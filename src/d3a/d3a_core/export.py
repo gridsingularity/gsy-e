@@ -25,11 +25,14 @@ import json
 import operator
 from slugify import slugify
 from sortedcontainers import SortedDict
-
-from d3a.constants import DATE_TIME_FORMAT
+from collections import namedtuple
+from pendulum import from_timestamp
+from copy import deepcopy
+from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.area import Area
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
+from d3a_interface.utils import mkdir_from_str
 from d3a.d3a_core.util import constsettings_to_dict, generate_market_slot_list
 from d3a.models.market.market_structures import MarketClearingState
 from d3a.models.strategy.storage import StorageStrategy
@@ -51,18 +54,15 @@ alternative_pricing_subdirs = {
     3: "net_metering_pricing"
 }
 
-EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "pv_production_kWh", "trade_price_eur",
-                           "soc_history_%", "load_profile_kWh"]
+EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "sold_trade_energy_kWh", "bought_trade_energy_kWh",
+                           "trade_price_eur", "pv_production_kWh", "soc_history_%",
+                           "load_profile_kWh"]
+
+SlotDataRange = namedtuple('SlotDataRange', ('start', 'end'))
 
 
 def get_from_dict(data_dict, map_list):
     return reduce(operator.getitem, map_list, data_dict)
-
-
-def mkdir_from_str(directory: str, exist_ok=True, parents=True):
-    out_dir = pathlib.Path(directory)
-    out_dir.mkdir(exist_ok=exist_ok, parents=parents)
-    return out_dir
 
 
 class ExportAndPlot:
@@ -92,10 +92,6 @@ class ExportAndPlot:
         settings_file = os.path.join(json_dir, "const_settings.json")
         with open(settings_file, 'w') as outfile:
             json.dump(constsettings_to_dict(), outfile, indent=2)
-        trade_file = os.path.join(json_dir, "trade-detail.json")
-        with open(trade_file, 'w') as outfile:
-            json.dump(self.endpoint_buffer.trade_details, outfile, indent=2)
-
         for key, value in self.endpoint_buffer.generate_json_report().items():
             json_file = os.path.join(json_dir, key + ".json")
             with open(json_file, 'w') as outfile:
@@ -127,16 +123,19 @@ class ExportAndPlot:
             if not os.path.exists(self.plot_dir):
                 os.makedirs(self.plot_dir)
 
-            self.plot_trade_partner_cell_tower(self.area, self.plot_dir)
             self.plot_energy_profile(self.area, self.plot_dir)
             self.plot_all_unmatched_loads()
             self.plot_avg_trade_price(self.area, self.plot_dir)
             self.plot_ess_soc_history(self.area, self.plot_dir)
             self.plot_ess_energy_trace(self.area, self.plot_dir)
+            if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
+                self.plot_stock_info_per_area_per_market_slot(self.area, self.plot_dir)
             if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
                 self.plot_device_stats(self.area, [])
+            if ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
+                self.plot_energy_trade_profile_hr(self.area, self.plot_dir)
             if ConstSettings.IAASettings.MARKET_TYPE == 3 and \
-                    ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS:
+                    ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS:
                 self.plot_supply_demand_curve(self.area, self.plot_dir)
             self.move_root_plot_folder()
         self.export_json_data(self.directory, self.area)
@@ -313,28 +312,6 @@ class ExportAndPlot:
             plot_dir, 'device_profile_{}.html'.format(device_name))
         PlotlyGraph.plot_device_profile(device_dict, device_name, output_file, device_strategy)
 
-    def plot_trade_partner_cell_tower(self, area: Area, subdir: str):
-        """
-        Wrapper for _plot_trade_partner_cell_tower
-        """
-        key = "cell-tower"
-        new_subdir = os.path.join(subdir, area.slug)
-        for child in area.children:
-            if child.slug == key:
-                self._plot_trade_partner_cell_tower(child.slug, subdir)
-            if child.children:
-                self.plot_trade_partner_cell_tower(child, new_subdir)
-
-    def _plot_trade_partner_cell_tower(self, load: str, plot_dir: str):
-        """
-        Plots trade partner pie graph for the sell tower.
-        """
-        higt = PlotlyGraph(self.export_data.buyer_trades, load)
-        higt.arrange_data()
-        mkdir_from_str(plot_dir)
-        higt.plot_pie_chart("Energy Trade Partners for {}".format(load),
-                            os.path.join(plot_dir, "energy_trade_partner_{}.html".format(load)))
-
     def plot_energy_profile(self, area: Area, subdir: str):
         """
         Wrapper for _plot_energy_profile
@@ -465,6 +442,56 @@ class ExportAndPlot:
         output_file = os.path.join(plot_dir, 'ess_soc_history_{}.html'.format(root_name))
         PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
+    def _plot_stock_info_per_area_per_market_slot(self, area, plot_dir):
+        """
+        Plots stock stats for each knot in the hierarchy per market_slot
+        """
+
+        area_stats = self.endpoint_buffer.area_market_stocks_stats.state[area.name]
+        self.market_slot_data_mapping = {}
+        fig = go.Figure()
+
+        for index, (market_slot_date, markets) in enumerate(area_stats.items()):
+            start = len(fig.data)
+            for tick_slot, info_dicts in markets.items():
+                for info_dict in info_dicts:
+                    size = 5 if info_dict["tag"] in ["offer", "bid"] else 10
+                    all_info_dicts = list([
+                        info_dict,
+                        *[i for i in info_dicts if i['rate'] == info_dict['rate']]])
+                    # Removes duplicate dicts from a list of dicts
+                    all_info_dicts = [dict(t)
+                                      for t in {
+                                          tuple(sorted(d.items())) for d in all_info_dicts
+                                      }]
+                    all_info_dicts.sort(key=lambda e: e["tool_tip"])
+                    tooltip_text = "<br />".join(map(lambda e: e["tool_tip"], all_info_dicts))
+                    fig.add_trace(
+                        go.Scatter(x=[tick_slot],
+                                   y=[info_dict['rate']],
+                                   text=tooltip_text,
+                                   hoverinfo='text',
+                                   marker=dict(size=size, color=all_info_dicts[0]['color']),
+                                   visible=False)
+                    )
+            self.market_slot_data_mapping[index] = SlotDataRange(start, len(fig.data))
+        PlotlyGraph.plot_slider_graph(
+            fig, plot_dir, area.name, self.market_slot_data_mapping
+        )
+
+    def plot_stock_info_per_area_per_market_slot(self, area, plot_dir):
+        """
+        Wrapper for _plot_stock_info_per_area_per_market_slot.
+        """
+        new_sub_dir = os.path.join(plot_dir, area.slug)
+        mkdir_from_str(new_sub_dir)
+        self._plot_stock_info_per_area_per_market_slot(area, new_sub_dir)
+
+        for child in area.children:
+            if not child.children:
+                continue
+            self.plot_stock_info_per_area_per_market_slot(child, new_sub_dir)
+
     def plot_ess_energy_trace(self, area, subdir):
         """
         Wrapper for _plot_ess_energy_trace.
@@ -546,15 +573,15 @@ class ExportAndPlot:
                                           y=[clearing_point[0], clearing_point[0]],
                                           mode='lines+markers',
                                           line=dict(width=5),
-                                          name=time_slot.format(DATE_TIME_FORMAT +
-                                                                ' Clearing-Rate'))
+                                          name=time_slot.format(DATE_TIME_FORMAT)
+                                               + ' Clearing-Rate')
                     data.append(data_obj)
                     data_obj = go.Scatter(x=[clearing_point[1], clearing_point[1]],
                                           y=[0, clearing_point[0]],
                                           mode='lines+markers',
                                           line=dict(width=5),
-                                          name=time_slot.format(DATE_TIME_FORMAT +
-                                                                ' Clearing-Energy'))
+                                          name=time_slot.format(DATE_TIME_FORMAT)
+                                               + ' Clearing-Energy')
                     data.append(data_obj)
                     xmax = max(xmax, clearing_point[1]) * 3
 
@@ -662,3 +689,76 @@ class ExportAndPlot:
                               y=list(graph_obj.umHours.values()),
                               name=label.lower())
         return data_obj
+
+    def plot_energy_trade_profile_hr(self, area: Area, subdir: str):
+        """
+        Wrapper for _plot_energy_profile_hr
+        """
+        new_subdir = os.path.join(subdir, area.slug)
+        self._plot_energy_profile_hr(area, new_subdir)
+        for child in area.children:
+            if child.children:
+                self.plot_energy_trade_profile_hr(child, new_subdir)
+
+    def _plot_energy_profile_hr(self, area: Area, subdir: str):
+        """
+        Plots history of energy trades plotted for each market_slot
+        """
+        barmode = "relative"
+        xtitle = 'Time'
+        ytitle = 'Energy [kWh]'
+        market_name = area.name
+        title = f'High Resolution Energy Trade Profile of {market_name}'
+        plot_dir = os.path.join(self.plot_dir, subdir, "energy_profile_hr")
+        mkdir_from_str(plot_dir)
+        for market_slot, data in area.stats.market_trades.items():
+            plot_data = self.add_plotly_graph_dataset(data, market_slot)
+            if len(plot_data) > 0:
+                market_slot_str = market_slot.format(DATE_TIME_FORMAT)
+                output_file = \
+                    os.path.join(plot_dir, f'energy_profile_hr_'
+                                           f'{market_name}_{market_slot_str}.html')
+                time_range = [market_slot - GlobalConfig.tick_length,
+                              market_slot + GlobalConfig.slot_length + GlobalConfig.tick_length]
+                PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, plot_data, output_file,
+                                           time_range=time_range)
+
+    @staticmethod
+    def add_plotly_graph_dataset(market_trades, market_slot):
+        plotly_dataset_list = []
+        seller_dict = {}
+        buyer_dict = {}
+        # This zero point is needed to make plotly also plot the first data point:
+        zero_point_dict = {"timestamp": [market_slot - GlobalConfig.tick_length],
+                           "energy": [0.0]}
+        # 1. accumulate data by buyer and seller:
+        for trade in market_trades:
+            trade_time = from_timestamp(trade["trade_time"], tz=TIME_ZONE)
+            seller = trade["seller"]
+            buyer = trade["buyer"]
+            energy = trade["energy"]
+            if seller not in seller_dict:
+                seller_dict[seller] = deepcopy(zero_point_dict)
+            if buyer not in buyer_dict:
+                buyer_dict[buyer] = deepcopy(zero_point_dict)
+            seller_dict[seller]["timestamp"].append(trade_time)
+            seller_dict[seller]["energy"].append(energy * ENERGY_SELLER_SIGN_PLOTS)
+            buyer_dict[buyer]["timestamp"].append(trade_time)
+            buyer_dict[buyer]["energy"].append(energy * ENERGY_BUYER_SIGN_PLOTS)
+
+        # 2. Create bar plot objects and collect them in a list
+        # The widths of bars in a plotly.Bar is set in milliseconds when axis is in datetime format
+        for agent, data in seller_dict.items():
+            data_obj = go.Bar(x=data["timestamp"],
+                              y=data["energy"],
+                              width=GlobalConfig.tick_length.seconds * 1000,
+                              name=agent + "-seller")
+            plotly_dataset_list.append(data_obj)
+
+        for agent, data in buyer_dict.items():
+            data_obj = go.Bar(x=data["timestamp"],
+                              y=data["energy"],
+                              width=GlobalConfig.tick_length.seconds * 1000,
+                              name=agent + "-buyer")
+            plotly_dataset_list.append(data_obj)
+        return plotly_dataset_list

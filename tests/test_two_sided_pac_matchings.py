@@ -1,4 +1,22 @@
+"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 import unittest
+import pendulum
 from parameterized import parameterized
 from d3a.models.market.market_structures import Bid, Offer, BidOfferMatch, Trade
 from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
@@ -22,19 +40,19 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
             self, en1, en2, en3, en4, en5, clearing_energy
     ):
         bid_list = [
-            Bid('bid_id', 1, en1, 'B', 'S'),
-            Bid('bid_id1', 2, en2, 'B', 'S'),
-            Bid('bid_id2', 3, en3, 'B', 'S'),
-            Bid('bid_id3', 4, en4, 'B', 'S'),
-            Bid('bid_id4', 5, en5, 'B', 'S')
+            Bid('bid_id', pendulum.now(), 1, en1, 'B', 'S'),
+            Bid('bid_id1', pendulum.now(), 2, en2, 'B', 'S'),
+            Bid('bid_id2', pendulum.now(), 3, en3, 'B', 'S'),
+            Bid('bid_id3', pendulum.now(), 4, en4, 'B', 'S'),
+            Bid('bid_id4', pendulum.now(), 5, en5, 'B', 'S')
         ]
 
         offer_list = [
-            Offer('offer_id', 1, en1, 'S'),
-            Offer('offer_id1', 2, en2, 'S'),
-            Offer('offer_id2', 3, en3, 'S'),
-            Offer('offer_id3', 4, en4, 'S'),
-            Offer('offer_id4', 5, en5, 'S')
+            Offer('offer_id', pendulum.now(), 1, en1, 'S'),
+            Offer('offer_id1', pendulum.now(), 2, en2, 'S'),
+            Offer('offer_id2', pendulum.now(), 3, en3, 'S'),
+            Offer('offer_id3', pendulum.now(), 4, en4, 'S'),
+            Offer('offer_id4', pendulum.now(), 5, en5, 'S')
         ]
 
         matchings = TwoSidedPayAsClear._create_bid_offer_matchings(
@@ -50,17 +68,17 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
 
     def test_create_bid_offer_matchings_can_handle_partial_bids(self):
         bid_list = [
-            Bid('bid_id', 9, 9, 'B', 'S'),
-            Bid('bid_id1', 3, 3, 'B', 'S'),
-            Bid('bid_id2', 3, 3, 'B', 'S'),
+            Bid('bid_id', pendulum.now(), 9, 9, 'B', 'S'),
+            Bid('bid_id1', pendulum.now(), 3, 3, 'B', 'S'),
+            Bid('bid_id2', pendulum.now(), 3, 3, 'B', 'S'),
         ]
 
         offer_list = [
-            Offer('offer_id', 1, 1, 'S'),
-            Offer('offer_id1', 2, 2, 'S'),
-            Offer('offer_id2', 3, 3, 'S'),
-            Offer('offer_id3', 4, 4, 'S'),
-            Offer('offer_id4', 5, 5, 'S')
+            Offer('offer_id', pendulum.now(), 1, 1, 'S'),
+            Offer('offer_id1', pendulum.now(), 2, 2, 'S'),
+            Offer('offer_id2', pendulum.now(), 3, 3, 'S'),
+            Offer('offer_id3', pendulum.now(), 4, 4, 'S'),
+            Offer('offer_id4', pendulum.now(), 5, 5, 'S')
         ]
 
         matchings = TwoSidedPayAsClear._create_bid_offer_matchings(15, offer_list, bid_list)
@@ -76,17 +94,17 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
 
     def test_create_bid_offer_matchings_can_handle_partial_offers(self):
         bid_list = [
-            Bid('bid_id', 1, 1, 'B', 'S'),
-            Bid('bid_id1', 2, 2, 'B', 'S'),
-            Bid('bid_id2', 3, 3, 'B', 'S'),
-            Bid('bid_id3', 4, 4, 'B', 'S'),
-            Bid('bid_id4', 5, 5, 'B', 'S')
+            Bid('bid_id', pendulum.now(), 1, 1, 'B', 'S'),
+            Bid('bid_id1', pendulum.now(), 2, 2, 'B', 'S'),
+            Bid('bid_id2', pendulum.now(), 3, 3, 'B', 'S'),
+            Bid('bid_id3', pendulum.now(), 4, 4, 'B', 'S'),
+            Bid('bid_id4', pendulum.now(), 5, 5, 'B', 'S')
         ]
 
         offer_list = [
-            Offer('offer_id', 8, 8, 'S'),
-            Offer('offer_id1', 4, 4, 'S'),
-            Offer('offer_id2', 3, 3, 'S'),
+            Offer('offer_id', pendulum.now(), 8, 8, 'S'),
+            Offer('offer_id1', pendulum.now(), 4, 4, 'S'),
+            Offer('offer_id2', pendulum.now(), 3, 3, 'S'),
         ]
 
         matchings = TwoSidedPayAsClear._create_bid_offer_matchings(15, offer_list, bid_list)
@@ -101,17 +119,17 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
 
     def test_create_bid_offer_matchings_can_handle_excessive_offer_energy(self):
         bid_list = [
-            Bid('bid_id', 1, 1, 'B', 'S'),
-            Bid('bid_id1', 2, 2, 'B', 'S'),
-            Bid('bid_id2', 3, 3, 'B', 'S'),
-            Bid('bid_id3', 4, 4, 'B', 'S'),
-            Bid('bid_id4', 5, 5, 'B', 'S')
+            Bid('bid_id', pendulum.now(), 1, 1, 'B', 'S'),
+            Bid('bid_id1', pendulum.now(), 2, 2, 'B', 'S'),
+            Bid('bid_id2', pendulum.now(), 3, 3, 'B', 'S'),
+            Bid('bid_id3', pendulum.now(), 4, 4, 'B', 'S'),
+            Bid('bid_id4', pendulum.now(), 5, 5, 'B', 'S')
         ]
 
         offer_list = [
-            Offer('offer_id', 8, 8, 'S'),
-            Offer('offer_id1', 4, 4, 'S'),
-            Offer('offer_id2', 13, 13, 'S'),
+            Offer('offer_id', pendulum.now(), 8, 8, 'S'),
+            Offer('offer_id1', pendulum.now(), 4, 4, 'S'),
+            Offer('offer_id2', pendulum.now(), 13, 13, 'S'),
         ]
 
         matchings = TwoSidedPayAsClear._create_bid_offer_matchings(15, offer_list, bid_list)
@@ -127,17 +145,17 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
 
     def test_create_bid_offer_matchings_can_handle_excessive_bid_energy(self):
         bid_list = [
-            Bid('bid_id', 1, 1, 'B', 'S'),
-            Bid('bid_id1', 2, 2, 'B', 'S'),
-            Bid('bid_id2', 3, 3, 'B', 'S'),
-            Bid('bid_id3', 4, 4, 'B', 'S'),
-            Bid('bid_id4', 5, 5, 'B', 'S')
+            Bid('bid_id', pendulum.now(), 1, 1, 'B', 'S'),
+            Bid('bid_id1', pendulum.now(), 2, 2, 'B', 'S'),
+            Bid('bid_id2', pendulum.now(), 3, 3, 'B', 'S'),
+            Bid('bid_id3', pendulum.now(), 4, 4, 'B', 'S'),
+            Bid('bid_id4', pendulum.now(), 5, 5, 'B', 'S')
         ]
 
         offer_list = [
-            Offer('offer_id', 8, 8, 'S'),
-            Offer('offer_id1', 4, 4, 'S'),
-            Offer('offer_id2', 5003, 5003, 'S'),
+            Offer('offer_id', pendulum.now(), 8, 8, 'S'),
+            Offer('offer_id1', pendulum.now(), 4, 4, 'S'),
+            Offer('offer_id2', pendulum.now(), 5003, 5003, 'S'),
         ]
 
         matchings = TwoSidedPayAsClear._create_bid_offer_matchings(15, offer_list, bid_list)
@@ -153,15 +171,15 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
 
     def test_create_bid_offer_matchings_can_match_with_only_one_offer(self):
         bid_list = [
-            Bid('bid_id', 1, 1, 'B', 'S'),
-            Bid('bid_id1', 2, 2, 'B', 'S'),
-            Bid('bid_id2', 3, 3, 'B', 'S'),
-            Bid('bid_id3', 4, 4, 'B', 'S'),
-            Bid('bid_id4', 5, 5, 'B', 'S')
+            Bid('bid_id', pendulum.now(), 1, 1, 'B', 'S'),
+            Bid('bid_id1', pendulum.now(), 2, 2, 'B', 'S'),
+            Bid('bid_id2', pendulum.now(), 3, 3, 'B', 'S'),
+            Bid('bid_id3', pendulum.now(), 4, 4, 'B', 'S'),
+            Bid('bid_id4', pendulum.now(), 5, 5, 'B', 'S')
         ]
 
         offer_list = [
-            Offer('offer_id', 8, 800000000, 'S')
+            Offer('offer_id', pendulum.now(), 8, 800000000, 'S')
         ]
 
         matchings = TwoSidedPayAsClear._create_bid_offer_matchings(15, offer_list, bid_list)
@@ -175,15 +193,15 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
 
     def test_create_bid_offer_matchings_can_match_with_only_one_bid(self):
         bid_list = [
-            Bid('bid_id', 9, 90123456789, 'B', 'S')
+            Bid('bid_id', pendulum.now(), 9, 90123456789, 'B', 'S')
         ]
 
         offer_list = [
-            Offer('offer_id', 1, 1, 'S'),
-            Offer('offer_id1', 2, 2, 'S'),
-            Offer('offer_id2', 3, 3, 'S'),
-            Offer('offer_id3', 4, 4, 'S'),
-            Offer('offer_id4', 5, 5, 'S')
+            Offer('offer_id', pendulum.now(), 1, 1, 'S'),
+            Offer('offer_id1', pendulum.now(), 2, 2, 'S'),
+            Offer('offer_id2', pendulum.now(), 3, 3, 'S'),
+            Offer('offer_id3', pendulum.now(), 4, 4, 'S'),
+            Offer('offer_id4', pendulum.now(), 5, 5, 'S')
         ]
 
         matchings = TwoSidedPayAsClear._create_bid_offer_matchings(15, offer_list, bid_list)
@@ -197,16 +215,16 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
 
     def test_matching_list_gets_updated_with_residual_offers(self):
         matchings = [
-            BidOfferMatch(offer=Offer('offer_id', 1, 1, 'S'), offer_energy=1,
-                          bid=Bid('bid_id', 1, 1, 'B', 'S'), bid_energy=1),
-            BidOfferMatch(offer=Offer('offer_id2', 2, 2, 'S'), offer_energy=2,
-                          bid=Bid('bid_id2', 2, 2, 'B', 'S'), bid_energy=2)
+            BidOfferMatch(offer=Offer('offer_id', pendulum.now(), 1, 1, 'S'), offer_energy=1,
+                          bid=Bid('bid_id', pendulum.now(), 1, 1, 'B', 'S'), bid_energy=1),
+            BidOfferMatch(offer=Offer('offer_id2', pendulum.now(), 2, 2, 'S'), offer_energy=2,
+                          bid=Bid('bid_id2', pendulum.now(), 2, 2, 'B', 'S'), bid_energy=2)
         ]
 
-        offer_trade = Trade('trade', 1, Offer('offer_id', 1, 1, 'S'), 'S', 'B',
-                            residual=Offer('residual_offer', 0.5, 0.5, 'S'))
-        bid_trade = Trade('bid_trade', 1, Bid('bid_id2', 1, 1, 'S', 'B'), 'S', 'B',
-                          residual=Bid('residual_bid_2', 1, 1, 'S', 'B'))
+        offer_trade = Trade('trade', 1, Offer('offer_id', pendulum.now(), 1, 1, 'S'), 'S', 'B',
+                            residual=Offer('residual_offer', pendulum.now(), 0.5, 0.5, 'S'))
+        bid_trade = Trade('bid_trade', 1, Bid('bid_id2', pendulum.now(), 1, 1, 'S', 'B'), 'S', 'B',
+                          residual=Bid('residual_bid_2', pendulum.now(), 1, 1, 'S', 'B'))
 
         matchings = TwoSidedPayAsClear._replace_offers_bids_with_residual_in_matching_list(
             matchings, 0, offer_trade, bid_trade
@@ -217,18 +235,18 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
 
     def test_matching_list_affects_only_matches_after_start_index(self):
         matchings = [
-            BidOfferMatch(offer=Offer('offer_id', 1, 1, 'S'), offer_energy=1,
-                          bid=Bid('bid_id', 1, 1, 'B', 'S'), bid_energy=1),
-            BidOfferMatch(offer=Offer('offer_id2', 2, 2, 'S'), offer_energy=2,
-                          bid=Bid('bid_id2', 2, 2, 'B', 'S'), bid_energy=2),
-            BidOfferMatch(offer=Offer('offer_id', 1, 1, 'S'), offer_energy=1,
-                          bid=Bid('bid_id', 1, 1, 'B', 'S'), bid_energy=1)
+            BidOfferMatch(offer=Offer('offer_id', pendulum.now(), 1, 1, 'S'), offer_energy=1,
+                          bid=Bid('bid_id', pendulum.now(), 1, 1, 'B', 'S'), bid_energy=1),
+            BidOfferMatch(offer=Offer('offer_id2', pendulum.now(), 2, 2, 'S'), offer_energy=2,
+                          bid=Bid('bid_id2', pendulum.now(), 2, 2, 'B', 'S'), bid_energy=2),
+            BidOfferMatch(offer=Offer('offer_id', pendulum.now(), 1, 1, 'S'), offer_energy=1,
+                          bid=Bid('bid_id', pendulum.now(), 1, 1, 'B', 'S'), bid_energy=1)
         ]
 
-        offer_trade = Trade('trade', 1, Offer('offer_id', 1, 1, 'S'), 'S', 'B',
-                            residual=Offer('residual_offer', 0.5, 0.5, 'S'))
-        bid_trade = Trade('bid_trade', 1, Bid('bid_id2', 1, 1, 'S', 'B'), 'S', 'B',
-                          residual=Bid('residual_bid_2', 1, 1, 'S', 'B'))
+        offer_trade = Trade('trade', 1, Offer('offer_id', pendulum.now(), 1, 1, 'S'), 'S', 'B',
+                            residual=Offer('residual_offer', pendulum.now(), 0.5, 0.5, 'S'))
+        bid_trade = Trade('bid_trade', 1, Bid('bid_id2', pendulum.now(), 1, 1, 'S', 'B'), 'S', 'B',
+                          residual=Bid('residual_bid_2', pendulum.now(), 1, 1, 'S', 'B'))
 
         matchings = TwoSidedPayAsClear._replace_offers_bids_with_residual_in_matching_list(
             matchings, 1, offer_trade, bid_trade

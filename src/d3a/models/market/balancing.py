@@ -74,7 +74,8 @@ class BalancingMarket(OneSidedMarket):
         if offer_id is None:
             offer_id = str(uuid.uuid4())
 
-        offer = BalancingOffer(offer_id, price, energy, seller, seller_origin=seller_origin)
+        offer = BalancingOffer(offer_id, self.now, price, energy,
+                               seller, seller_origin=seller_origin)
         self.offers[offer.id] = offer
 
         self.offer_history.append(offer)

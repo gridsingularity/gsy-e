@@ -32,7 +32,11 @@ def get_setup(config):
                     Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50),
                          appliance=SwitchableAppliance(),
                          event_list=[StrategyEvents(0, {'initial_selling_rate': 31}),
-                                     StrategyEvents(12, {'initial_selling_rate': 33})]),
+                                     StrategyEvents(12, {'initial_selling_rate': 33}),
+                                     StrategyEvents(15, {'initial_selling_rate': 40,
+                                                         'update_interval': 5,
+                                                         'fit_to_limit': False,
+                                                         'energy_rate_decrease_per_update': 1})]),
                 ]
             ),
             Area('Grid Load', strategy=LoadHoursStrategy(avg_power_W=10,

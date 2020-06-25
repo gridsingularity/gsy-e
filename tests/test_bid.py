@@ -16,10 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.market.market_structures import Bid
+import pendulum
 
 
 def test_offer_id_stringified():
-    bid = Bid(object(), 10, 20, 'A', 'B')
+    bid = Bid(object(), pendulum.now(), 10, 20, 'A', 'B')
 
     assert isinstance(bid.id, str)
     assert "<object object at" in bid.id

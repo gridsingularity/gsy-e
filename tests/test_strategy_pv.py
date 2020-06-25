@@ -81,11 +81,11 @@ class FakeMarket:
         self.count = count
         self.id = str(count)
         self.created_offers = []
-        self.offers = {'id': Offer(id='id', price=10, energy=0.5, seller='A')}
+        self.offers = {'id': Offer(id='id', time=pendulum.now(), price=10, energy=0.5, seller='A')}
 
     def offer(self, price, energy, seller, original_offer_price=None, seller_origin=None):
-        offer = Offer(str(uuid.uuid4()), price, energy, seller, original_offer_price,
-                      seller_origin=seller_origin)
+        offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy, seller,
+                      original_offer_price, seller_origin=seller_origin)
         self.created_offers.append(offer)
         self.offers[offer.id] = offer
         return offer
@@ -170,7 +170,7 @@ def testing_event_tick(pv_test2, market_test2, area_test2):
     assert pv_test2.energy_production_forecast_kWh[
                pendulum.today(tz=TIME_ZONE).at(hour=0, minute=0, second=2)
            ] == 0
-    area_test2.current_tick = DEFAULT_CONFIG.ticks_per_slot - 2
+    area_test2.current_tick_in_slot = DEFAULT_CONFIG.ticks_per_slot - 2
     pv_test2.event_tick()
     offer_id2 = list(pv_test2.offers.posted.keys())[0]
     offer2 = market_test2.offers[offer_id2]
@@ -197,7 +197,7 @@ def pv_test3(area_test3):
     p = PVStrategy()
     p.area = area_test3
     p.owner = area_test3
-    p.offers.posted = {Offer('id', 1, 1, 'FakeArea'): area_test3.test_market.id}
+    p.offers.posted = {Offer('id', pendulum.now(), 1, 1, 'FakeArea'): area_test3.test_market.id}
     return p
 
 
@@ -233,7 +233,8 @@ def pv_test4(area_test3, called):
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {
-        Offer(id='id', price=20, energy=1, seller='FakeArea'): area_test3.test_market.id
+        Offer(id='id', time=pendulum.now(), price=20,
+              energy=1, seller='FakeArea'): area_test3.test_market.id
     }
     return p
 
@@ -241,7 +242,8 @@ def pv_test4(area_test3, called):
 def testing_event_trade(area_test3, pv_test4):
     pv_test4.event_trade(market_id=area_test3.test_market.id,
                          trade=Trade(id='id', time='time',
-                                     offer=Offer(id='id', price=20, energy=1, seller='FakeArea'),
+                                     offer=Offer(id='id', time=pendulum.now(), price=20,
+                                                 energy=1, seller='FakeArea'),
                                      seller=area_test3, buyer='buyer'
                                      )
                          )
@@ -369,7 +371,7 @@ def pv_test8(area_test3):
     p = PVStrategy(panel_count=1, initial_selling_rate=30)
     p.area = area_test3
     p.owner = area_test3
-    p.offers.posted = {Offer('id', 1, 1, 'FakeArea'): area_test3.test_market.id}
+    p.offers.posted = {Offer('id', pendulum.now(), 1, 1, 'FakeArea'): area_test3.test_market.id}
     return p
 
 
@@ -474,8 +476,8 @@ def pv_test11(area_test3):
 
 def test_assert_if_trade_rate_is_lower_than_offer_rate(pv_test11):
     market_id = "market_id"
-    pv_test11.offers.sold[market_id] = [Offer("offer_id", 30, 1, "FakeArea")]
-    to_cheap_offer = Offer("offer_id", 29, 1, "FakeArea")
+    pv_test11.offers.sold[market_id] = [Offer("offer_id", pendulum.now(), 30, 1, "FakeArea")]
+    to_cheap_offer = Offer("offer_id", pendulum.now(), 29, 1, "FakeArea")
     trade = Trade("trade_id", "time", to_cheap_offer, pv_test11, "buyer")
 
     with pytest.raises(AssertionError):

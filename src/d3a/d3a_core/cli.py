@@ -31,7 +31,7 @@ from d3a.models.config import SimulationConfig
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import IntervalType, available_simulation_scenarios, \
-    read_settings_from_file, update_advanced_settings, convert_str_to_pauseafter_intervall, \
+    read_settings_from_file, update_advanced_settings, convert_str_to_pause_after_interval, \
     DateType
 
 from d3a.d3a_core.simulation import run_simulation
@@ -109,6 +109,7 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
             simulation_settings, advanced_settings = read_settings_from_file(settings_file)
             update_advanced_settings(advanced_settings)
             validate_global_settings(simulation_settings)
+            simulation_settings["external_connection_enabled"] = False
             simulation_config = SimulationConfig(**simulation_settings)
         else:
             global_settings = {"sim_duration": duration,
@@ -119,7 +120,8 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
             validate_global_settings(global_settings)
             simulation_config = \
                 SimulationConfig(duration, slot_length, tick_length, market_count,
-                                 cloud_coverage, start_date=start_date)
+                                 cloud_coverage, start_date=start_date,
+                                 external_connection_enabled=False)
 
         if compare_alt_pricing is True:
             ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
@@ -139,7 +141,7 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
 
         else:
             if pause_at is not None:
-                kwargs["pause_after"] = convert_str_to_pauseafter_intervall(start_date, pause_at)
+                kwargs["pause_after"] = convert_str_to_pause_after_interval(start_date, pause_at)
             run_simulation(setup_module_name, simulation_config, None, slowdown, None,
                            kwargs)
 

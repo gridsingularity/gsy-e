@@ -25,6 +25,9 @@ General Settings is where the general simulation parameters are set. The configu
 
 - **Tick length:** Amount of time between two "heartbeats" of the simulation, influences e.g. the number of price updates.
 
+- **Grid Fees:** The user can select on of the 2 types of grid fee : [Constant grid fee](constant-fees.md) and [Percentage grid fee](percentage-fees.md)
+
+
 The interface for selecting general settings is shown below:
 
 ![img](img/general-settings-1.png)

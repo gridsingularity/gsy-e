@@ -259,10 +259,10 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
             dispatcher.redis.publish.assert_called_once()
 
     def test_publish_event_converts_python_objects_to_json(self):
-        offer = Offer("1", 2, 3, "A")
-        trade = Trade("2", now(), Offer("accepted", 7, 8, "Z"), "B", "C")
-        new_offer = Offer("3", 4, 5, "D")
-        existing_offer = Offer("4", 5, 6, "E")
+        offer = Offer("1", now(), 2, 3, "A")
+        trade = Trade("2", now(), Offer("accepted", now(), 7, 8, "Z"), "B", "C")
+        new_offer = Offer("3", now(), 4, 5, "D")
+        existing_offer = Offer("4", now(), 5, 6, "E")
         kwargs = {"offer": offer,
                   "trade": trade,
                   "new_offer": new_offer,
@@ -274,10 +274,13 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
             assert dispatcher.redis.publish.call_count == 1
             payload = json.loads(dispatcher.redis.publish.call_args_list[0][0][1])
             assert isinstance(payload["kwargs"]["offer"], str)
-            assert offer_from_JSON_string(payload["kwargs"]["offer"]) == offer
+            assert offer_from_JSON_string(payload["kwargs"]["offer"], offer.time) == offer
             assert isinstance(payload["kwargs"]["trade"], str)
-            assert trade_from_JSON_string(payload["kwargs"]["trade"]) == trade
+            assert trade_from_JSON_string(payload["kwargs"]["trade"], trade.time) == trade
             assert isinstance(payload["kwargs"]["new_offer"], str)
-            assert offer_from_JSON_string(payload["kwargs"]["new_offer"]) == new_offer
+            assert offer_from_JSON_string(payload["kwargs"]["new_offer"],
+                                          new_offer.time) == new_offer
             assert isinstance(payload["kwargs"]["existing_offer"], str)
-            assert offer_from_JSON_string(payload["kwargs"]["existing_offer"]) == existing_offer
+            assert offer_from_JSON_string(payload["kwargs"]["existing_offer"],
+                                          existing_offer.time) == \
+                existing_offer

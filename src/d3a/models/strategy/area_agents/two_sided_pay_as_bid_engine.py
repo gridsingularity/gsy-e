@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
 from typing import Dict  # NOQA
-from copy import deepcopy
 from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent  # NOQA
 from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
 from d3a.d3a_core.exceptions import BidNotFound, MarketException
@@ -225,6 +224,6 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                              f"{short_offer_bid_log_str(local_residual_bid)}")
 
     def _add_to_forward_bids(self, source_bid, target_bid):
-        bid_info = BidInfo(deepcopy(source_bid), deepcopy(target_bid))
+        bid_info = BidInfo(source_bid, target_bid)
         self.forwarded_bids[source_bid.id] = bid_info
         self.forwarded_bids[target_bid.id] = bid_info

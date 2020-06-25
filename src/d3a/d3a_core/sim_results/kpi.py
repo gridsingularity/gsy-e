@@ -16,39 +16,39 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
+from d3a.d3a_core.util import if_not_in_list_append
 from d3a.d3a_core.sim_results.area_statistics import _is_load_node, _is_prosumer_node, \
     _is_producer_node
 
 
 class KPIState:
-    def __init__(self, area):
+    def __init__(self):
         self.producer_list = list()
         self.consumer_list = list()
         self.areas_to_trace_list = list()
         self.ess_list = list()
         self.buffer_list = list()
         self.total_energy_demanded_wh = 0
+        self.demanded_buffer_wh = 0
         self.total_energy_produced_wh = 0
         self.total_self_consumption_wh = 0
         self.self_consumption_buffer_wh = 0
         self.accounted_markets = {}
 
-        self._accumulate_devices(area)
-
-    def _accumulate_devices(self, area):
+    def accumulate_devices(self, area):
         for child in area.children:
             if _is_producer_node(child) and type(child.strategy) is not InfiniteBusStrategy:
-                self.producer_list.append(child.name)
-                self.areas_to_trace_list.append(child.parent)
+                if_not_in_list_append(self.producer_list, child.name)
+                if_not_in_list_append(self.areas_to_trace_list, child.parent)
             elif _is_load_node(child):
-                self.consumer_list.append(child.name)
-                self.areas_to_trace_list.append(child.parent)
+                if_not_in_list_append(self.consumer_list, child.name)
+                if_not_in_list_append(self.areas_to_trace_list, child.parent)
             elif _is_prosumer_node(child):
-                self.ess_list.append(child.name)
+                if_not_in_list_append(self.ess_list, child.name)
             elif isinstance(child.strategy, InfiniteBusStrategy):
-                self.buffer_list.append(child.name)
+                if_not_in_list_append(self.buffer_list, child.name)
             if child.children:
-                self._accumulate_devices(child)
+                self.accumulate_devices(child)
 
     def _accumulate_total_energy_demanded(self, area):
         for child in area.children:
@@ -98,12 +98,30 @@ class KPIState:
                     self.self_consumption_buffer_wh = 0
 
     def _accumulate_infinite_consumption(self, trade):
-        if trade.seller_origin in self.buffer_list and trade.buyer_origin in self.consumer_list:
+        """
+        If the InfiniteBus is a seller of the trade when below the referenced area and bought
+        by any of child devices.
+        * total_self_consumption_wh needs to accumulated.
+        * total_energy_produced_wh also needs to accumulated accounting of what
+        the InfiniteBus has produced.
+        """
+        if trade.seller_origin in self.buffer_list and \
+                trade.buyer_origin in self.consumer_list and \
+                trade.buyer_origin == trade.buyer:
             self.total_self_consumption_wh += trade.offer.energy * 1000
+            self.total_energy_produced_wh += trade.offer.energy * 1000
 
     def _dissipate_infinite_consumption(self, trade):
+        """
+        If the InfiniteBus is a buyer of the trade when below the referenced area
+        and sold by any of child devices.
+        total_self_consumption_wh needs to accumulated.
+        demanded_buffer_wh also needs to accumulated accounting of what
+        the InfiniteBus has consumed/demanded.
+        """
         if trade.buyer_origin in self.buffer_list and trade.seller_origin in self.producer_list:
             self.total_self_consumption_wh += trade.offer.energy * 1000
+            self.demanded_buffer_wh += trade.offer.energy * 1000
 
     def _accumulate_energy_trace(self):
         for c_area in self.areas_to_trace_list:
@@ -138,19 +156,23 @@ class KPI:
 
     def area_performance_indices(self, area):
         if area.name not in self.state:
-            self.state[area.name] = KPIState(area)
+            self.state[area.name] = KPIState()
+        self.state[area.name].accumulate_devices(area)
 
         self.state[area.name].update_area_kpi(area)
+        self.state[area.name].total_demand = \
+            self.state[area.name].total_energy_demanded_wh + \
+            self.state[area.name].demanded_buffer_wh
 
         # in case when the area doesn't have any load demand
-        if self.state[area.name].total_energy_demanded_wh <= 0:
+        if self.state[area.name].total_demand <= 0:
             self_sufficiency = None
         elif self.state[area.name].total_self_consumption_wh >= \
-                self.state[area.name].total_energy_demanded_wh:
+                self.state[area.name].total_demand:
             self_sufficiency = 1.0
         else:
             self_sufficiency = self.state[area.name].total_self_consumption_wh / \
-                               self.state[area.name].total_energy_demanded_wh
+                               self.state[area.name].total_demand
 
         if self.state[area.name].total_energy_produced_wh <= 0:
             self_consumption = None
@@ -160,21 +182,30 @@ class KPI:
         else:
             self_consumption = self.state[area.name].total_self_consumption_wh / \
                                self.state[area.name].total_energy_produced_wh
-        return {"self_sufficiency": self_sufficiency, "self_consumption": self_consumption}
+        return {"self_sufficiency": self_sufficiency, "self_consumption": self_consumption,
+                "total_energy_demanded_wh": self.state[area.name].total_demand,
+                "total_energy_produced_wh": self.state[area.name].total_energy_produced_wh,
+                "total_self_consumption_wh": self.state[area.name].total_self_consumption_wh}
 
     def _kpi_ratio_to_percentage(self, area_name):
-        if self.performance_indices[area_name]["self_sufficiency"] is not None:
+        area_kpis = self.performance_indices[area_name]
+        if area_kpis["self_sufficiency"] is not None:
             self_sufficiency_percentage = \
-                self.performance_indices[area_name]["self_sufficiency"] * 100
+                area_kpis["self_sufficiency"] * 100
         else:
             self_sufficiency_percentage = 0.0
-        if self.performance_indices[area_name]["self_consumption"] is not None:
+        if area_kpis["self_consumption"] is not None:
             self_consumption_percentage = \
-                self.performance_indices[area_name]["self_consumption"] * 100
+                area_kpis["self_consumption"] * 100
         else:
             self_consumption_percentage = 0.0
+
         return {"self_sufficiency": self_sufficiency_percentage,
-                "self_consumption": self_consumption_percentage}
+                "self_consumption": self_consumption_percentage,
+                "total_energy_demanded_wh": area_kpis["total_energy_demanded_wh"],
+                "total_energy_produced_wh": area_kpis["total_energy_produced_wh"],
+                "total_self_consumption_wh": area_kpis["total_self_consumption_wh"]
+                }
 
     def update_kpis_from_area(self, area):
         self.performance_indices[area.name] = \

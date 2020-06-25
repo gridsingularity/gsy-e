@@ -93,6 +93,7 @@ class FakeArea:
         self.is_nighttime = False
         self.stats = MagicMock(spec=AreaStats)
         self.stats.report_accounting = self.report_accounting
+        self.current_tick_in_slot = 0
 
     def report_accounting(self, market, owner, value, time):
         self.reported_value = value

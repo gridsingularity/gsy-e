@@ -95,7 +95,7 @@ class Market:
             self.redis_publisher = MarketRedisEventPublisher(self.id)
         elif notification_listener:
             self.notification_listeners.append(notification_listener)
-        self.current_tick = 0
+        self.current_tick_in_slot = 0
         self.device_registry = DeviceRegistry.REGISTRY
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             self.redis_api = MarketRedisEventSubscriber(self) \
@@ -219,13 +219,13 @@ class Market:
         return [o for o in self.sorted_offers if
                 abs(o.energy_rate - rate) < FLOATING_POINT_TOLERANCE]
 
-    def update_clock(self, current_tick):
-        self.current_tick = current_tick
+    def update_clock(self, current_tick_in_slot):
+        self.current_tick_in_slot = current_tick_in_slot
 
     @property
     def now(self) -> DateTime:
-        return GlobalConfig.start_date.add(
-            seconds=GlobalConfig.tick_length.seconds * self.current_tick)
+        return self.time_slot.add(
+            seconds=GlobalConfig.tick_length.seconds * self.current_tick_in_slot)
 
     def set_actual_energy(self, time, reporter, value):
         if reporter in self.accumulated_actual_energy_agg:
@@ -256,4 +256,11 @@ class Market:
             "id": self.id,
             "start_time": self.time_slot_str,
             "duration_min": GlobalConfig.slot_length.minutes
+        }
+
+    def get_bids_offers_trades(self):
+        return {
+            "bids": [b.serializable_dict() for b in self.bid_history],
+            "offers": [o.serializable_dict() for o in self.offer_history],
+            "trades": [t.serializable_dict() for t in self.trades]
         }

@@ -37,8 +37,7 @@ from d3a.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
 
 from d3a.models.leaves import Leaf # NOQA
 from d3a.models.leaves import *  # NOQA
-from d3a.d3a_core.util import convert_datetime_to_str_keys_cached as convert_datetime_to_str_keys
-from d3a_interface.utils import key_in_dict_and_not_none
+from d3a_interface.utils import convert_pendulum_to_str_in_dict, key_in_dict_and_not_none
 
 
 class AreaEncoder(json.JSONEncoder):
@@ -93,7 +92,7 @@ def _convert_member_dt_to_string(in_dict):
     for key, value in in_dict.items():
         if type(value) == dict:
             outdict = {}
-            convert_datetime_to_str_keys(value, outdict)
+            convert_pendulum_to_str_in_dict(value, outdict)
             in_dict[key] = outdict
     return in_dict
 

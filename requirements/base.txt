@@ -5,17 +5,17 @@
 #    pip-compile --no-index requirements/base.in
 #
 attrdict==2.0.1           # via eth-account
-attrs==19.3.0
-awesome-slugify==1.6.5
+attrs==19.3.0             # via -r requirements/base.in, jsonschema
+awesome-slugify==1.6.5    # via -r requirements/base.in
 base58==2.0.0             # via multiaddr
-cached-property==1.5.1
+cached-property==1.5.1    # via -r requirements/base.in
 certifi==2019.11.28       # via requests
 chardet==3.0.4            # via requests
-click-default-group==1.2.2
-click==7.0
-colorlog==4.1.0
+click-default-group==1.2.2  # via -r requirements/base.in
+click==7.0                # via -r requirements/base.in, click-default-group, pip-tools, rq
+colorlog==4.1.0           # via -r requirements/base.in
 cytoolz==0.10.1           # via eth-keyfile, eth-utils
-dill==0.3.1.1
+dill==0.3.1.1             # via -r requirements/base.in
 eth-abi==2.1.0            # via eth-account, web3
 eth-account==0.4.0        # via web3
 eth-hash[pycryptodome]==0.2.0  # via eth-utils, web3
@@ -34,33 +34,34 @@ more-itertools==8.1.0     # via zipp
 multiaddr==0.0.9          # via ipfshttpclient
 mypy-extensions==0.4.3    # via web3
 netaddr==0.7.19           # via multiaddr
-numpy==1.18.1
+numpy==1.18.1             # via -r requirements/base.in
 parsimonious==0.8.1       # via eth-abi
-pendulum==2.0.5
-pip-tools==4.4.0
-plotly==4.4.1
+pendulum==2.0.5           # via -r requirements/base.in
+pip-tools==5.2.1          # via -r requirements/base.in
+plotly==4.4.1             # via -r requirements/base.in
 protobuf==3.11.2          # via web3
 pycryptodome==3.9.4       # via eth-hash, eth-keyfile
 pyrsistent==0.15.7        # via jsonschema
 python-dateutil==2.8.1    # via pendulum
-python-rex==0.4
+python-rex==0.4           # via -r requirements/base.in
 pytzdata==2019.3          # via pendulum
-redis==3.3.11
+redis==3.3.11             # via -r requirements/base.in, rq
 regex==2020.1.8           # via awesome-slugify
 requests==2.22.0          # via ipfshttpclient, web3
 retrying==1.3.3           # via plotly
 rlp==1.2.0                # via eth-account, eth-rlp
-rq==1.2.0
+rq==1.2.0                 # via -r requirements/base.in
 six==1.14.0               # via attrdict, ipfshttpclient, jsonschema, multiaddr, parsimonious, pip-tools, plotly, protobuf, pyrsistent, python-dateutil, python-rex, retrying
-sortedcontainers==2.1.0
+sortedcontainers==2.1.0   # via -r requirements/base.in
 toolz==0.10.0             # via cytoolz
 typing-extensions==3.7.4.1  # via web3
 unidecode==0.4.21         # via awesome-slugify
 urllib3==1.25.8           # via requests
 varint==1.0.2             # via multiaddr
-web3==5.4.0
+web3==5.4.0               # via -r requirements/base.in
 websockets==8.1           # via web3
 zipp==2.0.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
+# pip
 # setuptools

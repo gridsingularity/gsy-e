@@ -22,12 +22,15 @@ from d3a_interface.device_validator import validate_market_maker
 
 
 class MarketMakerStrategy(CommercialStrategy):
-    parameters = ('energy_rate', 'grid_connected')
+    parameters = ('energy_rate_profile', 'energy_rate', 'grid_connected')
 
-    def __init__(self, energy_rate=None, grid_connected=True):
+    def __init__(self, energy_rate_profile=None, energy_rate=None, grid_connected=True):
         validate_market_maker(grid_connected=grid_connected)
-        energy_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE \
-            if energy_rate is None else read_and_convert_identity_profile_to_float(energy_rate)
+        if energy_rate_profile is not None:
+            energy_rate = read_and_convert_identity_profile_to_float(energy_rate_profile)
+        else:
+            energy_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE \
+                if energy_rate is None else read_and_convert_identity_profile_to_float(energy_rate)
         GlobalConfig.market_maker_rate = energy_rate
         self._grid_connected = grid_connected
         super().__init__(energy_rate)

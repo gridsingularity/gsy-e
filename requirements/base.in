@@ -7,7 +7,7 @@ colorlog
 dill
 numpy
 pendulum
-pip-tools==4.4.0
+pip-tools
 plotly
 # TODO: Deactivating solidity compiler due to bug
 # py-solc

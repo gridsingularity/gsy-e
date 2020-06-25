@@ -117,19 +117,20 @@ class MarketRedisEventSubscriber:
     def _accept_offer_response_channel(self):
         return f"{self._accept_offer_channel}/RESPONSE"
 
-    @classmethod
-    def _parse_payload(cls, payload):
+    def _parse_payload(self, payload):
         data_dict = json.loads(payload["data"])
-        return cls.sanitize_parameters(data_dict)
+        return MarketRedisEventSubscriber.sanitize_parameters(data_dict, self.market.now)
 
     @classmethod
-    def sanitize_parameters(cls, data_dict):
+    def sanitize_parameters(cls, data_dict, current_time):
         if "offer_or_id" in data_dict and data_dict["offer_or_id"] is not None:
             if isinstance(data_dict["offer_or_id"], str):
-                data_dict["offer_or_id"] = offer_from_JSON_string(data_dict["offer_or_id"])
+                data_dict["offer_or_id"] = \
+                    offer_from_JSON_string(data_dict["offer_or_id"], current_time)
         if "offer" in data_dict and data_dict["offer"] is not None:
             if isinstance(data_dict["offer"], str):
-                data_dict["offer"] = offer_from_JSON_string(data_dict["offer"])
+                data_dict["offer"] = \
+                    offer_from_JSON_string(data_dict["offer"], current_time)
 
         return data_dict
 

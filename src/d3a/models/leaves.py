@@ -32,6 +32,7 @@ from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrate
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy, \
     PVPredefinedExternalStrategy, PVUserProfileExternalStrategy
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
+from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 
 external_strategies_mapping = {
     LoadHoursStrategy: LoadHoursExternalStrategy,
@@ -73,6 +74,10 @@ class Leaf(Area):
 
 class CommercialProducer(Leaf):
     strategy_type = CommercialStrategy
+
+
+class InfiniteBus(Leaf):
+    strategy_type = InfiniteBusStrategy
 
 
 class MarketMaker(Leaf):

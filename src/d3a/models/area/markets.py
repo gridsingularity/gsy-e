@@ -75,8 +75,6 @@ class AreaMarkets:
                 market.readonly = True
                 self._delete_past_markets(past_markets, timeframe)
                 past_markets[timeframe] = market
-                # Remove inter area agent
-                area_agent.pop(market.time_slot, None)
                 self.log.trace("Moving {t:%H:%M} {m} to past"
                                .format(t=timeframe, m=past_markets[timeframe].name))
 
@@ -87,14 +85,14 @@ class AreaMarkets:
             for pm in delete_markets:
                 if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                     past_markets[pm].redis_api.stop()
-                past_markets[pm].offers = {}
-                past_markets[pm].trades = {}
-                past_markets[pm].offer_history = {}
-                past_markets[pm].notification_listeners = {}
-                past_markets[pm].bids = {}
-                past_markets[pm].bid_history = {}
-                past_markets[pm].traded_energy = {}
-                past_markets[pm].accumulated_actual_energy_agg = {}
+                del past_markets[pm].offers
+                del past_markets[pm].trades
+                del past_markets[pm].offer_history
+                del past_markets[pm].notification_listeners
+                del past_markets[pm].bids
+                del past_markets[pm].bid_history
+                del past_markets[pm].traded_energy
+                del past_markets[pm].accumulated_actual_energy_agg
                 del past_markets[pm]
 
     @staticmethod

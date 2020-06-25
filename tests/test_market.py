@@ -19,7 +19,7 @@ import string
 from math import isclose
 from copy import deepcopy
 import pytest
-from pendulum import DateTime
+from pendulum import DateTime, now
 
 from d3a.constants import TIME_ZONE
 from d3a.events.event_structures import MarketEvent
@@ -51,7 +51,7 @@ transfer_fees = TransferFees(grid_fee_percentage=0, transfer_fee_const=0)
 
 
 class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
-    def __init__(self, bids=[], m_id=123, time_slot=DateTime.now()):
+    def __init__(self, bids=[], m_id=123, time_slot=now()):
         super().__init__(transfer_fees=transfer_fees, time_slot=time_slot)
         self.id = m_id
         self._bids = bids
@@ -104,11 +104,11 @@ class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
         market_bid = [b for b in self.bids.values() if b.id == bid.id][0]
         if energy < market_bid.energy:
             residual_energy = bid.energy - energy
-            residual = Bid('res', bid.price, residual_energy, bid.buyer, seller)
-            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller)
+            residual = Bid('res', bid.time, bid.price, residual_energy, bid.buyer, seller)
+            traded = Bid(bid.id, bid.time, (trade_rate * energy), energy, bid.buyer, seller)
             return Trade('trade_id', time, traded, traded.seller, bid.buyer, residual)
         else:
-            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller)
+            traded = Bid(bid.id, bid.time, (trade_rate * energy), energy, bid.buyer, seller)
             return Trade('trade_id', time, traded, traded.seller, bid.buyer)
 
 
@@ -118,16 +118,16 @@ def teardown_function():
 
 @pytest.yield_fixture
 def market():
-    return TwoSidedPayAsBid()
+    return TwoSidedPayAsBid(time_slot=now())
 
 
 def test_double_sided_performs_pay_as_bid_matching(market):
-    market.offers = {"offer1": Offer('id', 2, 2, 'other', 2)}
+    market.offers = {"offer1": Offer('id', now(), 2, 2, 'other', 2)}
 
-    market.bids = {"bid1": Bid('bid_id', 9, 10, 'B', 'S')}
+    market.bids = {"bid1": Bid('bid_id', now(), 9, 10, 'B', 'S')}
     matched = list(market._perform_pay_as_bid_matching())
     assert len(matched) == 0
-    market.bids = {"bid1": Bid('bid_id', 10, 10, 'B', 'S')}
+    market.bids = {"bid1": Bid('bid_id', now(), 10, 10, 'B', 'S')}
     matched = list(market._perform_pay_as_bid_matching())
     assert len(matched) == 1
 
@@ -135,9 +135,9 @@ def test_double_sided_performs_pay_as_bid_matching(market):
     assert bid == list(market.bids.values())[0]
     assert offer == list(market.offers.values())[0]
 
-    market.bids = {"bid1": Bid('bid_id1', 11, 10, 'B', 'S'),
-                   "bid2": Bid('bid_id2', 9, 10, 'B', 'S'),
-                   "bid3": Bid('bid_id3', 12, 10, 'B', 'S')}
+    market.bids = {"bid1": Bid('bid_id1', now(), 11, 10, 'B', 'S'),
+                   "bid2": Bid('bid_id2', now(), 9, 10, 'B', 'S'),
+                   "bid3": Bid('bid_id3', now(), 12, 10, 'B', 'S')}
     matched = list(market._perform_pay_as_bid_matching())
     assert len(matched) == 1
     bid, offer = matched[0]
@@ -153,8 +153,8 @@ def test_device_registry(market=BalancingMarket()):
 
 
 @pytest.mark.parametrize("market, offer", [
-    (OneSidedMarket(time_slot=DateTime.now()), "offer"),
-    (BalancingMarket(time_slot=DateTime.now()), "balancing_offer")
+    (OneSidedMarket(time_slot=now()), "offer"),
+    (BalancingMarket(time_slot=now()), "balancing_offer")
 ])
 def test_market_offer(market, offer):
     DeviceRegistry.REGISTRY = device_registry_dict
@@ -217,8 +217,8 @@ def test_market_offer_readonly(market, offer):
 
 
 @pytest.mark.parametrize("market, offer", [
-    (TwoSidedPayAsBid(time_slot=DateTime.now()), "offer"),
-    (BalancingMarket(time_slot=DateTime.now()), "balancing_offer")
+    (TwoSidedPayAsBid(time_slot=now()), "offer"),
+    (BalancingMarket(time_slot=now()), "balancing_offer")
 ])
 def test_market_offer_delete(market, offer):
     offer = getattr(market, offer)(20, 10, 'someone', 'someone')
@@ -266,9 +266,9 @@ def test_market_bid_delete_missing(market: TwoSidedPayAsBid):
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
-    (OneSidedMarket(time_slot=DateTime.now()),
+    (OneSidedMarket(time_slot=now()),
      "offer", "accept_offer"),
-    (BalancingMarket(time_slot=DateTime.now()),
+    (BalancingMarket(time_slot=now()),
      "balancing_offer", "accept_offer")
 ])
 def test_market_trade(market, offer, accept_offer):
@@ -285,7 +285,7 @@ def test_market_trade(market, offer, accept_offer):
     assert trade.buyer == 'B'
 
 
-def test_balancing_market_negative_offer_trade(market=BalancingMarket(time_slot=DateTime.now())):  # NOQA
+def test_balancing_market_negative_offer_trade(market=BalancingMarket(time_slot=now())):  # NOQA
     offer = market.balancing_offer(20, -10, 'A', 'A')
 
     now = DateTime.now(tz=TIME_ZONE)
@@ -299,7 +299,7 @@ def test_balancing_market_negative_offer_trade(market=BalancingMarket(time_slot=
     assert trade.buyer == 'B'
 
 
-def test_market_bid_trade(market=TwoSidedPayAsBid(time_slot=DateTime.now())):
+def test_market_bid_trade(market=TwoSidedPayAsBid(time_slot=now())):
     bid = market.bid(20, 10, 'A', 'B', 'A', original_bid_price=20)
 
     trade = market.accept_bid(bid, energy=10, seller='B', trade_offer_info=[2, 2, 0.5, 0.5, 2])
@@ -314,9 +314,9 @@ def test_market_bid_trade(market=TwoSidedPayAsBid(time_slot=DateTime.now())):
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
-    (OneSidedMarket(time_slot=DateTime.now()),
+    (OneSidedMarket(time_slot=now()),
      "offer", "accept_offer"),
-    (BalancingMarket(time_slot=DateTime.now()),
+    (BalancingMarket(time_slot=now()),
      "balancing_offer", "accept_offer")
 ])
 def test_market_trade_by_id(market, offer, accept_offer):
@@ -328,9 +328,9 @@ def test_market_trade_by_id(market, offer, accept_offer):
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
-    (OneSidedMarket(),
+    (OneSidedMarket(time_slot=now()),
      "offer", "accept_offer"),
-    (BalancingMarket(),
+    (BalancingMarket(time_slot=now()),
      "balancing_offer", "accept_offer")
 ])
 def test_market_trade_readonly(market, offer, accept_offer):
@@ -341,9 +341,9 @@ def test_market_trade_readonly(market, offer, accept_offer):
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
-    (OneSidedMarket(time_slot=DateTime.now()),
+    (OneSidedMarket(time_slot=now()),
      "offer", "accept_offer"),
-    (BalancingMarket(time_slot=DateTime.now()),
+    (BalancingMarket(time_slot=now()),
      "balancing_offer", "accept_offer")
 ])
 def test_market_trade_not_found(market, offer, accept_offer):
@@ -354,7 +354,7 @@ def test_market_trade_not_found(market, offer, accept_offer):
         getattr(market, accept_offer)(offer_or_id=e_offer, buyer='B', energy=10)
 
 
-def test_market_trade_bid_not_found(market=TwoSidedPayAsBid(time_slot=DateTime.now())):
+def test_market_trade_bid_not_found(market=TwoSidedPayAsBid(time_slot=now())):
     bid = market.bid(20, 10, 'A', 'B', 'A')
 
     assert market.accept_bid(bid, 10, 'B', trade_offer_info=[2, 2, 1, 1, 2])
@@ -364,9 +364,9 @@ def test_market_trade_bid_not_found(market=TwoSidedPayAsBid(time_slot=DateTime.n
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
-    (OneSidedMarket(time_slot=DateTime.now()),
+    (OneSidedMarket(time_slot=now()),
      "offer", "accept_offer"),
-    (BalancingMarket(time_slot=DateTime.now()),
+    (BalancingMarket(time_slot=now()),
      "balancing_offer", "accept_offer")
 ])
 def test_market_trade_partial(market, offer, accept_offer):
@@ -391,7 +391,7 @@ def test_market_trade_partial(market, offer, accept_offer):
     assert new_offer.id != e_offer.id
 
 
-def test_market_trade_bid_partial(market=TwoSidedPayAsBid(time_slot=DateTime.now())):
+def test_market_trade_bid_partial(market=TwoSidedPayAsBid(time_slot=now())):
     bid = market.bid(20, 20, 'A', 'B', 'A', original_bid_price=20)
 
     trade = market.accept_bid(bid, energy=5, seller='B', trade_offer_info=[1, 1, 1, 1, 1])
@@ -414,7 +414,7 @@ def test_market_trade_bid_partial(market=TwoSidedPayAsBid(time_slot=DateTime.now
 
 
 def test_market_accept_bid_emits_bid_split_on_partial_bid(
-        called, market=TwoSidedPayAsBid(time_slot=DateTime.now())):
+        called, market=TwoSidedPayAsBid(time_slot=now())):
     market.add_listener(called)
     bid = market.bid(20, 20, 'A', 'B', 'A')
     trade = market.accept_bid(bid, energy=1, trade_offer_info=[1, 1, 1, 1, 1])
@@ -431,7 +431,7 @@ def test_market_accept_bid_emits_bid_split_on_partial_bid(
 @pytest.mark.parametrize('market_method', ('_update_accumulated_trade_price_energy',
                                            '_update_min_max_avg_trade_prices'))
 def test_market_accept_bid_always_updates_trade_stats(
-        called, market_method, market=TwoSidedPayAsBid(time_slot=DateTime.now())):
+        called, market_method, market=TwoSidedPayAsBid(time_slot=now())):
     setattr(market, market_method, called)
 
     bid = market.bid(20, 20, 'A', 'B', 'A')
@@ -441,13 +441,13 @@ def test_market_accept_bid_always_updates_trade_stats(
 
 
 @pytest.mark.parametrize("market, offer, accept_offer, energy, exception", [
-    (OneSidedMarket(time_slot=DateTime.now()),
+    (OneSidedMarket(time_slot=now()),
      "offer", "accept_offer", 0, InvalidTrade),
-    (OneSidedMarket(time_slot=DateTime.now()),
+    (OneSidedMarket(time_slot=now()),
      "offer", "accept_offer", 21, InvalidTrade),
-    (BalancingMarket(time_slot=DateTime.now()), "balancing_offer",
+    (BalancingMarket(time_slot=now()), "balancing_offer",
      "accept_offer", 0, InvalidBalancingTradeException),
-    (BalancingMarket(time_slot=DateTime.now()), "balancing_offer",
+    (BalancingMarket(time_slot=now()), "balancing_offer",
      "accept_offer", 21, InvalidBalancingTradeException)
 ])
 def test_market_trade_partial_invalid(market, offer, accept_offer, energy, exception):
@@ -458,14 +458,14 @@ def test_market_trade_partial_invalid(market, offer, accept_offer, energy, excep
 
 @pytest.mark.parametrize('energy', (0, 21, 100, -20))
 def test_market_trade_partial_bid_invalid(
-        energy, market=TwoSidedPayAsBid(time_slot=DateTime.now())):
+        energy, market=TwoSidedPayAsBid(time_slot=now())):
     bid = market.bid(20, 20, 'A', 'B', 'A')
 
     with pytest.raises(InvalidTrade):
         market.accept_bid(bid, energy=energy, seller='A', trade_offer_info=[1, 1, 1, 1, 1])
 
 
-def test_market_acct_simple(market=OneSidedMarket(time_slot=DateTime.now())):
+def test_market_acct_simple(market=OneSidedMarket(time_slot=now())):
     offer = market.offer(20, 10, 'A', 'A')
     market.accept_offer(offer, 'B')
 
@@ -477,7 +477,7 @@ def test_market_acct_simple(market=OneSidedMarket(time_slot=DateTime.now())):
     assert market.sold_energy('B') == 0
 
 
-def test_market_acct_multiple(market=OneSidedMarket(time_slot=DateTime.now())):
+def test_market_acct_multiple(market=OneSidedMarket(time_slot=now())):
     offer1 = market.offer(10, 20, 'A', 'A')
     offer2 = market.offer(10, 10, 'A', 'A')
     market.accept_offer(offer1, 'B')
@@ -493,8 +493,8 @@ def test_market_acct_multiple(market=OneSidedMarket(time_slot=DateTime.now())):
 
 
 @pytest.mark.parametrize("market, offer", [
-    (OneSidedMarket(time_slot=DateTime.now()), "offer"),
-    (BalancingMarket(time_slot=DateTime.now()), "balancing_offer")
+    (OneSidedMarket(time_slot=now()), "offer"),
+    (BalancingMarket(time_slot=now()), "balancing_offer")
 ])
 def test_market_avg_offer_price(market, offer):
     getattr(market, offer)(1, 1, 'A', 'A')
@@ -504,15 +504,15 @@ def test_market_avg_offer_price(market, offer):
 
 
 @pytest.mark.parametrize("market",
-                         [OneSidedMarket(time_slot=DateTime.now()),
-                          BalancingMarket(time_slot=DateTime.now())])
+                         [OneSidedMarket(time_slot=now()),
+                          BalancingMarket(time_slot=now())])
 def test_market_avg_offer_price_empty(market):
     assert market.avg_offer_price == 0
 
 
 @pytest.mark.parametrize("market, offer", [
-    (OneSidedMarket(time_slot=DateTime.now()), "offer"),
-    (BalancingMarket(time_slot=DateTime.now()), "balancing_offer")
+    (OneSidedMarket(time_slot=now()), "offer"),
+    (BalancingMarket(time_slot=now()), "balancing_offer")
 ])
 def test_market_sorted_offers(market, offer):
     getattr(market, offer)(5, 1, 'A', 'A')
@@ -525,8 +525,8 @@ def test_market_sorted_offers(market, offer):
 
 
 @pytest.mark.parametrize("market, offer", [
-    (OneSidedMarket(time_slot=DateTime.now()), "offer"),
-    (BalancingMarket(time_slot=DateTime.now()), "balancing_offer")
+    (OneSidedMarket(time_slot=now()), "offer"),
+    (BalancingMarket(time_slot=now()), "balancing_offer")
 ])
 def test_market_most_affordable_offers(market, offer):
     getattr(market, offer)(5, 1, 'A', 'A')
@@ -546,15 +546,15 @@ def test_market_most_affordable_offers(market, offer):
     (BalancingMarket, "balancing_offer")
 ])
 def test_market_listeners_init(market, offer, called):
-    markt = market(time_slot=DateTime.now(), notification_listener=called)
+    markt = market(time_slot=now(), notification_listener=called)
     getattr(markt, offer)(10, 20, 'A', 'A')
     assert len(called.calls) == 1
 
 
 @pytest.mark.parametrize("market, offer, add_listener", [
-    (OneSidedMarket(time_slot=DateTime.now()),
+    (OneSidedMarket(time_slot=now()),
      "offer", "add_listener"),
-    (BalancingMarket(time_slot=DateTime.now()),
+    (BalancingMarket(time_slot=now()),
      "balancing_offer", "add_listener")
 ])
 def test_market_listeners_add(market, offer, add_listener, called):
@@ -565,9 +565,9 @@ def test_market_listeners_add(market, offer, add_listener, called):
 
 
 @pytest.mark.parametrize("market, offer, add_listener, event", [
-    (OneSidedMarket(time_slot=DateTime.now()), "offer",
+    (OneSidedMarket(time_slot=now()), "offer",
      "add_listener", MarketEvent.OFFER),
-    (BalancingMarket(time_slot=DateTime.now()), "balancing_offer",
+    (BalancingMarket(time_slot=now()), "balancing_offer",
      "add_listener", MarketEvent.BALANCING_OFFER)
 ])
 def test_market_listeners_offer(market, offer, add_listener, event, called):
@@ -579,9 +579,9 @@ def test_market_listeners_offer(market, offer, add_listener, event, called):
 
 
 @pytest.mark.parametrize("market, offer, accept_offer, add_listener, event", [
-    (OneSidedMarket(time_slot=DateTime.now()), "offer", "accept_offer", "add_listener",
+    (OneSidedMarket(time_slot=now()), "offer", "accept_offer", "add_listener",
      MarketEvent.OFFER_SPLIT),
-    (BalancingMarket(time_slot=DateTime.now()), "balancing_offer", "accept_offer", "add_listener",
+    (BalancingMarket(time_slot=now()), "balancing_offer", "accept_offer", "add_listener",
      MarketEvent.BALANCING_OFFER_SPLIT)
 ])
 def test_market_listeners_offer_split(market, offer, accept_offer, add_listener, event, called):
@@ -603,9 +603,9 @@ def test_market_listeners_offer_split(market, offer, accept_offer, add_listener,
 
 
 @pytest.mark.parametrize("market, offer, delete_offer, add_listener, event", [
-    (OneSidedMarket(time_slot=DateTime.now()), "offer", "delete_offer",
+    (OneSidedMarket(time_slot=now()), "offer", "delete_offer",
      "add_listener", MarketEvent.OFFER_DELETED),
-    (BalancingMarket(time_slot=DateTime.now()),
+    (BalancingMarket(time_slot=now()),
      "balancing_offer", "delete_balancing_offer",
      "add_listener", MarketEvent.BALANCING_OFFER_DELETED)
 ])
@@ -628,7 +628,7 @@ def test_market_listeners_offer_deleted(market, offer, delete_offer, add_listene
     )
 )
 def test_market_issuance_acct_reverse(last_offer_size, traded_energy):
-    market = OneSidedMarket(time_slot=DateTime.now())
+    market = OneSidedMarket(time_slot=now())
     offer1 = market.offer(10, 20, 'A', 'A')
     offer2 = market.offer(10, 10, 'A', 'A')
     offer3 = market.offer(10, last_offer_size, 'D', 'D')
@@ -640,9 +640,9 @@ def test_market_issuance_acct_reverse(last_offer_size, traded_energy):
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
-    (OneSidedMarket(time_slot=DateTime.now()),
+    (OneSidedMarket(time_slot=now()),
      "offer", "accept_offer"),
-    (BalancingMarket(time_slot=DateTime.now()),
+    (BalancingMarket(time_slot=now()),
      "balancing_offer", "accept_offer")
 ])
 def test_market_accept_offer_yields_partial_trade(market, offer, accept_offer):
@@ -652,7 +652,7 @@ def test_market_accept_offer_yields_partial_trade(market, offer, accept_offer):
 
 
 def test_market_accept_bid_yields_partial_bid_trade(
-        market=TwoSidedPayAsBid(time_slot=DateTime.now())):
+        market=TwoSidedPayAsBid(time_slot=now())):
     bid = market.bid(2.0, 4, 'buyer', 'seller', 'buyer')
     trade = market.accept_bid(bid, energy=1, seller='seller', trade_offer_info=[2, 2, 1, 1, 2])
     assert trade.offer.id == bid.id and trade.offer.energy == 1
@@ -660,7 +660,7 @@ def test_market_accept_bid_yields_partial_bid_trade(
 
 @pytest.yield_fixture
 def pac_market():
-    return TwoSidedPayAsClear(time_slot=DateTime.now())
+    return TwoSidedPayAsClear(time_slot=now())
 
 
 @pytest.mark.parametrize("offer, bid, mcp_rate, mcp_energy", [
@@ -679,21 +679,21 @@ def pac_market():
 def test_double_sided_market_performs_pay_as_clear_matching(pac_market, offer, bid, mcp_rate,
                                                             mcp_energy, algorithm):
     ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = algorithm
-    pac_market.offers = {"offer1": Offer('id1', offer[0], 1, 'other'),
-                         "offer2": Offer('id2', offer[1], 1, 'other'),
-                         "offer3": Offer('id3', offer[2], 1, 'other'),
-                         "offer4": Offer('id4', offer[3], 1, 'other'),
-                         "offer5": Offer('id5', offer[4], 1, 'other'),
-                         "offer6": Offer('id6', offer[5], 1, 'other'),
-                         "offer7": Offer('id7', offer[6], 1, 'other')}
+    pac_market.offers = {"offer1": Offer('id1', now(), offer[0], 1, 'other'),
+                         "offer2": Offer('id2', now(), offer[1], 1, 'other'),
+                         "offer3": Offer('id3', now(), offer[2], 1, 'other'),
+                         "offer4": Offer('id4', now(), offer[3], 1, 'other'),
+                         "offer5": Offer('id5', now(), offer[4], 1, 'other'),
+                         "offer6": Offer('id6', now(), offer[5], 1, 'other'),
+                         "offer7": Offer('id7', now(), offer[6], 1, 'other')}
 
-    pac_market.bids = {"bid1": Bid('bid_id1', bid[0], 1, 'B', 'S'),
-                       "bid2": Bid('bid_id2', bid[1], 1, 'B', 'S'),
-                       "bid3": Bid('bid_id3', bid[2], 1, 'B', 'S'),
-                       "bid4": Bid('bid_id4', bid[3], 1, 'B', 'S'),
-                       "bid5": Bid('bid_id5', bid[4], 1, 'B', 'S'),
-                       "bid6": Bid('bid_id6', bid[5], 1, 'B', 'S'),
-                       "bid7": Bid('bid_id7', bid[6], 1, 'B', 'S')}
+    pac_market.bids = {"bid1": Bid('bid_id1', now(), bid[0], 1, 'B', 'S'),
+                       "bid2": Bid('bid_id2', now(), bid[1], 1, 'B', 'S'),
+                       "bid3": Bid('bid_id3', now(), bid[2], 1, 'B', 'S'),
+                       "bid4": Bid('bid_id4', now(), bid[3], 1, 'B', 'S'),
+                       "bid5": Bid('bid_id5', now(), bid[4], 1, 'B', 'S'),
+                       "bid6": Bid('bid_id6', now(), bid[5], 1, 'B', 'S'),
+                       "bid7": Bid('bid_id7', now(), bid[6], 1, 'B', 'S')}
 
     matched_rate, matched_energy = pac_market._perform_pay_as_clear_matching()
     assert matched_rate == mcp_rate
@@ -702,14 +702,14 @@ def test_double_sided_market_performs_pay_as_clear_matching(pac_market, offer, b
 
 def test_double_sided_pay_as_clear_market_works_with_floats(pac_market):
     ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
-    pac_market.offers = {"offer1": Offer('id1', 1.1, 1, 'other'),
-                         "offer2": Offer('id2', 2.2, 1, 'other'),
-                         "offer3": Offer('id3', 3.3, 1, 'other')}
+    pac_market.offers = {"offer1": Offer('id1', now(), 1.1, 1, 'other'),
+                         "offer2": Offer('id2', now(), 2.2, 1, 'other'),
+                         "offer3": Offer('id3', now(), 3.3, 1, 'other')}
 
     pac_market.bids = {
-                    "bid1": Bid('bid_id1', 3.3, 1, 'B', 'S'),
-                    "bid2": Bid('bid_id2', 2.2, 1, 'B', 'S'),
-                    "bid3": Bid('bid_id3', 1.1, 1, 'B', 'S')}
+                    "bid1": Bid('bid_id1', now(), 3.3, 1, 'B', 'S'),
+                    "bid2": Bid('bid_id2', now(), 2.2, 1, 'B', 'S'),
+                    "bid3": Bid('bid_id3', now(), 1.1, 1, 'B', 'S')}
 
     matched = pac_market._perform_pay_as_clear_matching()[0]
     assert matched == 2.2
@@ -723,13 +723,13 @@ def pab_market():
 def test_double_sided_pay_as_bid_market_match_offer_bids(pab_market):
     pab_market.calls_offers = []
     pab_market.calls_bids = []
-    offer = Offer('offer1', 2, 2, 'other', 2)
+    offer = Offer('offer1', now(), 2, 2, 'other', 2)
     pab_market.offers = {"offer1": offer}
 
-    source_bid = Bid('bid_id3', 12, 10, 'B', 'S', original_bid_price=12)
-    pab_market.bids = {"bid_id": Bid('bid_id', 10, 10, 'B', 'S'),
-                       "bid_id1": Bid('bid_id1', 11, 10, 'B', 'S'),
-                       "bid_id2": Bid('bid_id2', 9, 10, 'B', 'S'),
+    source_bid = Bid('bid_id3', now(), 12, 10, 'B', 'S', original_bid_price=12)
+    pab_market.bids = {"bid_id": Bid('bid_id', now(), 10, 10, 'B', 'S'),
+                       "bid_id1": Bid('bid_id1', now(), 11, 10, 'B', 'S'),
+                       "bid_id2": Bid('bid_id2', now(), 9, 10, 'B', 'S'),
                        "bid_id3": source_bid}
 
     pab_market.match_offers_bids()
@@ -751,7 +751,7 @@ class MarketStateMachine(RuleBasedStateMachine):
     actors = Bundle('Actors')
 
     def __init__(self):
-        self.market = OneSidedMarket(time_slot=DateTime.now())
+        self.market = OneSidedMarket(time_slot=now())
         super().__init__()
 
     @rule(target=actors, actor=st.text(min_size=1, max_size=3,

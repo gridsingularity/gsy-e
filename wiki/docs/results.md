@@ -1,4 +1,4 @@
-**Navigating your configuration grid**
+## Navigating your configuration grid
 
 ![img](img/results-1.png)
 
@@ -14,11 +14,13 @@ In the above figure, the community market is selected.
 
 ------
 
-**Simulation Results**
+## Simulation Results
 
-When selecting a market, the results page will show you various relevant plots and tables. This section will discuss each of these results.
+When selecting a market, the results page will show you various relevant plots and tables. You also have the possibility to select which one you want to view/hide (by default all of them are visible). This section will discuss each of these results.
 
-**Energy Availability**
+![img](img/results-9.png){:style="height:350px;width:220px"}
+
+### Energy Availability
 
 ![img](img/results-2.png)
 
@@ -26,7 +28,13 @@ This plot shows whether or not each energy device inside the selected market had
 
 The granularity of the plot is 1 hour, so if there has been a trade interval (possibly <1 hour length) within the hour in which the agent was not able to buy the demanded energy, the whole block will turn purple. The user can hover over a purple block to see a list of the devices not able to buy for that time slot.
 
-**Cumulative trading**
+### Self sufficiency and consumption
+
+![img](img/results-10.png)
+
+These 2 pie charts shows the Self Sufficiency and Self Consumption of the selected area. Please see [Key Performance Indicators](kpis.md#self-sufficiency-self-consumption) for more information.
+
+### Cumulative trading
 
 ![img](img/results-3.png)
 
@@ -36,29 +44,35 @@ Each bar has its own color to represent its sold energy. Energy sold is negative
 
 The external trades represent energy produced in this market, but sold to an outside market (the positive bar layers containing the colors of each participant) and the energy bought from an external source and sold to a participant in this market. The energy bought externally is teal in this example and is the negative bar for External Trades. This energy was sold to the other participants where a positive teal colored bar can be seen (all participants).
 
-**Energy bills**
+### Energy bills and net energy
 
-![img](img/results-4.png)
+![img](img/results-11.png)
 
 The energy bills provide information on the cumulative trade volumes of all market participants and the costs associated with these trades. For each agent, including the external trades, the energy bought and sold during the simulation is listed, along with a total net consumption.
 
-The "Totals" column can be considered as the net energy consumption and final bill to the listed agent, which may represent a device or an area of ownership. Negative values for costs stands for a profit.
+The *Totals* column can be considered as the net energy consumption and final bill to the listed agent, which may represent a device or an area of ownership.
 
-*Accumulated Trades* represents the total of trades that are made by the agents inside the selected area. *External Trades* represents the import/export from/to a higher level market by the inter-area agent of the selected market, and hence represents the difference between energy traded inside the community and the total accumulated trades.
+*External Trades* represents the import/export from/to a higher level market by the inter-area agent of the selected market, and hence represents the difference between energy traded inside the community and the total accumulated trades.
+
+The *Totals* row represents the total of trades that are made by the agents inside the selected area. 
 
 In this example, we have the *Community* market selected. In the *Community* market, the participating agents are the inter-area agents of the houses that lie inside of the community area. 
 
-**Energy profile**
+### Energy trade profile
 
-![img](img/results-5.png)
+![img](img/results-12.png)
 
 The energy profile shows both the demand-side as supply-side of the trades made inside the selected market for every market interval of the simulation. The negative side of the y-axis represents the energy sold, and the positive y-axis shows the energy bought. The different colors represent the different agents. 
 
 As all buyers and sellers of each trade are accounted for in a select market, the supply and demand sides should be exact mirrors of each other in terms of volume. 
 
+If *peak analysis* is switched on the external trades are hidden and only the demand and supply of the current area's agents remain. 
 
+![img](img/results-13.png)
 
-**Energy prices**
+On this plot 2 lines are shown : the *current peak imports* and the *current peak exports* which represent the maximum energy imported and exported for the selected area (here the *Community*).
+
+### Energy pricing
 
 ![img](img/results-6.png)
 
@@ -68,13 +82,13 @@ In addition, the minimum and maximum price on that time of the day for all days 
 
 If there was no trade happening during a certain market interval, the price is set to zero at that time. 
 
-**Compare results**
+## Compare results
 
 The user has the possibility to compare the results to another simulation (in order to compare results, the simulation should already have been run). The user can also download the results using the interface shown below:
 
 ![img](img/results-7.png)
 
-**Settings**
+## Settings
 
 The user have the possibility to **duplicate** the setup, **download** the results of their simulation or **delete** the configuration:
 

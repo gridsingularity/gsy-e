@@ -87,11 +87,11 @@ class FakeMarket:
         self.count = count
         self.id = str(count)
         self.created_offers = []
-        self.offers = {'id': Offer(id='id', price=10, energy=0.5, seller='A')}
+        self.offers = {'id': Offer(id='id', time=pendulum.now(), price=10, energy=0.5, seller='A')}
 
     def offer(self, price, energy, seller, original_offer_price=None, seller_origin=None):
-        offer = Offer(str(uuid.uuid4()), price, energy, seller, original_offer_price,
-                      seller_origin=seller_origin)
+        offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy, seller,
+                      original_offer_price, seller_origin=seller_origin)
         self.created_offers.append(offer)
         self.offers[offer.id] = offer
         return offer
@@ -159,7 +159,7 @@ def pv_test3(area_test3):
     p = PVPredefinedStrategy(cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE)
     p.area = area_test3
     p.owner = area_test3
-    p.offers.posted = {Offer('id', 30, 1, 'FakeArea'): area_test3.test_market.id}
+    p.offers.posted = {Offer('id', pendulum.now(), 30, 1, 'FakeArea'): area_test3.test_market.id}
     return p
 
 
@@ -185,7 +185,8 @@ def pv_test4(area_test3, called):
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {
-        Offer(id='id', price=20, energy=1, seller='FakeArea'): area_test3.test_market.id
+        Offer(id='id', time=pendulum.now(), price=20, energy=1,
+              seller='FakeArea'): area_test3.test_market.id
     }
     return p
 
@@ -193,7 +194,8 @@ def pv_test4(area_test3, called):
 def testing_event_trade(area_test3, pv_test4):
     pv_test4.event_trade(market_id=area_test3.test_market.id,
                          trade=Trade(id='id', time='time',
-                                     offer=Offer(id='id', price=20, energy=1, seller='FakeArea'),
+                                     offer=Offer(id='id', time=pendulum.now(), price=20,
+                                                 energy=1, seller='FakeArea'),
                                      seller=area_test3, buyer='buyer'
                                      )
                          )

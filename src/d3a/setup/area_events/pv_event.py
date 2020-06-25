@@ -30,7 +30,8 @@ def get_setup(config):
             Area(
                 'House 1',
                 children=[
-                    Area('H2 PV', strategy=PVStrategy(1, 80),
+                    Area('H2 PV', strategy=PVStrategy(panel_count=1,
+                                                      initial_selling_rate=80),
                          appliance=PVAppliance(),
                          event_list=[StrategyEvents(12, {'panel_count': 5,
                                                          'max_panel_power_W': 320})])

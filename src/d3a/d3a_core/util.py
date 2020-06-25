@@ -20,28 +20,27 @@ import select
 import sys
 import termios
 import tty
-from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 import json
-from functools import lru_cache
+import d3a
+import inspect
+import os
 
 from click.types import ParamType
-from pendulum import duration, from_format, DateTime
+from pendulum import duration, from_format
 from rex import rex
 from pkgutil import walk_packages
 from datetime import timedelta
 from functools import wraps
+from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 
 from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
-from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, TIME_FORMAT
-from d3a_interface.constants_limits import GlobalConfig
-from d3a_interface.constants_limits import RangeLimit
-from d3a_interface.utils import generate_market_slot_list_from_config
+from d3a.constants import DATE_FORMAT
+from d3a_interface.constants_limits import GlobalConfig, RangeLimit
+from d3a_interface.utils import generate_market_slot_list_from_config, str_to_pendulum_datetime,\
+    format_datetime
 
-import d3a
-import inspect
-import os
 d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
 
@@ -341,27 +340,12 @@ def generate_market_slot_list(area=None):
     return config.market_slot_list
 
 
-@lru_cache(maxsize=100, typed=False)
-def format_datetime(datetime, ui_format=False):
-    return datetime.format(DATE_TIME_FORMAT) \
-        if not ui_format \
-        else datetime.format(DATE_TIME_UI_FORMAT)
-
-
-def convert_datetime_to_str_keys_cached(indict, outdict, ui_format=False):
-    """
-    Converts all Datetime keys in a dict into strings in DATE_TIME_FORMAT
-    """
-
-    for key, value in indict.items():
-        if isinstance(key, DateTime):
-            outdict[format_datetime(key, ui_format)] = indict[key]
-        else:
-            if isinstance(indict[key], dict):
-                outdict[key] = {}
-                convert_datetime_to_str_keys_cached(indict[key], outdict[key])
-
-    return outdict
+def get_market_slot_time_str(slot_number, config):
+    return format_datetime(
+        config.start_date.add(
+            minutes=config.slot_length.minutes * slot_number
+        )
+    )
 
 
 def constsettings_to_dict():
@@ -471,19 +455,8 @@ def create_subdict_or_update(indict, key, subdict):
     return indict
 
 
-def str_to_pendulum(input_str: str):
-    try:
-        pendulum_time = from_format(input_str, TIME_FORMAT)
-    except ValueError:
-        try:
-            pendulum_time = from_format(input_str, DATE_TIME_FORMAT)
-        except ValueError:
-            raise Exception(f"Format is not one of ('{TIME_FORMAT}', '{DATE_TIME_FORMAT}')")
-    return pendulum_time
-
-
-def convert_str_to_pauseafter_intervall(start_time, input_str):
-    pause_time = str_to_pendulum(input_str)
+def convert_str_to_pause_after_interval(start_time, input_str):
+    pause_time = str_to_pendulum_datetime(input_str)
     return pause_time - start_time
 
 
@@ -530,3 +503,8 @@ def area_sells_to_child(trade, area_name, child_names):
 def child_buys_from_area(trade, area_name, child_names):
     return area_name_from_area_or_iaa_name(trade.buyer) == \
         area_name and area_name_from_area_or_iaa_name(trade.seller) in child_names
+
+
+def if_not_in_list_append(target_list, obj):
+    if obj not in target_list:
+        target_list.append(obj)

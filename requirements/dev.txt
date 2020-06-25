@@ -5,92 +5,93 @@
 #    pip-compile --no-index requirements/dev.in
 #
 aspy.yaml==1.3.0          # via pre-commit
-attrdict==2.0.1
-attrs==19.3.0
-awesome-slugify==1.6.5
-base58==2.0.0
+attrdict==2.0.1           # via -r requirements/base.txt, eth-account
+attrs==19.3.0             # via -r requirements/base.txt, jsonschema
+awesome-slugify==1.6.5    # via -r requirements/base.txt
+base58==2.0.0             # via -r requirements/base.txt, multiaddr
 bcrypt==3.1.7             # via paramiko
-cached-property==1.5.1
-certifi==2019.11.28
+cached-property==1.5.1    # via -r requirements/base.txt
+certifi==2019.11.28       # via -r requirements/base.txt, requests
 cffi==1.13.2              # via bcrypt, cryptography, pynacl
 cfgv==2.0.1               # via pre-commit
-chardet==3.0.4
-click-default-group==1.2.2
-click==7.0
-colorlog==4.1.0
+chardet==3.0.4            # via -r requirements/base.txt, requests
+click-default-group==1.2.2  # via -r requirements/base.txt
+click==7.0                # via -r requirements/base.txt, click-default-group, pip-tools, rq
+colorlog==4.1.0           # via -r requirements/base.txt
 cryptography==2.8         # via paramiko
-cytoolz==0.10.1
-dill==0.3.1.1
+cytoolz==0.10.1           # via -r requirements/base.txt, eth-keyfile, eth-utils
+dill==0.3.1.1             # via -r requirements/base.txt
 docopt==0.6.2             # via ptpython
-eth-abi==2.1.0
-eth-account==0.4.0
-eth-hash[pycryptodome]==0.2.0
-eth-keyfile==0.5.1
-eth-keys==0.2.4
-eth-rlp==0.1.2
-eth-typing==2.2.1
-eth-utils==1.8.4
-fabric3==1.14.post1
+eth-abi==2.1.0            # via -r requirements/base.txt, eth-account, web3
+eth-account==0.4.0        # via -r requirements/base.txt, web3
+eth-hash[pycryptodome]==0.2.0  # via -r requirements/base.txt, eth-utils, web3
+eth-keyfile==0.5.1        # via -r requirements/base.txt, eth-account
+eth-keys==0.2.4           # via -r requirements/base.txt, eth-account, eth-keyfile
+eth-rlp==0.1.2            # via -r requirements/base.txt, eth-account
+eth-typing==2.2.1         # via -r requirements/base.txt, eth-abi, eth-utils, web3
+eth-utils==1.8.4          # via -r requirements/base.txt, eth-abi, eth-account, eth-keyfile, eth-keys, eth-rlp, hexbytes, rlp, web3
+fabric3==1.14.post1       # via -r requirements/dev.in
 filelock==3.0.12          # via tox
-hexbytes==0.2.0
+hexbytes==0.2.0           # via -r requirements/base.txt, eth-account, eth-rlp, web3
 identify==1.4.10          # via pre-commit
-idna==2.8
-importlib-metadata==1.4.0
+idna==2.8                 # via -r requirements/base.txt, requests
+importlib-metadata==1.4.0  # via -r requirements/base.txt, jsonschema, pluggy, pre-commit, tox
 importlib-resources==1.0.2  # via pre-commit
-ipfshttpclient==0.4.12
+ipfshttpclient==0.4.12    # via -r requirements/base.txt, web3
 jedi==0.15.2              # via ptpython
-jsonschema==3.2.0
-lru-dict==1.1.6
-more-itertools==8.1.0
-multiaddr==0.0.9
-mypy-extensions==0.4.3
-netaddr==0.7.19
+jsonschema==3.2.0         # via -r requirements/base.txt, web3
+lru-dict==1.1.6           # via -r requirements/base.txt, web3
+more-itertools==8.1.0     # via -r requirements/base.txt, zipp
+multiaddr==0.0.9          # via -r requirements/base.txt, ipfshttpclient
+mypy-extensions==0.4.3    # via -r requirements/base.txt, web3
+netaddr==0.7.19           # via -r requirements/base.txt, multiaddr
 nodeenv==1.3.4            # via pre-commit
-numpy==1.18.1
+numpy==1.18.1             # via -r requirements/base.txt
 packaging==20.0           # via tox
 paramiko==2.7.1           # via fabric3
-parsimonious==0.8.1
+parsimonious==0.8.1       # via -r requirements/base.txt, eth-abi
 parso==0.5.2              # via jedi
-pendulum==2.0.5
-pip-tools==4.4.0
-plotly==4.4.1
+pendulum==2.0.5           # via -r requirements/base.txt
+pip-tools==5.2.1          # via -r requirements/base.txt
+plotly==4.4.1             # via -r requirements/base.txt
 pluggy==0.13.1            # via tox
-pre-commit==1.21.0
+pre-commit==1.21.0        # via -r requirements/dev.in
 prompt-toolkit==2.0.10    # via ptpython
-protobuf==3.11.2
-psutil==5.7.0
-ptpython==2.0.6
+protobuf==3.11.2          # via -r requirements/base.txt, web3
+psutil==5.7.0             # via -r requirements/dev.in
+ptpython==2.0.6           # via -r requirements/dev.in
 py==1.8.1                 # via tox
 pycparser==2.19           # via cffi
-pycryptodome==3.9.4
+pycryptodome==3.9.4       # via -r requirements/base.txt, eth-hash, eth-keyfile
 pygments==2.5.2           # via ptpython
 pynacl==1.3.0             # via paramiko
 pyparsing==2.4.6          # via packaging
-pyrsistent==0.15.7
-python-dateutil==2.8.1
-python-rex==0.4
-pytzdata==2019.3
-pyyaml==5.3
-redis==3.3.11
-regex==2020.1.8
-requests==2.22.0
-retrying==1.3.3
-rlp==1.2.0
-rq==1.2.0
-six==1.14.0
-sortedcontainers==2.1.0
+pyrsistent==0.15.7        # via -r requirements/base.txt, jsonschema
+python-dateutil==2.8.1    # via -r requirements/base.txt, pendulum
+python-rex==0.4           # via -r requirements/base.txt
+pytzdata==2019.3          # via -r requirements/base.txt, pendulum
+pyyaml==5.3               # via -r requirements/dev.in, aspy.yaml, pre-commit
+redis==3.3.11             # via -r requirements/base.txt, rq
+regex==2020.1.8           # via -r requirements/base.txt, awesome-slugify
+requests==2.22.0          # via -r requirements/base.txt, ipfshttpclient, web3
+retrying==1.3.3           # via -r requirements/base.txt, plotly
+rlp==1.2.0                # via -r requirements/base.txt, eth-account, eth-rlp
+rq==1.2.0                 # via -r requirements/base.txt
+six==1.14.0               # via -r requirements/base.txt, attrdict, bcrypt, cfgv, cryptography, fabric3, ipfshttpclient, jsonschema, multiaddr, packaging, parsimonious, pip-tools, plotly, pre-commit, prompt-toolkit, protobuf, pynacl, pyrsistent, python-dateutil, python-rex, retrying, tox
+sortedcontainers==2.1.0   # via -r requirements/base.txt
 toml==0.10.0              # via pre-commit, tox
-toolz==0.10.0
-tox==3.14.3
-typing-extensions==3.7.4.1
-unidecode==0.4.21
-urllib3==1.25.8
-varint==1.0.2
+toolz==0.10.0             # via -r requirements/base.txt, cytoolz
+tox==3.14.3               # via -r requirements/dev.in
+typing-extensions==3.7.4.1  # via -r requirements/base.txt, web3
+unidecode==0.4.21         # via -r requirements/base.txt, awesome-slugify
+urllib3==1.25.8           # via -r requirements/base.txt, requests
+varint==1.0.2             # via -r requirements/base.txt, multiaddr
 virtualenv==16.7.9        # via pre-commit, tox
 wcwidth==0.1.8            # via prompt-toolkit
-web3==5.4.0
-websockets==8.1
-zipp==2.0.0
+web3==5.4.0               # via -r requirements/base.txt
+websockets==8.1           # via -r requirements/base.txt, web3
+zipp==2.0.0               # via -r requirements/base.txt, importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
+# pip
 # setuptools

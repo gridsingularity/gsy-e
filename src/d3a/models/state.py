@@ -15,7 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from pendulum import duration
+from pendulum import duration, DateTime  # NOQA
+from typing import Dict  # NOQA
 from collections import namedtuple
 from enum import Enum
 from math import isclose
@@ -100,9 +101,9 @@ class StorageState:
              for slot in generate_market_slot_list()}
 
         self.charge_history = \
-            {slot: '-' for slot in generate_market_slot_list()}
+            {slot: 100.0 * initial_capacity_kWh / capacity for slot in generate_market_slot_list()}
         self.charge_history_kWh = \
-            {slot: '-' for slot in generate_market_slot_list()}
+            {slot: initial_capacity_kWh for slot in generate_market_slot_list()}
         self.offered_history = \
             {slot: '-' for slot in generate_market_slot_list()}
         self.used_history = \

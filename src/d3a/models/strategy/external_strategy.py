@@ -153,7 +153,8 @@ class RedisExternalStrategyConnection(TwoSidedMarketRedisEventSubscriber):
     def _accept_offer(self, payload):
         try:
             arguments = self._parse_payload(payload)
-            assert set(arguments.keys()) in [{'offer'}, {'offer', 'energy'}]
+            assert set(arguments.keys()) in [{'offer'}, {'offer', 'energy'}], \
+                f"malformed args: {arguments}"
             arguments['offer_or_id'] = arguments.pop('offer')
             arguments['buyer'] = self.area.name
         except Exception:

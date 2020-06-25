@@ -159,6 +159,8 @@ class AreaDispatcher:
             return
         if not self.area.parent.events.is_connected:
             return
+        if not self.area.children:
+            return
 
         if is_spot_market:
             if market.time_slot in self.interarea_agents or \
@@ -215,8 +217,13 @@ class AreaDispatcher:
                     if hasattr(agent, "engines"):
                         for engine in agent.engines:
                             del engine.forwarded_offers
+                            del engine.offer_age
+                            del engine.trade_residual
+                            del engine.ignored_offers
                             if hasattr(engine, "forwarded_bids"):
                                 del engine.forwarded_bids
+                                del engine.bid_age
+                                del engine.bid_trade_residual
                         del agent.engines
                     agent.higher_market = None
                     agent.lower_market = None
