@@ -22,6 +22,7 @@ import json
 from time import time
 from d3a.d3a_core.redis_connections.redis_communication import REDIS_URL
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
+import d3a.constants
 
 log = logging.getLogger(__name__)
 REDIS_THREAD_JOIN_TIMEOUT = 2
@@ -92,23 +93,50 @@ class ResettableCommunicator(RedisCommunicator):
         self.publish(channel, json.dumps(data))
 
 
-class CommonResettableCommunicator(ResettableCommunicator):
-    def __init__(self):
-        super().__init__()
-        self.channel_callback_dict = {}
+class ExternalConnectionCommunicator(ResettableCommunicator):
+    def __init__(self, is_enabled):
+        self.is_enabled = is_enabled
+        if self.is_enabled:
+            super().__init__()
+            self.channel_callback_dict = {}
 
     def sub_to_channel(self, channel, callback):
+        if not self.is_enabled:
+            return
         self.pubsub.subscribe(**{channel: callback})
 
     def sub_to_multiple_channels(self, channel_callback_dict):
+        if not self.is_enabled:
+            return
         self.pubsub.subscribe(**channel_callback_dict)
 
     def start_communication(self):
+        if not self.is_enabled:
+            return
         if not self.pubsub.channels:
             return
         thread = self.pubsub.run_in_thread(daemon=True)
         log.trace(f"Started thread for multiple channels: {thread}")
         self.thread = thread
+
+    def sub_to_aggregator(self, aggregator):
+        if not self.is_enabled:
+            return
+        self.pubsub.psubscribe(**{
+            f'external/{d3a.constants.COLLABORATION_ID}/aggregator/*/batch_commands':
+                aggregator.receive_batch_commands_callback
+        })
+
+    def approve_aggregator_commands(self, aggregator):
+        if not self.is_enabled:
+            return
+        aggregator.approve_batch_commands()
+
+    def publish_aggregator_commands_responses_events(self, aggregator):
+        if not self.is_enabled:
+            return
+        aggregator.publish_all_commands_responses(self)
+        aggregator.publish_all_events(self)
 
 
 class BlockingCommunicator(RedisCommunicator):

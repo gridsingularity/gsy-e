@@ -29,6 +29,7 @@ class KPIState:
         self.ess_list = list()
         self.buffer_list = list()
         self.total_energy_demanded_wh = 0
+        self.demanded_buffer_wh = 0
         self.total_energy_produced_wh = 0
         self.total_self_consumption_wh = 0
         self.self_consumption_buffer_wh = 0
@@ -97,12 +98,30 @@ class KPIState:
                     self.self_consumption_buffer_wh = 0
 
     def _accumulate_infinite_consumption(self, trade):
-        if trade.seller_origin in self.buffer_list and trade.buyer_origin in self.consumer_list:
+        """
+        If the InfiniteBus is a seller of the trade when below the referenced area and bought
+        by any of child devices.
+        * total_self_consumption_wh needs to accumulated.
+        * total_energy_produced_wh also needs to accumulated accounting of what
+        the InfiniteBus has produced.
+        """
+        if trade.seller_origin in self.buffer_list and \
+                trade.buyer_origin in self.consumer_list and \
+                trade.buyer_origin == trade.buyer:
             self.total_self_consumption_wh += trade.offer.energy * 1000
+            self.total_energy_produced_wh += trade.offer.energy * 1000
 
     def _dissipate_infinite_consumption(self, trade):
+        """
+        If the InfiniteBus is a buyer of the trade when below the referenced area
+        and sold by any of child devices.
+        total_self_consumption_wh needs to accumulated.
+        demanded_buffer_wh also needs to accumulated accounting of what
+        the InfiniteBus has consumed/demanded.
+        """
         if trade.buyer_origin in self.buffer_list and trade.seller_origin in self.producer_list:
             self.total_self_consumption_wh += trade.offer.energy * 1000
+            self.demanded_buffer_wh += trade.offer.energy * 1000
 
     def _accumulate_energy_trace(self):
         for c_area in self.areas_to_trace_list:
@@ -141,16 +160,19 @@ class KPI:
         self.state[area.name].accumulate_devices(area)
 
         self.state[area.name].update_area_kpi(area)
+        self.state[area.name].total_demand = \
+            self.state[area.name].total_energy_demanded_wh + \
+            self.state[area.name].demanded_buffer_wh
 
         # in case when the area doesn't have any load demand
-        if self.state[area.name].total_energy_demanded_wh <= 0:
+        if self.state[area.name].total_demand <= 0:
             self_sufficiency = None
         elif self.state[area.name].total_self_consumption_wh >= \
-                self.state[area.name].total_energy_demanded_wh:
+                self.state[area.name].total_demand:
             self_sufficiency = 1.0
         else:
             self_sufficiency = self.state[area.name].total_self_consumption_wh / \
-                               self.state[area.name].total_energy_demanded_wh
+                               self.state[area.name].total_demand
 
         if self.state[area.name].total_energy_produced_wh <= 0:
             self_consumption = None
@@ -161,7 +183,7 @@ class KPI:
             self_consumption = self.state[area.name].total_self_consumption_wh / \
                                self.state[area.name].total_energy_produced_wh
         return {"self_sufficiency": self_sufficiency, "self_consumption": self_consumption,
-                "total_energy_demanded_wh": self.state[area.name].total_energy_demanded_wh,
+                "total_energy_demanded_wh": self.state[area.name].total_demand,
                 "total_energy_produced_wh": self.state[area.name].total_energy_produced_wh,
                 "total_self_consumption_wh": self.state[area.name].total_self_consumption_wh}
 

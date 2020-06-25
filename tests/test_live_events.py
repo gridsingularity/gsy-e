@@ -19,7 +19,8 @@ class TestLiveEvents(unittest.TestCase):
             slot_length=duration(minutes=15),
             tick_length=duration(seconds=15),
             market_count=1,
-            cloud_coverage=0
+            cloud_coverage=0,
+            external_connection_enabled=False
         )
 
         self.live_events = LiveEvents(self.config)
