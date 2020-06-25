@@ -98,6 +98,13 @@ class KPIState:
                     self.self_consumption_buffer_wh = 0
 
     def _accumulate_infinite_consumption(self, trade):
+        """
+        If the InfiniteBus is a seller of the trade when below the referenced area and bought
+        by any of child devices.
+        * total_self_consumption_wh needs to accumulated.
+        * total_energy_produced_wh also needs to accumulated accounting of what
+        the InfiniteBus has produced.
+        """
         if trade.seller_origin in self.buffer_list and \
                 trade.buyer_origin in self.consumer_list and \
                 trade.buyer_origin == trade.buyer:
@@ -105,6 +112,13 @@ class KPIState:
             self.total_energy_produced_wh += trade.offer.energy * 1000
 
     def _dissipate_infinite_consumption(self, trade):
+        """
+        If the InfiniteBus is a buyer of the trade when below the referenced area
+        and sold by any of child devices.
+        total_self_consumption_wh needs to accumulated.
+        demanded_buffer_wh also needs to accumulated accounting of what
+        the InfiniteBus has consumed/demanded.
+        """
         if trade.buyer_origin in self.buffer_list and trade.seller_origin in self.producer_list:
             self.total_self_consumption_wh += trade.offer.energy * 1000
             self.demanded_buffer_wh += trade.offer.energy * 1000
