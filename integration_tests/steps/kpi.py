@@ -52,9 +52,10 @@ def test_export_of_kpi_result(context, kpi, expected_kpis):
         elif kpi == "total_energy_demanded_wh":
             assert isclose(kpi_data[area]['total_energy_demanded_wh'], float(value), abs_tol=1e-03)
         elif kpi == "total_energy_produced_wh":
-            assert isclose(kpi_data[area]['total_energy_demanded_wh'], float(value), abs_tol=1e-03)
+            assert isclose(kpi_data[area]['total_energy_produced_wh'], float(value), abs_tol=1e-03)
         elif kpi == "total_self_consumption_wh":
-            assert isclose(kpi_data[area]['total_energy_demanded_wh'], float(value), abs_tol=1e-03)
+            assert isclose(kpi_data[area]['total_self_consumption_wh'],
+                           float(value), abs_tol=1e-03)
 
 
 @then("device '{device_name}' reports penalties of {penalty_energy} kWh")
