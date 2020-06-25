@@ -112,7 +112,8 @@ class FakeArea:
                 slot_length=Duration(minutes=15),
                 tick_length=Duration(seconds=15),
                 cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
-                market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+                market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+                external_connection_enabled=False
                 )
         change_global_config(**configuration.__dict__)
         return configuration
