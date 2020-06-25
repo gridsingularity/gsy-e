@@ -51,13 +51,13 @@ class RedisSimulationCommunication:
         self._live_events = live_events
         self._simulation_id = simulation_id
         self._simulation = simulation
-        self._sub_callback_dict = {self._simulation_id + "/stop": self._stop_callback,
-                                   self._simulation_id + "/pause": self._pause_callback,
-                                   self._simulation_id + "/resume": self._resume_callback,
-                                   self._simulation_id + "/slowdown": self._slowdown_callback,
-                                   self._simulation_id + "/live-event": self._live_event_callback,
-                                   self._simulation_id + "/bulk-live-event":
-                                       self._bulk_live_event_callback}
+        self._sub_callback_dict = {
+            self._simulation_id + "/stop": self._stop_callback,
+            self._simulation_id + "/pause": self._pause_callback,
+            self._simulation_id + "/resume": self._resume_callback,
+            self._simulation_id + "/slowdown": self._slowdown_callback,
+            self._simulation_id + "/live-event": self._live_event_callback,
+            self._simulation_id + "/bulk-live-event": self._bulk_live_event_callback}
         self.result_channel = RESULTS_CHANNEL
 
         try:
@@ -73,7 +73,7 @@ class RedisSimulationCommunication:
 
     def _subscribe_to_channels(self):
         self.pubsub.subscribe(**self._sub_callback_dict)
-        self.pubsub.run_in_thread(sleep_time=0.5, daemon=True)
+        self.pubsub.run_in_thread(sleep_time=0.1, daemon=True)
 
     def _generate_redis_response(self, response, simulation_id, is_successful, command_type,
                                  response_params=None):

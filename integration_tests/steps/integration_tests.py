@@ -151,7 +151,8 @@ def pv_profile_scenario(context):
                                          sim_duration=duration(hours=23),
                                          market_count=4,
                                          cloud_coverage=0,
-                                         market_maker_rate=30)
+                                         market_maker_rate=30,
+                                         external_connection_enabled=False)
     context._settings.area = predefined_pv_scenario
 
 
@@ -197,7 +198,8 @@ def load_profile_scenario(context):
                                          sim_duration=duration(hours=24),
                                          market_count=4,
                                          cloud_coverage=0,
-                                         market_maker_rate=30)
+                                         market_maker_rate=30,
+                                         external_connection_enabled=False)
     context._settings.area = predefined_load_scenario
 
 
@@ -307,7 +309,8 @@ def run_sim_with_config_setting(context, cloud_coverage, scenario):
                                          duration(minutes=int(60)),
                                          duration(seconds=int(60)),
                                          market_count=4,
-                                         cloud_coverage=int(cloud_coverage))
+                                         cloud_coverage=int(cloud_coverage),
+                                         external_connection_enabled=False)
 
     slowdown = 0
     seed = 0
@@ -491,7 +494,8 @@ def create_sim_object(context, scenario):
                                          market_count=1,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
-                                         start_date=today(tz=TIME_ZONE))
+                                         start_date=today(tz=TIME_ZONE),
+                                         external_connection_enabled=False)
 
     context.simulation = Simulation(
         scenario, simulation_config, None, 0, 0, False, duration(), False, False, None, None,
@@ -596,7 +600,8 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
                                          market_count=1,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
-                                         start_date=start_date)
+                                         start_date=start_date,
+                                         external_connection_enabled=False)
 
     slowdown = 0
     seed = 0
@@ -645,7 +650,8 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
                                          duration(seconds=int(tick_length)),
                                          market_count=int(market_count),
                                          cloud_coverage=0,
-                                         market_maker_rate=30)
+                                         market_maker_rate=30,
+                                         external_connection_enabled=False)
 
     slowdown = 0
     seed = 0
