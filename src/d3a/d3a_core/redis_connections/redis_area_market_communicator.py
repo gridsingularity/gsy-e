@@ -122,10 +122,12 @@ class ExternalConnectionCommunicator(ResettableCommunicator):
     def sub_to_aggregator(self, aggregator):
         if not self.is_enabled:
             return
-        self.pubsub.psubscribe(**{
+        channel_callback_dict = {
             f'external/{d3a.constants.COLLABORATION_ID}/aggregator/*/batch_commands':
-                aggregator.receive_batch_commands_callback
-        })
+                aggregator.receive_batch_commands_callback,
+            f'crud_aggregator': aggregator.crud_aggregator_callback
+        }
+        self.pubsub.psubscribe(**channel_callback_dict)
 
     def approve_aggregator_commands(self, aggregator):
         if not self.is_enabled:

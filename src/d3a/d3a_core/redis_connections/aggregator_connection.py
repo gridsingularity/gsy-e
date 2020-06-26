@@ -2,11 +2,15 @@ import json
 import logging
 from threading import Lock
 import d3a.constants
+from redis import StrictRedis
+from d3a.d3a_core.redis_connections.redis_communication import REDIS_URL
 
 
 class AggregatorHandler:
 
     def __init__(self):
+        self.redis_db = StrictRedis.from_url(REDIS_URL, retry_on_timeout=True)
+        self.pubsub = self.redis_db.pubsub()
         self.pending_batch_commands = {}
         self.processing_batch_commands = {}
         self.responses_batch_commands = {}
@@ -14,6 +18,7 @@ class AggregatorHandler:
         self.batch_tick_events = {}
         self.batch_trade_events = {}
         self.batch_finished_events = {}
+        self.selected_aggregators = []
         self.aggregator_device_mapping = {}
         self.device_aggregator_mapping = {}
         self.lock = Lock()
@@ -48,6 +53,98 @@ class AggregatorHandler:
 
     def add_batch_finished_event(self, device_uuid, event):
         self._add_batch_event(device_uuid, event, self.batch_finished_events)
+
+    def crud_aggregator_callback(self, payload):
+        print(f"payload: {payload}")
+        message = json.loads(payload["data"])
+        transaction_id = message["transaction_id"]
+        if message["type"] == "CREATE":
+            self._create_aggregator(message, transaction_id)
+        elif message["type"] == "DELETE":
+            self._delete_aggregator(message, transaction_id)
+        elif message["type"] == "SELECT":
+            self._select_aggregator(message, transaction_id)
+
+    def _select_aggregator(self, message, transaction_id):
+        self.aggregator_device_mapping = {}
+        self.device_aggregator_mapping = {}
+
+        if message['aggregator_name'] not in self.selected_aggregators:
+            self.aggregator_device_mapping[message['aggregator_name']] = []
+            msg = f"{self.device_aggregator_mapping[message['device_name']]} " \
+                  f"aggregator not found."
+            error_response_message = {
+                "status": "error", "aggregator_name": message['aggregator_name'],
+                "device_name": message['device_name'],
+                "transaction_id": transaction_id,
+                "msg": msg
+            }
+            self.redis_db.publish(
+                "crud_aggregator_response", json.dumps(error_response_message)
+            )
+        elif message['device_name'] in self.device_aggregator_mapping:
+            msg = f"Device already have selected " \
+                  f"{self.device_aggregator_mapping[message['device_name']]}"
+            error_response_message = {
+                "status": "error", "aggregator_name": message['aggregator_name'],
+                "device_name": message['device_name'],
+                "transaction_id": transaction_id,
+                "msg": msg
+            }
+            self.redis_db.publish(
+                "crud_aggregator_response", json.dumps(error_response_message)
+            )
+        else:
+            self.aggregator_device_mapping[message['aggregator_name']].\
+                append(message['device_name'])
+            self.device_aggregator_mapping[message['device_name']] = message['aggregator_name']
+            success_response_message = {
+                "status": "ready", "aggregator_name": message['aggregator_name'],
+                "device_name": message['device_name'],
+                "transaction_id": transaction_id}
+            self.redis_db.publish(
+                "crud_aggregator_response", json.dumps(success_response_message)
+            )
+
+    def _create_aggregator(self, message, transaction_id):
+        if message['name'] not in self.selected_aggregators:
+            self.selected_aggregators.append(message['name'])
+            print(f"selected_aggregators: {self.selected_aggregators}")
+            success_response_message = {
+                "status": "ready", "name": message['name'],
+                "transaction_id": transaction_id}
+            self.redis_db.publish(
+                "crud_aggregator_response", json.dumps(success_response_message)
+            )
+        else:
+            print(f"doublecount")
+            error_response_message = {
+                "status": "error", "name": message['name'],
+                "transaction_id": transaction_id}
+            self.redis_db.publish(
+                "crud_aggregator_response", json.dumps(error_response_message)
+            )
+
+    def _delete_aggregator(self, message, transaction_id):
+        if message['name'] in self.selected_aggregators:
+            aggr_name = self.selected_aggregators.pop(
+                self.selected_aggregators.index(message['name'])
+            )
+            print(f"aggr_name: {aggr_name}")
+            success_response_message = {
+                "status": "deleted", "name": message['name'],
+                "transaction_id": transaction_id}
+            self.redis_db.publish(
+                "crud_aggregator_response", json.dumps(success_response_message)
+            )
+        else:
+            print(f"doublecount")
+            error_response_message = {
+                "status": "error", "name": message['name'],
+                "transaction_id": transaction_id}
+            self.redis_db.publish(
+                "crud_aggregator_response", json.dumps(error_response_message)
+            )
 
     def receive_batch_commands_callback(self, payload):
         batch_command_message = json.loads(payload["data"])
