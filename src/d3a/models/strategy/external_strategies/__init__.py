@@ -124,6 +124,8 @@ class ExternalMixin:
     def _register(self, payload):
         self._connected = register_area(self.redis, self.channel_prefix, self.connected,
                                         self._get_transaction_id(payload))
+        if self._connected:
+            self.device.uuid = self._get_transaction_id(payload)
 
     def _unregister(self, payload):
         self._connected = unregister_area(self.redis, self.channel_prefix, self.connected,
