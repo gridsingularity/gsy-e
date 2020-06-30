@@ -22,10 +22,8 @@ To create a new simulation, select the *New Simulation* button shown below. The 
 ![img](img/projects-home-page-4.png){:style="height:45px;width:180px"}
 
 **The following quick links are available for each simulation:**
-
- ![img](img/projects-home-page-12.png){:style="height:50px;width:50px"} Run the simulation and redirect the user to the [Results Page](results.md)
  
- ![img](img/projects-home-page-13.png){:style="height:50px;width:50px"} Redirects the user to the [Results Page](results.md)
+ ![img](img/projects-home-page-13.png){:style="height:50px;width:50px"} Redirects the user to the [Results Page](results.md). On this latter the user can 
 
  ![img](img/projects-home-page-15.png){:style="height:50px;width:50px"} Edit the [General Settings](general-settings.md) of the simulation
 
