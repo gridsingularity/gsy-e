@@ -18,7 +18,7 @@ In the above figure, the community market is selected.
 
 When selecting a market, the results page will show you various relevant plots and tables. You also have the possibility to select which one you want to view/hide (by default all of them are visible). This section will discuss each of these results.
 
-![img](img/results-9.png){:style="height:350px;width:220px"}
+![img](img/results-15.png){:style="height:450px;width:220px"}
 
 ### Energy Availability
 
@@ -74,13 +74,19 @@ On this plot 2 lines are shown : the *current peak imports* and the *current pea
 
 ### Energy pricing
 
-![img](img/results-6.png)
+![img](img/results-16.png)
 
 In this plot, energy pricing is shown. In case of multiple clearing moments within a market interval (depending on market design and grid configuration), there could be different prices for different trades in the market interval. In this case, an average of the trade price is shown.  
 
 In addition, the minimum and maximum price on that time of the day for all days of simulation is provided.
 
 If there was no trade happening during a certain market interval, the price is set to zero at that time. 
+
+### Bids, Offers, and Trades per Market Slot
+
+In this plot every [bids, offers](how-strategies-adjust-prices.md) and trades posted in the selected market is shown according to their posting time. With this graph the user can understand why specific offers/bids were matched or not and thus adapt their trading strategy. The range of this graph is the [market slot](market-slots-and-ticks.md) length (15 minutes by default). Every market slots of the simulation can be selected with the drop down (days) and the slider (hours & minutes). 
+
+![img](img/results-14.png)
 
 ## Compare results
 

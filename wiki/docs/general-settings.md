@@ -30,6 +30,6 @@ General Settings is where the general simulation parameters are set. The configu
 
 The interface for selecting general settings is shown below:
 
-![img](img/general-settings-1.png)
+![img](img/general-settings-1.png){:style="height:550px;width:275px"}
 
-![img](img/general-settings-2.png)
+![img](img/general-settings-2.png){:style="height:450px;width:275px"}
