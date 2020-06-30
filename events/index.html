@@ -13,7 +13,7 @@
         <meta name="description" content="Wiki for the D3A by Grid Singularity">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/d3a/d3a-documentation/infinite-bus-strategy/">
+        <link rel="canonical" href="https://gridsingularity.github.io/d3a/d3a-documentation/events/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -42,7 +42,7 @@
     
     
       
-        <title>Infinite Bus Strategy - D3A Wiki</title>
+        <title>Events - D3A Wiki</title>
       
     
     
@@ -131,7 +131,7 @@
               D3A Wiki
             </span>
             <span class="md-header-nav__topic">
-              Infinite Bus Strategy
+              Events
             </span>
           
         </div>
@@ -251,10 +251,12 @@
       
       
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
     
     <label class="md-nav__link" for="nav-2">
       User Interface (d3a.io)
@@ -306,10 +308,12 @@
           
           
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4" checked>
     
     <label class="md-nav__link" for="nav-2-4">
       Simulation Configuration
@@ -481,11 +485,18 @@
           
           
 
+  
 
-  <li class="md-nav__item">
-    <a href="../events/" title="Events" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+    <a href="./" title="Events" class="md-nav__link md-nav__link--active">
       Events
     </a>
+    
   </li>
 
         
@@ -515,12 +526,10 @@
       
       
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
     
     <label class="md-nav__link" for="nav-3">
       Backend Codebase
@@ -548,12 +557,10 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2">
     
     <label class="md-nav__link" for="nav-3-2">
       Strategies
@@ -653,18 +660,11 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-    
-    <a href="./" title="Infinite Bus Strategy" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../infinite-bus-strategy/" title="Infinite Bus Strategy" class="md-nav__link">
       Infinite Bus Strategy
     </a>
-    
   </li>
 
         
@@ -1194,23 +1194,33 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/gridsingularity/d3a/wiki/edit/master/docs/infinite-bus-strategy.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/gridsingularity/d3a/wiki/edit/master/docs/events.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                  <h1>Infinite Bus Strategy</h1>
+                  <h1>Events</h1>
                 
-                <p>This device is the same as the commercial energy producer / infinite power plant in that it produces an infinite amount of energy at the <code>energy_sell_rate</code>. 
-However, the infinite bus can also buy an infinite amount of energy at a predefined price, the <code>energy_buy_rate.</code></p>
-<p>Configuration parameters:</p>
+                <p>The user has the ability to make changes in the modelling page while the simulation is running. These changes are called <strong>events</strong>. To create an event the user can either go to the modelling page and make a change while the simulation is running or can pause the simulation beforehand and resume it when the change is done.</p>
+<p>The possible events are : </p>
 <ul>
-<li><code>energy_buy_rate</code>: energy rate for selling in cents/kWh (can be a profile in JSON or dict format as well as a filename) </li>
-<li><code>energy_sell_rate</code>: energy rate for buying in cents/kWh (can be a profile in JSON or dict format as well as a filename) </li>
+<li>
+<p>Add &amp; delete <a href="../areas/">areas</a> and energy resources</p>
+</li>
+<li>
+<p>Change parameters of energy resources to the exception of their names and the <a href="../market-maker/">Market Maker</a></p>
+</li>
+<li>
+<p>Change parameters of areas to the exception of their names</p>
+</li>
+<li>
+<p>Add a library component (next deploy 0.7.0)</p>
+</li>
 </ul>
-<p>Corresponding code: <code>src/3a/models/strategy/infinite_bus.py</code></p>
-<p>How to add a infinite power plant to the setup-file:</p>
-<div class="codehilite"><pre><span></span><code>Area(&#39;Infinite Bus&#39;, strategy=InfiniteBusStrategy(energy_buy_rate=24, energy_sell_rate=25),
-                             appliance=SimpleAppliance()),
-</code></pre></div>
+<p>Once an event is set the user can track it on the timeline of the simulation. If the user click on the event while being on the modeling page she/he can view the grid setup at that specific time. If the user click on an event in the result page she/he will get the results of the specific areas / energy resources. </p>
+<p><img alt="img" src="../img/events-1.png" /></p>
+<p><img alt="img" src="../img/events-2.png" style="height:50px;width:50px" /> whenever an area or energy resource was <strong>added</strong></p>
+<p><img alt="img" src="../img/events-3.png" style="height:50px;width:50px" /> whenever an area or energy resource parameter was <strong>modified</strong></p>
+<p><img alt="img" src="../img/events-4.png" style="height:50px;width:50px" /> whenever an area or energy resource was <strong>removed</strong></p>
+<p><img alt="img" src="../img/events-5.png" style="height:50px;width:50px" /> whenever <strong>multiple events</strong> have been executed at the same time</p>
                 
                   
                 
@@ -1231,7 +1241,7 @@ However, the infinite bus can also buy an infinite amount of energy at a predefi
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../custom-pv-strategy/" title="Custom PV Strategy" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../upload-file-formats/" title="Upload File Formats" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -1240,19 +1250,19 @@ However, the infinite bus can also buy an infinite amount of energy at a predefi
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Custom PV Strategy
+                Upload File Formats
               </span>
             </div>
           </a>
         
         
-          <a href="../how-implement-custom-device-strategies/" title="How to Implement Custom Device Strategies" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../results/" title="Results" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                How to Implement Custom Device Strategies
+                Results
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

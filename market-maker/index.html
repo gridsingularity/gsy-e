@@ -490,6 +490,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../events/" title="Events" class="md-nav__link">
+      Events
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -970,6 +982,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../kpis/" title="Key Performance Indicators (KPIs)" class="md-nav__link">
+      Key Performance Indicators (KPIs)
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -1119,18 +1143,6 @@
   </li>
 
         
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../kpis/" title="Key Performance Indicators (KPIs)" class="md-nav__link">
-      Key Performance Indicators (KPIs)
-    </a>
-  </li>
-
-        
       </ul>
     </nav>
   </li>
@@ -1195,22 +1207,35 @@
 <p><strong>Name:</strong> The name of the Market Maker.</p>
 </li>
 <li>
+<p><strong>Mode</strong> The user has two options:</p>
+<ul>
+<li>Infinite power plant: In this mode, it has the ability to meet the infinite energy demands of consumers at the most expansive rate that could exist in that grid.</li>
+<li>Infinite bus: In this mode, the Market Maker has not only the ability to meet the infinite energy demands of consumer but can also absorb the infinite generation excess of prosumers/producers at the lowest rate the could exist in that grid.</li>
+</ul>
+</li>
+<li>
 <p><strong>Role:</strong> The user has two options:</p>
 <ul>
-<li>Infinite power plant, grid connected: In this mode, it has the ability to meet the infinite energy demands of consumers at the most expansive rate that could exist in that grid.</li>
-<li>Pricer setter, islanded microgrid: In this mode, it won’t fulfill the energy demands of any consumer but would only be used as a reference point of highest possible <code>energy_rate</code> that could exist in that grid.</li>
+<li>Grid connected: In this role, the Market Maker is connected to the grid and thus can fulfill the energy demands of any consumer and absorb the excess of generation (if infinite bus mode selected)</li>
+<li>Islanded: In this role, it won’t fulfill the energy demands of any consumer but would only be used as a reference point of highest possible <code>energy_rate</code> that could exist in that grid.</li>
 </ul>
 </li>
 <li>
-<p><strong>Market maker rate type:</strong> The user can choose either <em>User Input</em> to define a fixed rate defined by the <em>Market maker rate</em> or to upload their own Market Maker profile.</p>
+<p><strong>Selling rate type:</strong> The user can choose either <em>User Input</em> to define a fixed rate defined by the <em>Selling rate</em> or to upload their own selling rate profile.</p>
 </li>
 <li>
-<p><strong>Market maker rate:</strong> The fixed rate the Market Maker will enforce, if <em>User Input</em> is chosen for the <em>Market maker rate type</em>.</p>
+<p><strong>Selling rate:</strong> The fixed rate the Market Maker will enforce, if <em>User Input</em> is chosen for the <em>selling rate type</em>.</p>
+</li>
+<li>
+<p><strong>Buying rate type (infinite bus only):</strong> The user can choose either <em>User Input</em> to define a fixed rate defined by the <em>buying rate</em> or to upload their own buying rate profile.</p>
+</li>
+<li>
+<p><strong>Buying rate (infinite bus only):</strong> The fixed rate the Market Maker will enforce, if <em>User Input</em> is chosen for the <em>buying rate type</em>.</p>
 </li>
 </ul>
-<p>For further general information about this strategy, follow the backend <a href="../market-maker-strategy/">Market Maker Strategy</a> manual.</p>
+<p>For further general information about this strategy, follow the backend <a href="../market-maker-strategy/">Market Maker Strategy</a> and <a href="../infinite-bus-strategy/">Infinite Bus Strategy</a> manual.</p>
 <p>The configuration interface is shown below: </p>
-<p><img alt="img" src="../img/market-maker-1.png" /></p>
+<p><img alt="img" src="../img/market-maker-1.png" style="height:500px;width:275px" /></p>
                 
                   
                 

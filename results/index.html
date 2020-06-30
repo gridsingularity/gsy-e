@@ -483,6 +483,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../events/" title="Events" class="md-nav__link">
+      Events
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -569,6 +581,13 @@
           <li class="md-nav__item">
   <a href="#energy-pricing" title="Energy pricing" class="md-nav__link">
     Energy pricing
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bids-offers-and-trades-per-market-slot" title="Bids, Offers, and Trades per Market Slot" class="md-nav__link">
+    Bids, Offers, and Trades per Market Slot
   </a>
   
 </li>
@@ -1066,6 +1085,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../kpis/" title="Key Performance Indicators (KPIs)" class="md-nav__link">
+      Key Performance Indicators (KPIs)
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -1215,18 +1246,6 @@
   </li>
 
         
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../kpis/" title="Key Performance Indicators (KPIs)" class="md-nav__link">
-      Key Performance Indicators (KPIs)
-    </a>
-  </li>
-
-        
       </ul>
     </nav>
   </li>
@@ -1343,6 +1362,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#bids-offers-and-trades-per-market-slot" title="Bids, Offers, and Trades per Market Slot" class="md-nav__link">
+    Bids, Offers, and Trades per Market Slot
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1393,7 +1419,7 @@
 <hr />
 <h2 id="simulation-results">Simulation Results<a class="headerlink" href="#simulation-results" title="Permanent link">&para;</a></h2>
 <p>When selecting a market, the results page will show you various relevant plots and tables. You also have the possibility to select which one you want to view/hide (by default all of them are visible). This section will discuss each of these results.</p>
-<p><img alt="img" src="../img/results-9.png" style="height:350px;width:220px" /></p>
+<p><img alt="img" src="img/results-15.png" style="height:450px;width:220px" /></p>
 <h3 id="energy-availability">Energy Availability<a class="headerlink" href="#energy-availability" title="Permanent link">&para;</a></h3>
 <p><img alt="img" src="../img/results-2.png" /></p>
 <p>This plot shows whether or not each energy device inside the selected market had access to the energy it needed. On the x-axis, the time is given. If the participating agent was able to get the energy it wants, at a certain time, the block at that time will appear green. If not, it will appear purple.</p>
@@ -1421,10 +1447,13 @@
 <p><img alt="img" src="../img/results-13.png" /></p>
 <p>On this plot 2 lines are shown : the <em>current peak imports</em> and the <em>current peak exports</em> which represent the maximum energy imported and exported for the selected area (here the <em>Community</em>).</p>
 <h3 id="energy-pricing">Energy pricing<a class="headerlink" href="#energy-pricing" title="Permanent link">&para;</a></h3>
-<p><img alt="img" src="../img/results-6.png" /></p>
+<p><img alt="img" src="../img/results-16.png" /></p>
 <p>In this plot, energy pricing is shown. In case of multiple clearing moments within a market interval (depending on market design and grid configuration), there could be different prices for different trades in the market interval. In this case, an average of the trade price is shown.  </p>
 <p>In addition, the minimum and maximum price on that time of the day for all days of simulation is provided.</p>
 <p>If there was no trade happening during a certain market interval, the price is set to zero at that time. </p>
+<h3 id="bids-offers-and-trades-per-market-slot">Bids, Offers, and Trades per Market Slot<a class="headerlink" href="#bids-offers-and-trades-per-market-slot" title="Permanent link">&para;</a></h3>
+<p>In this plot every <a href="../how-strategies-adjust-prices/">bids, offers</a> and trades posted in the selected market is shown according to their posting time. With this graph the user can understand why specific offers/bids were matched or not and thus adapt their trading strategy. The range of this graph is the <a href="../market-slots-and-ticks/">market slot</a> length (15 minutes by default). Every market slots of the simulation can be selected with the drop down (days) and the slider (hours &amp; minutes). </p>
+<p><img alt="img" src="../img/results-14.png" /></p>
 <h2 id="compare-results">Compare results<a class="headerlink" href="#compare-results" title="Permanent link">&para;</a></h2>
 <p>The user has the possibility to compare the results to another simulation (in order to compare results, the simulation should already have been run). The user can also download the results using the interface shown below:</p>
 <p><img alt="img" src="../img/results-7.png" /></p>
@@ -1451,7 +1480,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../upload-file-formats/" title="Upload File Formats" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../events/" title="Events" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -1460,7 +1489,7 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Upload File Formats
+                Events
               </span>
             </div>
           </a>
