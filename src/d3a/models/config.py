@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import ast
+import json
 from pendulum import duration, Duration, DateTime, today
 
 from d3a.constants import TIME_ZONE
@@ -35,7 +36,7 @@ class SimulationConfig:
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  pv_user_profile=None, start_date: DateTime=today(tz=TIME_ZONE),
                  max_panel_power_W=None, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
-                 external_connection_enabled=True):
+                 external_connection_enabled=True, aggregator_device_mapping=None):
 
         self.sim_duration = sim_duration
         self.start_date = start_date
@@ -69,6 +70,11 @@ class SimulationConfig:
         self.max_panel_power_W = max_panel_power_W
         self.external_redis_communicator = ExternalConnectionCommunicator(
             external_connection_enabled)
+        if aggregator_device_mapping is not None:
+            aggregator_device_mapping = json.loads(aggregator_device_mapping)
+            self.external_redis_communicator.aggregator.set_aggregator_device_mapping(
+                aggregator_device_mapping
+            )
 
     def __repr__(self):
         return (

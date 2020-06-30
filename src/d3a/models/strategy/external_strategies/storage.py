@@ -20,7 +20,6 @@ import logging
 from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
-from d3a.d3a_core.singletons import aggregator
 
 
 class StorageExternalMixin(ExternalMixin):
@@ -314,7 +313,7 @@ class StorageExternalMixin(ExternalMixin):
                 self.redis.publish_json(market_event_channel, current_market_info)
 
             if self.is_aggregator_controlled:
-                aggregator.add_batch_market_event(self.device.uuid, current_market_info)
+                self.redis.aggregator.add_batch_market_event(self.device.uuid, current_market_info)
         else:
             super().event_market_cycle()
 
@@ -324,8 +323,8 @@ class StorageExternalMixin(ExternalMixin):
 
     def event_tick(self):
         if self.is_aggregator_controlled:
-            aggregator.consume_all_area_commands(self.device.uuid,
-                                                 self.trigger_aggregator_commands)
+            self.redis.aggregator.consume_all_area_commands(self.device.uuid,
+                                                            self.trigger_aggregator_commands)
 
         if not self.connected and not self.is_aggregator_controlled:
             super().event_tick()

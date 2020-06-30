@@ -22,7 +22,6 @@ from d3a.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from collections import namedtuple
 from d3a.models.market.market_structures import Offer
 from d3a_interface.constants_limits import ConstSettings
-from d3a.d3a_core.singletons import aggregator
 
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
@@ -100,7 +99,7 @@ class ExternalMixin:
     def is_aggregator_controlled(self):
         if not d3a.constants.EXTERNAL_CONNECTION_WEB:
             return False
-        return aggregator.is_controlling_device(self.device.uuid)
+        return self.redis.aggregator.is_controlling_device(self.device.uuid)
 
     @property
     def should_use_default_strategy(self):
@@ -217,7 +216,7 @@ class ExternalMixin:
                 self.redis.publish_json(tick_event_channel, current_tick_info)
 
             if self.is_aggregator_controlled:
-                aggregator.add_batch_tick_event(self.device.uuid, current_tick_info)
+                self.redis.aggregator.add_batch_tick_event(self.device.uuid, current_tick_info)
 
     def _publish_trade_event(self, trade, is_bid_trade):
 
@@ -260,21 +259,21 @@ class ExternalMixin:
             self.redis.publish_json(trade_event_channel, event_response_dict)
 
         if self.is_aggregator_controlled:
-            aggregator.add_batch_trade_event(self.device.uuid, event_response_dict)
+            self.redis.aggregator.add_batch_trade_event(self.device.uuid, event_response_dict)
 
     def event_bid_traded(self, market_id, bid_trade):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
-        if self.connected or aggregator.is_controlling_device(self.device.uuid):
+        if self.connected or self.redis.aggregator.is_controlling_device(self.device.uuid):
             self._publish_trade_event(bid_trade, True)
 
     def event_trade(self, market_id, trade):
         super().event_trade(market_id=market_id, trade=trade)
-        if self.connected or aggregator.is_controlling_device(self.device.uuid):
+        if self.connected or self.redis.aggregator.is_controlling_device(self.device.uuid):
             self._publish_trade_event(trade, False)
 
     def deactivate(self):
         super().deactivate()
-        if self.connected or aggregator.is_controlling_device(self.device.uuid):
+        if self.connected or self.redis.aggregator.is_controlling_device(self.device.uuid):
             deactivate_event_channel = f"{self.channel_prefix}/events/finish"
             deactivate_msg = {
                 "event": "finish",
@@ -284,7 +283,7 @@ class ExternalMixin:
                 self.redis.publish_json(deactivate_event_channel, deactivate_msg)
 
             if self.is_aggregator_controlled:
-                aggregator.add_batch_finished_event(self.device.uuid, deactivate_msg)
+                self.redis.aggregator.add_batch_finished_event(self.device.uuid, deactivate_msg)
 
     def _bid_aggregator(self, command):
         raise CommandTypeNotSupported(

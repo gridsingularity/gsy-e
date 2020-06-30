@@ -2,14 +2,12 @@ import json
 import logging
 from threading import Lock
 import d3a.constants
-from redis import StrictRedis
-from d3a.d3a_core.redis_connections.redis_communication import REDIS_URL
 
 
 class AggregatorHandler:
 
-    def __init__(self):
-        self.redis_db = StrictRedis.from_url(REDIS_URL, retry_on_timeout=True)
+    def __init__(self, redis_db):
+        self.redis_db = redis_db
         self.pubsub = self.redis_db.pubsub()
         self.pending_batch_commands = {}
         self.processing_batch_commands = {}

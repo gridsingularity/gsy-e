@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 from os import environ, getpid
 import ast
-import json
 
 from datetime import datetime
 from pendulum import now, duration, instance
@@ -29,7 +28,6 @@ from rq.decorators import job
 from d3a.models.config import SimulationConfig
 from d3a.d3a_core.util import available_simulation_scenarios, update_advanced_settings
 from d3a.d3a_core.simulation import run_simulation
-from d3a.d3a_core.singletons import aggregator
 from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 from d3a_interface.settings_validators import validate_global_settings
 from zlib import decompress
@@ -62,10 +60,6 @@ def start(scenario, settings, events, aggregator_device_mapping):
         if events is not None:
             events = ast.literal_eval(events)
 
-        aggregator_device_mapping = json.loads(aggregator_device_mapping)
-        if aggregator_device_mapping is not None:
-            aggregator.set_aggregator_device_mapping(aggregator_device_mapping)
-
         config_settings = {
             "start_date":
                 instance(datetime.combine(settings.get('start_date'), datetime.min.time()))
@@ -88,7 +82,8 @@ def start(scenario, settings, events, aggregator_device_mapping):
             "max_panel_power_W": settings.get('max_panel_power_W',
                                               ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W),
             "grid_fee_type": settings.get('grid_fee_type', GlobalConfig.grid_fee_type),
-            "external_connection_enabled": True
+            "external_connection_enabled": True,
+            "aggregator_device_mapping": aggregator_device_mapping
         }
 
         validate_global_settings(config_settings)
