@@ -1,4 +1,4 @@
-To start building a simulation, the user is guided through the simulation configuration pages. These pages allow a user to model their use-case and D3A market structure that the energy devices in their model will use to trade energy.
+To start building a simulation, the user is guided through the simulation configuration pages. These pages allow a user to model their use-case and D3A market structure that the energy resources in their model will use to trade energy.
 
 The simulation configuration consists of two steps:
 

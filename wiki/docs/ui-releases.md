@@ -1,3 +1,16 @@
+##Version 0.6.0
+The following features were implemented : 
+
+* [Bid and Offer matching graph](results.md#bids-offers-and-trades-per-market-slot) <br /> Analyze all bids, offers, and trades in a market and see why they match based on their strategies.
+* [Simulation events](events.md) <br />Add, delete, or update areas or energy resources in a simulation while it is running. This allows users to grow their simulations in real-time and analyze the impacts of energy resources coming online and changes to grid parameters such as grid fees.
+* Timeline to view [events](events.md) and zoom in <br />View all events in a timeline and click on each event to view its relevant grid configuration and results. Zoom in to view results for a specific day.
+* Pause or stop a simulation <br />Pause a simulation to freeze it while adding an event. Stop a simulation pre-maturely in order to run another version sooner.
+* Configure an infinite bus as part of the [Market Maker](market-maker.md) <br />Configure an Infinite Bus in order to add a feed-in-tariff to the simulation.
+
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/X5Fhb1mEBu4" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+
 ##Version 0.5.0
 The following features were implemented :
 
