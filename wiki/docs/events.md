@@ -12,7 +12,7 @@ The possible events are :
 * Add a library component (next deploy 0.7.0)
 
 
-Once an event is set the user can track it on the timeline of the simulation. If the user click on the event while being on the modeling page she/he can view the grid setup at that specific time. If the user click on an event in the result page she/he will get the results of the specific areas / energy resources. 
+Once an event is set the user can track it on the timeline of the simulation. If the user click on the event while being on the modelling page she/he can view the grid setup at that specific time. If the user click on an event in the result page she/he will get the results of the specific areas / energy resources. 
 
 ![img](img/events-1.png)
 

@@ -12,7 +12,7 @@ nav:
     - 'Simulation Configuration':
         - 'Simulation Configuration Overview': 'simulation-configuration.md'
         - 'General Settings': 'general-settings.md'
-        - 'Grid Setup':
+        - 'Grid Modelling':
             - 'Initial Grid Setup': 'grid-setup.md'
             - 'PV': 'pv.md'
             - 'Storage': 'storage.md'
