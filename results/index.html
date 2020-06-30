@@ -361,11 +361,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4-3" type="checkbox" id="nav-2-4-3">
     
     <label class="md-nav__link" for="nav-2-4-3">
-      Grid Setup
+      Grid Modelling
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-2-4-3">
-        Grid Setup
+        Grid Modelling
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -1411,31 +1411,31 @@
                 
                 <h2 id="navigating-your-configuration-grid">Navigating your configuration grid<a class="headerlink" href="#navigating-your-configuration-grid" title="Permanent link">&para;</a></h2>
 <p><img alt="img" src="../img/results-1.png" /></p>
-<p>The D3A allows energy devices to trade inside energy markets. During trading, the user can view what is happening at the energy device level and at the market level. </p>
+<p>The D3A allows energy resources to trade inside energy markets. During trading, the user can view what is happening at the energy resource level and at the market level. </p>
 <p>Since a D3A grid is build up into a hierarchy of multiple markets, we use a folder structure to navigate through the grid simulation results. </p>
 <p>The user can select a <strong>market</strong>, which brings the user to the result page of this specific market;</p>
-<p>or, you can select a <strong>device</strong> (located inside a market) to bring the user to the results page of this specific device.</p>
+<p>or, you can select an <strong>energy resource</strong> (located inside a market) to bring the user to the results page of this specific energy resource.</p>
 <p>In the above figure, the community market is selected.</p>
 <hr />
 <h2 id="simulation-results">Simulation Results<a class="headerlink" href="#simulation-results" title="Permanent link">&para;</a></h2>
 <p>When selecting a market, the results page will show you various relevant plots and tables. You also have the possibility to select which one you want to view/hide (by default all of them are visible). This section will discuss each of these results.</p>
-<p><img alt="img" src="img/results-15.png" style="height:450px;width:220px" /></p>
+<p><img alt="img" src="../img/results-15.png" style="height:450px;width:230px" /></p>
 <h3 id="energy-availability">Energy Availability<a class="headerlink" href="#energy-availability" title="Permanent link">&para;</a></h3>
 <p><img alt="img" src="../img/results-2.png" /></p>
-<p>This plot shows whether or not each energy device inside the selected market had access to the energy it needed. On the x-axis, the time is given. If the participating agent was able to get the energy it wants, at a certain time, the block at that time will appear green. If not, it will appear purple.</p>
-<p>The granularity of the plot is 1 hour, so if there has been a trade interval (possibly &lt;1 hour length) within the hour in which the agent was not able to buy the demanded energy, the whole block will turn purple. The user can hover over a purple block to see a list of the devices not able to buy for that time slot.</p>
+<p>This plot shows whether or not each energy resource inside the selected market had access to the energy it needed. On the x-axis, the time is given. If the participating agent was able to get the energy it wants, at a certain time, the block at that time will appear green. If not, it will appear purple.</p>
+<p>The granularity of the plot is 1 hour, so if there has been a trade interval (possibly &lt;1 hour length) within the hour in which the agent was not able to buy the demanded energy, the whole block will turn purple. The user can hover over a purple block to see a list of the energy resources not able to buy for that time slot.</p>
 <h3 id="self-sufficiency-and-consumption">Self sufficiency and consumption<a class="headerlink" href="#self-sufficiency-and-consumption" title="Permanent link">&para;</a></h3>
 <p><img alt="img" src="../img/results-10.png" /></p>
 <p>These 2 pie charts shows the Self Sufficiency and Self Consumption of the selected area. Please see <a href="../kpis/#self-sufficiency-self-consumption">Key Performance Indicators</a> for more information.</p>
 <h3 id="cumulative-trading">Cumulative trading<a class="headerlink" href="#cumulative-trading" title="Permanent link">&para;</a></h3>
 <p><img alt="img" src="../img/results-3.png" /></p>
-<p>This plot shows the total trade volumes that have been traded between market participants in the selected market over the simulation's duration. Market participants are the agents (representing a device or an area) immediately inside the selected market.</p>
+<p>This plot shows the total trade volumes that have been traded between market participants in the selected market over the simulation's duration. Market participants are the agents (representing an energy resource or an area) immediately inside the selected market.</p>
 <p>Each bar has its own color to represent its sold energy. Energy sold is negative and energy bought is positive. In this example, the energy sold by House 1 is purple. House 1 also has a positive purple bar, meaning that it bought some of its own energy production. The rest of its energy production was sold as the thin purple layer shown in the bar of the other market participants. By using this color coding, the user can visually track how energy has flowed in a specific market.</p>
 <p>The external trades represent energy produced in this market, but sold to an outside market (the positive bar layers containing the colors of each participant) and the energy bought from an external source and sold to a participant in this market. The energy bought externally is teal in this example and is the negative bar for External Trades. This energy was sold to the other participants where a positive teal colored bar can be seen (all participants).</p>
 <h3 id="energy-bills-and-net-energy">Energy bills and net energy<a class="headerlink" href="#energy-bills-and-net-energy" title="Permanent link">&para;</a></h3>
 <p><img alt="img" src="../img/results-11.png" /></p>
 <p>The energy bills provide information on the cumulative trade volumes of all market participants and the costs associated with these trades. For each agent, including the external trades, the energy bought and sold during the simulation is listed, along with a total net consumption.</p>
-<p>The <em>Totals</em> column can be considered as the net energy consumption and final bill to the listed agent, which may represent a device or an area of ownership.</p>
+<p>The <em>Totals</em> column can be considered as the net energy consumption and final bill to the listed agent, which may represent an energy resource or an area of ownership.</p>
 <p><em>External Trades</em> represents the import/export from/to a higher level market by the inter-area agent of the selected market, and hence represents the difference between energy traded inside the community and the total accumulated trades.</p>
 <p>The <em>Totals</em> row represents the total of trades that are made by the agents inside the selected area. </p>
 <p>In this example, we have the <em>Community</em> market selected. In the <em>Community</em> market, the participating agents are the inter-area agents of the houses that lie inside of the community area. </p>
