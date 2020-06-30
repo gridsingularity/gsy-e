@@ -1,4 +1,4 @@
-On this page the user can set up the architecture of the grid by adding Areas and Energy Resources. You can define up to 1000 nodes. Each area or device is considered as 1 node.
+On this page the user can set up the architecture of the grid by adding Areas and Energy Resources. You can define up to 1000 nodes. Each area or energy resource is considered as 1 node.
 
 ![img](img/grid-setup-1.png)
 
@@ -18,7 +18,7 @@ There are 4 different types of basic energy resources available (for detailed se
 
 ![img](img/grid-setup-2.png)
 
-The user can also insert [Libraries](libraries.md), which are customized energy resources available from the D3A community. A list of these devices with a search function appears when clicking on "LIBRARY" on the upper right corner.
+The user can also insert [Libraries](libraries.md), which are customized energy resources available from the D3A community. A list of these energy resources with a search function appears when clicking on "LIBRARY" on the upper right corner.
 
 ![img](img/grid-setup-3.png)
 
@@ -30,7 +30,7 @@ When the simulation is running, the user can :
 
 ![img](img/grid-setup-7.png){:style="height:40px;width:100px"} Pause it
 
-![img](img/grid-setup-8.png){:style="height:40px;width:100px"} Abort it (Warning, after aborting the user will not be able to resume it!)
+![img](img/grid-setup-8.png){:style="height:40px;width:100px"} Abort it (Warning, after aborting the user will not be able to resume the simulation!)
 
 The user can duplicate the number of Areas or Energy Resources by clicking on the +/- buttons shown below (energy resource or area settings view).
 

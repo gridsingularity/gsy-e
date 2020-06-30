@@ -23,11 +23,11 @@ To create a new simulation, select the *New Simulation* button shown below. The 
 
 **The following quick links are available for each simulation:**
  
- ![img](img/projects-home-page-13.png){:style="height:50px;width:50px"} Redirects the user to the [Results Page](results.md). On this latter the user can 
+ ![img](img/projects-home-page-13.png){:style="height:50px;width:50px"} Redirects the user to the [Results Page](results.md). On this latter the user can launch the simulation, pause it and abort it.
 
  ![img](img/projects-home-page-15.png){:style="height:50px;width:50px"} Edit the [General Settings](general-settings.md) of the simulation
 
- ![img](img/projects-home-page-14.png){:style="height:50px;width:50px"} Edit the grid setup of the simulation
+ ![img](img/projects-home-page-14.png){:style="height:50px;width:50px"} Model the grid setup of the simulation
 
  ![img](img/projects-home-page-16.png){:style="height:50px;width:50px"} Duplicate the configuration, download the results or delete the simulation
 
