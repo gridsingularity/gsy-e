@@ -401,8 +401,10 @@ class StorageExternalMixin(ExternalMixin):
         arguments['seller_origin'] = self.device.name
         try:
             assert arguments['energy'] <= self.state.energy_to_sell_dict[self.market.time_slot]
-            offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
-            offer = self.market.offer(**offer_arguments)
+            offer = self.market.offer(
+                price=arguments['price'], energy=arguments['energy'],
+                seller=arguments['seller'], seller_origin=arguments['seller_origin']
+            )
             self.offers.post(offer, self.market.id)
             self.state.offered_sell_kWh[self.market.time_slot] = \
                 self.offers.open_offer_energy(self.market.id)
