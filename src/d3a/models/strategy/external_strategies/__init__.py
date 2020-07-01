@@ -283,7 +283,9 @@ class ExternalMixin:
                 self.redis.publish_json(deactivate_event_channel, deactivate_msg)
 
             if self.is_aggregator_controlled:
-                self.redis.aggregator.add_batch_finished_event(self.device.uuid, deactivate_msg)
+                self.redis.aggregator._publish_all_events_from_one_type(
+                    self.redis, deactivate_msg, "finish"
+                )
 
     def _bid_aggregator(self, command):
         raise CommandTypeNotSupported(
