@@ -333,6 +333,16 @@ class ExternalMixin:
                 return self._list_offers_aggregator(command)
             elif command["type"] == "device_info":
                 return self._device_info_aggregator(command)
+            elif command["type"] == "list_market_stats":
+                market_data = self.device.parent.stats.get_market_stats(
+                    command['data']['market_slots']
+                )
+                return {
+                    "command": "list_market_stats", "status": "ready",
+                    "market_data": market_data,
+                    "transaction_id": command.get("transaction_id", None),
+                    "area_uuid": self.device.uuid
+                }
             else:
                 return {
                     "command": command["type"], "status": "error",
