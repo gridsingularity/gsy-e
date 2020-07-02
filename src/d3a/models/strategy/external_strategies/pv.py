@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import logging
 import traceback
+from d3a.d3a_core.exceptions import MarketException
 from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
@@ -267,6 +268,25 @@ class PVExternalMixin(ExternalMixin):
                 "area_uuid": self.device.uuid,
                 "error_message": f"Error when listing offers on area {self.device.name}.",
                 "transaction_id": arguments.get("transaction_id", None)}
+
+    def _update_offer_aggregator(self, arguments):
+        assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
+        arguments['seller'] = self.device.name
+        arguments['seller_origin'] = self.device.name
+        offer_arguments = {k: v
+                           for k, v in arguments.items()
+                           if k not in ["transaction_id", "type"]}
+
+        for offer, iterated_market_id in self.offers.open.items():
+            iterated_market = self.area.get_future_market_from_id(iterated_market_id)
+            if iterated_market is None:
+                continue
+            try:
+                iterated_market.delete_offer(offer.id)
+                new_offer = iterated_market.offer(**offer_arguments)
+                self.offers.replace(offer, new_offer, iterated_market.id)
+            except MarketException:
+                continue
 
     def _offer_aggregator(self, arguments):
         assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}

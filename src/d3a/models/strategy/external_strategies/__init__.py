@@ -291,6 +291,10 @@ class ExternalMixin:
         raise CommandTypeNotSupported(
             f"Bid command not supported on device {self.device.uuid}")
 
+    def _update_bid_aggregator(self, command):
+        raise CommandTypeNotSupported(
+            f"Update Bid command not supported on device {self.device.uuid}")
+
     def _delete_bid_aggregator(self, command):
         raise CommandTypeNotSupported(
             f"Delete bid command not supported on device {self.device.uuid}")
@@ -300,6 +304,10 @@ class ExternalMixin:
             f"List bids command not supported on device {self.device.uuid}")
 
     def _offer_aggregator(self, command):
+        raise CommandTypeNotSupported(
+            f"Offer command not supported on device {self.device.uuid}")
+
+    def _update_offer_aggregator(self, command):
         raise CommandTypeNotSupported(
             f"Offer command not supported on device {self.device.uuid}")
 
@@ -321,12 +329,16 @@ class ExternalMixin:
         try:
             if command["type"] == "bid":
                 return self._bid_aggregator(command)
+            elif command["type"] == "update_bid_price":
+                return self._update_bid_aggregator(command)
             elif command["type"] == "delete_bid":
                 return self._delete_bid_aggregator(command)
             elif command["type"] == "list_bids":
                 return self._list_bids_aggregator(command)
             elif command["type"] == "offer":
                 return self._offer_aggregator(command)
+            elif command["type"] == "update_offer":
+                return self._update_offer_aggregator(command)
             elif command["type"] == "delete_offer":
                 return self._delete_offer_aggregator(command)
             elif command["type"] == "list_offers":

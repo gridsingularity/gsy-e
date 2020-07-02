@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import logging
+from d3a.d3a_core.exceptions import MarketException
 from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
@@ -395,6 +396,25 @@ class StorageExternalMixin(ExternalMixin):
                 "error_message": f"Error when listing offers on area {self.device.name}.",
                 "transaction_id": arguments.get("transaction_id", None)}
 
+    def _update_offer_aggregator(self, arguments):
+        assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
+        arguments['seller'] = self.device.name
+        arguments['seller_origin'] = self.device.name
+        offer_arguments = {k: v
+                           for k, v in arguments.items()
+                           if k not in ["transaction_id", "type"]}
+
+        for offer, iterated_market_id in self.offers.open.items():
+            iterated_market = self.area.get_future_market_from_id(iterated_market_id)
+            if iterated_market is None:
+                continue
+            try:
+                iterated_market.delete_offer(offer.id)
+                new_offer = iterated_market.offer(**offer_arguments)
+                self.offers.replace(offer, new_offer, iterated_market.id)
+            except MarketException:
+                continue
+
     def _offer_aggregator(self, arguments):
         assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
         arguments['seller'] = self.device.name
@@ -423,6 +443,19 @@ class StorageExternalMixin(ExternalMixin):
                 "error_message": f"Error when handling offer create "
                                  f"on area {self.device.name} with arguments {arguments}.",
                 "transaction_id": arguments.get("transaction_id", None)}
+
+    def _update_bid_aggregator(self, arguments):
+        assert set(arguments.keys()) == {'price', 'energy', 'type', 'transaction_id'}
+        existing_bids = list(self.get_posted_bids(self.market))
+        for bid in existing_bids:
+            assert bid.buyer == self.owner.name
+            if bid.id in self.market.bids.keys():
+                bid = self.market.bids[bid.id]
+            self.market.delete_bid(bid.id)
+
+            self.remove_bid_from_pending(self.market.id, bid.id)
+        self.post_bid(self.market, arguments["price"], arguments["energy"],
+                      buyer_origin=bid.buyer_origin)
 
     def _bid_aggregator(self, arguments):
         try:
