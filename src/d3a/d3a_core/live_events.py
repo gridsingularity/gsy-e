@@ -3,6 +3,9 @@ import logging
 import traceback
 from d3a.d3a_core.area_serializer import area_from_dict
 from d3a.d3a_core.exceptions import D3AException
+from d3a.models.area.event_dispatcher import DispatcherFactory
+from d3a.models.area.stats import AreaStats
+from d3a.models.area.markets import AreaMarkets
 
 
 class LiveEventException(D3AException):
@@ -62,6 +65,10 @@ class DeleteAreaEvent:
             return False
 
         area.children = [c for c in area.children if c.uuid != self.area_uuid]
+        if len(area.children) == 0:
+            area._markets = AreaMarkets(area.log)
+            area.stats = AreaStats(area._markets)
+            area.dispatcher = DispatcherFactory(area)()
         return True
 
     def __repr__(self):
