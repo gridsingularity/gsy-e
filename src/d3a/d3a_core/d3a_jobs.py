@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 from os import environ, getpid
 import ast
+import json
 
 from datetime import datetime
 from pendulum import now, duration, instance
@@ -56,6 +57,7 @@ def start(scenario, settings, events, aggregator_device_mapping):
         advanced_settings = settings.get('advanced_settings', None)
         if advanced_settings is not None:
             update_advanced_settings(ast.literal_eval(advanced_settings))
+        aggregator_device_mapping = json.loads(aggregator_device_mapping)
 
         if events is not None:
             events = ast.literal_eval(events)

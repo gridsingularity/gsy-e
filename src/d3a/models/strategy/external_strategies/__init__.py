@@ -329,7 +329,7 @@ class ExternalMixin:
         try:
             if command["type"] == "bid":
                 return self._bid_aggregator(command)
-            elif command["type"] == "update_bid_price":
+            elif command["type"] == "update_bid":
                 return self._update_bid_aggregator(command)
             elif command["type"] == "delete_bid":
                 return self._delete_bid_aggregator(command)
