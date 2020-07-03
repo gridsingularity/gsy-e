@@ -16,7 +16,6 @@ class AggregatorHandler:
         self.batch_tick_events = {}
         self.batch_trade_events = {}
         self.batch_finished_events = {}
-        self.selected_aggregators = []
         self.aggregator_device_mapping = {}
         self.device_aggregator_mapping = {}
         self.lock = Lock()
@@ -62,7 +61,7 @@ class AggregatorHandler:
             self._select_aggregator(message)
 
     def _select_aggregator(self, message):
-        if message['aggregator_uuid'] not in self.selected_aggregators:
+        if message['aggregator_uuid'] not in self.aggregator_device_mapping:
             msg = f"{message['aggregator_uuid']} aggregator not found."
             error_response_message = {
                 "status": "error", "aggregator_uuid": message['aggregator_uuid'],
@@ -71,7 +70,7 @@ class AggregatorHandler:
                 "msg": msg
             }
             self.redis_db.publish(
-                "crud_aggregator_response", json.dumps(error_response_message)
+                "aggregator_response", json.dumps(error_response_message)
             )
         elif message['device_uuid'] in self.device_aggregator_mapping:
             msg = f"Device already have selected " \
@@ -83,7 +82,7 @@ class AggregatorHandler:
                 "msg": msg
             }
             self.redis_db.publish(
-                "crud_aggregator_response", json.dumps(error_response_message)
+                "aggregator_response", json.dumps(error_response_message)
             )
         else:
             self.aggregator_device_mapping[message['aggregator_uuid']].\
@@ -94,19 +93,18 @@ class AggregatorHandler:
                 "device_uuid": message['device_uuid'],
                 "transaction_id": message['transaction_id']}
             self.redis_db.publish(
-                "crud_aggregator_response", json.dumps(success_response_message)
+                "aggregator_response", json.dumps(success_response_message)
             )
 
     def _create_aggregator(self, message):
-        if message['transaction_id'] not in self.selected_aggregators:
+        if message['transaction_id'] not in self.aggregator_device_mapping:
             with self.lock:
-                self.selected_aggregators.append(message['transaction_id'])
                 self.aggregator_device_mapping[message['transaction_id']] = []
             success_response_message = {
                 "status": "ready", "name": message['name'],
                 "transaction_id": message['transaction_id']}
             self.redis_db.publish(
-                "crud_aggregator_response", json.dumps(success_response_message)
+                "aggregator_response", json.dumps(success_response_message)
             )
             d3a.constants.EXTERNAL_CONNECTION_WEB = True
 
@@ -115,26 +113,24 @@ class AggregatorHandler:
                 "status": "error", "aggregator_uuid": message['transaction_id'],
                 "transaction_id": message['transaction_id']}
             self.redis_db.publish(
-                "crud_aggregator_response", json.dumps(error_response_message)
+                "aggregator_response", json.dumps(error_response_message)
             )
 
     def _delete_aggregator(self, message):
-        if message['aggregator_uuid'] in self.selected_aggregators:
-            self.selected_aggregators.pop(
-                self.selected_aggregators.index(message['aggregator_uuid'])
-            )
+        if message['aggregator_uuid'] in self.aggregator_device_mapping:
+            del self.aggregator_device_mapping[message['aggregator_uuid']]
             success_response_message = {
                 "status": "deleted", "aggregator_uuid": message['aggregator_uuid'],
                 "transaction_id": message['transaction_id']}
             self.redis_db.publish(
-                "crud_aggregator_response", json.dumps(success_response_message)
+                "aggregator_response", json.dumps(success_response_message)
             )
         else:
             error_response_message = {
                 "status": "error", "aggregator_uuid": message['aggregator_uuid'],
                 "transaction_id": message['transaction_id']}
             self.redis_db.publish(
-                "crud_aggregator_response", json.dumps(error_response_message)
+                "aggregator_response", json.dumps(error_response_message)
             )
 
     def receive_batch_commands_callback(self, payload):

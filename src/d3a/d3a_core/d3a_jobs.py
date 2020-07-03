@@ -84,7 +84,7 @@ def start(scenario, settings, events, aggregator_device_mapping):
             "max_panel_power_W": settings.get('max_panel_power_W',
                                               ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W),
             "grid_fee_type": settings.get('grid_fee_type', GlobalConfig.grid_fee_type),
-            "external_connection_enabled": True,
+            "external_connection_enabled": settings.get('external_connection_enabled', False),
             "aggregator_device_mapping": aggregator_device_mapping
         }
 
