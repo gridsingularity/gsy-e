@@ -65,6 +65,8 @@ class DeleteAreaEvent:
 
         area.children = [c for c in area.children if c.uuid != self.area_uuid]
         if len(area.children) == 0:
+            # TODO: D3ASIM-2560; Please also catch the case for multiple future markets
+            # TODO: as a re-initiation would delete all results of future markets.
             area._markets = AreaMarkets(area.log)
             area.dispatcher = DispatcherFactory(area)()
         return True
