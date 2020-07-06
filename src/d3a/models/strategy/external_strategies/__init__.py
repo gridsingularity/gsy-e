@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import json
 import d3a.constants
+from threading import Lock
 from d3a.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from collections import namedtuple
 from d3a.models.market.market_structures import Offer
@@ -87,6 +88,7 @@ class ExternalMixin:
         super().__init__(*args, **kwargs)
         self._last_dispatched_tick = 0
         self.pending_requests = []
+        self.lock = Lock()
 
     @property
     def channel_prefix(self):

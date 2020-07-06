@@ -235,16 +235,31 @@ class LoadExternalMixin(ExternalMixin):
 
     def _update_bid_aggregator(self, arguments):
         assert set(arguments.keys()) == {'price', 'energy', 'type', 'transaction_id'}
-        existing_bids = list(self.get_posted_bids(self.market))
-        for bid in existing_bids:
-            assert bid.buyer == self.owner.name
-            if bid.id in self.market.bids.keys():
-                bid = self.market.bids[bid.id]
-            self.market.delete_bid(bid.id)
+        bid_rate = arguments["price"] / arguments["energy"]
+        with self.lock:
+            existing_bids = list(self.get_posted_bids(self.market))
+            existing_bid_energy = sum([bid.energy for bid in existing_bids])
+            for bid in existing_bids:
+                assert bid.buyer == self.owner.name
+                if bid.id in self.market.bids.keys():
+                    bid = self.market.bids[bid.id]
+                self.market.delete_bid(bid.id)
 
-            self.remove_bid_from_pending(self.market.id, bid.id)
-        self.post_bid(self.market, arguments["price"], arguments["energy"],
-                      buyer_origin=bid.buyer_origin)
+                self.remove_bid_from_pending(self.market.id, bid.id)
+            if len(existing_bids) > 0:
+                updated_bid = self.post_bid(self.market, bid_rate * existing_bid_energy,
+                                            existing_bid_energy, buyer_origin=self.device.name)
+                return {
+                    "command": "update_bid", "status": "ready",
+                    "bid": updated_bid.to_JSON_string(),
+                    "area_uuid": self.device.uuid,
+                    "transaction_id": arguments.get("transaction_id", None)}
+            else:
+                return {
+                    "command": "update_bid", "status": "error",
+                    "area_uuid": self.device.uuid,
+                    "error_message": f"Updated bid would only work if the old exist in market.",
+                    "transaction_id": arguments.get("transaction_id", None)}
 
     def _bid_aggregator(self, arguments):
         try:
