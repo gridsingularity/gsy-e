@@ -51,7 +51,7 @@ class AggregatorHandler:
     def add_batch_finished_event(self, device_uuid, event):
         self._add_batch_event(device_uuid, event, self.batch_finished_events)
 
-    def crud_aggregator_callback(self, payload):
+    def aggregator_callback(self, payload):
         message = json.loads(payload["data"])
         if message["type"] == "CREATE":
             self._create_aggregator(message)

@@ -127,7 +127,7 @@ class ExternalConnectionCommunicator(ResettableCommunicator):
         channel_callback_dict = {
             f'external/{d3a.constants.COLLABORATION_ID}/aggregator/*/batch_commands':
                 self.aggregator.receive_batch_commands_callback,
-            f'crud_aggregator': self.aggregator.crud_aggregator_callback
+            f'aggregator': self.aggregator.aggregator_callback
         }
         self.pubsub.psubscribe(**channel_callback_dict)
 
