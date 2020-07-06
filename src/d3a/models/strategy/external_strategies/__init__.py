@@ -42,13 +42,13 @@ def check_for_connected_and_reply(redis, channel_name, is_connected):
     return True
 
 
-def register_area(redis, channel_prefix, is_connected, transaction_id):
+def register_area(redis, channel_prefix, is_connected, transaction_id, device_uuid=None):
     register_response_channel = f'{channel_prefix}/response/register_participant'
     try:
         redis.publish_json(
             register_response_channel,
             {"command": "register", "status": "ready", "registered": True,
-             "transaction_id": transaction_id})
+             "transaction_id": transaction_id, "device_uuid": device_uuid})
         return True
     except Exception as e:
         logging.error(f"Error when registering to area {channel_prefix}: "
@@ -56,6 +56,7 @@ def register_area(redis, channel_prefix, is_connected, transaction_id):
         redis.publish_json(
             register_response_channel,
             {"command": "register", "status": "error", "transaction_id": transaction_id,
+             "device_uuid": device_uuid,
              "error_message": f"Error when registering to area {channel_prefix}."})
         return is_connected
 
@@ -99,8 +100,6 @@ class ExternalMixin:
 
     @property
     def is_aggregator_controlled(self):
-        if not d3a.constants.EXTERNAL_CONNECTION_WEB:
-            return False
         return self.redis.aggregator.is_controlling_device(self.device.uuid)
 
     @property
@@ -124,7 +123,8 @@ class ExternalMixin:
 
     def _register(self, payload):
         self._connected = register_area(self.redis, self.channel_prefix, self.connected,
-                                        self._get_transaction_id(payload))
+                                        self._get_transaction_id(payload),
+                                        device_uuid=self.device.uuid)
         if self._connected:
             self.device.uuid = self._get_transaction_id(payload)
 

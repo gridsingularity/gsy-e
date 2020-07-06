@@ -106,7 +106,6 @@ class AggregatorHandler:
             self.redis_db.publish(
                 "aggregator_response", json.dumps(success_response_message)
             )
-            d3a.constants.EXTERNAL_CONNECTION_WEB = True
 
         else:
             error_response_message = {
