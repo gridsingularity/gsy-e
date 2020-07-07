@@ -114,32 +114,32 @@ When a new market slot is available the client will get notified via an event. I
 Ex: `def on_market_cycle(self, market_info):`
 
 In the variable market_info you will get a dictionary with information on the market and your devices. You receive information for each device you manage. The return values are the following : 
-```json
+```python
 {
   "name": "house2", 
   "id": "13023c7d-205d-4b3a-a434-02375eb277ca", 
-  "start_time": start-time of the market slot, 
-  "duration_min": 15, 
+  "start_time": # start-time of the market slot, 
+  "duration_min": # 15, 
   "device_info": {
-    "energy_requirement_kWh": energy that the device has to buy during this market slot, 
-    "available_energy_kWh": energy that the device has to sell during this market slot
+    "energy_requirement_kWh": # energy that the device has to buy during this market slot, 
+    "available_energy_kWh": # energy that the device has to sell during this market slot
   }, 
   "event": "market", 
   "device_bill": {
-    "bought": energy bought in kWh, 
-    "sold": energy sold in kWh, 
-    "spent": money spent in €, 
-    "earned": money earned in €, 
-    "total_energy": bought - sold, 
-    "total_cost": spent - earned, 
-    "market_fee": € that goes in grid fee, 
-    "type": type of the strategy
+    "bought": # energy bought in kWh, 
+    "sold": # energy sold in kWh, 
+    "spent": # money spent in €, 
+    "earned": # money earned in €, 
+    "total_energy": # bought - sold, 
+    "total_cost": # spent - earned, 
+    "market_fee": # € that goes in grid fee, 
+    "type": # type of the strategy
     }, 
   "last_market_stats": {
-    "min_trade_rate": minimum trade price in €/kWh, 
-    "max_trade_rate": maximum trade price in €/kWh, 
-    "avg_trade_rate": average trade price in €/kWh, 
-    "total_traded_energy_kWh": total energy traded in kWh
+    "min_trade_rate": # minimum trade price in €/kWh, 
+    "max_trade_rate": # maximum trade price in €/kWh, 
+    "avg_trade_rate": # average trade price in €/kWh, 
+    "total_traded_energy_kWh": # total energy traded in kWh
     }
 }
 ```
