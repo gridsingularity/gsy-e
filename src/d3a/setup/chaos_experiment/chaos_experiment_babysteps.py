@@ -1,3 +1,4 @@
+# flake8: noqa
 """
 Copyright 2018 Grid Singularity
 This file is part of D3A.
@@ -22,9 +23,11 @@ from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHours
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
+from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
 from d3a_interface.constants_limits import ConstSettings
 
 ConstSettings.IAASettings.MARKET_TYPE = 2
+ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR=False
 
 
 def get_setup(config):
@@ -43,7 +46,7 @@ def get_setup(config):
                     Area('H1 Storage1', strategy=StorageStrategy(initial_soc=100,
                                                                  battery_capacity_kWh=20),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage2', strategy=StorageStrategy(initial_soc=100,
+                    Area('H1 Storage2', strategy=StorageExternalStrategy(initial_soc=100,
                                                                  battery_capacity_kWh=20),
                          appliance=SwitchableAppliance()),
                 ],
@@ -51,12 +54,21 @@ def get_setup(config):
             Area(
                 'House 2',
                 [
-                    Area('load', strategy=LoadHoursExternalStrategy(
+                    Area('Green Load 1', strategy=LoadHoursExternalStrategy(
                         avg_power_W=200, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
                         final_buying_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('pv', strategy=PVExternalStrategy(panel_count=4),
+                    Area('Green Load 5', strategy=LoadHoursExternalStrategy(
+                        avg_power_W=200, hrs_per_day=20, hrs_of_day=list(range(2, 22)),
+                        final_buying_rate=35),
+                         appliance=SwitchableAppliance()),
+                    Area('Green PV 1', strategy=PVExternalStrategy(panel_count=4),
                          appliance=PVAppliance()),
+                    Area('Green Storage 1', strategy=StorageExternalStrategy(initial_soc=50,
+                                                                          min_allowed_soc=10,
+                                                                          battery_capacity_kWh=5,
+                                                                          max_abs_battery_power_kW=4),
+                         appliance=SwitchableAppliance()),
 
                 ], external_connection_available=True,
             ),
