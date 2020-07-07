@@ -17,10 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import logging
+from d3a.d3a_core.exceptions import MarketException
 from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
-from d3a.d3a_core.singletons import aggregator
 
 
 class StorageExternalMixin(ExternalMixin):
@@ -314,7 +314,7 @@ class StorageExternalMixin(ExternalMixin):
                 self.redis.publish_json(market_event_channel, current_market_info)
 
             if self.is_aggregator_controlled:
-                aggregator.add_batch_market_event(self.device.uuid, current_market_info)
+                self.redis.aggregator.add_batch_market_event(self.device.uuid, current_market_info)
         else:
             super().event_market_cycle()
 
@@ -324,8 +324,8 @@ class StorageExternalMixin(ExternalMixin):
 
     def event_tick(self):
         if self.is_aggregator_controlled:
-            aggregator.consume_all_area_commands(self.device.uuid,
-                                                 self.trigger_aggregator_commands)
+            self.redis.aggregator.consume_all_area_commands(self.device.uuid,
+                                                            self.trigger_aggregator_commands)
 
         if not self.connected and not self.is_aggregator_controlled:
             super().event_tick()
@@ -396,32 +396,98 @@ class StorageExternalMixin(ExternalMixin):
                 "error_message": f"Error when listing offers on area {self.device.name}.",
                 "transaction_id": arguments.get("transaction_id", None)}
 
-    def _offer_aggregator(self, arguments):
+    def _update_offer_aggregator(self, arguments):
         assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
         arguments['seller'] = self.device.name
         arguments['seller_origin'] = self.device.name
-        try:
-            assert arguments['energy'] <= self.state.energy_to_sell_dict[self.market.time_slot]
-            offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
-            offer = self.market.offer(**offer_arguments)
-            self.offers.post(offer, self.market.id)
-            self.state.offered_sell_kWh[self.market.time_slot] = \
-                self.offers.open_offer_energy(self.market.id)
-            self.state.clamp_energy_to_sell_kWh([self.market.time_slot])
+        offer_arguments = {k: v
+                           for k, v in arguments.items()
+                           if k not in ["transaction_id", "type"]}
+
+        open_offers = self.offers.open
+        if len(open_offers) == 0:
             return {
-                "command": "offer",
+                "command": "update_offer", "status": "error",
                 "area_uuid": self.device.uuid,
-                "status": "ready",
-                "offer": offer.to_JSON_string(),
-                "transaction_id": arguments.get("transaction_id", None),
-            }
-        except Exception as e:
-            return {
-                "command": "offer", "status": "error",
-                "area_uuid": self.device.uuid,
-                "error_message": f"Error when handling offer create "
-                                 f"on area {self.device.name} with arguments {arguments}.",
+                "error_message": f"Update offer is only possible if the old offer exist",
                 "transaction_id": arguments.get("transaction_id", None)}
+
+        for offer, iterated_market_id in open_offers.items():
+            iterated_market = self.area.get_future_market_from_id(iterated_market_id)
+            if iterated_market is None:
+                continue
+            try:
+                iterated_market.delete_offer(offer.id)
+                new_offer = iterated_market.offer(**offer_arguments)
+                self.offers.replace(offer, new_offer, iterated_market.id)
+                return {
+                    "command": "update_offer",
+                    "area_uuid": self.device.uuid,
+                    "status": "ready",
+                    "offer": offer.to_JSON_string(),
+                    "transaction_id": arguments.get("transaction_id", None),
+                }
+            except MarketException:
+                continue
+
+    def _offer_aggregator(self, arguments):
+        assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
+        with self.lock:
+            arguments['seller'] = self.device.name
+            arguments['seller_origin'] = self.device.name
+            try:
+                assert arguments['energy'] <= self.state.energy_to_sell_dict[self.market.time_slot]
+                offer = self.market.offer(
+                    price=arguments['price'], energy=arguments['energy'],
+                    seller=arguments['seller'], seller_origin=arguments['seller_origin']
+                )
+                self.offers.post(offer, self.market.id)
+                self.state.offered_sell_kWh[self.market.time_slot] = \
+                    self.offers.open_offer_energy(self.market.id)
+                self.state.clamp_energy_to_sell_kWh([self.market.time_slot])
+                return {
+                    "command": "offer",
+                    "area_uuid": self.device.uuid,
+                    "status": "ready",
+                    "offer": offer.to_JSON_string(),
+                    "transaction_id": arguments.get("transaction_id", None),
+                }
+            except Exception as e:
+                return {
+                    "command": "offer", "status": "error",
+                    "area_uuid": self.device.uuid,
+                    "error_message": f"Error when handling offer create "
+                                     f"on area {self.device.name} with arguments {arguments}.",
+                    "transaction_id": arguments.get("transaction_id", None)}
+
+    def _update_bid_aggregator(self, arguments):
+        assert set(arguments.keys()) == {'price', 'energy', 'type', 'transaction_id'}
+        bid_rate = arguments["price"] / arguments["energy"]
+        with self.lock:
+            existing_bids = list(self.get_posted_bids(self.market))
+            existing_bid_energy = sum([bid.energy for bid in existing_bids])
+
+            for bid in existing_bids:
+                assert bid.buyer == self.owner.name
+                if bid.id in self.market.bids.keys():
+                    bid = self.market.bids[bid.id]
+                self.market.delete_bid(bid.id)
+
+                self.remove_bid_from_pending(self.market.id, bid.id)
+            if len(existing_bids) > 0:
+                updated_bid = self.post_bid(self.market, bid_rate * existing_bid_energy,
+                                            existing_bid_energy, buyer_origin=self.device.name)
+                return {
+                    "command": "update_bid", "status": "ready",
+                    "bid": updated_bid.to_JSON_string(),
+                    "area_uuid": self.device.uuid,
+                    "transaction_id": arguments.get("transaction_id", None)}
+            else:
+                return {
+                    "command": "update_bid", "status": "error",
+                    "area_uuid": self.device.uuid,
+                    "error_message": f"Updated bid would only work if the old exist in market.",
+                    "transaction_id": arguments.get("transaction_id", None)}
 
     def _bid_aggregator(self, arguments):
         try:
