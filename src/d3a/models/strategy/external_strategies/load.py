@@ -22,7 +22,6 @@ from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
-from d3a.d3a_core.singletons import aggregator
 
 
 class LoadExternalMixin(ExternalMixin):
@@ -187,7 +186,7 @@ class LoadExternalMixin(ExternalMixin):
             self.redis.publish_json(market_event_channel, current_market_info)
 
         if self.is_aggregator_controlled:
-            aggregator.add_batch_market_event(self.device.uuid, current_market_info)
+            self.redis.aggregator.add_batch_market_event(self.device.uuid, current_market_info)
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
                            use_market_maker_rate, initial_buying_rate, final_buying_rate):
@@ -206,8 +205,8 @@ class LoadExternalMixin(ExternalMixin):
 
     def event_tick(self):
         if self.is_aggregator_controlled:
-            aggregator.consume_all_area_commands(self.device.uuid,
-                                                 self.trigger_aggregator_commands)
+            self.redis.aggregator.consume_all_area_commands(self.device.uuid,
+                                                            self.trigger_aggregator_commands)
 
         if not self.connected and not self.is_aggregator_controlled:
             super().event_tick()
@@ -233,6 +232,34 @@ class LoadExternalMixin(ExternalMixin):
     def event_market_cycle_prices(self):
         if self.should_use_default_strategy:
             super().event_market_cycle_prices()
+
+    def _update_bid_aggregator(self, arguments):
+        assert set(arguments.keys()) == {'price', 'energy', 'type', 'transaction_id'}
+        bid_rate = arguments["price"] / arguments["energy"]
+        with self.lock:
+            existing_bids = list(self.get_posted_bids(self.market))
+            existing_bid_energy = sum([bid.energy for bid in existing_bids])
+            for bid in existing_bids:
+                assert bid.buyer == self.owner.name
+                if bid.id in self.market.bids.keys():
+                    bid = self.market.bids[bid.id]
+                self.market.delete_bid(bid.id)
+
+                self.remove_bid_from_pending(self.market.id, bid.id)
+            if len(existing_bids) > 0:
+                updated_bid = self.post_bid(self.market, bid_rate * existing_bid_energy,
+                                            existing_bid_energy, buyer_origin=self.device.name)
+                return {
+                    "command": "update_bid", "status": "ready",
+                    "bid": updated_bid.to_JSON_string(),
+                    "area_uuid": self.device.uuid,
+                    "transaction_id": arguments.get("transaction_id", None)}
+            else:
+                return {
+                    "command": "update_bid", "status": "error",
+                    "area_uuid": self.device.uuid,
+                    "error_message": f"Updated bid would only work if the old exist in market.",
+                    "transaction_id": arguments.get("transaction_id", None)}
 
     def _bid_aggregator(self, arguments):
         try:
