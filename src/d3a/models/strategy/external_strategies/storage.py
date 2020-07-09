@@ -421,6 +421,9 @@ class StorageExternalMixin(ExternalMixin):
                     continue
                 try:
                     iterated_market.delete_offer(offer.id)
+                    offer_arguments['energy'] = offer.energy
+                    offer_arguments['price'] = \
+                        (offer_arguments['price'] / offer_arguments['energy']) * offer.energy
                     new_offer = iterated_market.offer(**offer_arguments)
                     self.offers.replace(offer, new_offer, iterated_market.id)
                     return {
