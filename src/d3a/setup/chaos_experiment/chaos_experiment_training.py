@@ -19,7 +19,7 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy
 from d3a.models.strategy.external_strategies.pv import PVUserProfileExternalStrategy
-from d3a.models.strategy.external_strategies.load import LoadProfileExternalStrategy
+from d3a.models.strategy.external_strategies.load import LoadProfileExternalStrategy, LoadHoursExternalStrategy
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
 from random import random
 
@@ -498,17 +498,17 @@ def get_setup(config):
                                 ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
                             ),
 
-                            Area('Vuca Meter 1', strategy=LoadHoursStrategy(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
+                            Area('Vuca Meter 1', strategy=LoadHoursExternalStrategy(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
                                                                               initial_buying_rate=11,
                                                                               final_buying_rate=30),
                                 appliance=SwitchableAppliance()),
 
-                            Area('Green Meter 2', strategy=LoadHoursStrategy(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
+                            Area('Green Meter 2', strategy=LoadHoursExternalStrategy(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
                                                                             initial_buying_rate=11,
                                                                             final_buying_rate=30),
                                 appliance=SwitchableAppliance()),
 
-                            Area('Oli Meter 3', strategy=LoadHoursStrategy(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
+                            Area('Oli Meter 3', strategy=LoadHoursExternalStrategy(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
                                                                             initial_buying_rate=11,
                                                                             final_buying_rate=30),
                                 appliance=SwitchableAppliance()),
