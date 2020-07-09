@@ -37,7 +37,7 @@ def get_setup(config):
                                                                            final_buying_rate=35),
                              appliance=SwitchableAppliance()),
                     ],
-                    grid_fee_percentage=0, transfer_fee_const=0,
+                    grid_fee_percentage=0, grid_fee_constant=0,
                     baseline_peak_energy_import_kWh=0.4
                 ),
                 Area(
@@ -56,7 +56,7 @@ def get_setup(config):
                                                            energy_rate=20),
                                  appliance=PVAppliance()),
                         ],
-                        grid_fee_percentage=0, transfer_fee_const=0,
+                        grid_fee_percentage=0, grid_fee_constant=0,
                         baseline_peak_energy_export_kWh=0.3
 
                     ),

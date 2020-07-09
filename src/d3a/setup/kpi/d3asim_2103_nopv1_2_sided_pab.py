@@ -32,7 +32,7 @@ def get_setup(config):
                                 final_buying_rate=30,
                                 fit_to_limit=True),
                                  appliance=SwitchableAppliance()),
-                        ], grid_fee_percentage=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
                         'House 2',
@@ -51,7 +51,7 @@ def get_setup(config):
                                 final_selling_rate=19.8,
                                 fit_to_limit=True),
                                  appliance=PVAppliance()),
-                        ], grid_fee_percentage=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
                         'House 3',
@@ -70,17 +70,17 @@ def get_setup(config):
                                 final_selling_rate=19.8,
                                 fit_to_limit=True),
                                  appliance=PVAppliance()),
-                        ], grid_fee_percentage=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
 
 
 
-                ], grid_fee_percentage=1, transfer_fee_const=0,
+                ], grid_fee_percentage=1, grid_fee_constant=0,
             ),
             Area('DSO', strategy=InfiniteBusStrategy(energy_buy_rate=19.9, energy_sell_rate=30),
                  appliance=SimpleAppliance()),
 
         ],
-        config=config, grid_fee_percentage=0, transfer_fee_const=0,
+        config=config, grid_fee_percentage=0, grid_fee_constant=0,
     )
     return area

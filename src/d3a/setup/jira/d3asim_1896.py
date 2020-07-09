@@ -54,7 +54,7 @@ def get_setup(config):
                                 update_interval=1
                             ), appliance=SwitchableAppliance())
 
-                        ], grid_fee_percentage=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                 ],),
             Area('DSO', strategy=InfiniteBusStrategy(energy_sell_rate=15,
