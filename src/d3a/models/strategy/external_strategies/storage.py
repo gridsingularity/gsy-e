@@ -400,37 +400,38 @@ class StorageExternalMixin(ExternalMixin):
 
     def _update_offer_aggregator(self, arguments):
         assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
-        arguments['seller'] = self.device.name
-        arguments['seller_origin'] = self.device.name
-        offer_arguments = {k: v
-                           for k, v in arguments.items()
-                           if k not in ["transaction_id", "type"]}
+        with self.lock:
+            arguments['seller'] = self.device.name
+            arguments['seller_origin'] = self.device.name
+            offer_arguments = {k: v
+                               for k, v in arguments.items()
+                               if k not in ["transaction_id", "type"]}
 
-        open_offers = self.offers.open
-        if len(open_offers) == 0:
-            return {
-                "command": "update_offer", "status": "error",
-                "area_uuid": self.device.uuid,
-                "error_message": f"Update offer is only possible if the old offer exist",
-                "transaction_id": arguments.get("transaction_id", None)}
-
-        for offer, iterated_market_id in open_offers.items():
-            iterated_market = self.area.get_future_market_from_id(iterated_market_id)
-            if iterated_market is None:
-                continue
-            try:
-                iterated_market.delete_offer(offer.id)
-                new_offer = iterated_market.offer(**offer_arguments)
-                self.offers.replace(offer, new_offer, iterated_market.id)
+            open_offers = self.offers.open
+            if len(open_offers) == 0:
                 return {
-                    "command": "update_offer",
+                    "command": "update_offer", "status": "error",
                     "area_uuid": self.device.uuid,
-                    "status": "ready",
-                    "offer": offer.to_JSON_string(),
-                    "transaction_id": arguments.get("transaction_id", None),
-                }
-            except MarketException:
-                continue
+                    "error_message": f"Update offer is only possible if the old offer exist",
+                    "transaction_id": arguments.get("transaction_id", None)}
+
+            for offer, iterated_market_id in open_offers.items():
+                iterated_market = self.area.get_future_market_from_id(iterated_market_id)
+                if iterated_market is None:
+                    continue
+                try:
+                    iterated_market.delete_offer(offer.id)
+                    new_offer = iterated_market.offer(**offer_arguments)
+                    self.offers.replace(offer, new_offer, iterated_market.id)
+                    return {
+                        "command": "update_offer",
+                        "area_uuid": self.device.uuid,
+                        "status": "ready",
+                        "offer": offer.to_JSON_string(),
+                        "transaction_id": arguments.get("transaction_id", None),
+                    }
+                except MarketException:
+                    continue
 
     def _offer_aggregator(self, arguments):
         assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
