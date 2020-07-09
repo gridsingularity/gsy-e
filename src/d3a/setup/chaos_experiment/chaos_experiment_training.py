@@ -92,7 +92,7 @@ def get_setup(config):
                                                                                        final_buying_rate=bat_final_buy_rate,
                                                                                        ),
                                          appliance=SwitchableAppliance()),
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H2',
@@ -117,7 +117,7 @@ def get_setup(config):
                                                                                        final_buying_rate=bat_final_buy_rate,
                                                                                        ),
                                          appliance=SwitchableAppliance()),
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'Vuca H3',
@@ -131,7 +131,7 @@ def get_setup(config):
                                                                                         initial_selling_rate=PV_initial,
                                                                                         final_selling_rate=PV_final),
                                          appliance=PVAppliance()),
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'Vuca H4',
@@ -156,7 +156,7 @@ def get_setup(config):
                                                                                        final_buying_rate=bat_final_buy_rate,
                                                                                        ),
                                          appliance=SwitchableAppliance()),
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'Green H5',
@@ -180,7 +180,7 @@ def get_setup(config):
                                                                                        final_buying_rate=bat_final_buy_rate,
                                                                                        ),
                                          appliance=SwitchableAppliance()),
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H6',
@@ -191,7 +191,7 @@ def get_setup(config):
                                          appliance=SwitchableAppliance()),
 
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H7',
@@ -216,7 +216,7 @@ def get_setup(config):
                                                                                        final_buying_rate=bat_final_buy_rate,
                                                                                        ),
                                          appliance=SwitchableAppliance()),
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'Green H8',
@@ -232,7 +232,7 @@ def get_setup(config):
                                          appliance=PVAppliance()),
 
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H10',
@@ -257,7 +257,7 @@ def get_setup(config):
                                                                                         final_buying_rate=bat_final_buy_rate,
                                                                                         ),
                                          appliance=SwitchableAppliance()),
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'Oli H11',
@@ -282,7 +282,7 @@ def get_setup(config):
                                                                                         final_buying_rate=bat_final_buy_rate,
                                                                                         ),
                                          appliance=SwitchableAppliance()),
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'Oli H12',
@@ -296,7 +296,7 @@ def get_setup(config):
                                                                                          initial_selling_rate=PV_initial,
                                                                                          final_selling_rate=PV_final),
                                          appliance=PVAppliance()),
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H13',
@@ -306,7 +306,7 @@ def get_setup(config):
                                                                                          final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H14',
@@ -321,7 +321,7 @@ def get_setup(config):
                                                                                          final_selling_rate=PV_final),
                                          appliance=PVAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'Oli H15',
@@ -331,7 +331,7 @@ def get_setup(config):
                                                                                          final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H16',
@@ -356,7 +356,7 @@ def get_setup(config):
                                                                                         final_buying_rate=bat_final_buy_rate,
                                                                                         ),
                                          appliance=SwitchableAppliance()),
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H17',
@@ -371,7 +371,7 @@ def get_setup(config):
                                                                                          final_selling_rate=PV_final),
                                          appliance=PVAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'Oli H18',
@@ -396,7 +396,7 @@ def get_setup(config):
                                                                                         final_buying_rate=bat_final_buy_rate,
                                                                                         ),
                                          appliance=SwitchableAppliance()),
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H19',
@@ -415,7 +415,7 @@ def get_setup(config):
                                                                                           initial_selling_rate=PV_initial,
                                                                                           final_selling_rate=PV_final),
                                          appliance=PVAppliance()),
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H20',
@@ -434,7 +434,7 @@ def get_setup(config):
                                                                                           initial_selling_rate=PV_initial,
                                                                                           final_selling_rate=PV_final),
                                          appliance=PVAppliance()),
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'Green H21',
@@ -444,7 +444,7 @@ def get_setup(config):
                                                                                          final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'Vuca H22',
@@ -454,7 +454,7 @@ def get_setup(config):
                                                                                          final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H24',
@@ -470,7 +470,7 @@ def get_setup(config):
                                          appliance=PVAppliance()),
 
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'Vuca H25',
@@ -495,7 +495,7 @@ def get_setup(config):
                                                                                         final_buying_rate=bat_final_buy_rate,
                                                                                         ),
                                          appliance=SwitchableAppliance()),
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
 
                             Area('Vuca Meter 1', strategy=LoadHoursStrategy(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
@@ -513,7 +513,7 @@ def get_setup(config):
                                                                             final_buying_rate=30),
                                 appliance=SwitchableAppliance()),
 
-                        ], grid_fee_percentage=0, transfer_fee_const=4, external_connection_available=True
+                        ], grid_fee_percentage=0, grid_fee_constant=4, external_connection_available=True
                     ),
                     Area(
                         'Community B',
@@ -526,7 +526,7 @@ def get_setup(config):
                                                                                          final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H2b',
@@ -536,7 +536,7 @@ def get_setup(config):
                                                                                          final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H3b',
@@ -546,7 +546,7 @@ def get_setup(config):
                                                                                          final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H4b',
@@ -556,7 +556,7 @@ def get_setup(config):
                                                                                          final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H5b',
@@ -566,7 +566,7 @@ def get_setup(config):
                                                                                          final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H6b',
@@ -576,7 +576,7 @@ def get_setup(config):
                                                                                          final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H7b',
@@ -586,7 +586,7 @@ def get_setup(config):
                                                                                          final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H8b',
@@ -596,7 +596,7 @@ def get_setup(config):
                                                                                          final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H10b',
@@ -607,7 +607,7 @@ def get_setup(config):
                                                                               final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H11b',
@@ -618,7 +618,7 @@ def get_setup(config):
                                                                               final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H12b',
@@ -629,7 +629,7 @@ def get_setup(config):
                                                                               final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H13b',
@@ -640,7 +640,7 @@ def get_setup(config):
                                                                               final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H14b',
@@ -651,7 +651,7 @@ def get_setup(config):
                                                                               final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H15b',
@@ -662,7 +662,7 @@ def get_setup(config):
                                                                               final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H16b',
@@ -673,7 +673,7 @@ def get_setup(config):
                                                                               final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H17b',
@@ -684,7 +684,7 @@ def get_setup(config):
                                                                               final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H18b',
@@ -695,7 +695,7 @@ def get_setup(config):
                                                                               final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H19b',
@@ -706,7 +706,7 @@ def get_setup(config):
                                                                               final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H20b',
@@ -717,7 +717,7 @@ def get_setup(config):
                                                                               final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H21b',
@@ -728,7 +728,7 @@ def get_setup(config):
                                                                               final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H22b',
@@ -739,7 +739,7 @@ def get_setup(config):
                                                                               final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H24b',
@@ -750,7 +750,7 @@ def get_setup(config):
                                                                               final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
                             Area(
                                 'H25b',
@@ -761,9 +761,9 @@ def get_setup(config):
                                                                               final_buying_rate=Houses_final_buying_rate),
                                          appliance=SwitchableAppliance()),
 
-                                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                             ),
-                        ], grid_fee_percentage=0, transfer_fee_const=4, external_connection_available=True
+                        ], grid_fee_percentage=0, grid_fee_constant=4, external_connection_available=True
                     ),
                 ]
             ),
@@ -779,6 +779,6 @@ def get_setup(config):
 
 
         ],
-        config=config, grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=False
+        config=config, grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=False
     )
     return area

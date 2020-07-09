@@ -65,10 +65,10 @@ class RedisMarketExternalConnection:
                       grid_fee_constant=payload_data.get("fee_const", None))
         if "fee_const" in payload_data and payload_data["fee_const"] is not None and \
                 self.area.config.grid_fee_type == 1:
-            self.area.transfer_fee_const = payload_data["fee_const"]
+            self.area.grid_fee_constant = payload_data["fee_const"]
             self.redis_db.publish_json(grid_fees_response_channel, {
                 "status": "ready", "command": "grid_fees",
-                "market_fee_const": str(self.area.transfer_fee_const),
+                "market_fee_const": str(self.area.grid_fee_constant),
                 "transaction_id": payload_data.get("transaction_id", None)}
              )
         elif "fee_percent" in payload_data and payload_data["fee_percent"] is not None and \
@@ -94,7 +94,7 @@ class RedisMarketExternalConnection:
                    "market_stats":
                        self.area.stats.get_market_stats(payload_data["market_slots"]),
                    "fee_type": str(self.area.config.grid_fee_type),
-                   "market_fee_const": str(self.area.transfer_fee_const),
+                   "market_fee_const": str(self.area.grid_fee_constant),
                    "market_fee_percent": str(self.area.grid_fee_percentage),
                    "transaction_id": payload_data.get("transaction_id", None)}
         self.redis_db.publish_json(dso_market_stats_response_channel, ret_val)
@@ -108,7 +108,7 @@ class RedisMarketExternalConnection:
             self.area.stats.get_price_stats_current_market()
         current_market_info["self_sufficiency"] = \
             self.area.endpoint_stats["kpi"].get("self_sufficiency", None)
-        current_market_info["market_fee"] = self.area.transfer_fee_const
+        current_market_info["market_fee"] = self.area.grid_fee_constant
         data = {"status": "ready",
                 "event": "market",
                 "market_info": current_market_info}

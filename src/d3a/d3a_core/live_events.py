@@ -49,6 +49,7 @@ class UpdateAreaEvent:
             return False
 
         area.area_reconfigure_event(**self.area_params)
+
         return True
 
     def __repr__(self):

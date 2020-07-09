@@ -123,7 +123,7 @@ class AreaMarkets:
                     notification_listener=area.dispatcher.broadcast_callback,
                     grid_fee_type=area.config.grid_fee_type,
                     transfer_fees=TransferFees(grid_fee_percentage=area.grid_fee_percentage,
-                                               transfer_fee_const=area.transfer_fee_const),
+                                               transfer_fee_const=area.grid_fee_constant),
                     name=area.name,
                     in_sim_duration=is_timeslot_in_simulation_duration(area.config, timeframe)
                 )
