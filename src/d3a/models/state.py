@@ -244,11 +244,13 @@ class StorageState:
         Simulate actual Energy flow by removing pledged storage and added bought energy to the
         used_storage
         """
-        self._used_storage -= self.pledged_sell_kWh[past_time_slot]
-        self._used_storage += self.pledged_buy_kWh[past_time_slot]
+        if past_time_slot:
+            self._used_storage -= self.pledged_sell_kWh[past_time_slot]
+            self._used_storage += self.pledged_buy_kWh[past_time_slot]
 
         self.calculate_soc_for_time_slot(time_slot)
         self.offered_history[time_slot] = self.offered_sell_kWh[time_slot]
 
-        for energy_type in self._used_storage_share:
-            self.time_series_ess_share[past_time_slot][energy_type.origin] += energy_type.value
+        if past_time_slot:
+            for energy_type in self._used_storage_share:
+                self.time_series_ess_share[past_time_slot][energy_type.origin] += energy_type.value
