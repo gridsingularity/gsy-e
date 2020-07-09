@@ -298,8 +298,10 @@ class StorageExternalMixin(ExternalMixin):
         self.register_on_market_cycle()
         if not self.should_use_default_strategy:
             self._reset_event_tick_counter()
-            self.state.market_cycle(self.market_area.current_market.time_slot,
-                                    self.market.time_slot)
+            self.state.market_cycle(
+                self.market_area.current_market.time_slot
+                if self.market_area.current_market else None,
+                self.market.time_slot)
             self.state.clamp_energy_to_sell_kWh([self.market.time_slot])
             self.state.clamp_energy_to_buy_kWh([self.market.time_slot])
             market_event_channel = f"{self.channel_prefix}/events/market"
