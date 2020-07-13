@@ -62,15 +62,16 @@ class AggregatorHandler:
 
     def _select_aggregator(self, message):
         if message['aggregator_uuid'] not in self.aggregator_device_mapping:
-            msg = f"{message['aggregator_uuid']} aggregator not found."
-            error_response_message = {
-                "status": "error", "aggregator_uuid": message['aggregator_uuid'],
+            self.aggregator_device_mapping[message['aggregator_uuid']] = []
+            self.aggregator_device_mapping[message['aggregator_uuid']].\
+                append(message['device_uuid'])
+            self.device_aggregator_mapping[message['device_uuid']] = message['aggregator_uuid']
+            success_response_message = {
+                "status": "SELECTED", "aggregator_uuid": message['aggregator_uuid'],
                 "device_uuid": message['device_uuid'],
-                "transaction_id": message['transaction_id'],
-                "msg": msg
-            }
+                "transaction_id": message['transaction_id']}
             self.redis_db.publish(
-                "aggregator_response", json.dumps(error_response_message)
+                "aggregator_response", json.dumps(success_response_message)
             )
         elif message['device_uuid'] in self.device_aggregator_mapping:
             msg = f"Device already have selected " \
