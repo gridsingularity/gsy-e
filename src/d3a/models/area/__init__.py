@@ -59,10 +59,6 @@ DEFAULT_CONFIG = SimulationConfig(
 
 class Area:
 
-    reconfig_parameters = ('grid_fee_percentage', 'transfer_fee_const',
-                           'baseline_peak_energy_import_kWh', 'baseline_peak_energy_export_kWh',
-                           'import_capacity_kVA', 'export_capacity_kVA')
-
     def __init__(self, name: str = None, children: List["Area"] = None,
                  uuid: str = None,
                  strategy: BaseStrategy = None,
@@ -72,14 +68,14 @@ class Area:
                  balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
                  event_list=[],
                  grid_fee_percentage: float = None,
-                 transfer_fee_const: float = None,
+                 grid_fee_constant: float = None,
                  external_connection_available: bool = False,
                  baseline_peak_energy_import_kWh: float = None,
                  baseline_peak_energy_export_kWh: float = None,
                  import_capacity_kVA: float = None,
                  export_capacity_kVA: float = None
                  ):
-        validate_area(grid_fee_constant=transfer_fee_const,
+        validate_area(grid_fee_constant=grid_fee_constant,
                       grid_fee_percentage=grid_fee_percentage,
                       baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
                       baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
@@ -111,7 +107,7 @@ class Area:
         self._bc = None
         self._markets = None
         self.dispatcher = DispatcherFactory(self)()
-        self._set_grid_fees(transfer_fee_const, grid_fee_percentage)
+        self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
         self._convert_area_throughput_kva_to_kwh(import_capacity_kVA, export_capacity_kVA)
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self._markets = AreaMarkets(self.log)
@@ -125,15 +121,16 @@ class Area:
         if self.strategy is not None:
             self.strategy.area_reconfigure_event(**kwargs)
             return
-        if key_in_dict_and_not_none(kwargs, 'transfer_fee_const') or \
+        if key_in_dict_and_not_none(kwargs, 'grid_fee_constant') or \
                 key_in_dict_and_not_none(kwargs, 'grid_fee_percentage'):
-            transfer_fee_const = kwargs["transfer_fee_const"] \
-                if key_in_dict_and_not_none(kwargs, 'transfer_fee_const') else None
+            grid_fee_constant = kwargs["grid_fee_constant"] \
+                if key_in_dict_and_not_none(kwargs, 'grid_fee_constant') else None
             grid_fee_percentage = kwargs["grid_fee_percentage"] \
                 if key_in_dict_and_not_none(kwargs, 'grid_fee_percentage') else None
+
             validate_area(grid_fee_percentage=grid_fee_percentage,
-                          grid_fee_constant=transfer_fee_const)
-            self._set_grid_fees(transfer_fee_const, grid_fee_percentage)
+                          grid_fee_constant=grid_fee_constant)
+            self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
 
         if key_in_dict_and_not_none(kwargs, 'baseline_peak_energy_import_kWh'):
             self.baseline_peak_energy_import_kWh = kwargs['baseline_peak_energy_import_kWh']
@@ -160,7 +157,7 @@ class Area:
             grid_fee_percentage = None
         elif grid_fee_type == 2:
             transfer_fee_const = None
-        self.transfer_fee_const = transfer_fee_const
+        self.grid_fee_constant = transfer_fee_const
         self.grid_fee_percentage = grid_fee_percentage
 
     def _convert_area_throughput_kva_to_kwh(self, import_capacity_kVA, export_capacity_kVA):

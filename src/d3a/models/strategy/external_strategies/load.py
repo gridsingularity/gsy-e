@@ -170,23 +170,23 @@ class LoadExternalMixin(ExternalMixin):
     def event_market_cycle(self):
         self._reject_all_pending_requests()
         self.register_on_market_cycle()
-        super().event_market_cycle()
-        if self.should_use_default_strategy:
-            return
-        self._reset_event_tick_counter()
-        market_event_channel = f"{self.channel_prefix}/events/market"
-        current_market_info = self.market.info
-        current_market_info['device_info'] = self._device_info_dict
-        current_market_info["event"] = "market"
-        current_market_info["area_uuid"] = self.device.uuid
-        current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"]
-        current_market_info['last_market_stats'] = \
-            self.market_area.stats.get_price_stats_current_market()
-        if self.connected:
-            self.redis.publish_json(market_event_channel, current_market_info)
+        if not self.should_use_default_strategy:
+            self._reset_event_tick_counter()
+            market_event_channel = f"{self.channel_prefix}/events/market"
+            current_market_info = self.market.info
+            current_market_info['device_info'] = self._device_info_dict
+            current_market_info["event"] = "market"
+            current_market_info["area_uuid"] = self.device.uuid
+            current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"]
+            current_market_info['last_market_stats'] = \
+                self.market_area.stats.get_price_stats_current_market()
+            if self.connected:
+                self.redis.publish_json(market_event_channel, current_market_info)
 
-        if self.is_aggregator_controlled:
-            self.redis.aggregator.add_batch_market_event(self.device.uuid, current_market_info)
+            if self.is_aggregator_controlled:
+                self.redis.aggregator.add_batch_market_event(self.device.uuid, current_market_info)
+        else:
+            super().event_market_cycle()
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
                            use_market_maker_rate, initial_buying_rate, final_buying_rate):
@@ -199,9 +199,9 @@ class LoadExternalMixin(ExternalMixin):
         if not self.connected:
             super().event_activate_price()
 
-    def _area_reconfigure_prices(self, final_buying_rate):
+    def _area_reconfigure_prices(self, **kwargs):
         if self.should_use_default_strategy:
-            super()._area_reconfigure_prices(final_buying_rate=final_buying_rate)
+            super()._area_reconfigure_prices(**kwargs)
 
     def event_tick(self):
         if self.is_aggregator_controlled:
