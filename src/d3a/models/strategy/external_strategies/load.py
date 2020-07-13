@@ -199,9 +199,9 @@ class LoadExternalMixin(ExternalMixin):
         if not self.connected:
             super().event_activate_price()
 
-    def _area_reconfigure_prices(self, final_buying_rate):
+    def _area_reconfigure_prices(self, **kwargs):
         if self.should_use_default_strategy:
-            super()._area_reconfigure_prices(final_buying_rate=final_buying_rate)
+            super()._area_reconfigure_prices(**kwargs)
 
     def event_tick(self):
         if self.is_aggregator_controlled:
