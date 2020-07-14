@@ -111,10 +111,17 @@ def start(scenario, settings, events, aggregator_device_mapping):
                   "pricing_scheme": 0,
                   "seed": settings.get('random_seed', 0)}
 
+        slowdown_factor = environ.get('D3A_SLOWDOWN_FACTOR', None)
+
+        if slowdown_factor is None:
+            slowdown_factor = settings.get('slowdown', 0)
+        else:
+            slowdown_factor = float(slowdown_factor)
+
         run_simulation(setup_module_name=scenario_name,
                        simulation_config=config,
                        simulation_events=events,
-                       slowdown=settings.get('slowdown', 0),
+                       slowdown=slowdown_factor,
                        redis_job_id=job.id,
                        kwargs=kwargs)
     except Exception:
