@@ -6,7 +6,9 @@ import d3a.constants
 
 class AggregatorHandler:
 
-    def __init__(self):
+    def __init__(self, redis_db):
+        self.redis_db = redis_db
+        self.pubsub = self.redis_db.pubsub()
         self.pending_batch_commands = {}
         self.processing_batch_commands = {}
         self.responses_batch_commands = {}
@@ -48,6 +50,88 @@ class AggregatorHandler:
 
     def add_batch_finished_event(self, device_uuid, event):
         self._add_batch_event(device_uuid, event, self.batch_finished_events)
+
+    def aggregator_callback(self, payload):
+        message = json.loads(payload["data"])
+        if message["type"] == "CREATE":
+            self._create_aggregator(message)
+        elif message["type"] == "DELETE":
+            self._delete_aggregator(message)
+        elif message["type"] == "SELECT":
+            self._select_aggregator(message)
+
+    def _select_aggregator(self, message):
+        if message['aggregator_uuid'] not in self.aggregator_device_mapping:
+            self.aggregator_device_mapping[message['aggregator_uuid']] = []
+            self.aggregator_device_mapping[message['aggregator_uuid']].\
+                append(message['device_uuid'])
+            self.device_aggregator_mapping[message['device_uuid']] = message['aggregator_uuid']
+            success_response_message = {
+                "status": "SELECTED", "aggregator_uuid": message['aggregator_uuid'],
+                "device_uuid": message['device_uuid'],
+                "transaction_id": message['transaction_id']}
+            self.redis_db.publish(
+                "aggregator_response", json.dumps(success_response_message)
+            )
+        elif message['device_uuid'] in self.device_aggregator_mapping:
+            msg = f"Device already have selected " \
+                  f"{self.device_aggregator_mapping[message['device_uuid']]}"
+            error_response_message = {
+                "status": "error", "aggregator_uuid": message['aggregator_uuid'],
+                "device_uuid": message['device_uuid'],
+                "transaction_id": message['transaction_id'],
+                "msg": msg
+            }
+            self.redis_db.publish(
+                "aggregator_response", json.dumps(error_response_message)
+            )
+        else:
+            self.aggregator_device_mapping[message['aggregator_uuid']].\
+                append(message['device_uuid'])
+            self.device_aggregator_mapping[message['device_uuid']] = message['aggregator_uuid']
+            success_response_message = {
+                "status": "SELECTED", "aggregator_uuid": message['aggregator_uuid'],
+                "device_uuid": message['device_uuid'],
+                "transaction_id": message['transaction_id']}
+            self.redis_db.publish(
+                "aggregator_response", json.dumps(success_response_message)
+            )
+
+    def _create_aggregator(self, message):
+        if message['transaction_id'] not in self.aggregator_device_mapping:
+            with self.lock:
+                self.aggregator_device_mapping[message['transaction_id']] = []
+            success_response_message = {
+                "status": "ready", "name": message['name'],
+                "transaction_id": message['transaction_id']}
+            self.redis_db.publish(
+                "aggregator_response", json.dumps(success_response_message)
+            )
+
+        else:
+            error_response_message = {
+                "status": "error", "aggregator_uuid": message['transaction_id'],
+                "transaction_id": message['transaction_id']}
+            self.redis_db.publish(
+                "aggregator_response", json.dumps(error_response_message)
+            )
+
+    def _delete_aggregator(self, message):
+        if message['aggregator_uuid'] in self.aggregator_device_mapping:
+            del self.aggregator_device_mapping[message['aggregator_uuid']]
+            success_response_message = {
+                "status": "deleted", "aggregator_uuid": message['aggregator_uuid'],
+                "transaction_id": message['transaction_id']}
+            self.redis_db.publish(
+                "aggregator_response", json.dumps(success_response_message)
+            )
+        else:
+            error_response_message = {
+                "status": "error", "aggregator_uuid": message['aggregator_uuid'],
+                "transaction_id": message['transaction_id']}
+            self.redis_db.publish(
+                "aggregator_response", json.dumps(error_response_message)
+            )
 
     def receive_batch_commands_callback(self, payload):
         batch_command_message = json.loads(payload["data"])

@@ -47,7 +47,6 @@ from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
-from d3a.d3a_core.singletons import aggregator
 import os
 import psutil
 import gc
@@ -288,7 +287,7 @@ class Simulation:
         tick_lengths_s = config.tick_length.total_seconds()
         slot_count = int(config.sim_duration / config.slot_length)
 
-        self.simulation_config.external_redis_communicator.sub_to_aggregator(aggregator)
+        self.simulation_config.external_redis_communicator.sub_to_aggregator()
         self.simulation_config.external_redis_communicator.start_communication()
         self._update_and_send_results()
         for slot_no in range(slot_resume, slot_count):
@@ -334,12 +333,12 @@ class Simulation:
                 )
 
                 self.simulation_config.external_redis_communicator.\
-                    approve_aggregator_commands(aggregator)
+                    approve_aggregator_commands()
 
                 self.area.tick_and_dispatch()
 
                 self.simulation_config.external_redis_communicator.\
-                    publish_aggregator_commands_responses_events(aggregator)
+                    publish_aggregator_commands_responses_events()
 
                 realtime_tick_length = time.time() - tick_start
                 if self.slowdown and realtime_tick_length < tick_lengths_s:

@@ -12,7 +12,7 @@ nav:
     - 'Simulation Configuration':
         - 'Simulation Configuration Overview': 'simulation-configuration.md'
         - 'General Settings': 'general-settings.md'
-        - 'Grid Setup':
+        - 'Grid Modelling':
             - 'Initial Grid Setup': 'grid-setup.md'
             - 'PV': 'pv.md'
             - 'Storage': 'storage.md'
@@ -22,6 +22,7 @@ nav:
             - 'Areas': 'areas.md'
         - 'Libraries': 'libraries.md'
         - 'Upload File Formats': 'upload-file-formats.md'
+        - 'Events': 'events.md'
     - 'Results': 'results.md'
 - 'Backend Codebase':
     - 'Backend Codebase Overview': 'backend-codebase.md'
@@ -56,6 +57,7 @@ nav:
     - 'Simulation Results':
         - 'Simulation Results Overview': 'simulation-results.md'
         - 'Bills': 'bills.md'
+        - 'Key Performance Indicators (KPIs)': 'kpis.md'
     - 'Alternative Pricing Schemes': 'alternative-pricing-schemes.md'
     - 'How to Configure Grid Transfer Fee': 'configure-transfer-fee.md'
     - 'Simulation Events': 'simulation-events.md'
@@ -67,7 +69,6 @@ nav:
         - 'Mac': 'ios-installation-instructions.md'
         - 'Virtual Machine': 'installation-instructions-vm.md'
         - 'Version Updates': 'version-update.md'
-    - 'Key Performance Indicators (KPIs)': 'kpis.md'
 - API: 'api.md'
 - FAQ: 'faq.md'
 - FAQ Odyssey hackathon: 'faq-odyssey.md'

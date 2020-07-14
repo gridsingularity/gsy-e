@@ -2,13 +2,13 @@
 
 ![img](img/results-1.png)
 
-The D3A allows energy devices to trade inside energy markets. During trading, the user can view what is happening at the energy device level and at the market level. 
+The D3A allows energy resources to trade inside energy markets. During trading, the user can view what is happening at the energy resource level and at the market level. 
 
 Since a D3A grid is build up into a hierarchy of multiple markets, we use a folder structure to navigate through the grid simulation results. 
 
 The user can select a **market**, which brings the user to the result page of this specific market;
 
-or, you can select a **device** (located inside a market) to bring the user to the results page of this specific device.
+or, you can select an **energy resource** (located inside a market) to bring the user to the results page of this specific energy resource.
 
 In the above figure, the community market is selected.
 
@@ -18,15 +18,15 @@ In the above figure, the community market is selected.
 
 When selecting a market, the results page will show you various relevant plots and tables. You also have the possibility to select which one you want to view/hide (by default all of them are visible). This section will discuss each of these results.
 
-![img](img/results-9.png){:style="height:350px;width:220px"}
+![img](img/results-15.png){:style="height:450px;width:230px"}
 
 ### Energy Availability
 
 ![img](img/results-2.png)
 
-This plot shows whether or not each energy device inside the selected market had access to the energy it needed. On the x-axis, the time is given. If the participating agent was able to get the energy it wants, at a certain time, the block at that time will appear green. If not, it will appear purple.
+This plot shows whether or not each energy resource inside the selected market had access to the energy it needed. On the x-axis, the time is given. If the participating agent was able to get the energy it wants, at a certain time, the block at that time will appear green. If not, it will appear purple.
 
-The granularity of the plot is 1 hour, so if there has been a trade interval (possibly <1 hour length) within the hour in which the agent was not able to buy the demanded energy, the whole block will turn purple. The user can hover over a purple block to see a list of the devices not able to buy for that time slot.
+The granularity of the plot is 1 hour, so if there has been a trade interval (possibly <1 hour length) within the hour in which the agent was not able to buy the demanded energy, the whole block will turn purple. The user can hover over a purple block to see a list of the energy resources not able to buy for that time slot.
 
 ### Self sufficiency and consumption
 
@@ -38,7 +38,7 @@ These 2 pie charts shows the Self Sufficiency and Self Consumption of the select
 
 ![img](img/results-3.png)
 
-This plot shows the total trade volumes that have been traded between market participants in the selected market over the simulation's duration. Market participants are the agents (representing a device or an area) immediately inside the selected market.
+This plot shows the total trade volumes that have been traded between market participants in the selected market over the simulation's duration. Market participants are the agents (representing an energy resource or an area) immediately inside the selected market.
 
 Each bar has its own color to represent its sold energy. Energy sold is negative and energy bought is positive. In this example, the energy sold by House 1 is purple. House 1 also has a positive purple bar, meaning that it bought some of its own energy production. The rest of its energy production was sold as the thin purple layer shown in the bar of the other market participants. By using this color coding, the user can visually track how energy has flowed in a specific market.
 
@@ -50,7 +50,7 @@ The external trades represent energy produced in this market, but sold to an out
 
 The energy bills provide information on the cumulative trade volumes of all market participants and the costs associated with these trades. For each agent, including the external trades, the energy bought and sold during the simulation is listed, along with a total net consumption.
 
-The *Totals* column can be considered as the net energy consumption and final bill to the listed agent, which may represent a device or an area of ownership.
+The *Totals* column can be considered as the net energy consumption and final bill to the listed agent, which may represent an energy resource or an area of ownership.
 
 *External Trades* represents the import/export from/to a higher level market by the inter-area agent of the selected market, and hence represents the difference between energy traded inside the community and the total accumulated trades.
 
@@ -74,13 +74,19 @@ On this plot 2 lines are shown : the *current peak imports* and the *current pea
 
 ### Energy pricing
 
-![img](img/results-6.png)
+![img](img/results-16.png)
 
 In this plot, energy pricing is shown. In case of multiple clearing moments within a market interval (depending on market design and grid configuration), there could be different prices for different trades in the market interval. In this case, an average of the trade price is shown.  
 
 In addition, the minimum and maximum price on that time of the day for all days of simulation is provided.
 
 If there was no trade happening during a certain market interval, the price is set to zero at that time. 
+
+### Bids, Offers, and Trades per Market Slot
+
+In this plot every [bids, offers](how-strategies-adjust-prices.md) and trades posted in the selected market is shown according to their posting time. With this graph the user can understand why specific offers/bids were matched or not and thus adapt their trading strategy. The range of this graph is the [market slot](market-slots-and-ticks.md) length (15 minutes by default). Every market slots of the simulation can be selected with the drop down (days) and the slider (hours & minutes). 
+
+![img](img/results-14.png)
 
 ## Compare results
 

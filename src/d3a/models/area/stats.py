@@ -47,9 +47,10 @@ class AreaStats:
     def update_area_market_stats(self):
         if self.current_market is not None:
             self.market_bills[self.current_market.time_slot] = \
-                {key: self.aggregated_stats["bills"]['Accumulated Trades'][key]
+                {key: self.aggregated_stats["bills"]["Accumulated Trades"][key]
                  for key in ["earned", "spent", "bought", "sold"]} \
-                if "bills" in self.aggregated_stats else None
+                if "bills" in self.aggregated_stats \
+                   and "Accumulated Trades" in self.aggregated_stats["bills"] else None
             self.rate_stats_market[self.current_market.time_slot] = \
                 self.min_max_avg_median_rate_current_market()
             # TODO: This accumulation of trade data could potentially also used for the
@@ -126,8 +127,9 @@ class AreaStats:
         market_timeslots = [m.time_slot for m in self._markets.all_spot_markets]
         if slot in market_timeslots:
             market.set_actual_energy(time, reporter, value)
-        else:
-            raise RuntimeError("Reporting energy for unknown market")
+        # TODO: Raise of RuntimeError disabled for bug in DeleteAreaEvent (D3ASIM-2560)
+        # else:
+        #     raise RuntimeError("Reporting energy for unknown market")
 
     @property
     def cheapest_offers(self):

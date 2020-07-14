@@ -18,11 +18,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import logging
 import traceback
+from d3a.d3a_core.exceptions import MarketException
 from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
-from d3a.d3a_core.singletons import aggregator
 
 
 class PVExternalMixin(ExternalMixin):
@@ -169,21 +169,23 @@ class PVExternalMixin(ExternalMixin):
     def event_market_cycle(self):
         self._reject_all_pending_requests()
         self.register_on_market_cycle()
-        super().event_market_cycle()
-        self._reset_event_tick_counter()
-        market_event_channel = f"{self.channel_prefix}/events/market"
-        current_market_info = self.market.info
-        current_market_info['device_info'] = self._device_info_dict
-        current_market_info["event"] = "market"
-        current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"]
-        current_market_info["area_uuid"] = self.device.uuid
-        current_market_info['last_market_stats'] = \
-            self.market_area.stats.get_price_stats_current_market()
-        if self.connected:
-            self.redis.publish_json(market_event_channel, current_market_info)
+        if not self.should_use_default_strategy:
+            self._reset_event_tick_counter()
+            market_event_channel = f"{self.channel_prefix}/events/market"
+            current_market_info = self.market.info
+            current_market_info['device_info'] = self._device_info_dict
+            current_market_info["event"] = "market"
+            current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"]
+            current_market_info["area_uuid"] = self.device.uuid
+            current_market_info['last_market_stats'] = \
+                self.market_area.stats.get_price_stats_current_market()
+            if self.connected:
+                self.redis.publish_json(market_event_channel, current_market_info)
 
-        if self.is_aggregator_controlled:
-            aggregator.add_batch_market_event(self.device.uuid, current_market_info)
+            if self.is_aggregator_controlled:
+                self.redis.aggregator.add_batch_market_event(self.device.uuid, current_market_info)
+        else:
+            super().event_market_cycle()
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
                            use_market_maker_rate, initial_buying_rate, final_buying_rate):
@@ -202,8 +204,8 @@ class PVExternalMixin(ExternalMixin):
 
     def event_tick(self):
         if self.is_aggregator_controlled:
-            aggregator.consume_all_area_commands(self.device.uuid,
-                                                 self.trigger_aggregator_commands)
+            self.redis.aggregator.consume_all_area_commands(self.device.uuid,
+                                                            self.trigger_aggregator_commands)
 
         if not self.connected and not self.is_aggregator_controlled:
             super().event_tick()
@@ -268,6 +270,44 @@ class PVExternalMixin(ExternalMixin):
                 "area_uuid": self.device.uuid,
                 "error_message": f"Error when listing offers on area {self.device.name}.",
                 "transaction_id": arguments.get("transaction_id", None)}
+
+    def _update_offer_aggregator(self, arguments):
+        assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
+        with self.lock:
+            arguments['seller'] = self.device.name
+            arguments['seller_origin'] = self.device.name
+            offer_arguments = {k: v
+                               for k, v in arguments.items()
+                               if k not in ["transaction_id", "type"]}
+
+            open_offers = self.offers.open
+            if len(open_offers) == 0:
+                return {
+                    "command": "update_offer", "status": "error",
+                    "area_uuid": self.device.uuid,
+                    "error_message": f"Update offer is only possible if the old offer exist",
+                    "transaction_id": arguments.get("transaction_id", None)}
+
+            for offer, iterated_market_id in open_offers.items():
+                iterated_market = self.area.get_future_market_from_id(iterated_market_id)
+                if iterated_market is None:
+                    continue
+                try:
+                    iterated_market.delete_offer(offer.id)
+                    offer_arguments['energy'] = offer.energy
+                    offer_arguments['price'] = \
+                        (offer_arguments['price'] / offer_arguments['energy']) * offer.energy
+                    new_offer = iterated_market.offer(**offer_arguments)
+                    self.offers.replace(offer, new_offer, iterated_market.id)
+                    return {
+                        "command": "update_offer",
+                        "area_uuid": self.device.uuid,
+                        "status": "ready",
+                        "offer": offer.to_JSON_string(),
+                        "transaction_id": arguments.get("transaction_id", None),
+                    }
+                except MarketException:
+                    continue
 
     def _offer_aggregator(self, arguments):
         assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}

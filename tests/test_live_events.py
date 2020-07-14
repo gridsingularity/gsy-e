@@ -151,7 +151,7 @@ class TestLiveEvents(unittest.TestCase):
             "eventType": "update_area",
             "area_uuid": self.area_house1.uuid,
             "area_representation": {
-                'transfer_fee_const': 12, 'baseline_peak_energy_import_kWh': 123,
+                'grid_fee_constant': 12, 'baseline_peak_energy_import_kWh': 123,
                 'baseline_peak_energy_export_kWh': 456, 'import_capacity_kVA': 987,
                 'export_capacity_kVA': 765
             }
@@ -161,7 +161,7 @@ class TestLiveEvents(unittest.TestCase):
 
         self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
-        assert self.area_house1.transfer_fee_const == 12
+        assert self.area_house1.grid_fee_constant == 12
         assert self.area_house1.baseline_peak_energy_import_kWh == 123
         assert self.area_house1.baseline_peak_energy_export_kWh == 456
         assert self.area_house1.import_capacity_kWh == \

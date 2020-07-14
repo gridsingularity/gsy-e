@@ -37,7 +37,8 @@ def get_setup(config):
                         initial_buying_rate=30, final_buying_rate=30),
                          appliance=SimpleAppliance()),
                     Area('storage', strategy=StorageExternalStrategy(
-                        initial_soc=50, battery_capacity_kWh=20),
+                        initial_soc=50, battery_capacity_kWh=20, max_abs_battery_power_kW=1
+                    ),
                          appliance=SwitchableAppliance()),
                 ],
             ),

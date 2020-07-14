@@ -7,7 +7,7 @@ This is achieved by creating two separate IAA Engines for each direction.
 
 ![img](img/inter-area-agent-1.png)
 
-The Inter-Area Agent is responsible for modeling the inter-area operations for an area. The main functionalities of an inter-area agent can be summarized to these points:
+The Inter-Area Agent is responsible for modelling the inter-area operations for an area. The main functionalities of an inter-area agent can be summarized to these points:
 
 - Forwarding offers from a lower hierarchy (market) to an upper hierarchy.
 - Forwarding bids, in the same fashion as offers
