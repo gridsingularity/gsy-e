@@ -58,8 +58,7 @@ class SimulationEndpointBuffer:
 
         self.last_unmatched_loads = {}
         self.bids_offers_trades = {}
-        self.export_plots = export_plots
-        if export_plots:
+        if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
             self.area_market_stocks_stats = OfferBidTradeGraphStats()
 
     def generate_result_report(self):
@@ -142,7 +141,7 @@ class SimulationEndpointBuffer:
         self.bids_offers_trades.clear()
         self.update_area_aggregated_stats(area)
 
-        if self.export_plots:
+        if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
             self.area_market_stocks_stats.update(area)
 
     def _send_results_to_areas(self, area):
