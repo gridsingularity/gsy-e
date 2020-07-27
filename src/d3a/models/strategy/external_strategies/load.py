@@ -171,6 +171,7 @@ class LoadExternalMixin(ExternalMixin):
         self._reject_all_pending_requests()
         self.register_on_market_cycle()
         if not self.should_use_default_strategy:
+            super().update_state()
             self._reset_event_tick_counter()
             market_event_channel = f"{self.channel_prefix}/events/market"
             current_market_info = self.market.info
