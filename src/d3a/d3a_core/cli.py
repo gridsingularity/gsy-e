@@ -80,9 +80,10 @@ _setup_modules = available_simulation_scenarios
                   ', '.join(_setup_modules)))
 @click.option('-g', '--settings-file', default=None,
               help="Settings file path")
-@click.option('--slowdown', type=int, default=0,
+@click.option('--slowdown', type=float, default=0,
               help="Slowdown factor [0 - 10,000]. "
-                   "Where 0 means: no slowdown, ticks are simulated as fast as possible; "
+                   "Where 0 means: no slowdown, ticks are simulated as fast as possible;"
+                   "You can give float value also which makes simulation slower"
                    "and 100: ticks are simulated in realtime")
 @click.option('--seed', help="Manually specify random seed")
 @click.option('--paused', is_flag=True, default=False, show_default=True,
