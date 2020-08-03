@@ -39,6 +39,7 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.state import ESSEnergyOrigin
 from d3a.d3a_core.sim_results.plotly_graph import PlotlyGraph
 from functools import reduce  # forward compatibility for Python 3
+from d3a_interface.utils import convert_pendulum_to_str_in_dict
 
 
 _log = logging.getLogger(__name__)
@@ -67,10 +68,11 @@ def get_from_dict(data_dict, map_list):
 
 class ExportAndPlot:
 
-    def __init__(self, root_area: Area, path: str, subdir: str, endpoint_buffer):
+    def __init__(self, root_area: Area, path: str, subdir: str, file_stats_endpoint,
+                 endpoint_buffer):
         self.area = root_area
         self.endpoint_buffer = endpoint_buffer
-        self.export_data = self.endpoint_buffer.file_export_endpoints
+        self.file_stats_endpoint = file_stats_endpoint
         try:
             if path is not None:
                 path = os.path.abspath(path)
@@ -86,13 +88,35 @@ class ExportAndPlot:
             _log.error("Could not open directory for csv exports: %s" % str(ex))
             return
 
-    def export_json_data(self, directory: dir, area: Area):
+    def generate_json_report(self):
+        return {
+            "job_id": self.endpoint_buffer.job_id,
+            "random_seed": self.endpoint_buffer.random_seed,
+            "unmatched_loads": convert_pendulum_to_str_in_dict(
+                self.endpoint_buffer.market_unmatched_loads.unmatched_loads, {}),
+            "price_energy_day": convert_pendulum_to_str_in_dict(
+                self.endpoint_buffer.price_energy_day.csv_output, {}),
+            "cumulative_grid_trades":
+                self.endpoint_buffer.cumulative_grid_trades.current_trades_redis,
+            "bills": self.endpoint_buffer.market_bills.bills_results,
+            "cumulative_bills": self.endpoint_buffer.cumulative_bills.cumulative_bills,
+            "status": self.endpoint_buffer.status,
+            "progress_info": self.endpoint_buffer.simulation_progress,
+            "device_statistics": convert_pendulum_to_str_in_dict(
+                self.endpoint_buffer.device_statistics.device_stats_dict, {}),
+            "energy_trade_profile": convert_pendulum_to_str_in_dict(
+                self.file_stats_endpoint.traded_energy_profile, {}, ui_format=True),
+            "kpi": self.endpoint_buffer.kpi.performance_indices,
+            "area_throughput": self.endpoint_buffer.area_throughput_stats.results,
+        }
+
+    def export_json_data(self, directory: dir):
         json_dir = os.path.join(directory, "aggregated_results")
         mkdir_from_str(json_dir)
         settings_file = os.path.join(json_dir, "const_settings.json")
         with open(settings_file, 'w') as outfile:
             json.dump(constsettings_to_dict(), outfile, indent=2)
-        for key, value in self.endpoint_buffer.generate_json_report().items():
+        for key, value in self.generate_json_report().items():
             json_file = os.path.join(json_dir, key + ".json")
             with open(json_file, 'w') as outfile:
                 json.dump(value, outfile, indent=2)
@@ -123,6 +147,8 @@ class ExportAndPlot:
             if not os.path.exists(self.plot_dir):
                 os.makedirs(self.plot_dir)
 
+            self.export_json_data(self.directory)
+
             self.plot_energy_profile(self.area, self.plot_dir)
             self.plot_all_unmatched_loads()
             self.plot_avg_trade_price(self.area, self.plot_dir)
@@ -138,7 +164,6 @@ class ExportAndPlot:
                     ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS:
                 self.plot_supply_demand_curve(self.area, self.plot_dir)
             self.move_root_plot_folder()
-        self.export_json_data(self.directory, self.area)
 
     def data_to_csv(self, area, is_first):
         self._export_area_with_children(area, self.directory, is_first)
@@ -266,7 +291,7 @@ class ExportAndPlot:
         area_name = area.slug
         if balancing:
             area_name += "-balancing"
-        data = self.export_data.generate_market_export_data(area, balancing)
+        data = self.file_stats_endpoint.generate_market_export_data(area, balancing)
         rows = data.rows()
         if not rows and not is_first:
             return
@@ -316,7 +341,8 @@ class ExportAndPlot:
         """
         Wrapper for _plot_energy_profile
         """
-
+        self.file_stats_endpoint.add_sold_bought_lists(
+            self.file_stats_endpoint.traded_energy_profile)
         new_subdir = os.path.join(subdir, area.slug)
         self._plot_energy_profile(new_subdir, area.name)
         for child in area.children:
@@ -333,18 +359,18 @@ class ExportAndPlot:
         ytitle = 'Energy [kWh]'
         key = 'energy'
         title = 'Energy Trade Profile of {}'.format(market_name)
-        data.extend(self._plot_energy_graph(self.export_data.traded_energy,
+        data.extend(self._plot_energy_graph(self.file_stats_endpoint.traded_energy_profile,
                                             market_name, "sold_energy_lists",
                                             "-seller", key, ENERGY_SELLER_SIGN_PLOTS))
-        data.extend(self._plot_energy_graph(self.export_data.traded_energy,
+        data.extend(self._plot_energy_graph(self.file_stats_endpoint.traded_energy_profile,
                                             market_name, "bought_energy_lists",
                                             "-buyer", key, ENERGY_BUYER_SIGN_PLOTS))
-        if "sold_energy_lists" in self.export_data.balancing_traded_energy[market_name]:
-            data.extend(self._plot_energy_graph(self.export_data.balancing_traded_energy,
+        if "sold_energy_lists" in self.file_stats_endpoint.balancing_traded_energy[market_name]:
+            data.extend(self._plot_energy_graph(self.file_stats_endpoint.balancing_traded_energy,
                                                 market_name, "sold_energy_lists",
                                                 "-balancing-seller", key,
                                                 ENERGY_SELLER_SIGN_PLOTS))
-            data.extend(self._plot_energy_graph(self.export_data.balancing_traded_energy,
+            data.extend(self._plot_energy_graph(self.file_stats_endpoint.balancing_traded_energy,
                                                 market_name, "bought_energy_lists",
                                                 "-balancing-buyer", key,
                                                 ENERGY_BUYER_SIGN_PLOTS))
@@ -352,7 +378,6 @@ class ExportAndPlot:
             return
         if all([len(da.y) == 0 for da in data]):
             return
-
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir,
@@ -382,11 +407,11 @@ class ExportAndPlot:
         xtitle = 'Time'
         ytitle = 'Energy (kWh)'
         barmode = 'stack'
-        load_list = [child_key for child_key in self.export_data.plot_stats.keys()
-                     if unmatched_key in self.export_data.plot_stats[child_key].keys()]
+        load_list = [child_key for child_key in self.file_stats_endpoint.plot_stats.keys()
+                     if unmatched_key in self.file_stats_endpoint.plot_stats[child_key].keys()]
 
         for li in load_list:
-            graph_obj = PlotlyGraph(self.export_data.plot_stats[li], unmatched_key)
+            graph_obj = PlotlyGraph(self.file_stats_endpoint.plot_stats[li], unmatched_key)
             if sum(graph_obj.dataset[unmatched_key]) < 1e-10:
                 continue
             graph_obj.graph_value()
@@ -409,7 +434,7 @@ class ExportAndPlot:
         storage_key = 'charge [%]'
         new_subdir = os.path.join(subdir, area.slug)
         storage_list = [child.slug for child in area.children
-                        if storage_key in self.export_data.plot_stats[child.slug].keys()]
+                        if storage_key in self.file_stats_endpoint.plot_stats[child.slug].keys()]
         if storage_list is not []:
             self._plot_ess_soc_history(storage_list, new_subdir, area.slug)
         for child in area.children:
@@ -429,7 +454,7 @@ class ExportAndPlot:
         ytitle = 'Charge [%]'
 
         for si in storage_list:
-            graph_obj = PlotlyGraph(self.export_data.plot_stats[si], storage_key)
+            graph_obj = PlotlyGraph(self.file_stats_endpoint.plot_stats[si], storage_key)
             graph_obj.graph_value()
             data_obj = go.Scatter(x=list(graph_obj.umHours.keys()),
                                   y=list(graph_obj.umHours.values()),
@@ -550,16 +575,16 @@ class ExportAndPlot:
                 self.plot_supply_demand_curve(child, new_subdir)
 
     def _plot_supply_demand_curve(self, subdir: str, area: Area):
-        if area.slug not in self.export_data.clearing:
+        if area.slug not in self.file_stats_endpoint.clearing:
             return
-        for market_slot, clearing in self.export_data.clearing[area.slug].items():
+        for market_slot, clearing in self.file_stats_endpoint.clearing[area.slug].items():
             data = list()
             xmax = 0
             for time_slot, supply_curve in \
-                    self.export_data.cumulative_offers[area.slug][market_slot].items():
+                    self.file_stats_endpoint.cumulative_offers[area.slug][market_slot].items():
                 data.append(self.render_supply_demand_curve(supply_curve, time_slot, True))
             for time_slot, demand_curve in \
-                    self.export_data.cumulative_bids[area.slug][market_slot].items():
+                    self.file_stats_endpoint.cumulative_bids[area.slug][market_slot].items():
                 data.append(self.render_supply_demand_curve(demand_curve, time_slot, False))
 
             if len(data) == 0:
@@ -657,20 +682,20 @@ class ExportAndPlot:
         title = 'Average Trade Price {}'.format(area_list[0])
         for area_name in area_list:
             data.append(
-                self._plot_avg_trade_graph(self.export_data.plot_stats,
+                self._plot_avg_trade_graph(self.file_stats_endpoint.plot_stats,
                                            area_name, key, area_name)
             )
             if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
-                    self.export_data.plot_balancing_stats[area_name.lower()] is not None:
+                    self.file_stats_endpoint.plot_balancing_stats[area_name.lower()] is not None:
                 area_name_balancing = area_name.lower() + "-demand-balancing-trades"
                 data.append(self._plot_avg_trade_graph(
-                    self.export_data.plot_balancing_stats, area_name,
+                    self.file_stats_endpoint.plot_balancing_stats, area_name,
                     'avg demand balancing trade rate [ct./kWh]',
                     area_name_balancing)
                 )
                 area_name_balancing = area_name.lower() + "-supply-balancing-trades"
                 data.append(self._plot_avg_trade_graph(
-                    self.export_data.plot_balancing_stats, area_name,
+                    self.file_stats_endpoint.plot_balancing_stats, area_name,
                     'avg supply balancing trade rate [ct./kWh]',
                     area_name_balancing)
                 )

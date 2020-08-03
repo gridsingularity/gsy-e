@@ -24,6 +24,9 @@ from pathlib import Path
 import dill
 import click
 import platform
+import os
+import psutil
+import gc
 
 from pendulum import DateTime
 from pendulum import duration
@@ -47,9 +50,8 @@ from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
-import os
-import psutil
-import gc
+from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
+
 
 if platform.python_implementation() != "PyPy" and \
         ConstSettings.BlockchainSettings.BC_INSTALLED is True:
@@ -121,9 +123,10 @@ class Simulation:
         deserialize_events_to_areas(simulation_events, self.area)
 
         validate_const_settings_for_simulation()
+
         if self.export_on_finish and not self.redis_connection.is_enabled():
             self.export = ExportAndPlot(self.area, self.export_path, self.export_subdir,
-                                        self.endpoint_buffer)
+                                        self.file_stats_endpoint, self.endpoint_buffer)
 
     def _set_traversal_length(self):
         no_of_levels = self._get_setup_levels(self.area) + 1
@@ -173,7 +176,8 @@ class Simulation:
         self.area = self.setup_module.get_setup(self.simulation_config)
         self.endpoint_buffer = SimulationEndpointBuffer(
             redis_job_id, self.initial_params,
-            self.area, export_plots=self.should_export_plots)
+            self.area)
+        self.file_stats_endpoint = FileExportEndpoints(self.should_export_plots)
 
         self._update_and_send_results()
 
@@ -254,6 +258,8 @@ class Simulation:
 
     def _update_and_send_results(self, is_final=False):
         self.endpoint_buffer.update_stats(self.area, self.status, self.progress_info)
+        if self.should_export_plots:
+            self.file_stats_endpoint(self.area)
         if not self.redis_connection.is_enabled():
             return
         if is_final:
