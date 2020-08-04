@@ -17,13 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.area import Area
 from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a.d3a_core.util import generate_market_slot_list, round_floats_for_ui, \
-    area_name_from_area_or_iaa_name
+from d3a.d3a_core.util import round_floats_for_ui, area_name_from_area_or_iaa_name
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.sim_results.aggregate_results import merge_energy_trade_profile_to_global
 from d3a.d3a_core.util import add_or_create_key
-
-trade_profile_init_dict = {"sold_energy": {}, "bought_energy": {}}
 
 
 class EnergyTradeProfile:
@@ -31,12 +28,9 @@ class EnergyTradeProfile:
         self.traded_energy_profile = {}
         self.traded_energy_current = {}
         self.balancing_traded_energy = {}
-        self.time_slots = []
         self.should_export_plots = should_export_plots
 
     def update(self, area):
-        if len(self.time_slots) == 0:
-            self.time_slots = generate_market_slot_list(area)
         self.traded_energy_current = {}
         self._populate_area_children_data(area)
 
@@ -51,63 +45,51 @@ class EnergyTradeProfile:
 
     def update_current_energy_trade_profile(self, area):
         if area.current_market is not None:
-            self.traded_energy_current[area.uuid] = trade_profile_init_dict
+            self.traded_energy_current[area.uuid] = {"sold_energy": {}, "bought_energy": {}}
             self.calculate_devices_sold_bought_energy(self.traded_energy_current[area.uuid],
-                                                      area.current_market,
-                                                      [area.current_market.time_slot])
+                                                      area.current_market)
             self.round_energy_trade_profile(self.traded_energy_current)
 
     def update_sold_bought_energy(self, area: Area):
         if area.current_market is not None:
-            if area.name not in self.traded_energy_current:
-                self.traded_energy_current[area.name] = trade_profile_init_dict
-
+            self.traded_energy_current[area.name] = {"sold_energy": {}, "bought_energy": {}}
             self.calculate_devices_sold_bought_energy(
-                self.traded_energy_current[area.name],
-                area.current_market, [area.current_market.time_slot])
+                self.traded_energy_current[area.name], area.current_market)
 
             traded_energy_current_name = {area.name: self.traded_energy_current[area.name]}
             self.traded_energy_profile = merge_energy_trade_profile_to_global(
                 traded_energy_current_name, self.traded_energy_profile,
-                self.time_slots)
+                [area.current_market.time_slot])
+
             if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
-                # balancing energy
                 if area.name not in self.balancing_traded_energy:
-                    self.balancing_traded_energy[area.name] = trade_profile_init_dict
+                    self.balancing_traded_energy[area.name] = \
+                        {"sold_energy": {}, "bought_energy": {}}
                 if len(area.past_balancing_markets) > 0:
                     self.calculate_devices_sold_bought_energy(
-                        self.balancing_traded_energy[area.name], area.current_balancing_market,
-                        self.time_slots)
+                        self.balancing_traded_energy[area.name], area.current_balancing_market)
 
     @staticmethod
-    def calculate_devices_sold_bought_energy(res_dict, market, time_slots):
+    def calculate_devices_sold_bought_energy(res_dict, market):
         if market is None:
             return
-
         for trade in market.trades:
             trade_seller = area_name_from_area_or_iaa_name(trade.seller)
             trade_buyer = area_name_from_area_or_iaa_name(trade.buyer)
 
             if trade_seller not in res_dict["sold_energy"]:
-                res_dict["sold_energy"][trade_seller] = {}
-                res_dict["sold_energy"][trade_seller]["accumulated"] = dict(
-                    (time_slot, 0) for time_slot in time_slots)
+                res_dict["sold_energy"][trade_seller] = {"accumulated": {}}
             if trade_buyer not in res_dict["sold_energy"][trade_seller]:
-                res_dict["sold_energy"][trade_seller][trade_buyer] = dict(
-                    (time_slot, 0) for time_slot in time_slots)
+                res_dict["sold_energy"][trade_seller][trade_buyer] = {}
             if trade.offer.energy > FLOATING_POINT_TOLERANCE:
                 add_or_create_key(res_dict["sold_energy"][trade_seller]["accumulated"],
                                   market.time_slot, trade.offer.energy)
                 add_or_create_key(res_dict["sold_energy"][trade_seller][trade_buyer],
                                   market.time_slot, trade.offer.energy)
-
             if trade_buyer not in res_dict["bought_energy"]:
-                res_dict["bought_energy"][trade_buyer] = {}
-                res_dict["bought_energy"][trade_buyer]["accumulated"] = dict(
-                    (time_slot, 0) for time_slot in time_slots)
+                res_dict["bought_energy"][trade_buyer] = {"accumulated": {}}
             if trade_seller not in res_dict["bought_energy"][trade_buyer]:
-                res_dict["bought_energy"][trade_buyer][trade_seller] = dict(
-                    (time_slot, 0) for time_slot in time_slots)
+                res_dict["bought_energy"][trade_buyer][trade_seller] = {}
             if trade.offer.energy > FLOATING_POINT_TOLERANCE:
                 add_or_create_key(res_dict["bought_energy"][trade_buyer]["accumulated"],
                                   market.time_slot, trade.offer.energy)
@@ -117,7 +99,7 @@ class EnergyTradeProfile:
     @staticmethod
     def round_energy_trade_profile(profile):
         for k in profile.keys():
-            for sold_bought in trade_profile_init_dict.keys():
+            for sold_bought in ("sold_energy", "bought_energy"):
                 if sold_bought not in profile[k]:
                     continue
                 for dev in profile[k][sold_bought].keys():
