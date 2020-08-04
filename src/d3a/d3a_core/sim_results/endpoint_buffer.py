@@ -45,6 +45,8 @@ class SimulationEndpointBuffer:
             "elapsed_time_seconds": 0,
             "percentage_completed": 0
         }
+        self.should_export_plots = should_export_plots
+
         self.market_unmatched_loads = MarketUnmatchedLoads(area)
         self.price_energy_day = MarketPriceEnergyDay()
         self.market_bills = MarketEnergyBills()
@@ -55,9 +57,7 @@ class SimulationEndpointBuffer:
         self.trade_profile = EnergyTradeProfile(should_export_plots)
         self.kpi = KPI()
         self.area_throughput_stats = AreaThroughputStats()
-        self.should_export_plots = should_export_plots
 
-        self.last_unmatched_loads = {}
         self.bids_offers_trades = {}
         self.last_energy_trades_high_resolution = {}
 
@@ -109,6 +109,7 @@ class SimulationEndpointBuffer:
         self.cumulative_bills.update_cumulative_bills(area)
 
         self.market_unmatched_loads.update_unmatched_loads(area)
+
         self.device_statistics.update(area)
 
         self.price_energy_day.update(area)
@@ -128,26 +129,28 @@ class SimulationEndpointBuffer:
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
             self.area_market_stocks_stats.update(area)
 
-    def _send_results_to_areas(self, area):
-        stats = {
-            "kpi": self.kpi.performance_indices_redis.get(area.uuid, None)
-        }
-        area.endpoint_stats.update(stats)
-
     def update_area_aggregated_stats(self, area):
         self._update_area_stats(area)
-        self._send_results_to_areas(area)
+        self._merge_cumulative_bills_into_bills_for_market_info(area)
         for child in area.children:
             self.update_area_aggregated_stats(child)
 
     def _update_area_stats(self, area):
         if area.current_market is not None:
             self.bids_offers_trades[area.uuid] = area.current_market.get_bids_offers_trades()
+            # TODO: as trades are already in bids_offers_trades:
+            #  last_energy_trades_high_resolution endpoint should be deprecated:
             self.last_energy_trades_high_resolution[area.uuid] = area.stats.market_trades
 
-        bills = self.market_bills.bills_redis_results[area.uuid]
-        bills.update({
-            "penalty_cost": self.cumulative_bills.cumulative_bills_results[area.uuid]["penalties"],
-            "penalty_energy":
-                self.cumulative_bills.cumulative_bills_results[area.uuid]["penalty_energy"]})
-        area.stats.update_aggregated_stats({"bills": bills})
+    def _merge_cumulative_bills_into_bills_for_market_info(self, area):
+        # this is only needed for areas with external connection
+        if area.redis_ext_conn:
+            bills = self.market_bills.bills_redis_results[area.uuid]
+            bills.update({
+                "penalty_cost":
+                    self.cumulative_bills.cumulative_bills_results[area.uuid]["penalties"],
+                "penalty_energy":
+                    self.cumulative_bills.cumulative_bills_results[area.uuid]["penalty_energy"]})
+            area.stats.update_aggregated_stats({"bills": bills})
+
+            area.stats.kpi.update(self.kpi.performance_indices_redis.get(area.uuid, None))

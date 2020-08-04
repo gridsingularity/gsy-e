@@ -40,6 +40,7 @@ class AreaStats:
         self.market_bills = {}
         self.rate_stats_market = {}
         self.market_trades = {}
+        self.kpi = {}
 
     def update_aggregated_stats(self, area_stats):
         self.aggregated_stats = area_stats

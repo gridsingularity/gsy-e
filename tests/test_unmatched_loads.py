@@ -75,7 +75,7 @@ class TestUnmatchedLoad(unittest.TestCase):
             self.grid._markets.past_markets[timeslot] = mock_market
 
         unmatched_loads, unmatched_loads_redis = \
-            ExportUnmatchedLoads(self.grid).get_current_market_results(all_past_markets=True)
+            ExportUnmatchedLoads(self.grid).get_current_market_results()
 
         assert list(unmatched_loads[self.grid.name].keys()) == ['House1']
         assert get_number_of_unmatched_loads(unmatched_loads) == 0
@@ -95,7 +95,7 @@ class TestUnmatchedLoad(unittest.TestCase):
             house1._markets.past_markets[timeslot] = mock_market
             self.grid._markets.past_markets[timeslot] = mock_market
         unmatched_loads, unmatched_loads_redis = \
-            ExportUnmatchedLoads(self.grid).get_current_market_results(all_past_markets=True)
+            ExportUnmatchedLoads(self.grid).get_current_market_results()
         assert get_number_of_unmatched_loads(unmatched_loads) == 20
 
     def test_export_unmatched_loads_is_reported_correctly_for_half_loads_unmatched(self):
@@ -113,7 +113,7 @@ class TestUnmatchedLoad(unittest.TestCase):
             self.grid._markets.past_markets[timeslot] = mock_market
 
         unmatched_loads, unmatched_loads_redis = \
-            ExportUnmatchedLoads(self.grid).get_current_market_results(all_past_markets=True)
+            ExportUnmatchedLoads(self.grid).get_current_market_results()
         assert get_number_of_unmatched_loads(unmatched_loads) == 10
 
     def test_export_unmatched_loads_reports_cell_tower_areas(self):
@@ -142,7 +142,7 @@ class TestUnmatchedLoad(unittest.TestCase):
             self.grid._markets.past_markets[timeslot] = mock_market
 
         unmatched_loads, unmatched_loads_redis = \
-            ExportUnmatchedLoads(self.grid).get_current_market_results(all_past_markets=True)
+            ExportUnmatchedLoads(self.grid).get_current_market_results()
         assert get_number_of_unmatched_loads(unmatched_loads) == 30
 
     def test_export_unmatched_loads_is_reported_correctly_for_predefined_load_strategy(self):
@@ -159,7 +159,7 @@ class TestUnmatchedLoad(unittest.TestCase):
             house1._markets.past_markets[timeslot] = mock_market
             self.grid._markets.past_markets[timeslot] = mock_market
         unmatched_loads, unmatched_loads_redis = \
-            ExportUnmatchedLoads(self.grid).get_current_market_results(all_past_markets=True)
+            ExportUnmatchedLoads(self.grid).get_current_market_results()
         assert get_number_of_unmatched_loads(unmatched_loads) == 20
 
     def test_export_unmatched_loads_is_reporting_correctly_the_device_types(self):
@@ -168,7 +168,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         house1 = Area("House1", [self.area1, self.area3])
         self.grid = Area("Grid", [house1])
         unmatched_loads, unmatched_loads_redis = \
-            ExportUnmatchedLoads(self.grid).get_current_market_results(all_past_markets=True)
+            ExportUnmatchedLoads(self.grid).get_current_market_results()
         assert get_number_of_unmatched_loads(unmatched_loads) == 0
         assert "type" not in unmatched_loads["House1"]
         assert unmatched_loads["House1"]["load1"]["type"] == "Area 1 type"

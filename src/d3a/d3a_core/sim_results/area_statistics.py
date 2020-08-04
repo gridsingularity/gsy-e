@@ -30,7 +30,6 @@ from d3a.d3a_core.util import area_name_from_area_or_iaa_name, make_iaa_name, \
     round_floats_for_ui, add_or_create_key, subtract_or_create_key, \
     area_sells_to_child, child_buys_from_area
 from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.sim_results.aggregate_results import merge_price_energy_day_results_to_global
 
 loads_avg_prices = namedtuple('loads_avg_prices', ['load', 'price'])
@@ -494,19 +493,12 @@ class MarketPriceEnergyDay:
         self.redis_output = {}
 
     @classmethod
-    def gather_trade_rates(cls, area, price_lists, use_last_past_market=False):
+    def gather_trade_rates(cls, area, price_lists):
         if area.children == []:
             return price_lists
 
-        if use_last_past_market is False:
-            markets = area.past_markets
         elif area.current_market is not None:
-            markets = [area.current_market]
-        else:
-            markets = []
-
-        for market in markets:
-            cls.gather_rates_one_market(area, market, price_lists)
+            cls.gather_rates_one_market(area, area.current_market, price_lists)
 
         for child in area.children:
             price_lists = cls.gather_trade_rates(child, price_lists)
@@ -527,25 +519,19 @@ class MarketPriceEnergyDay:
         price_lists[area][market.time_slot].extend(trade_rates)
 
     def update(self, area):
-        current_price_lists = self.gather_trade_rates(
-            area, {},
-            use_last_past_market=not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS
-        )
+        current_price_lists = self.gather_trade_rates(area, {})
 
         price_energy_csv_output = {}
         price_energy_redis_output = {}
         self._convert_output_format(
             current_price_lists, price_energy_csv_output, price_energy_redis_output)
 
-        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
-            self.csv_output = price_energy_csv_output
-            self.redis_output = price_energy_redis_output
-        else:
-            self.csv_output = merge_price_energy_day_results_to_global(
-                price_energy_csv_output, self.csv_output)
-            self.redis_output = price_energy_redis_output
+        self.csv_output = merge_price_energy_day_results_to_global(
+            price_energy_csv_output, self.csv_output)
+        self.redis_output = price_energy_redis_output
 
-    def _convert_output_format(self, price_energy, csv_output, redis_output):
+    @staticmethod
+    def _convert_output_format(price_energy, csv_output, redis_output):
         for node, trade_rates in price_energy.items():
             if node.name not in csv_output:
                 csv_output[node.name] = {

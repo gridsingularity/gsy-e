@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trades, \
     export_cumulative_grid_trades_redis
-from d3a_interface.constants_limits import ConstSettings
 
 
 class CumulativeGridTrades:
@@ -30,16 +29,8 @@ class CumulativeGridTrades:
         self.accumulated_balancing_trades = {}
 
     def update(self, area):
-        market_type = \
-            "past_markets" if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS else "current_market"
-        balancing_market_type = "past_balancing_markets" \
-            if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS \
-            else "current_balancing_market"
-
-        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
-            self.accumulated_trades = {}
-            self.accumulated_trades_redis = {}
-            self.accumulated_balancing_trades = {}
+        market_type = "current_market"
+        balancing_market_type = "current_balancing_market"
 
         self.accumulated_trades_redis, self.current_trades_redis = \
             export_cumulative_grid_trades_redis(area, self.accumulated_trades_redis,

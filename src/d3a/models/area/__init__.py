@@ -111,7 +111,6 @@ class Area:
         self._convert_area_throughput_kva_to_kwh(import_capacity_kVA, export_capacity_kVA)
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self._markets = AreaMarkets(self.log)
-        self.endpoint_stats = {}
         self.stats = AreaStats(self._markets)
         log.debug(f"External connection {external_connection_available} for area {self.name}")
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
