@@ -28,9 +28,12 @@ from d3a.constants import DEVICE_PENALTY_RATE
 def _get_past_markets_from_area(area, past_market_types):
     if not hasattr(area, past_market_types) or getattr(area, past_market_types) is None:
         return []
-    if len(getattr(area, past_market_types)) < 1:
-        return []
-    return [getattr(area, past_market_types)[-1]]
+    if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+        return getattr(area, past_market_types)
+    else:
+        if len(getattr(area, past_market_types)) < 1:
+            return []
+        return [getattr(area, past_market_types)[-1]]
 
 
 class CumulativeBills:
@@ -203,13 +206,14 @@ class MarketEnergyBills:
         else:
             # TODO: find a better way to handle this.
             # is only triggered once:
-            # when a chil is added to an area both triggered by a live event
+            # when a child is added to an area both triggered by a live event
             if area.children and "bought" in self.bills_results[area.name]:
                 self.bills_results[area.name] = {}
             for child in area.children:
                 self.bills_results[area.name][child.name] = self._default_area_dict(child) \
                     if child.name not in self.bills_results[area.name] else \
                     self.bills_results[area.name][child.name]
+
         return self.bills_results[area.name]
 
     def _energy_bills(self, area, past_market_types):

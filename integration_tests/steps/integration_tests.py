@@ -384,7 +384,7 @@ def save_reported_cumulative_grid_trade_profile(context):
     context.cumulative_grid_trades = deepcopy(
         context.simulation.endpoint_buffer.cumulative_grid_trades.accumulated_trades)
     context.cumulative_grid_trades_redis = \
-        deepcopy(context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades_redis)
+        deepcopy(context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades)
     context.cumulative_grid_balancing_trades = deepcopy(
         context.simulation.endpoint_buffer.cumulative_grid_trades.current_balancing_trades)
 
@@ -751,7 +751,7 @@ def test_external_trade_energy_price(context):
     # Please activate the test when implementing the aforementioned bug.
     return
     bills = context.simulation.endpoint_buffer.market_bills.bills_results
-    current_trades = context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades_redis
+    current_trades = context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades
     houses = [child for child in context.simulation.area.children
               if child.name in ["House 1", "House 2"]]
     for house in houses:

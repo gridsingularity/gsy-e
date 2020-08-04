@@ -15,32 +15,31 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trades, \
-    export_cumulative_grid_trades_redis
+from d3a.d3a_core.sim_results.area_statistics import accumulate_grid_trades_all_devices, \
+    generate_cumulative_grid_trades_for_all_areas
+from d3a_interface.constants_limits import ConstSettings
+
+
+def export_cumulative_grid_trades(area, accumulated_trades_redis, past_market_types):
+    accumulated_trades = \
+        accumulate_grid_trades_all_devices(area, accumulated_trades_redis, past_market_types)
+    return accumulated_trades, generate_cumulative_grid_trades_for_all_areas(accumulated_trades,
+                                                                             area, {})
 
 
 class CumulativeGridTrades:
-    def __init__(self, should_export_plots):
+    def __init__(self):
         self.current_trades = {}
-        self.current_trades_redis = {}
         self.current_balancing_trades = {}
         self.accumulated_trades = {}
-        self.accumulated_trades_redis = {}
         self.accumulated_balancing_trades = {}
-        self.should_export_plots = should_export_plots
 
     def update(self, area):
-        market_type = "current_market"
-        balancing_market_type = "current_balancing_market"
+        self.accumulated_trades, self.current_trades = \
+            export_cumulative_grid_trades(area, self.accumulated_trades,
+                                          "current_market")
 
-        if self.should_export_plots:
-            self.accumulated_trades, self.current_trades = \
-                export_cumulative_grid_trades(area, self.accumulated_trades,
-                                              market_type, all_devices=True)
+        if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.accumulated_balancing_trades, self.current_balancing_trades = \
                 export_cumulative_grid_trades(area, self.accumulated_balancing_trades,
-                                              balancing_market_type)
-        else:
-            self.accumulated_trades_redis, self.current_trades_redis = \
-                export_cumulative_grid_trades_redis(area, self.accumulated_trades_redis,
-                                                    market_type)
+                                              "current_balancing_market")

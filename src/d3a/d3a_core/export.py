@@ -97,7 +97,7 @@ class ExportAndPlot:
             "price_energy_day": convert_pendulum_to_str_in_dict(
                 self.endpoint_buffer.price_energy_day.csv_output, {}),
             "cumulative_grid_trades":
-                self.endpoint_buffer.cumulative_grid_trades.current_trades_redis,
+                self.endpoint_buffer.cumulative_grid_trades.current_trades,
             "bills": self.endpoint_buffer.market_bills.bills_results,
             "cumulative_bills": self.endpoint_buffer.cumulative_bills.cumulative_bills,
             "status": self.endpoint_buffer.status,

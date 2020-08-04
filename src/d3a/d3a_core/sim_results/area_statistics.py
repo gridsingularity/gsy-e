@@ -270,7 +270,7 @@ def _accumulate_grid_trades(area, accumulated_trades, past_market_types):
     return accumulated_trades
 
 
-def _accumulate_grid_trades_all_devices(area, accumulated_trades, past_market_types):
+def accumulate_grid_trades_all_devices(area, accumulated_trades, past_market_types):
     for child in area.children:
         if _is_cell_tower_node(child):
             accumulated_trades = _accumulate_load_trades(
@@ -298,7 +298,7 @@ def _accumulate_grid_trades_all_devices(area, accumulated_trades, past_market_ty
             accumulated_trades = _accumulate_area_trades(
                 child, area, accumulated_trades, past_market_types
             )
-            accumulated_trades = _accumulate_grid_trades_all_devices(
+            accumulated_trades = accumulate_grid_trades_all_devices(
                 child, accumulated_trades, past_market_types
             )
     return accumulated_trades
@@ -458,32 +458,6 @@ def generate_cumulative_grid_trades_for_all_areas(accumulated_trades, area, resu
     for child in area.children:
         results = generate_cumulative_grid_trades_for_all_areas(accumulated_trades, child, results)
     return results
-
-
-def export_cumulative_grid_trades(area, accumulated_trades, past_market_types, all_devices=False):
-    accumulated_trades = _accumulate_grid_trades_all_devices(area, accumulated_trades,
-                                                             past_market_types) \
-        if all_devices else _accumulate_grid_trades(area, {}, past_market_types)
-
-    return accumulated_trades, {
-        "unit": "kWh",
-        "areas": sorted(accumulated_trades.keys()),
-        "cumulative-grid-trades": [
-            # Append first produced energy for all areas
-            _generate_produced_energy_entries(accumulated_trades),
-            # Then self consumption energy for all areas
-            _generate_self_consumption_entries(accumulated_trades),
-            # Then consumption entries for intra-house trades
-            *_generate_intraarea_consumption_entries(accumulated_trades)
-        ]
-    }
-
-
-def export_cumulative_grid_trades_redis(area, accumulated_trades_redis, past_market_types):
-    accumulated_trades = \
-        _accumulate_grid_trades_all_devices(area, accumulated_trades_redis, past_market_types)
-    return accumulated_trades, generate_cumulative_grid_trades_for_all_areas(accumulated_trades,
-                                                                             area, {})
 
 
 class MarketPriceEnergyDay:

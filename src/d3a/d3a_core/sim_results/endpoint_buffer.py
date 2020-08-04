@@ -52,7 +52,7 @@ class SimulationEndpointBuffer:
         self.market_bills = MarketEnergyBills()
         self.cumulative_bills = CumulativeBills()
         self.balancing_bills = MarketEnergyBills(is_spot_market=False)
-        self.cumulative_grid_trades = CumulativeGridTrades(should_export_plots)
+        self.cumulative_grid_trades = CumulativeGridTrades()
         self.device_statistics = DeviceStatistics(should_export_plots)
         self.trade_profile = EnergyTradeProfile(should_export_plots)
         self.kpi = KPI(should_export_plots)
@@ -70,7 +70,7 @@ class SimulationEndpointBuffer:
             "job_id": self.job_id,
             "current_market": self.current_market,
             "random_seed": self.random_seed,
-            "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
+            "cumulative_grid_trades": self.cumulative_grid_trades.current_trades,
             "bills": self.market_bills.bills_redis_results,
             "cumulative_bills": self.cumulative_bills.cumulative_bills,
             "status": self.status,
