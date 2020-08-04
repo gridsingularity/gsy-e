@@ -39,7 +39,8 @@ class FileExportEndpoints:
                 self._populate_area_children_data(child)
         self.update_plot_stats(area)
 
-    def generate_market_export_data(self, area, is_balancing_market):
+    @staticmethod
+    def generate_market_export_data(area, is_balancing_market):
         return ExportBalancingData(area) if is_balancing_market else ExportData.create(area)
 
     def _get_stats_from_market_data(self, out_dict, area, balancing):

@@ -130,16 +130,16 @@ class SimulationEndpointBuffer:
             self.area_market_stocks_stats.update(area)
 
     def update_area_aggregated_stats(self, area):
-        self._update_area_stats(area)
+        self._update_bids_offer_trades(area)
         self._merge_cumulative_bills_into_bills_for_market_info(area)
         for child in area.children:
             self.update_area_aggregated_stats(child)
 
-    def _update_area_stats(self, area):
+    def _update_bids_offer_trades(self, area):
         if area.current_market is not None:
             self.bids_offers_trades[area.uuid] = area.current_market.get_bids_offers_trades()
-            # TODO: as trades are already in bids_offers_trades:
-            #  last_energy_trades_high_resolution endpoint should be deprecated:
+            # TODO: (D3ASIM-2670) Trades are already stored in bids_offers_trades:
+            #  accumulation of area.stats.market_trades endpoint should be deprecated
             self.last_energy_trades_high_resolution[area.uuid] = area.stats.market_trades
 
     def _merge_cumulative_bills_into_bills_for_market_info(self, area):

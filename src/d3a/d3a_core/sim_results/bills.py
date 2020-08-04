@@ -131,7 +131,8 @@ class MarketEnergyBills:
         self.market_fees = {}
         self.external_trades = {}
 
-    def _store_bought_trade(self, result_dict, trade):
+    @staticmethod
+    def _store_bought_trade(result_dict, trade):
         # Division by 100 to convert cents to Euros
         fee_price = trade.fee_price / 100. if trade.fee_price is not None else 0.
         result_dict['bought'] += trade.offer.energy
@@ -144,7 +145,8 @@ class MarketEnergyBills:
         result_dict['total_energy'] += trade.offer.energy
         result_dict['market_fee'] += fee_price
 
-    def _store_sold_trade(self, result_dict, trade):
+    @staticmethod
+    def _store_sold_trade(result_dict, trade):
         # Division by 100 to convert cents to Euros
         fee_price = trade.fee_price if trade.fee_price is not None else 0.
         result_dict['sold'] += trade.offer.energy
@@ -291,7 +293,8 @@ class MarketEnergyBills:
                 )
         return results
 
-    def _write_acculumated_stats(self, area, results, all_child_results, key_name):
+    @staticmethod
+    def _write_acculumated_stats(area, results, all_child_results, key_name):
         results[area.name].update({key_name: {
             'bought': sum(v['bought'] for v in all_child_results),
             'sold': sum(v['sold'] for v in all_child_results),
