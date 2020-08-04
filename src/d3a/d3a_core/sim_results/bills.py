@@ -25,13 +25,6 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.constants import DEVICE_PENALTY_RATE
 
 
-def recursive_current_markets(area):
-    if area.current_market is not None:
-        yield area.current_market
-        for child in area.children:
-            yield from recursive_current_markets(child)
-
-
 def _get_past_markets_from_area(area, past_market_types):
     if not hasattr(area, past_market_types) or getattr(area, past_market_types) is None:
         return []
@@ -41,31 +34,6 @@ def _get_past_markets_from_area(area, past_market_types):
         if len(getattr(area, past_market_types)) < 1:
             return []
         return [getattr(area, past_market_types)[-1]]
-
-
-def primary_trades(markets):
-    """
-    We want to avoid counting trades between different areas multiple times
-    (as they are represented as a chain of trades with IAAs). To achieve
-    this, we skip all trades where the buyer is an IAA.
-    """
-    for market in markets:
-        for trade in market.trades:
-            if trade.buyer[:4] != 'IAA ':
-                yield trade
-    # TODO find a less hacky way to exclude trades with IAAs as buyers
-
-
-def primary_unit_prices(markets):
-    for trade in primary_trades(markets):
-        yield trade.offer.energy_rate
-
-
-def total_avg_trade_price(markets):
-    return (
-        sum(trade.offer.price for trade in primary_trades(markets)) /
-        sum(trade.offer.energy for trade in primary_trades(markets))
-    )
 
 
 class CumulativeBills:

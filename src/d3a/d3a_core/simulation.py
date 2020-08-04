@@ -176,8 +176,9 @@ class Simulation:
         self.area = self.setup_module.get_setup(self.simulation_config)
         self.endpoint_buffer = SimulationEndpointBuffer(
             redis_job_id, self.initial_params,
-            self.area)
-        self.file_stats_endpoint = FileExportEndpoints(self.should_export_plots)
+            self.area, self.should_export_plots)
+        if self.should_export_plots:
+            self.file_stats_endpoint = FileExportEndpoints()
 
         self._update_and_send_results()
 
@@ -260,7 +261,6 @@ class Simulation:
         self.endpoint_buffer.update_stats(self.area, self.status, self.progress_info)
         if self.should_export_plots:
             self.file_stats_endpoint(self.area)
-        if not self.redis_connection.is_enabled():
             return
         if is_final:
             self.redis_connection.publish_results(

@@ -25,7 +25,7 @@ from math import isclose
 from pendulum import duration, today, from_format
 from behave import given, when, then
 from deepdiff import DeepDiff
-from copy import deepcopy, copy
+from copy import deepcopy
 
 from d3a.models.config import SimulationConfig
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
@@ -350,12 +350,6 @@ def run_d3a_with_settings_file(context):
 def save_reported_unmatched_loads(context):
     unmatched_loads_object = context.simulation.endpoint_buffer.market_unmatched_loads
     context.unmatched_loads = deepcopy(unmatched_loads_object.unmatched_loads)
-
-
-@when('the reported energy trade profile are saved')
-def save_reported_energy_trade_profile(context):
-    context.energy_trade_profile = \
-        copy(context.simulation.file_stats_endpoint.traded_energy_profile)
 
 
 @when('the reported price energy day results are saved')
@@ -1032,12 +1026,6 @@ def identical_cumulative_grid_trades(context):
                         significant_digits=5)) == 0
     assert len(DeepDiff(cumulative_grid_balancing_trades, context.cumulative_grid_balancing_trades,
                         significant_digits=5)) == 0
-
-
-@then('the energy trade profiles are identical no matter if the past markets are kept')
-def identical_energy_trade_profiles(context):
-    energy_trade_profile = context.simulation.file_stats_endpoint.traded_energy_profile
-    assert len(DeepDiff(energy_trade_profile, context.energy_trade_profile)) == 0
 
 
 @then('the price energy day results are identical no matter if the past markets are kept')

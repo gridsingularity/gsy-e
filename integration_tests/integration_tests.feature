@@ -129,16 +129,6 @@ Feature: Run integration tests
      And we run the simulation with setup file balancing_market.default_2a and parameters [24, 60, 60, 1]
      Then the cumulative grid trades are identical no matter if the past markets are kept
 
-  Scenario: Energy trade profile is the same with and without keeping the past markets
-     Given we have a scenario named default_2a
-     And d3a is installed
-     And the past markets are kept in memory
-     When we run the simulation with setup file default_2a and parameters [10, 60, 60, 1]
-     And the reported energy trade profile are saved
-     And the past markets are not kept in memory
-     And we run the simulation with setup file default_2a and parameters [10, 60, 60, 1]
-     Then the energy trade profiles are identical no matter if the past markets are kept
-
   Scenario: Energy bills are the same with and without keeping the past markets
      Given we have a scenario named default_2a
      And d3a is installed

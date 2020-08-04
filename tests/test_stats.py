@@ -20,8 +20,7 @@ from unittest.mock import MagicMock
 from math import isclose
 from uuid import uuid4
 from d3a.models.market.market_structures import Trade
-from d3a.d3a_core.sim_results.stats import MarketEnergyBills, primary_unit_prices, \
-    recursive_current_markets, total_avg_trade_price
+from d3a.d3a_core.sim_results.bills import MarketEnergyBills
 
 from d3a.d3a_core.util import make_iaa_name
 from d3a.models.strategy import BaseStrategy
@@ -71,14 +70,6 @@ def area():
                      FakeArea('child3', [FakeArea('grandchild2')])])
 
 
-def test_recursive_current_markets(area):
-    markets = list(recursive_current_markets(area))
-    assert len(markets) == 4
-    assert all(market in markets for market in (
-        'market parent', 'market child2', 'market grandchild1', 'market child3'
-    ))
-
-
 @pytest.fixture
 def markets():
     """Example with all equal energy prices"""
@@ -97,17 +88,6 @@ def markets2():
         FakeMarket((_trade(11, 'Fridge', 11), _trade(4, 'Storage', 4), _trade(1, 'IAA 1', 10))),
         FakeMarket((_trade(3, 'ECar', 1), _trade(9, 'Fridge', 3), _trade(3, 'Storage', 1)))
     )
-
-
-def test_total_avg_trade_price(markets, markets2):
-    assert total_avg_trade_price(markets) == 3.5
-    assert total_avg_trade_price(markets2) == 1.5
-
-
-def test_primary_unit_prices(markets2):
-    prices = list(primary_unit_prices(markets2))
-    assert min(prices) == 1
-    assert max(prices) == 3
 
 
 @pytest.fixture

@@ -105,7 +105,7 @@ class ExportAndPlot:
             "device_statistics": convert_pendulum_to_str_in_dict(
                 self.endpoint_buffer.device_statistics.device_stats_dict, {}),
             "energy_trade_profile": convert_pendulum_to_str_in_dict(
-                self.file_stats_endpoint.traded_energy_profile, {}, ui_format=True),
+                self.endpoint_buffer.trade_profile.traded_energy_profile, {}, ui_format=True),
             "kpi": self.endpoint_buffer.kpi.performance_indices,
             "area_throughput": self.endpoint_buffer.area_throughput_stats.results,
         }
@@ -341,8 +341,8 @@ class ExportAndPlot:
         """
         Wrapper for _plot_energy_profile
         """
-        self.file_stats_endpoint.add_sold_bought_lists(
-            self.file_stats_endpoint.traded_energy_profile)
+        self.endpoint_buffer.trade_profile.add_sold_bought_lists(
+            self.endpoint_buffer.trade_profile.traded_energy_profile)
         new_subdir = os.path.join(subdir, area.slug)
         self._plot_energy_profile(new_subdir, area.name)
         for child in area.children:
@@ -359,21 +359,23 @@ class ExportAndPlot:
         ytitle = 'Energy [kWh]'
         key = 'energy'
         title = 'Energy Trade Profile of {}'.format(market_name)
-        data.extend(self._plot_energy_graph(self.file_stats_endpoint.traded_energy_profile,
-                                            market_name, "sold_energy_lists",
-                                            "-seller", key, ENERGY_SELLER_SIGN_PLOTS))
-        data.extend(self._plot_energy_graph(self.file_stats_endpoint.traded_energy_profile,
-                                            market_name, "bought_energy_lists",
-                                            "-buyer", key, ENERGY_BUYER_SIGN_PLOTS))
-        if "sold_energy_lists" in self.file_stats_endpoint.balancing_traded_energy[market_name]:
-            data.extend(self._plot_energy_graph(self.file_stats_endpoint.balancing_traded_energy,
-                                                market_name, "sold_energy_lists",
-                                                "-balancing-seller", key,
-                                                ENERGY_SELLER_SIGN_PLOTS))
-            data.extend(self._plot_energy_graph(self.file_stats_endpoint.balancing_traded_energy,
-                                                market_name, "bought_energy_lists",
-                                                "-balancing-buyer", key,
-                                                ENERGY_BUYER_SIGN_PLOTS))
+        data.extend(self._plot_energy_graph(
+            self.endpoint_buffer.trade_profile.traded_energy_profile,
+            market_name, "sold_energy_lists", "-seller", key, ENERGY_SELLER_SIGN_PLOTS))
+        data.extend(self._plot_energy_graph(
+            self.endpoint_buffer.trade_profile.traded_energy_profile,
+            market_name, "bought_energy_lists", "-buyer", key, ENERGY_BUYER_SIGN_PLOTS))
+        if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
+            if "sold_energy_lists" in \
+                    self.endpoint_buffer.trade_profile.balancing_traded_energy[market_name]:
+                data.extend(self._plot_energy_graph(
+                    self.endpoint_buffer.trade_profile.balancing_traded_energy,
+                    market_name, "sold_energy_lists",
+                    "-balancing-seller", key, ENERGY_SELLER_SIGN_PLOTS))
+                data.extend(self._plot_energy_graph(
+                    self.endpoint_buffer.trade_profile.balancing_traded_energy,
+                    market_name, "bought_energy_lists",
+                    "-balancing-buyer", key, ENERGY_BUYER_SIGN_PLOTS))
         if len(data) == 0:
             return
         if all([len(da.y) == 0 for da in data]):
