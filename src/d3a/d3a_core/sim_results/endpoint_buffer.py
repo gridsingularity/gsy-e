@@ -48,14 +48,14 @@ class SimulationEndpointBuffer:
         self.should_export_plots = should_export_plots
 
         self.market_unmatched_loads = MarketUnmatchedLoads(area)
-        self.price_energy_day = MarketPriceEnergyDay()
+        self.price_energy_day = MarketPriceEnergyDay(should_export_plots)
         self.market_bills = MarketEnergyBills()
         self.cumulative_bills = CumulativeBills()
         self.balancing_bills = MarketEnergyBills(is_spot_market=False)
-        self.cumulative_grid_trades = CumulativeGridTrades()
-        self.device_statistics = DeviceStatistics()
+        self.cumulative_grid_trades = CumulativeGridTrades(should_export_plots)
+        self.device_statistics = DeviceStatistics(should_export_plots)
         self.trade_profile = EnergyTradeProfile(should_export_plots)
-        self.kpi = KPI()
+        self.kpi = KPI(should_export_plots)
         self.area_throughput_stats = AreaThroughputStats()
 
         self.bids_offers_trades = {}

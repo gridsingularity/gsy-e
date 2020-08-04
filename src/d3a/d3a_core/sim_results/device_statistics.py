@@ -14,10 +14,11 @@ FILL_VALUE = None
 
 class DeviceStatistics:
 
-    def __init__(self):
+    def __init__(self, should_export_plots):
         self.device_stats_dict = {}
         self.current_stats_dict = {}
         self.current_stats_time_str = {}
+        self.should_export_plots = should_export_plots
 
     @staticmethod
     def _calc_min_max_from_sim_dict(subdict: Dict, key: str):
@@ -140,9 +141,10 @@ class DeviceStatistics:
         cls._calc_min_max_from_sim_dict(subdict, key_name)
 
     def update(self, area):
-        self.gather_device_statistics(area, self.device_stats_dict, {})
-        # TODO: only calculate this if redis is enabled:
-        self.gather_device_statistics(area, {}, self.current_stats_dict)
+        if self.should_export_plots:
+            self.gather_device_statistics(area, self.device_stats_dict, {})
+        else:
+            self.gather_device_statistics(area, {}, self.current_stats_dict)
 
     @classmethod
     def gather_device_statistics(cls, area: Area, subdict: Dict, flat_result_dict: Dict):

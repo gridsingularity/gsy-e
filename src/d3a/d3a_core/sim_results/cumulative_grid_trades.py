@@ -20,24 +20,27 @@ from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trad
 
 
 class CumulativeGridTrades:
-    def __init__(self):
+    def __init__(self, should_export_plots):
         self.current_trades = {}
         self.current_trades_redis = {}
         self.current_balancing_trades = {}
         self.accumulated_trades = {}
         self.accumulated_trades_redis = {}
         self.accumulated_balancing_trades = {}
+        self.should_export_plots = should_export_plots
 
     def update(self, area):
         market_type = "current_market"
         balancing_market_type = "current_balancing_market"
 
-        self.accumulated_trades_redis, self.current_trades_redis = \
-            export_cumulative_grid_trades_redis(area, self.accumulated_trades_redis,
-                                                market_type)
-        self.accumulated_trades, self.current_trades = \
-            export_cumulative_grid_trades(area, self.accumulated_trades,
-                                          market_type, all_devices=True)
-        self.accumulated_balancing_trades, self.current_balancing_trades = \
-            export_cumulative_grid_trades(area, self.accumulated_balancing_trades,
-                                          balancing_market_type)
+        if self.should_export_plots:
+            self.accumulated_trades, self.current_trades = \
+                export_cumulative_grid_trades(area, self.accumulated_trades,
+                                              market_type, all_devices=True)
+            self.accumulated_balancing_trades, self.current_balancing_trades = \
+                export_cumulative_grid_trades(area, self.accumulated_balancing_trades,
+                                              balancing_market_type)
+        else:
+            self.accumulated_trades_redis, self.current_trades_redis = \
+                export_cumulative_grid_trades_redis(area, self.accumulated_trades_redis,
+                                                    market_type)

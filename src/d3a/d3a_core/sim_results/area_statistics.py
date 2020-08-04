@@ -487,10 +487,11 @@ def export_cumulative_grid_trades_redis(area, accumulated_trades_redis, past_mar
 
 
 class MarketPriceEnergyDay:
-    def __init__(self):
+    def __init__(self, should_export_plots):
         self._price_energy_day = {}
         self.csv_output = {}
         self.redis_output = {}
+        self.should_export_plots = should_export_plots
 
     @classmethod
     def gather_trade_rates(cls, area, price_lists):
@@ -525,10 +526,11 @@ class MarketPriceEnergyDay:
         price_energy_redis_output = {}
         self._convert_output_format(
             current_price_lists, price_energy_csv_output, price_energy_redis_output)
-
-        self.csv_output = merge_price_energy_day_results_to_global(
-            price_energy_csv_output, self.csv_output)
-        self.redis_output = price_energy_redis_output
+        if self.should_export_plots:
+            self.csv_output = merge_price_energy_day_results_to_global(
+                price_energy_csv_output, self.csv_output)
+        else:
+            self.redis_output = price_energy_redis_output
 
     @staticmethod
     def _convert_output_format(price_energy, csv_output, redis_output):
