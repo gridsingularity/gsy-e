@@ -121,12 +121,11 @@ class Area:
         if self.strategy is not None:
             self.strategy.area_reconfigure_event(**kwargs)
             return
-        if key_in_dict_and_not_none(kwargs, 'grid_fee_constant') or \
-                key_in_dict_and_not_none(kwargs, 'grid_fee_percentage'):
+        if 'grid_fee_constant' in kwargs or 'grid_fee_percentage' in kwargs:
             grid_fee_constant = kwargs["grid_fee_constant"] \
-                if key_in_dict_and_not_none(kwargs, 'grid_fee_constant') else None
+                if key_in_dict_and_not_none(kwargs, 'grid_fee_constant') else 0
             grid_fee_percentage = kwargs["grid_fee_percentage"] \
-                if key_in_dict_and_not_none(kwargs, 'grid_fee_percentage') else None
+                if key_in_dict_and_not_none(kwargs, 'grid_fee_percentage') else 0
 
             validate_area(grid_fee_percentage=grid_fee_percentage,
                           grid_fee_constant=grid_fee_constant)
