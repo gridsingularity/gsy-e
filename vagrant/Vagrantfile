@@ -3,6 +3,7 @@ Vagrant.configure("2") do |config|
   config.vm.provider "virtualbox" do |v|
     v.memory = 4096
     v.cpus = 4
+    v.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
   end
  config.vm.provision "shell", inline: <<-SHELL
     export DEBIAN_FRONTEND=noninteractive
@@ -14,36 +15,7 @@ Vagrant.configure("2") do |config|
     sudo apt-get install python3.6 -y
     sudo apt-get install git-core -y
     sudo apt-get install python3-pip -y
-
-    export REPO=gridsingularity/d3a
-    export BRANCH=master
-
-    # Create d3a virtualenv
-    pip3 install virtualenv
-    mkdir envs
-    cd envs
-    virtualenv -p /usr/bin/python3.6 d3a
-
-    source d3a/bin/activate
-    cd /home/vagrant/
-    git clone https://github.com/gridsingularity/d3a.git
-    cd d3a
-    pip install --upgrade setuptools pendulum pip
-    pip install -r requirements/pandapower.txt
-    pip install -e .
-    cd /home/vagrant/
-    deactivate
-
-    # Create d3a-api-client virtualenv
-    cd envs
-    virtualenv -p /usr/bin/python3.6 api-client
-    source api-client/bin/activate
-    cd /home/vagrant/
-    git clone https://github.com/gridsingularity/d3a-api-client.git
-    cd d3a-api-client
-    pip install -e .
-    cd /home/vagrant/
-    deactivate
-
+    sudo apt-get install python3-setuptools -y
   SHELL
+  config.vm.synced_folder ".", "/vagrant/"
 end
