@@ -134,6 +134,9 @@ class Offers:
     def sold_in_market(self, market_id):
         return self.sold[market_id] if market_id in self.sold else {}
 
+    def bought_in_market(self, market_id):
+        return self.bought[market_id] if market_id in self.bought else {}
+
     def post(self, offer, market_id):
         # If offer was split already, don't post one with the same uuid again
         if offer.id not in self.split:

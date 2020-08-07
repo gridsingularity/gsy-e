@@ -58,9 +58,10 @@ class DeviceStatistics:
         key_name = "trade_price_eur"
         market = list(area.parent.past_markets)[-1]
         trade_price_list = []
-        for t in market.trades:
-            if t.seller == area.name or t.buyer == area.name:
-                trade_price_list.append(t.offer.energy_rate / 100.0)
+        for t in area.strategy.offers.sold_in_market(market.id):
+            trade_price_list.append(t.energy_rate / 100.0)
+        for t in area.strategy.offers.bought_in_market(market.id):
+            trade_price_list.append(t.energy_rate / 100.0)
 
         if trade_price_list:
             _create_or_append_dict(subdict, key_name,
@@ -82,11 +83,10 @@ class DeviceStatistics:
     def calculate_stats_for_device(cls, area, market, subdict):
         key_name = "trade_energy_kWh"
         traded_energy = 0
-        for t in market.trades:
-            if t.seller == area.name:
-                traded_energy -= t.offer.energy
-            if t.buyer == area.name:
-                traded_energy += t.offer.energy
+        for t in area.strategy.offers.sold_in_market(market.id):
+            traded_energy -= t.energy
+        for t in area.strategy.offers.bought_in_market(market.id):
+            traded_energy += t.energy
 
         _create_or_append_dict(subdict, key_name, {market.time_slot: traded_energy})
         cls._calc_min_max_from_sim_dict(subdict, key_name)
@@ -98,11 +98,10 @@ class DeviceStatistics:
         sold_traded_energy = 0
         bought_traded_energy = 0
 
-        for t in market.trades:
-            if t.seller == area.name:
-                sold_traded_energy += t.offer.energy
-            if t.buyer == area.name:
-                bought_traded_energy += t.offer.energy
+        for t in area.strategy.offers.sold_in_market(market.id):
+            sold_traded_energy += t.energy
+        for t in area.strategy.offers.bought_in_market(market.id):
+            bought_traded_energy += t.energy
 
         _create_or_append_dict(subdict, sold_key_name, {market.time_slot: sold_traded_energy})
         cls._calc_min_max_from_sim_dict(subdict, sold_key_name)
