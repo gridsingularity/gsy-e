@@ -82,7 +82,8 @@ _setup_modules = available_simulation_scenarios
               help="Settings file path")
 @click.option('--slowdown', type=float, default=0,
               help="Slowdown factor [0 - 10,000]. "
-                   "Where 0 means: no slowdown, ticks are simulated as fast as possible;")
+                   "Where 0 means: no slowdown, ticks are simulated as fast as possible;"
+                   "and 100: ticks are simulated in realtime")
 @click.option('--seed', help="Manually specify random seed")
 @click.option('--paused', is_flag=True, default=False, show_default=True,
               help="Start simulation in paused state")
