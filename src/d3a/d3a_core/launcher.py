@@ -18,18 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import sys
 import os
 import click
-import logging
-import time
-
-from urllib.parse import urlparse
-from redis.exceptions import ConnectionError
 from datetime import datetime, timedelta
 from redis import StrictRedis
 from rq import Queue
 from subprocess import Popen
 from time import sleep
 import platform
-
+from d3a_interface.utils import check_and_wait_for_redis
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 MAX_JOBS = os.environ.get('D3A_MAX_JOBS_PER_POD', 2)
@@ -60,25 +55,13 @@ class Launcher:
             self.job_array = [j for j in self.job_array if j.poll() is None]
 
     def is_crowded(self):
-        self.check_and_wait_for_redis()
+        check_and_wait_for_redis()
         enqueued = self.queue.jobs
         if enqueued:
             earliest = min(job.enqueued_at for job in enqueued)
             if datetime.now()-earliest >= self.max_delay:
                 return True
         return False
-
-    @staticmethod
-    def check_and_wait_for_redis():
-        redis_host = urlparse(REDIS_URL).netloc
-        info = None
-        while not info:
-            try:
-                info = StrictRedis(redis_host).info()
-                logging.debug("REDIS IS ALIVE")
-            except ConnectionError:
-                logging.error("Redis not yet available - sleeping")
-                time.sleep(5)
 
     def _start_worker(self):
         job_environment = os.environ
