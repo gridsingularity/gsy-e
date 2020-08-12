@@ -39,7 +39,6 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.state import ESSEnergyOrigin
 from d3a.d3a_core.sim_results.plotly_graph import PlotlyGraph
 from functools import reduce  # forward compatibility for Python 3
-from d3a_interface.utils import convert_pendulum_to_str_in_dict
 
 
 _log = logging.getLogger(__name__)
@@ -88,35 +87,13 @@ class ExportAndPlot:
             _log.error("Could not open directory for csv exports: %s" % str(ex))
             return
 
-    def generate_json_report(self):
-        return {
-            "job_id": self.endpoint_buffer.job_id,
-            "random_seed": self.endpoint_buffer.random_seed,
-            "unmatched_loads": convert_pendulum_to_str_in_dict(
-                self.endpoint_buffer.market_unmatched_loads.unmatched_loads, {}),
-            "price_energy_day": convert_pendulum_to_str_in_dict(
-                self.endpoint_buffer.price_energy_day.csv_output, {}),
-            "cumulative_grid_trades":
-                self.endpoint_buffer.cumulative_grid_trades.current_trades,
-            "bills": self.endpoint_buffer.market_bills.bills_results,
-            "cumulative_bills": self.endpoint_buffer.cumulative_bills.cumulative_bills,
-            "status": self.endpoint_buffer.status,
-            "progress_info": self.endpoint_buffer.simulation_progress,
-            "device_statistics": convert_pendulum_to_str_in_dict(
-                self.endpoint_buffer.device_statistics.device_stats_dict, {}),
-            "energy_trade_profile": convert_pendulum_to_str_in_dict(
-                self.endpoint_buffer.trade_profile.traded_energy_profile, {}, ui_format=True),
-            "kpi": self.endpoint_buffer.kpi.performance_indices,
-            "area_throughput": self.endpoint_buffer.area_throughput_stats.results,
-        }
-
     def export_json_data(self, directory: dir):
         json_dir = os.path.join(directory, "aggregated_results")
         mkdir_from_str(json_dir)
         settings_file = os.path.join(json_dir, "const_settings.json")
         with open(settings_file, 'w') as outfile:
             json.dump(constsettings_to_dict(), outfile, indent=2)
-        for key, value in self.generate_json_report().items():
+        for key, value in self.endpoint_buffer.generate_json_report().items():
             json_file = os.path.join(json_dir, key + ".json")
             with open(json_file, 'w') as outfile:
                 json.dump(value, outfile, indent=2)
@@ -125,17 +102,6 @@ class ExportAndPlot:
     def _file_path(directory: dir, slug: str):
         file_name = ("%s.csv" % slug).replace(' ', '_')
         return directory.joinpath(file_name).as_posix()
-
-    def export_to_zip_file(self):
-        self.export(export_plots=False)
-        shutil.make_archive(str(self.zip_filename), 'zip', str(self.directory))
-        return str(self.zip_filename) + ".zip"
-
-    def delete_exported_files(self):
-        zip_file_with_ext = str(self.zip_filename) + ".zip"
-        if os.path.isfile(zip_file_with_ext):
-            os.remove(zip_file_with_ext)
-        shutil.rmtree(str(self.directory))
 
     def export(self, export_plots=True, power_flow=None):
         """Wrapping function, executes all export and plotting functions"""

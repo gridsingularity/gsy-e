@@ -115,7 +115,7 @@ def test_energy_bills(grid):
     ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
     m_bills = MarketEnergyBills()
     m_bills.update(grid)
-    result = m_bills.bills_results
+    result = m_bills.bills
     assert result['house2']['Accumulated Trades']['bought'] == result['commercial']['sold'] == 13
     assert result['house2']['Accumulated Trades']['spent'] == \
         result['commercial']['earned'] == \
@@ -130,7 +130,7 @@ def test_energy_bills_last_past_market(grid):
     ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
     m_bills = MarketEnergyBills()
     m_bills.update(grid)
-    result = m_bills.bills_results
+    result = m_bills.bills
     assert result['house2']['Accumulated Trades']['bought'] == result['commercial']['sold'] == 1
     assert result['house2']['Accumulated Trades']['spent'] == \
         result['commercial']['earned'] == \
@@ -162,14 +162,14 @@ def grid2():
 def test_energy_bills_finds_iaas(grid2):
     m_bills = MarketEnergyBills()
     m_bills.update(grid2)
-    result = m_bills.bills_results
+    result = m_bills.bills
     assert result['house1']['bought'] == result['house2']['sold'] == 3
 
 
 def test_energy_bills_ensure_device_types_are_populated(grid2):
     m_bills = MarketEnergyBills()
     m_bills.update(grid2)
-    result = m_bills.bills_results
+    result = m_bills.bills
     assert result["house1"]["type"] == "House 1 type"
     assert result["house2"]["type"] == "House 2 type"
 
@@ -218,7 +218,7 @@ def test_energy_bills_report_correctly_market_fees(grid_fees):
     ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
     m_bills = MarketEnergyBills()
     m_bills.update(grid_fees)
-    result = m_bills.bills_results
+    result = m_bills.bills
     assert result["street"]["house1"]["market_fee"] == 0.04
     assert result["street"]["house2"]["market_fee"] == 0.01
     assert result["street"]['Accumulated Trades']["market_fee"] == 0.05

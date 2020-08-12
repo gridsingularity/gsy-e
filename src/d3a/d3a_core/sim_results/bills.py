@@ -127,12 +127,13 @@ class CumulativeBills:
 
 
 class MarketEnergyBills:
-    def __init__(self, is_spot_market=True):
+    def __init__(self, should_export_plots, is_spot_market=True):
         self.is_spot_market = is_spot_market
+        self.bills = {}
         self.bills_results = {}
-        self.bills_redis_results = {}
         self.market_fees = {}
         self.external_trades = {}
+        self.should_export_plots = should_export_plots
 
     @staticmethod
     def _store_bought_trade(result_dict, trade):
@@ -271,7 +272,8 @@ class MarketEnergyBills:
         flattened = {}
         self._flatten_energy_bills(bills, flattened)
         self.bills_results = self._accumulate_by_children(area, flattened, {})
-        self._bills_for_redis(area, deepcopy(self.bills_results))
+        if not self.should_export_plots:
+            self._bills_for_redis(area, deepcopy(self.bills_results))
 
     @classmethod
     def _flatten_energy_bills(cls, energy_bills, flat_results):

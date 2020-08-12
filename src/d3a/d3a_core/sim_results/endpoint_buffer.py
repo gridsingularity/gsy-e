@@ -46,12 +46,12 @@ class SimulationEndpointBuffer:
             "percentage_completed": 0
         }
         self.should_export_plots = should_export_plots
-
         self.market_unmatched_loads = MarketUnmatchedLoads(area)
         self.price_energy_day = MarketPriceEnergyDay(should_export_plots)
-        self.market_bills = MarketEnergyBills()
+        self.market_bills = MarketEnergyBills(should_export_plots)
         self.cumulative_bills = CumulativeBills()
-        self.balancing_bills = MarketEnergyBills(is_spot_market=False)
+        if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
+            self.balancing_bills = MarketEnergyBills(should_export_plots, is_spot_market=False)
         self.cumulative_grid_trades = CumulativeGridTrades()
         self.device_statistics = DeviceStatistics(should_export_plots)
         self.trade_profile = EnergyTradeProfile(should_export_plots)
@@ -71,7 +71,7 @@ class SimulationEndpointBuffer:
             "current_market": self.current_market,
             "random_seed": self.random_seed,
             "cumulative_grid_trades": self.cumulative_grid_trades.current_trades,
-            "bills": self.market_bills.bills_redis_results,
+            "bills": self.market_bills.bills_results,
             "cumulative_bills": self.cumulative_bills.cumulative_bills,
             "status": self.status,
             "progress_info": self.simulation_progress,
@@ -88,6 +88,28 @@ class SimulationEndpointBuffer:
             "last_energy_trades_high_resolution": convert_pendulum_to_str_in_dict(
                 self.last_energy_trades_high_resolution, {}),
             "bids_offers_trades": self.bids_offers_trades
+        }
+
+    def generate_json_report(self):
+        return {
+            "job_id": self.job_id,
+            "random_seed": self.random_seed,
+            "unmatched_loads": convert_pendulum_to_str_in_dict(
+                self.market_unmatched_loads.unmatched_loads, {}),
+            "price_energy_day": convert_pendulum_to_str_in_dict(
+                self.price_energy_day.csv_output, {}),
+            "cumulative_grid_trades":
+                self.cumulative_grid_trades.current_trades,
+            "bills": self.market_bills.bills_results,
+            "cumulative_bills": self.cumulative_bills.cumulative_bills,
+            "status": self.status,
+            "progress_info": self.simulation_progress,
+            "device_statistics": convert_pendulum_to_str_in_dict(
+                self.device_statistics.device_stats_dict, {}),
+            "energy_trade_profile": convert_pendulum_to_str_in_dict(
+                self.trade_profile.traded_energy_profile, {}, ui_format=True),
+            "kpi": self.kpi.performance_indices,
+            "area_throughput": self.area_throughput_stats.results,
         }
 
     def update_stats(self, area, simulation_status, progress_info):

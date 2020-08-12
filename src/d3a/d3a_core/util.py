@@ -455,10 +455,10 @@ def create_subdict_or_update(indict, key, subdict):
     return indict
 
 
-def _create_or_update_subdict(indict, key, subdict):
-    if key not in indict.keys():
-        indict[key] = {}
-    indict[key].update(subdict)
+# def _create_or_update_subdict(indict, key, subdict):
+#     if key not in indict.keys():
+#         indict[key] = {}
+#     indict[key].update(subdict)
 
 
 def convert_str_to_pause_after_interval(start_time, input_str):
