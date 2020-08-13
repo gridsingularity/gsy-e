@@ -71,7 +71,7 @@ class SimulationEndpointBuffer:
             "current_market": self.current_market,
             "random_seed": self.random_seed,
             "cumulative_grid_trades": self.cumulative_grid_trades.current_trades,
-            "bills": self.market_bills.bills_results,
+            "bills": self.market_bills.bills_redis_results,
             "cumulative_bills": self.cumulative_bills.cumulative_bills,
             "status": self.status,
             "progress_info": self.simulation_progress,
