@@ -40,6 +40,10 @@ class CumulativeBills:
     def __init__(self):
         self.cumulative_bills_results = {}
 
+    def update(self, area):
+        self.cumulative_bills_results = {}
+        self.update_cumulative_bills(area)
+
     def _calculate_device_penalties(self, area):
         if len(area.children) > 0:
             return
@@ -299,7 +303,7 @@ class MarketEnergyBills:
         return results
 
     @staticmethod
-    def _write_acculumated_stats(area, results, all_child_results, key_name):
+    def _write_accumulated_stats(area, results, all_child_results, key_name):
         results[area.name].update({key_name: {
             'bought': sum(v['bought'] for v in all_child_results),
             'sold': sum(v['sold'] for v in all_child_results),
@@ -327,7 +331,7 @@ class MarketEnergyBills:
     def _generate_external_and_total_bills(self, area, results):
 
         all_child_results = [v for v in results[area.name].values()]
-        self._write_acculumated_stats(area, results, all_child_results, "Accumulated Trades")
+        self._write_accumulated_stats(area, results, all_child_results, "Accumulated Trades")
         total_market_fee = results[area.name]["Accumulated Trades"]["market_fee"]
         if area.name in self.external_trades:
             # External trades are the trades of the parent area
@@ -356,7 +360,7 @@ class MarketEnergyBills:
             totals_child_list = [results[area.name]["Accumulated Trades"],
                                  results[area.name]["Market Fees"]]
 
-        self._write_acculumated_stats(area, results, totals_child_list, "Totals")
+        self._write_accumulated_stats(area, results, totals_child_list, "Totals")
         return results
 
     def _bills_for_redis(self, area, bills_results):
