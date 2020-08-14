@@ -7,22 +7,18 @@ from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.area import Area
 from d3a import limit_float_precision
+from d3a_interface.utils import create_or_update_subdict
 
 FILL_VALUE = None
 
 
-def _create_or_append_dict(dict, key, subdict):
-    if key not in dict.keys():
-        dict[key] = {}
-    dict[key].update(subdict)
-
-
 class DeviceStatistics:
 
-    def __init__(self):
+    def __init__(self, should_export_plots):
         self.device_stats_dict = {}
         self.current_stats_dict = {}
         self.current_stats_time_str = {}
+        self.should_export_plots = should_export_plots
 
     @staticmethod
     def _calc_min_max_from_sim_dict(subdict: Dict, key: str):
@@ -48,10 +44,8 @@ class DeviceStatistics:
         max_trade_stats = dict((time, max_trade_stats_daily[time.format(TIME_FORMAT)])
                                for time in indict.keys())
 
-        _create_or_append_dict(subdict, f"min_{key}",
-                               min_trade_stats)
-        _create_or_append_dict(subdict, f"max_{key}",
-                               max_trade_stats)
+        create_or_update_subdict(subdict, f"min_{key}", min_trade_stats)
+        create_or_update_subdict(subdict, f"max_{key}", max_trade_stats)
 
     @classmethod
     def _device_price_stats(cls, area: Area, subdict: Dict):
@@ -64,10 +58,9 @@ class DeviceStatistics:
             trade_price_list.append(t.energy_rate / 100.0)
 
         if trade_price_list:
-            _create_or_append_dict(subdict, key_name,
-                                   {market.time_slot: trade_price_list})
+            create_or_update_subdict(subdict, key_name, {market.time_slot: trade_price_list})
         else:
-            _create_or_append_dict(subdict, key_name, {market.time_slot: FILL_VALUE})
+            create_or_update_subdict(subdict, key_name, {market.time_slot: FILL_VALUE})
 
         cls._calc_min_max_from_sim_dict(subdict, key_name)
 
@@ -88,7 +81,7 @@ class DeviceStatistics:
         for t in area.strategy.offers.bought_in_market(market.id):
             traded_energy += t.energy
 
-        _create_or_append_dict(subdict, key_name, {market.time_slot: traded_energy})
+        create_or_update_subdict(subdict, key_name, {market.time_slot: traded_energy})
         cls._calc_min_max_from_sim_dict(subdict, key_name)
 
     @classmethod
@@ -103,10 +96,10 @@ class DeviceStatistics:
         for t in area.strategy.offers.bought_in_market(market.id):
             bought_traded_energy += t.energy
 
-        _create_or_append_dict(subdict, sold_key_name, {market.time_slot: sold_traded_energy})
+        create_or_update_subdict(subdict, sold_key_name, {market.time_slot: sold_traded_energy})
         cls._calc_min_max_from_sim_dict(subdict, sold_key_name)
-        _create_or_append_dict(subdict, bought_key_name,
-                               {market.time_slot: bought_traded_energy})
+        create_or_update_subdict(subdict, bought_key_name,
+                                 {market.time_slot: bought_traded_energy})
         cls._calc_min_max_from_sim_dict(subdict, bought_key_name)
 
     @classmethod
@@ -114,7 +107,7 @@ class DeviceStatistics:
         key_name = "pv_production_kWh"
         market = list(area.parent.past_markets)[-1]
 
-        _create_or_append_dict(
+        create_or_update_subdict(
             subdict, key_name,
             {market.time_slot:
                 area.strategy.energy_production_forecast_kWh.get(market.time_slot, 0)})
@@ -125,9 +118,9 @@ class DeviceStatistics:
     def _soc_stats(cls, area: Area, subdict: Dict):
         key_name = "soc_history_%"
         market = list(area.parent.past_markets)[-1]
-        _create_or_append_dict(subdict, key_name,
-                               {market.time_slot:
-                                area.strategy.state.charge_history[market.time_slot]})
+        create_or_update_subdict(subdict, key_name,
+                                 {market.time_slot:
+                                  area.strategy.state.charge_history[market.time_slot]})
 
         cls._calc_min_max_from_sim_dict(subdict, key_name)
 
@@ -136,18 +129,19 @@ class DeviceStatistics:
         key_name = "load_profile_kWh"
         market = list(area.parent.past_markets)[-1]
         if market.time_slot in area.strategy.state.desired_energy_Wh:
-            _create_or_append_dict(subdict, key_name, {
+            create_or_update_subdict(subdict, key_name, {
                 market.time_slot:
                     area.strategy.state.desired_energy_Wh.get(market.time_slot, 0) / 1000.})
         else:
-            _create_or_append_dict(subdict, key_name, {market.time_slot: 0})
+            create_or_update_subdict(subdict, key_name, {market.time_slot: 0})
 
         cls._calc_min_max_from_sim_dict(subdict, key_name)
 
     def update(self, area):
-        self.gather_device_statistics(area, self.device_stats_dict, {})
-        # TODO: only calculate this if redis is enabled:
-        self.gather_device_statistics(area, {}, self.current_stats_dict)
+        if self.should_export_plots:
+            self.gather_device_statistics(area, self.device_stats_dict, {})
+        else:
+            self.gather_device_statistics(area, {}, self.current_stats_dict)
 
     @classmethod
     def gather_device_statistics(cls, area: Area, subdict: Dict, flat_result_dict: Dict):
@@ -179,8 +173,8 @@ class DeviceStatistics:
 
         elif type(area.strategy) == FinitePowerPlant:
             market = list(area.parent.past_markets)[-1]
-            _create_or_append_dict(subdict, "production_kWh",
-                                   {market.time_slot: area.strategy.energy_per_slot_kWh})
+            create_or_update_subdict(subdict, "production_kWh",
+                                     {market.time_slot: area.strategy.energy_per_slot_kWh})
             cls._calc_min_max_from_sim_dict(subdict, "production_kWh")
 
         flat_result_dict[area.uuid] = subdict.copy()

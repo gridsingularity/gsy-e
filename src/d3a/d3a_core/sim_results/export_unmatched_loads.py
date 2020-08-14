@@ -262,11 +262,7 @@ class MarketUnmatchedLoads:
             self.write_none_to_unmatched_loads(area)
         else:
             current_results, current_results_uuid = \
-                self.export_unmatched_loads.get_current_market_results(
-                    all_past_markets=ConstSettings.GeneralSettings.KEEP_PAST_MARKETS)
+                self.export_unmatched_loads.get_current_market_results()
 
             self.last_unmatched_loads = current_results_uuid
-            if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
-                self.unmatched_loads = current_results
-            else:
-                self.merge_unmatched_loads(current_results)
+            self.merge_unmatched_loads(current_results)

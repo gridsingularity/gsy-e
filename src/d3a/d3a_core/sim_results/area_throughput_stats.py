@@ -29,7 +29,8 @@ class AreaThroughputStats:
     def update(self, area):
         self.update_results(area)
 
-    def _calc_results(self, area, baseline_value, energy_profile, direction_key):
+    @staticmethod
+    def _calc_results(area, baseline_value, energy_profile, direction_key):
         # as this is mainly a frontend feature,
         # the numbers are rounded for both local and redis results
         peak_percentage = \
@@ -43,10 +44,12 @@ class AreaThroughputStats:
             "baseline_peak_energy_kWh": baseline_peak_energy_kWh,
          }
 
-    def _calc_peak_energy_results(self, energy_profile):
+    @staticmethod
+    def _calc_peak_energy_results(energy_profile):
         return {"peak_energy_kWh": round_floats_for_ui(max(energy_profile.values(), default=0.0))}
 
-    def _calc_transformer_results(self, area, direction_key):
+    @staticmethod
+    def _calc_transformer_results(area, direction_key):
         if direction_key == "import":
             capacity_kWh = round_floats_for_ui(area.import_capacity_kWh)
         else:

@@ -15,17 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trades, \
-    export_cumulative_grid_trades_redis, MarketPriceEnergyDay
+from d3a.d3a_core.sim_results.area_statistics import MarketPriceEnergyDay
 from d3a.d3a_core.sim_results.area_throughput_stats import AreaThroughputStats
-from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
-from d3a.d3a_core.sim_results.stats import MarketEnergyBills, CumulativeBills
+from d3a.d3a_core.sim_results.bills import MarketEnergyBills, CumulativeBills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
 from d3a.d3a_core.sim_results.export_unmatched_loads import MarketUnmatchedLoads
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.sim_results.kpi import KPI
 from d3a.d3a_core.sim_results.area_market_stock_stats import OfferBidTradeGraphStats
 from d3a_interface.utils import convert_pendulum_to_str_in_dict
+from d3a.d3a_core.sim_results.energy_trade_profile import EnergyTradeProfile
+from d3a.d3a_core.sim_results.cumulative_grid_trades import CumulativeGridTrades
 
 _NO_VALUE = {
     'min': None,
@@ -35,7 +35,7 @@ _NO_VALUE = {
 
 
 class SimulationEndpointBuffer:
-    def __init__(self, job_id, initial_params, area, export_plots=True):
+    def __init__(self, job_id, initial_params, area, should_export_plots):
         self.job_id = job_id
         self.current_market = ""
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
@@ -45,19 +45,22 @@ class SimulationEndpointBuffer:
             "elapsed_time_seconds": 0,
             "percentage_completed": 0
         }
+        self.should_export_plots = should_export_plots
         self.market_unmatched_loads = MarketUnmatchedLoads(area)
-        self.price_energy_day = MarketPriceEnergyDay()
+        self.price_energy_day = MarketPriceEnergyDay(should_export_plots)
         self.market_bills = MarketEnergyBills()
         self.cumulative_bills = CumulativeBills()
-        self.balancing_bills = MarketEnergyBills(is_spot_market=False)
+        if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
+            self.balancing_bills = MarketEnergyBills(is_spot_market=False)
         self.cumulative_grid_trades = CumulativeGridTrades()
-        self.device_statistics = DeviceStatistics()
-        self.file_export_endpoints = FileExportEndpoints(export_plots)
-        self.kpi = KPI()
+        self.device_statistics = DeviceStatistics(should_export_plots)
+        self.trade_profile = EnergyTradeProfile(should_export_plots)
+        self.kpi = KPI(should_export_plots)
         self.area_throughput_stats = AreaThroughputStats()
 
-        self.last_unmatched_loads = {}
         self.bids_offers_trades = {}
+        self.last_energy_trades_high_resolution = {}
+
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
             self.area_market_stocks_stats = OfferBidTradeGraphStats()
 
@@ -67,7 +70,7 @@ class SimulationEndpointBuffer:
             "job_id": self.job_id,
             "current_market": self.current_market,
             "random_seed": self.random_seed,
-            "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
+            "cumulative_grid_trades": self.cumulative_grid_trades.current_trades,
             "bills": self.market_bills.bills_redis_results,
             "cumulative_bills": self.cumulative_bills.cumulative_bills,
             "status": self.status,
@@ -76,14 +79,14 @@ class SimulationEndpointBuffer:
             "last_unmatched_loads": convert_pendulum_to_str_in_dict(
                 self.market_unmatched_loads.last_unmatched_loads, {}),
             "last_energy_trade_profile": convert_pendulum_to_str_in_dict(
-                self.file_export_endpoints.traded_energy_current, {}, ui_format=True),
+                self.trade_profile.traded_energy_current, {}, ui_format=True),
             "last_price_energy_day": convert_pendulum_to_str_in_dict(
                 self.price_energy_day.redis_output, {}),
             "last_device_statistics": convert_pendulum_to_str_in_dict(
                 self.device_statistics.current_stats_dict, {}),
             "area_throughput": self.area_throughput_stats.results_redis,
             "last_energy_trades_high_resolution": convert_pendulum_to_str_in_dict(
-                self.file_export_endpoints.last_energy_trades_high_resolution, {}),
+                self.last_energy_trades_high_resolution, {}),
             "bids_offers_trades": self.bids_offers_trades
         }
 
@@ -95,7 +98,8 @@ class SimulationEndpointBuffer:
                 self.market_unmatched_loads.unmatched_loads, {}),
             "price_energy_day": convert_pendulum_to_str_in_dict(
                 self.price_energy_day.csv_output, {}),
-            "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
+            "cumulative_grid_trades":
+                self.cumulative_grid_trades.current_trades,
             "bills": self.market_bills.bills_results,
             "cumulative_bills": self.cumulative_bills.cumulative_bills,
             "status": self.status,
@@ -103,7 +107,7 @@ class SimulationEndpointBuffer:
             "device_statistics": convert_pendulum_to_str_in_dict(
                 self.device_statistics.device_stats_dict, {}),
             "energy_trade_profile": convert_pendulum_to_str_in_dict(
-                self.file_export_endpoints.traded_energy_profile, {}, ui_format=True),
+                self.trade_profile.traded_energy_profile, {}, ui_format=True),
             "kpi": self.kpi.performance_indices,
             "area_throughput": self.area_throughput_stats.results,
         }
@@ -126,8 +130,8 @@ class SimulationEndpointBuffer:
 
         self.cumulative_bills.update_cumulative_bills(area)
 
-        self.file_export_endpoints(area)
         self.market_unmatched_loads.update_unmatched_loads(area)
+
         self.device_statistics.update(area)
 
         self.price_energy_day.update(area)
@@ -139,61 +143,36 @@ class SimulationEndpointBuffer:
         self.generate_result_report()
 
         self.bids_offers_trades.clear()
+
+        self.trade_profile.update(area)
+
         self.update_area_aggregated_stats(area)
 
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
             self.area_market_stocks_stats.update(area)
 
-    def _send_results_to_areas(self, area):
-        stats = {
-            "kpi": self.kpi.performance_indices_redis.get(area.uuid, None)
-        }
-        area.endpoint_stats.update(stats)
-
     def update_area_aggregated_stats(self, area):
-        self._update_area_stats(area)
-        self._send_results_to_areas(area)
+        self._update_bids_offer_trades(area)
+        self._merge_cumulative_bills_into_bills_for_market_info(area)
         for child in area.children:
             self.update_area_aggregated_stats(child)
 
-    def _update_area_stats(self, area):
+    def _update_bids_offer_trades(self, area):
         if area.current_market is not None:
             self.bids_offers_trades[area.uuid] = area.current_market.get_bids_offers_trades()
-        bills = self.market_bills.bills_redis_results[area.uuid]
-        bills.update({
-            "penalty_cost": self.cumulative_bills.cumulative_bills_results[area.uuid]["penalties"],
-            "penalty_energy":
-                self.cumulative_bills.cumulative_bills_results[area.uuid]["penalty_energy"]})
-        area.stats.update_aggregated_stats({"bills": bills})
+            # TODO: (D3ASIM-2670) Trades are already stored in bids_offers_trades:
+            #  accumulation of area.stats.market_trades endpoint should be deprecated
+            self.last_energy_trades_high_resolution[area.uuid] = area.stats.market_trades
 
+    def _merge_cumulative_bills_into_bills_for_market_info(self, area):
+        # this is only needed for areas with external connection
+        if area.redis_ext_conn:
+            bills = self.market_bills.bills_redis_results[area.uuid]
+            bills.update({
+                "penalty_cost":
+                    self.cumulative_bills.cumulative_bills_results[area.uuid]["penalties"],
+                "penalty_energy":
+                    self.cumulative_bills.cumulative_bills_results[area.uuid]["penalty_energy"]})
+            area.stats.update_aggregated_stats({"bills": bills})
 
-class CumulativeGridTrades:
-    def __init__(self):
-        self.current_trades = {}
-        self.current_trades_redis = {}
-        self.current_balancing_trades = {}
-        self.accumulated_trades = {}
-        self.accumulated_trades_redis = {}
-        self.accumulated_balancing_trades = {}
-
-    def update(self, area):
-        market_type = \
-            "past_markets" if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS else "current_market"
-        balancing_market_type = "past_balancing_markets" \
-            if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS \
-            else "current_balancing_market"
-
-        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
-            self.accumulated_trades = {}
-            self.accumulated_trades_redis = {}
-            self.accumulated_balancing_trades = {}
-
-        self.accumulated_trades_redis, self.current_trades_redis = \
-            export_cumulative_grid_trades_redis(area, self.accumulated_trades_redis,
-                                                market_type)
-        self.accumulated_trades, self.current_trades = \
-            export_cumulative_grid_trades(area, self.accumulated_trades,
-                                          market_type, all_devices=True)
-        self.accumulated_balancing_trades, self.current_balancing_trades = \
-            export_cumulative_grid_trades(area, self.accumulated_balancing_trades,
-                                          balancing_market_type)
+            area.stats.kpi.update(self.kpi.performance_indices_redis.get(area.uuid, None))

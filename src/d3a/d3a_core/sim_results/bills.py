@@ -25,13 +25,6 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.constants import DEVICE_PENALTY_RATE
 
 
-def recursive_current_markets(area):
-    if area.current_market is not None:
-        yield area.current_market
-        for child in area.children:
-            yield from recursive_current_markets(child)
-
-
 def _get_past_markets_from_area(area, past_market_types):
     if not hasattr(area, past_market_types) or getattr(area, past_market_types) is None:
         return []
@@ -43,34 +36,13 @@ def _get_past_markets_from_area(area, past_market_types):
         return [getattr(area, past_market_types)[-1]]
 
 
-def primary_trades(markets):
-    """
-    We want to avoid counting trades between different areas multiple times
-    (as they are represented as a chain of trades with IAAs). To achieve
-    this, we skip all trades where the buyer is an IAA.
-    """
-    for market in markets:
-        for trade in market.trades:
-            if trade.buyer[:4] != 'IAA ':
-                yield trade
-    # TODO find a less hacky way to exclude trades with IAAs as buyers
-
-
-def primary_unit_prices(markets):
-    for trade in primary_trades(markets):
-        yield trade.offer.energy_rate
-
-
-def total_avg_trade_price(markets):
-    return (
-        sum(trade.offer.price for trade in primary_trades(markets)) /
-        sum(trade.offer.energy for trade in primary_trades(markets))
-    )
-
-
 class CumulativeBills:
     def __init__(self):
         self.cumulative_bills_results = {}
+
+    def update(self, area):
+        self.cumulative_bills_results = {}
+        self.update_cumulative_bills(area)
 
     def _calculate_device_penalties(self, area):
         if len(area.children) > 0:
@@ -104,8 +76,7 @@ class CumulativeBills:
         for child in area.children:
             self.update_cumulative_bills(child)
 
-        if area.uuid not in self.cumulative_bills_results or \
-                ConstSettings.GeneralSettings.KEEP_PAST_MARKETS is True:
+        if area.uuid not in self.cumulative_bills_results:
             self.cumulative_bills_results[area.uuid] = {
                 "name": area.name,
                 "spent_total": 0.0,
@@ -162,12 +133,14 @@ class CumulativeBills:
 class MarketEnergyBills:
     def __init__(self, is_spot_market=True):
         self.is_spot_market = is_spot_market
+        self.bills = {}
         self.bills_results = {}
         self.bills_redis_results = {}
         self.market_fees = {}
         self.external_trades = {}
 
-    def _store_bought_trade(self, result_dict, trade):
+    @staticmethod
+    def _store_bought_trade(result_dict, trade):
         # Division by 100 to convert cents to Euros
         fee_price = trade.fee_price / 100. if trade.fee_price is not None else 0.
         result_dict['bought'] += trade.offer.energy
@@ -180,7 +153,8 @@ class MarketEnergyBills:
         result_dict['total_energy'] += trade.offer.energy
         result_dict['market_fee'] += fee_price
 
-    def _store_sold_trade(self, result_dict, trade):
+    @staticmethod
+    def _store_sold_trade(result_dict, trade):
         # Division by 100 to convert cents to Euros
         fee_price = trade.fee_price if trade.fee_price is not None else 0.
         result_dict['sold'] += trade.offer.energy
@@ -230,25 +204,22 @@ class MarketEnergyBills:
                     type=area.display_type)
 
     def _get_child_data(self, area):
-        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
-            return {child.name: self._default_area_dict(child)
+        if area.name not in self.bills_results:
+            self.bills_results[area.name] =  \
+                {child.name: self._default_area_dict(child)
                     for child in area.children}
         else:
-            if area.name not in self.bills_results:
-                self.bills_results[area.name] =  \
-                    {child.name: self._default_area_dict(child)
-                        for child in area.children}
-            else:
-                # TODO: find a better way to handle this.
-                # is only triggered once:
-                # when a chil is added to an area both triggered by a live event
-                if area.children and "bought" in self.bills_results[area.name]:
-                    self.bills_results[area.name] = {}
-                for child in area.children:
-                    self.bills_results[area.name][child.name] = self._default_area_dict(child) \
-                        if child.name not in self.bills_results[area.name] else \
-                        self.bills_results[area.name][child.name]
-            return self.bills_results[area.name]
+            # TODO: find a better way to handle this.
+            # is only triggered once:
+            # when a child is added to an area both triggered by a live event
+            if area.children and "bought" in self.bills_results[area.name]:
+                self.bills_results[area.name] = {}
+            for child in area.children:
+                self.bills_results[area.name][child.name] = self._default_area_dict(child) \
+                    if child.name not in self.bills_results[area.name] else \
+                    self.bills_results[area.name][child.name]
+
+        return self.bills_results[area.name]
 
     def _energy_bills(self, area, past_market_types):
         """
@@ -259,8 +230,7 @@ class MarketEnergyBills:
         if not area.children:
             return None
 
-        if area.name not in self.external_trades or \
-                ConstSettings.GeneralSettings.KEEP_PAST_MARKETS is True:
+        if area.name not in self.external_trades:
             self.external_trades[area.name] = dict(
                 bought=0.0, sold=0.0, spent=0.0, earned=0.0,
                 total_energy=0.0, total_cost=0.0, market_fee=0.0)
@@ -297,9 +267,6 @@ class MarketEnergyBills:
             self._accumulate_market_fees(child, past_market_types)
 
     def _update_market_fees(self, area, market_type):
-        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
-            # If all the past markets remain in memory, reinitialize the market fees
-            self.market_fees = {}
         self._accumulate_market_fees(area, market_type)
 
     def update(self, area):
@@ -335,7 +302,8 @@ class MarketEnergyBills:
                 )
         return results
 
-    def _write_acculumated_stats(self, area, results, all_child_results, key_name):
+    @staticmethod
+    def _write_accumulated_stats(area, results, all_child_results, key_name):
         results[area.name].update({key_name: {
             'bought': sum(v['bought'] for v in all_child_results),
             'sold': sum(v['sold'] for v in all_child_results),
@@ -363,7 +331,7 @@ class MarketEnergyBills:
     def _generate_external_and_total_bills(self, area, results):
 
         all_child_results = [v for v in results[area.name].values()]
-        self._write_acculumated_stats(area, results, all_child_results, "Accumulated Trades")
+        self._write_accumulated_stats(area, results, all_child_results, "Accumulated Trades")
         total_market_fee = results[area.name]["Accumulated Trades"]["market_fee"]
         if area.name in self.external_trades:
             # External trades are the trades of the parent area
@@ -392,7 +360,7 @@ class MarketEnergyBills:
             totals_child_list = [results[area.name]["Accumulated Trades"],
                                  results[area.name]["Market Fees"]]
 
-        self._write_acculumated_stats(area, results, totals_child_list, "Totals")
+        self._write_accumulated_stats(area, results, totals_child_list, "Totals")
         return results
 
     def _bills_for_redis(self, area, bills_results):
