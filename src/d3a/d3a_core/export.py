@@ -26,14 +26,12 @@ import operator
 from slugify import slugify
 from sortedcontainers import SortedDict
 from collections import namedtuple
-from pendulum import from_timestamp
 from copy import deepcopy
-from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.area import Area
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
 from d3a_interface.utils import mkdir_from_str
-from d3a.d3a_core.util import constsettings_to_dict, generate_market_slot_list
+from d3a.d3a_core.util import constsettings_to_dict, generate_market_slot_list, round_floats_for_ui
 from d3a.models.market.market_structures import MarketClearingState
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.state import ESSEnergyOrigin
@@ -448,6 +446,23 @@ class ExportAndPlot:
             start = len(fig.data)
             for tick_slot, info_dicts in markets.items():
                 for info_dict in info_dicts:
+                    if info_dict["tag"] == "bid":
+                        tool_tip = f"{info_dict['seller_origin']} " \
+                                   f"Bid ({info_dict['energy']} kWh @ " \
+                                   f"{round_floats_for_ui(info_dict['rate'])} € cents / kWh)"
+                        info_dict.update({"tool_tip": tool_tip})
+                    elif info_dict["tag"] == "offer":
+                        tool_tip = f"{info_dict['buyer_origin']} " \
+                                   f"Offer({info_dict['energy']} kWh @ " \
+                                   f"{round_floats_for_ui(info_dict['rate'])} € cents / kWh)"
+                        info_dict.update({"tool_tip": tool_tip})
+                    elif info_dict["tag"] == "trade":
+                        tool_tip = f"Trade: {info_dict['seller_origin']} --> " \
+                                   f"{info_dict['buyer_origin']} " \
+                                   f"({info_dict['energy']} kWh @ " \
+                                   f"{round_floats_for_ui(info_dict['rate'])} € / kWh)"
+                        info_dict.update({"tool_tip": tool_tip})
+                for info_dict in info_dicts:
                     size = 5 if info_dict["tag"] in ["offer", "bid"] else 10
                     all_info_dicts = list([
                         info_dict,
@@ -697,6 +712,7 @@ class ExportAndPlot:
         """
         Plots history of energy trades plotted for each market_slot
         """
+        area_stats = self.endpoint_buffer.area_market_stocks_stats.state[area.name]
         barmode = "relative"
         xtitle = 'Time'
         ytitle = 'Energy [kWh]'
@@ -704,7 +720,7 @@ class ExportAndPlot:
         title = f'High Resolution Energy Trade Profile of {market_name}'
         plot_dir = os.path.join(self.plot_dir, subdir, "energy_profile_hr")
         mkdir_from_str(plot_dir)
-        for market_slot, data in area.stats.market_trades.items():
+        for market_slot, data in area_stats.items():
             plot_data = self.add_plotly_graph_dataset(data, market_slot)
             if len(plot_data) > 0:
                 market_slot_str = market_slot.format(DATE_TIME_FORMAT)
@@ -725,19 +741,21 @@ class ExportAndPlot:
         zero_point_dict = {"timestamp": [market_slot - GlobalConfig.tick_length],
                            "energy": [0.0]}
         # 1. accumulate data by buyer and seller:
-        for trade in market_trades:
-            trade_time = from_timestamp(trade["trade_time"], tz=TIME_ZONE)
-            seller = trade["seller"]
-            buyer = trade["buyer"]
-            energy = trade["energy"]
-            if seller not in seller_dict:
-                seller_dict[seller] = deepcopy(zero_point_dict)
-            if buyer not in buyer_dict:
-                buyer_dict[buyer] = deepcopy(zero_point_dict)
-            seller_dict[seller]["timestamp"].append(trade_time)
-            seller_dict[seller]["energy"].append(energy * ENERGY_SELLER_SIGN_PLOTS)
-            buyer_dict[buyer]["timestamp"].append(trade_time)
-            buyer_dict[buyer]["energy"].append(energy * ENERGY_BUYER_SIGN_PLOTS)
+        for stock_time, stocks in market_trades.items():
+            for stock in stocks:
+                if stock['tag'] == "trade":
+                    trade_time = stock_time
+                    seller = stock["seller_origin"]
+                    buyer = stock["buyer_origin"]
+                    energy = stock["energy"]
+                    if seller not in seller_dict:
+                        seller_dict[seller] = deepcopy(zero_point_dict)
+                    if buyer not in buyer_dict:
+                        buyer_dict[buyer] = deepcopy(zero_point_dict)
+                    seller_dict[seller]["timestamp"].append(trade_time)
+                    seller_dict[seller]["energy"].append(energy * ENERGY_SELLER_SIGN_PLOTS)
+                    buyer_dict[buyer]["timestamp"].append(trade_time)
+                    buyer_dict[buyer]["energy"].append(energy * ENERGY_BUYER_SIGN_PLOTS)
 
         # 2. Create bar plot objects and collect them in a list
         # The widths of bars in a plotly.Bar is set in milliseconds when axis is in datetime format

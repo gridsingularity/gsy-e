@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from random import randint
-from d3a.d3a_core.util import round_floats_for_ui
 
 
 class OfferBidTradeGraphStats:
@@ -36,33 +35,28 @@ class OfferBidTradeGraphStats:
             self.state[area.name][last_past_market.time_slot] = {}
 
         for bid in last_past_market.bid_history:
-            tool_tip = f"{bid.buyer_origin} " \
-                       f"Bid ({bid.energy} kWh @ " \
-                       f"{round_floats_for_ui(bid.energy_rate)} € cents / kWh)"
             self.check_and_create_color_mapping(bid.buyer_origin)
             self.check_and_create_list(area, last_past_market, bid)
-            info_dict = {"rate": bid.energy_rate, "tool_tip": tool_tip, "tag": "offer",
-                         "color": self.color_mapping[bid.buyer_origin]}
+            info_dict = {"rate": bid.energy_rate, "tag": "offer",
+                         "color": self.color_mapping[bid.buyer_origin],
+                         "buyer_origin": bid.buyer_origin, "energy": bid.energy}
             self.state[area.name][last_past_market.time_slot][bid.time].append(info_dict)
 
         for offer in last_past_market.offer_history:
-            tool_tip = f"{offer.seller_origin} " \
-                       f"Offer({offer.energy} kWh @ " \
-                       f"{round_floats_for_ui(offer.energy_rate)} € cents / kWh)"
             self.check_and_create_color_mapping(offer.seller_origin)
             self.check_and_create_list(area, last_past_market, offer)
             self.state[area.name][last_past_market.time_slot][offer.time].append(
-                {"rate": offer.energy_rate, "tool_tip": tool_tip, "tag": "bid",
-                 "color": self.color_mapping[offer.seller_origin]})
+                {"rate": offer.energy_rate, "tag": "bid",
+                 "color": self.color_mapping[offer.seller_origin],
+                 "seller_origin": offer.seller_origin, "energy": offer.energy})
 
         for trade in last_past_market.trades:
-            tool_tip = f"Trade: {trade.seller_origin} --> {trade.buyer_origin} " \
-                       f"({trade.offer.energy} kWh @ " \
-                       f"{round_floats_for_ui(trade.offer.energy_rate)} € / kWh)"
             self.check_and_create_color_mapping(trade.seller_origin)
             self.check_and_create_list(area, last_past_market, trade)
-            info_dict = {"rate": trade.offer.energy_rate, "tool_tip": tool_tip, "tag": "trade",
-                         "color": self.color_mapping[trade.seller_origin]}
+            info_dict = {"rate": trade.offer.energy_rate, "tag": "trade",
+                         "color": self.color_mapping[trade.seller_origin],
+                         "seller_origin": trade.seller_origin, "buyer_origin": trade.buyer_origin,
+                         "energy": trade.offer.energy}
             self.state[area.name][last_past_market.time_slot][trade.time].append(info_dict)
 
         for child in area.children:
