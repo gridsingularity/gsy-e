@@ -159,8 +159,7 @@ class SimulationEndpointBuffer:
 
     def _update_bids_offer_trades(self, area):
         if area.current_market is not None:
-            self.bids_offers_trades[area.uuid] = \
-                {area.current_market.time_slot_str: area.current_market.get_bids_offers_trades()}
+            self.bids_offers_trades[area.uuid] = area.current_market.get_bids_offers_trades()
 
     def _merge_cumulative_bills_into_bills_for_market_info(self, area):
         # this is only needed for areas with external connection
