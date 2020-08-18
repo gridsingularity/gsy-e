@@ -62,7 +62,8 @@ class SimulationEndpointBuffer:
         self.bids_offers_trades = {}
         self.last_energy_trades_high_resolution = {}
 
-        if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
+        if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or \
+                ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
             self.area_market_stocks_stats = OfferBidTradeGraphStats()
 
     def update_results_area_uuids(self, area):
@@ -156,7 +157,8 @@ class SimulationEndpointBuffer:
 
         self.update_area_aggregated_stats(area)
 
-        if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
+        if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or \
+                ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
             self.area_market_stocks_stats.update(area)
 
         self.result_area_uuids = set()
@@ -171,9 +173,6 @@ class SimulationEndpointBuffer:
     def _update_bids_offer_trades(self, area):
         if area.current_market is not None:
             self.bids_offers_trades[area.uuid] = area.current_market.get_bids_offers_trades()
-            # TODO: (D3ASIM-2670) Trades are already stored in bids_offers_trades:
-            #  accumulation of area.stats.market_trades endpoint should be deprecated
-            self.last_energy_trades_high_resolution[area.uuid] = area.stats.market_trades
 
     def _merge_cumulative_bills_into_bills_for_market_info(self, area):
         # this is only needed for areas with external connection
