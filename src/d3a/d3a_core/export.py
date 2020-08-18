@@ -741,13 +741,13 @@ class ExportAndPlot:
         zero_point_dict = {"timestamp": [market_slot - GlobalConfig.tick_length],
                            "energy": [0.0]}
         # 1. accumulate data by buyer and seller:
-        for stock_time, stocks in market_trades.items():
-            for stock in stocks:
-                if stock['tag'] == "trade":
-                    trade_time = stock_time
-                    seller = stock["seller_origin"]
-                    buyer = stock["buyer_origin"]
-                    energy = stock["energy"]
+        for market_slot_time, market_slot_trades in market_trades.items():
+            for trade in market_slot_trades:
+                if trade['tag'] == "trade":
+                    trade_time = market_slot_time
+                    seller = trade["seller_origin"]
+                    buyer = trade["buyer_origin"]
+                    energy = trade["energy"]
                     if seller not in seller_dict:
                         seller_dict[seller] = deepcopy(zero_point_dict)
                     if buyer not in buyer_dict:
