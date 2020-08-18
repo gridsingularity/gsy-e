@@ -37,6 +37,7 @@ _NO_VALUE = {
 class SimulationEndpointBuffer:
     def __init__(self, job_id, initial_params, area, should_export_plots):
         self.job_id = job_id
+        self.result_area_uuids = set()
         self.current_market = ""
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
         self.status = {}
@@ -64,6 +65,12 @@ class SimulationEndpointBuffer:
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
             self.area_market_stocks_stats = OfferBidTradeGraphStats()
 
+    def update_results_area_uuids(self, area):
+        if area.strategy is not None or (area.strategy is None and area.children):
+            self.result_area_uuids.update({area.uuid})
+        for child in area.children:
+            self.update_results_area_uuids(child)
+
     def generate_result_report(self):
         # TODO: In D3ASIM-2288, add unix_time=True to convert_pendulum_to_str_in_dict
         return {
@@ -87,7 +94,8 @@ class SimulationEndpointBuffer:
             "area_throughput": self.area_throughput_stats.results_redis,
             "last_energy_trades_high_resolution": convert_pendulum_to_str_in_dict(
                 self.last_energy_trades_high_resolution, {}),
-            "bids_offers_trades": self.bids_offers_trades
+            "bids_offers_trades": self.bids_offers_trades,
+            "results_area_uuids": list(self.result_area_uuids)
         }
 
     def generate_json_report(self):
@@ -150,6 +158,9 @@ class SimulationEndpointBuffer:
 
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
             self.area_market_stocks_stats.update(area)
+
+        self.result_area_uuids = set()
+        self.update_results_area_uuids(area)
 
     def update_area_aggregated_stats(self, area):
         self._update_bids_offer_trades(area)
