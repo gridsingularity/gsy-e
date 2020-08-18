@@ -126,9 +126,6 @@ class AreaStats:
         market_timeslots = [m.time_slot for m in self._markets.all_spot_markets]
         if slot in market_timeslots:
             market.set_actual_energy(time, reporter, value)
-        # TODO: Raise of RuntimeError disabled for bug in DeleteAreaEvent (D3ASIM-2560)
-        # else:
-        #     raise RuntimeError("Reporting energy for unknown market")
 
     @property
     def cheapest_offers(self):
