@@ -381,6 +381,7 @@ class Simulation:
         self._update_and_send_results(is_final=True)
         if self.export_on_finish and not self.redis_connection.is_enabled():
             log.info("Exporting simulation data.")
+            self.export.data_to_csv(self.area, False)
             if GlobalConfig.POWER_FLOW:
                 self.export.export(export_plots=self.should_export_plots,
                                    power_flow=self.power_flow)
