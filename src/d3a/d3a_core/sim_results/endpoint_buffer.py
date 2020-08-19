@@ -185,4 +185,4 @@ class SimulationEndpointBuffer:
                     self.cumulative_bills.cumulative_bills_results[area.uuid]["penalty_energy"]})
             area.stats.update_aggregated_stats({"bills": bills})
 
-            area.stats.kpi.update(self.kpi.performance_indices_redis.get(area.uuid, None))
+            area.stats.kpi.update(self.kpi.performance_indices_redis.get(area.uuid, {}))
