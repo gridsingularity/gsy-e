@@ -29,6 +29,8 @@ from d3a_interface.constants_limits import ConstSettings
 def get_setup(config):
 
     ConstSettings.IAASettings.MARKET_TYPE = 2
+    # ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR = True
+    ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR = True
 
     area = Area(
         'Grid',
