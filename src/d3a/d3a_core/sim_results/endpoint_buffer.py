@@ -175,14 +175,12 @@ class SimulationEndpointBuffer:
             self.bids_offers_trades[area.uuid] = area.current_market.get_bids_offers_trades()
 
     def _merge_cumulative_bills_into_bills_for_market_info(self, area):
-        # this is only needed for areas with external connection
-        if area.redis_ext_conn:
-            bills = self.market_bills.bills_redis_results[area.uuid]
-            bills.update({
-                "penalty_cost":
-                    self.cumulative_bills.cumulative_bills_results[area.uuid]["penalties"],
-                "penalty_energy":
-                    self.cumulative_bills.cumulative_bills_results[area.uuid]["penalty_energy"]})
-            area.stats.update_aggregated_stats({"bills": bills})
+        bills = self.market_bills.bills_redis_results[area.uuid]
+        bills.update({
+            "penalty_cost":
+                self.cumulative_bills.cumulative_bills_results[area.uuid]["penalties"],
+            "penalty_energy":
+                self.cumulative_bills.cumulative_bills_results[area.uuid]["penalty_energy"]})
+        area.stats.update_aggregated_stats({"bills": bills})
 
-            area.stats.kpi.update(self.kpi.performance_indices_redis.get(area.uuid, {}))
+        area.stats.kpi.update(self.kpi.performance_indices_redis.get(area.uuid, {}))
