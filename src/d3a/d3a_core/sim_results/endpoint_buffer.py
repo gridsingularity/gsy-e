@@ -41,6 +41,8 @@ class SimulationEndpointBuffer:
         self.current_market = ""
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
         self.status = {}
+        self.area_result_dict = self._create_area_tree_dict(area)
+        print(f"area_result_dict: {self.area_result_dict}")
         self.simulation_progress = {
             "eta_seconds": 0,
             "elapsed_time_seconds": 0,
@@ -65,6 +67,27 @@ class SimulationEndpointBuffer:
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or \
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
             self.area_market_stocks_stats = OfferBidTradeGraphStats()
+
+    @staticmethod
+    def _structure_results_from_area_object(target_area):
+        area_dict = dict()
+        area_dict['name'] = target_area.name
+        area_dict['uuid'] = target_area.uuid
+        area_dict['strategy'] = str(target_area.strategy.__class__.__name__)
+        area_dict['appliance'] = str(target_area.strategy.__class__.__name__)
+        # area_dict['offers'] = {}
+        # area_dict['bids'] = {}
+        # area_dict['trades'] = {}
+        area_dict['children'] = []
+        return area_dict
+
+    def _create_area_tree_dict(self, area):
+        area_result_dict = self._structure_results_from_area_object(area)
+        for child in area.children:
+            area_result_dict["children"].append(
+                self._create_area_tree_dict(child)
+            )
+        return area_result_dict
 
     def update_results_area_uuids(self, area):
         if area.strategy is not None or (area.strategy is None and area.children):
