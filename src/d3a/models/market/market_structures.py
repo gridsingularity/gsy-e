@@ -67,7 +67,6 @@ class Offer:
         return {
             "type": "Offer",
             "id": self.id,
-            "price": self.price,
             "energy": self.energy,
             "energy_rate": self.energy_rate,
             "seller": self.seller,
@@ -150,11 +149,10 @@ class Bid(namedtuple('Bid', ('id', 'time', 'price', 'energy', 'buyer', 'seller',
         return {
             "type": "Bid",
             "id": self.id,
-            "price": self.price,
             "energy": self.energy,
             "energy_rate": self.energy_rate,
-            "buyer": self.buyer,
             "buyer_origin": self.buyer_origin,
+            "buyer": self.buyer,
             "time": datetime_to_string_incl_seconds(self.time)
         }
 
@@ -234,13 +232,12 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'resi
             "id": self.id,
             "offer_bid_id": self.offer.id,
             "residual_id": self.residual.id if self.residual is not None else None,
-            "price": self.offer.price,
             "energy": self.offer.energy,
             "energy_rate": self.offer.energy_rate,
             "buyer": self.buyer,
             "buyer_origin": self.buyer_origin,
-            "seller": self.seller,
             "seller_origin": self.seller_origin,
+            "seller": self.seller,
             "fee_price": self.fee_price,
             "time": datetime_to_string_incl_seconds(self.time)
         }

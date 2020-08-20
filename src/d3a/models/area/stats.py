@@ -17,10 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from pendulum import from_format
 from statistics import mean, median
-from d3a_interface.constants_limits import DATE_TIME_FORMAT, ConstSettings
+from d3a_interface.constants_limits import DATE_TIME_FORMAT
 from d3a.constants import TIME_ZONE
 from d3a import limit_float_precision
-from d3a.d3a_core.util import area_name_from_area_or_iaa_name
 from copy import copy
 
 default_trade_stats_dict = {
@@ -40,6 +39,7 @@ class AreaStats:
         self.market_bills = {}
         self.rate_stats_market = {}
         self.market_trades = {}
+        self.kpi = {}
 
     def update_aggregated_stats(self, area_stats):
         self.aggregated_stats = area_stats
@@ -53,25 +53,6 @@ class AreaStats:
                    and "Accumulated Trades" in self.aggregated_stats["bills"] else None
             self.rate_stats_market[self.current_market.time_slot] = \
                 self.min_max_avg_median_rate_current_market()
-            # TODO: This accumulation of trade data could potentially also used for the
-            #  LR energy trade profile (in the frame of D3ASIM-2212) and replace the old way
-            if not ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
-                # only save the trades of the last time slot for the endpoint
-                self.market_trades = {}
-            self.market_trades[self.current_market.time_slot] = \
-                self.aggregate_market_trades()
-
-    def aggregate_market_trades(self):
-        """
-        Adds entry for each trade with exact time of trade.
-        As multiple trades can happen in the same tick, a list of dict is returned.
-        """
-
-        return [{"trade_time": trade.time.timestamp(),
-                 "energy": trade.offer.energy,
-                 "seller": area_name_from_area_or_iaa_name(trade.seller),
-                 "buyer": area_name_from_area_or_iaa_name(trade.buyer)}
-                for trade in self.current_market.trades]
 
     def update_accumulated(self):
         self._accumulated_past_price = sum(
@@ -127,9 +108,6 @@ class AreaStats:
         market_timeslots = [m.time_slot for m in self._markets.all_spot_markets]
         if slot in market_timeslots:
             market.set_actual_energy(time, reporter, value)
-        # TODO: Raise of RuntimeError disabled for bug in DeleteAreaEvent (D3ASIM-2560)
-        # else:
-        #     raise RuntimeError("Reporting energy for unknown market")
 
     @property
     def cheapest_offers(self):

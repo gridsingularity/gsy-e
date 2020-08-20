@@ -352,13 +352,6 @@ def save_reported_unmatched_loads(context):
     context.unmatched_loads = deepcopy(unmatched_loads_object.unmatched_loads)
 
 
-@when('the reported energy trade profile are saved')
-def save_reported_energy_trade_profile(context):
-    file_export_endpoints = context.simulation.endpoint_buffer.file_export_endpoints
-    context.energy_trade_profile = deepcopy(
-        file_export_endpoints.traded_energy_profile)
-
-
 @when('the reported price energy day results are saved')
 def step_impl(context):
     context.price_energy_day = deepcopy(
@@ -391,7 +384,7 @@ def save_reported_cumulative_grid_trade_profile(context):
     context.cumulative_grid_trades = deepcopy(
         context.simulation.endpoint_buffer.cumulative_grid_trades.accumulated_trades)
     context.cumulative_grid_trades_redis = \
-        deepcopy(context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades_redis)
+        deepcopy(context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades)
     context.cumulative_grid_balancing_trades = deepcopy(
         context.simulation.endpoint_buffer.cumulative_grid_trades.current_balancing_trades)
 
@@ -758,7 +751,7 @@ def test_external_trade_energy_price(context):
     # Please activate the test when implementing the aforementioned bug.
     return
     bills = context.simulation.endpoint_buffer.market_bills.bills_results
-    current_trades = context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades_redis
+    current_trades = context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades
     houses = [child for child in context.simulation.area.children
               if child.name in ["House 1", "House 2"]]
     for house in houses:
@@ -1033,14 +1026,6 @@ def identical_cumulative_grid_trades(context):
                         significant_digits=5)) == 0
     assert len(DeepDiff(cumulative_grid_balancing_trades, context.cumulative_grid_balancing_trades,
                         significant_digits=5)) == 0
-
-
-@then('the energy trade profiles are identical no matter if the past markets are kept')
-def identical_energy_trade_profiles(context):
-    file_export_endpoints = context.simulation.endpoint_buffer.file_export_endpoints
-    energy_trade_profile = file_export_endpoints.traded_energy_profile
-
-    assert len(DeepDiff(energy_trade_profile, context.energy_trade_profile)) == 0
 
 
 @then('the price energy day results are identical no matter if the past markets are kept')

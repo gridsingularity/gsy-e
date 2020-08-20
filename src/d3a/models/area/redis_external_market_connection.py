@@ -107,7 +107,7 @@ class RedisMarketExternalConnection:
         current_market_info['last_market_stats'] = \
             self.area.stats.get_price_stats_current_market()
         current_market_info["self_sufficiency"] = \
-            self.area.endpoint_stats["kpi"].get("self_sufficiency", None)
+            self.area.stats.kpi.get("self_sufficiency", None)
         current_market_info["market_fee"] = self.area.grid_fee_constant
         data = {"status": "ready",
                 "event": "market",

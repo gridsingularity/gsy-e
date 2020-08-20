@@ -128,6 +128,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def event_market_cycle(self):
         super().event_market_cycle()
         self._calculate_active_markets()
+        self.update_state()
+
+    def update_state(self):
         for market in self.active_markets:
             current_day = self._get_day_of_timestamp(market.time_slot)
             if self.hrs_per_day[current_day] <= FLOATING_POINT_TOLERANCE:

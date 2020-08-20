@@ -175,7 +175,8 @@ class PVExternalMixin(ExternalMixin):
             current_market_info = self.market.info
             current_market_info['device_info'] = self._device_info_dict
             current_market_info["event"] = "market"
-            current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"]
+            current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
+                if "bills" in self.device.stats.aggregated_stats else None
             current_market_info["area_uuid"] = self.device.uuid
             current_market_info['last_market_stats'] = \
                 self.market_area.stats.get_price_stats_current_market()

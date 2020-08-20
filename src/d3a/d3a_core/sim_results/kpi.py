@@ -146,10 +146,11 @@ class KPIState:
 
 
 class KPI:
-    def __init__(self):
+    def __init__(self, should_export_plots):
         self.performance_indices = dict()
         self.performance_indices_redis = dict()
         self.state = {}
+        self.should_export_plots = should_export_plots
 
     def __repr__(self):
         return f"KPI: {self.performance_indices}"
@@ -210,7 +211,8 @@ class KPI:
     def update_kpis_from_area(self, area):
         self.performance_indices[area.name] = \
             self.area_performance_indices(area)
-        self.performance_indices_redis[area.uuid] = self._kpi_ratio_to_percentage(area.name)
+        if not self.should_export_plots:
+            self.performance_indices_redis[area.uuid] = self._kpi_ratio_to_percentage(area.name)
 
         for child in area.children:
             if len(child.children) > 0:
