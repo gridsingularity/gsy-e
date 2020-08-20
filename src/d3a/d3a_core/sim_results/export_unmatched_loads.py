@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from pendulum import duration
 from itertools import product
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a_interface.constants_limits import GlobalConfig, ConstSettings
+from d3a_interface.constants_limits import GlobalConfig
 from d3a.constants import DATE_TIME_FORMAT, FLOATING_POINT_TOLERANCE
 from d3a_interface.sim_results.aggregate_results import merge_unmatched_load_results_to_global
 
@@ -54,16 +54,16 @@ class ExportUnmatchedLoads:
         self.load_count = 0
         self.count_load_devices_in_setup(self.area)
 
-    def _set_latest_time_slot(self):
+    def _set_latest_time_slot(self, all_past_markets):
         # This is for only returning data until the current time_slot:
         if hasattr(self.area, "past_markets") and len(list(self.area.past_markets)) > 0:
             self.latest_time_slot = list(self.area.past_markets)[-1].time_slot
         else:
-            if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS is False:
+            if all_past_markets is False:
                 self.latest_time_slot = self.hour_list[0].add(
                     seconds=self.area.config.tick_length.seconds * self.area.current_tick)
             else:
-                self.latest_time_slot = self.hour_list[0]
+                self.latest_time_slot = self.hour_list[-1]
 
     def count_load_devices_in_setup(self, area):
         for child in area.children:
@@ -73,13 +73,13 @@ class ExportUnmatchedLoads:
                 self.count_load_devices_in_setup(child)
 
     def get_current_market_results(self, all_past_markets=False):
-        self._set_latest_time_slot()
+        self._set_latest_time_slot(all_past_markets)
         unmatched_loads = self.arrange_output(self.append_device_type(
             self.expand_to_ul_to_hours(
                 self.expand_ul_to_parents(
                     self.find_unmatched_loads(self.area, {}, all_past_markets)[self.area.name],
                     self.area.name, {}
-                ))), self.area)
+                ), all_past_markets)), self.area)
 
         return unmatched_loads, self.change_name_to_uuid(unmatched_loads)
 
@@ -190,13 +190,13 @@ class ExportUnmatchedLoads:
         else:
             return {"unmatched_count": ul_count, "unmatched_times": hover_dict}
 
-    def expand_to_ul_to_hours(self, indict):
+    def expand_to_ul_to_hours(self, indict, all_past_markets=True):
         """
         Changing format to dict of hour time stamps
         """
         outdict = {}
         for node_name, subdict in indict.items():
-            if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS is True:
+            if all_past_markets:
                 outdict[node_name] = {}
                 for hour_time in self.hour_list:
                     if hour_time <= self.latest_time_slot:

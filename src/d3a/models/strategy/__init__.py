@@ -33,6 +33,7 @@ from d3a.d3a_core.util import append_or_create_key
 from d3a.models.market.market_structures import trade_from_JSON_string, offer_from_JSON_string
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
 from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a import constants
 
 log = getLogger(__name__)
 
@@ -398,7 +399,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         self.offers.on_offer_split(original_offer, accepted_offer, residual_offer, market_id)
 
     def event_market_cycle(self):
-        if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+        if not constants.D3A_TEST_RUN:
             self.offers.delete_past_markets_offers()
         self.event_responses = []
 
@@ -529,7 +530,7 @@ class BidEnabledStrategy(BaseStrategy):
             self.add_bid_to_bought(bid_trade.offer, market_id)
 
     def event_market_cycle(self):
-        if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+        if not constants.D3A_TEST_RUN:
             self._bids = {}
             self._traded_bids = {}
             super().event_market_cycle()
