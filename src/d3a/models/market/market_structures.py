@@ -69,6 +69,7 @@ class Offer:
             "id": self.id,
             "energy": self.energy,
             "energy_rate": self.energy_rate,
+            "seller": self.seller,
             "seller_origin": self.seller_origin,
             "time": datetime_to_string_incl_seconds(self.time)
         }
@@ -151,6 +152,7 @@ class Bid(namedtuple('Bid', ('id', 'time', 'price', 'energy', 'buyer', 'seller',
             "energy": self.energy,
             "energy_rate": self.energy_rate,
             "buyer_origin": self.buyer_origin,
+            "buyer": self.buyer,
             "time": datetime_to_string_incl_seconds(self.time)
         }
 
@@ -232,8 +234,10 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'resi
             "residual_id": self.residual.id if self.residual is not None else None,
             "energy": self.offer.energy,
             "energy_rate": self.offer.energy_rate,
+            "buyer": self.buyer,
             "buyer_origin": self.buyer_origin,
             "seller_origin": self.seller_origin,
+            "seller": self.seller,
             "fee_price": self.fee_price,
             "time": datetime_to_string_incl_seconds(self.time)
         }
