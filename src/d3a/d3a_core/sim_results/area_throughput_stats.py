@@ -15,16 +15,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.d3a_core.util import area_name_from_area_or_iaa_name,  round_floats_for_ui, \
-    add_or_create_key, create_subdict_or_update, area_sells_to_child, child_buys_from_area
+from d3a.d3a_core.util import round_floats_for_ui, create_subdict_or_update
 
 
 class AreaThroughputStats:
     def __init__(self):
         self.results = {}
         self.results_redis = {}
-        self.exported_energy = {}
-        self.imported_energy = {}
 
     def update(self, area):
         self.update_results(area)
@@ -57,9 +54,9 @@ class AreaThroughputStats:
         return {"capacity_kWh": capacity_kWh}
 
     def update_results(self, area):
-        self.aggregate_exported_imported_energy(area)
-        area_results = {"import": self._calc_peak_energy_results(self.imported_energy[area.uuid]),
-                        "export": self._calc_peak_energy_results(self.exported_energy[area.uuid])}
+        area.stats.aggregate_exported_imported_energy(area)
+        area_results = {"import": self._calc_peak_energy_results(area.stats.imported_energy),
+                        "export": self._calc_peak_energy_results(area.stats.exported_energy)}
 
         baseline_import = area.baseline_peak_energy_import_kWh
         baseline_export = area.baseline_peak_energy_export_kWh
@@ -68,12 +65,12 @@ class AreaThroughputStats:
             if baseline_import is not None and baseline_import > 0:
                 area_results["import"].update(
                     self._calc_results(area, baseline_import,
-                                       self.imported_energy[area.uuid], "import")
+                                       area.stats.imported_energy, "import")
                 )
             if baseline_export is not None and baseline_export > 0:
                 area_results["export"].update(
                     self._calc_results(area, baseline_export,
-                                       self.exported_energy[area.uuid], "export")
+                                       area.stats.exported_energy, "export")
                 )
 
         import_capacity = area.import_capacity_kWh
@@ -89,28 +86,3 @@ class AreaThroughputStats:
         for child in area.children:
             if child.strategy is None:
                 self.update_results(child)
-
-    def aggregate_exported_imported_energy(self, area):
-        if area.uuid not in self.imported_energy:
-            self.imported_energy[area.uuid] = {}
-        if area.uuid not in self.exported_energy:
-            self.exported_energy[area.uuid] = {}
-
-        past_markets = list(area._markets.past_markets.values())
-        if len(past_markets) > 0:
-            current_market = past_markets[-1]
-        else:
-            return
-
-        child_names = [area_name_from_area_or_iaa_name(c.name) for c in area.children]
-        for trade in current_market.trades:
-            if child_buys_from_area(trade, area.name, child_names):
-                add_or_create_key(self.exported_energy[area.uuid], current_market.time_slot_str,
-                                  trade.offer.energy)
-            if area_sells_to_child(trade, area.name, child_names):
-                add_or_create_key(self.imported_energy[area.uuid], current_market.time_slot_str,
-                                  trade.offer.energy)
-        if current_market.time_slot_str not in self.imported_energy[area.uuid]:
-            self.imported_energy[area.uuid][current_market.time_slot_str] = 0.
-        if current_market.time_slot_str not in self.exported_energy[area.uuid]:
-            self.exported_energy[area.uuid][current_market.time_slot_str] = 0.
