@@ -24,7 +24,7 @@ from d3a.d3a_core.sim_results.bills import MarketEnergyBills
 
 from d3a.d3a_core.util import make_iaa_name
 from d3a.models.strategy import BaseStrategy
-from d3a_interface.constants_limits import ConstSettings
+from d3a import constants
 
 
 class FakeArea:
@@ -112,7 +112,7 @@ def grid():
 
 
 def test_energy_bills(grid):
-    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
+    constants.D3A_TEST_RUN = True
     m_bills = MarketEnergyBills()
     m_bills.update(grid)
     result = m_bills.bills_results
@@ -127,7 +127,7 @@ def test_energy_bills(grid):
 
 
 def test_energy_bills_last_past_market(grid):
-    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
+    constants.D3A_TEST_RUN = False
     m_bills = MarketEnergyBills()
     m_bills.update(grid)
     result = m_bills.bills_results
@@ -197,7 +197,7 @@ def grid_fees():
 
 
 def test_energy_bills_accumulate_fees(grid_fees):
-    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
+    constants.D3A_TEST_RUN = True
     m_bills = MarketEnergyBills()
     m_bills._update_market_fees(grid_fees, 'past_markets')
     assert m_bills.market_fees['house2'] == 0.03
@@ -206,7 +206,7 @@ def test_energy_bills_accumulate_fees(grid_fees):
 
 
 def test_energy_bills_use_only_last_market_if_not_keep_past_markets(grid_fees):
-    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
+    constants.D3A_TEST_RUN = False
     m_bills = MarketEnergyBills()
     m_bills._update_market_fees(grid_fees, 'past_markets')
     assert m_bills.market_fees['house2'] == 0.03
@@ -215,7 +215,7 @@ def test_energy_bills_use_only_last_market_if_not_keep_past_markets(grid_fees):
 
 
 def test_energy_bills_report_correctly_market_fees(grid_fees):
-    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
+    constants.D3A_TEST_RUN = True
     m_bills = MarketEnergyBills()
     m_bills.update(grid_fees)
     result = m_bills.bills_results
