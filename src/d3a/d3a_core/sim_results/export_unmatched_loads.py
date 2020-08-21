@@ -45,25 +45,17 @@ def hour_list():
 
 class ExportUnmatchedLoads:
     def __init__(self, area):
-
         self.hour_list = hour_list()
-        self.latest_time_slot = None
         self.name_uuid_map = {area.name: area.uuid}
         self.name_type_map = {area.name: area.display_type}
         self.area = area
         self.load_count = 0
         self.count_load_devices_in_setup(self.area)
 
-    def _set_latest_time_slot(self, all_past_markets):
-        # This is for only returning data until the current time_slot:
-        if hasattr(self.area, "past_markets") and len(list(self.area.past_markets)) > 0:
-            self.latest_time_slot = list(self.area.past_markets)[-1].time_slot
-        else:
-            if all_past_markets is False:
-                self.latest_time_slot = self.hour_list[0].add(
-                    seconds=self.area.config.tick_length.seconds * self.area.current_tick)
-            else:
-                self.latest_time_slot = self.hour_list[-1]
+    @property
+    def latest_time_slot(self):
+        return self.area.current_market.time_slot \
+            if self.area.current_market is not None else self.hour_list[-1]
 
     def count_load_devices_in_setup(self, area):
         for child in area.children:
@@ -73,7 +65,6 @@ class ExportUnmatchedLoads:
                 self.count_load_devices_in_setup(child)
 
     def get_current_market_results(self, all_past_markets=False):
-        self._set_latest_time_slot(all_past_markets)
         unmatched_loads = self.arrange_output(self.append_device_type(
             self.expand_to_ul_to_hours(
                 self.expand_ul_to_parents(
@@ -168,7 +159,7 @@ class ExportUnmatchedLoads:
         return outdict
 
     @classmethod
-    def _get_hover_info(cls, indict, hour_time):
+    def _get_hover_info(cls, indict, slot_time):
         """
         returns dict of UL for each subarea for the hover the UL graph
         """
@@ -176,10 +167,10 @@ class ExportUnmatchedLoads:
         ul_count = 0
         for child_name, child_ul_list in indict.items():
             for time in child_ul_list:
-                if time.hour == hour_time.hour and \
-                   time.day == hour_time.day and \
-                   time.month == hour_time.month and \
-                   time.year == hour_time.year:
+                if time.hour == slot_time.hour and \
+                   time.day == slot_time.day and \
+                   time.month == slot_time.month and \
+                   time.year == slot_time.year:
                     ul_count += 1
                     if child_name in hover_dict:
                         hover_dict[child_name].append(time.format(DATE_TIME_FORMAT))
