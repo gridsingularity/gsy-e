@@ -39,10 +39,14 @@ class SimulationEndpointBuffer:
         self.job_id = job_id
         self.result_area_uuids = set()
         self.current_market = ""
+        self.current_market_unix = None
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
         self.status = {}
         self.area_result_dict = self._create_area_tree_dict(area)
-        print(f"area_result_dict: {self.area_result_dict}")
+        # print(f"area_result_dict: {self.area_result_dict}")
+        self.flattened_area_core_stats_dict = {}
+        self._create_flattened_core_area_stats(area)
+        # print(f"flattened_area_core_stats_dict: {self.flattened_area_core_stats_dict}")
         self.simulation_progress = {
             "eta_seconds": 0,
             "elapsed_time_seconds": 0,
@@ -75,9 +79,6 @@ class SimulationEndpointBuffer:
         area_dict['uuid'] = target_area.uuid
         area_dict['strategy'] = str(target_area.strategy.__class__.__name__)
         area_dict['appliance'] = str(target_area.strategy.__class__.__name__)
-        # area_dict['offers'] = {}
-        # area_dict['bids'] = {}
-        # area_dict['trades'] = {}
         area_dict['children'] = []
         return area_dict
 
@@ -144,10 +145,23 @@ class SimulationEndpointBuffer:
             "area_throughput": self.area_throughput_stats.results,
         }
 
+    def _create_flattened_core_area_stats(self, target_area):
+        if target_area.uuid not in self.flattened_area_core_stats_dict:
+            self.flattened_area_core_stats_dict[target_area.uuid] = {}
+        for child in target_area.children:
+            self._create_flattened_core_area_stats(child)
+
     def update_stats(self, area, simulation_status, progress_info):
         self.status = simulation_status
         if area.current_market is not None:
             self.current_market = area.current_market.time_slot_str
+            self.current_market_unix = area.current_market.time_slot.timestamp()
+        if self.current_market_unix is not None and \
+                self.current_market_unix not in self.flattened_area_core_stats_dict[area.uuid]:
+            self.flattened_area_core_stats_dict[area.uuid] = {}
+            self.flattened_area_core_stats_dict[area.uuid][self.current_market_unix] = \
+                {'bids': [], 'offers': [], 'trades': []}
+            # print(f"update_stats: {self.flattened_area_core_stats_dict}")
         self.simulation_progress = {
             "eta_seconds": progress_info.eta.seconds,
             "elapsed_time_seconds": progress_info.elapsed_time.seconds,
