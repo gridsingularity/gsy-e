@@ -43,10 +43,8 @@ class SimulationEndpointBuffer:
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
         self.status = {}
         self.area_result_dict = self._create_area_tree_dict(area)
-        # print(f"area_result_dict: {self.area_result_dict}")
         self.flattened_area_core_stats_dict = {}
         self._create_flattened_core_area_stats(area)
-        # print(f"flattened_area_core_stats_dict: {self.flattened_area_core_stats_dict}")
         self.simulation_progress = {
             "eta_seconds": 0,
             "elapsed_time_seconds": 0,
@@ -151,17 +149,45 @@ class SimulationEndpointBuffer:
         for child in target_area.children:
             self._create_flattened_core_area_stats(child)
 
+    def _populate_core_stats(self, area):
+        if self.current_market_unix is not None and \
+                self.current_market_unix not in self.flattened_area_core_stats_dict[area.uuid]:
+            core_stats_dict = {'bids': [], 'offers': [], 'trades': []}
+            if hasattr(area.current_market, 'offers'):
+                for offer in list(area.current_market.offers.values()):
+                    offer_info_dict = \
+                        {'id': offer.id, 'time': offer.time.timestamp(), 'energy': offer.energy,
+                         'rate': offer.energy_rate, 'seller_origin': offer.seller_origin}
+                    core_stats_dict['offers'].append(offer_info_dict)
+            if hasattr(area.current_market, 'bids'):
+                for bid in list(area.current_market.bids.values()):
+                    offer_info_dict = \
+                        {'id': bid.id, 'time': bid.time.timestamp(), 'energy': bid.energy,
+                         'rate': bid.energy_rate, 'buyer_origin': bid.buyer_origin}
+                    core_stats_dict['bids'].append(offer_info_dict)
+            if hasattr(area.current_market, 'trades'):
+                for trade in area.current_market.trades:
+                    trade_info_dict = \
+                        {'id': trade.id, 'time': trade.time.timestamp(),
+                         'energy': trade.offer.energy, 'rate': trade.offer.energy_rate,
+                         'buyer_origin': trade.buyer_origin, 'seller_origin': trade.seller_origin,
+                         'fee_price': trade.fee_price}
+                    core_stats_dict['trades'].append(trade_info_dict)
+
+            self.flattened_area_core_stats_dict[area.uuid] = {}
+            self.flattened_area_core_stats_dict[area.uuid][self.current_market_unix] = \
+                core_stats_dict
+
+        for child in area.children:
+            self._populate_core_stats(child)
+
     def update_stats(self, area, simulation_status, progress_info):
         self.status = simulation_status
         if area.current_market is not None:
             self.current_market = area.current_market.time_slot_str
             self.current_market_unix = area.current_market.time_slot.timestamp()
-        if self.current_market_unix is not None and \
-                self.current_market_unix not in self.flattened_area_core_stats_dict[area.uuid]:
-            self.flattened_area_core_stats_dict[area.uuid] = {}
-            self.flattened_area_core_stats_dict[area.uuid][self.current_market_unix] = \
-                {'bids': [], 'offers': [], 'trades': []}
-            # print(f"update_stats: {self.flattened_area_core_stats_dict}")
+        self._populate_core_stats(area)
+        print(f"flattened_area_core_stats_dict: {self.flattened_area_core_stats_dict}")
         self.simulation_progress = {
             "eta_seconds": progress_info.eta.seconds,
             "elapsed_time_seconds": progress_info.elapsed_time.seconds,
