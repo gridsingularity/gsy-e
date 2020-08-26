@@ -138,7 +138,7 @@ def main():
                                          retry_on_timeout=True)):
         Worker(
             ['d3a'],
-            name='simulation.{}.{:%s}'.format(getpid(), now())
+            name='simulation.{}.{:%s}'.format(getpid(), now()),log_job_description=False
         ).work()
 
 
