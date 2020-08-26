@@ -118,7 +118,8 @@ class SimulationEndpointBuffer:
             "last_energy_trades_high_resolution": convert_pendulum_to_str_in_dict(
                 self.last_energy_trades_high_resolution, {}),
             "bids_offers_trades": self.bids_offers_trades,
-            "results_area_uuids": list(self.result_area_uuids)
+            "results_area_uuids": list(self.result_area_uuids),
+            "flattened_area_core_stats_dict": self.flattened_area_core_stats_dict
         }
 
     def generate_json_report(self):
@@ -153,11 +154,11 @@ class SimulationEndpointBuffer:
         if self.current_market_unix is not None and \
                 self.current_market_unix not in self.flattened_area_core_stats_dict[area.uuid]:
             core_stats_dict = {'bids': [], 'offers': [], 'trades': []}
-            if hasattr(area.current_market, 'offers'):
-                for offer in list(area.current_market.offers.values()):
+            if hasattr(area.current_market, 'offer_history'):
+                for offer in area.current_market.offer_history:
                     core_stats_dict['offers'].append(offer.serializable_dict())
-            if hasattr(area.current_market, 'bids'):
-                for bid in list(area.current_market.bids.values()):
+            if hasattr(area.current_market, 'bid_history'):
+                for bid in area.current_market.bid_history:
                     core_stats_dict['bids'].append(bid.serializable_dict())
             if hasattr(area.current_market, 'trades'):
                 for trade in area.current_market.trades:
@@ -176,7 +177,7 @@ class SimulationEndpointBuffer:
             self.current_market = area.current_market.time_slot_str
             self.current_market_unix = area.current_market.time_slot.timestamp()
         self._populate_core_stats(area)
-        print(f"flattened_area_core_stats_dict: {self.flattened_area_core_stats_dict}")
+        # print(f"flattened_area_core_stats_dict: {self.flattened_area_core_stats_dict}")
         self.simulation_progress = {
             "eta_seconds": progress_info.eta.seconds,
             "elapsed_time_seconds": progress_info.elapsed_time.seconds,
