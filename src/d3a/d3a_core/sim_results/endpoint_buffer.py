@@ -155,24 +155,13 @@ class SimulationEndpointBuffer:
             core_stats_dict = {'bids': [], 'offers': [], 'trades': []}
             if hasattr(area.current_market, 'offers'):
                 for offer in list(area.current_market.offers.values()):
-                    offer_info_dict = \
-                        {'id': offer.id, 'time': offer.time.timestamp(), 'energy': offer.energy,
-                         'rate': offer.energy_rate, 'seller_origin': offer.seller_origin}
-                    core_stats_dict['offers'].append(offer_info_dict)
+                    core_stats_dict['offers'].append(offer.serializable_dict())
             if hasattr(area.current_market, 'bids'):
                 for bid in list(area.current_market.bids.values()):
-                    offer_info_dict = \
-                        {'id': bid.id, 'time': bid.time.timestamp(), 'energy': bid.energy,
-                         'rate': bid.energy_rate, 'buyer_origin': bid.buyer_origin}
-                    core_stats_dict['bids'].append(offer_info_dict)
+                    core_stats_dict['bids'].append(bid.serializable_dict())
             if hasattr(area.current_market, 'trades'):
                 for trade in area.current_market.trades:
-                    trade_info_dict = \
-                        {'id': trade.id, 'time': trade.time.timestamp(),
-                         'energy': trade.offer.energy, 'rate': trade.offer.energy_rate,
-                         'buyer_origin': trade.buyer_origin, 'seller_origin': trade.seller_origin,
-                         'fee_price': trade.fee_price}
-                    core_stats_dict['trades'].append(trade_info_dict)
+                    core_stats_dict['trades'].append(trade.serializable_dict())
 
             self.flattened_area_core_stats_dict[area.uuid] = {}
             self.flattened_area_core_stats_dict[area.uuid][self.current_market_unix] = \
