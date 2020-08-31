@@ -23,12 +23,13 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.constants import DEVICE_PENALTY_RATE
+from d3a import constants
 
 
 def _get_past_markets_from_area(area, past_market_types):
     if not hasattr(area, past_market_types) or getattr(area, past_market_types) is None:
         return []
-    if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+    if constants.D3A_TEST_RUN:
         return getattr(area, past_market_types)
     else:
         if len(getattr(area, past_market_types)) < 1:

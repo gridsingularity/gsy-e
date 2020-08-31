@@ -164,7 +164,8 @@ class OneSidedMarket(Market):
                                     original_offer_price=original_residual_price,
                                     dispatch_event=False,
                                     seller_origin=original_offer.seller_origin,
-                                    adapt_price_with_fees=False)
+                                    adapt_price_with_fees=False,
+                                    add_to_history=True)
 
         log.debug(f"[OFFER][SPLIT][{self.time_slot_str}, {self.name}] "
                   f"({short_offer_bid_log_str(original_offer)} into "

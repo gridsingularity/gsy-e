@@ -32,6 +32,7 @@ from d3a.models.read_user_profile import InputProfileTypes
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.utils import key_in_dict_and_not_none
+from d3a import constants
 
 BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
@@ -146,7 +147,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._delete_past_state()
 
     def _delete_past_state(self):
-        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS is True or \
+        if constants.D3A_TEST_RUN is True or \
                 self.area.current_market is None:
             return
         to_delete = []

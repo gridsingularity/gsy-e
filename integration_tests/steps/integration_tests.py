@@ -35,6 +35,7 @@ from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
     get_number_of_unmatched_loads
+from d3a import constants
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
 ACCUMULATED_KEYS_LIST = ["Accumulated Trades", "External Trades", "Totals", "Market Fees"]
@@ -235,7 +236,7 @@ def dispatch_bootom_top(context):
 
 @given('the past markets are kept in memory')
 def past_markets_in_memory(context):
-    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
+    constants.D3A_TEST_RUN = True
 
 
 @given('the minimum offer age is {min_offer_age}')
@@ -376,7 +377,7 @@ def past_markets_not_in_memory(context):
     # d3a has to be set to publish the full results:
     ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS = True
 
-    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
+    constants.D3A_TEST_RUN = False
 
 
 @when('the reported cumulative grid trades are saved')
