@@ -75,7 +75,7 @@ class SimulationEndpointBuffer:
         area_dict = dict()
         area_dict['name'] = target_area.name
         area_dict['uuid'] = target_area.uuid
-        area_dict['type'] = str(target_area.strategy.__class__.__name__)
+        area_dict['type'] = str(target_area.strategy.__class__.__name__) if target_area.strategy is not None else "Area"
         area_dict['children'] = []
         return area_dict
 
