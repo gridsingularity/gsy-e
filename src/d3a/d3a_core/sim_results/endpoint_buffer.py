@@ -75,8 +75,7 @@ class SimulationEndpointBuffer:
         area_dict = dict()
         area_dict['name'] = target_area.name
         area_dict['uuid'] = target_area.uuid
-        area_dict['strategy'] = str(target_area.strategy.__class__.__name__)
-        area_dict['appliance'] = str(target_area.strategy.__class__.__name__)
+        area_dict['type'] = str(target_area.strategy.__class__.__name__)
         area_dict['children'] = []
         return area_dict
 
@@ -177,7 +176,6 @@ class SimulationEndpointBuffer:
             self.current_market = area.current_market.time_slot_str
             self.current_market_unix = area.current_market.time_slot.timestamp()
         self._populate_core_stats(area)
-        # print(f"flattened_area_core_stats_dict: {self.flattened_area_core_stats_dict}")
         self.simulation_progress = {
             "eta_seconds": progress_info.eta.seconds,
             "elapsed_time_seconds": progress_info.elapsed_time.seconds,
