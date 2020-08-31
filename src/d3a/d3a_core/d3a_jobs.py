@@ -41,7 +41,7 @@ def decompress_and_decode_queued_strings(queued_string):
 
 @job('d3a')
 def start(scenario, settings, events, aggregator_device_mapping):
-    logging.getLogger().setLevel(logging.INFO)
+    logging.getLogger().setLevel(logging.ERROR)
 
     scenario = decompress_and_decode_queued_strings(scenario)
     logging.getLogger().info(f"Scenario details are : {0}: {scenario}")
@@ -142,7 +142,7 @@ def main():
                                          retry_on_timeout=True)):
         Worker(
             ['d3a'],
-            name='simulation.{}.{:%s}'.format(getpid(), now()),log_job_description=False
+            name='simulation.{}.{:%s}'.format(getpid(), now()), log_job_description=False
         ).work()
 
 
