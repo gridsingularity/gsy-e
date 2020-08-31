@@ -119,7 +119,6 @@ class SimulationEndpointBuffer:
                 self.last_energy_trades_high_resolution, {}),
             "bids_offers_trades": self.bids_offers_trades,
             "results_area_uuids": list(self.result_area_uuids),
-            "flattened_area_core_stats_dict": self.flattened_area_core_stats_dict
         }
 
     def generate_json_report(self):
