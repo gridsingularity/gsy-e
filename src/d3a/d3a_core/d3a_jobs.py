@@ -44,6 +44,10 @@ def start(scenario, settings, events, aggregator_device_mapping):
     logging.getLogger().setLevel(logging.ERROR)
 
     scenario = decompress_and_decode_queued_strings(scenario)
+    logging.getLogger().info(f"Scenario details are : {0}: {scenario}")
+    logging.getLogger().info(f"Settings details are : {0}: {settings}")
+    logging.getLogger().info(f"Events details are : {0}: {events}")
+    logging.getLogger().info(f"Events details are : {0}: {aggregator_device_mapping}")
 
     job = get_current_job()
     job.save_meta()
