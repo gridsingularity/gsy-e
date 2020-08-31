@@ -447,12 +447,12 @@ class ExportAndPlot:
             for tick_slot, info_dicts in markets.items():
                 for info_dict in info_dicts:
                     if info_dict["tag"] == "bid":
-                        tool_tip = f"{info_dict['seller_origin']} " \
+                        tool_tip = f"{info_dict['buyer_origin']} " \
                                    f"Bid ({info_dict['energy']} kWh @ " \
                                    f"{round_floats_for_ui(info_dict['rate'])} € cents / kWh)"
                         info_dict.update({"tool_tip": tool_tip})
                     elif info_dict["tag"] == "offer":
-                        tool_tip = f"{info_dict['buyer_origin']} " \
+                        tool_tip = f"{info_dict['seller_origin']} " \
                                    f"Offer({info_dict['energy']} kWh @ " \
                                    f"{round_floats_for_ui(info_dict['rate'])} € cents / kWh)"
                         info_dict.update({"tool_tip": tool_tip})
