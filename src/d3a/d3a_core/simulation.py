@@ -192,8 +192,6 @@ class Simulation:
 
         self._set_traversal_length()
 
-        are_all_areas_unique(self.area, set())
-
         self.area.activate(self.bc)
 
     @property
