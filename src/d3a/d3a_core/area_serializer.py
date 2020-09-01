@@ -163,7 +163,6 @@ def area_from_string(string, config=None):
 
 
 def are_all_areas_unique(area, list_of_areas=set()):
-    assert area.name not in list_of_areas
     list_of_areas.add(area.name)
 
     for child in area.children:
