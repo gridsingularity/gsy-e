@@ -44,7 +44,6 @@ class SimulationEndpointBuffer:
         self.status = {}
         self.area_result_dict = self._create_area_tree_dict(area)
         self.flattened_area_core_stats_dict = {}
-        self._create_flattened_core_area_stats(area)
         self.simulation_progress = {
             "eta_seconds": 0,
             "elapsed_time_seconds": 0,
@@ -143,13 +142,9 @@ class SimulationEndpointBuffer:
             "area_throughput": self.area_throughput_stats.results,
         }
 
-    def _create_flattened_core_area_stats(self, target_area):
-        if target_area.uuid not in self.flattened_area_core_stats_dict:
-            self.flattened_area_core_stats_dict[target_area.uuid] = {}
-        for child in target_area.children:
-            self._create_flattened_core_area_stats(child)
-
     def _populate_core_stats(self, area):
+        if area.uuid not in self.flattened_area_core_stats_dict:
+            self.flattened_area_core_stats_dict[area.uuid] = {}
         if self.current_market_unix is not None and \
                 self.current_market_unix not in self.flattened_area_core_stats_dict[area.uuid]:
             core_stats_dict = {'bids': [], 'offers': [], 'trades': []}
