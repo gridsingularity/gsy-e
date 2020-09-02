@@ -97,8 +97,11 @@ class ExportAndPlot:
                 json.dump(value, outfile, indent=2)
 
     @staticmethod
-    def _file_path(directory: dir, slug: str):
-        file_name = ("%s.csv" % slug).replace(' ', '_')
+    def _file_path(directory: dir, slug: str, uuid='', parent=''):
+        if parent != '' and parent != "grid" and parent is not None:
+            file_name = ("{0}-{1}.csv".format(slug, uuid)).replace(' ', '_')
+        else:
+            file_name = ("{0}.csv".format(slug)).replace(' ', '_')
         return directory.joinpath(file_name).as_posix()
 
     def export(self, export_plots=True, power_flow=None):
@@ -204,7 +207,9 @@ class ExportAndPlot:
         (*-bids/offers/balancing-offers.csv files)
         return: dict[out_keys]
         """
-        file_path = self._file_path(directory, f"{area.slug}-{file_suffix}")
+        file_path = self._file_path(directory,
+                                    f"{area.slug}-{file_suffix}",
+                                    area.uuid, area.parent)
         labels = ("slot",) + offer_type._csv_fields()
         try:
             with open(file_path, 'a') as csv_file:
@@ -226,11 +231,14 @@ class ExportAndPlot:
         """
 
         if balancing:
-            file_path = self._file_path(directory, "{}-balancing-trades".format(area.slug))
+            file_path = self._file_path(directory,
+                                        "{}-balancing-trades".format(area.slug),
+                                        area.uuid, area.parent)
             labels = ("slot",) + BalancingTrade._csv_fields()
             past_markets = area.past_balancing_markets
         else:
-            file_path = self._file_path(directory, "{}-trades".format(area.slug))
+            file_path = self._file_path(directory, "{}-trades".format(area.slug),
+                                        area.uuid, area.parent)
             labels = ("slot",) + Trade._csv_fields()
             past_markets = area.past_markets
 
@@ -253,15 +261,18 @@ class ExportAndPlot:
         """
 
         area_name = area.slug
+        area_uuid = area.uuid
         if balancing:
             area_name += "-balancing"
-        data = self.file_stats_endpoint.generate_market_export_data(area, balancing)
+        data = self.file_stats_endpoint.\
+            generate_market_export_data(area, balancing)
         rows = data.rows()
         if not rows and not is_first:
             return
 
         try:
-            with open(self._file_path(directory, area_name), 'a') as csv_file:
+            with open(self._file_path(directory, area_name, area_uuid, area.parent), 'a') \
+                    as csv_file:
                 writer = csv.writer(csv_file)
                 if is_first:
                     writer.writerow(data.labels())
@@ -280,9 +291,9 @@ class ExportAndPlot:
                 self.plot_device_stats(child, new_node_address_list)
             else:
                 address_list = new_node_address_list + [child.name]
-                self._plot_device_stats(address_list, child.strategy)
+                self._plot_device_stats(address_list, child.strategy, area)
 
-    def _plot_device_stats(self, address_list: list, device_strategy):
+    def _plot_device_stats(self, address_list: list, device_strategy, area):
         """
         Plots device graphs
         """
@@ -296,6 +307,9 @@ class ExportAndPlot:
         # converting address_list into plot_dir by slugifying the members
         plot_dir = os.path.join(self.plot_dir,
                                 "/".join([slugify(node).lower() for node in address_list][0:-1]))
+        if area.slug != "grid":
+            plot_dir = plot_dir + "-" + area.uuid
+
         mkdir_from_str(plot_dir)
         output_file = os.path.join(
             plot_dir, 'device_profile_{}.html'.format(device_name))
@@ -307,7 +321,10 @@ class ExportAndPlot:
         """
         self.endpoint_buffer.trade_profile.add_sold_bought_lists(
             self.endpoint_buffer.trade_profile.traded_energy_profile)
-        new_subdir = os.path.join(subdir, area.slug)
+        if area.slug != "grid":
+            new_subdir = os.path.join(subdir, area.slug + "-" + area.uuid)
+        else:
+            new_subdir = os.path.join(subdir, area.slug)
         self._plot_energy_profile(new_subdir, area.name)
         for child in area.children:
             if child.children:
@@ -402,16 +419,16 @@ class ExportAndPlot:
         storage_list = [child.slug for child in area.children
                         if storage_key in self.file_stats_endpoint.plot_stats[child.slug].keys()]
         if storage_list is not []:
-            self._plot_ess_soc_history(storage_list, new_subdir, area.slug)
+            self._plot_ess_soc_history(storage_list, new_subdir, area)
         for child in area.children:
             if child.children:
                 self.plot_ess_soc_history(child, new_subdir)
 
-    def _plot_ess_soc_history(self, storage_list: list, subdir: str, root_name: str):
+    def _plot_ess_soc_history(self, storage_list: list, subdir: str, area):
         """
         Plots ess soc for each knot in the hierarchy
         """
-
+        root_name = area.slug
         storage_key = 'charge [%]'
         data = list()
         barmode = "relative"
@@ -429,6 +446,8 @@ class ExportAndPlot:
         if len(data) == 0:
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
+        if area.slug != "grid":
+            plot_dir = plot_dir + "-" + area.uuid
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir, 'ess_soc_history_{}.html'.format(root_name))
         PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
@@ -510,16 +529,16 @@ class ExportAndPlot:
                         if isinstance(child.strategy, StorageStrategy)]
         for element in storage_list:
             self._plot_ess_energy_trace(element.strategy.state.time_series_ess_share,
-                                        new_subdir, area.slug)
+                                        new_subdir, area)
         for child in area.children:
             if child.children:
                 self.plot_ess_energy_trace(child, new_subdir)
 
-    def _plot_ess_energy_trace(self, energy: dict, subdir: str, root_name: str):
+    def _plot_ess_energy_trace(self, energy: dict, subdir: str, area):
         """
         Plots ess energy trace for each knot in the hierarchy
         """
-
+        root_name = area.slug
         data = list()
         barmode = "stack"
         title = 'ESS ENERGY SHARE ({})'.format(root_name)
@@ -543,6 +562,8 @@ class ExportAndPlot:
         if len(data) == 0:
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
+        if area.slug != "grid":
+            plot_dir = plot_dir + "-" + area.uuid
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir, 'ess_energy_share_{}.html'.format(root_name))
         PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
@@ -649,11 +670,11 @@ class ExportAndPlot:
                 area_list.append(area.parent.slug)
             area_list += [ci.slug for ci in area.children]
             new_subdir = os.path.join(subdir, area.slug)
-            self._plot_avg_trade_price(area_list, new_subdir)
+            self._plot_avg_trade_price(area_list, new_subdir, area)
             for child in area.children:
                 self.plot_avg_trade_price(child, new_subdir)
 
-    def _plot_avg_trade_price(self, area_list: list, subdir: str):
+    def _plot_avg_trade_price(self, area_list: list, subdir: str, area):
         """
         Plots average trade for the specified level of the hierarchy
         """
@@ -686,6 +707,8 @@ class ExportAndPlot:
         if all([len(da.y) == 0 for da in data]):
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
+        if area.slug != "grid":
+            plot_dir = plot_dir + "-" + area.uuid
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir, 'average_trade_price_{}.html'.format(area_list[0]))
         PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
