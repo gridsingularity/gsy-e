@@ -1059,6 +1059,8 @@ def identical_cumulative_bills(context):
 def identical_profiles(context):
     device_stats_dict = context.simulation.endpoint_buffer.device_statistics.device_stats_dict
     load_profile = device_stats_dict['House 1']['H1 DefinedLoad']['load_profile_kWh']
-    for time_slot, value in load_profile.items():
-        if time_slot.add(days=1) < today(tz=TIME_ZONE).add(days=2):
-            assert value == load_profile[time_slot.add(days=1)]
+    load_profile_ts = {int(from_format(time_slot, DATE_TIME_FORMAT).timestamp()): value
+                       for time_slot, value in load_profile.items()}
+    start = int(list(load_profile_ts.keys())[0])
+    end = int(list(load_profile_ts.keys())[23])
+    assert all([load_profile_ts[i] == load_profile_ts[i + 86400] for i in range(start, end, 3600)])

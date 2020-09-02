@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 from d3a.d3a_core.sim_results.area_statistics import MarketPriceEnergyDay
 from d3a.d3a_core.sim_results.area_throughput_stats import AreaThroughputStats
 from d3a.d3a_core.sim_results.bills import MarketEnergyBills, CumulativeBills
@@ -26,6 +27,10 @@ from d3a.d3a_core.sim_results.area_market_stock_stats import OfferBidTradeGraphS
 from d3a_interface.utils import convert_pendulum_to_str_in_dict
 from d3a.d3a_core.sim_results.energy_trade_profile import EnergyTradeProfile
 from d3a.d3a_core.sim_results.cumulative_grid_trades import CumulativeGridTrades
+from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.storage import StorageStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 
 _NO_VALUE = {
     'min': None,
@@ -40,6 +45,7 @@ class SimulationEndpointBuffer:
         self.result_area_uuids = set()
         self.current_market = ""
         self.current_market_unix = None
+        self.current_market_datetime = None
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
         self.status = {}
         self.area_result_dict = self._create_area_tree_dict(area)
@@ -145,8 +151,8 @@ class SimulationEndpointBuffer:
     def _populate_core_stats(self, area):
         if area.uuid not in self.flattened_area_core_stats_dict:
             self.flattened_area_core_stats_dict[area.uuid] = {}
-        if self.current_market_unix is not None and \
-                self.current_market_unix not in self.flattened_area_core_stats_dict[area.uuid]:
+        if self.current_market != "" and \
+                self.current_market not in self.flattened_area_core_stats_dict[area.uuid]:
             core_stats_dict = {'bids': [], 'offers': [], 'trades': []}
             if hasattr(area.current_market, 'offer_history'):
                 for offer in area.current_market.offer_history:
@@ -158,8 +164,24 @@ class SimulationEndpointBuffer:
                 for trade in area.current_market.trades:
                     core_stats_dict['trades'].append(trade.serializable_dict())
 
+            if isinstance(area.strategy, PVStrategy):
+                core_stats_dict['pv_production_kWh'] = \
+                    area.strategy.energy_production_forecast_kWh.get(self.current_market_datetime,
+                                                                     0)
+
+            elif isinstance(area.strategy, StorageStrategy):
+                core_stats_dict['soc_history_%'] = \
+                    area.strategy.state.charge_history.get(self.current_market_datetime, 0)
+
+            elif isinstance(area.strategy, LoadHoursStrategy):
+                core_stats_dict['load_profile_kWh'] = \
+                    area.strategy.state.desired_energy_Wh.get(self.current_market_datetime, 0)
+
+            elif type(area.strategy) == FinitePowerPlant:
+                core_stats_dict['production_kWh'] = area.strategy.energy_per_slot_kWh
+
             self.flattened_area_core_stats_dict[area.uuid] = {}
-            self.flattened_area_core_stats_dict[area.uuid][self.current_market_unix] = \
+            self.flattened_area_core_stats_dict[area.uuid][self.current_market] = \
                 core_stats_dict
 
         for child in area.children:
@@ -170,6 +192,7 @@ class SimulationEndpointBuffer:
         if area.current_market is not None:
             self.current_market = area.current_market.time_slot_str
             self.current_market_unix = area.current_market.time_slot.timestamp()
+            self.current_market_datetime = area.current_market.time_slot
         self._populate_core_stats(area)
         self.simulation_progress = {
             "eta_seconds": progress_info.eta.seconds,
@@ -187,7 +210,8 @@ class SimulationEndpointBuffer:
 
         self.market_unmatched_loads.update_unmatched_loads(area)
 
-        self.device_statistics.update(area)
+        self.device_statistics.update(area, self.area_result_dict,
+                                      self.flattened_area_core_stats_dict)
 
         self.price_energy_day.update(area)
 

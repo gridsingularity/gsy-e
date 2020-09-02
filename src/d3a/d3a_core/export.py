@@ -292,7 +292,6 @@ class ExportAndPlot:
         device_name = device_address_list[-1].replace(" ", "_")
         device_dict = get_from_dict(self.endpoint_buffer.device_statistics.device_stats_dict,
                                     device_address_list)
-
         # converting address_list into plot_dir by slugifying the members
         plot_dir = os.path.join(self.plot_dir,
                                 "/".join([slugify(node).lower() for node in address_list][0:-1]))
