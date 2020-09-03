@@ -97,11 +97,8 @@ class ExportAndPlot:
                 json.dump(value, outfile, indent=2)
 
     @staticmethod
-    def _file_path(directory: dir, slug: str, uuid='', parent=''):
-        if parent != '' and parent != "grid" and parent is not None:
-            file_name = ("{0}-{1}.csv".format(slug, uuid)).replace(' ', '_')
-        else:
-            file_name = ("{0}.csv".format(slug)).replace(' ', '_')
+    def _file_path(directory: dir, slug: str):
+        file_name = ("{0}.csv".format(slug)).replace(' ', '_')
         return directory.joinpath(file_name).as_posix()
 
     def export(self, export_plots=True, power_flow=None):
@@ -208,8 +205,7 @@ class ExportAndPlot:
         return: dict[out_keys]
         """
         file_path = self._file_path(directory,
-                                    f"{area.slug}-{file_suffix}",
-                                    area.uuid, area.parent)
+                                    f"{area.slug}-{file_suffix}")
         labels = ("slot",) + offer_type._csv_fields()
         try:
             with open(file_path, 'a') as csv_file:
@@ -232,13 +228,11 @@ class ExportAndPlot:
 
         if balancing:
             file_path = self._file_path(directory,
-                                        "{}-balancing-trades".format(area.slug),
-                                        area.uuid, area.parent)
+                                        "{}-balancing-trades".format(area.slug))
             labels = ("slot",) + BalancingTrade._csv_fields()
             past_markets = area.past_balancing_markets
         else:
-            file_path = self._file_path(directory, "{}-trades".format(area.slug),
-                                        area.uuid, area.parent)
+            file_path = self._file_path(directory, "{}-trades".format(area.slug))
             labels = ("slot",) + Trade._csv_fields()
             past_markets = area.past_markets
 
@@ -259,9 +253,7 @@ class ExportAndPlot:
         """
         Exports stats (*.csv files)
         """
-
         area_name = area.slug
-        area_uuid = area.uuid
         if balancing:
             area_name += "-balancing"
         data = self.file_stats_endpoint.\
@@ -271,7 +263,7 @@ class ExportAndPlot:
             return
 
         try:
-            with open(self._file_path(directory, area_name, area_uuid, area.parent), 'a') \
+            with open(self._file_path(directory, area_name), 'a') \
                     as csv_file:
                 writer = csv.writer(csv_file)
                 if is_first:
@@ -307,6 +299,7 @@ class ExportAndPlot:
         # converting address_list into plot_dir by slugifying the members
         plot_dir = os.path.join(self.plot_dir,
                                 "/".join([slugify(node).lower() for node in address_list][0:-1]))
+        # to do
         if area.slug != "grid":
             plot_dir = plot_dir + "-" + area.uuid
 
@@ -321,6 +314,7 @@ class ExportAndPlot:
         """
         self.endpoint_buffer.trade_profile.add_sold_bought_lists(
             self.endpoint_buffer.trade_profile.traded_energy_profile)
+        # to do
         if area.slug != "grid":
             new_subdir = os.path.join(subdir, area.slug + "-" + area.uuid)
         else:
@@ -446,6 +440,7 @@ class ExportAndPlot:
         if len(data) == 0:
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
+        # to do
         if area.slug != "grid":
             plot_dir = plot_dir + "-" + area.uuid
         mkdir_from_str(plot_dir)
@@ -562,6 +557,7 @@ class ExportAndPlot:
         if len(data) == 0:
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
+        # to do
         if area.slug != "grid":
             plot_dir = plot_dir + "-" + area.uuid
         mkdir_from_str(plot_dir)
@@ -707,6 +703,7 @@ class ExportAndPlot:
         if all([len(da.y) == 0 for da in data]):
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
+        # to do
         if area.slug != "grid":
             plot_dir = plot_dir + "-" + area.uuid
         mkdir_from_str(plot_dir)
