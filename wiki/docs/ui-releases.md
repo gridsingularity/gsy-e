@@ -1,10 +1,10 @@
 ##Version 0.7.0
 The following features were implemented : 
 
-* Detailed energy trade profile graph. Zoom in to each 15 minute market slot to view the scheduled trades with 1 minute resolution. 
-* Grid Operator user can change grid parameters inside a collaboration and while it is running, like grid fees or the transformer capacity.
-* Allow collaboration participants to register for events while the simulation is running. Allows users to simulate a growing community.
-* Information Aggregator to compile and send average market measurements to assist data scientists in building smart strategies to trade through the API.
+* [Detailed energy trade profile graph](results.md#detailed-energy-trade-profile). Zoom in to each 15 minute market slot to view the scheduled trades with 1 minute resolution. 
+* Grid Operator user can change grid parameters inside a collaboration and while it is running, like [grid fees](constant-fees.md) or the transformer capacity.
+* Allow collaboration participants to register for [events](events.md) while the simulation is running. Allows users to simulate a growing community.
+* Information Aggregator to compile and send average market measurements to assist data scientists in building smart strategies to trade through the [API](api.md).
 
 
 
