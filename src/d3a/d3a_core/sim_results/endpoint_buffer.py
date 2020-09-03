@@ -39,8 +39,11 @@ class SimulationEndpointBuffer:
         self.job_id = job_id
         self.result_area_uuids = set()
         self.current_market = ""
+        self.current_market_unix = None
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
         self.status = {}
+        self.area_result_dict = self._create_area_tree_dict(area)
+        self.flattened_area_core_stats_dict = {}
         self.simulation_progress = {
             "eta_seconds": 0,
             "elapsed_time_seconds": 0,
@@ -65,6 +68,24 @@ class SimulationEndpointBuffer:
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or \
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
             self.area_market_stocks_stats = OfferBidTradeGraphStats()
+
+    @staticmethod
+    def _structure_results_from_area_object(target_area):
+        area_dict = dict()
+        area_dict['name'] = target_area.name
+        area_dict['uuid'] = target_area.uuid
+        area_dict['type'] = str(target_area.strategy.__class__.__name__) \
+            if target_area.strategy is not None else "Area"
+        area_dict['children'] = []
+        return area_dict
+
+    def _create_area_tree_dict(self, area):
+        area_result_dict = self._structure_results_from_area_object(area)
+        for child in area.children:
+            area_result_dict["children"].append(
+                self._create_area_tree_dict(child)
+            )
+        return area_result_dict
 
     def update_results_area_uuids(self, area):
         if area.strategy is not None or (area.strategy is None and area.children):
@@ -96,7 +117,7 @@ class SimulationEndpointBuffer:
             "last_energy_trades_high_resolution": convert_pendulum_to_str_in_dict(
                 self.last_energy_trades_high_resolution, {}),
             "bids_offers_trades": self.bids_offers_trades,
-            "results_area_uuids": list(self.result_area_uuids)
+            "results_area_uuids": list(self.result_area_uuids),
         }
 
     def generate_json_report(self):
@@ -121,10 +142,35 @@ class SimulationEndpointBuffer:
             "area_throughput": self.area_throughput_stats.results,
         }
 
+    def _populate_core_stats(self, area):
+        if area.uuid not in self.flattened_area_core_stats_dict:
+            self.flattened_area_core_stats_dict[area.uuid] = {}
+        if self.current_market_unix is not None and \
+                self.current_market_unix not in self.flattened_area_core_stats_dict[area.uuid]:
+            core_stats_dict = {'bids': [], 'offers': [], 'trades': []}
+            if hasattr(area.current_market, 'offer_history'):
+                for offer in area.current_market.offer_history:
+                    core_stats_dict['offers'].append(offer.serializable_dict())
+            if hasattr(area.current_market, 'bid_history'):
+                for bid in area.current_market.bid_history:
+                    core_stats_dict['bids'].append(bid.serializable_dict())
+            if hasattr(area.current_market, 'trades'):
+                for trade in area.current_market.trades:
+                    core_stats_dict['trades'].append(trade.serializable_dict())
+
+            self.flattened_area_core_stats_dict[area.uuid] = {}
+            self.flattened_area_core_stats_dict[area.uuid][self.current_market_unix] = \
+                core_stats_dict
+
+        for child in area.children:
+            self._populate_core_stats(child)
+
     def update_stats(self, area, simulation_status, progress_info):
         self.status = simulation_status
         if area.current_market is not None:
             self.current_market = area.current_market.time_slot_str
+            self.current_market_unix = area.current_market.time_slot.timestamp()
+        self._populate_core_stats(area)
         self.simulation_progress = {
             "eta_seconds": progress_info.eta.seconds,
             "elapsed_time_seconds": progress_info.elapsed_time.seconds,
@@ -175,14 +221,12 @@ class SimulationEndpointBuffer:
             self.bids_offers_trades[area.uuid] = area.current_market.get_bids_offers_trades()
 
     def _merge_cumulative_bills_into_bills_for_market_info(self, area):
-        # this is only needed for areas with external connection
-        if area.redis_ext_conn:
-            bills = self.market_bills.bills_redis_results[area.uuid]
-            bills.update({
-                "penalty_cost":
-                    self.cumulative_bills.cumulative_bills_results[area.uuid]["penalties"],
-                "penalty_energy":
-                    self.cumulative_bills.cumulative_bills_results[area.uuid]["penalty_energy"]})
-            area.stats.update_aggregated_stats({"bills": bills})
+        bills = self.market_bills.bills_redis_results[area.uuid]
+        bills.update({
+            "penalty_cost":
+                self.cumulative_bills.cumulative_bills_results[area.uuid]["penalties"],
+            "penalty_energy":
+                self.cumulative_bills.cumulative_bills_results[area.uuid]["penalty_energy"]})
+        area.stats.update_aggregated_stats({"bills": bills})
 
-            area.stats.kpi.update(self.kpi.performance_indices_redis.get(area.uuid, {}))
+        area.stats.kpi.update(self.kpi.performance_indices_redis.get(area.uuid, {}))

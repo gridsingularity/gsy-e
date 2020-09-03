@@ -27,7 +27,6 @@ def get_setup(config):
 
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 1
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
 
     area = Area(
         'Grid',

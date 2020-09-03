@@ -36,7 +36,7 @@ from d3a.models.area.redis_dispatcher.market_notify_event_subscriber \
     import MarketNotifyEventSubscriber
 from d3a.models.area.redis_dispatcher.area_to_market_publisher import AreaToMarketEventPublisher
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import RedisCommunicator
-
+from d3a import constants
 
 log = getLogger(__name__)
 
@@ -206,7 +206,7 @@ class AreaDispatcher:
             self.area.appliance = InterAreaAppliance(self.area.parent, self.area)
 
     def _delete_past_agents(self, area_agent_member):
-        if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+        if not constants.D3A_TEST_RUN:
             delete_agents = [pm for pm in area_agent_member.keys() if
                              self.area.current_market and pm < self.area.current_market.time_slot]
             for pm in delete_agents:

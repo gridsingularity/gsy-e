@@ -34,7 +34,6 @@ from pendulum.period import Period
 from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
 
-from d3a.d3a_core.area_serializer import are_all_areas_unique
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, SIMULATION_PAUSE_TIMEOUT
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.d3a_core.export import ExportAndPlot
@@ -191,8 +190,6 @@ class Simulation:
         log.debug("Starting simulation with config %s", self.simulation_config)
 
         self._set_traversal_length()
-
-        are_all_areas_unique(self.area, set())
 
         self.area.activate(self.bc)
 
