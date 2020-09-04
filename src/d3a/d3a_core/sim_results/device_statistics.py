@@ -46,11 +46,12 @@ class DeviceStatistics:
         if core_stats[area['uuid']] == {}:
             return
         time_slot = list(core_stats[area['uuid']].keys())[0]
+        area_core_stats = core_stats[area['uuid']].get(time_slot, {})
+        area_core_trades = area_core_stats.get('trades', [])
         trade_price_list = []
-        for t in core_stats.get('trades', []):
+        for t in area_core_trades:
             if t['seller'] == area['name'] or t['buyer'] == area['name']:
                 trade_price_list.append(t['energy_rate'] / 100.0)
-
         if trade_price_list:
             create_or_update_subdict(
                 subdict, key_name,
@@ -64,8 +65,7 @@ class DeviceStatistics:
 
     @classmethod
     def _device_energy_stats(cls, area: Dict, subdict: Dict, core_stats: Dict):
-        # market = list(area.parent.past_markets)[-1]
-        if type(area["type"]) == "InfiniteBusStrategy":
+        if area["type"] == "InfiniteBusStrategy":
             cls.calculate_stats_for_infinite_bus(area, subdict, core_stats)
         else:
             cls.calculate_stats_for_device(area, subdict, core_stats)
@@ -76,12 +76,14 @@ class DeviceStatistics:
         if core_stats[area['uuid']] == {}:
             return
         time_slot = list(core_stats[area['uuid']].keys())[0]
+        area_core_stats = core_stats[area['uuid']].get(time_slot, {})
+        area_core_trades = area_core_stats.get('trades', [])
 
         traded_energy = 0
-        for t in core_stats.get('trades', []):
-            if t.seller == area['name']:
+        for t in area_core_trades:
+            if t['seller'] == area['name']:
                 traded_energy -= t['energy']
-            if t.buyer == area['name']:
+            if t['buyer'] == area['name']:
                 traded_energy += t['energy']
 
         create_or_update_subdict(
@@ -98,13 +100,14 @@ class DeviceStatistics:
         if core_stats[area['uuid']] == {}:
             return
         time_slot = list(core_stats[area['uuid']].keys())[0]
+        area_core_stats = core_stats[area['uuid']].get(time_slot, {})
+        area_core_trades = area_core_stats.get('trades', [])
 
-        for t in core_stats['trades']:
+        for t in area_core_trades:
             if t['seller'] == area['name']:
                 sold_traded_energy += t['energy']
             if t['buyer'] == area['name']:
                 bought_traded_energy += t['energy']
-
         create_or_update_subdict(
             subdict, sold_key_name,
             {time_slot: sold_traded_energy})
@@ -159,7 +162,7 @@ class DeviceStatistics:
                 area_result_dict, self.device_stats_dict, {}, core_stats)
         else:
             self.gather_device_statistics(
-                area, {}, self.current_stats_dict, core_stats)
+                area_result_dict, {}, self.current_stats_dict, core_stats)
 
     @classmethod
     def gather_device_statistics(cls, area: Dict, subdict: Dict,
@@ -187,7 +190,8 @@ class DeviceStatistics:
             cls._device_price_stats(area, subdict, core_stats)
             cls._device_energy_stats(area, subdict, core_stats)
 
-        if area['type'] == "PVStrategy":
+        if area['type'] in ["PVStrategy", "PVUserProfileStrategy",
+                            "PVPredefinedStrategy"]:
             cls._pv_production_stats(area, subdict, core_stats)
 
         elif area['type'] == "StorageStrategy":
