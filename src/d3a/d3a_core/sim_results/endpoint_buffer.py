@@ -253,16 +253,18 @@ class SimulationEndpointBuffer:
 
         self.result_area_uuids = set()
         self.update_results_area_uuids(area)
+        self.update_offer_bid_trade()
 
     def update_area_aggregated_stats(self, area):
-        self._update_bids_offer_trades(area)
         self._merge_cumulative_bills_into_bills_for_market_info(area)
         for child in area.children:
             self.update_area_aggregated_stats(child)
 
-    def _update_bids_offer_trades(self, area):
-        if area.current_market is not None:
-            self.bids_offers_trades[area.uuid] = area.current_market.get_bids_offers_trades()
+    def update_offer_bid_trade(self):
+        if self.current_market == "":
+            return
+        for area_uuid, area_result in self.flattened_area_core_stats_dict.items():
+            self.bids_offers_trades[area_uuid] = area_result[self.current_market]
 
     def _merge_cumulative_bills_into_bills_for_market_info(self, area):
         bills = self.market_bills.bills_redis_results[area.uuid]
