@@ -72,6 +72,12 @@ If *peak analysis* is switched on the external trades are hidden and only the de
 
 On this plot 2 lines are shown : the *current peak imports* and the *current peak exports* which represent the maximum energy imported and exported for the selected area (here the *Community*).
 
+### Detailed energy trade profile
+
+This graph is a high resolution energy trade profile. With this graph the user can select a specific [market slot](market-slots-and-ticks.md) in order to see precisely when each trade was cleared during that slot, with a resolution of 1 minute. The graph's length is the market slot length (15 minutes by default). Every market slot of the simulation can be selected with the drop down (for the date) and the slider (for the time).
+
+![img](img/results-17.png)
+
 ### Energy pricing
 
 ![img](img/results-16.png)
@@ -84,7 +90,7 @@ If there was no trade happening during a certain market interval, the price is s
 
 ### Bids, Offers, and Trades per Market Slot
 
-In this plot every [bids, offers](how-strategies-adjust-prices.md) and trades posted in the selected market is shown according to their posting time. With this graph the user can understand why specific offers/bids were matched or not and thus adapt their trading strategy. The range of this graph is the [market slot](market-slots-and-ticks.md) length (15 minutes by default). Every market slots of the simulation can be selected with the drop down (days) and the slider (hours & minutes). 
+In this plot every [bids, offers](how-strategies-adjust-prices.md) and trades posted in the selected market is shown according to their posting time. With this graph the user can understand why specific offers/bids were matched or not and thus adapt their trading strategy. The range of this graph is the [market slot](market-slots-and-ticks.md) length (15 minutes by default). Every market slot of the simulation can be selected with the drop down (days) and the slider (hours & minutes). 
 
 ![img](img/results-14.png)
 
