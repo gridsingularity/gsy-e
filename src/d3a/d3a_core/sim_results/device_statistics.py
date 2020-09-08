@@ -41,167 +41,167 @@ class DeviceStatistics:
         create_or_update_subdict(subdict, f"max_{key}", max_trade_stats)
 
     @classmethod
-    def _device_price_stats(cls, area: Dict, subdict: Dict, core_stats, current_market_time_slot):
+    def _device_price_stats(cls, area_dict: Dict, subdict: Dict, core_stats, current_market_slot):
         key_name = "trade_price_eur"
-        if core_stats[area['uuid']] == {}:
+        if core_stats[area_dict['uuid']] == {}:
             return
-        area_core_trades = core_stats[area['uuid']].get('trades', [])
+        area_core_trades = core_stats[area_dict['uuid']].get('trades', [])
         trade_price_list = []
         for t in area_core_trades:
-            if t['seller'] == area['name'] or t['buyer'] == area['name']:
+            if t['seller'] == area_dict['name'] or t['buyer'] == area_dict['name']:
                 trade_price_list.append(t['energy_rate'] / 100.0)
         if trade_price_list:
             create_or_update_subdict(
                 subdict, key_name,
-                {current_market_time_slot: trade_price_list})
+                {current_market_slot: trade_price_list})
         else:
             create_or_update_subdict(
                 subdict, key_name,
-                {current_market_time_slot: FILL_VALUE})
+                {current_market_slot: FILL_VALUE})
 
         cls._calc_min_max_from_sim_dict(subdict, key_name)
 
     @classmethod
-    def _device_energy_stats(cls, area: Dict, subdict: Dict, core_stats: Dict,
-                             current_market_time_slot):
-        if area["type"] == "InfiniteBusStrategy":
-            cls.calculate_stats_for_infinite_bus(area, subdict, core_stats,
-                                                 current_market_time_slot)
+    def _device_energy_stats(cls, area_dict: Dict, subdict: Dict, core_stats: Dict,
+                             current_market_slot):
+        if area_dict["type"] == "InfiniteBusStrategy":
+            cls.calculate_stats_for_infinite_bus(area_dict, subdict, core_stats,
+                                                 current_market_slot)
         else:
-            cls.calculate_stats_for_device(area, subdict, core_stats, current_market_time_slot)
+            cls.calculate_stats_for_device(area_dict, subdict, core_stats, current_market_slot)
 
     @classmethod
-    def calculate_stats_for_device(cls, area, subdict, core_stats, current_market_time_slot):
+    def calculate_stats_for_device(cls, area_dict, subdict, core_stats, current_market_slot):
         key_name = "trade_energy_kWh"
-        if core_stats[area['uuid']] == {}:
+        if core_stats[area_dict['uuid']] == {}:
             return
-        area_core_trades = core_stats[area['uuid']].get('trades', [])
+        area_core_trades = core_stats[area_dict['uuid']].get('trades', [])
 
         traded_energy = 0
         for t in area_core_trades:
-            if t['seller'] == area['name']:
+            if t['seller'] == area_dict['name']:
                 traded_energy -= t['energy']
-            if t['buyer'] == area['name']:
+            if t['buyer'] == area_dict['name']:
                 traded_energy += t['energy']
 
         create_or_update_subdict(
             subdict, key_name,
-            {current_market_time_slot: traded_energy})
+            {current_market_slot: traded_energy})
         cls._calc_min_max_from_sim_dict(subdict, key_name)
 
     @classmethod
-    def calculate_stats_for_infinite_bus(cls, area, subdict, core_stats, current_market_time_slot):
+    def calculate_stats_for_infinite_bus(cls, area_dict, subdict, core_stats, current_market_slot):
         sold_key_name = "sold_trade_energy_kWh"
         bought_key_name = "bought_trade_energy_kWh"
         sold_traded_energy = 0
         bought_traded_energy = 0
-        if core_stats[area['uuid']] == {}:
+        if core_stats[area_dict['uuid']] == {}:
             return
-        area_core_trades = core_stats[area['uuid']].get('trades', [])
+        area_core_trades = core_stats[area_dict['uuid']].get('trades', [])
 
         for t in area_core_trades:
-            if t['seller'] == area['name']:
+            if t['seller'] == area_dict['name']:
                 sold_traded_energy += t['energy']
-            if t['buyer'] == area['name']:
+            if t['buyer'] == area_dict['name']:
                 bought_traded_energy += t['energy']
         create_or_update_subdict(
             subdict, sold_key_name,
-            {current_market_time_slot: sold_traded_energy})
+            {current_market_slot: sold_traded_energy})
         cls._calc_min_max_from_sim_dict(subdict, sold_key_name)
         create_or_update_subdict(
             subdict, bought_key_name,
-            {current_market_time_slot: bought_traded_energy})
+            {current_market_slot: bought_traded_energy})
         cls._calc_min_max_from_sim_dict(subdict, bought_key_name)
 
     @classmethod
-    def _pv_production_stats(cls, area: Dict, subdict: Dict, core_stats={},
-                             current_market_time_slot=None):
+    def _pv_production_stats(cls, area_dict: Dict, subdict: Dict, core_stats={},
+                             current_market_slot=None):
         key_name = "pv_production_kWh"
-        if core_stats[area['uuid']] == {}:
+        if core_stats[area_dict['uuid']] == {}:
             return
 
         create_or_update_subdict(
             subdict, key_name,
-            {current_market_time_slot: core_stats[area["uuid"]][key_name]})
+            {current_market_slot: core_stats[area_dict["uuid"]][key_name]})
 
         cls._calc_min_max_from_sim_dict(subdict, key_name)
 
     @classmethod
-    def _soc_stats(cls, area: Dict, subdict: Dict, core_stats={}, current_market_time_slot=None):
+    def _soc_stats(cls, area_dict: Dict, subdict: Dict, core_stats={}, current_market_slot=None):
         key_name = "soc_history_%"
-        if core_stats[area['uuid']] == {}:
+        if core_stats[area_dict['uuid']] == {}:
             return
         create_or_update_subdict(
             subdict, key_name,
-            {current_market_time_slot: core_stats[area["uuid"]][key_name]})
+            {current_market_slot: core_stats[area_dict["uuid"]][key_name]})
 
         cls._calc_min_max_from_sim_dict(subdict, key_name)
 
     @classmethod
-    def _load_profile_stats(cls, area: Dict, subdict: Dict, core_stats={},
-                            current_market_time_slot=None):
+    def _load_profile_stats(cls, area_dict: Dict, subdict: Dict, core_stats={},
+                            current_market_slot=None):
         key_name = "load_profile_kWh"
-        if core_stats[area['uuid']] == {}:
+        if core_stats[area_dict['uuid']] == {}:
             return
         create_or_update_subdict(
             subdict, key_name,
-            {current_market_time_slot: core_stats[area["uuid"]][key_name]}
+            {current_market_slot: core_stats[area_dict["uuid"]][key_name]}
         )
 
         cls._calc_min_max_from_sim_dict(subdict, key_name)
 
-    def update(self, area_result_dict={}, core_stats={}, current_market_time_slot=None):
+    def update(self, area_result_dict={}, core_stats={}, current_market_slot=None):
         if self.should_export_plots:
             self.gather_device_statistics(
                 area_result_dict, self.device_stats_dict, {}, core_stats,
-                current_market_time_slot)
+                current_market_slot)
         else:
             self.gather_device_statistics(
                 area_result_dict, {}, self.current_stats_dict, core_stats,
-                current_market_time_slot)
+                current_market_slot)
 
     @classmethod
-    def gather_device_statistics(cls, area: Dict, subdict: Dict,
+    def gather_device_statistics(cls, area_dict: Dict, subdict: Dict,
                                  flat_result_dict: Dict,
-                                 core_stats={}, current_market_time_slot=None):
-        for child in area['children']:
+                                 core_stats={}, current_market_slot=None):
+        for child in area_dict['children']:
             if child['name'] not in subdict.keys():
                 subdict.update({child['name']: {}})
             if child['children'] == [] and core_stats != {}:
                 cls._gather_device_statistics(
                     child, subdict[child['name']], flat_result_dict,
-                    core_stats, current_market_time_slot)
+                    core_stats, current_market_slot)
             else:
                 cls.gather_device_statistics(
                     child, subdict[child['name']], flat_result_dict,
-                    core_stats, current_market_time_slot)
+                    core_stats, current_market_slot)
 
     @classmethod
-    def _gather_device_statistics(cls, area: Dict, subdict: Dict,
+    def _gather_device_statistics(cls, area_dict: Dict, subdict: Dict,
                                   flat_result_dict: Dict,
-                                  core_stats={}, current_market_time_slot=None):
-        if core_stats.get(area['uuid'], {}) == {}:
+                                  core_stats={}, current_market_slot=None):
+        if core_stats.get(area_dict['uuid'], {}) == {}:
             return
-        if area['type'] != "Area":
-            cls._device_price_stats(area, subdict, core_stats, current_market_time_slot)
-            cls._device_energy_stats(area, subdict, core_stats, current_market_time_slot)
+        if area_dict['type'] != "area_dict":
+            cls._device_price_stats(area_dict, subdict, core_stats, current_market_slot)
+            cls._device_energy_stats(area_dict, subdict, core_stats, current_market_slot)
 
-        if area['type'] in ["PVStrategy", "PVUserProfileStrategy",
-                            "PVPredefinedStrategy"]:
-            cls._pv_production_stats(area, subdict, core_stats, current_market_time_slot)
+        if area_dict['type'] in ["PVStrategy", "PVUserProfileStrategy",
+                                 "PVPredefinedStrategy"]:
+            cls._pv_production_stats(area_dict, subdict, core_stats, current_market_slot)
 
-        elif area['type'] == "StorageStrategy":
-            cls._soc_stats(area, subdict, core_stats, current_market_time_slot)
+        elif area_dict['type'] == "StorageStrategy":
+            cls._soc_stats(area_dict, subdict, core_stats, current_market_slot)
 
-        elif area['type'] in ["LoadHoursStrategy", "DefinedLoadStrategy",
-                              "CellTowerLoadHoursStrategy"]:
-            cls._load_profile_stats(area, subdict, core_stats, current_market_time_slot)
+        elif area_dict['type'] in ["LoadHoursStrategy", "DefinedLoadStrategy",
+                                   "CellTowerLoadHoursStrategy"]:
+            cls._load_profile_stats(area_dict, subdict, core_stats, current_market_slot)
 
-        elif area['type'] == "FinitePowerPlant":
+        elif area_dict['type'] == "FinitePowerPlant":
             create_or_update_subdict(
                 subdict, "production_kWh",
-                {current_market_time_slot: core_stats[area["uuid"]]["production_kWh"]}
+                {current_market_slot: core_stats[area_dict["uuid"]]["production_kWh"]}
             )
             cls._calc_min_max_from_sim_dict(subdict, "production_kWh")
 
-        flat_result_dict[area["uuid"]] = subdict.copy()
+        flat_result_dict[area_dict["uuid"]] = subdict.copy()

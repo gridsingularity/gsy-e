@@ -200,7 +200,6 @@ class SimulationEndpointBuffer:
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
 
-        self.flattened_area_core_stats_dict[area.uuid] = {}
         self.flattened_area_core_stats_dict[area.uuid] = core_stats_dict
 
         for child in area.children:
