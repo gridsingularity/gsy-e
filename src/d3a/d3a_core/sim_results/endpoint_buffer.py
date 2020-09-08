@@ -72,7 +72,15 @@ class SimulationEndpointBuffer:
     @staticmethod
     def _structure_results_from_area_object(target_area):
         area_dict = dict()
-        area_dict['name'] = target_area.name
+        if target_area.strategy is None and target_area.parent is not None:
+            target_area.rename(target_area.name + target_area.uuid)
+            area_dict['name'] = target_area.name
+        elif (len(target_area.children) == 0) and (target_area.parent is not None) \
+                and target_area.parent.parent is None and target_area.name != 'Market Maker':
+            target_area.rename(target_area.name + target_area.uuid)
+            area_dict['name'] = target_area.name
+        else:
+            area_dict['name'] = target_area.name
         area_dict['uuid'] = target_area.uuid
         area_dict['type'] = str(target_area.strategy.__class__.__name__) \
             if target_area.strategy is not None else "Area"
