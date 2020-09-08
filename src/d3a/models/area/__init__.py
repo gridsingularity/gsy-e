@@ -434,3 +434,6 @@ class Area:
             self.strategy.read_config_event()
         for child in self.children:
             child.update_config(**kwargs)
+
+    def rename(self, new_name):
+        self.name = new_name
