@@ -150,7 +150,7 @@ class DeviceStatistics:
 
         cls._calc_min_max_from_sim_dict(subdict, key_name)
 
-    def update(self, area, area_result_dict={}, core_stats={}, current_market_time_slot=None):
+    def update(self, area_result_dict={}, core_stats={}, current_market_time_slot=None):
         if self.should_export_plots:
             self.gather_device_statistics(
                 area_result_dict, self.device_stats_dict, {}, core_stats,
