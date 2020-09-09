@@ -437,3 +437,4 @@ class Area:
 
     def rename(self, new_name):
         self.name = new_name
+        self.slug = slugify(self.name, to_lower=True)
