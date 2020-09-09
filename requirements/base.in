@@ -6,7 +6,7 @@ click-default-group
 colorlog
 dill
 numpy
-pendulum
+pendulum==2.1.2
 pip-tools
 plotly
 # TODO: Deactivating solidity compiler due to bug
