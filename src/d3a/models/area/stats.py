@@ -183,12 +183,12 @@ class AreaStats:
         child_names = [area_name_from_area_or_iaa_name(c.name) for c in area.children]
         for trade in current_market.trades:
             if child_buys_from_area(trade, area.name, child_names):
-                add_or_create_key(self.exported_energy, current_market.time_slot_str,
+                add_or_create_key(self.exported_energy, current_market.time_slot,
                                   trade.offer.energy)
             if area_sells_to_child(trade, area.name, child_names):
-                add_or_create_key(self.imported_energy, current_market.time_slot_str,
+                add_or_create_key(self.imported_energy, current_market.time_slot,
                                   trade.offer.energy)
-        if current_market.time_slot_str not in self.imported_energy:
-            self.imported_energy[current_market.time_slot_str] = 0.
-        if current_market.time_slot_str not in self.exported_energy:
-            self.exported_energy[current_market.time_slot_str] = 0.
+        if current_market.time_slot not in self.imported_energy:
+            self.imported_energy[current_market.time_slot] = 0.
+        if current_market.time_slot not in self.exported_energy:
+            self.exported_energy[current_market.time_slot] = 0.
