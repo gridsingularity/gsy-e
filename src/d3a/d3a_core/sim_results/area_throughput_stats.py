@@ -54,7 +54,6 @@ class AreaThroughputStats:
         return {"capacity_kWh": capacity_kWh}
 
     def update_results(self, area):
-        area.stats.aggregate_exported_imported_energy(area)
         area_results = {"import": self._calc_peak_energy_results(area.stats.imported_energy),
                         "export": self._calc_peak_energy_results(area.stats.exported_energy)}
 

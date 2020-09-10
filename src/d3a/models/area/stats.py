@@ -174,21 +174,18 @@ class AreaStats:
         return out_dict
 
     def aggregate_exported_imported_energy(self, area):
-        past_markets = list(self._markets.past_markets.values())
-        if len(past_markets) > 0:
-            current_market = past_markets[-1]
-        else:
-            return
+        if self.current_market is None:
+            return None
 
         child_names = [area_name_from_area_or_iaa_name(c.name) for c in area.children]
-        for trade in current_market.trades:
+        for trade in self.current_market.trades:
             if child_buys_from_area(trade, area.name, child_names):
-                add_or_create_key(self.exported_energy, current_market.time_slot,
+                add_or_create_key(self.exported_energy, self.current_market.time_slot,
                                   trade.offer.energy)
             if area_sells_to_child(trade, area.name, child_names):
-                add_or_create_key(self.imported_energy, current_market.time_slot,
+                add_or_create_key(self.imported_energy, self.current_market.time_slot,
                                   trade.offer.energy)
-        if current_market.time_slot not in self.imported_energy:
-            self.imported_energy[current_market.time_slot] = 0.
-        if current_market.time_slot not in self.exported_energy:
-            self.exported_energy[current_market.time_slot] = 0.
+        if self.current_market.time_slot not in self.imported_energy:
+            self.imported_energy[self.current_market.time_slot] = 0.
+        if self.current_market.time_slot not in self.exported_energy:
+            self.exported_energy[self.current_market.time_slot] = 0.

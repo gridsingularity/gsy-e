@@ -244,6 +244,7 @@ class Area:
 
         # area_market_stats have to updated when cycling market of each area:
         self.stats.update_area_market_stats()
+        self.stats.aggregate_exported_imported_energy(self)
 
         # Markets range from one slot to market_count into the future
         changed = self._markets.create_future_markets(self.now, True, self)

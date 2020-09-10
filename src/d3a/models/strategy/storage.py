@@ -341,11 +341,15 @@ class StorageStrategy(BidEnabledStrategy):
                 energy = 0
 
     def _track_energy_bought_type(self, trade):
+        print("_track_energy_bought_type", trade.offer.energy)
         if area_name_from_area_or_iaa_name(trade.seller) == self.area.name:
+            print("external")
             self.state.update_used_storage_share(trade.offer.energy, ESSEnergyOrigin.EXTERNAL)
         elif self._is_local(trade):
+            print("local")
             self.state.update_used_storage_share(trade.offer.energy, ESSEnergyOrigin.LOCAL)
         else:
+            print("unknown")
             self.state.update_used_storage_share(trade.offer.energy, ESSEnergyOrigin.UNKNOWN)
 
     def event_bid_traded(self, *, market_id, bid_trade):
