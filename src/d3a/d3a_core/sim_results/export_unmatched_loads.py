@@ -46,17 +46,17 @@ def hour_list():
 class ExportUnmatchedLoads:
     def __init__(self, area):
         self.hour_list = hour_list()
-        self.name_uuid_map = {area.name: area.uuid}
-        self.name_type_map = {area.name: area.display_type}
+        self.name_uuid_map = {area['name']: area['uuid']}
+        self.name_type_map = {area['name']: area['type']}
         self.area = area
         self.load_count = 0
         self.count_load_devices_in_setup(self.area)
 
     def count_load_devices_in_setup(self, area):
-        for child in area.children:
-            if isinstance(child.strategy, LoadHoursStrategy):
+        for child in area['children']:
+            if child['type'] == LoadHoursStrategy:
                 self.load_count += 1
-            if child.children:
+            if child['children']:
                 self.count_load_devices_in_setup(child)
 
     def get_current_market_results(self, area_dict={}, core_stats={}, current_market_slot=None):
@@ -100,7 +100,7 @@ class ExportUnmatchedLoads:
         desired_energy_kWh = core_stats[area_dict['uuid']]['load_profile_kWh']
         traded_energy_kWh = sum(trade['energy']
                                 for trade in core_stats[area_dict['uuid']]['trades'])
-        deficit = desired_energy_kWh + traded_energy_kWh
+        deficit = desired_energy_kWh - traded_energy_kWh
         if deficit > FLOATING_POINT_TOLERANCE:
             unmatched_times.append(current_market_slot)
         return {"unmatched_times": unmatched_times}

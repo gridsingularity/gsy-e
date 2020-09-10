@@ -59,7 +59,7 @@ class SimulationEndpointBuffer:
             "percentage_completed": 0
         }
         self.should_export_plots = should_export_plots
-        self.market_unmatched_loads = MarketUnmatchedLoads(area)
+        self.market_unmatched_loads = MarketUnmatchedLoads(self.area_result_dict)
         self.price_energy_day = MarketPriceEnergyDay(should_export_plots)
         self.market_bills = MarketEnergyBills()
         self.cumulative_bills = CumulativeBills()
@@ -182,7 +182,7 @@ class SimulationEndpointBuffer:
 
         elif isinstance(area.strategy, LoadHoursStrategy):
             core_stats_dict['load_profile_kWh'] = \
-                area.strategy.state.desired_energy_Wh.get(self.current_market_datetime, 0)
+                area.strategy.state.desired_energy_Wh.get(self.current_market_datetime, 0) / 1000
             if area.parent.current_market is not None:
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
@@ -194,6 +194,8 @@ class SimulationEndpointBuffer:
                     core_stats_dict['trades'].append(t.serializable_dict())
 
         elif type(area.strategy) in [InfiniteBusStrategy, MarketMakerStrategy]:
+            core_stats_dict['energy_rate'] = \
+                area.strategy.energy_rate[area.parent.current_market.time_slot]
             if area.parent.current_market is not None:
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())

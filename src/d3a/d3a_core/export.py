@@ -23,6 +23,7 @@ import plotly.graph_objs as go
 import shutil
 import json
 import operator
+from typing import Dict
 from slugify import slugify
 from sortedcontainers import SortedDict
 from collections import namedtuple
@@ -131,6 +132,22 @@ class ExportAndPlot:
 
     def data_to_csv(self, area, is_first):
         self._export_area_with_children(area, self.directory, is_first)
+
+    def area_tree_summary_to_json(self, data: Dict):
+        subdirectory = pathlib.Path(self.directory, "raw_data")
+        if not subdirectory.exists():
+            subdirectory.mkdir(exist_ok=True, parents=True)
+        json_file = os.path.join(self.directory, "area_tree_summary.json")
+        with open(json_file, 'w') as outfile:
+            json.dump(data, outfile, indent=2)
+
+    def raw_data_to_json(self, time_slot, data: Dict):
+        subdirectory = pathlib.Path(self.directory, "raw_data")
+        if not subdirectory.exists():
+            subdirectory.mkdir(exist_ok=True, parents=True)
+        json_file = os.path.join(subdirectory, f"{time_slot}.json")
+        with open(json_file, 'w') as outfile:
+            json.dump(data, outfile, indent=2)
 
     def move_root_plot_folder(self):
         """

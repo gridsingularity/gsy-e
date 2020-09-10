@@ -256,6 +256,11 @@ class Simulation:
 
     def _update_and_send_results(self, is_final=False):
         self.endpoint_buffer.update_stats(self.area, self.status, self.progress_info)
+        if self.export_on_finish and not self.redis_connection.is_enabled() and is_final:
+            self.export.raw_data_to_json(
+                self.area.current_market.time_slot_str,
+                self.endpoint_buffer.flattened_area_core_stats_dict
+            )
         if self.should_export_plots:
             self.file_stats_endpoint(self.area)
             return
@@ -361,6 +366,11 @@ class Simulation:
             self._update_and_send_results()
             if self.export_on_finish and not self.redis_connection.is_enabled():
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
+                if self.area.current_market is not None:
+                    self.export.raw_data_to_json(
+                        self.area.current_market.time_slot_str,
+                        self.endpoint_buffer.flattened_area_core_stats_dict
+                    )
 
         self.sim_status = "finished"
         self.deactivate_areas(self.area)
@@ -374,11 +384,11 @@ class Simulation:
                 " ({} paused)".format(paused_duration) if paused_duration else "",
                 config.sim_duration / (self.progress_info.elapsed_time - paused_duration)
             )
-
         self._update_and_send_results(is_final=True)
         if self.export_on_finish and not self.redis_connection.is_enabled():
             log.info("Exporting simulation data.")
             self.export.data_to_csv(self.area, False)
+            self.export.area_tree_summary_to_json(self.endpoint_buffer.area_result_dict)
             if GlobalConfig.POWER_FLOW:
                 self.export.export(export_plots=self.should_export_plots,
                                    power_flow=self.power_flow)
