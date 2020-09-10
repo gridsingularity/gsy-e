@@ -34,15 +34,7 @@ _NO_VALUE = {
 }
 
 
-def check_duplicates(lst):
-    from collections import Counter
-    dict_data = dict(Counter(lst))
-    return dict_data
-
-
 class SimulationEndpointBuffer:
-    duplicate_list = []
-
     def __init__(self, job_id, initial_params, area, should_export_plots):
         self.job_id = job_id
         self.result_area_uuids = set()
@@ -80,31 +72,12 @@ class SimulationEndpointBuffer:
     @staticmethod
     def _structure_results_from_area_object(target_area):
         area_dict = dict()
-        lst = []
-        if target_area.parent is None:
-            for value in target_area.children:
-                lst.append(value.name)
-            duplicate_values = SimulationEndpointBuffer.get_duplicate_data(lst)
-            SimulationEndpointBuffer.duplicate_list.extend(duplicate_values)
-        if target_area.name in SimulationEndpointBuffer.duplicate_list \
-                and target_area.parent is not None \
-                and target_area.parent.parent is None and target_area.name != 'Market Maker':
-            target_area.rename(target_area.name + target_area.uuid)
-            area_dict['name'] = target_area.name
-        else:
-            area_dict['name'] = target_area.name
+        area_dict['name'] = target_area.name
         area_dict['uuid'] = target_area.uuid
         area_dict['type'] = str(target_area.strategy.__class__.__name__) \
             if target_area.strategy is not None else "Area"
         area_dict['children'] = []
         return area_dict
-
-    @staticmethod
-    def get_duplicate_data(lst):
-        from collections import Counter
-        dict_data = dict(Counter(lst))
-        duplicate_values = [item for item, count in dict_data.items() if count > 1]
-        return duplicate_values
 
     def _create_area_tree_dict(self, area):
         area_result_dict = self._structure_results_from_area_object(area)
