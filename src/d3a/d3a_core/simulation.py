@@ -565,9 +565,9 @@ class Simulation:
                 if obj.name in duplicate_values:
                     obj.rename(obj.name + "_" + obj.uuid)
             else:
-                print(":::string value:::", obj.name)
+                pass
         except D3AException as ex:
-            print(ex)
+            raise D3AException("Area object cannot be renamed", ex)
 
     @staticmethod
     def get_duplicate_data(lst):
@@ -579,7 +579,7 @@ class Simulation:
             dict_data = dict(Counter(new_lst))
             duplicate_values = [item for item, count in dict_data.items() if count > 1]
         except D3AException as ex:
-            print(ex)
+            raise D3AException("Error in finding duplicate areas", ex)
         else:
             return duplicate_values
 
