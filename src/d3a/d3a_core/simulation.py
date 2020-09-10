@@ -173,6 +173,7 @@ class Simulation:
             log.info("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
+        self.loop_area_object(self.area)
         self.endpoint_buffer = SimulationEndpointBuffer(
             redis_job_id, self.initial_params,
             self.area, self.should_export_plots)
@@ -538,6 +539,49 @@ class Simulation:
         random.setstate(state.pop('_random_state'))
         self.__dict__.update(state)
         self._load_setup_module()
+
+    def loop_area_object(self, target_area):
+        duplicate_values = ""
+        try:
+            if target_area.parent is None:
+                duplicate_values = self.get_duplicate_data(target_area.children)
+                if len(duplicate_values) > 0:
+                    self.rename_area_object(target_area.children, duplicate_values)
+            for child in target_area.children:
+                if len(child.children) > 0:
+                    duplicate_values = self.get_duplicate_data(child.children)
+                if len(duplicate_values) > 0 and len(child.children):
+                    self.rename_area_object(child.children, duplicate_values)
+                    self.loop_area_object(child)
+        except D3AException as ex:
+            import traceback
+            traceback.print_exc()
+            raise D3AException("Cannot loop over the area object for renaming", ex)
+
+    @staticmethod
+    def rename_area_object(target_area, duplicate_values):
+        try:
+            for obj in target_area:
+                if obj.name in duplicate_values:
+                    obj.rename(obj.name + "_" + obj.uuid)
+            else:
+                print(":::string value:::", obj.name)
+        except D3AException as ex:
+            print(ex)
+
+    @staticmethod
+    def get_duplicate_data(lst):
+        new_lst = []
+        try:
+            for i in range(len(lst)):
+                new_lst.append(lst[i].name)
+            from collections import Counter
+            dict_data = dict(Counter(new_lst))
+            duplicate_values = [item for item, count in dict_data.items() if count > 1]
+        except D3AException as ex:
+            print(ex)
+        else:
+            return duplicate_values
 
 
 def run_simulation(setup_module_name="", simulation_config=None, simulation_events=None,
