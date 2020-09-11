@@ -17,9 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from pendulum import duration
 from itertools import product
-from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a_interface.constants_limits import GlobalConfig
-from d3a.constants import DATE_TIME_FORMAT, FLOATING_POINT_TOLERANCE  # NOQA
+from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a_interface.sim_results.aggregate_results import merge_unmatched_load_results_to_global
 
 DATE_HOUR_FORMAT = "YYYY-MM-DDTHH"
@@ -54,7 +53,7 @@ class ExportUnmatchedLoads:
 
     def count_load_devices_in_setup(self, area):
         for child in area['children']:
-            if child['type'] == LoadHoursStrategy:
+            if child['type'] in ["LoadHoursStrategy", "DefinedLoadStrategy"]:
                 self.load_count += 1
             if child['children']:
                 self.count_load_devices_in_setup(child)
@@ -67,7 +66,6 @@ class ExportUnmatchedLoads:
                                               current_market_slot)[area_dict['name']],
                     area_dict['name'], {}
                 ), current_market_slot)), area_dict)
-
         return unmatched_loads, self.change_name_to_uuid(unmatched_loads)
 
     def find_unmatched_loads(self, area_dict, core_stats, indict, current_market_slot):
