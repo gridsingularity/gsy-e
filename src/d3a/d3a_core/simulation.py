@@ -50,6 +50,8 @@ from d3a.d3a_core.exceptions import D3AException
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
+from collections import Counter
+from traceback import print_exc
 
 
 if platform.python_implementation() != "PyPy" and \
@@ -555,8 +557,7 @@ class Simulation:
                     self.rename_area_object(child.children, duplicate_values)
                     self.loop_area_object(child)
         except D3AException as ex:
-            import traceback
-            traceback.print_exc()
+            print_exc()
             raise D3AException("Cannot loop over the area object for renaming", ex)
 
     @staticmethod
@@ -568,12 +569,11 @@ class Simulation:
             pass
 
     @staticmethod
-    def get_duplicate_data(lst):
-        new_lst = []
-        for i in range(len(lst)):
-            new_lst.append(lst[i].name)
-        from collections import Counter
-        dict_data = dict(Counter(new_lst))
+    def get_duplicate_data(children_list):
+        temp_lst = []
+        for num in range(len(children_list)):
+            temp_lst.append(children_list[num].name)
+        dict_data = dict(Counter(temp_lst))
         duplicate_values = [item for item, count in dict_data.items() if count > 1]
         return duplicate_values
 
