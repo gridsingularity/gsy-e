@@ -51,7 +51,6 @@ from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
 from collections import Counter
-from traceback import print_exc
 
 
 if platform.python_implementation() != "PyPy" and \
@@ -544,25 +543,16 @@ class Simulation:
         self._load_setup_module()
 
     def loop_area_object(self, target_area):
-        duplicate_values = ""
-        try:
-            if target_area.parent is None:
-                duplicate_values = self.get_duplicate_data(target_area.children)
-                if len(duplicate_values) > 0:
-                    self.rename_area_object(target_area.children, duplicate_values)
+        if len(target_area.children) > 0:
+            duplicate_values = self.get_duplicate_data(target_area.children)
+            if len(duplicate_values) > 0:
+                self.rename_area_object(target_area, duplicate_values)
             for child in target_area.children:
-                if len(child.children) > 0:
-                    duplicate_values = self.get_duplicate_data(child.children)
-                if len(duplicate_values) > 0:
-                    self.rename_area_object(child.children, duplicate_values)
-                    self.loop_area_object(child)
-        except D3AException as ex:
-            print_exc()
-            raise D3AException("Cannot loop over the area object for renaming", ex)
+                self.loop_area_object(child)
 
     @staticmethod
     def rename_area_object(target_area, duplicate_values):
-        for obj in target_area:
+        for obj in target_area.children:
             if obj.name in duplicate_values:
                 obj.rename(obj.name + "_" + obj.uuid)
         else:
