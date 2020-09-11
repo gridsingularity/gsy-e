@@ -553,7 +553,7 @@ class Simulation:
             for child in target_area.children:
                 if len(child.children) > 0:
                     duplicate_values = self.get_duplicate_data(child.children)
-                if len(duplicate_values) > 0 and len(child.children) > 0:
+                if len(duplicate_values) > 0:
                     self.rename_area_object(child.children, duplicate_values)
                     self.loop_area_object(child)
         except D3AException as ex:
