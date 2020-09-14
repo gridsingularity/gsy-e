@@ -58,17 +58,18 @@ class ExportUnmatchedLoads:
             if child['children']:
                 self.count_load_devices_in_setup(child)
 
-    def get_current_market_results(self, area_dict={}, core_stats={}, current_market_slot=None):
+    def get_current_market_results(self, area_dict={}, core_stats={},
+                                   current_market_time_slot_str=None):
         unmatched_loads = self.arrange_output(self.append_device_type(
             self.expand_to_ul_to_hours(
                 self.expand_ul_to_parents(
                     self.find_unmatched_loads(area_dict, core_stats, {},
-                                              current_market_slot)[area_dict['name']],
+                                              current_market_time_slot_str)[area_dict['name']],
                     area_dict['name'], {}
-                ), current_market_slot)), area_dict)
+                ), current_market_time_slot_str)), area_dict)
         return unmatched_loads, self.change_name_to_uuid(unmatched_loads)
 
-    def find_unmatched_loads(self, area_dict, core_stats, indict, current_market_slot):
+    def find_unmatched_loads(self, area_dict, core_stats, indict, current_market_time_slot_str):
         """
         Aggregates list of times for each unmatched time slot for each load
         """
@@ -78,7 +79,7 @@ class ExportUnmatchedLoads:
             self.name_type_map[child['name']] = child['type']
             if child['children']:
                 indict[area_dict['name']] = self.find_unmatched_loads(
-                    child, core_stats, indict[area_dict['name']], current_market_slot
+                    child, core_stats, indict[area_dict['name']], current_market_time_slot_str
                 )
             else:
                 if child['type'] in ["LoadHoursStrategy", "DefinedLoadStrategy",
@@ -86,11 +87,12 @@ class ExportUnmatchedLoads:
                         core_stats.get(child['uuid'], {}) != {}:
                     indict[area_dict['name']][child['name']] = \
                         self._calculate_unmatched_loads_leaf_area(child, core_stats,
-                                                                  current_market_slot)
+                                                                  current_market_time_slot_str)
         return indict
 
     @classmethod
-    def _calculate_unmatched_loads_leaf_area(cls, area_dict, core_stats, current_market_slot):
+    def _calculate_unmatched_loads_leaf_area(cls, area_dict, core_stats,
+                                             current_market_time_slot_str):
         """
         actually determines the unmatched loads
         """
@@ -100,7 +102,7 @@ class ExportUnmatchedLoads:
                                 for trade in core_stats[area_dict['uuid']]['trades'])
         deficit = desired_energy_kWh - traded_energy_kWh
         if deficit > FLOATING_POINT_TOLERANCE:
-            unmatched_times.append(current_market_slot)
+            unmatched_times.append(current_market_time_slot_str)
         return {"unmatched_times": unmatched_times}
 
     def change_name_to_uuid(self, indict):
@@ -168,15 +170,15 @@ class ExportUnmatchedLoads:
         else:
             return {"unmatched_count": ul_count, "unmatched_times": hover_dict}
 
-    def expand_to_ul_to_hours(self, indict, current_market_slot):
+    def expand_to_ul_to_hours(self, indict, current_market_time_slot_str):
         """
         Changing format to dict of hour time stamps
         """
         outdict = {}
         for node_name, subdict in indict.items():
             outdict[node_name] = {}
-            outdict[node_name][current_market_slot] = \
-                self._get_hover_info(subdict, current_market_slot)
+            outdict[node_name][current_market_time_slot_str] = \
+                self._get_hover_info(subdict, current_market_time_slot_str)
         return outdict
 
     def append_device_type(self, indict):
@@ -230,15 +232,17 @@ class MarketUnmatchedLoads:
             current_results, self.unmatched_loads
         )
 
-    def update_unmatched_loads(self, area_dict={}, core_stats={}, current_market_slot=None):
-        if current_market_slot is None:
+    def update_unmatched_loads(self, area_dict={}, core_stats={},
+                               current_market_time_slot_str=None):
+        if current_market_time_slot_str is None:
             return
         if self.export_unmatched_loads.load_count == 0:
             self.write_none_to_unmatched_loads(area_dict)
         else:
             current_results, current_results_uuid = \
-                self.export_unmatched_loads.get_current_market_results(area_dict, core_stats,
-                                                                       current_market_slot)
+                self.export_unmatched_loads.get_current_market_results(
+                    area_dict, core_stats, current_market_time_slot_str
+                )
 
             self.last_unmatched_loads = current_results_uuid
             self.merge_unmatched_loads(current_results)
