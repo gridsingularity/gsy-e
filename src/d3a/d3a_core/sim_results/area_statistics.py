@@ -27,9 +27,7 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
-from d3a.d3a_core.util import area_name_from_area_or_iaa_name, make_iaa_name, \
-    round_floats_for_ui, add_or_create_key
-from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.d3a_core.util import round_floats_for_ui
 from d3a_interface.sim_results.aggregate_results import merge_price_energy_day_results_to_global
 
 loads_avg_prices = namedtuple('loads_avg_prices', ['load', 'price'])
@@ -82,27 +80,6 @@ def _is_prosumer_node(area):
 
 def _is_buffer_node(area):
     return type(area.strategy) == InfiniteBusStrategy
-
-
-def _area_trade_from_parent(area, parent, accumulated_trades, past_market_types):
-    area_IAA_name = make_iaa_name(area)
-    parent_markets = getattr(parent, past_market_types)
-    if parent_markets is not None:
-        if type(parent_markets) != list:
-            parent_markets = [parent_markets]
-
-        for market in parent_markets:
-            for trade in market.trades:
-                if trade.buyer == area_IAA_name:
-                    seller_id = area_name_from_area_or_iaa_name(trade.seller)
-                    accumulated_trades[area.name]["consumedFrom"] = \
-                        add_or_create_key(accumulated_trades[area.name]["consumedFrom"],
-                                          seller_id, trade.offer.energy)
-                    accumulated_trades[area.name]["spentTo"] = \
-                        add_or_create_key(accumulated_trades[area.name]["spentTo"],
-                                          seller_id, trade.offer.price)
-
-    return accumulated_trades
 
 
 def _generate_produced_energy_entries(accumulated_trades):
@@ -176,72 +153,6 @@ def _generate_intraarea_consumption_entries(accumulated_trades):
             })
         consumption_rows.append(sorted(consumption_row, key=lambda x: x["areaName"]))
     return consumption_rows
-
-
-def _external_trade_entries(child, accumulated_trades):
-    results = {"areaName": "External Trades"}
-    area_data = accumulated_trades[child.name]
-    results["bars"] = []
-    incoming_energy = 0
-    spent = 0
-    # External Trades entries
-    if "consumedFromExternal" in area_data:
-        for k, v in area_data["consumedFromExternal"].items():
-            incoming_energy += round_floats_for_ui(area_data["consumedFromExternal"][k])
-            spent += round_floats_for_ui(area_data["spentToExternal"][k])
-        results["bars"].append({
-            "energy": incoming_energy,
-            "targetArea": child.name,
-            "energyLabel": f"External sources sold "
-                           f"{abs(round_floats_for_ui(incoming_energy))} kWh",
-            "priceLabel": f"External sources earned {abs(round_floats_for_ui(spent))} cents"
-
-        })
-
-    if "producedForExternal" in area_data:
-        for k, v in area_data["producedForExternal"].items():
-            outgoing_energy = round_floats_for_ui(area_data["producedForExternal"][k])
-            earned = round_floats_for_ui(area_data["earnedFromExternal"][k])
-            results["bars"].append({
-                "energy": outgoing_energy,
-                "targetArea": k,
-                "energyLabel": f"External sources bought {abs(outgoing_energy)} kWh "
-                               f"from {k}",
-                "priceLabel": f"{child.name} spent {earned} cents."
-            })
-    return results
-
-
-def generate_area_cumulative_trade_redis(child, accumulated_trades):
-    results = {"areaName": child.name}
-    area_data = accumulated_trades[child.name]
-    results["bars"] = []
-    # Producer entries
-    if abs(area_data["produced"]) > FLOATING_POINT_TOLERANCE:
-        results["bars"].append(
-            {"energy": round_floats_for_ui(area_data["produced"]), "targetArea": child.name,
-             "energyLabel":
-                 f"{child.name} sold "
-                 f"{str(round_floats_for_ui(abs(area_data['produced'])))} kWh",
-             "priceLabel":
-                 f"{child.name} earned "
-                 f"{str(round_floats_for_ui(area_data['earned']))} cents"}
-        )
-
-    # Consumer entries
-    for producer, energy in area_data["consumedFrom"].items():
-        money = round_floats_for_ui(area_data["spentTo"][producer])
-        tag = "external sources" if producer == child.parent.name else producer
-        results["bars"].append({
-            "energy": round_floats_for_ui(energy),
-            "targetArea": producer,
-            "energyLabel": f"{child.name} bought "
-                           f"{str(round_floats_for_ui(energy))} kWh from {tag}",
-            "priceLabel": f"{child.name} spent "
-                          f"{str(round_floats_for_ui(money))} cents on energy from {tag}",
-        })
-
-    return results
 
 
 class MarketPriceEnergyDay:
