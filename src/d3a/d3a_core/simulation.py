@@ -256,7 +256,7 @@ class Simulation:
 
     def _update_and_send_results(self, is_final=False):
         self.endpoint_buffer.update_stats(self.area, self.status, self.progress_info)
-        if self.export_on_finish and not self.should_export_results and is_final:
+        if self.export_on_finish and self.should_export_results and is_final:
             self.export.raw_data_to_json(
                 self.area.current_market.time_slot_str,
                 self.endpoint_buffer.flattened_area_core_stats_dict
