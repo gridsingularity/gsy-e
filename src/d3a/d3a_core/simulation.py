@@ -123,7 +123,7 @@ class Simulation:
 
         validate_const_settings_for_simulation()
 
-        if self.export_on_finish and not self.redis_connection.is_enabled():
+        if self.export_on_finish and self.should_export_results:
             self.export = ExportAndPlot(self.area, self.export_path, self.export_subdir,
                                         self.file_stats_endpoint, self.endpoint_buffer)
 
@@ -175,8 +175,8 @@ class Simulation:
         self.area = self.setup_module.get_setup(self.simulation_config)
         self.endpoint_buffer = SimulationEndpointBuffer(
             redis_job_id, self.initial_params,
-            self.area, self.should_export_plots)
-        if self.should_export_plots:
+            self.area, self.should_export_results)
+        if self.should_export_results:
             self.file_stats_endpoint = FileExportEndpoints()
 
         self._update_and_send_results()
@@ -256,12 +256,12 @@ class Simulation:
 
     def _update_and_send_results(self, is_final=False):
         self.endpoint_buffer.update_stats(self.area, self.status, self.progress_info)
-        if self.export_on_finish and not self.redis_connection.is_enabled() and is_final:
+        if self.export_on_finish and not self.should_export_results and is_final:
             self.export.raw_data_to_json(
                 self.area.current_market.time_slot_str,
                 self.endpoint_buffer.flattened_area_core_stats_dict
             )
-        if self.should_export_plots:
+        if self.should_export_results:
             self.file_stats_endpoint(self.area)
             return
         if is_final:
@@ -364,7 +364,7 @@ class Simulation:
                     sleep(abs(tick_lengths_s - realtime_tick_length))
 
             self._update_and_send_results()
-            if self.export_on_finish and not self.redis_connection.is_enabled():
+            if self.export_on_finish and self.should_export_results:
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
                 if self.area.current_market is not None:
                     self.export.raw_data_to_json(
@@ -385,21 +385,21 @@ class Simulation:
                 config.sim_duration / (self.progress_info.elapsed_time - paused_duration)
             )
         self._update_and_send_results(is_final=True)
-        if self.export_on_finish and not self.redis_connection.is_enabled():
+        if self.export_on_finish and self.should_export_results:
             log.info("Exporting simulation data.")
             self.export.data_to_csv(self.area, False)
             self.export.area_tree_summary_to_json(self.endpoint_buffer.area_result_dict)
             if GlobalConfig.POWER_FLOW:
-                self.export.export(export_plots=self.should_export_plots,
+                self.export.export(export_plots=self.should_export_results,
                                    power_flow=self.power_flow)
             else:
-                self.export.export(self.should_export_plots)
+                self.export.export(self.should_export_results)
 
         if self.use_repl:
             self._start_repl()
 
     @property
-    def should_export_plots(self):
+    def should_export_results(self):
         return not self.redis_connection.is_enabled()
 
     def toggle_pause(self):
