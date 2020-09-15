@@ -20,9 +20,9 @@ import pendulum
 import uuid
 import pathlib
 import os
-from pendulum import DateTime, duration, today, instance
-from datetime import date, datetime
-from typing import Dict
+from pendulum import DateTime, duration, today, instance, date
+from datetime import datetime
+from typing import Dict  # NOQA
 
 from d3a.d3a_core.util import d3a_path, change_global_config
 from d3a.constants import TIME_ZONE, TIME_FORMAT
