@@ -20,7 +20,9 @@ import pendulum
 import uuid
 import pathlib
 import os
-from pendulum import DateTime, duration, today
+from pendulum import DateTime, duration, today, instance
+from datetime import date, datetime
+from typing import Dict, Time  # NOQA
 
 from d3a.d3a_core.util import d3a_path, change_global_config
 from d3a.constants import TIME_ZONE, TIME_FORMAT
@@ -384,3 +386,15 @@ def test_pv_user_profile_constructor_rejects_incorrect_parameters():
     with pytest.raises(D3ADeviceException):
         PVUserProfileStrategy(power_profile=user_profile_path,
                               fit_to_limit=False, energy_rate_decrease_per_update=-1)
+
+
+def test_profile_with_date_and_seconds_can_be_parsed():
+    GlobalConfig.slot_length = duration(minutes=15)
+    profile_date = date(year=2019, month=3, day=2)
+    GlobalConfig.start_date = instance((datetime.combine(profile_date, datetime.min.time())))
+    profile_path = pathlib.Path(d3a_path + '/resources/datetime_seconds_profile.csv')
+    profile = read_arbitrary_profile(InputProfileTypes.POWER, str(profile_path))
+    # After the 6th element the rest of the entries are populated with the last value
+    assert list(profile.values())[:6] == [1.5, 1.25, 1.0, 0.75, 0.5, 0.25]
+    assert all(x == 0.25 for x in list(profile.values())[6:])
+    GlobalConfig.start_date = instance((datetime.combine(date.today(), datetime.min.time())))
