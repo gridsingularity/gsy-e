@@ -22,7 +22,7 @@ import pathlib
 import os
 from pendulum import DateTime, duration, today, instance
 from datetime import date, datetime
-from typing import Dict, Time  # NOQA
+from typing import Dict
 
 from d3a.d3a_core.util import d3a_path, change_global_config
 from d3a.constants import TIME_ZONE, TIME_FORMAT
@@ -38,7 +38,7 @@ def setup_function():
     change_global_config(**DEFAULT_CONFIG.__dict__)
 
 
-ENERGY_FORECAST = {}  # type: Dict[Time, float]
+ENERGY_FORECAST = {}  # type: Dict[datetime, float]
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 
