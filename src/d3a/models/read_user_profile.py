@@ -22,7 +22,7 @@ from enum import Enum
 from pendulum import duration, from_format, from_timestamp, today, DateTime
 from typing import Dict
 from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, TIME_ZONE
-from d3a_interface.constants_limits import GlobalConfig
+from d3a_interface.constants_limits import GlobalConfig, DATE_TIME_FORMAT_SECONDS
 from d3a.d3a_core.util import generate_market_slot_list
 
 """
@@ -42,7 +42,7 @@ def _str_to_datetime(time_str, time_format) -> DateTime:
     :return: DateTime
     """
     time = from_format(time_str, time_format, tz=TIME_ZONE)
-    if time_format == DATE_TIME_FORMAT:
+    if time_format == DATE_TIME_FORMAT or time_format == DATE_TIME_FORMAT_SECONDS:
         return time
     elif time_format == TIME_FORMAT:
         return GlobalConfig.start_date.add(
@@ -99,7 +99,7 @@ def _eval_time_format(time_dict: Dict) -> str:
     """
     Evaluates which time format the provided dictionary has, also checks if the time-format is
     consistent for each time_slot
-    :return: TIME_FORMAT or DATE_TIME_FORMAT
+    :return: TIME_FORMAT or DATE_TIME_FORMAT or DATE_TIME_FORMAT_SECONDS
     """
     try:
         [from_format(str(ti), TIME_FORMAT) for ti in time_dict.keys()]
@@ -109,8 +109,12 @@ def _eval_time_format(time_dict: Dict) -> str:
             [from_format(str(ti), DATE_TIME_FORMAT) for ti in time_dict.keys()]
             return DATE_TIME_FORMAT
         except ValueError:
-            raise Exception(f"Format of time-stamp is not one of ('{TIME_FORMAT}', "
-                            f"'{DATE_TIME_FORMAT}')")
+            try:
+                [from_format(str(ti), DATE_TIME_FORMAT_SECONDS) for ti in time_dict.keys()]
+                return DATE_TIME_FORMAT_SECONDS
+            except ValueError:
+                raise Exception(f"Format of time-stamp is not one of ('{TIME_FORMAT}', "
+                                f"'{DATE_TIME_FORMAT}', '{DATE_TIME_FORMAT_SECONDS}')")
 
 
 def _readCSV(path: str) -> Dict:
