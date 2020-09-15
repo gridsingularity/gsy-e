@@ -20,8 +20,8 @@ import pendulum
 import uuid
 import pathlib
 import os
-from pendulum import DateTime, duration, today, instance, date
-from datetime import datetime
+from pendulum import DateTime, duration, today, instance
+from datetime import datetime, date
 from typing import Dict  # NOQA
 
 from d3a.d3a_core.util import d3a_path, change_global_config
