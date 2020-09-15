@@ -32,7 +32,7 @@ class TestExternalStrategy(unittest.TestCase):
     def test_sub_to_external_requests_exposes_correct_channels_two_sided_market(self, market_type):
         ConstSettings.IAASettings.MARKET_TYPE = market_type
         self.external_strategy2 = ExternalStrategy(self.area)
-        self.external_strategy2.redis.redis_db.sub_to_multiple_channels.assert_called_once_with(
+        self.external_strategy2.redis.redis_com.sub_to_multiple_channels.assert_called_once_with(
             {
                 "parent-area/test-area/offer": self.external_strategy2.redis._offer,
                 "parent-area/test-area/delete_offer": self.external_strategy2.redis._delete_offer,
@@ -44,7 +44,7 @@ class TestExternalStrategy(unittest.TestCase):
         )
 
     def test_sub_to_external_requests_exposes_correct_channels_one_sided_market(self):
-        self.external_redis.redis_db.sub_to_multiple_channels.assert_called_once_with(
+        self.external_redis.redis_com.sub_to_multiple_channels.assert_called_once_with(
             {
                 "parent-area/test-area/offer": self.external_redis._offer,
                 "parent-area/test-area/delete_offer": self.external_redis._delete_offer,
@@ -63,11 +63,11 @@ class TestExternalStrategy(unittest.TestCase):
         offer2 = self.test_market.offer(2, 3, "B", "B")
         offer3 = self.test_market.offer(3, 4, "C", "C")
         self.external_redis._offer_lists("")
-        self.external_redis.redis_db.publish.assert_called_once()
-        assert self.external_redis.redis_db.publish.call_args_list[0][0][0] == \
+        self.external_redis.redis_com.publish.assert_called_once()
+        assert self.external_redis.redis_com.publish.call_args_list[0][0][0] == \
             "parent-area/test-area/offers/response"
         response_payload = json.loads(
-            self.external_redis.redis_db.publish.call_args_list[0][0][1])
+            self.external_redis.redis_com.publish.call_args_list[0][0][1])
         offers_dict = response_payload["offer_list"]
         assert len(offers_dict) == 3
         self._assert_dict_is_the_same_as_offer(offers_dict[0], offer1)
@@ -81,11 +81,11 @@ class TestExternalStrategy(unittest.TestCase):
         offer2 = self.test_market.offer(2, 3, "test_area", "test_area")
         self.test_market.offer(3, 4, "C", "C")
         self.external_redis._offer_lists("")
-        self.external_redis.redis_db.publish.assert_called_once()
-        assert self.external_redis.redis_db.publish.call_args_list[0][0][0] == \
+        self.external_redis.redis_com.publish.assert_called_once()
+        assert self.external_redis.redis_com.publish.call_args_list[0][0][0] == \
             "parent-area/test-area/offers/response"
         response_payload = json.loads(
-            self.external_redis.redis_db.publish.call_args_list[0][0][1])
+            self.external_redis.redis_com.publish.call_args_list[0][0][1])
         offers_dict = response_payload["offer_list"]
         assert len(offers_dict) == 2
         self._assert_dict_is_the_same_as_offer(offers_dict[0], offer1)
@@ -100,10 +100,11 @@ class TestExternalStrategy(unittest.TestCase):
         assert offer.energy == 22
         assert offer.seller == "test_area"
         market_offer_json = offer.to_JSON_string()
-        self.external_redis.redis_db.publish.assert_called_once()
-        assert self.external_redis.redis_db.publish.call_args_list[0][0][0] == \
+        self.external_redis.redis_com.publish.assert_called_once()
+        assert self.external_redis.redis_com.publish.call_args_list[0][0][0] == \
             "parent-area/test-area/offer/response"
-        response_payload = json.loads(self.external_redis.redis_db.publish.call_args_list[0][0][1])
+        response_payload = \
+            json.loads(self.external_redis.redis_com.publish.call_args_list[0][0][1])
         assert response_payload["offer"] == market_offer_json
 
     def test_delete_offer(self):
@@ -111,8 +112,8 @@ class TestExternalStrategy(unittest.TestCase):
         payload = {"data": json.dumps({"offer": offer1.to_JSON_string()})}
         self.external_redis._delete_offer(payload)
         assert len(self.test_market.offers) == 0
-        self.external_redis.redis_db.publish.assert_called_once()
-        assert self.external_redis.redis_db.publish.call_args_list[0][0][0] == \
+        self.external_redis.redis_com.publish.assert_called_once()
+        assert self.external_redis.redis_com.publish.call_args_list[0][0][0] == \
             "parent-area/test-area/delete_offer/response"
 
     def test_accept_offer(self):
@@ -122,10 +123,11 @@ class TestExternalStrategy(unittest.TestCase):
         assert len(self.test_market.trades) == 1
         trade = self.test_market.trades[0]
         assert len(self.test_market.offers) == 0
-        self.external_redis.redis_db.publish.assert_called_once()
-        assert self.external_redis.redis_db.publish.call_args_list[0][0][0] == \
+        self.external_redis.redis_com.publish.assert_called_once()
+        assert self.external_redis.redis_com.publish.call_args_list[0][0][0] == \
             "parent-area/test-area/accept_offer/response"
-        response_payload = json.loads(self.external_redis.redis_db.publish.call_args_list[0][0][1])
+        response_payload = \
+            json.loads(self.external_redis.redis_com.publish.call_args_list[0][0][1])
         assert response_payload["trade"] == trade.to_JSON_string()
 
     def test_bid(self):
@@ -137,10 +139,11 @@ class TestExternalStrategy(unittest.TestCase):
         assert bid.energy == 12
         assert bid.buyer == "test_area"
         assert bid.seller == "parent_area"
-        self.external_redis.redis_db.publish.assert_called_once()
-        assert self.external_redis.redis_db.publish.call_args_list[0][0][0] == \
+        self.external_redis.redis_com.publish.assert_called_once()
+        assert self.external_redis.redis_com.publish.call_args_list[0][0][0] == \
             "parent-area/test-area/bid/response"
-        response_payload = json.loads(self.external_redis.redis_db.publish.call_args_list[0][0][1])
+        response_payload = \
+            json.loads(self.external_redis.redis_com.publish.call_args_list[0][0][1])
         assert response_payload["bid"] == bid.to_JSON_string()
 
     def test_delete_bid(self):
@@ -148,8 +151,8 @@ class TestExternalStrategy(unittest.TestCase):
         payload = {"data": json.dumps({"bid": bid1.id})}
         self.external_redis._delete_bid(payload)
         assert len(self.test_market.bids) == 0
-        self.external_redis.redis_db.publish.assert_called_once()
-        assert self.external_redis.redis_db.publish.call_args_list[0][0][0] == \
+        self.external_redis.redis_com.publish.assert_called_once()
+        assert self.external_redis.redis_com.publish.call_args_list[0][0][0] == \
             "parent-area/test-area/delete_bid/response"
 
     @parameterized.expand([(2, ), (3, )])
@@ -159,11 +162,11 @@ class TestExternalStrategy(unittest.TestCase):
         bid2 = self.test_market.bid(2, 3, "test_area", "B", "test_area")
         bid3 = self.test_market.bid(3, 4, "test_area", "C", "test_area")
         self.external_redis._list_bids("")
-        self.external_redis.redis_db.publish.assert_called_once()
-        assert self.external_redis.redis_db.publish.call_args_list[0][0][0] == \
+        self.external_redis.redis_com.publish.assert_called_once()
+        assert self.external_redis.redis_com.publish.call_args_list[0][0][0] == \
             "parent-area/test-area/bids/response"
         response_payload = json.loads(
-            self.external_redis.redis_db.publish.call_args_list[0][0][1])
+            self.external_redis.redis_com.publish.call_args_list[0][0][1])
         bids_list = response_payload["bid_list"]
         assert len(bids_list) == 3
         self._assert_dict_is_the_same_as_offer(bids_list[0], bid1)

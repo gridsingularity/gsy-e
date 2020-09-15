@@ -268,6 +268,10 @@ class Area:
             self.redis_ext_conn.event_market_cycle()
 
     def tick(self):
+        if self.redis_ext_conn is not None and not self.strategy:
+            if self.redis_ext_conn.is_aggregator_controlled:
+                self.redis_ext_conn.aggregator.consume_all_area_commands(
+                    self.uuid, self.redis_ext_conn.trigger_aggregator_commands)
         if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                 ConstSettings.IAASettings.MARKET_TYPE == 3:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
