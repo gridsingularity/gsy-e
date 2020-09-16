@@ -156,10 +156,8 @@ class ExportUnmatchedLoads:
         ul_count = 0
         for child_name, child_ul_list in indict.items():
             for time in child_ul_list:
-                if int(time[11:13]) == int(slot_time[11:13]) and \
-                   int(time[8:10]) == int(slot_time[8:10]) and \
-                   int(time[5:7]) == int(slot_time[5:7]) and \
-                   int(time[:4]) == int(slot_time[:4]):
+                if time[11:13] == slot_time[11:13] and time[8:10] == slot_time[8:10] and \
+                   time[5:7] == slot_time[5:7] and time[:4] == slot_time[:4]:
                     ul_count += 1
                     if child_name in hover_dict:
                         hover_dict[child_name].append(time)

@@ -30,7 +30,7 @@ from copy import deepcopy
 from d3a.models.config import SimulationConfig
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.simulation import Simulation
-from d3a.d3a_core.util import d3a_path
+from d3a.d3a_core.util import d3a_path, area_name_uuid_map
 from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
 from d3a_interface.constants_limits import ConstSettings
 from d3a import constants
@@ -660,9 +660,10 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
     paused = False
     pause_after = duration()
     repl = False
-    no_export = True
-    export_path = None
+    no_export = False
     export_subdir = None
+    context.export_path = os.path.join(context.simdir, scenario)
+    os.makedirs(context.export_path, exist_ok=True)
     try:
         context.simulation = Simulation(
             scenario,
@@ -674,7 +675,7 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
             pause_after,
             repl,
             no_export,
-            export_path,
+            context.export_path,
             export_subdir,
         )
         context.simulation.run()
@@ -696,9 +697,8 @@ def test_output(context, scenario, sim_duration, slot_length, tick_length):
     # (check if simulation successfully finished):
     assert len(context.raw_sim_data.keys()) == 24
     if scenario == "default":
-        assert "Street 1" in context.name_uuid_map.keys()
-        assert "S1 House 1" in context.name_uuid_map.keys()
-        assert "S1 H1 Load" in context.name_uuid_map.keys()
+        assert {"Street 1", "S1 House 1", "S1 H1 Load"}.\
+            issubset(set(context.name_uuid_map.keys()))
         for time_slot, core_stats in context.raw_sim_data.items():
             assert 'load_profile_kWh' in core_stats[context.name_uuid_map['S1 H1 Load']].keys()
 
@@ -1076,10 +1076,8 @@ def identical_profiles(context):
 
 def get_simulation_raw_results(context):
     area_tree_summary = glob.glob(os.path.join(context.export_path, "*", "area_tree_summary.json"))
-    print(f"area_tree_summary: {area_tree_summary}")
     with open(area_tree_summary[0], "r") as sf:
         context.area_tree_summary_data = json.load(sf)
-    from d3a.d3a_core.util import area_name_uuid_map
     context.name_uuid_map = area_name_uuid_map(context.area_tree_summary_data)
 
     raw_data_dir_path = glob.glob(os.path.join(context.export_path, "*", "raw_data", "*"))
