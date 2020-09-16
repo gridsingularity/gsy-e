@@ -152,7 +152,7 @@ class SimulationEndpointBuffer:
             self.flattened_area_core_stats_dict[area.uuid] = {}
         if self.current_market_time_slot_str == "":
             return
-        core_stats_dict = {'bids': [], 'offers': [], 'trades': []}
+        core_stats_dict = {'bids': [], 'offers': [], 'trades': [], 'market_fee': 0.0}
         if hasattr(area.current_market, 'offer_history'):
             for offer in area.current_market.offer_history:
                 core_stats_dict['offers'].append(offer.serializable_dict())
@@ -162,6 +162,8 @@ class SimulationEndpointBuffer:
         if hasattr(area.current_market, 'trades'):
             for trade in area.current_market.trades:
                 core_stats_dict['trades'].append(trade.serializable_dict())
+        if hasattr(area.current_market, 'market_fee'):
+            core_stats_dict['market_fee'] = area.current_market.market_fee
 
         if isinstance(area.strategy, PVStrategy) or \
                 isinstance(area.strategy, PVUserProfileStrategy) or \
@@ -219,10 +221,15 @@ class SimulationEndpointBuffer:
         }
 
         self.cumulative_grid_trades.update(area)
+        # print(f"area_result_dict: {self.area_result_dict}")
+        # print(f"flattened_area_core_stats_dict: {self.flattened_area_core_stats_dict}")
 
-        self.market_bills.update(area)
-        if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
-            self.balancing_bills.update(area)
+        if self.current_market_time_slot_str != "":
+            self.market_bills.update(self.area_result_dict, self.flattened_area_core_stats_dict)
+            # self.update_area_aggregated_stats(self.area_result_dict)
+
+        # if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
+        #     self.balancing_bills.update(area)
 
         self.cumulative_bills.update_cumulative_bills(area)
 
@@ -247,8 +254,6 @@ class SimulationEndpointBuffer:
 
         self.trade_profile.update(area)
 
-        self.update_area_aggregated_stats(area)
-
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or \
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
             self.area_market_stocks_stats.update(area)
@@ -257,9 +262,9 @@ class SimulationEndpointBuffer:
         self.update_results_area_uuids(area)
         self.update_offer_bid_trade()
 
-    def update_area_aggregated_stats(self, area):
-        self._merge_cumulative_bills_into_bills_for_market_info(area)
-        for child in area.children:
+    def update_area_aggregated_stats(self, area_dict):
+        self._merge_cumulative_bills_into_bills_for_market_info(area_dict)
+        for child in area_dict['children']:
             self.update_area_aggregated_stats(child)
 
     def update_offer_bid_trade(self):
@@ -268,13 +273,14 @@ class SimulationEndpointBuffer:
         for area_uuid, area_result in self.flattened_area_core_stats_dict.items():
             self.bids_offers_trades[area_uuid] = area_result
 
-    def _merge_cumulative_bills_into_bills_for_market_info(self, area):
-        bills = self.market_bills.bills_redis_results[area.uuid]
-        bills.update({
-            "penalty_cost":
-                self.cumulative_bills.cumulative_bills_results[area.uuid]["penalties"],
-            "penalty_energy":
-                self.cumulative_bills.cumulative_bills_results[area.uuid]["penalty_energy"]})
-        area.stats.update_aggregated_stats({"bills": bills})
-
-        area.stats.kpi.update(self.kpi.performance_indices_redis.get(area.uuid, {}))
+    def _merge_cumulative_bills_into_bills_for_market_info(self, area_dict):
+        pass
+        # bills = self.market_bills.bills_redis_results[area_dict['uuid']]
+        # bills.update({
+        #     "penalty_cost":
+        #         self.cumulative_bills.cumulative_bills_results[area_dict['uuid']]["penalties"],
+        #     "penalty_energy":
+        #         self.cumulative_bills.cumulative_bills_results[area_dict['uuid']]["penalty_energy"]})
+        # area.stats.update_aggregated_stats({"bills": bills})
+        #
+        # area.stats.kpi.update(self.kpi.performance_indices_redis.get(area_dict['uuid'], {}))
