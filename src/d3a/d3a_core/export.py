@@ -82,6 +82,11 @@ class ExportAndPlot:
             self.directory = pathlib.Path(self.rootdir, subdir)
             self.zip_filename = pathlib.Path(self.rootdir, subdir + "_results")
             mkdir_from_str(str(self.directory))
+            import d3a.constants
+            if d3a.constants.D3A_TEST_RUN:
+                subdirectory = pathlib.Path(self.directory, "raw_data")
+                if not subdirectory.exists():
+                    subdirectory.mkdir(exist_ok=True, parents=True)
         except Exception as ex:
             _log.error("Could not open directory for csv exports: %s" % str(ex))
             return
@@ -143,8 +148,6 @@ class ExportAndPlot:
 
     def raw_data_to_json(self, time_slot, data: Dict):
         subdirectory = pathlib.Path(self.directory, "raw_data")
-        if not subdirectory.exists():
-            subdirectory.mkdir(exist_ok=True, parents=True)
         json_file = os.path.join(subdirectory, f"{time_slot}.json")
         with open(json_file, 'w') as outfile:
             json.dump(data, outfile, indent=2)
