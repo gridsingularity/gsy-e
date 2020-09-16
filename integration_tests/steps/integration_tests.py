@@ -30,7 +30,8 @@ from copy import deepcopy
 from d3a.models.config import SimulationConfig
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.simulation import Simulation
-from d3a.d3a_core.util import d3a_path, area_name_uuid_map
+from d3a.d3a_core.util import d3a_path
+from d3a_interface.utils import get_area_name_uuid_mapping
 from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
 from d3a_interface.constants_limits import ConstSettings
 from d3a import constants
@@ -1078,7 +1079,7 @@ def get_simulation_raw_results(context):
     area_tree_summary = glob.glob(os.path.join(context.export_path, "*", "area_tree_summary.json"))
     with open(area_tree_summary[0], "r") as sf:
         context.area_tree_summary_data = json.load(sf)
-    context.name_uuid_map = area_name_uuid_map(context.area_tree_summary_data)
+    context.name_uuid_map = get_area_name_uuid_mapping(context.area_tree_summary_data)
 
     raw_data_dir_path = glob.glob(os.path.join(context.export_path, "*", "raw_data", "*"))
     context.raw_sim_data = {}

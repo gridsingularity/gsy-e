@@ -80,8 +80,8 @@ def device_partially_fulfill_bid(context, device):
 
 @then('the PV always provides constant power according to load demand')
 def pv_constant_power(context):
-    from d3a.d3a_core.util import area_name_uuid_map
-    context.name_uuid_map = area_name_uuid_map(context.area_tree_summary_data)
+    from d3a_interface.utils import get_area_name_uuid_mapping
+    context.name_uuid_map = get_area_name_uuid_mapping(context.area_tree_summary_data)
     load_energies_set = set()
     pv_energies_set = set()
 
