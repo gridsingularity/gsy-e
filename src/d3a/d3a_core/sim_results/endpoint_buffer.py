@@ -46,9 +46,9 @@ class SimulationEndpointBuffer:
     def __init__(self, job_id, initial_params, area, should_export_plots):
         self.job_id = job_id
         self.result_area_uuids = set()
-        self.current_market = ""
-        self.current_market_unix = None
-        self.current_market_datetime = None
+        self.current_market_time_slot_str = ""
+        self.current_market_time_slot_unix = None
+        self.current_market_time_slot = None
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
         self.status = {}
         self.area_result_dict = self._create_area_tree_dict(area)
@@ -59,7 +59,7 @@ class SimulationEndpointBuffer:
             "percentage_completed": 0
         }
         self.should_export_plots = should_export_plots
-        self.market_unmatched_loads = MarketUnmatchedLoads(area)
+        self.market_unmatched_loads = MarketUnmatchedLoads(self.area_result_dict)
         self.price_energy_day = MarketPriceEnergyDay(should_export_plots)
         self.market_bills = MarketEnergyBills()
         self.cumulative_bills = CumulativeBills()
@@ -106,7 +106,7 @@ class SimulationEndpointBuffer:
         # TODO: In D3ASIM-2288, add unix_time=True to convert_pendulum_to_str_in_dict
         return {
             "job_id": self.job_id,
-            "current_market": self.current_market,
+            "current_market": self.current_market_time_slot_str,
             "random_seed": self.random_seed,
             "cumulative_grid_trades": self.cumulative_grid_trades.current_trades,
             "bills": self.market_bills.bills_redis_results,
@@ -114,8 +114,7 @@ class SimulationEndpointBuffer:
             "status": self.status,
             "progress_info": self.simulation_progress,
             "kpi": self.kpi.performance_indices_redis,
-            "last_unmatched_loads": convert_pendulum_to_str_in_dict(
-                self.market_unmatched_loads.last_unmatched_loads, {}),
+            "last_unmatched_loads": self.market_unmatched_loads.last_unmatched_loads,
             "last_energy_trade_profile": convert_pendulum_to_str_in_dict(
                 self.trade_profile.traded_energy_current, {}, ui_format=True),
             "last_price_energy_day": convert_pendulum_to_str_in_dict(
@@ -132,8 +131,7 @@ class SimulationEndpointBuffer:
         return {
             "job_id": self.job_id,
             "random_seed": self.random_seed,
-            "unmatched_loads": convert_pendulum_to_str_in_dict(
-                self.market_unmatched_loads.unmatched_loads, {}),
+            "unmatched_loads": self.market_unmatched_loads.unmatched_loads,
             "price_energy_day": convert_pendulum_to_str_in_dict(
                 self.price_energy_day.csv_output, {}),
             "cumulative_grid_trades":
@@ -152,7 +150,7 @@ class SimulationEndpointBuffer:
     def _populate_core_stats(self, area):
         if area.uuid not in self.flattened_area_core_stats_dict:
             self.flattened_area_core_stats_dict[area.uuid] = {}
-        if self.current_market == "":
+        if self.current_market_time_slot_str == "":
             return
         core_stats_dict = {'bids': [], 'offers': [], 'trades': []}
         if hasattr(area.current_market, 'offer_history'):
@@ -169,7 +167,7 @@ class SimulationEndpointBuffer:
                 isinstance(area.strategy, PVUserProfileStrategy) or \
                 isinstance(area.strategy, PVPredefinedStrategy):
             core_stats_dict['pv_production_kWh'] = \
-                area.strategy.energy_production_forecast_kWh.get(self.current_market_datetime,
+                area.strategy.energy_production_forecast_kWh.get(self.current_market_time_slot,
                                                                  0)
             if area.parent.current_market is not None:
                 for t in area.strategy.trades[area.parent.current_market]:
@@ -177,14 +175,14 @@ class SimulationEndpointBuffer:
 
         elif isinstance(area.strategy, StorageStrategy):
             core_stats_dict['soc_history_%'] = \
-                area.strategy.state.charge_history.get(self.current_market_datetime, 0)
+                area.strategy.state.charge_history.get(self.current_market_time_slot, 0)
             if area.parent.current_market is not None:
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
 
         elif isinstance(area.strategy, LoadHoursStrategy):
             core_stats_dict['load_profile_kWh'] = \
-                area.strategy.state.desired_energy_Wh.get(self.current_market_datetime, 0)
+                area.strategy.state.desired_energy_Wh.get(self.current_market_time_slot, 0) / 1000
             if area.parent.current_market is not None:
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
@@ -196,6 +194,8 @@ class SimulationEndpointBuffer:
                     core_stats_dict['trades'].append(t.serializable_dict())
 
         elif type(area.strategy) in [InfiniteBusStrategy, MarketMakerStrategy]:
+            core_stats_dict['energy_rate'] = \
+                area.strategy.energy_rate[area.parent.current_market.time_slot]
             if area.parent.current_market is not None:
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
@@ -208,9 +208,9 @@ class SimulationEndpointBuffer:
     def update_stats(self, area, simulation_status, progress_info):
         self.status = simulation_status
         if area.current_market is not None:
-            self.current_market = area.current_market.time_slot_str
-            self.current_market_unix = area.current_market.time_slot.timestamp()
-            self.current_market_datetime = area.current_market.time_slot
+            self.current_market_time_slot_str = area.current_market.time_slot_str
+            self.current_market_time_slot_unix = area.current_market.time_slot.timestamp()
+            self.current_market_time_slot = area.current_market.time_slot
         self._populate_core_stats(area)
         self.simulation_progress = {
             "eta_seconds": progress_info.eta.seconds,
@@ -226,11 +226,14 @@ class SimulationEndpointBuffer:
 
         self.cumulative_bills.update_cumulative_bills(area)
 
-        self.market_unmatched_loads.update_unmatched_loads(area)
+        self.market_unmatched_loads.update_unmatched_loads(
+            self.area_result_dict, self.flattened_area_core_stats_dict,
+            self.current_market_time_slot_str
+        )
 
         self.device_statistics.update(self.area_result_dict,
                                       self.flattened_area_core_stats_dict,
-                                      self.current_market)
+                                      self.current_market_time_slot_str)
 
         self.price_energy_day.update(area)
 
@@ -260,7 +263,7 @@ class SimulationEndpointBuffer:
             self.update_area_aggregated_stats(child)
 
     def update_offer_bid_trade(self):
-        if self.current_market == "":
+        if self.current_market_time_slot_str == "":
             return
         for area_uuid, area_result in self.flattened_area_core_stats_dict.items():
             self.bids_offers_trades[area_uuid] = area_result

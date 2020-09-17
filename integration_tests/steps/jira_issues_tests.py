@@ -21,8 +21,6 @@ from pendulum import today
 import os
 from d3a.d3a_core.util import d3a_path
 from d3a.constants import TIME_ZONE
-from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
-    get_number_of_unmatched_loads
 from d3a.d3a_core.export import EXPORT_DEVICE_VARIABLES
 
 
@@ -112,26 +110,13 @@ def step_impl(context):
 
 @then('on every market slot there should be matching trades on grid and house markets')
 def check_matching_trades(context):
-    house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
-    grid = context.simulation.area
-
-    for market in grid.past_markets:
-        timeslot = market.time_slot
-        assert house1.get_past_market(timeslot)
-        grid_trades = grid.get_past_market(timeslot).trades
-        house_trades = house1.get_past_market(timeslot).trades
+    for time_slot, core_stats in context.raw_sim_data.items():
+        grid_trades = core_stats[context.name_uuid_map['Grid']]['trades']
+        house_trades = core_stats[context.name_uuid_map['House 1']]['trades']
         assert len(grid_trades) == len(house_trades)
         assert all(
-            any(t.offer.energy == th.offer.energy and t.buyer == th.seller for th in house_trades)
+            any(t['energy'] == th['energy'] and t['buyer'] == th['seller'] for th in house_trades)
             for t in grid_trades)
-
-
-@then('there should be no unmatched loads')
-def no_unmatched_loads(context):
-    unmatched, unmatched_redis = \
-        ExportUnmatchedLoads(context.simulation.area).get_current_market_results(
-            all_past_markets=True)
-    assert get_number_of_unmatched_loads(unmatched) == 0
 
 
 @then('pv produces the same energy on each corresponding time slot regardless of the day')

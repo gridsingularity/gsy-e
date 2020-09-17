@@ -229,6 +229,7 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'resi
     def serializable_dict(self):
         return {
             "type": "Trade",
+            "match_type": "Offer" if isinstance(self.offer, Offer) else "Bid",
             "id": self.id,
             "offer_bid_id": self.offer.id,
             "residual_id": self.residual.id if self.residual is not None else None,

@@ -31,10 +31,9 @@ from d3a.models.config import SimulationConfig
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.simulation import Simulation
 from d3a.d3a_core.util import d3a_path
+from d3a_interface.utils import get_area_name_uuid_mapping
 from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
 from d3a_interface.constants_limits import ConstSettings
-from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
-    get_number_of_unmatched_loads
 from d3a import constants
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
@@ -298,6 +297,16 @@ def run_sim_console_alt_price(context, scenario):
     os.makedirs(context.export_path, exist_ok=True)
     os.system("d3a -l FATAL run -d 2h -t 15s --setup={scenario} --export-path={export_path} "
               "--compare-alt-pricing".format(export_path=context.export_path, scenario=scenario))
+
+
+@when('we run the d3a simulation on console with {scenario} for {hours} hrs slot_length: '
+      '{slot_length}m, tick_length: {tick_length}s and markets: {market_count}')
+def run_simulation_via_console(context, scenario, hours, slot_length,
+                               tick_length, market_count):
+    context.export_path = os.path.join(context.simdir, scenario)
+    os.makedirs(context.export_path, exist_ok=True)
+    os.system(f"d3a -l FATAL run -d {hours}h -t {tick_length}s -s {slot_length}m "
+              f"-m {market_count} --seed 0 --setup={scenario} --export-path={context.export_path}")
 
 
 @when('we run the d3a simulation with cloud_coverage [{cloud_coverage}] and {scenario}')
@@ -630,6 +639,12 @@ def run_sim_market_count(context, scenario):
     context.simulation_4 = context.simulation
 
 
+@given('export {flag}')
+@when('export {flag}')
+def export_logic(context, flag):
+    context.no_export = True if flag == 'isnt_needed' else False
+
+
 @when('we run the simulation with setup file {scenario} and parameters '
       '[{total_duration}, {slot_length}, {tick_length}, {market_count}]')
 @then('we run the simulation with setup file {scenario} and parameters '
@@ -652,9 +667,9 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
     paused = False
     pause_after = duration()
     repl = False
-    no_export = True
-    export_path = None
     export_subdir = None
+    context.export_path = os.path.join(context.simdir, scenario)
+    os.makedirs(context.export_path, exist_ok=True)
     try:
         context.simulation = Simulation(
             scenario,
@@ -665,8 +680,8 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
             paused,
             pause_after,
             repl,
-            no_export,
-            export_path,
+            context.no_export,
+            context.export_path,
             export_subdir,
         )
         context.simulation.run()
@@ -678,21 +693,20 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
 @then('we test the output of the simulation of '
       '{scenario} [{sim_duration}, {slot_length}, {tick_length}]')
 def test_output(context, scenario, sim_duration, slot_length, tick_length):
+    from integration_tests.steps.integration_tests import get_simulation_raw_results
+    get_simulation_raw_results(context)
 
     if scenario in ["default_2a", "default_2b", "default_3"]:
-        unmatched_loads, unmatched_loads_redis = \
-            ExportUnmatchedLoads(context.simulation.area).get_current_market_results(
-                all_past_markets=True)
-        assert get_number_of_unmatched_loads(unmatched_loads) == 0
-    # (check if number of last slot is the maximal number of slots):
-    no_of_slots = int(int(sim_duration) * 60 / int(slot_length))
-    assert no_of_slots == context.simulation.area.current_slot
+        from integration_tests.steps.two_sided_market import no_unmatched_loads
+        no_unmatched_loads(context)
+
+    # (check if simulation successfully finished):
+    assert len(context.raw_sim_data.keys()) == 24
     if scenario == "default":
-        street1 = list(filter(lambda x: x.name == "Street 1", context.simulation.area.children))[0]
-        house1 = list(filter(lambda x: x.name == "S1 House 1", street1.children))[0]
-        permanent_load = list(filter(lambda x: x.name == "S1 H1 Load", house1.children))[0]
-        energy_profile = [ki for ki in permanent_load.strategy.state.desired_energy_Wh.values()]
-        assert all([permanent_load.strategy.energy == ei for ei in energy_profile])
+        assert {"Street 1", "S1 House 1", "S1 H1 Load"}.\
+            issubset(set(context.name_uuid_map.keys()))
+        for time_slot, core_stats in context.raw_sim_data.items():
+            assert 'load_profile_kWh' in core_stats[context.name_uuid_map['S1 H1 Load']].keys()
 
 
 @then('the energy bills report the correct accumulated traded energy price')
@@ -1064,3 +1078,18 @@ def identical_profiles(context):
     start = int(list(load_profile_ts.keys())[0])
     end = int(list(load_profile_ts.keys())[23])
     assert all([load_profile_ts[i] == load_profile_ts[i + 86400] for i in range(start, end, 3600)])
+
+
+def get_simulation_raw_results(context):
+    area_tree_summary = glob.glob(os.path.join(context.export_path, "*", "area_tree_summary.json"))
+    with open(area_tree_summary[0], "r") as sf:
+        context.area_tree_summary_data = json.load(sf)
+    context.name_uuid_map = get_area_name_uuid_mapping(context.area_tree_summary_data)
+
+    raw_data_dir_path = glob.glob(os.path.join(context.export_path, "*", "raw_data", "*"))
+    context.raw_sim_data = {}
+    for raw in raw_data_dir_path:
+        time = raw.split("/")[-1].split('.')[0]
+        with open(raw, "r") as sf:
+            parsed_raw_data = json.load(sf)
+            context.raw_sim_data[time] = parsed_raw_data

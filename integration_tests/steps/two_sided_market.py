@@ -19,85 +19,79 @@ from behave import then
 from math import isclose
 from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
     get_number_of_unmatched_loads
-from d3a_interface.constants_limits import ConstSettings
-from d3a.d3a_core.util import make_iaa_name
-from d3a import limit_float_precision
-from d3a.constants import DEFAULT_PRECISION
 from d3a.models.market.market_structures import Offer, Bid
 
 
+@then('there should be no unmatched loads')
 @then('the load has no unmatched loads')
 def no_unmatched_loads(context):
-    unmatched, unmatched_redis = \
-        ExportUnmatchedLoads(context.simulation.area).get_current_market_results(
-            all_past_markets=True)
-    assert get_number_of_unmatched_loads(unmatched) == 0
+    from integration_tests.steps.integration_tests import get_simulation_raw_results
+    get_simulation_raw_results(context)
+    count = 0
+    unmatched = ExportUnmatchedLoads(context.area_tree_summary_data)
+    for time_slot, core_stats in context.raw_sim_data.items():
+        unmatched_data, _ = unmatched.get_current_market_results(
+            context.area_tree_summary_data, core_stats, time_slot
+        )
+        count += 1
+        assert get_number_of_unmatched_loads(unmatched_data) == 0
+    assert count > 0
 
 
 @then('the load has unmatched loads')
 def has_unmatched_loads(context):
-    unmatched, unmatched_redis = \
-        ExportUnmatchedLoads(context.simulation.area).get_current_market_results(
-            all_past_markets=True)
-    assert get_number_of_unmatched_loads(unmatched) > 0
+    from integration_tests.steps.integration_tests import get_simulation_raw_results
+    get_simulation_raw_results(context)
+    count = 0
+    unmatched = ExportUnmatchedLoads(context.area_tree_summary_data)
+    for time_slot, core_stats in context.raw_sim_data.items():
+        unmatched_data, _ = unmatched.get_current_market_results(
+            context.area_tree_summary_data, core_stats, time_slot
+        )
+        if get_number_of_unmatched_loads(unmatched_data) > 0:
+            count += 1
+    assert count > 0
 
 
 @then('the {device} bid is partially fulfilled by the PV offers')
 def device_partially_fulfill_bid(context, device):
-    grid = context.simulation.area
-    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
-    device_name = "H1 General Load" if device == "load" else "H1 Storage"
-    load_or_storage = next(filter(lambda x: device_name in x.name, house1.children))
-    house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
-    pvs = list(filter(lambda x: "H2 PV" in x.name, house2.children))
+    from integration_tests.steps.integration_tests import get_simulation_raw_results
+    get_simulation_raw_results(context)
 
-    for market in house1.past_markets:
-        slot = market.time_slot
-        if len(market.trades) == 0:
+    for time_slot, core_stats in context.raw_sim_data.items():
+        grid_trades = core_stats[context.name_uuid_map['Grid']]['trades']
+        house1_trades = core_stats[context.name_uuid_map['House 1']]['trades']
+        house2_trades = core_stats[context.name_uuid_map['House 2']]['trades']
+        if len(house1_trades) == 0:
             continue
-        for trade in market.trades:
-            assert load_or_storage.strategy.bid_update.initial_rate[market.time_slot] <= \
-                   round(trade.offer.price / trade.offer.energy, DEFAULT_PRECISION) <= \
-                   load_or_storage.strategy.bid_update.final_rate[market.time_slot]
 
         # Assert one trade for each PV
-        assert len(market.trades) == 5
-        assert all(trade.buyer == load_or_storage.name for trade in market.trades)
-        assert all(trade.seller == make_iaa_name(house1)
-                   for trade in house1.get_past_market(slot).trades)
-        assert len(grid.get_past_market(slot).trades) == 5
-        assert all(trade.buyer == make_iaa_name(house1)
-                   for trade in grid.get_past_market(slot).trades)
-        assert all(trade.seller == make_iaa_name(house2)
-                   for trade in grid.get_past_market(slot).trades)
+        assert len(house1_trades) == 5
+        assert all(trade['buyer'] == device for trade in house1_trades)
+        assert all(trade['seller'] == "IAA House 1" for trade in house1_trades)
+        assert len(grid_trades) == 5
+        assert all(trade['buyer'] == "IAA House 1" for trade in grid_trades)
+        assert all(trade['seller'] == "IAA House 2" for trade in grid_trades)
 
-        pv_names = [pv.name for pv in pvs]
-        assert len(grid.get_past_market(slot).trades) == 5
-        assert all(trade.buyer == make_iaa_name(house2)
-                   for trade in house2.get_past_market(slot).trades)
-        assert all(trade.seller in pv_names
-                   for trade in house2.get_past_market(slot).trades)
+        pv_names = ['H2 PV1', 'H2 PV2', 'H2 PV3', 'H2 PV4', 'H2 PV5']
+        assert all(trade['buyer'] == "IAA House 2" for trade in house2_trades)
+        assert all(trade['seller'] in pv_names for trade in house2_trades)
 
 
 @then('the PV always provides constant power according to load demand')
 def pv_constant_power(context):
-    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
-    load = next(filter(lambda x: "H1 General Load" in x.name, house1.children))
-
-    house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
-    pv = next(filter(lambda x: "H2 PV" in x.name, house2.children))
-
+    from d3a_interface.utils import get_area_name_uuid_mapping
+    context.name_uuid_map = get_area_name_uuid_mapping(context.area_tree_summary_data)
     load_energies_set = set()
     pv_energies_set = set()
-    for market in house1.past_markets:
-        for trade in market.trades:
-            if trade.buyer == load.name:
-                load_energies_set.add(trade.offer.energy)
 
-    for market in house2.past_markets:
-        for trade in market.trades:
-            if trade.seller == pv.name:
-                pv_energies_set.add(trade.offer.energy)
+    for time_slot, core_stats in context.raw_sim_data.items():
+        for trade in core_stats[context.name_uuid_map['House 1']]['trades']:
+            if trade['buyer'] == "H1 General Load":
+                load_energies_set.add(trade['energy'])
+        for trade in core_stats[context.name_uuid_map['House 2']]['trades']:
+            if trade['seller'] == 'H2 PV':
+                pv_energies_set.add(trade['energy'])
 
     assert len(load_energies_set) == 1
     assert len(pv_energies_set) == 1
@@ -106,74 +100,47 @@ def pv_constant_power(context):
 
 @then('the storage is never selling energy')
 def storage_never_selling(context):
-    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
-    storage = next(filter(lambda x: "H1 Storage" in x.name, house1.children))
-
-    for market in storage.past_markets:
-        for trade in market.trades:
-            assert trade.seller != storage.name
-            assert trade.buyer == storage.name
+    from integration_tests.steps.integration_tests import get_simulation_raw_results
+    get_simulation_raw_results(context)
+    for time_slot, core_stats in context.raw_sim_data.items():
+        for trade in core_stats[context.name_uuid_map['House 1']]['trades']:
+            assert trade['seller'] != "H1 Storage"
+            assert trade['buyer'] == "H1 Storage"
 
 
 @then('the storage final SOC is {soc_level}%')
 def final_soc_full(context, soc_level):
-    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
-    storage = next(filter(lambda x: "H1 Storage" in x.name, house1.children))
-    if soc_level == '0':
-        soc_level = ConstSettings.StorageSettings.MIN_ALLOWED_SOC * 100.0
-    final_soc = list(storage.strategy.state.charge_history.values())[-2]
-    assert isclose(final_soc, float(soc_level))
+    for time_slot, core_stats in context.raw_sim_data.items():
+        if time_slot[-5:] == "23:00":
+            assert isclose(float(soc_level),
+                           core_stats[context.name_uuid_map['H1 Storage']]['soc_history_%'])
 
 
 @then('the energy rate for all trades are in between initial and final buying rate of storage')
 def energy_rate_average_between_min_and_max_ess_pv(context):
-    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
-    storage = next(filter(lambda x: "H1 Storage" in x.name, house1.children))
-
-    house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
-    pv = next(filter(lambda x: "H2 PV" in x.name, house2.children))
-
-    for market in house1.past_markets:
-        for trade in market.trades:
-            if trade.buyer == storage.name:
-                initial = storage.strategy.bid_update.initial_rate[market.time_slot]
-                final = storage.strategy.bid_update.final_rate[market.time_slot]
-                assert initial <= (trade.offer.price / trade.offer.energy) <= final
-
-    for market in house2.past_markets:
-        for trade in market.trades:
-            if trade.seller == pv.name:
-                initial = storage.strategy.bid_update.initial_rate[market.time_slot]
-                final = storage.strategy.bid_update.final_rate[market.time_slot]
-                assert initial <= (trade.offer.price / trade.offer.energy) <= final
+    for time_slot, core_stats in context.raw_sim_data.items():
+        for area_uuid, area_stats in core_stats.items():
+            for trade in area_stats['trades']:
+                assert 0.0 <= trade['energy_rate'] <= 24.9
 
 
 @then('the storage is never buying energy and is always selling energy')
 def storage_never_buys_always_sells(context):
-    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
-    storage = next(filter(lambda x: "H1 Storage" in x.name, house1.children))
-
-    for market in house1.past_markets:
-        for trade in market.trades:
-            assert trade.buyer != storage.name
-            assert trade.seller == storage.name
+    from integration_tests.steps.integration_tests import get_simulation_raw_results
+    get_simulation_raw_results(context)
+    for time_slot, core_stats in context.raw_sim_data.items():
+        house1_core_stats = core_stats[context.name_uuid_map['House 1']]
+        for trade in house1_core_stats['trades']:
+            assert trade['buyer'] != "H1 Storage"
+            assert trade['seller'] == "H1 Storage"
 
 
 @then('all the trade rates are between load device buying boundaries')
 def trade_rates_break_even(context):
-
-    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
-    storage = next(filter(lambda x: "H1 Storage" in x.name, house1.children))
-
-    house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
-    load = next(filter(lambda x: "H2 General Load" in x.name, house2.children))
-
-    for area in [house1, house2, storage, load]:
-        for market in area.past_markets:
-            for trade in market.trades:
-                assert load.strategy.bid_update.initial_rate[market.time_slot] <= \
-                       limit_float_precision(trade.offer.price / trade.offer.energy) <= \
-                       load.strategy.bid_update.final_rate[market.time_slot]
+    for time_slot, core_stats in context.raw_sim_data.items():
+        for area_uuid, area_stats in core_stats.items():
+            for trade in area_stats['trades']:
+                assert 0.0 <= trade['energy_rate'] <= 35.0
 
 
 @then('CEP posted the residual offer at the old rate')
@@ -191,13 +158,14 @@ def cep_offer_residual_offer_rate(context):
 @then('Energy producer is {producer} & consumer is {consumer}')
 def energy_origin(context, producer, consumer):
     trade_count = 0
+    from integration_tests.steps.integration_tests import get_simulation_raw_results
+    get_simulation_raw_results(context)
 
-    for market in context.simulation.area.past_markets:
-        if len(market.trades) > 0:
-            for trade in market.trades:
-                trade_count += 1
-                assert trade.buyer_origin == consumer
-                assert trade.seller_origin == producer
+    for time_slot, core_stats in context.raw_sim_data.items():
+        for trade in core_stats[context.name_uuid_map['Grid']]['trades']:
+            trade_count += 1
+            assert trade['buyer_origin'] == consumer
+            assert trade['seller_origin'] == producer
 
     assert trade_count > 0
 
@@ -211,15 +179,23 @@ def trades_matched_on_grid(context):
 
     # Assert that all House 1 trades contain Bid objects
     house1 = next(c for c in context.simulation.area.children if c.name == "House 1")
-    assert all(isinstance(trade.offer, Bid)
-               for market in house1.past_markets
-               for trade in market.trades)
+    load = next(c for c in house1.children if c.name == "H1 General Load")
+    load_energy_per_day = load.strategy.energy_per_slot_Wh / 1000 * 24
+    house1_consumed_energy = sum(trade.offer.energy
+                                 for market in house1.past_markets
+                                 for trade in market.trades)
+    assert isclose(house1_consumed_energy, load_energy_per_day, rel_tol=1e-3)
 
     # Assert that all House 2 trades contain Offer objects
     house2 = next(c for c in context.simulation.area.children if c.name == "House 2")
     assert all(isinstance(trade.offer, Offer)
                for market in house2.past_markets
                for trade in market.trades)
+
+    house2_consumed_energy = sum(trade.offer.energy
+                                 for market in house2.past_markets
+                                 for trade in market.trades)
+    assert isclose(house2_consumed_energy, load_energy_per_day, rel_tol=1e-3)
 
 
 @then('trades are matched only on the House 1 market')
@@ -231,9 +207,16 @@ def trades_matched_on_house1(context):
 
     # Assert that all House 1 trades contain Offer objects
     house1 = next(c for c in context.simulation.area.children if c.name == "House 1")
+    load = next(c for c in house1.children if c.name == "H1 General Load")
+    load_energy_per_day = load.strategy.energy_per_slot_Wh / 1000 * 24
     assert all(isinstance(trade.offer, Offer)
                for market in house1.past_markets
                for trade in market.trades)
+
+    house1_consumed_energy = sum(trade.offer.energy
+                                 for market in house1.past_markets
+                                 for trade in market.trades)
+    assert isclose(house1_consumed_energy, load_energy_per_day, rel_tol=1e-3)
 
     # Assert that all House 2 trades contain Offer objects
     house2 = next(c for c in context.simulation.area.children if c.name == "House 2")
@@ -251,6 +234,8 @@ def trades_matched_on_house2(context):
 
     # Assert that all House 1 trades contain Bid objects
     house1 = next(c for c in context.simulation.area.children if c.name == "House 1")
+    load = next(c for c in house1.children if c.name == "H1 General Load")
+    load_energy_per_day = load.strategy.energy_per_slot_Wh / 1000 * 24
     assert all(isinstance(trade.offer, Bid)
                for market in house1.past_markets
                for trade in market.trades)
@@ -260,3 +245,7 @@ def trades_matched_on_house2(context):
     assert all(isinstance(trade.offer, Offer)
                for market in house2.past_markets
                for trade in market.trades)
+    house2_consumed_energy = sum(trade.offer.energy
+                                 for market in house2.past_markets
+                                 for trade in market.trades)
+    assert isclose(house2_consumed_energy, load_energy_per_day, rel_tol=1e-3)
