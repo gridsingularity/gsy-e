@@ -113,7 +113,7 @@ def get_setup(config):
                                                                        max_abs_battery_power_kW=4),
                                  appliance=SwitchableAppliance()),
 
-                        ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                        ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                     ),
                     Area(
                         'house-2',
@@ -137,7 +137,7 @@ def get_setup(config):
                                                                        initial_selling_rate=29,
                                                                        final_selling_rate=15.01),
                                  appliance=SwitchableAppliance()),
-                        ], grid_fee_percentage=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
 
                     Area(
@@ -153,7 +153,7 @@ def get_setup(config):
                                                                          final_selling_rate=PV_final),
                                  appliance=PVAppliance()),
 
-                        ], grid_fee_percentage=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
                         'house-4',
@@ -168,7 +168,7 @@ def get_setup(config):
                                                                          final_selling_rate=PV_final),
                                  appliance=PVAppliance()),
 
-                        ], grid_fee_percentage=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
                         'house-5',
@@ -177,7 +177,7 @@ def get_setup(config):
                                                                          initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          use_market_maker_rate=True),
                                  appliance=SwitchableAppliance()),
-                        ], grid_fee_percentage=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
                         'house-6',
@@ -191,7 +191,7 @@ def get_setup(config):
                                                                          initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          final_selling_rate=PV_final),
                                  appliance=PVAppliance()),
-                        ], grid_fee_percentage=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
                         'house-7',
@@ -205,7 +205,7 @@ def get_setup(config):
                                                                          initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          final_selling_rate=PV_final),
                                  appliance=PVAppliance()),
-                        ], grid_fee_percentage=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
                         'house-8',
@@ -219,7 +219,7 @@ def get_setup(config):
                                                                          initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          final_selling_rate=PV_final),
                                  appliance=PVAppliance()),
-                        ], grid_fee_percentage=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
                         'house-9',
@@ -233,7 +233,7 @@ def get_setup(config):
                                                                          initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          final_selling_rate=PV_final),
                                  appliance=PVAppliance()),
-                        ], grid_fee_percentage=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
                         'house-10',
@@ -247,7 +247,7 @@ def get_setup(config):
                                                                           initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           final_selling_rate=PV_final),
                                  appliance=PVAppliance()),
-                        ], grid_fee_percentage=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
                         'house-11',
@@ -261,10 +261,10 @@ def get_setup(config):
                                                                           initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           final_selling_rate=PV_final),
                                  appliance=PVAppliance()),
-                        ], grid_fee_percentage=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
 
-                ], grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=True
+                ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
             ),
 
 
@@ -278,6 +278,6 @@ def get_setup(config):
 
 
         ],
-        config=config, grid_fee_percentage=0, transfer_fee_const=0, external_connection_available=False
+        config=config, grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=False
     )
     return area

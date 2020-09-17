@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 from os import environ, getpid
 import ast
+import json
 
 from datetime import datetime
 from pendulum import now, duration, instance
@@ -39,10 +40,15 @@ def decompress_and_decode_queued_strings(queued_string):
 
 
 @job('d3a')
-def start(scenario, settings, events):
+def start(scenario, settings, events, aggregator_device_mapping):
     logging.getLogger().setLevel(logging.ERROR)
 
     scenario = decompress_and_decode_queued_strings(scenario)
+    logging.getLogger().error(f"Scenario details are : {0}: {scenario}")
+    logging.getLogger().error(f"Settings details are : {0}: {settings}")
+    logging.getLogger().error(f"Events details are : {0}: {events}")
+    logging.getLogger().error(f"Aggregator device mapping details are : {0}: "
+                              f"{aggregator_device_mapping}")
 
     job = get_current_job()
     job.save_meta()
@@ -56,6 +62,7 @@ def start(scenario, settings, events):
         advanced_settings = settings.get('advanced_settings', None)
         if advanced_settings is not None:
             update_advanced_settings(ast.literal_eval(advanced_settings))
+        aggregator_device_mapping = json.loads(aggregator_device_mapping)
 
         if events is not None:
             events = ast.literal_eval(events)
@@ -81,7 +88,9 @@ def start(scenario, settings, events):
             "pv_user_profile": settings.get('pv_user_profile', None),
             "max_panel_power_W": settings.get('max_panel_power_W',
                                               ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W),
-            "grid_fee_type": settings.get('grid_fee_type', GlobalConfig.grid_fee_type)
+            "grid_fee_type": settings.get('grid_fee_type', GlobalConfig.grid_fee_type),
+            "external_connection_enabled": settings.get('external_connection_enabled', False),
+            "aggregator_device_mapping": aggregator_device_mapping
         }
 
         validate_global_settings(config_settings)
@@ -104,10 +113,17 @@ def start(scenario, settings, events):
                   "pricing_scheme": 0,
                   "seed": settings.get('random_seed', 0)}
 
+        slowdown_factor = environ.get('D3A_SLOWDOWN_FACTOR', None)
+
+        if slowdown_factor is None:
+            slowdown_factor = settings.get('slowdown', 0)
+        else:
+            slowdown_factor = float(slowdown_factor)
+
         run_simulation(setup_module_name=scenario_name,
                        simulation_config=config,
                        simulation_events=events,
-                       slowdown=settings.get('slowdown', 0),
+                       slowdown=slowdown_factor,
                        redis_job_id=job.id,
                        kwargs=kwargs)
     except Exception:
@@ -127,7 +143,7 @@ def main():
                                          retry_on_timeout=True)):
         Worker(
             ['d3a'],
-            name='simulation.{}.{:%s}'.format(getpid(), now())
+            name='simulation.{}.{:%s}'.format(getpid(), now()), log_job_description=False
         ).work()
 
 

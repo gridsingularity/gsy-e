@@ -24,7 +24,6 @@ def get_setup(config):
 
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 1
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
     ConstSettings.IAASettings.MIN_OFFER_AGE = 1
 
     area = Area(
@@ -58,7 +57,7 @@ def get_setup(config):
                                      initial_buying_rate=20,
                                      final_buying_rate=30),
                                  appliance=SwitchableAppliance()),
-                        ], grid_fee_percentage=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area('central storage', strategy=StorageStrategy(
                         initial_soc=10,
@@ -87,7 +86,7 @@ def get_setup(config):
                                 final_selling_rate=15,
                                 fit_to_limit=True),
                                  appliance=PVAppliance()),
-                        ], grid_fee_percentage=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
                         'House 3',
@@ -106,12 +105,12 @@ def get_setup(config):
                                 final_selling_rate=15,
                                 fit_to_limit=True),
                                  appliance=PVAppliance()),
-                        ], grid_fee_percentage=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
 
 
 
-                ], grid_fee_percentage=0, transfer_fee_const=0,
+                ], grid_fee_percentage=0, grid_fee_constant=0,
             ),
             Area('Feed In Tariff', strategy=InfiniteBusStrategy(
                 energy_buy_rate=15.2,
@@ -122,6 +121,6 @@ def get_setup(config):
                  strategy=MarketMakerStrategy(energy_rate=30, grid_connected=True)
                  )
         ],
-        config=config, grid_fee_percentage=0, transfer_fee_const=0,
+        config=config, grid_fee_percentage=0, grid_fee_constant=0,
     )
     return area

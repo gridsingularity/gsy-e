@@ -43,13 +43,12 @@ def get_setup(config):
                                                       final_selling_rate=15,
                                                       initial_selling_rate=24.1),
                          appliance=PVAppliance()),
-                ], transfer_fee_const=1
+                ], grid_fee_constant=1
             ),
             Area('Infinite Bus', strategy=InfiniteBusStrategy(energy_buy_rate=24,
                                                               energy_sell_rate=24),
                  appliance=SimpleAppliance()
                  ),
-
         ],
         config=config
     )

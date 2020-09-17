@@ -3,6 +3,7 @@ import logging
 import traceback
 from d3a.d3a_core.area_serializer import area_from_dict
 from d3a.d3a_core.exceptions import D3AException
+from d3a.models.area.event_dispatcher import DispatcherFactory
 
 
 class LiveEventException(D3AException):
@@ -47,6 +48,7 @@ class UpdateAreaEvent:
             return False
 
         area.area_reconfigure_event(**self.area_params)
+
         return True
 
     def __repr__(self):
@@ -62,6 +64,8 @@ class DeleteAreaEvent:
             return False
 
         area.children = [c for c in area.children if c.uuid != self.area_uuid]
+        if len(area.children) == 0:
+            area.dispatcher = DispatcherFactory(area)()
         return True
 
     def __repr__(self):

@@ -1,3 +1,28 @@
+##Version 0.7.0
+The following features were implemented : 
+
+* [Detailed energy trade profile graph](results.md#detailed-energy-trade-profile). Zoom in to each 15 minute market slot to view the scheduled trades with 1 minute resolution. 
+* Grid Operator user can change grid parameters inside a collaboration and while it is running, like [grid fees](constant-fees.md) or the transformer capacity.
+* Allow collaboration participants to register for [events](events.md) while the simulation is running. Allows users to simulate a growing community.
+* Information Aggregator to compile and send average market measurements to assist data scientists in building smart strategies to trade through the [API](api.md).
+
+
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/RrYMdITH1CA" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+##Version 0.6.0
+The following features were implemented : 
+
+* [Bid and Offer matching graph](results.md#bids-offers-and-trades-per-market-slot) <br /> Analyze all bids, offers, and trades in a market and see why they match based on their strategies.
+* [Simulation events](events.md) <br />Add, delete, or update areas or energy resources in a simulation while it is running. This allows users to grow their simulations in real-time and analyze the impacts of energy resources coming online and changes to grid parameters such as grid fees.
+* Timeline to view [events](events.md) and zoom in <br />View all events in a timeline and click on each event to view its relevant grid configuration and results. Zoom in to view results for a specific day.
+* Pause or stop a simulation <br />Pause a simulation to freeze it while adding an event. Stop a simulation pre-maturely in order to run another version sooner.
+* Configure an infinite bus as part of the [Market Maker](market-maker.md) <br />Configure an Infinite Bus in order to add a feed-in-tariff to the simulation.
+
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/X5Fhb1mEBu4" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+
 ##Version 0.5.0
 The following features were implemented :
 

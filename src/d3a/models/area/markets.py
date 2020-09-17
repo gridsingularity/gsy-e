@@ -27,6 +27,7 @@ from d3a.models.market import Market # noqa
 from d3a_interface.constants_limits import ConstSettings
 from collections import OrderedDict
 from d3a.d3a_core.util import is_timeslot_in_simulation_duration
+from d3a import constants
 
 
 class AreaMarkets:
@@ -79,7 +80,7 @@ class AreaMarkets:
                                .format(t=timeframe, m=past_markets[timeframe].name))
 
     def _delete_past_markets(self, past_markets, timeframe):
-        if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+        if not constants.D3A_TEST_RUN:
             delete_markets = [pm for pm in past_markets if
                               pm not in self.markets.values()]
             for pm in delete_markets:
@@ -123,7 +124,7 @@ class AreaMarkets:
                     notification_listener=area.dispatcher.broadcast_callback,
                     grid_fee_type=area.config.grid_fee_type,
                     transfer_fees=TransferFees(grid_fee_percentage=area.grid_fee_percentage,
-                                               transfer_fee_const=area.transfer_fee_const),
+                                               transfer_fee_const=area.grid_fee_constant),
                     name=area.name,
                     in_sim_duration=is_timeslot_in_simulation_duration(area.config, timeframe)
                 )

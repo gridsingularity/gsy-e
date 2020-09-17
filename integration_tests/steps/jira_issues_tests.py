@@ -312,8 +312,7 @@ def storage_decreases_bid_rate(context):
 
 @then('cumulative grid trades correctly reports the external trade')
 def area_external_trade(context):
-    cumulative_trade = context.simulation.endpoint_buffer.cumulative_grid_trades.\
-        current_trades_redis
+    cumulative_trade = context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     ext_trade = list(filter(lambda x: x['areaName'] == "External Trades",
                             cumulative_trade[house1.uuid]))[0]['bars'][0]['energy']

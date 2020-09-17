@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import json
 import d3a.constants
+from threading import Lock
 from d3a.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from collections import namedtuple
 from d3a.models.market.market_structures import Offer
@@ -25,6 +26,10 @@ from d3a_interface.constants_limits import ConstSettings
 
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
+
+
+class CommandTypeNotSupported(Exception):
+    pass
 
 
 def check_for_connected_and_reply(redis, channel_name, is_connected):
@@ -37,13 +42,13 @@ def check_for_connected_and_reply(redis, channel_name, is_connected):
     return True
 
 
-def register_area(redis, channel_prefix, is_connected, transaction_id):
+def register_area(redis, channel_prefix, is_connected, transaction_id, device_uuid=None):
     register_response_channel = f'{channel_prefix}/response/register_participant'
     try:
         redis.publish_json(
             register_response_channel,
             {"command": "register", "status": "ready", "registered": True,
-             "transaction_id": transaction_id})
+             "transaction_id": transaction_id, "device_uuid": device_uuid})
         return True
     except Exception as e:
         logging.error(f"Error when registering to area {channel_prefix}: "
@@ -51,6 +56,7 @@ def register_area(redis, channel_prefix, is_connected, transaction_id):
         redis.publish_json(
             register_response_channel,
             {"command": "register", "status": "error", "transaction_id": transaction_id,
+             "device_uuid": device_uuid,
              "error_message": f"Error when registering to area {channel_prefix}."})
         return is_connected
 
@@ -83,6 +89,7 @@ class ExternalMixin:
         super().__init__(*args, **kwargs)
         self._last_dispatched_tick = 0
         self.pending_requests = []
+        self.lock = Lock()
 
     @property
     def channel_prefix(self):
@@ -90,6 +97,14 @@ class ExternalMixin:
             return f"external/{d3a.constants.COLLABORATION_ID}/{self.device.uuid}"
         else:
             return f"{self.device.name}"
+
+    @property
+    def is_aggregator_controlled(self):
+        return self.redis.aggregator.is_controlling_device(self.device.uuid)
+
+    @property
+    def should_use_default_strategy(self):
+        return not self.connected and not self.is_aggregator_controlled
 
     @property
     def _dispatch_tick_frequency(self):
@@ -108,7 +123,8 @@ class ExternalMixin:
 
     def _register(self, payload):
         self._connected = register_area(self.redis, self.channel_prefix, self.connected,
-                                        self._get_transaction_id(payload))
+                                        self._get_transaction_id(payload),
+                                        device_uuid=self.device.uuid)
 
     def _unregister(self, payload):
         self._connected = unregister_area(self.redis, self.channel_prefix, self.connected,
@@ -142,6 +158,22 @@ class ExternalMixin:
                  "error_message": f"Error when handling device info on area {self.device.name}.",
                  "transaction_id": arguments.get("transaction_id", None)})
 
+    def _device_info_aggregator(self, arguments):
+        try:
+            return {
+                "command": "device_info", "status": "ready",
+                "device_info": self._device_info_dict,
+                "transaction_id": arguments.get("transaction_id", None),
+                "area_uuid": self.device.uuid
+            }
+        except Exception as e:
+            return {
+                "command": "device_info", "status": "error",
+                "error_message": f"Error when handling device info on area {self.device.name}.",
+                "transaction_id": arguments.get("transaction_id", None),
+                "area_uuid": self.device.uuid
+            }
+
     @property
     def market(self):
         return self.market_area.next_market
@@ -166,6 +198,9 @@ class ExternalMixin:
         self._last_dispatched_tick = 0
 
     def _dispatch_event_tick_to_external_agent(self):
+        if not self.connected and not self.is_aggregator_controlled:
+            return
+
         current_tick = self.device.current_tick % self.device.config.ticks_per_slot
         if current_tick - self._last_dispatched_tick >= self._dispatch_tick_frequency:
             tick_event_channel = f"{self.channel_prefix}/events/tick"
@@ -173,10 +208,15 @@ class ExternalMixin:
                 "event": "tick",
                 "slot_completion":
                     f"{int((current_tick / self.device.config.ticks_per_slot) * 100)}%",
+                "area_uuid": self.device.uuid,
                 "device_info": self._device_info_dict
             }
             self._last_dispatched_tick = current_tick
-            self.redis.publish_json(tick_event_channel, current_tick_info)
+            if self.connected:
+                self.redis.publish_json(tick_event_channel, current_tick_info)
+
+            if self.is_aggregator_controlled:
+                self.redis.aggregator.add_batch_tick_event(self.device.uuid, current_tick_info)
 
     def _publish_trade_event(self, trade, is_bid_trade):
 
@@ -201,7 +241,8 @@ class ExternalMixin:
             "time": trade.time.isoformat(),
             "price": trade.offer.price,
             "energy": trade.offer.energy,
-            "fee_price": trade.fee_price
+            "fee_price": trade.fee_price,
+            "area_uuid": self.device.uuid
         }
         event_response_dict["seller"] = trade.seller \
             if trade.seller == self.device.name else "anonymous"
@@ -214,26 +255,119 @@ class ExternalMixin:
             if trade.buyer == self.device.name else "sell"
         event_response_dict[bid_offer_key] = trade.offer.id
         trade_event_channel = f"{self.channel_prefix}/events/trade"
-        self.redis.publish_json(trade_event_channel, event_response_dict)
+        if self.connected:
+            self.redis.publish_json(trade_event_channel, event_response_dict)
+
+        if self.is_aggregator_controlled:
+            self.redis.aggregator.add_batch_trade_event(self.device.uuid, event_response_dict)
 
     def event_bid_traded(self, market_id, bid_trade):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
-        if self.connected:
+        if self.connected or self.redis.aggregator.is_controlling_device(self.device.uuid):
             self._publish_trade_event(bid_trade, True)
 
     def event_trade(self, market_id, trade):
         super().event_trade(market_id=market_id, trade=trade)
-        if self.connected:
+        if self.connected or self.redis.aggregator.is_controlling_device(self.device.uuid):
             self._publish_trade_event(trade, False)
 
     def deactivate(self):
         super().deactivate()
-        if self.connected:
+        if self.connected or self.redis.aggregator.is_controlling_device(self.device.uuid):
             deactivate_event_channel = f"{self.channel_prefix}/events/finish"
             deactivate_msg = {
-                "event": "finish"
+                "event": "finish",
+                "area_uuid": self.device.uuid
             }
-            self.redis.publish_json(deactivate_event_channel, deactivate_msg)
+            if self.connected:
+                self.redis.publish_json(deactivate_event_channel, deactivate_msg)
+
+            if self.is_aggregator_controlled:
+                self.redis.aggregator._publish_all_events_from_one_type(
+                    self.redis, deactivate_msg, "finish"
+                )
+
+    def _bid_aggregator(self, command):
+        raise CommandTypeNotSupported(
+            f"Bid command not supported on device {self.device.uuid}")
+
+    def _update_bid_aggregator(self, command):
+        raise CommandTypeNotSupported(
+            f"Update Bid command not supported on device {self.device.uuid}")
+
+    def _delete_bid_aggregator(self, command):
+        raise CommandTypeNotSupported(
+            f"Delete bid command not supported on device {self.device.uuid}")
+
+    def _list_bids_aggregator(self, command):
+        raise CommandTypeNotSupported(
+            f"List bids command not supported on device {self.device.uuid}")
+
+    def _offer_aggregator(self, command):
+        raise CommandTypeNotSupported(
+            f"Offer command not supported on device {self.device.uuid}")
+
+    def _update_offer_aggregator(self, command):
+        raise CommandTypeNotSupported(
+            f"Offer command not supported on device {self.device.uuid}")
+
+    def _delete_offer_aggregator(self, command):
+        raise CommandTypeNotSupported(
+            f"Delete offer command not supported on device {self.device.uuid}")
+
+    def _list_offers_aggregator(self, command):
+        raise CommandTypeNotSupported(
+            f"List offers command not supported on device {self.device.uuid}")
+
+    def trigger_aggregator_commands(self, command):
+        if "type" not in command:
+            return {
+                "status": "error",
+                "area_uuid": self.device.uuid,
+                "message": "Invalid command type"}
+
+        try:
+            if command["type"] == "bid":
+                return self._bid_aggregator(command)
+            elif command["type"] == "update_bid":
+                return self._update_bid_aggregator(command)
+            elif command["type"] == "delete_bid":
+                return self._delete_bid_aggregator(command)
+            elif command["type"] == "list_bids":
+                return self._list_bids_aggregator(command)
+            elif command["type"] == "offer":
+                return self._offer_aggregator(command)
+            elif command["type"] == "update_offer":
+                return self._update_offer_aggregator(command)
+            elif command["type"] == "delete_offer":
+                return self._delete_offer_aggregator(command)
+            elif command["type"] == "list_offers":
+                return self._list_offers_aggregator(command)
+            elif command["type"] == "device_info":
+                return self._device_info_aggregator(command)
+            elif command["type"] == "list_market_stats":
+                return self._list_market_stats(command)
+            else:
+                return {
+                    "command": command["type"], "status": "error",
+                    "area_uuid": self.device.uuid,
+                    "message": f"Command type not supported for device {self.device.uuid}"}
+        except CommandTypeNotSupported as e:
+            return {
+                "command": command["type"], "status": "error",
+                "area_uuid": self.device.uuid,
+                "message": str(e)}
+
+    def _list_market_stats(self, command):
+        market_data = self.device.parent.stats.get_market_stats(
+            command['data']['market_slots']
+        )
+        return {
+            "command": "list_market_stats", "status": "ready",
+            "market_data": market_data,
+            "transaction_id": command.get("transaction_id", None),
+            "area_uuid": self.device.uuid
+        }
 
     def _reject_all_pending_requests(self):
         for req in self.pending_requests:

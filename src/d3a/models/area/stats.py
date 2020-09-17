@@ -15,13 +15,16 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from copy import copy
 from pendulum import from_format
 from statistics import mean, median
-from d3a_interface.constants_limits import DATE_TIME_FORMAT, ConstSettings
+
+from d3a_interface.constants_limits import DATE_TIME_FORMAT
 from d3a.constants import TIME_ZONE
 from d3a import limit_float_precision
-from d3a.d3a_core.util import area_name_from_area_or_iaa_name
-from copy import copy
+from d3a.d3a_core.util import area_name_from_area_or_iaa_name, add_or_create_key, \
+    area_sells_to_child, child_buys_from_area
+
 
 default_trade_stats_dict = {
     "min_trade_rate": None,
@@ -40,6 +43,9 @@ class AreaStats:
         self.market_bills = {}
         self.rate_stats_market = {}
         self.market_trades = {}
+        self.kpi = {}
+        self.exported_energy = {}
+        self.imported_energy = {}
 
     def update_aggregated_stats(self, area_stats):
         self.aggregated_stats = area_stats
@@ -47,30 +53,12 @@ class AreaStats:
     def update_area_market_stats(self):
         if self.current_market is not None:
             self.market_bills[self.current_market.time_slot] = \
-                {key: self.aggregated_stats["bills"]['Accumulated Trades'][key]
+                {key: self.aggregated_stats["bills"]["Accumulated Trades"][key]
                  for key in ["earned", "spent", "bought", "sold"]} \
-                if "bills" in self.aggregated_stats else None
+                if "bills" in self.aggregated_stats \
+                   and "Accumulated Trades" in self.aggregated_stats["bills"] else None
             self.rate_stats_market[self.current_market.time_slot] = \
                 self.min_max_avg_median_rate_current_market()
-            # TODO: This accumulation of trade data could potentially also used for the
-            #  LR energy trade profile (in the frame of D3ASIM-2212) and replace the old way
-            if not ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
-                # only save the trades of the last time slot for the endpoint
-                self.market_trades = {}
-            self.market_trades[self.current_market.time_slot] = \
-                self.aggregate_market_trades()
-
-    def aggregate_market_trades(self):
-        """
-        Adds entry for each trade with exact time of trade.
-        As multiple trades can happen in the same tick, a list of dict is returned.
-        """
-
-        return [{"trade_time": trade.time.timestamp(),
-                 "energy": trade.offer.energy,
-                 "seller": area_name_from_area_or_iaa_name(trade.seller),
-                 "buyer": area_name_from_area_or_iaa_name(trade.buyer)}
-                for trade in self.current_market.trades]
 
     def update_accumulated(self):
         self._accumulated_past_price = sum(
@@ -126,8 +114,6 @@ class AreaStats:
         market_timeslots = [m.time_slot for m in self._markets.all_spot_markets]
         if slot in market_timeslots:
             market.set_actual_energy(time, reporter, value)
-        else:
-            raise RuntimeError("Reporting energy for unknown market")
 
     @property
     def cheapest_offers(self):
@@ -138,6 +124,12 @@ class AreaStats:
 
     def _get_market_bills(self, time_slot):
         return self.market_bills[time_slot] if time_slot in self.market_bills.keys() else None
+
+    def _get_market_area_throughput(self, time_slot):
+        return {"import": self.imported_energy[time_slot]
+                if time_slot in self.imported_energy.keys() else None,
+                "export": self.exported_energy[time_slot]
+                if time_slot in self.exported_energy.keys() else None}
 
     def get_price_stats_current_market(self):
         if self.current_market is None:
@@ -164,7 +156,7 @@ class AreaStats:
         past_markets = list(self._markets.past_markets.values())
         return past_markets[-1] if len(past_markets) > 0 else None
 
-    def get_market_stats(self, market_slot_list):
+    def get_market_stats(self, market_slot_list, dso=False):
         out_dict = {}
         for time_slot_str in market_slot_list:
             try:
@@ -175,4 +167,25 @@ class AreaStats:
             out_dict[time_slot_str] = self.rate_stats_market.get(
                 time_slot, default_trade_stats_dict)
             out_dict[time_slot_str]["market_bill"] = self._get_market_bills(time_slot)
+            if dso:
+                out_dict[time_slot_str]["area_throughput"] = \
+                    self._get_market_area_throughput(time_slot)
+
         return out_dict
+
+    def aggregate_exported_imported_energy(self, area):
+        if self.current_market is None:
+            return None
+
+        child_names = [area_name_from_area_or_iaa_name(c.name) for c in area.children]
+        for trade in self.current_market.trades:
+            if child_buys_from_area(trade, area.name, child_names):
+                add_or_create_key(self.exported_energy, self.current_market.time_slot,
+                                  trade.offer.energy)
+            if area_sells_to_child(trade, area.name, child_names):
+                add_or_create_key(self.imported_energy, self.current_market.time_slot,
+                                  trade.offer.energy)
+        if self.current_market.time_slot not in self.imported_energy:
+            self.imported_energy[self.current_market.time_slot] = 0.
+        if self.current_market.time_slot not in self.exported_energy:
+            self.exported_energy[self.current_market.time_slot] = 0.

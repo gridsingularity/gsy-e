@@ -41,9 +41,9 @@ def get_setup(config):
                                                                     final_buying_rate=60,
                                                                     update_interval=1),
                                  appliance=SwitchableAppliance()),
-                         ], transfer_fee_const=2)
+                         ], grid_fee_constant=2)
                 ],
-                transfer_fee_const=3,
+                grid_fee_constant=3,
             ),
             Area(
                 'DSO',
@@ -52,11 +52,11 @@ def get_setup(config):
                                                                   max_available_power_kW=1000),
                          appliance=SwitchableAppliance()),
                 ],
-                transfer_fee_const=10,
+                grid_fee_constant=10,
             ),
             Area('Market Maker', strategy=MarketMakerStrategy(grid_connected=True, energy_rate=50),
                  appliance=SwitchableAppliance()),
-        ], transfer_fee_const=10,
+        ], grid_fee_constant=10,
         config=config
     )
     return area
