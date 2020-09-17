@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from logging import getLogger
 from typing import List  # noqa
 from cached_property import cached_property
-from pendulum import DateTime, duration, today
+from pendulum import DateTime, duration, today, parse
 from slugify import slugify
 from uuid import uuid4
 from d3a.constants import TIME_ZONE
@@ -42,7 +42,6 @@ from d3a_interface.utils import key_in_dict_and_not_none
 import d3a.constants
 
 log = getLogger(__name__)
-
 
 # TODO: As this is only used in the unittests, please remove it here and replace the usages
 #       of this class with d3a-interface.constants_limits.GlobalConfig class:
@@ -115,8 +114,10 @@ class Area:
         log.debug(f"External connection {external_connection_available} for area {self.name}")
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available is True else None
+        self.schedule_grid_fee = ""
 
     def area_reconfigure_event(self, **kwargs):
+        grid_fee_dict = {}
         if self.strategy is not None:
             self.strategy.area_reconfigure_event(**kwargs)
             return
@@ -125,10 +126,15 @@ class Area:
                 if key_in_dict_and_not_none(kwargs, 'grid_fee_constant') else 0
             grid_fee_percentage = kwargs["grid_fee_percentage"] \
                 if key_in_dict_and_not_none(kwargs, 'grid_fee_percentage') else 0
-
+            grid_fee_dict['grid_fee_constant'] = grid_fee_constant
+            grid_fee_dict['grid_fee_percentage'] = grid_fee_percentage
+            grid_fee_dict['name'] = kwargs['name']
+            grid_fee_dict['scheduled_time'] = kwargs['scheduled_time']
+            self.schedule_grid_fee = grid_fee_dict
             validate_area(grid_fee_percentage=grid_fee_percentage,
                           grid_fee_constant=grid_fee_constant)
-            self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
+            if kwargs['scheduled_time'] is None:
+                self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
 
         if key_in_dict_and_not_none(kwargs, 'baseline_peak_energy_import_kWh'):
             self.baseline_peak_energy_import_kWh = kwargs['baseline_peak_energy_import_kWh']
@@ -196,7 +202,6 @@ class Area:
 
         # Cycle markets without triggering it's own event chain.
         self._cycle_markets(_trigger_event=False)
-
         if not self.strategy and self.parent is not None:
             self.log.debug("No strategy. Using inter area agent.")
         self.log.debug('Activating area')
@@ -224,6 +229,15 @@ class Area:
         initial area activation.
         """
         self.events.update_events(self.now)
+        if self.current_market is not None and len(self.schedule_grid_fee) > 0:
+            scheduled_time = parse(self.schedule_grid_fee['scheduled_time'])
+            time_slot_start = self.current_market.time_slot
+            time_slot_end = time_slot_start.add(minutes=GlobalConfig.slot_length.minutes)
+            if time_slot_start <= scheduled_time <= time_slot_end and self.current_market.name == \
+                    self.schedule_grid_fee['name']:
+                self._set_grid_fees(self.schedule_grid_fee['grid_fee_constant'],
+                                    self.schedule_grid_fee['grid_fee_percentage'])
+                print("done:::::")
 
         if not self.children:
             # Since children trade in markets we only need to populate them if there are any

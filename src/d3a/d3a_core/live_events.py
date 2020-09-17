@@ -88,6 +88,8 @@ class LiveEvents:
                 elif event_dict["eventType"] == "delete_area":
                     event_object = DeleteAreaEvent(event_dict["area_uuid"])
                 elif event_dict["eventType"] == "update_area":
+                    event_dict["area_representation"]["scheduled_time"] = \
+                        event_dict.get("scheduled_time")
                     event_object = UpdateAreaEvent(
                         event_dict["area_uuid"], event_dict["area_representation"])
                 else:
@@ -103,7 +105,7 @@ class LiveEvents:
             if event.apply(area) is True:
                 return True
         except Exception as e:
-            logging.error(f"Event {event} failed to apply on area {area.name}. "
+            logging.error(f"Event {event} failed to apply on area {area.name}."
                           f"Exception: {e}. Traceback: {traceback.format_exc()}")
             return False
         if not area.children:
