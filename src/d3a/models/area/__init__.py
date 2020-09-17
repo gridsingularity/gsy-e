@@ -126,15 +126,16 @@ class Area:
                 if key_in_dict_and_not_none(kwargs, 'grid_fee_constant') else 0
             grid_fee_percentage = kwargs["grid_fee_percentage"] \
                 if key_in_dict_and_not_none(kwargs, 'grid_fee_percentage') else 0
-            grid_fee_dict['grid_fee_constant'] = grid_fee_constant
-            grid_fee_dict['grid_fee_percentage'] = grid_fee_percentage
-            grid_fee_dict['name'] = kwargs['name']
-            grid_fee_dict['scheduled_time'] = kwargs['scheduled_time']
-            self.schedule_grid_fee = grid_fee_dict
             validate_area(grid_fee_percentage=grid_fee_percentage,
                           grid_fee_constant=grid_fee_constant)
             if kwargs['scheduled_time'] is None:
                 self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
+            else:
+                grid_fee_dict['grid_fee_constant'] = grid_fee_constant
+                grid_fee_dict['grid_fee_percentage'] = grid_fee_percentage
+                grid_fee_dict['name'] = kwargs['name']
+                grid_fee_dict['scheduled_time'] = kwargs['scheduled_time']
+                self.schedule_grid_fee = grid_fee_dict
 
         if key_in_dict_and_not_none(kwargs, 'baseline_peak_energy_import_kWh'):
             self.baseline_peak_energy_import_kWh = kwargs['baseline_peak_energy_import_kWh']
@@ -237,7 +238,6 @@ class Area:
                     self.schedule_grid_fee['name']:
                 self._set_grid_fees(self.schedule_grid_fee['grid_fee_constant'],
                                     self.schedule_grid_fee['grid_fee_percentage'])
-                print("done:::::")
 
         if not self.children:
             # Since children trade in markets we only need to populate them if there are any
