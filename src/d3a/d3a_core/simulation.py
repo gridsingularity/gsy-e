@@ -50,6 +50,7 @@ from d3a.d3a_core.exceptions import D3AException
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
+import d3a.constants
 
 
 if platform.python_implementation() != "PyPy" and \
@@ -255,7 +256,6 @@ class Simulation:
 
     def _update_and_send_results(self, is_final=False):
         self.endpoint_buffer.update_stats(self.area, self.status, self.progress_info)
-        import d3a.constants
         if self.export_on_finish and self.should_export_results and \
                 self.area.current_market is not None and d3a.constants.D3A_TEST_RUN:
             self.export.raw_data_to_json(
@@ -367,11 +367,6 @@ class Simulation:
             self._update_and_send_results()
             if self.export_on_finish and self.should_export_results:
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
-                # if self.area.current_market is not None:
-                #     self.export.raw_data_to_json(
-                #         self.area.current_market.time_slot_str,
-                #         self.endpoint_buffer.flattened_area_core_stats_dict
-                #     )
 
         self.sim_status = "finished"
         self.deactivate_areas(self.area)

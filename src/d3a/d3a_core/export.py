@@ -38,7 +38,7 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.state import ESSEnergyOrigin
 from d3a.d3a_core.sim_results.plotly_graph import PlotlyGraph
 from functools import reduce  # forward compatibility for Python 3
-
+import d3a.constants
 
 _log = logging.getLogger(__name__)
 
@@ -71,6 +71,7 @@ class ExportAndPlot:
         self.area = root_area
         self.endpoint_buffer = endpoint_buffer
         self.file_stats_endpoint = file_stats_endpoint
+        self.raw_data_subdir = None
         try:
             if path is not None:
                 path = os.path.abspath(path)
@@ -82,11 +83,10 @@ class ExportAndPlot:
             self.directory = pathlib.Path(self.rootdir, subdir)
             self.zip_filename = pathlib.Path(self.rootdir, subdir + "_results")
             mkdir_from_str(str(self.directory))
-            import d3a.constants
             if d3a.constants.D3A_TEST_RUN:
-                subdirectory = pathlib.Path(self.directory, "raw_data")
-                if not subdirectory.exists():
-                    subdirectory.mkdir(exist_ok=True, parents=True)
+                self.raw_data_subdir = pathlib.Path(self.directory, "raw_data")
+                if not self.raw_data_subdir.exists():
+                    self.raw_data_subdir.mkdir(exist_ok=True, parents=True)
         except Exception as ex:
             _log.error("Could not open directory for csv exports: %s" % str(ex))
             return
@@ -147,8 +147,7 @@ class ExportAndPlot:
             json.dump(data, outfile, indent=2)
 
     def raw_data_to_json(self, time_slot, data: Dict):
-        subdirectory = pathlib.Path(self.directory, "raw_data")
-        json_file = os.path.join(subdirectory, f"{time_slot}.json")
+        json_file = os.path.join(self.raw_data_subdir, f"{time_slot}.json")
         with open(json_file, 'w') as outfile:
             json.dump(data, outfile, indent=2)
 

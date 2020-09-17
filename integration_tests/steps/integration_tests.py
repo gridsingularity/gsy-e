@@ -639,6 +639,12 @@ def run_sim_market_count(context, scenario):
     context.simulation_4 = context.simulation
 
 
+@given('export {flag}')
+@when('export {flag}')
+def export_logic(context, flag):
+    context.no_export = True if flag == 'isnt_needed' else False
+
+
 @when('we run the simulation with setup file {scenario} and parameters '
       '[{total_duration}, {slot_length}, {tick_length}, {market_count}]')
 @then('we run the simulation with setup file {scenario} and parameters '
@@ -661,7 +667,6 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
     paused = False
     pause_after = duration()
     repl = False
-    no_export = False
     export_subdir = None
     context.export_path = os.path.join(context.simdir, scenario)
     os.makedirs(context.export_path, exist_ok=True)
@@ -675,7 +680,7 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
             paused,
             pause_after,
             repl,
-            no_export,
+            context.no_export,
             context.export_path,
             export_subdir,
         )

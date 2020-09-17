@@ -48,6 +48,7 @@ def before_scenario(context, scenario):
     os.makedirs(context.simdir, exist_ok=True)
     context.resource_manager = contextlib.ExitStack()
     constants.D3A_TEST_RUN = True
+    context.no_export = True
     if os.environ.get("DISPATCH_EVENTS_BOTTOM_TO_TOP") == "False":
         d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = False
 

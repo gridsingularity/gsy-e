@@ -18,6 +18,7 @@ Feature: Jira Issues Tests
   Scenario: D3ASIM-662, IAA should always track offers back to its source
      Given we have a scenario named strategy_tests/home_cp_ess_load
      And d3a is installed
+     And export is_needed
      When we run the simulation with setup file strategy_tests.home_cp_ess_load and parameters [24, 60, 60, 1]
      Then there should be no unmatched loads
      And on every market slot there should be matching trades on grid and house markets
@@ -47,6 +48,7 @@ Feature: Jira Issues Tests
   Scenario: D3ASIM-871, unmatched loads are not reported if hours per day are covered
      Given we have a scenario named jira/d3asim_871
      And d3a is installed
+     And export is_needed
      When we run the simulation with setup file jira.d3asim_871 and parameters [24, 60, 60, 1]
      Then there should be no unmatched loads
 
@@ -118,6 +120,7 @@ Feature: Jira Issues Tests
   Scenario: D3ASIM-1690: No unmatched load
     Given we have a scenario named two_sided_pay_as_clear/jira_d3asim_1690
     And d3a is installed
+    And export is_needed
     When we run the simulation with setup file two_sided_pay_as_clear.jira_d3asim_1690 and parameters [24, 60, 60, 1]
     Then there should be no unmatched loads
 
