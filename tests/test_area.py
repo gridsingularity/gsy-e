@@ -34,6 +34,7 @@ from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.models.area.event_dispatcher import AreaDispatcher
 from d3a.models.area.stats import AreaStats
+from d3a import constants
 
 
 class TestAreaClass(unittest.TestCase):
@@ -66,7 +67,7 @@ class TestAreaClass(unittest.TestCase):
 
     def tearDown(self):
         GlobalConfig.market_count = 1
-        ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
+        constants.D3A_TEST_RUN = False
 
     def test_respective_area_grid_fee_is_applied(self):
         self.config.grid_fee_type = 2
@@ -108,7 +109,7 @@ class TestAreaClass(unittest.TestCase):
         assert list(self.area.past_markets)[-1].time_slot == today(tz=TIME_ZONE).add(hours=1)
 
     def test_keep_past_markets(self):
-        ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
+        constants.D3A_TEST_RUN = True
         self.area = Area(name="Street", children=[Area(name="House")],
                          config=GlobalConfig, grid_fee_percentage=5)
         self.area.config.market_count = 1

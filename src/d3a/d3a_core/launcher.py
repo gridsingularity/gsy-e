@@ -18,14 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import sys
 import os
 import click
-
 from datetime import datetime, timedelta
 from redis import StrictRedis
 from rq import Queue
 from subprocess import Popen
 from time import sleep
 import platform
-
+from d3a_interface.utils import check_redis_health
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 MAX_JOBS = os.environ.get('D3A_MAX_JOBS_PER_POD', 2)
@@ -56,6 +55,7 @@ class Launcher:
             self.job_array = [j for j in self.job_array if j.poll() is None]
 
     def is_crowded(self):
+        check_redis_health(redis_db=StrictRedis.from_url(REDIS_URL, retry_on_timeout=True))
         enqueued = self.queue.jobs
         if enqueued:
             earliest = min(job.enqueued_at for job in enqueued)

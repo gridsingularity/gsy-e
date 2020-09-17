@@ -111,7 +111,6 @@ class Area:
         self._convert_area_throughput_kva_to_kwh(import_capacity_kVA, export_capacity_kVA)
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self._markets = AreaMarkets(self.log)
-        self.endpoint_stats = {}
         self.stats = AreaStats(self._markets)
         log.debug(f"External connection {external_connection_available} for area {self.name}")
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
@@ -121,12 +120,11 @@ class Area:
         if self.strategy is not None:
             self.strategy.area_reconfigure_event(**kwargs)
             return
-        if key_in_dict_and_not_none(kwargs, 'grid_fee_constant') or \
-                key_in_dict_and_not_none(kwargs, 'grid_fee_percentage'):
+        if 'grid_fee_constant' in kwargs or 'grid_fee_percentage' in kwargs:
             grid_fee_constant = kwargs["grid_fee_constant"] \
-                if key_in_dict_and_not_none(kwargs, 'grid_fee_constant') else None
+                if key_in_dict_and_not_none(kwargs, 'grid_fee_constant') else 0
             grid_fee_percentage = kwargs["grid_fee_percentage"] \
-                if key_in_dict_and_not_none(kwargs, 'grid_fee_percentage') else None
+                if key_in_dict_and_not_none(kwargs, 'grid_fee_percentage') else 0
 
             validate_area(grid_fee_percentage=grid_fee_percentage,
                           grid_fee_constant=grid_fee_constant)
@@ -246,6 +244,7 @@ class Area:
 
         # area_market_stats have to updated when cycling market of each area:
         self.stats.update_area_market_stats()
+        self.stats.aggregate_exported_imported_energy(self)
 
         # Markets range from one slot to market_count into the future
         changed = self._markets.create_future_markets(self.now, True, self)

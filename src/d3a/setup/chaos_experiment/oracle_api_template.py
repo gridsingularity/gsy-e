@@ -359,6 +359,7 @@ else:
     DeviceClient = RedisDeviceClient
     device_args = {
         "autoregister": True,
+        "pubsub_thread": aggr.pubsub
     }
 
 
@@ -369,6 +370,7 @@ def register_device_list(device_names, device_args, device_uuid_map):
             uuid = get_area_uuid_from_area_name_and_collaboration_id(device_args["simulation_id"], d, device_args["domain_name"])
             device_args['device_id'] = uuid
             device_uuid_map[uuid] = d
+            del device_args['pubsub_thread']
         else:
             device_args['device_id'] = d
         device = DeviceClient(**device_args)

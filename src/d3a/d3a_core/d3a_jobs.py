@@ -44,6 +44,11 @@ def start(scenario, settings, events, aggregator_device_mapping):
     logging.getLogger().setLevel(logging.ERROR)
 
     scenario = decompress_and_decode_queued_strings(scenario)
+    logging.getLogger().error(f"Scenario details are : {0}: {scenario}")
+    logging.getLogger().error(f"Settings details are : {0}: {settings}")
+    logging.getLogger().error(f"Events details are : {0}: {events}")
+    logging.getLogger().error(f"Aggregator device mapping details are : {0}: "
+                              f"{aggregator_device_mapping}")
 
     job = get_current_job()
     job.save_meta()
@@ -138,7 +143,7 @@ def main():
                                          retry_on_timeout=True)):
         Worker(
             ['d3a'],
-            name='simulation.{}.{:%s}'.format(getpid(), now())
+            name='simulation.{}.{:%s}'.format(getpid(), now()), log_job_description=False
         ).work()
 
 

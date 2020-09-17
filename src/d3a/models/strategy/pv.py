@@ -31,6 +31,7 @@ from d3a.d3a_core.exceptions import MarketException
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.utils import key_in_dict_and_not_none
+from d3a import constants
 
 
 class PVStrategy(BaseStrategy):
@@ -198,7 +199,7 @@ class PVStrategy(BaseStrategy):
         self._delete_past_state()
 
     def _delete_past_state(self):
-        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS is True or \
+        if constants.D3A_TEST_RUN is True or \
                 self.area.current_market is None:
             return
 
