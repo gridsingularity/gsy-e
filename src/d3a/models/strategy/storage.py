@@ -315,7 +315,9 @@ class StorageStrategy(BidEnabledStrategy):
         self.assert_if_trade_offer_price_is_too_low(market_id, trade)
 
         if trade.buyer == self.owner.name:
-            self._track_energy_bought_type(trade)
+            if ConstSettings.IAASettings.MARKET_TYPE == 1:
+                # in order to omit double counting this is only applied for one sided market
+                self._track_energy_bought_type(trade)
         if trade.offer.seller == self.owner.name:
             self._track_energy_sell_type(trade)
             self.state.pledged_sell_kWh[market.time_slot] += trade.offer.energy

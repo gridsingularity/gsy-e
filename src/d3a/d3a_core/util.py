@@ -512,10 +512,3 @@ def child_buys_from_area(trade, area_name, child_names):
 def if_not_in_list_append(target_list, obj):
     if obj not in target_list:
         target_list.append(obj)
-
-
-def area_name_uuid_map(tree_dict, name_uuid_map={}):
-    name_uuid_map[tree_dict['name']] = tree_dict['uuid']
-    for child in tree_dict['children']:
-        area_name_uuid_map(child, name_uuid_map)
-    return name_uuid_map

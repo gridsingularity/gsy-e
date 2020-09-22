@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from behave import then, given
 from math import isclose
 from d3a import limit_float_precision
-from d3a.d3a_core.util import area_name_uuid_map
+from d3a_interface.utils import get_area_name_uuid_mapping
 from d3a.models.config import ConstSettings
 
 
@@ -31,7 +31,7 @@ def set_market_type(context, market_type):
 def check_buy_behaviour_ib(context):
     from integration_tests.steps.two_sided_market import no_unmatched_loads
     no_unmatched_loads(context)
-    name_uuid_map = area_name_uuid_map(context.area_tree_summary_data)
+    name_uuid_map = get_area_name_uuid_mapping(context.area_tree_summary_data)
 
     for time_slot, core_stats in context.raw_sim_data.items():
         for trade in core_stats[name_uuid_map['Grid']]['trades']:

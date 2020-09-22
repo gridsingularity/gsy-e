@@ -79,6 +79,7 @@ def check_user_pv_dict_profile(context):
 
 @then('LoadHoursStrategy does not buy energy with rates that are higher than the provided profile')
 def check_user_rate_profile_dict(context):
+    house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     from integration_tests.steps.integration_tests import get_simulation_raw_results
     get_simulation_raw_results(context)
     count = 0
@@ -91,7 +92,7 @@ def check_user_rate_profile_dict(context):
     # There are two loads with the same final_buying_rate profile that should report unmatched
     # energy demand for the first 6 hours of the day:
     number_of_loads = 2
-    assert count == number_of_loads * 6 * 60 / 30
+    assert count == int(number_of_loads * 6. * 60 / house.config.slot_length.minutes)
 
 
 @then('LoadHoursStrategy buys energy with rates equal to the initial buying rate profile')

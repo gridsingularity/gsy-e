@@ -90,7 +90,7 @@ class TestUnmatchedLoad(unittest.TestCase):
                       'abc', 'load2', seller_origin='abc', buyer_origin='load2')
             ]
 
-            epb.current_market = mock_market.time_slot_str
+            epb.current_market_time_slot_str = mock_market.time_slot_str
             epb._create_area_tree_dict(self.grid)
             epb._populate_core_stats(self.grid)
 
@@ -99,12 +99,12 @@ class TestUnmatchedLoad(unittest.TestCase):
 
             epb.market_unmatched_loads.update_unmatched_loads(
                 epb.area_result_dict, epb.flattened_area_core_stats_dict,
-                current_market_slot=mock_market.time_slot)
+                current_market_time_slot_str=mock_market.time_slot)
 
             unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(epb.area_result_dict).\
                 get_current_market_results(
                 area_dict=epb.area_result_dict, core_stats=epb.flattened_area_core_stats_dict,
-                current_market_slot=mock_market.time_slot)
+                current_market_time_slot_str=mock_market.time_slot)
 
             assert list(unmatched_loads['Grid'].keys()) == ['House1']
             assert get_number_of_unmatched_loads(unmatched_loads) == 0
@@ -135,16 +135,16 @@ class TestUnmatchedLoad(unittest.TestCase):
                       Bid("23", timeslot, 1, 0.09, 'load2', 'abc', 1, 'load2'),
                       'abc', 'load2', seller_origin='abc', buyer_origin='load2')
             ]
-            epb.current_market = mock_market.time_slot_str
-            epb.current_market_datetime = mock_market.time_slot
+            epb.current_market_time_slot_str = mock_market.time_slot_str
+            epb.current_market_time_slot = mock_market.time_slot
             epb._populate_core_stats(self.grid)
             epb.market_unmatched_loads.update_unmatched_loads(
                 epb.area_result_dict, epb.flattened_area_core_stats_dict,
-                current_market_slot=mock_market.time_slot_str)
+                current_market_time_slot_str=mock_market.time_slot_str)
             unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(epb.area_result_dict).\
                 get_current_market_results(
                 area_dict=epb.area_result_dict, core_stats=epb.flattened_area_core_stats_dict,
-                current_market_slot=mock_market.time_slot_str)
+                current_market_time_slot_str=mock_market.time_slot_str)
             cumulative_unmatched_load += get_number_of_unmatched_loads(unmatched_loads)
         assert cumulative_unmatched_load == 20
 
@@ -175,16 +175,16 @@ class TestUnmatchedLoad(unittest.TestCase):
                       Bid("23", timeslot, 1, 1.05, 'load2', 'abc', 1, 'load2'),
                       'abc', 'load2', seller_origin='abc', buyer_origin='load2')
             ]
-            epb.current_market = mock_market.time_slot_str
-            epb.current_market_datetime = mock_market.time_slot
+            epb.current_market_time_slot_str = mock_market.time_slot_str
+            epb.current_market_time_slot = mock_market.time_slot
             epb._populate_core_stats(self.grid)
             epb.market_unmatched_loads.update_unmatched_loads(
                 epb.area_result_dict, epb.flattened_area_core_stats_dict,
-                current_market_slot=mock_market.time_slot_str)
+                current_market_time_slot_str=mock_market.time_slot_str)
             unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(epb.area_result_dict).\
                 get_current_market_results(
                 area_dict=epb.area_result_dict, core_stats=epb.flattened_area_core_stats_dict,
-                current_market_slot=mock_market.time_slot_str)
+                current_market_time_slot_str=mock_market.time_slot_str)
             cumulative_unmatched_load += get_number_of_unmatched_loads(unmatched_loads)
 
         assert cumulative_unmatched_load == 10
@@ -228,16 +228,16 @@ class TestUnmatchedLoad(unittest.TestCase):
                       'abc', 'Cell Tower', seller_origin='abc', buyer_origin='Cell Tower')
             ]
             self.grid._markets.past_markets[timeslot] = deepcopy(mock_market)
-            epb.current_market = mock_market.time_slot_str
-            epb.current_market_datetime = mock_market.time_slot
+            epb.current_market_time_slot_str = mock_market.time_slot_str
+            epb.current_market_time_slot = mock_market.time_slot
             epb._populate_core_stats(self.grid)
             epb.market_unmatched_loads.update_unmatched_loads(
                 epb.area_result_dict, epb.flattened_area_core_stats_dict,
-                current_market_slot=mock_market.time_slot_str)
+                current_market_time_slot_str=mock_market.time_slot_str)
             unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(epb.area_result_dict).\
                 get_current_market_results(
                 area_dict=epb.area_result_dict, core_stats=epb.flattened_area_core_stats_dict,
-                current_market_slot=mock_market.time_slot_str)
+                current_market_time_slot_str=mock_market.time_slot_str)
             cumulative_unmatched_load += get_number_of_unmatched_loads(unmatched_loads)
 
         assert cumulative_unmatched_load == 30
@@ -267,16 +267,16 @@ class TestUnmatchedLoad(unittest.TestCase):
                       Bid("23", timeslot, 1, 0.079, 'load3', 'abc', 1, 'load3'),
                       'abc', 'load3', seller_origin='abc', buyer_origin='load3')
             ]
-            epb.current_market = mock_market.time_slot_str
-            epb.current_market_datetime = mock_market.time_slot
+            epb.current_market_time_slot_str = mock_market.time_slot_str
+            epb.current_market_time_slot = mock_market.time_slot
             epb._populate_core_stats(self.grid)
             epb.market_unmatched_loads.update_unmatched_loads(
                 epb.area_result_dict, epb.flattened_area_core_stats_dict,
-                current_market_slot=mock_market.time_slot_str)
+                current_market_time_slot_str=mock_market.time_slot_str)
             unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(epb.area_result_dict).\
                 get_current_market_results(
                 area_dict=epb.area_result_dict, core_stats=epb.flattened_area_core_stats_dict,
-                current_market_slot=mock_market.time_slot_str)
+                current_market_time_slot_str=mock_market.time_slot_str)
             cumulative_unmatched_load += get_number_of_unmatched_loads(unmatched_loads)
 
         assert cumulative_unmatched_load == 20
@@ -293,18 +293,18 @@ class TestUnmatchedLoad(unittest.TestCase):
         mock_market = MagicMock(spec=Market)
         mock_market.time_slot = timeslot
         mock_market.time_slot_str = timeslot.format(DATE_TIME_FORMAT)
-        epb.current_market = mock_market.time_slot_str
+        epb.current_market_time_slot_str = mock_market.time_slot_str
         self.area1._markets.past_markets[timeslot] = deepcopy(mock_market)
         self.area3._markets.past_markets[timeslot] = deepcopy(mock_market)
 
         epb._populate_core_stats(self.grid)
         epb.market_unmatched_loads.update_unmatched_loads(
             epb.area_result_dict, epb.flattened_area_core_stats_dict,
-            current_market_slot=mock_market.time_slot_str)
+            current_market_time_slot_str=mock_market.time_slot_str)
         unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(epb.area_result_dict). \
             get_current_market_results(
             area_dict=epb.area_result_dict, core_stats=epb.flattened_area_core_stats_dict,
-            current_market_slot=mock_market.time_slot_str)
+            current_market_time_slot_str=mock_market.time_slot_str)
 
         assert get_number_of_unmatched_loads(unmatched_loads) == 0
         assert "type" not in unmatched_loads["House1"]
@@ -325,13 +325,13 @@ class TestUnmatchedLoad(unittest.TestCase):
         mock_market = MagicMock(spec=Market)
         mock_market.time_slot = timeslot
         mock_market.time_slot_str = timeslot.format(DATE_TIME_FORMAT)
-        epb.current_market = mock_market.time_slot_str
+        epb.current_market_time_slot_str = mock_market.time_slot_str
         self.grid._markets.past_markets[timeslot] = deepcopy(mock_market)
         self.area1._markets.past_markets[timeslot] = deepcopy(mock_market)
         self.area3._markets.past_markets[timeslot] = deepcopy(mock_market)
         epb._populate_core_stats(self.grid)
         epb.market_unmatched_loads.update_unmatched_loads(
-            epb.area_result_dict, current_market_slot=self.config.start_date)
+            epb.area_result_dict, current_market_time_slot_str=self.config.start_date)
         unmatched_loads = epb.market_unmatched_loads.unmatched_loads
         assert unmatched_loads["House1"] is None
         assert unmatched_loads["Grid"] is None
@@ -346,12 +346,12 @@ class TestUnmatchedLoad(unittest.TestCase):
         mock_market = MagicMock(spec=Market)
         mock_market.time_slot = timeslot
         mock_market.time_slot_str = timeslot.format(DATE_TIME_FORMAT)
-        epb.current_market = mock_market.time_slot_str
+        epb.current_market_time_slot_str = mock_market.time_slot_str
         self.grid._markets.past_markets[timeslot] = deepcopy(mock_market)
         epb._populate_core_stats(self.grid)
         epb.market_unmatched_loads.update_unmatched_loads(
             epb.area_result_dict, epb.flattened_area_core_stats_dict,
-            current_market_slot=epb.current_market)
+            current_market_time_slot_str=epb.current_market_time_slot_str)
         unmatched_loads = epb.market_unmatched_loads.unmatched_loads
         assert unmatched_loads["House1"] is not None
         assert unmatched_loads["Grid"] is not None
