@@ -28,7 +28,6 @@ from d3a_interface.utils import convert_pendulum_to_str_in_dict
 from d3a.d3a_core.sim_results.energy_trade_profile import EnergyTradeProfile
 from d3a.d3a_core.sim_results.cumulative_grid_trades import CumulativeGridTrades
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
@@ -163,9 +162,7 @@ class SimulationEndpointBuffer:
             for trade in area.current_market.trades:
                 core_stats_dict['trades'].append(trade.serializable_dict())
 
-        if isinstance(area.strategy, PVStrategy) or \
-                isinstance(area.strategy, PVUserProfileStrategy) or \
-                isinstance(area.strategy, PVPredefinedStrategy):
+        if isinstance(area.strategy, PVStrategy):
             core_stats_dict['pv_production_kWh'] = \
                 area.strategy.energy_production_forecast_kWh.get(self.current_market_time_slot,
                                                                  0)
