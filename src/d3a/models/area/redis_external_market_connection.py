@@ -94,8 +94,8 @@ class RedisMarketExternalConnection:
                    "market_stats":
                        self.area.stats.get_market_stats(payload_data["market_slots"], dso=True),
                    "fee_type": str(self.area.config.grid_fee_type),
-                   "market_fee_const": str(self.area.grid_fee_constant),
-                   "market_fee_percent": str(self.area.grid_fee_percentage),
+                   "current_market_fee": str(self.area.next_market.fee_class.grid_fee_rate),
+                   "next_market_fee": str(self.area.get_grid_fee()),
                    "transaction_id": payload_data.get("transaction_id", None)}
         self.redis_db.publish_json(dso_market_stats_response_channel, ret_val)
 
