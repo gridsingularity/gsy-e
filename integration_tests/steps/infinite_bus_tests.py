@@ -18,9 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from behave import then, given
 from math import isclose
 from d3a import limit_float_precision
+from d3a_interface.utils import get_area_name_uuid_mapping
 from d3a.models.config import ConstSettings
-from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads,\
-    get_number_of_unmatched_loads
 
 
 @given('the market type is {market_type}')
@@ -30,29 +29,23 @@ def set_market_type(context, market_type):
 
 @then('Infinite Bus buys energy that is not needed from the PV and sells to the load')
 def check_buy_behaviour_ib(context):
-    grid = context.simulation.area
-    bus = list(filter(lambda x: x.name == "Infinite Bus", grid.children))[0]
-    house_1 = list(filter(lambda x: x.name == "House 1", grid.children))[0]
-    pv = list(filter(lambda x: x.name == "H1 PV", house_1.children))[0]
-    load = list(filter(lambda x: x.name == "H1 General Load", house_1.children))[0]
+    from integration_tests.steps.two_sided_market import no_unmatched_loads
+    no_unmatched_loads(context)
+    name_uuid_map = get_area_name_uuid_mapping(context.area_tree_summary_data)
 
-    for market in grid.past_markets:
-        for trade in market.trades:
-            assert limit_float_precision(trade.offer.price / trade.offer.energy) <= \
-                   bus.strategy.energy_rate[market.time_slot] or \
-                   "Infinite Bus" is not trade.seller
+    for time_slot, core_stats in context.raw_sim_data.items():
+        for trade in core_stats[name_uuid_map['Grid']]['trades']:
+            assert limit_float_precision(trade['energy_rate']) <= \
+                   core_stats[name_uuid_map['Infinite Bus']]['energy_rate'] or \
+                   "Infinite Bus" is not trade['seller']
 
-            if trade.buyer == load.name:
-                assert trade.offer.energy == load.strategy.avg_power_W / 1000.
-            elif trade.seller == bus.name:
-                assert isclose(trade.offer.energy,
-                               load.strategy.avg_power_W / 1000. -
-                               pv.strategy.energy_production_forecast_kWh[market.time_slot])
-
-    unmatched, unmatched_redis = \
-        ExportUnmatchedLoads(context.simulation.area).get_current_market_results(
-            all_past_markets=True)
-    assert get_number_of_unmatched_loads(unmatched) == 0
+            if trade['buyer'] == "H1 General Load":
+                assert trade['energy'] == \
+                       core_stats[name_uuid_map['H1 General Load']]['load_profile_kWh']
+            elif trade['seller'] == 'Infinite Bus':
+                assert isclose(trade['energy'],
+                               (core_stats[name_uuid_map['H1 General Load']]['load_profile_kWh'] -
+                                core_stats[name_uuid_map['H1 PV']]['pv_production_kWh']))
 
 
 @then('the infinite bus traded energy respecting its buy/sell rate')
