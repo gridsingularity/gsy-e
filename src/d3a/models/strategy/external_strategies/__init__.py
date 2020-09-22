@@ -42,13 +42,13 @@ def check_for_connected_and_reply(redis, channel_name, is_connected):
     return True
 
 
-def register_area(redis, channel_prefix, is_connected, transaction_id, device_uuid=None):
+def register_area(redis, channel_prefix, is_connected, transaction_id, area_uuid=None):
     register_response_channel = f'{channel_prefix}/response/register_participant'
     try:
         redis.publish_json(
             register_response_channel,
             {"command": "register", "status": "ready", "registered": True,
-             "transaction_id": transaction_id, "device_uuid": device_uuid})
+             "transaction_id": transaction_id, "device_uuid": area_uuid})
         return True
     except Exception as e:
         logging.error(f"Error when registering to area {channel_prefix}: "
@@ -56,7 +56,7 @@ def register_area(redis, channel_prefix, is_connected, transaction_id, device_uu
         redis.publish_json(
             register_response_channel,
             {"command": "register", "status": "error", "transaction_id": transaction_id,
-             "device_uuid": device_uuid,
+             "device_uuid": area_uuid,
              "error_message": f"Error when registering to area {channel_prefix}."})
         return is_connected
 
@@ -124,7 +124,7 @@ class ExternalMixin:
     def _register(self, payload):
         self._connected = register_area(self.redis, self.channel_prefix, self.connected,
                                         self._get_transaction_id(payload),
-                                        device_uuid=self.device.uuid)
+                                        area_uuid=self.device.uuid)
 
     def _unregister(self, payload):
         self._connected = unregister_area(self.redis, self.channel_prefix, self.connected,
