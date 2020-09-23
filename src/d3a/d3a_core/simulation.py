@@ -345,6 +345,7 @@ class Simulation:
                     approve_aggregator_commands()
 
                 self.area.tick_and_dispatch()
+                self.area.update_area_current_tick()
 
                 self.simulation_config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()

@@ -26,7 +26,7 @@ Feature: Area Events Tests
   Scenario: Area isolates from main grid during disconnect-interval event
     Given we have a scenario named area_events/disconnect_interval_event
     And d3a is installed
-    When we run the simulation with setup file area_events.disconnect_interval_event and parameters [24, 60, 60, 1]
+    When we run the simulation with setup file area_events.disconnect_interval_event and parameters [24, 60, 15, 1]
     Then load and battery use energy from grid before 6:00
     And battery does not charge between 6:00 and 16:00
     And load and battery use energy from grid after 16:00
