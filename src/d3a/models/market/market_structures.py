@@ -235,6 +235,7 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'resi
             "residual_id": self.residual.id if self.residual is not None else None,
             "energy": self.offer.energy,
             "energy_rate": self.offer.energy_rate,
+            "price": self.offer.energy * self.offer.energy_rate,
             "buyer": self.buyer,
             "buyer_origin": self.buyer_origin,
             "seller_origin": self.seller_origin,
