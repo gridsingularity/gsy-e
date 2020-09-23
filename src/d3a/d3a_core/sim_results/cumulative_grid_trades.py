@@ -16,39 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.d3a_core.sim_results import _is_cell_tower_type, _is_load_node_type, \
+    _is_producer_node_type, _is_prosumer_node_type, _is_buffer_node_type, area_sells_to_child, \
+    child_buys_from_area
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name, add_or_create_key, \
     make_iaa_name_from_dict, subtract_or_create_key, round_floats_for_ui
-
-
-def _is_cell_tower_type(area):
-    return area['type'] == "CellTowerLoadHoursStrategy"
-
-
-def _is_load_node_type(area):
-    return area['type'] == "LoadHoursStrategy"
-
-
-def _is_producer_node_type(area):
-    return area['type'] in ["PVStrategy", "CommercialStrategy", "FinitePowerPlant",
-                            "MarketMakerStrategy"]
-
-
-def _is_prosumer_node_type(area):
-    return area['type'] == "StorageStrategy"
-
-
-def _is_buffer_node_type(area):
-    return area['type'] == "InfiniteBusStrategy"
-
-
-def area_sells_to_child(trade, area_name, child_names):
-    return area_name_from_area_or_iaa_name(trade['seller']) == \
-            area_name and area_name_from_area_or_iaa_name(trade['buyer']) in child_names
-
-
-def child_buys_from_area(trade, area_name, child_names):
-    return area_name_from_area_or_iaa_name(trade['buyer']) == \
-        area_name and area_name_from_area_or_iaa_name(trade['seller']) in child_names
 
 
 class CumulativeGridTrades:
@@ -202,24 +174,22 @@ class CumulativeGridTrades:
         area_trades = flattened_area_core_stats_dict.get(area['uuid'], {}).get('trades', [])
 
         for trade in area_trades:
-            trade_price = trade['energy'] * trade['energy_rate']
             if area_name_from_area_or_iaa_name(trade['seller']) in child_names and \
                     area_name_from_area_or_iaa_name(trade['buyer']) in child_names:
                 # House self-consumption trade
                 accumulated_trades[area['name']]["produced"] -= trade['energy']
-                accumulated_trades[area['name']]["earned"] += trade_price
+                accumulated_trades[area['name']]["earned"] += trade['price']
                 accumulated_trades[area['name']]["consumedFrom"] = \
                     add_or_create_key(accumulated_trades[area['name']]["consumedFrom"],
                                       area['name'], trade['energy'])
                 accumulated_trades[area['name']]["spentTo"] = \
                     add_or_create_key(accumulated_trades[area['name']]["spentTo"],
-                                      area['name'], trade_price)
+                                      area['name'], trade['price'])
             elif trade['buyer'] == area_IAA_name:
-                accumulated_trades[area['name']]["earned"] += trade_price
+                accumulated_trades[area['name']]["earned"] += trade['price']
                 accumulated_trades[area['name']]["produced"] -= trade['energy']
         # for market in area_markets:
         for trade in area_trades:
-            trade_price = trade['energy'] * trade['energy_rate']
             if area_sells_to_child(trade, area['name'], child_names):
                 accumulated_trades[area['name']]["consumedFromExternal"] = \
                     subtract_or_create_key(accumulated_trades[area['name']]
@@ -229,7 +199,7 @@ class CumulativeGridTrades:
                 accumulated_trades[area['name']]["spentToExternal"] = \
                     add_or_create_key(accumulated_trades[area['name']]["spentToExternal"],
                                       area_name_from_area_or_iaa_name(trade['buyer']),
-                                      trade_price)
+                                      trade['price'])
             elif child_buys_from_area(trade, area['name'], child_names):
                 accumulated_trades[area['name']]["producedForExternal"] = \
                     add_or_create_key(accumulated_trades[area['name']]["producedForExternal"],
@@ -238,7 +208,7 @@ class CumulativeGridTrades:
                 accumulated_trades[area['name']]["earnedFromExternal"] = \
                     add_or_create_key(accumulated_trades[area['name']]["earnedFromExternal"],
                                       area_name_from_area_or_iaa_name(trade['seller']),
-                                      trade_price)
+                                      trade['price'])
 
         accumulated_trades = CumulativeGridTrades._area_trade_from_parent(
             area, parent, flattened_area_core_stats_dict, accumulated_trades
@@ -275,7 +245,6 @@ class CumulativeGridTrades:
         parent_trades = flattened_area_core_stats_dict.get(parent['uuid'], {}).get('trades', [])
 
         for trade in parent_trades:
-            trade_price = trade['energy'] * trade['energy_rate']
             if trade['buyer'] == area_IAA_name:
                 seller_id = area_name_from_area_or_iaa_name(trade['seller'])
                 accumulated_trades[area['name']]["consumedFrom"] = \
@@ -283,7 +252,7 @@ class CumulativeGridTrades:
                                       seller_id, trade['energy'])
                 accumulated_trades[area['name']]["spentTo"] = \
                     add_or_create_key(accumulated_trades[area['name']]["spentTo"],
-                                      seller_id, trade_price)
+                                      seller_id, trade['price'])
 
         return accumulated_trades
 

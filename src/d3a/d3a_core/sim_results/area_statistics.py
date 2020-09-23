@@ -26,7 +26,7 @@ from d3a.models.strategy.area_agents.one_sided_agent import InterAreaAgent
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.d3a_core.util import round_floats_for_ui
 from d3a_interface.sim_results.aggregate_results import merge_price_energy_day_results_to_global
 
@@ -59,10 +59,6 @@ def gather_area_loads_and_trade_prices(area, load_price_lists):
 
 def _is_house_node(area):
     return all(child.children == [] for child in area.children)
-
-
-def _is_cell_tower_node(area):
-    return isinstance(area.strategy, CellTowerLoadHoursStrategy)
 
 
 def _is_load_node(area):
