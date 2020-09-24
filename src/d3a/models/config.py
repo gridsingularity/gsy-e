@@ -67,9 +67,11 @@ class SimulationConfig:
         max_panel_power_W = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W \
             if max_panel_power_W is None else max_panel_power_W
         self.max_panel_power_W = max_panel_power_W
+        # TODO: add this as a singleton:
         self.external_redis_communicator = ExternalConnectionCommunicator(
             external_connection_enabled)
         if aggregator_device_mapping is not None:
+            # TODO: doesnt this has to be done every market_slot too?
             self.external_redis_communicator.aggregator.set_aggregator_device_mapping(
                 aggregator_device_mapping
             )

@@ -23,6 +23,7 @@ from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
+from d3a.d3a_core.redis_connections.aggregator_connection import default_market_info
 
 
 class PVExternalMixin(ExternalMixin):
@@ -173,18 +174,21 @@ class PVExternalMixin(ExternalMixin):
             self._reset_event_tick_counter()
             market_event_channel = f"{self.channel_prefix}/events/market"
             current_market_info = self.market.info
+            current_market_info.update(default_market_info)
             current_market_info['device_info'] = self._device_info_dict
             current_market_info["event"] = "market"
             current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
                 if "bills" in self.device.stats.aggregated_stats else None
             current_market_info["area_uuid"] = self.device.uuid
-            current_market_info['last_market_stats'] = \
-                self.market_area.stats.get_price_stats_current_market()
             if self.connected:
+                current_market_info['last_market_stats'] = \
+                    self.market_area.stats.get_price_stats_current_market()
                 self.redis.publish_json(market_event_channel, current_market_info)
 
             if self.is_aggregator_controlled:
-                self.redis.aggregator.add_batch_market_event(self.device.uuid, current_market_info)
+                self.redis.aggregator.add_batch_market_event(self.device.uuid,
+                                                             current_market_info,
+                                                             self.area.global_objects)
         else:
             super().event_market_cycle()
 
