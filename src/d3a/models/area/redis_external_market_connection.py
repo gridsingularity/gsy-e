@@ -93,9 +93,6 @@ class RedisMarketExternalConnection:
                    "command": "dso_market_stats",
                    "market_stats":
                        self.area.stats.get_market_stats(payload_data["market_slots"], dso=True),
-                   "fee_type": str(self.area.config.grid_fee_type),
-                   "current_market_fee": str(self.area.next_market.fee_class.grid_fee_rate),
-                   "next_market_fee": str(self.area.get_grid_fee()),
                    "transaction_id": payload_data.get("transaction_id", None)}
         self.redis_db.publish_json(dso_market_stats_response_channel, ret_val)
 
@@ -104,7 +101,10 @@ class RedisMarketExternalConnection:
             return
         market_event_channel = f"{self.channel_prefix}/market-events/market"
         current_market_info = self.area.current_market.info
-        current_market_info['last_market_stats'] = \
+        current_market_info["current_market_fee"] = \
+            self.area.current_market.fee_class.grid_fee_rate
+        current_market_info["next_market_fee"] = str(self.area.get_grid_fee())
+        current_market_info["last_market_stats"] = \
             self.area.stats.get_price_stats_current_market()
         current_market_info["self_sufficiency"] = \
             self.area.stats.kpi.get("self_sufficiency", None)
