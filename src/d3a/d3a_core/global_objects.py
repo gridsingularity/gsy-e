@@ -23,17 +23,17 @@ class GlobalObjects:
         self.area_tree_dict = {}
 
     def update(self, area):
-        self._create_grid_tree_dict(area, self.area_tree_dict)
+        if area.current_market:
+            self._create_grid_tree_dict(area, self.area_tree_dict)
 
     def _create_grid_tree_dict(self, area, outdict):
-        outdict[area.name] = {"area_grid_fee": area.grid_fee_constant}
-
+        outdict[area.name] = {}
         if area.children:
             outdict[area.name].update(
-                {"market_bill": area.stats.aggregated_stats,
-                 "price_stats": area.market_area.stats.get_price_stats_current_market(),
-                 "current_market_fee": str(area.next_market.fee_class.grid_fee_rate),
-                 "next_market_fee": str(area.get_grid_fee()),
+                {"last_market_slot": area.current_market.time_slot_str,
+                 "last_market_bill": area.stats.get_current_market_stats_for_grid_tree(),
+                 "last_market_stats": area.stats.get_price_stats_current_market(),
+                 "last_market_fee": str(area.current_market.fee_class.grid_fee_rate),
                  "children": {}})
             for child in area.children:
                 self._create_grid_tree_dict(child, outdict[area.name]["children"])

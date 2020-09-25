@@ -27,6 +27,7 @@ class AggregatorHandler:
         self.aggregator_device_mapping = {}
         self.device_aggregator_mapping = {}
         self.lock = Lock()
+        self.grid_buffer = {}
 
     def set_aggregator_device_mapping(self, aggregator_device):
         self.aggregator_device_mapping = aggregator_device
@@ -47,17 +48,15 @@ class AggregatorHandler:
 
         batch_event_dict[aggregator_uuid].append(event)
 
-    def _add_grid_stats_market_event(self, device_uuid, global_objects):
-        if self.already_sent_grid_stats:
-            return
-        # TODO: cut the devices that are not owned
+    def _add_grid_stats_to_market_event(self, device_uuid, global_objects):
         market_info = default_market_info
         market_info["grid_stats_tree"] = global_objects.area_tree_dict
         self._add_batch_event(device_uuid, market_info, self.batch_market_cycle_events)
         self.already_sent_grid_stats = True
 
     def add_batch_market_event(self, device_uuid, event, global_objects):
-        self._add_grid_stats_market_event(device_uuid, global_objects)
+        if self.already_sent_grid_stats or not global_objects.area_tree_dict:
+            self._add_grid_stats_to_market_event(device_uuid, global_objects)
         self._add_batch_event(device_uuid, event, self.batch_market_cycle_events)
 
     def add_batch_tick_event(self, device_uuid, event):

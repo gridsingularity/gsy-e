@@ -50,15 +50,25 @@ class AreaStats:
     def update_aggregated_stats(self, area_stats):
         self.aggregated_stats = area_stats
 
+    def _extract_from_bills(self, trade_key):
+        if self.current_market is None:
+            return None
+        return {key: self.aggregated_stats["bills"][trade_key][key]
+                for key in ["earned", "spent", "bought", "sold"]} \
+            if "bills" in self.aggregated_stats \
+               and trade_key in self.aggregated_stats["bills"] else None
+
     def update_area_market_stats(self):
         if self.current_market is not None:
             self.market_bills[self.current_market.time_slot] = \
-                {key: self.aggregated_stats["bills"]["Accumulated Trades"][key]
-                 for key in ["earned", "spent", "bought", "sold"]} \
-                if "bills" in self.aggregated_stats \
-                   and "Accumulated Trades" in self.aggregated_stats["bills"] else None
+                {key: self._extract_from_bills(key)
+                 for key in ["Accumulated Trades"]}
             self.rate_stats_market[self.current_market.time_slot] = \
                 self.min_max_avg_median_rate_current_market()
+
+    def get_current_market_stats_for_grid_tree(self):
+        return {key.lower().replace(" ", "_"): self._extract_from_bills(key)
+                for key in ["Accumulated Trades", "External Trades"]}
 
     def update_accumulated(self):
         self._accumulated_past_price = sum(
@@ -164,8 +174,8 @@ class AreaStats:
             except ValueError:
                 return {"ERROR": f"Time string '{time_slot_str}' is not following "
                                  f"the format '{DATE_TIME_FORMAT}'"}
-            out_dict[time_slot_str] = self.rate_stats_market.get(
-                time_slot, default_trade_stats_dict)
+            out_dict[time_slot_str] = copy(self.rate_stats_market.get(
+                time_slot, default_trade_stats_dict))
             out_dict[time_slot_str]["market_bill"] = self._get_market_bills(time_slot)
             if dso:
                 out_dict[time_slot_str]["area_throughput"] = \

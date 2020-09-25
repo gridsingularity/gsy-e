@@ -225,7 +225,6 @@ class Area:
         `_trigger_event` is used internally to avoid multiple event chains during
         initial area activation.
         """
-        # print(self.name, self.global_objects.area_tree_dict.keys())
         self.events.update_events(self.now)
 
         if not self.children:
