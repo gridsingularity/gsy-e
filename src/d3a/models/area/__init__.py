@@ -162,7 +162,8 @@ class Area:
         grid_fee_type = self.config.grid_fee_type \
             if self.config is not None \
             else ConstSettings.IAASettings.GRID_FEE_TYPE
-       return self.grid_fee_constant if grid_fee_type == 1 else self.grid_fee_percentage
+        return self.grid_fee_constant if grid_fee_type == 1 else self.grid_fee_percentage
+
     def _convert_area_throughput_kva_to_kwh(self, import_capacity_kVA, export_capacity_kVA):
         self.import_capacity_kWh = \
             import_capacity_kVA * self.config.slot_length.total_minutes() / 60.0 \
