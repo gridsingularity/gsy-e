@@ -128,7 +128,7 @@ class EnergyTradeProfile:
                         list(res_dict[area_name][ks][node]["accumulated"].values())
 
     @staticmethod
-    def convert_timestamp_strings_to_timestamps(profile):
+    def convert_timestamp_strings_to_datetimes(profile):
         outdict = {}
         for k in profile.keys():
             outdict[k] = {}
@@ -141,7 +141,7 @@ class EnergyTradeProfile:
                     for target in profile[k][sold_bought][dev].keys():
                         outdict[k][sold_bought][dev][target] = {}
                         for timestamp_str in profile[k][sold_bought][dev][target].keys():
-                            timestamp_object = str_to_pendulum_datetime(timestamp_str)
-                            outdict[k][sold_bought][dev][target][timestamp_object] = \
+                            datetime_obj = str_to_pendulum_datetime(timestamp_str)
+                            outdict[k][sold_bought][dev][target][datetime_obj] = \
                                 profile[k][sold_bought][dev][target][timestamp_str]
         return outdict
