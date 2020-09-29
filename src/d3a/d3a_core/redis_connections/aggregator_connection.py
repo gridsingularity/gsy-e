@@ -1,6 +1,7 @@
 import json
 import logging
 from threading import Lock
+from copy import deepcopy
 import d3a.constants
 
 
@@ -49,7 +50,7 @@ class AggregatorHandler:
         batch_event_dict[aggregator_uuid].append(event)
 
     def _add_grid_stats_to_market_event(self, device_uuid, global_objects):
-        market_info = default_market_info
+        market_info = deepcopy(default_market_info)
         market_info["grid_stats_tree"] = global_objects.area_tree_dict
         self._add_batch_event(device_uuid, market_info, self.batch_market_cycle_events)
         self.already_sent_grid_stats = True

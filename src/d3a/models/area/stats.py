@@ -66,7 +66,7 @@ class AreaStats:
             self.rate_stats_market[self.current_market.time_slot] = \
                 self.min_max_avg_median_rate_current_market()
 
-    def get_current_market_stats_for_grid_tree(self):
+    def get_last_market_stats_for_grid_tree(self):
         return {key.lower().replace(" ", "_"): self._extract_from_bills(key)
                 for key in ["Accumulated Trades", "External Trades"]}
 

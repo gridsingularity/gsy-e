@@ -31,7 +31,7 @@ class GlobalObjects:
         if area.children:
             outdict[area.name].update(
                 {"last_market_slot": area.current_market.time_slot_str,
-                 "last_market_bill": area.stats.get_current_market_stats_for_grid_tree(),
+                 "last_market_bill": area.stats.get_last_market_stats_for_grid_tree(),
                  "last_market_stats": area.stats.get_price_stats_current_market(),
                  "last_market_fee": str(area.current_market.fee_class.grid_fee_rate),
                  "children": {}})
