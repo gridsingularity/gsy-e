@@ -213,6 +213,10 @@ def make_iaa_name(owner):
     return f"IAA {owner.name}"
 
 
+def make_iaa_name_from_dict(owner):
+    return f"IAA {owner['name']}"
+
+
 def make_ba_name(owner):
     return f"BA {owner.name}"
 

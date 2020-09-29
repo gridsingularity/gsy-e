@@ -215,7 +215,8 @@ class SimulationEndpointBuffer:
             "percentage_completed": int(progress_info.percentage_completed)
         }
 
-        self.cumulative_grid_trades.update(area)
+        self.cumulative_grid_trades.update(self.area_result_dict,
+                                           self.flattened_area_core_stats_dict)
 
         self.market_bills.update(area)
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
@@ -242,7 +243,11 @@ class SimulationEndpointBuffer:
 
         self.bids_offers_trades.clear()
 
-        self.trade_profile.update(area)
+        self.trade_profile.update(
+            self.area_result_dict,
+            self.flattened_area_core_stats_dict,
+            self.current_market_time_slot_str
+        )
 
         self.update_area_aggregated_stats(area)
 
