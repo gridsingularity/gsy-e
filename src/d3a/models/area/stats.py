@@ -52,11 +52,11 @@ class AreaStats:
 
     def _extract_from_bills(self, trade_key):
         if self.current_market is None:
-            return None
+            return {}
         return {key: self.aggregated_stats["bills"][trade_key][key]
                 for key in ["earned", "spent", "bought", "sold"]} \
             if "bills" in self.aggregated_stats \
-               and trade_key in self.aggregated_stats["bills"] else None
+               and trade_key in self.aggregated_stats["bills"] else {}
 
     def update_area_market_stats(self):
         if self.current_market is not None:
