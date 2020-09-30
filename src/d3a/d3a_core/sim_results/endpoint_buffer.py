@@ -246,7 +246,11 @@ class SimulationEndpointBuffer:
 
         self.bids_offers_trades.clear()
 
-        self.trade_profile.update(area)
+        self.trade_profile.update(
+            self.area_result_dict,
+            self.flattened_area_core_stats_dict,
+            self.current_market_time_slot_str
+        )
 
         self.update_area_aggregated_stats(area)
 
