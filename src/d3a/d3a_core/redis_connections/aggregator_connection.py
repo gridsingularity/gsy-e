@@ -1,7 +1,15 @@
 import json
 import logging
 from threading import Lock
+from copy import deepcopy
 import d3a.constants
+
+
+default_market_info = {"device_info": None,
+                       "device_bill": None,
+                       "event": None,
+                       "grid_stats_tree": None,
+                       "area_uuid": None}
 
 
 class AggregatorHandler:
@@ -13,12 +21,14 @@ class AggregatorHandler:
         self.processing_batch_commands = {}
         self.responses_batch_commands = {}
         self.batch_market_cycle_events = {}
+        self.already_sent_grid_stats = False
         self.batch_tick_events = {}
         self.batch_trade_events = {}
         self.batch_finished_events = {}
         self.aggregator_device_mapping = {}
         self.device_aggregator_mapping = {}
         self.lock = Lock()
+        self.grid_buffer = {}
 
     def set_aggregator_device_mapping(self, aggregator_device):
         self.aggregator_device_mapping = aggregator_device
@@ -39,7 +49,15 @@ class AggregatorHandler:
 
         batch_event_dict[aggregator_uuid].append(event)
 
-    def add_batch_market_event(self, device_uuid, event):
+    def _add_grid_stats_to_market_event(self, device_uuid, global_objects):
+        market_info = deepcopy(default_market_info)
+        market_info["grid_stats_tree"] = global_objects.area_tree_dict
+        self._add_batch_event(device_uuid, market_info, self.batch_market_cycle_events)
+        self.already_sent_grid_stats = True
+
+    def add_batch_market_event(self, device_uuid, event, global_objects):
+        if self.already_sent_grid_stats or not global_objects.area_tree_dict:
+            self._add_grid_stats_to_market_event(device_uuid, global_objects)
         self._add_batch_event(device_uuid, event, self.batch_market_cycle_events)
 
     def add_batch_tick_event(self, device_uuid, event):
@@ -177,6 +195,7 @@ class AggregatorHandler:
         self._publish_all_events_from_one_type(redis, self.batch_tick_events, "tick")
         self._publish_all_events_from_one_type(redis, self.batch_trade_events, "trade")
         self._publish_all_events_from_one_type(redis, self.batch_finished_events, "finish")
+        self.already_sent_grid_stats = False
 
     def publish_all_commands_responses(self, redis):
         for transaction_id, batch_commands in self.responses_batch_commands.items():
