@@ -77,6 +77,7 @@ class Market:
         self.bids = {}  # type: Dict[str, Bid]
         self.bid_history = []  # type: List[Bid]
         self.trades = []  # type: List[Trade]
+        self.const_fee_rate = None
 
         self._create_fee_handler(grid_fee_type, transfer_fees)
         self.market_fee = 0
@@ -112,6 +113,7 @@ class Market:
                 self.fee_class = ConstantGridFees(0.0)
             else:
                 self.fee_class = ConstantGridFees(transfer_fees.transfer_fee_const)
+            self.const_fee_rate = self.fee_class.grid_fee_rate
         else:
             if transfer_fees.grid_fee_percentage is None or \
                     transfer_fees.grid_fee_percentage <= 0.0:

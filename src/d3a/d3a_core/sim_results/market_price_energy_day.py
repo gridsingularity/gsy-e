@@ -1,3 +1,21 @@
+"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
 from collections import OrderedDict
 from statistics import mean
 
@@ -88,4 +106,4 @@ class MarketPriceEnergyDay:
             fee = area_core_stats['grid_fee_constant'] / 100 \
                 if key_in_dict_and_not_none(area_core_stats, 'grid_fee_constant') else None
 
-            redis_output[node_uuid]["price-energy-day"][0].update({"fee_price": fee})
+            redis_output[node_uuid]["price-energy-day"][0].update({"grid_fee_constant": fee})
