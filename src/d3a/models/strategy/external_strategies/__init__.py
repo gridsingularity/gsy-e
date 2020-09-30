@@ -23,6 +23,7 @@ from d3a.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from collections import namedtuple
 from d3a.models.market.market_structures import Offer
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.utils import key_in_dict_and_not_none
 
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
@@ -116,7 +117,7 @@ class ExternalMixin:
     @staticmethod
     def _get_transaction_id(payload):
         data = json.loads(payload["data"])
-        if "transaction_id" in data and data["transaction_id"] is not None:
+        if key_in_dict_and_not_none(data, "transaction_id"):
             return data["transaction_id"]
         else:
             raise ValueError("transaction_id not in payload or None")

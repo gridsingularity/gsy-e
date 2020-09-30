@@ -113,6 +113,7 @@ class Area:
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets)
         log.debug(f"External connection {external_connection_available} for area {self.name}")
+        # print(self.name, external_connection_available)
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available is True else None
 
@@ -270,14 +271,24 @@ class Area:
                 and _trigger_event and ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.dispatcher.broadcast_balancing_market_cycle()
 
-        if self.redis_ext_conn is not None:
+        if not self.strategy and self.redis_ext_conn is not None:
             self.redis_ext_conn.event_market_cycle()
 
+    def _consume_commands_from_aggregator(self):
+        if self.redis_ext_conn is not None and self.redis_ext_conn.is_aggregator_controlled:
+            self.redis_ext_conn.aggregator.\
+                consume_all_area_commands(self.uuid,
+                                          self.redis_ext_conn.trigger_aggregator_commands)
+        elif self.strategy is not None \
+                and hasattr(self.strategy, "is_aggregator_controlled") \
+                and self.strategy.is_aggregator_controlled:
+            self.strategy.redis.aggregator.\
+                consume_all_area_commands(self.uuid,
+                                          self.strategy.trigger_aggregator_commands)
+
     def tick(self):
-        if self.redis_ext_conn is not None and not self.strategy:
-            if self.redis_ext_conn.is_aggregator_controlled:
-                self.redis_ext_conn.aggregator.consume_all_area_commands(
-                    self.uuid, self.redis_ext_conn.trigger_aggregator_commands)
+        self._consume_commands_from_aggregator()
+
         if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                 ConstSettings.IAASettings.MARKET_TYPE == 3:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:

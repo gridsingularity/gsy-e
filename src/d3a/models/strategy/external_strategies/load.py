@@ -206,10 +206,6 @@ class LoadExternalMixin(ExternalMixin):
             super()._area_reconfigure_prices(**kwargs)
 
     def event_tick(self):
-        if self.is_aggregator_controlled:
-            self.redis.aggregator.consume_all_area_commands(self.device.uuid,
-                                                            self.trigger_aggregator_commands)
-
         if not self.connected and not self.is_aggregator_controlled:
             super().event_tick()
         else:
