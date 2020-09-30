@@ -40,6 +40,8 @@ from d3a.constants import DATE_FORMAT
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit
 from d3a_interface.utils import generate_market_slot_list_from_config, str_to_pendulum_datetime,\
     format_datetime
+from d3a_interface.area_validator import validate_area
+from d3a_interface.exceptions import D3ASettingsException, D3ADeviceException, D3AAreaException
 
 d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
@@ -520,3 +522,10 @@ def get_current_market_maker_rate(market_slot):
         return mmr_rate[market_slot] if market_slot in mmr_rate else None
     else:
         return mmr_rate
+
+
+def validate_new_area_setting(**kwargs):
+    try:
+        validate_area(**kwargs)
+    except [D3ASettingsException, D3ADeviceException, D3AAreaException] as e:
+        log.error(f"{str(e)}")
