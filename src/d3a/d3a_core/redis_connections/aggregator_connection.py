@@ -175,10 +175,12 @@ class AggregatorHandler:
             area_commands = command_to_process["batch_commands"].pop(area_uuid, None)
             if area_commands is None:
                 continue
-            self.responses_batch_commands[transaction_id] = (aggregator_uuid, [
-                strategy_method({**command, 'transaction_id': transaction_id})
-                for command in area_commands
-            ])
+
+            response = [strategy_method({**command, 'transaction_id': transaction_id})
+                        for command in area_commands]
+            if transaction_id not in self.responses_batch_commands:
+                self.responses_batch_commands[transaction_id] = {aggregator_uuid: []}
+            self.responses_batch_commands[transaction_id][aggregator_uuid].append(response)
 
     def _publish_all_events_from_one_type(self, redis, event_dict, event_type):
         for aggregator_uuid, event_list in event_dict.items():
@@ -199,17 +201,17 @@ class AggregatorHandler:
 
     def publish_all_commands_responses(self, redis):
         for transaction_id, batch_commands in self.responses_batch_commands.items():
-            aggregator_uuid = batch_commands[0]
-            response_body = batch_commands[1]
-            redis.publish_json(
-                f"external-aggregator/{d3a.constants.COLLABORATION_ID}/"
-                f"{aggregator_uuid}/response/batch_commands",
-                {
-                    "command": "batch_commands",
-                    "transaction_id": transaction_id,
-                    "aggregator_uuid": aggregator_uuid,
-                    "responses": response_body
-                 }
-            )
+            for aggregator_uuid, response_body in batch_commands.items():
+                redis.publish_json(
+                    f"external-aggregator/{d3a.constants.COLLABORATION_ID}/"
+                    f"{aggregator_uuid}/response/batch_commands",
+                    {
+                        "command": "batch_commands",
+                        "transaction_id": transaction_id,
+                        "aggregator_uuid": aggregator_uuid,
+                        "responses": response_body
+                     }
+                )
+
         self.responses_batch_commands = {}
         self.processing_batch_commands = {}
