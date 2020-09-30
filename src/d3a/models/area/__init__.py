@@ -30,6 +30,7 @@ from d3a.models.strategy import BaseStrategy
 from d3a.d3a_core.util import TaggedLogWrapper
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.d3a_core.global_objects import GlobalObjects
 from d3a.constants import TIME_FORMAT
 from d3a.models.area.stats import AreaStats
 from d3a.models.area.event_dispatcher import DispatcherFactory
@@ -100,6 +101,7 @@ class Area:
         self.strategy = strategy
         self.appliance = appliance
         self._config = config
+        self._global_objects = None
         self.events = Events(event_list, self)
         self.budget_keeper = budget_keeper
         if budget_keeper:
@@ -332,6 +334,15 @@ class Area:
         if self.parent:
             return self.parent.config
         return GlobalConfig
+
+    @property
+    def global_objects(self):
+        if self._global_objects:
+            return self._global_objects
+        if self.parent:
+            return self.parent.global_objects
+        else:
+            return GlobalObjects()
 
     @property
     def bc(self):
