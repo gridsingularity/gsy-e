@@ -86,6 +86,6 @@ class MarketPriceEnergyDay:
 
             area_core_stats = core_stats.get(node_uuid, {})
             fee = area_core_stats['grid_fee_constant'] / 100 \
-                if key_in_dict_and_not_none(area_core_stats, 'grid_fee_constant') else 0.
+                if key_in_dict_and_not_none(area_core_stats, 'grid_fee_constant') else None
 
             redis_output[node_uuid]["price-energy-day"][0].update({"fee_price": fee})

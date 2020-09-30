@@ -33,6 +33,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
+from d3a.models.market.grid_fees.constant_grid_fees import ConstantGridFees
 
 _NO_VALUE = {
     'min': None,
@@ -161,7 +162,8 @@ class SimulationEndpointBuffer:
             for trade in area.current_market.trades:
                 core_stats_dict['trades'].append(trade.serializable_dict())
         if getattr(area, 'strategy', None) is None and area.current_market is not None:
-            core_stats_dict['grid_fee_constant'] = area.current_market.fee_class.grid_fee_rate
+            core_stats_dict['grid_fee_constant'] = area.current_market.fee_class.grid_fee_rate \
+                if isinstance(area.current_market.fee_class, ConstantGridFees) else None
 
         if isinstance(area.strategy, PVStrategy):
             core_stats_dict['pv_production_kWh'] = \
