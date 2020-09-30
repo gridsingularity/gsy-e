@@ -113,7 +113,6 @@ class Area:
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets)
         log.debug(f"External connection {external_connection_available} for area {self.name}")
-        # print(self.name, external_connection_available)
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available is True else None
 
