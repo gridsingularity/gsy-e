@@ -76,6 +76,7 @@ class TestUnmatchedLoad(unittest.TestCase):
             mock_market = MagicMock(spec=Market)
             mock_market.time_slot = timeslot
             mock_market.time_slot_str = timeslot.format(DATE_TIME_FORMAT)
+            mock_market.const_fee_rate = None
 
             self.area1._markets.past_markets[timeslot] = deepcopy(mock_market)
             self.area1._markets.past_markets[timeslot].trades = [
@@ -207,6 +208,7 @@ class TestUnmatchedLoad(unittest.TestCase):
             mock_market = MagicMock(spec=Market)
             mock_market.time_slot = timeslot
             mock_market.time_slot_str = timeslot.format(DATE_TIME_FORMAT)
+            mock_market.const_fee_rate = None
             self.area1._markets.past_markets[timeslot] = deepcopy(mock_market)
             self.area1._markets.past_markets[timeslot].trades = [
                 Trade("123", timeslot,
@@ -325,6 +327,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         mock_market = MagicMock(spec=Market)
         mock_market.time_slot = timeslot
         mock_market.time_slot_str = timeslot.format(DATE_TIME_FORMAT)
+        mock_market.const_fee_rate = None
         epb.current_market_time_slot_str = mock_market.time_slot_str
         self.grid._markets.past_markets[timeslot] = deepcopy(mock_market)
         self.area1._markets.past_markets[timeslot] = deepcopy(mock_market)
@@ -346,6 +349,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         mock_market = MagicMock(spec=Market)
         mock_market.time_slot = timeslot
         mock_market.time_slot_str = timeslot.format(DATE_TIME_FORMAT)
+        mock_market.const_fee_rate = None
         epb.current_market_time_slot_str = mock_market.time_slot_str
         self.grid._markets.past_markets[timeslot] = deepcopy(mock_market)
         epb._populate_core_stats(self.grid)
