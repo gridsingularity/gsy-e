@@ -31,6 +31,7 @@ from d3a.constants import DATE_TIME_FORMAT, TIME_ZONE
 from d3a.d3a_core.sim_results.export_unmatched_loads import get_number_of_unmatched_loads
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.models.market.market_structures import Trade, Bid
+from d3a.models.market.grid_fees.constant_grid_fees import ConstantGridFees
 
 
 class TestUnmatchedLoad(unittest.TestCase):
@@ -76,6 +77,7 @@ class TestUnmatchedLoad(unittest.TestCase):
             mock_market = MagicMock(spec=Market)
             mock_market.time_slot = timeslot
             mock_market.time_slot_str = timeslot.format(DATE_TIME_FORMAT)
+            mock_market.fee_class = ConstantGridFees(0.0)
 
             self.area1._markets.past_markets[timeslot] = deepcopy(mock_market)
             self.area1._markets.past_markets[timeslot].trades = [
@@ -207,6 +209,7 @@ class TestUnmatchedLoad(unittest.TestCase):
             mock_market = MagicMock(spec=Market)
             mock_market.time_slot = timeslot
             mock_market.time_slot_str = timeslot.format(DATE_TIME_FORMAT)
+            mock_market.fee_class = ConstantGridFees(0.0)
             self.area1._markets.past_markets[timeslot] = deepcopy(mock_market)
             self.area1._markets.past_markets[timeslot].trades = [
                 Trade("123", timeslot,
@@ -325,6 +328,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         mock_market = MagicMock(spec=Market)
         mock_market.time_slot = timeslot
         mock_market.time_slot_str = timeslot.format(DATE_TIME_FORMAT)
+        mock_market.fee_class = ConstantGridFees(0.0)
         epb.current_market_time_slot_str = mock_market.time_slot_str
         self.grid._markets.past_markets[timeslot] = deepcopy(mock_market)
         self.area1._markets.past_markets[timeslot] = deepcopy(mock_market)
@@ -346,6 +350,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         mock_market = MagicMock(spec=Market)
         mock_market.time_slot = timeslot
         mock_market.time_slot_str = timeslot.format(DATE_TIME_FORMAT)
+        mock_market.fee_class = ConstantGridFees(0.0)
         epb.current_market_time_slot_str = mock_market.time_slot_str
         self.grid._markets.past_markets[timeslot] = deepcopy(mock_market)
         epb._populate_core_stats(self.grid)
