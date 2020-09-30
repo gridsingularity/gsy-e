@@ -2,6 +2,7 @@ from collections import OrderedDict
 from statistics import mean
 
 from d3a.d3a_core.util import round_floats_for_ui
+from d3a_interface.utils import key_in_dict_and_not_none
 
 
 class MarketPriceEnergyDay:
@@ -12,23 +13,20 @@ class MarketPriceEnergyDay:
         self.should_export_plots = should_export_plots
 
     @classmethod
-    def gather_trade_rates(cls, area_dict, core_stats, current_market_slot, price_lists,
-                           fee_lists):
+    def gather_trade_rates(cls, area_dict, core_stats, current_market_slot, price_lists):
         if area_dict['children'] == []:
-            return price_lists, fee_lists
+            return price_lists
 
-        cls.gather_rates_one_market(area_dict, core_stats, current_market_slot, price_lists,
-                                    fee_lists)
+        cls.gather_rates_one_market(area_dict, core_stats, current_market_slot, price_lists)
 
         for child in area_dict['children']:
-            price_lists, fee_lists = cls.gather_trade_rates(child, core_stats, current_market_slot,
-                                                            price_lists, fee_lists)
+            price_lists = cls.gather_trade_rates(child, core_stats, current_market_slot,
+                                                 price_lists)
 
-        return price_lists, fee_lists
+        return price_lists
 
     @classmethod
-    def gather_rates_one_market(cls, area_dict, core_stats, current_market_slot, price_lists,
-                                fee_lists):
+    def gather_rates_one_market(cls, area_dict, core_stats, current_market_slot, price_lists):
         if area_dict['uuid'] not in price_lists:
             price_lists[area_dict['uuid']] = OrderedDict()
         if current_market_slot not in price_lists[area_dict['uuid']].keys():
@@ -40,26 +38,15 @@ class MarketPriceEnergyDay:
         ]
         price_lists[area_dict['uuid']][current_market_slot].extend(trade_rates)
 
-        if area_dict['uuid'] not in fee_lists:
-            fee_lists[area_dict['uuid']] = OrderedDict()
-        if current_market_slot not in fee_lists[area_dict['uuid']].keys():
-            fee_lists[area_dict['uuid']][current_market_slot] = []
-        fee_rates = [
-            # Convert from cents to euro
-            t['fee_price'] / 100.0 / t['energy']
-            for t in core_stats.get(area_dict['uuid'], {}).get('trades', [])
-        ]
-        fee_lists[area_dict['uuid']][current_market_slot].extend(fee_rates)
-
     def update(self, area_result_dict={}, core_stats={}, current_market_slot=None):
         if current_market_slot is None:
             return
-        current_price_lists, current_fee_lists = self.gather_trade_rates(
-            area_result_dict, core_stats, current_market_slot, {}, {}
+        current_price_lists = self.gather_trade_rates(
+            area_result_dict, core_stats, current_market_slot, {}
         )
         price_energy_redis_output = {}
         self._convert_output_format(current_price_lists, price_energy_redis_output,
-                                    current_fee_lists)
+                                    core_stats, current_market_slot)
         if self.should_export_plots:
             self.calculate_csv_output(area_result_dict, price_energy_redis_output)
         else:
@@ -83,16 +70,16 @@ class MarketPriceEnergyDay:
             self.calculate_csv_output(child, price_energy_redis_output)
 
     @staticmethod
-    def _convert_output_format(price_energy, redis_output, fees):
-        for node_name, trade_rates in price_energy.items():
-            if node_name not in redis_output:
-                redis_output[node_name] = {
+    def _convert_output_format(price_energy, redis_output, core_stats, current_market_slot):
+        for node_uuid, trade_rates in price_energy.items():
+            if node_uuid not in redis_output:
+                redis_output[node_uuid] = {
                     "price-currency": "Euros",
                     "load-unit": "kWh",
                     "price-energy-day": [],
                     "grid-fee-rate": []
                 }
-            redis_output[node_name]["price-energy-day"] = [
+            redis_output[node_uuid]["price-energy-day"] = [
                 {
                     "time": timeslot,
                     "av_price": round_floats_for_ui(mean(trades) if len(trades) > 0 else 0),
@@ -100,12 +87,10 @@ class MarketPriceEnergyDay:
                     "max_price": round_floats_for_ui(max(trades) if len(trades) > 0 else 0),
                 } for timeslot, trades in trade_rates.items()
             ]
-        for node_name, fee_rates in fees.items():
-            redis_output[node_name]["grid-fee-rate"] = [
-                {
-                    "time": timeslot,
-                    "av_price": round_floats_for_ui(mean(fee_rate) if len(fee_rate) > 0 else 0),
-                    "min_price": round_floats_for_ui(min(fee_rate) if len(fee_rate) > 0 else 0),
-                    "max_price": round_floats_for_ui(max(fee_rate) if len(fee_rate) > 0 else 0),
-                } for timeslot, fee_rate in fee_rates.items()
-            ]
+
+            area_core_stats = core_stats.get(node_uuid, {})
+            fee = area_core_stats['grid_fee_constant'] / 100 \
+                if key_in_dict_and_not_none(area_core_stats, 'grid_fee_constant') else 0.
+            fee_dict = {"time": current_market_slot, "value": fee}
+
+            redis_output[node_uuid]["grid-fee-rate"].append(fee_dict)

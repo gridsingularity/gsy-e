@@ -160,6 +160,8 @@ class SimulationEndpointBuffer:
         if hasattr(area.current_market, 'trades'):
             for trade in area.current_market.trades:
                 core_stats_dict['trades'].append(trade.serializable_dict())
+        if getattr(area, 'strategy', None) is None and area.current_market is not None:
+            core_stats_dict['grid_fee_constant'] = area.current_market.fee_class.grid_fee_rate
 
         if isinstance(area.strategy, PVStrategy):
             core_stats_dict['pv_production_kWh'] = \
