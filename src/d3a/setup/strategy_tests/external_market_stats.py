@@ -46,7 +46,7 @@ def get_setup(config):
                     Area('H1 Storage2', strategy=StorageStrategy(initial_soc=100,
                                                                  battery_capacity_kWh=20),
                          appliance=SwitchableAppliance()),
-                ],
+                ], external_connection_available=True
             ),
             Area(
                 'House 2',
