@@ -34,8 +34,8 @@ ALICE_ADDRESS = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
 
 test_value = 10000000000000000
 test_rate = 12
-main_address = "5DdvvTxEB4DgZ8AyK2vixr4rjEoD2y7PhvB1GJua1t8jhA6f"
-mnemonic = "buddy shy mass rather proud draw quit hundred romance cover dynamic gadget"
+main_address = "ADDRESS_OF_YOUR_DEPLOYED_CONTRACT"
+mnemonic = "MNEMONIC_TO_RESTORE_YOUR_KEYPAIR"
 default_url = "ws://127.0.0.1:9944"
 
 
