@@ -21,12 +21,19 @@ from d3a.d3a_core.exceptions import InvalidTrade
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.models.market.blockchain_utils import get_function_metadata, \
     address_to_hex, swap_byte_order, BOB_ADDRESS, ALICE_ADDRESS, \
-    test_value, test_rate, main_address, mnemonic, hex2
+    test_value, test_rate, main_address, mnemonic, hex2, default_url
 from substrateinterface import SubstrateInterface, SubstrateRequestException, Keypair
 from pathlib import Path
 import platform
 import random
+import logging
 
+logging.basicConfig(filename="trades.log",
+                    format='%(asctime)s %(message)s',
+                    filemode='w')
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 if platform.python_implementation() != "PyPy" and \
         ConstSettings.BlockchainSettings.BC_INSTALLED is True:
@@ -69,13 +76,12 @@ class SubstrateBlockchainInterface():
     def __init__(self):
         self.contracts = {'main': main_address}
         self.substrate = SubstrateInterface(
-            url="ws://127.0.0.1:9944",
+            url=default_url,
             address_type=42,
             type_registry_preset='default'
         )
 
-    def simple_contract_call(self, contract_address, function, path):
-        data = get_function_metadata(function, path)
+    def compose_call(self, data, contract_address):
         call = self.substrate.compose_call(
             call_module='Contracts',
             call_function='call',
@@ -88,24 +94,18 @@ class SubstrateBlockchainInterface():
         )
         return call
 
-    def storage_contract_call(self, contract_address, function, path):
-        trade_id = random.randint(10, 16)
-        print('TRADE ID {}'.format(trade_id))
+    def simple_contract_call(self, contract_address, function, path):
+        data = get_function_metadata(function, path)
+        call = self.compose_call(data, contract_address)
+        return call
 
-        data = get_function_metadata(function, path) + str(trade_id) + \
-            address_to_hex(BOB_ADDRESS) + address_to_hex(ALICE_ADDRESS) + \
+    def storage_contract_call(self, contract_address, function, path):
+        trade_id = random.randint(10, 32)
+        logger.info('TRADE ID {}'.format(trade_id))
+        data = get_function_metadata(function, path) + hex2(trade_id) + \
+            address_to_hex(ALICE_ADDRESS) + address_to_hex(BOB_ADDRESS) + \
             swap_byte_order(hex2(test_value)) + '000000000000000000' + hex2(test_rate)
-        print('DATA {}'.format(data))
-        call = self.substrate.compose_call(
-            call_module='Contracts',
-            call_function='call',
-            call_params={
-                'dest': contract_address,
-                'value': 1 * 10**18,
-                'gas_limit': 1000000000000,
-                'data': data
-            }
-        )
+        call = self.compose_call(data, contract_address)
         return trade_id, call
 
     def create_new_offer(self, energy, price, seller):
