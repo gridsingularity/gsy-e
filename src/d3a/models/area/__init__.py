@@ -30,6 +30,7 @@ from d3a.models.strategy import BaseStrategy
 from d3a.d3a_core.util import TaggedLogWrapper
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.d3a_core.global_objects import GlobalObjects
 from d3a.constants import TIME_FORMAT
 from d3a.models.area.stats import AreaStats
 from d3a.models.area.event_dispatcher import DispatcherFactory
@@ -100,6 +101,7 @@ class Area:
         self.strategy = strategy
         self.appliance = appliance
         self._config = config
+        self._global_objects = None
         self.events = Events(event_list, self)
         self.budget_keeper = budget_keeper
         if budget_keeper:
@@ -158,6 +160,12 @@ class Area:
         self.grid_fee_constant = transfer_fee_const
         self.grid_fee_percentage = grid_fee_percentage
 
+    def get_grid_fee(self):
+        grid_fee_type = self.config.grid_fee_type \
+            if self.config is not None \
+            else ConstSettings.IAASettings.GRID_FEE_TYPE
+        return self.grid_fee_constant if grid_fee_type == 1 else self.grid_fee_percentage
+
     def _convert_area_throughput_kva_to_kwh(self, import_capacity_kVA, export_capacity_kVA):
         self.import_capacity_kWh = \
             import_capacity_kVA * self.config.slot_length.total_minutes() / 60.0 \
@@ -203,7 +211,7 @@ class Area:
         self.active = True
         self.dispatcher.broadcast_activate()
         if self.redis_ext_conn is not None:
-            self.redis_ext_conn.sub_to_area_event()
+            self.redis_ext_conn.sub_to_external_channels()
 
     def deactivate(self):
         self._cycle_markets(deactivate=True)
@@ -244,6 +252,7 @@ class Area:
 
         # area_market_stats have to updated when cycling market of each area:
         self.stats.update_area_market_stats()
+        self.stats.aggregate_exported_imported_energy(self)
 
         # Markets range from one slot to market_count into the future
         changed = self._markets.create_future_markets(self.now, True, self)
@@ -263,10 +272,24 @@ class Area:
                 and _trigger_event and ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.dispatcher.broadcast_balancing_market_cycle()
 
-        if self.redis_ext_conn is not None:
+        if not self.strategy and self.redis_ext_conn is not None:
             self.redis_ext_conn.event_market_cycle()
 
+    def _consume_commands_from_aggregator(self):
+        if self.redis_ext_conn is not None and self.redis_ext_conn.is_aggregator_controlled:
+            self.redis_ext_conn.aggregator.\
+                consume_all_area_commands(self.uuid,
+                                          self.redis_ext_conn.trigger_aggregator_commands)
+        elif self.strategy is not None \
+                and hasattr(self.strategy, "is_aggregator_controlled") \
+                and self.strategy.is_aggregator_controlled:
+            self.strategy.redis.aggregator.\
+                consume_all_area_commands(self.uuid,
+                                          self.strategy.trigger_aggregator_commands)
+
     def tick(self):
+        self._consume_commands_from_aggregator()
+
         if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                 ConstSettings.IAASettings.MARKET_TYPE == 3:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
@@ -310,6 +333,15 @@ class Area:
         if self.parent:
             return self.parent.config
         return GlobalConfig
+
+    @property
+    def global_objects(self):
+        if self._global_objects:
+            return self._global_objects
+        if self.parent:
+            return self.parent.global_objects
+        else:
+            return GlobalObjects()
 
     @property
     def bc(self):

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from d3a.d3a_core.sim_results.area_statistics import MarketPriceEnergyDay
+from d3a.d3a_core.sim_results.market_price_energy_day import MarketPriceEnergyDay
 from d3a.d3a_core.sim_results.area_throughput_stats import AreaThroughputStats
 from d3a.d3a_core.sim_results.bills import MarketEnergyBills, CumulativeBills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
@@ -28,7 +28,6 @@ from d3a_interface.utils import convert_pendulum_to_str_in_dict
 from d3a.d3a_core.sim_results.energy_trade_profile import EnergyTradeProfile
 from d3a.d3a_core.sim_results.cumulative_grid_trades import CumulativeGridTrades
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
@@ -132,8 +131,7 @@ class SimulationEndpointBuffer:
             "job_id": self.job_id,
             "random_seed": self.random_seed,
             "unmatched_loads": self.market_unmatched_loads.unmatched_loads,
-            "price_energy_day": convert_pendulum_to_str_in_dict(
-                self.price_energy_day.csv_output, {}),
+            "price_energy_day": self.price_energy_day.csv_output,
             "cumulative_grid_trades":
                 self.cumulative_grid_trades.current_trades,
             "bills": self.market_bills.bills_results,
@@ -164,10 +162,10 @@ class SimulationEndpointBuffer:
                 core_stats_dict['trades'].append(trade.serializable_dict())
         if hasattr(area.current_market, 'market_fee'):
             core_stats_dict['market_fee'] = area.current_market.market_fee
+        if getattr(area, 'strategy', None) is None and area.current_market is not None:
+            core_stats_dict['grid_fee_constant'] = area.current_market.const_fee_rate
 
-        if isinstance(area.strategy, PVStrategy) or \
-                isinstance(area.strategy, PVUserProfileStrategy) or \
-                isinstance(area.strategy, PVPredefinedStrategy):
+        if isinstance(area.strategy, PVStrategy):
             core_stats_dict['pv_production_kWh'] = \
                 area.strategy.energy_production_forecast_kWh.get(self.current_market_time_slot,
                                                                  0)
@@ -220,10 +218,8 @@ class SimulationEndpointBuffer:
             "percentage_completed": int(progress_info.percentage_completed)
         }
 
-        self.cumulative_grid_trades.update(area)
-        # print(f"area_result_dict: {self.area_result_dict}")
-        # print(f"flattened_area_core_stats_dict: {self.flattened_area_core_stats_dict}")
-
+        self.cumulative_grid_trades.update(self.area_result_dict,
+                                           self.flattened_area_core_stats_dict)
         if self.current_market_time_slot_str != "":
             self.market_bills.update(self.area_result_dict, self.flattened_area_core_stats_dict)
             # self.update_area_aggregated_stats(self.area_result_dict)
@@ -242,7 +238,9 @@ class SimulationEndpointBuffer:
                                       self.flattened_area_core_stats_dict,
                                       self.current_market_time_slot_str)
 
-        self.price_energy_day.update(area)
+        self.price_energy_day.update(self.area_result_dict,
+                                     self.flattened_area_core_stats_dict,
+                                     self.current_market_time_slot_str)
 
         self.kpi.update_kpis_from_area(area)
 
@@ -252,7 +250,11 @@ class SimulationEndpointBuffer:
 
         self.bids_offers_trades.clear()
 
-        self.trade_profile.update(area)
+        self.trade_profile.update(
+            self.area_result_dict,
+            self.flattened_area_core_stats_dict,
+            self.current_market_time_slot_str
+        )
 
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or \
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:

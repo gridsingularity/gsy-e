@@ -4,6 +4,7 @@ Feature: Infinite Bus tests
     Given we have a scenario named <scenario>
     And d3a is installed
     And the market type is <market_type>
+    And export is_needed
     When we run the simulation with setup file <scenario> and parameters [24, 60, 60, 1]
     Then Infinite Bus buys energy that is not needed from the PV and sells to the load
   Examples: Market Type

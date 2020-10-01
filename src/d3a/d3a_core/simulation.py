@@ -50,6 +50,8 @@ from d3a.d3a_core.exceptions import D3AException
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
+from d3a.d3a_core.global_objects import GlobalObjects
+import d3a.constants
 
 
 if platform.python_implementation() != "PyPy" and \
@@ -91,6 +93,7 @@ class Simulation:
         )
         self.progress_info = SimulationProgressInfo()
         self.simulation_config = simulation_config
+        self.global_objects = GlobalObjects()
         self.use_repl = repl
         self.export_on_finish = not no_export
         self.export_path = export_path
@@ -169,6 +172,7 @@ class Simulation:
             log.info("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
+        self.area._global_objects = self.global_objects
         self.endpoint_buffer = SimulationEndpointBuffer(
             redis_job_id, self.initial_params,
             self.area, self.should_export_results)
@@ -255,7 +259,6 @@ class Simulation:
 
     def _update_and_send_results(self, is_final=False):
         self.endpoint_buffer.update_stats(self.area, self.status, self.progress_info)
-        import d3a.constants
         if self.export_on_finish and self.should_export_results and \
                 self.area.current_market is not None and d3a.constants.D3A_TEST_RUN:
             self.export.raw_data_to_json(
@@ -321,6 +324,8 @@ class Simulation:
 
             self.area._cycle_markets()
 
+            self.global_objects.update(self.area)
+
             gc.collect()
             process = psutil.Process(os.getpid())
             mbs_used = process.memory_info().rss / 1000000.0
@@ -367,11 +372,6 @@ class Simulation:
             self._update_and_send_results()
             if self.export_on_finish and self.should_export_results:
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
-                # if self.area.current_market is not None:
-                #     self.export.raw_data_to_json(
-                #         self.area.current_market.time_slot_str,
-                #         self.endpoint_buffer.flattened_area_core_stats_dict
-                #     )
 
         self.sim_status = "finished"
         self.deactivate_areas(self.area)

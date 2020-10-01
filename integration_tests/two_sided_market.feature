@@ -3,6 +3,7 @@ Feature: Two sided market tests
   Scenario: One storage, one load
      Given we have a scenario named two_sided_market/one_load_one_storage
      And d3a is installed
+     And export is_needed
      When we run the simulation with setup file two_sided_market.one_load_one_storage and parameters [24, 60, 60, 1]
      Then the storage is never buying energy and is always selling energy
      And the storage final SOC is 10%
@@ -12,6 +13,7 @@ Feature: Two sided market tests
   Scenario: One pv, one load
      Given we have a scenario named two_sided_market/one_pv_one_load
      And d3a is installed
+     And export is_needed
      When we run the simulation with setup file two_sided_market.one_pv_one_load and parameters [24, 60, 60, 4]
      Then the load has no unmatched loads
      And the PV always provides constant power according to load demand
@@ -20,6 +22,7 @@ Feature: Two sided market tests
   Scenario: One storage, one pv
      Given we have a scenario named two_sided_market/one_pv_one_storage
      And d3a is installed
+     And export is_needed
      When we run the simulation with setup file two_sided_market.one_pv_one_storage and parameters [24, 60, 60, 4]
      Then the storage is never selling energy
      And the storage final SOC is 100%
@@ -29,6 +32,7 @@ Feature: Two sided market tests
   Scenario: 5 pv, one load
      Given we have a scenario named two_sided_market/one_load_5_pv_partial
      And d3a is installed
+     And export is_needed
      When we run the simulation with setup file two_sided_market.one_load_5_pv_partial and parameters [24, 60, 60, 4]
      Then the load has unmatched loads
      And the H1 General Load bid is partially fulfilled by the PV offers
@@ -36,6 +40,7 @@ Feature: Two sided market tests
   Scenario: 5 pv, one storage
      Given we have a scenario named two_sided_market/one_storage_5_pv_partial
      And d3a is installed
+    And export is_needed
      When we run the simulation with setup file two_sided_market.one_storage_5_pv_partial and parameters [24, 60, 60, 1]
      Then the H1 Storage bid is partially fulfilled by the PV offers
 
@@ -48,6 +53,7 @@ Feature: Two sided market tests
   Scenario: LoadHoursStrategy buys energy in the min energy rate
     Given we have a scenario named two_sided_market/one_cep_one_load
     And d3a is installed
+    And export is_needed
     When we run the simulation with setup file two_sided_market.one_cep_one_load and parameters [24, 60, 60, 4]
     Then Energy producer is Commercial Energy Producer & consumer is H1 General Load
     And LoadHoursStrategy buys energy at the final_buying_rate
