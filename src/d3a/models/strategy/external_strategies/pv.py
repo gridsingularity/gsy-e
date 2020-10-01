@@ -206,9 +206,9 @@ class PVExternalMixin(ExternalMixin):
         if not self.connected:
             super().event_activate_price()
 
-    def _area_reconfigure_prices(self, validate=True, **kwargs):
+    def _area_reconfigure_prices(self, **kwargs):
         if not self.connected:
-            super()._area_reconfigure_prices(validate, **kwargs)
+            super()._area_reconfigure_prices(**kwargs)
 
     def event_tick(self):
         if not self.connected and not self.is_aggregator_controlled:

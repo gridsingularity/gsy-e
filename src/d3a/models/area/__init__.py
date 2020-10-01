@@ -40,7 +40,7 @@ from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.area_validator import validate_area
 from d3a.models.area.redis_external_market_connection import RedisMarketExternalConnection
 from d3a_interface.utils import key_in_dict_and_not_none
-from d3a.d3a_core.util import validate_new_area_setting
+from d3a_interface.exceptions import D3AException
 import d3a.constants
 
 log = getLogger(__name__)
@@ -128,19 +128,26 @@ class Area:
                 if key_in_dict_and_not_none(kwargs, 'grid_fee_constant') else 0
             grid_fee_percentage = kwargs["grid_fee_percentage"] \
                 if key_in_dict_and_not_none(kwargs, 'grid_fee_percentage') else 0
-
-            validate_new_area_setting(grid_fee_percentage=grid_fee_percentage,
-                                      grid_fee_constant=grid_fee_constant)
-            self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
+            try:
+                validate_area(grid_fee_percentage=grid_fee_percentage,
+                              grid_fee_constant=grid_fee_constant)
+                self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
+            except D3AException as e:
+                log.error(str(e))
 
         if key_in_dict_and_not_none(kwargs, 'baseline_peak_energy_import_kWh'):
-            self.baseline_peak_energy_import_kWh = kwargs['baseline_peak_energy_import_kWh']
-            validate_new_area_setting(
-                baseline_peak_energy_import_kWh=self.baseline_peak_energy_import_kWh)
+            try:
+                validate_area(baseline_peak_energy_import_kWh=self.baseline_peak_energy_import_kWh)
+                self.baseline_peak_energy_import_kWh = kwargs['baseline_peak_energy_import_kWh']
+            except D3AException as e:
+                log.error(str(e))
+
         if key_in_dict_and_not_none(kwargs, 'baseline_peak_energy_export_kWh'):
-            self.baseline_peak_energy_export_kWh = kwargs['baseline_peak_energy_export_kWh']
-            validate_new_area_setting(
-                baseline_peak_energy_export_kWh=self.baseline_peak_energy_export_kWh)
+            try:
+                validate_area(baseline_peak_energy_export_kWh=self.baseline_peak_energy_export_kWh)
+                self.baseline_peak_energy_export_kWh = kwargs['baseline_peak_energy_export_kWh']
+            except D3AException as e:
+                log.error(str(e))
 
         if key_in_dict_and_not_none(kwargs, 'import_capacity_kVA') or \
                 key_in_dict_and_not_none(kwargs, 'export_capacity_kVA'):
@@ -148,9 +155,12 @@ class Area:
                 if key_in_dict_and_not_none(kwargs, 'import_capacity_kVA') else None
             export_capacity_kVA = kwargs["export_capacity_kVA"] \
                 if key_in_dict_and_not_none(kwargs, 'export_capacity_kVA') else None
-            validate_new_area_setting(import_capacity_kVA=import_capacity_kVA,
-                                      export_capacity_kVA=export_capacity_kVA)
-            self._convert_area_throughput_kva_to_kwh(import_capacity_kVA, export_capacity_kVA)
+            try:
+                validate_area(import_capacity_kVA=import_capacity_kVA,
+                              export_capacity_kVA=export_capacity_kVA)
+                self._convert_area_throughput_kva_to_kwh(import_capacity_kVA, export_capacity_kVA)
+            except D3AException as e:
+                log.error(str(e))
 
     def _set_grid_fees(self, transfer_fee_const, grid_fee_percentage):
         grid_fee_type = self.config.grid_fee_type \

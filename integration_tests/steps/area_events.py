@@ -192,6 +192,7 @@ def load_consumes_variable_energy_with_rate_between(context, energy, rate, start
         assert market.trades[0].seller == "IAA House 1" and \
             market.trades[0].buyer == "Grid Load"
         assert isclose(market.trades[0].offer.energy, energy)
+        print(market.trades[0].offer.price / market.trades[0].offer.energy, rate)
         assert isclose(market.trades[0].offer.price / market.trades[0].offer.energy, rate)
 
 

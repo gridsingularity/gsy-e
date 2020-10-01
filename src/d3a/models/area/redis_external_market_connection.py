@@ -17,10 +17,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import d3a
+from logging import getLogger
+
 from d3a_interface.area_validator import validate_area
 from d3a_interface.utils import key_in_dict_and_not_none
+from d3a_interface.exceptions import D3AException
 from d3a.models.strategy.external_strategies import CommandTypeNotSupported, register_area, \
     unregister_area
+
+log = getLogger(__name__)
 
 
 class RedisMarketExternalConnection:
@@ -97,8 +102,14 @@ class RedisMarketExternalConnection:
         grid_fees_response_channel = f"{self.channel_prefix}/response/grid_fees"
         payload_data = payload["data"] \
             if isinstance(payload["data"], dict) else json.loads(payload["data"])
-        validate_area(grid_fee_percentage=payload_data.get("fee_percent", None),
-                      grid_fee_constant=payload_data.get("fee_const", None))
+        try:
+            print("validate")
+            validate_area(grid_fee_percentage=payload_data.get("fee_percent", None),
+                          grid_fee_constant=payload_data.get("fee_const", None))
+        except D3AException as e:
+            log.error(str(e))
+            return
+
         base_dict = {"area_uuid": self.area.uuid,
                      "command": "grid_fees"}
         if "fee_const" in payload_data and payload_data["fee_const"] is not None and \

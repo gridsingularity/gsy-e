@@ -26,7 +26,7 @@ from colorlog.colorlog import ColoredFormatter
 from multiprocessing import Process
 from pendulum import DateTime, today
 
-from d3a.d3a_core.exceptions import D3AException
+from d3a_interface.exceptions import D3AException
 from d3a.models.config import SimulationConfig
 
 from d3a_interface.constants_limits import ConstSettings
