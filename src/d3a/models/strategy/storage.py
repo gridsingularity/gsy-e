@@ -73,7 +73,6 @@ class StorageStrategy(BidEnabledStrategy):
                  balancing_energy_ratio: tuple = (BalancingSettings.OFFER_DEMAND_RATIO,
                                                   BalancingSettings.OFFER_SUPPLY_RATIO)):
 
-        # TODO: Add validation for live events
         if update_interval is None:
             update_interval = \
                 duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
