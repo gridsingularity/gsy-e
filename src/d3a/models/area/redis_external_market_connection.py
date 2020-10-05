@@ -149,7 +149,7 @@ class RedisMarketExternalConnection:
         current_market_info = self.area.current_market.info
         current_market_info["current_market_fee"] = \
             self.area.current_market.fee_class.grid_fee_rate
-        current_market_info["next_market_fee"] = str(self.area.get_grid_fee())
+        current_market_info["next_market_fee"] = self.area.get_grid_fee()
         current_market_info["last_market_stats"] = \
             self.area.stats.get_price_stats_current_market()
         current_market_info["self_sufficiency"] = \
