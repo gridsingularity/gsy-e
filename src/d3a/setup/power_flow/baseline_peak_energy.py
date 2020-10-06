@@ -40,10 +40,6 @@ def get_setup(config):
                     grid_fee_percentage=0, grid_fee_constant=0,
                     baseline_peak_energy_import_kWh=0.4
                 ),
-                Area(
-                    'House 1 2', [],
-                    import_capacity_kVA=2.0, export_capacity_kVA=2.0
-                ),
                 ], baseline_peak_energy_import_kWh=0.4, import_capacity_kVA=2.0
               ),
             Area('Neighborhood 2',

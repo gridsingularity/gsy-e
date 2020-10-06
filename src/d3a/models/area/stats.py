@@ -22,6 +22,8 @@ from statistics import mean, median
 from d3a_interface.constants_limits import DATE_TIME_FORMAT
 from d3a.constants import TIME_ZONE
 from d3a import limit_float_precision
+from d3a.d3a_core.util import area_name_from_area_or_iaa_name, add_or_create_key, \
+    area_sells_to_child, child_buys_from_area
 
 default_trade_stats_dict = {
     "min_trade_rate": None,
@@ -169,3 +171,24 @@ class AreaStats:
                     self._get_market_area_throughput(time_slot)
 
         return out_dict
+
+    def aggregate_exported_imported_energy(self, area):
+        if area.current_market is None:
+            return None
+
+        self.imported_energy = {}
+        self.exported_energy = {}
+
+        child_names = [area_name_from_area_or_iaa_name(c.name) for c in area.children]
+        if getattr(self.current_market, 'trades', None) is not None:
+            for trade in self.current_market.trades:
+                if child_buys_from_area(trade, area.name, child_names):
+                    add_or_create_key(self.exported_energy, self.current_market.time_slot,
+                                      trade.offer.energy)
+                if area_sells_to_child(trade, area.name, child_names):
+                    add_or_create_key(self.imported_energy, self.current_market.time_slot,
+                                      trade.offer.energy)
+        if self.current_market.time_slot not in self.imported_energy:
+            self.imported_energy[self.current_market.time_slot] = 0.
+        if self.current_market.time_slot not in self.exported_energy:
+            self.exported_energy[self.current_market.time_slot] = 0.

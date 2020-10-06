@@ -151,6 +151,7 @@ class SimulationEndpointBuffer:
             self.flattened_area_core_stats_dict[area.uuid] = {}
         if self.current_market_time_slot_str == "":
             return
+        area.stats.aggregate_exported_imported_energy(area)
         core_stats_dict = {'bids': [], 'offers': [], 'trades': []}
         if hasattr(area.current_market, 'offer_history'):
             for offer in area.current_market.offer_history:
@@ -161,12 +162,16 @@ class SimulationEndpointBuffer:
         if hasattr(area.current_market, 'trades'):
             for trade in area.current_market.trades:
                 core_stats_dict['trades'].append(trade.serializable_dict())
-        if area.strategy is None:
+        if area.strategy is None and area.current_market is not None:
             area_stats = {
                 'baseline_peak_energy_import_kWh': area.baseline_peak_energy_import_kWh,
                 'baseline_peak_energy_export_kWh': area.baseline_peak_energy_export_kWh,
                 'import_capacity_kWh': area.import_capacity_kWh,
-                'export_capacity_kWh': area.export_capacity_kWh
+                'export_capacity_kWh': area.export_capacity_kWh,
+                'imported_energy_kWh': area.stats.imported_energy.get(
+                    area.current_market.time_slot, 0.),
+                'exported_energy_kWh': area.stats.exported_energy.get(
+                    area.current_market.time_slot, 0.)
             }
             core_stats_dict['area_throughput'] = area_stats
 
@@ -245,10 +250,6 @@ class SimulationEndpointBuffer:
 
         self.kpi.update_kpis_from_area(area)
 
-        self.area_throughput_stats.update(self.area_result_dict,
-                                          self.flattened_area_core_stats_dict,
-                                          self.current_market_time_slot_str)
-
         self.generate_result_report()
 
         self.bids_offers_trades.clear()
@@ -256,6 +257,10 @@ class SimulationEndpointBuffer:
         self.trade_profile.update(area)
 
         self.update_area_aggregated_stats(area)
+
+        self.area_throughput_stats.update(self.area_result_dict,
+                                          self.flattened_area_core_stats_dict,
+                                          self.current_market_time_slot_str)
 
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or \
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:

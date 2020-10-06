@@ -15,8 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.d3a_core.util import round_floats_for_ui, create_subdict_or_update, \
-    area_name_from_area_or_iaa_name, child_buys_from_area, add_or_create_key, area_sells_to_child
+from d3a.d3a_core.util import round_floats_for_ui, create_subdict_or_update
 
 
 class AreaThroughputStats:
@@ -29,18 +28,14 @@ class AreaThroughputStats:
     def update(self, area_dict, core_stats, current_market_time_slot_str):
         self.update_results(area_dict, core_stats, current_market_time_slot_str)
 
-    @staticmethod
-    def _calc_peak_energy_results(energy_profile):
-        return {"peak_energy_kWh": round_floats_for_ui(max(energy_profile.values(), default=0.0))}
-
     def update_results(self, area_dict, core_stats, current_market_time_slot_str):
-        self.aggregate_exported_imported_energy(area_dict, core_stats,
-                                                current_market_time_slot_str)
-        area_results = {
-            "import": self._calc_peak_energy_results(self.imported_energy[area_dict['uuid']]),
-            "export": self._calc_peak_energy_results(self.exported_energy[area_dict['uuid']])
-        }
         area_throughput = core_stats.get(area_dict['uuid'], {}).get('area_throughput', {})
+        imported_peak = round_floats_for_ui(area_throughput.get('imported_energy_kWh', 0.))
+        exported_peak = round_floats_for_ui(area_throughput.get('exported_energy_kWh', 0.))
+        area_results = {
+            "import": {'peak_energy_kWh': imported_peak},
+            "export": {'peak_energy_kWh': exported_peak},
+        }
 
         baseline_import = area_throughput.get('baseline_peak_energy_import_kWh', None)
         baseline_export = area_throughput.get('baseline_peak_energy_export_kWh', None)
@@ -80,24 +75,3 @@ class AreaThroughputStats:
         for child in area_dict['children']:
             if child['type'] == "Area":
                 self.update_results(child, core_stats, current_market_time_slot_str)
-
-    def aggregate_exported_imported_energy(self, area_dict, core_stats,
-                                           current_market_time_slot_str):
-        if current_market_time_slot_str is None:
-            return
-
-        if area_dict['uuid'] not in self.imported_energy:
-            self.imported_energy[area_dict['uuid']] = {}
-        if area_dict['uuid'] not in self.exported_energy:
-            self.exported_energy[area_dict['uuid']] = {}
-
-        child_names = [area_name_from_area_or_iaa_name(c['name']) for c in area_dict['children']]
-        for trade in core_stats.get(area_dict['uuid'], {}).get('trades', []):
-            if child_buys_from_area(trade, area_dict['name'], child_names):
-                add_or_create_key(self.exported_energy[area_dict['uuid']],
-                                  current_market_time_slot_str,
-                                  trade['energy'])
-            if area_sells_to_child(trade, area_dict['name'], child_names):
-                add_or_create_key(self.imported_energy[area_dict['uuid']],
-                                  current_market_time_slot_str,
-                                  trade['energy'])
