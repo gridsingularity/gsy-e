@@ -162,18 +162,17 @@ class SimulationEndpointBuffer:
         if hasattr(area.current_market, 'trades'):
             for trade in area.current_market.trades:
                 core_stats_dict['trades'].append(trade.serializable_dict())
-        if area.strategy is None and area.current_market is not None:
-            area_stats = {
+        if area.strategy is None:
+            core_stats_dict['area_throughput'] = {
                 'baseline_peak_energy_import_kWh': area.baseline_peak_energy_import_kWh,
                 'baseline_peak_energy_export_kWh': area.baseline_peak_energy_export_kWh,
                 'import_capacity_kWh': area.import_capacity_kWh,
                 'export_capacity_kWh': area.export_capacity_kWh,
                 'imported_energy_kWh': area.stats.imported_energy.get(
-                    area.current_market.time_slot, 0.),
+                    area.current_market.time_slot, 0.) if area.current_market is not None else 0.,
                 'exported_energy_kWh': area.stats.exported_energy.get(
-                    area.current_market.time_slot, 0.)
+                    area.current_market.time_slot, 0.) if area.current_market is not None else 0.
             }
-            core_stats_dict['area_throughput'] = area_stats
 
         if isinstance(area.strategy, PVStrategy):
             core_stats_dict['pv_production_kWh'] = \
