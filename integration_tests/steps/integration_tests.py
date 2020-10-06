@@ -792,10 +792,16 @@ def test_external_trade_energy_price(context):
 @then('the cumulative energy bills for each area are the sum of its children')
 def cumulative_bills_sum(context):
     cumulative_bills = context.simulation.endpoint_buffer.cumulative_bills.cumulative_bills_results
+    print(f"cumulative_bills: {cumulative_bills.keys()}")
     bills = context.simulation.endpoint_buffer.market_bills.bills_redis_results
+    print(f"bills: {bills.keys()}")
 
     def assert_area_cumulative_bills(area):
+        print(f"assert_area_cumulative_bills")
+        print(f"area: {area}")
         area_bills = cumulative_bills[area.uuid]
+        print(f"area_cc_bills: {area_bills}")
+        print(f"bills: {bills[area.uuid]}")
         if len(area.children) == 0:
             estimated_total = area_bills["spent_total"] - area_bills["earned"] + \
                               area_bills["penalties"]

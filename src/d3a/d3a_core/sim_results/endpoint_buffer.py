@@ -82,6 +82,8 @@ class SimulationEndpointBuffer:
         area_dict = dict()
         area_dict['name'] = target_area.name
         area_dict['uuid'] = target_area.uuid
+        area_dict['parent_uuid'] = target_area.parent.uuid \
+            if target_area.parent is not None else ""
         area_dict['type'] = str(target_area.strategy.__class__.__name__) \
             if target_area.strategy is not None else "Area"
         area_dict['children'] = []
@@ -169,6 +171,8 @@ class SimulationEndpointBuffer:
             core_stats_dict['pv_production_kWh'] = \
                 area.strategy.energy_production_forecast_kWh.get(self.current_market_time_slot,
                                                                  0)
+            core_stats_dict['available_energy_kWh'] = \
+                area.strategy.state.available_energy_kWh.get(self.current_market_time_slot, 0)
             if area.parent.current_market is not None:
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
@@ -182,7 +186,12 @@ class SimulationEndpointBuffer:
 
         elif isinstance(area.strategy, LoadHoursStrategy):
             core_stats_dict['load_profile_kWh'] = \
-                area.strategy.state.desired_energy_Wh.get(self.current_market_time_slot, 0) / 1000
+                area.strategy.state.desired_energy_Wh.get(
+                    self.current_market_time_slot, 0) / 1000.0
+            core_stats_dict['energy_requirement_kWh'] = \
+                area.strategy.energy_requirement_Wh.get(
+                    self.current_market_time_slot, 0) / 1000.0
+
             if area.parent.current_market is not None:
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
@@ -222,12 +231,14 @@ class SimulationEndpointBuffer:
                                            self.flattened_area_core_stats_dict)
         if self.current_market_time_slot_str != "":
             self.market_bills.update(self.area_result_dict, self.flattened_area_core_stats_dict)
-            # self.update_area_aggregated_stats(self.area_result_dict)
+            self.update_area_aggregated_stats(self.area_result_dict)
 
         # if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
         #     self.balancing_bills.update(area)
 
-        self.cumulative_bills.update_cumulative_bills(area)
+        self.cumulative_bills.update_cumulative_bills(self.area_result_dict,
+                                                      self.flattened_area_core_stats_dict,
+                                                      self.current_market_time_slot_str)
 
         self.market_unmatched_loads.update_unmatched_loads(
             self.area_result_dict, self.flattened_area_core_stats_dict,
@@ -276,13 +287,13 @@ class SimulationEndpointBuffer:
             self.bids_offers_trades[area_uuid] = area_result
 
     def _merge_cumulative_bills_into_bills_for_market_info(self, area_dict):
-        pass
-        # bills = self.market_bills.bills_redis_results[area_dict['uuid']]
-        # bills.update({
-        #     "penalty_cost":
-        #         self.cumulative_bills.cumulative_bills_results[area_dict['uuid']]["penalties"],
-        #     "penalty_energy":
-        #         self.cumulative_bills.cumulative_bills_results[area_dict['uuid']]["penalty_energy"]})
+        bills = self.market_bills.bills_redis_results[area_dict['uuid']]
+        bills.update({
+            "penalty_cost":
+                self.cumulative_bills.cumulative_bills_results[area_dict['uuid']]["penalties"],
+            "penalty_energy":
+                self.cumulative_bills.cumulative_bills_results[area_dict['uuid']]["penalty_energy"]
+        })
         # area.stats.update_aggregated_stats({"bills": bills})
         #
         # area.stats.kpi.update(self.kpi.performance_indices_redis.get(area_dict['uuid'], {}))
