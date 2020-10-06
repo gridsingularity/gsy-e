@@ -520,3 +520,8 @@ def get_current_market_maker_rate(market_slot):
         return mmr_rate[market_slot] if market_slot in mmr_rate else None
     else:
         return mmr_rate
+
+
+def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
+    return transfer_capacity_kWA * slot_length.total_minutes() / 60.0 \
+        if transfer_capacity_kWA is not None else 0.

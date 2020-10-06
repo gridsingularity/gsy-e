@@ -134,35 +134,32 @@ class PVStrategy(BaseStrategy):
         if key_in_dict_and_not_none(kwargs, 'use_market_maker_rate'):
             self.use_market_maker_rate = kwargs['use_market_maker_rate']
 
-        if self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
-                                fit_to_limit):
-            self.offer_update.initial_rate = initial_rate
-            self.offer_update.final_rate = final_rate
-            self.offer_update.energy_rate_change_per_update = energy_rate_change_per_update
-            self.offer_update.fit_to_limit = fit_to_limit
-            self.offer_update.update_interval = update_interval
+        try:
+            self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
+                                 fit_to_limit)
+        except D3AException as e:
+            log.error(str(e))
+            return
+
+        self.offer_update.initial_rate = initial_rate
+        self.offer_update.final_rate = final_rate
+        self.offer_update.energy_rate_change_per_update = energy_rate_change_per_update
+        self.offer_update.fit_to_limit = fit_to_limit
+        self.offer_update.update_interval = update_interval
 
         self.offer_update.update_offer(self)
 
     @staticmethod
-    def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit,
-                        init=False):
-        try:
-            for time_slot in generate_market_slot_list():
-                rate_change = None if fit_to_limit else \
-                    energy_rate_change_per_update[time_slot]
-                validate_pv_device_price(
-                    initial_selling_rate=initial_rate[time_slot],
-                    final_selling_rate=final_rate[time_slot],
-                    energy_rate_decrease_per_update=rate_change,
-                    fit_to_limit=fit_to_limit)
-            return True
-        except D3AException as e:
-            if init:
-                raise e
-            else:
-                log.error(str(e))
-                return False
+    def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
+        # all parameters have to be validated for each time slot here
+        for time_slot in initial_rate.keys():
+            rate_change = None if fit_to_limit else \
+                energy_rate_change_per_update[time_slot]
+            validate_pv_device_price(
+                initial_selling_rate=initial_rate[time_slot],
+                final_selling_rate=final_rate[time_slot],
+                energy_rate_decrease_per_update=rate_change,
+                fit_to_limit=fit_to_limit)
 
     def event_activate(self):
         self.event_activate_price()
@@ -174,7 +171,7 @@ class PVStrategy(BaseStrategy):
             self.area_reconfigure_event(initial_selling_rate=GlobalConfig.market_maker_rate)
         self._validate_rates(self.offer_update.initial_rate, self.offer_update.final_rate,
                              self.offer_update.energy_rate_change_per_update,
-                             self.offer_update.fit_to_limit, init=True)
+                             self.offer_update.fit_to_limit)
         # Calculating the produced energy
         self._set_alternative_pricing_scheme()
         self.offer_update.update_on_activate()

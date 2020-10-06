@@ -176,20 +176,25 @@ class StorageStrategy(BidEnabledStrategy):
         else:
             update_interval = self.bid_update.update_interval
 
-        if self._validate_rates(initial_selling_rate, final_selling_rate,
-                                initial_buying_rate, final_buying_rate,
-                                energy_rate_increase_per_update, energy_rate_decrease_per_update,
-                                bid_fit_to_limit, offer_fit_to_limit):
-            self.offer_update.initial_rate = initial_selling_rate
-            self.offer_update.final_rate = final_selling_rate
-            self.bid_update.initial_rate = initial_buying_rate
-            self.bid_update.final_rate = final_buying_rate
-            self.bid_update.energy_rate_change_per_update = energy_rate_increase_per_update
-            self.offer_update.energy_rate_change_per_update = energy_rate_decrease_per_update
-            self.bid_update.fit_to_limit = bid_fit_to_limit
-            self.offer_update.fit_to_limit = offer_fit_to_limit
-            self.bid_update.update_interval = update_interval
-            self.offer_update.update_interval = update_interval
+        try:
+            self._validate_rates(initial_selling_rate, final_selling_rate,
+                                 initial_buying_rate, final_buying_rate,
+                                 energy_rate_increase_per_update, energy_rate_decrease_per_update,
+                                 bid_fit_to_limit, offer_fit_to_limit)
+        except D3AException as e:
+            log.error(str(e))
+            return
+
+        self.offer_update.initial_rate = initial_selling_rate
+        self.offer_update.final_rate = final_selling_rate
+        self.bid_update.initial_rate = initial_buying_rate
+        self.bid_update.final_rate = final_buying_rate
+        self.bid_update.energy_rate_change_per_update = energy_rate_increase_per_update
+        self.offer_update.energy_rate_change_per_update = energy_rate_decrease_per_update
+        self.bid_update.fit_to_limit = bid_fit_to_limit
+        self.offer_update.fit_to_limit = offer_fit_to_limit
+        self.bid_update.update_interval = update_interval
+        self.offer_update.update_interval = update_interval
 
     def area_reconfigure_event(self, **kwargs):
         self._area_reconfigure_prices(**kwargs)
@@ -200,28 +205,19 @@ class StorageStrategy(BidEnabledStrategy):
     def _validate_rates(initial_selling_rate, final_selling_rate,
                         initial_buying_rate, final_buying_rate,
                         energy_rate_increase_per_update, energy_rate_decrease_per_update,
-                        bid_fit_to_limit, offer_fit_to_limit,
-                        init=False):
-        try:
-            for time_slot in generate_market_slot_list():
-                bid_rate_change = None if bid_fit_to_limit else \
-                    energy_rate_increase_per_update[time_slot]
-                offer_rate_change = None if offer_fit_to_limit else \
-                    energy_rate_decrease_per_update[time_slot]
-                validate_storage_device(initial_selling_rate=initial_selling_rate[time_slot],
-                                        final_selling_rate=final_selling_rate[time_slot],
-                                        initial_buying_rate=initial_buying_rate[time_slot],
-                                        final_buying_rate=final_buying_rate[time_slot],
-                                        energy_rate_increase_per_update=bid_rate_change,
-                                        energy_rate_decrease_per_update=offer_rate_change,
-                                        fit_to_limit=bid_fit_to_limit)
-            return True
-        except D3AException as e:
-            if init:
-                raise e
-            else:
-                log.error(str(e))
-                return False
+                        bid_fit_to_limit, offer_fit_to_limit):
+
+        for time_slot in initial_selling_rate.keys():
+            bid_rate_change = None if bid_fit_to_limit else \
+                energy_rate_increase_per_update[time_slot]
+            offer_rate_change = None if offer_fit_to_limit else \
+                energy_rate_decrease_per_update[time_slot]
+            validate_storage_device(initial_selling_rate=initial_selling_rate[time_slot],
+                                    final_selling_rate=final_selling_rate[time_slot],
+                                    initial_buying_rate=initial_buying_rate[time_slot],
+                                    final_buying_rate=final_buying_rate[time_slot],
+                                    energy_rate_increase_per_update=bid_rate_change,
+                                    energy_rate_decrease_per_update=offer_rate_change)
 
     def event_on_disabled_area(self):
         self.state.calculate_soc_for_time_slot(self.area.next_market.time_slot)
@@ -231,8 +227,7 @@ class StorageStrategy(BidEnabledStrategy):
                              self.bid_update.initial_rate, self.bid_update.final_rate,
                              self.bid_update.energy_rate_change_per_update,
                              self.offer_update.energy_rate_change_per_update,
-                             self.bid_update.fit_to_limit, self.offer_update.fit_to_limit,
-                             init=True)
+                             self.bid_update.fit_to_limit, self.offer_update.fit_to_limit)
         self.offer_update.update_on_activate()
         self.bid_update.update_on_activate()
         self._set_alternative_pricing_scheme()

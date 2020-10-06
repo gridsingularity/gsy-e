@@ -103,7 +103,6 @@ class RedisMarketExternalConnection:
         payload_data = payload["data"] \
             if isinstance(payload["data"], dict) else json.loads(payload["data"])
         try:
-            print("validate")
             validate_area(grid_fee_percentage=payload_data.get("fee_percent", None),
                           grid_fee_constant=payload_data.get("fee_const", None))
         except D3AException as e:
