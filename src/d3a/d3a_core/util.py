@@ -512,3 +512,11 @@ def child_buys_from_area(trade, area_name, child_names):
 def if_not_in_list_append(target_list, obj):
     if obj not in target_list:
         target_list.append(obj)
+
+
+def get_current_market_maker_rate(market_slot):
+    mmr_rate = GlobalConfig.market_maker_rate
+    if isinstance(mmr_rate, dict):
+        return mmr_rate[market_slot] if market_slot in mmr_rate else None
+    else:
+        return mmr_rate
