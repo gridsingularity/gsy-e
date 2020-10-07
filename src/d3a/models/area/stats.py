@@ -34,10 +34,11 @@ default_trade_stats_dict = {
 
 
 class AreaStats:
-    def __init__(self, area_markets):
+    def __init__(self, area_markets, area):
         self._accumulated_past_price = 0
         self._accumulated_past_energy = 0
         self._markets = area_markets
+        self._area = area
         self.aggregated_stats = {}
         self.market_bills = {}
         self.rate_stats_market = {}
@@ -64,6 +65,7 @@ class AreaStats:
                  for key in ["Accumulated Trades"]}
             self.rate_stats_market[self.current_market.time_slot] = \
                 self.min_max_avg_median_rate_current_market()
+            self._aggregate_exported_imported_energy()
 
     def get_last_market_stats_for_grid_tree(self):
         return {key.lower().replace(" ", "_"): self._extract_from_bills(key)
@@ -182,20 +184,20 @@ class AreaStats:
 
         return out_dict
 
-    def aggregate_exported_imported_energy(self, area):
-        if area.current_market is None:
+    def _aggregate_exported_imported_energy(self):
+        if self._area.current_market is None:
             return None
 
         self.imported_energy = {}
         self.exported_energy = {}
 
-        child_names = [area_name_from_area_or_iaa_name(c.name) for c in area.children]
+        child_names = [area_name_from_area_or_iaa_name(c.name) for c in self._area.children]
         if getattr(self.current_market, 'trades', None) is not None:
             for trade in self.current_market.trades:
-                if child_buys_from_area(trade, area.name, child_names):
+                if child_buys_from_area(trade, self._area.name, child_names):
                     add_or_create_key(self.exported_energy, self.current_market.time_slot,
                                       trade.offer.energy)
-                if area_sells_to_child(trade, area.name, child_names):
+                if area_sells_to_child(trade, self._area.name, child_names):
                     add_or_create_key(self.imported_energy, self.current_market.time_slot,
                                       trade.offer.energy)
         if self.current_market.time_slot not in self.imported_energy:

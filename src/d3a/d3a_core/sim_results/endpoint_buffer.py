@@ -150,7 +150,6 @@ class SimulationEndpointBuffer:
             self.flattened_area_core_stats_dict[area.uuid] = {}
         if self.current_market_time_slot_str == "":
             return
-        area.stats.aggregate_exported_imported_energy(area)
         core_stats_dict = {'bids': [], 'offers': [], 'trades': []}
         if hasattr(area.current_market, 'offer_history'):
             for offer in area.current_market.offer_history:
