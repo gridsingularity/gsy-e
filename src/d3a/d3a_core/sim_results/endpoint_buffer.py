@@ -164,8 +164,19 @@ class SimulationEndpointBuffer:
                 core_stats_dict['trades'].append(trade.serializable_dict())
         if hasattr(area.current_market, 'market_fee'):
             core_stats_dict['market_fee'] = area.current_market.market_fee
-        if getattr(area, 'strategy', None) is None and area.current_market is not None:
-            core_stats_dict['grid_fee_constant'] = area.current_market.const_fee_rate
+        if area.strategy is None:
+            core_stats_dict['area_throughput'] = {
+                'baseline_peak_energy_import_kWh': area.baseline_peak_energy_import_kWh,
+                'baseline_peak_energy_export_kWh': area.baseline_peak_energy_export_kWh,
+                'import_capacity_kWh': area.import_capacity_kWh,
+                'export_capacity_kWh': area.export_capacity_kWh,
+                'imported_energy_kWh': area.stats.imported_energy.get(
+                    area.current_market.time_slot, 0.) if area.current_market is not None else 0.,
+                'exported_energy_kWh': area.stats.exported_energy.get(
+                    area.current_market.time_slot, 0.) if area.current_market is not None else 0.
+            }
+            core_stats_dict['grid_fee_constant'] = area.current_market.const_fee_rate \
+                if area.current_market is not None else 0.
 
         if isinstance(area.strategy, PVStrategy):
             core_stats_dict['pv_production_kWh'] = \
@@ -231,7 +242,6 @@ class SimulationEndpointBuffer:
                                            self.flattened_area_core_stats_dict)
         if self.current_market_time_slot_str != "":
             self.market_bills.update(self.area_result_dict, self.flattened_area_core_stats_dict)
-            self.update_area_aggregated_stats(self.area_result_dict)
 
         # if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
         #     self.balancing_bills.update(area)
@@ -255,8 +265,6 @@ class SimulationEndpointBuffer:
 
         self.kpi.update_kpis_from_area(area)
 
-        self.area_throughput_stats.update(area)
-
         self.generate_result_report()
 
         self.bids_offers_trades.clear()
@@ -266,6 +274,10 @@ class SimulationEndpointBuffer:
             self.flattened_area_core_stats_dict,
             self.current_market_time_slot_str
         )
+
+        self.area_throughput_stats.update(self.area_result_dict,
+                                          self.flattened_area_core_stats_dict,
+                                          self.current_market_time_slot_str)
 
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or \
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:

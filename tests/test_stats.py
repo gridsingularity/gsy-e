@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
+from unittest.mock import MagicMock, Mock
 from math import isclose
 from pendulum import today, now
 from uuid import uuid4
@@ -36,6 +37,13 @@ class FakeArea:
         self.strategy = None
         self.uuid = uuid4()
         self.parent = None
+        self.baseline_peak_energy_import_kWh = None
+        self.baseline_peak_energy_export_kWh = None
+        self.import_capacity_kWh = None
+        self.export_capacity_kWh = None
+        self.stats = MagicMock()
+        self.stats.imported_energy = Mock()
+        self.stats.exported_energy = Mock()
 
     @property
     def current_market(self):

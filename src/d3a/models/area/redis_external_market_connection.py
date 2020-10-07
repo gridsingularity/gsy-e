@@ -137,7 +137,7 @@ class RedisMarketExternalConnection:
                    "market_stats":
                        self.area.stats.get_market_stats(payload_data["market_slots"], dso=True)}
         if self.is_aggregator_controlled:
-            ret_val.pop("transaction_id")
+            return ret_val
         else:
             ret_val["transaction_id"] = payload_data.get("transaction_id", None)
             self.redis_com.publish_json(dso_market_stats_response_channel, ret_val)
@@ -149,7 +149,7 @@ class RedisMarketExternalConnection:
         current_market_info = self.area.current_market.info
         current_market_info["current_market_fee"] = \
             self.area.current_market.fee_class.grid_fee_rate
-        current_market_info["next_market_fee"] = str(self.area.get_grid_fee())
+        current_market_info["next_market_fee"] = self.area.get_grid_fee()
         current_market_info["last_market_stats"] = \
             self.area.stats.get_price_stats_current_market()
         current_market_info["self_sufficiency"] = \
@@ -159,7 +159,8 @@ class RedisMarketExternalConnection:
                 "event": "market",
                 "market_info": current_market_info}
         if self.is_aggregator_controlled:
-            self.aggregator.add_batch_market_event(self.area.uuid, current_market_info)
+            self.aggregator.add_batch_market_event(self.area.uuid, current_market_info,
+                                                   self.area.global_objects)
         else:
             self.redis_com.publish_json(market_event_channel, data)
 
