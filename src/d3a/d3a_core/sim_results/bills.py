@@ -147,11 +147,11 @@ class MarketEnergyBills:
             trade_price = trade['energy'] * trade['energy_rate'] / 100.
         else:
             trade_price = trade['energy'] * trade['energy_rate'] / 100. - fee_price
-        result_dict['earned'] += trade_price / 100.
-        result_dict['total_cost'] -= trade_price / 100.
+        result_dict['earned'] += trade_price
+        result_dict['total_cost'] -= trade_price
 
     def _store_outgoing_external_trade(self, trade, area_dict):
-        trade_price = trade['energy'] * trade['energy_rate'] / 100.
+        trade_price = trade['energy'] * trade['energy_rate']
         fee_price = trade['fee_price'] if trade['fee_price'] is not None else 0.
         self.external_trades[area_dict['name']]['sold'] += trade['energy']
         if ConstSettings.IAASettings.MARKET_TYPE == 1:

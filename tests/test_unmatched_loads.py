@@ -47,12 +47,15 @@ class TestUnmatchedLoad(unittest.TestCase):
         self.strategy1 = MagicMock(spec=LoadHoursStrategy)
         self.strategy1.state = MagicMock(spec=LoadState)
         self.strategy1.state.desired_energy_Wh = {}
+        self.strategy1.energy_requirement_Wh = {}
         self.strategy2 = MagicMock(spec=LoadHoursStrategy)
         self.strategy2.state = MagicMock(spec=LoadState)
         self.strategy2.state.desired_energy_Wh = {}
+        self.strategy2.energy_requirement_Wh = {}
         self.strategy3 = MagicMock(spec=DefinedLoadStrategy)
         self.strategy3.state = MagicMock(spec=LoadState)
         self.strategy3.state.desired_energy_Wh = {}
+        self.strategy3.energy_requirement_Wh = {}
         self.area1 = Area("load1", None, None, self.strategy1, self.appliance,
                           self.config, None, grid_fee_percentage=0)
         self.area2 = Area("load2", None, None, self.strategy2, self.appliance,
@@ -195,6 +198,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         ct_strategy = MagicMock(spec=CellTowerLoadHoursStrategy)
         ct_strategy.state = MagicMock(spec=LoadState)
         ct_strategy.state.desired_energy_Wh = {}
+        ct_strategy.energy_requirement_Wh = {}
         cell_tower = Area("Cell Tower", strategy=ct_strategy)
         self.grid = Area("Grid", [house1, cell_tower])
         epb = SimulationEndpointBuffer("1", {"seed": 0}, self.grid, True)
