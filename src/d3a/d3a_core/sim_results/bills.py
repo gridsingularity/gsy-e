@@ -124,7 +124,7 @@ class MarketEnergyBills:
 
     @staticmethod
     def _store_bought_trade(result_dict, trade):
-        trade_price = trade['energy'] * trade['energy_rate'] / 100.
+        trade_price = trade['price'] / 100.
         # Division by 100 to convert cents to Euros
         fee_price = trade['fee_price'] / 100. if trade['fee_price'] is not None else 0.
         result_dict['bought'] += trade['energy']
@@ -144,29 +144,28 @@ class MarketEnergyBills:
         result_dict['sold'] += trade['energy']
         result_dict['total_energy'] -= trade['energy']
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
-            trade_price = trade['energy'] * trade['energy_rate'] / 100.
+            trade_price = trade['price'] / 100.
         else:
-            trade_price = trade['energy'] * trade['energy_rate'] / 100. - fee_price
+            trade_price = trade['price'] / 100. - fee_price
         result_dict['earned'] += trade_price
         result_dict['total_cost'] -= trade_price
 
     def _store_outgoing_external_trade(self, trade, area_dict):
-        trade_price = trade['energy'] * trade['energy_rate']
         fee_price = trade['fee_price'] if trade['fee_price'] is not None else 0.
         self.external_trades[area_dict['name']]['sold'] += trade['energy']
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
-            self.external_trades[area_dict['name']]['earned'] += trade_price
-            self.external_trades[area_dict['name']]['total_cost'] -= trade_price
+            self.external_trades[area_dict['name']]['earned'] += trade['price']
+            self.external_trades[area_dict['name']]['total_cost'] -= trade['price']
         else:
             self.external_trades[area_dict['name']]['earned'] += \
-                (trade_price - fee_price) / 100.
+                (trade['price'] - fee_price) / 100.
             self.external_trades[area_dict['name']]['total_cost'] -= \
-                (trade_price - fee_price) / 100.
+                (trade['price'] - fee_price) / 100.
         self.external_trades[area_dict['name']]['total_energy'] -= trade['energy']
         self.external_trades[area_dict['name']]['market_fee'] += fee_price / 100.
 
     def _store_incoming_external_trade(self, trade, area_dict):
-        trade_price = trade['energy'] * trade['energy_rate'] / 100.
+        trade_price = trade['price'] / 100.
         fee_price = trade['fee_price'] / 100. if trade['fee_price'] is not None else 0.
         self.external_trades[area_dict['name']]['bought'] += trade['energy']
         if ConstSettings.IAASettings.MARKET_TYPE == 1:

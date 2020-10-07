@@ -243,9 +243,6 @@ class SimulationEndpointBuffer:
         if self.current_market_time_slot_str != "":
             self.market_bills.update(self.area_result_dict, self.flattened_area_core_stats_dict)
 
-        # if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
-        #     self.balancing_bills.update(area)
-
         self.cumulative_bills.update_cumulative_bills(self.area_result_dict,
                                                       self.flattened_area_core_stats_dict,
                                                       self.current_market_time_slot_str)

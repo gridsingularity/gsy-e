@@ -275,11 +275,8 @@ def json_setup_file(context, setup_json):
 def dso_pays_certain_price(context, child_market):
     bills = context.simulation.endpoint_buffer.market_bills.bills_results
     child_market_spent = bills["Grid"][child_market]["spent"]
-    print(f"child_market_spent: {child_market_spent}")
     dso_earned_on_grid = bills["Grid"]["DSO"]["earned"]
-    print(f"dso_earned_on_grid: {dso_earned_on_grid}")
     grid_fees = bills["Grid"]["Accumulated Trades"]["market_fee"]
-    print(f"grid_fees: {grid_fees}")
     assert isclose(child_market_spent-dso_earned_on_grid, grid_fees)
     assert bills["DSO"]["earned"] == dso_earned_on_grid
     assert bills["Grid"]["Accumulated Trades"]["spent"] == child_market_spent
