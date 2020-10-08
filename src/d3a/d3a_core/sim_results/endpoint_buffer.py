@@ -199,6 +199,8 @@ class SimulationEndpointBuffer:
             core_stats_dict['load_profile_kWh'] = \
                 area.strategy.state.desired_energy_Wh.get(
                     self.current_market_time_slot, 0) / 1000.0
+            core_stats_dict['total_energy_demanded_wh'] = \
+                area.strategy.state.total_energy_demanded_wh
             core_stats_dict['energy_requirement_kWh'] = \
                 area.strategy.energy_requirement_Wh.get(
                     self.current_market_time_slot, 0) / 1000.0
@@ -260,7 +262,9 @@ class SimulationEndpointBuffer:
                                      self.flattened_area_core_stats_dict,
                                      self.current_market_time_slot_str)
 
-        self.kpi.update_kpis_from_area(area)
+        self.kpi.update_kpis_from_area(self.area_result_dict,
+                                       self.flattened_area_core_stats_dict,
+                                       self.current_market_time_slot_str)
 
         self.generate_result_report()
 

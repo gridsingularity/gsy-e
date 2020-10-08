@@ -6,12 +6,12 @@ def _is_cell_tower_type(area):
 
 
 def _is_load_node_type(area):
-    return area['type'] == "LoadHoursStrategy"
+    return area['type'] in ["LoadHoursStrategy", "DefinedLoadStrategy"]
 
 
 def _is_producer_node_type(area):
-    return area['type'] in ["PVStrategy", "CommercialStrategy", "FinitePowerPlant",
-                            "MarketMakerStrategy"]
+    return area['type'] in ["PVStrategy", "PVUserProfileStrategy", "PVPredefinedStrategy",
+                            "CommercialStrategy", "FinitePowerPlant", "MarketMakerStrategy"]
 
 
 def _is_prosumer_node_type(area):
