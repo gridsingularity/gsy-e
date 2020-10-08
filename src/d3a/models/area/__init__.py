@@ -160,20 +160,12 @@ class Area:
         self.grid_fee_constant = transfer_fee_const
         self.grid_fee_percentage = grid_fee_percentage
 
-    '''
     def get_path_to_root_fees(self):
         if self.parent is not None:
-            parent_fees = self.get_path_to_root_fees(self.parent)
-            return self.grid_fee_constant + parent_fees
+            grid_fee_constant = self.grid_fee_constant if self.grid_fee_constant else 0
+            return grid_fee_constant + self.parent.get_path_to_root_fees()
         else:
-            return self.grid_fee_constant
-    '''
-    def get_path_to_root_fees(self):
-        if self.parent is not None:
-            parent_fees = self.parent.grid_fee_constant
-            return self.grid_fee_constant + parent_fees
-        else:
-            return self.grid_fee_constant
+            return self.grid_fee_constant if self.grid_fee_constant else 0
 
     def get_grid_fee(self):
         grid_fee_type = self.config.grid_fee_type \
