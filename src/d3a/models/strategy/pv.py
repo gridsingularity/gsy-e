@@ -32,7 +32,6 @@ from d3a.d3a_core.exceptions import MarketException
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.utils import key_in_dict_and_not_none
-from d3a_interface.exceptions import D3AException
 from d3a import constants
 
 log = getLogger(__name__)
@@ -137,7 +136,7 @@ class PVStrategy(BaseStrategy):
         try:
             self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
                                  fit_to_limit)
-        except D3AException as e:
+        except Exception as e:
             log.error(str(e))
             return
 
