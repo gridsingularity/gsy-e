@@ -44,15 +44,20 @@ def get_setup(config):
                                 use_market_maker_rate=True),
                             appliance=SwitchableAppliance()),
                     ],
-                    grid_fee_constant=0)], grid_fee_constant=1),
+                    grid_fee_constant=0
+                )
+            ], grid_fee_constant=1),
             Area('Neighborhood 2', [
                 Area(
                     'House 2',
                     [
-                        Area('H2 PV', strategy=PVStrategy(panel_count=10, initial_selling_rate=10,
-                                                          final_selling_rate=10),
-                             appliance=PVAppliance()),
-
+                        Area(
+                            name='H2 PV',
+                            strategy=PVStrategy(
+                                panel_count=10,
+                                max_panel_power_W=50,
+                                use_market_maker_rate=True),
+                            appliance=PVAppliance()),
                     ],
                     grid_fee_constant=0
 
