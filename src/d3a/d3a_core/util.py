@@ -35,7 +35,7 @@ from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setL
 
 from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
-from d3a.d3a_core.exceptions import D3AException
+from d3a_interface.exceptions import D3AException
 from d3a.constants import DATE_FORMAT
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit
 from d3a_interface.utils import generate_market_slot_list_from_config, str_to_pendulum_datetime,\
@@ -520,3 +520,8 @@ def get_current_market_maker_rate(market_slot):
         return mmr_rate[market_slot] if market_slot in mmr_rate else None
     else:
         return mmr_rate
+
+
+def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
+    return transfer_capacity_kWA * slot_length.total_minutes() / 60.0 \
+        if transfer_capacity_kWA is not None else 0.
