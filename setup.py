@@ -14,7 +14,7 @@ try:
             ['d3a-interface @ '
              'git+https://github.com/gridsingularity/d3a-interface.git',
              'py-solc @ git+https://github.com/Jonasmpi/py-solc.git',
-             'py-substrate-interface @ '
+             'substrate-interface @ '
              'git+https://github.com/gridsingularity/py-substrate-interface.git'
              ])
 except OSError:

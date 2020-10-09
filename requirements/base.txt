@@ -7,7 +7,7 @@
 attrdict==2.0.1           # via eth-account
 attrs==19.3.0             # via -r requirements/base.in, jsonschema
 awesome-slugify==1.6.5    # via -r requirements/base.in
-base58==2.0.0             # via multiaddr
+base58==2.0.1             # via multiaddr
 cached-property==1.5.1    # via -r requirements/base.in
 certifi==2019.11.28       # via requests
 chardet==3.0.4            # via requests
