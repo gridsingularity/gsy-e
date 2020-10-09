@@ -21,7 +21,7 @@ import uuid
 from pendulum import DateTime
 from parameterized import parameterized
 import os
-from typing import Dict
+from typing import Dict  # NOQA
 
 from d3a.constants import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
