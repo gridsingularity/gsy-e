@@ -8,7 +8,7 @@ asyncio==3.4.3            # via substrate-interface
 attrdict==2.0.1           # via eth-account
 attrs==19.3.0             # via -r requirements/base.in, jsonschema
 awesome-slugify==1.6.5    # via -r requirements/base.in
-base58==2.0.0             # via multiaddr, scalecodec, substrate-interface
+base58==2.0.1             # via multiaddr, scalecodec, substrate-interface
 cached-property==1.5.1    # via -r requirements/base.in
 certifi==2019.11.28        # via requests, substrate-interface
 chardet==3.0.4            # via requests, substrate-interface
