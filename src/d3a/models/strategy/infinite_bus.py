@@ -15,16 +15,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import sys
 
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy import BidEnabledStrategy
+from d3a.models.strategy import BidEnabledStrategy, INF_ENERGY
 from d3a.d3a_core.exceptions import MarketException
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
     read_and_convert_identity_profile_to_float
-
-INF_ENERGY = int(sys.maxsize)
 
 
 class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
@@ -82,3 +80,20 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
                 self.post_bid(market,
                               self.energy_buy_rate[market.time_slot] * INF_ENERGY, INF_ENERGY,
                               buyer_origin=self.owner.name)
+
+    def get_state(self):
+        return {
+            "energy_rate": convert_pendulum_to_str_in_dict(self.energy_rate),
+            "energy_rate_profile": convert_pendulum_to_str_in_dict(self.energy_rate_profile),
+            "energy_buy_rate": convert_pendulum_to_str_in_dict(self.energy_buy_rate),
+            "buying_rate_profile": convert_pendulum_to_str_in_dict(self.buying_rate_profile)
+        }
+
+    def load_state(self, saved_state):
+        self.energy_buy_rate = convert_str_to_pendulum_in_dict(
+            saved_state["energy_buy_rate"])
+        self.buying_rate_profile = convert_str_to_pendulum_in_dict(
+            saved_state["buying_rate_profile"])
+        self.energy_rate = convert_str_to_pendulum_in_dict(saved_state["energy_rate"])
+        self.energy_rate_profile = convert_str_to_pendulum_in_dict(
+            saved_state["energy_rate_profile"])

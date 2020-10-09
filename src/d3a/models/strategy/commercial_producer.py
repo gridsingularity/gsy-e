@@ -15,12 +15,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import sys
-
-from d3a.models.strategy import BaseStrategy
+from d3a.models.strategy import BaseStrategy, INF_ENERGY
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.device_validator import validate_commercial_producer
+from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
 
 
 class CommercialStrategy(BaseStrategy):
@@ -30,7 +29,7 @@ class CommercialStrategy(BaseStrategy):
         validate_commercial_producer(energy_rate=energy_rate)
         super().__init__()
         self.energy_rate = energy_rate
-        self.energy_per_slot_kWh = int(sys.maxsize)
+        self.energy_per_slot_kWh = INF_ENERGY
 
     def event_activate(self):
         self.energy_rate = self.area.config.market_maker_rate if self.energy_rate is None \
@@ -86,3 +85,9 @@ class CommercialStrategy(BaseStrategy):
             self.owner.name
         )
         self.offers.post(offer, market.id)
+
+    def get_state(self):
+        return {"energy_rate": convert_pendulum_to_str_in_dict(self.energy_rate)}
+
+    def load_state(self, saved_state):
+        self.energy_rate = convert_str_to_pendulum_in_dict(saved_state["energy_rate"])

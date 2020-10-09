@@ -19,6 +19,7 @@ from pendulum import duration
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.device_validator import validate_finite_diesel_generator
+from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
 
 
 class FinitePowerPlant(CommercialStrategy):
@@ -45,3 +46,15 @@ class FinitePowerPlant(CommercialStrategy):
         if self.energy_per_slot_kWh <= 0.0:
             return
         super().event_market_cycle()
+
+    def get_state(self):
+        return {
+            "energy_rate": convert_pendulum_to_str_in_dict(self.energy_rate),
+            "max_available_power_kW": convert_pendulum_to_str_in_dict(
+                self.max_available_power_kW)
+        }
+
+    def load_state(self, saved_state):
+        self.energy_rate = convert_str_to_pendulum_in_dict(saved_state["energy_rate"])
+        self.max_available_power_kW = convert_str_to_pendulum_in_dict(
+            saved_state["max_available_power_kW"])
