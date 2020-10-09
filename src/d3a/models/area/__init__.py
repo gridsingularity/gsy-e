@@ -40,7 +40,6 @@ from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.area_validator import validate_area
 from d3a.models.area.redis_external_market_connection import RedisMarketExternalConnection
 from d3a_interface.utils import key_in_dict_and_not_none
-from d3a_interface.exceptions import D3AException
 import d3a.constants
 
 log = getLogger(__name__)
@@ -163,7 +162,7 @@ class Area:
                           import_capacity_kVA=import_capacity_kVA,
                           export_capacity_kVA=export_capacity_kVA)
 
-        except D3AException as e:
+        except Exception as e:
             log.error(str(e))
             return
 
