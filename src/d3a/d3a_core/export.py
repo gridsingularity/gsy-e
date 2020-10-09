@@ -323,15 +323,21 @@ class ExportAndPlot:
         """
         Wrapper for _plot_energy_profile
         """
-        self.endpoint_buffer.trade_profile.add_sold_bought_lists(
-            self.endpoint_buffer.trade_profile.traded_energy_profile)
+
+        energy_profile = \
+            self.endpoint_buffer.trade_profile.convert_timestamp_strings_to_datetimes(
+                self.endpoint_buffer.trade_profile.traded_energy_profile
+            )
+
+        self.endpoint_buffer.trade_profile.add_sold_bought_lists(energy_profile)
+
         new_subdir = os.path.join(subdir, area.slug)
-        self._plot_energy_profile(new_subdir, area.name)
+        self._plot_energy_profile(new_subdir, area.name, energy_profile)
         for child in area.children:
             if child.children:
                 self.plot_energy_profile(child, new_subdir)
 
-    def _plot_energy_profile(self, subdir: str, market_name: str):
+    def _plot_energy_profile(self, subdir: str, market_name: str, energy_profile):
         """
         Plots history of energy trades
         """
@@ -342,22 +348,11 @@ class ExportAndPlot:
         key = 'energy'
         title = 'Energy Trade Profile of {}'.format(market_name)
         data.extend(self._plot_energy_graph(
-            self.endpoint_buffer.trade_profile.traded_energy_profile,
+            energy_profile,
             market_name, "sold_energy_lists", "-seller", key, ENERGY_SELLER_SIGN_PLOTS))
         data.extend(self._plot_energy_graph(
-            self.endpoint_buffer.trade_profile.traded_energy_profile,
+            energy_profile,
             market_name, "bought_energy_lists", "-buyer", key, ENERGY_BUYER_SIGN_PLOTS))
-        if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
-            if "sold_energy_lists" in \
-                    self.endpoint_buffer.trade_profile.balancing_traded_energy[market_name]:
-                data.extend(self._plot_energy_graph(
-                    self.endpoint_buffer.trade_profile.balancing_traded_energy,
-                    market_name, "sold_energy_lists",
-                    "-balancing-seller", key, ENERGY_SELLER_SIGN_PLOTS))
-                data.extend(self._plot_energy_graph(
-                    self.endpoint_buffer.trade_profile.balancing_traded_energy,
-                    market_name, "bought_energy_lists",
-                    "-balancing-buyer", key, ENERGY_BUYER_SIGN_PLOTS))
         if len(data) == 0:
             return
         if all([len(da.y) == 0 for da in data]):

@@ -168,3 +168,19 @@ class TestLiveEvents(unittest.TestCase):
             987 * self.config.slot_length.total_minutes() / 60.0
         assert self.area_house1.export_capacity_kWh == \
             765 * self.config.slot_length.total_minutes() / 60.0
+
+    def test_create_area_event_failing_due_to_wrong_parameter_settings_no_exception_raised(self):
+        event_dict = {
+            "eventType": "create_area",
+            "parent_uuid": self.area_house1.uuid,
+            "area_representation": {
+                "type": "LoadHours", "name": "new_load", "avg_power_W": 234,
+                "initial_buying_rate": 20, "final_buying_rate": 10}
+        }
+
+        try:
+            self.live_events.add_event(event_dict)
+            self.live_events.handle_all_events(self.area_grid)
+        except Exception:
+            assert False
+        assert self.area_house1.children == [self.area1, self.area2]

@@ -114,8 +114,10 @@ class DeviceStatistics:
         cls._calc_min_max_from_sim_dict(subdict, bought_key_name)
 
     @classmethod
-    def _pv_production_stats(cls, area_dict: Dict, subdict: Dict, core_stats={},
+    def _pv_production_stats(cls, area_dict: Dict, subdict: Dict, core_stats=None,
                              current_market_slot=None):
+        if core_stats is None:
+            core_stats = {}
         key_name = "pv_production_kWh"
         if core_stats[area_dict['uuid']] == {}:
             return
@@ -127,7 +129,9 @@ class DeviceStatistics:
         cls._calc_min_max_from_sim_dict(subdict, key_name)
 
     @classmethod
-    def _soc_stats(cls, area_dict: Dict, subdict: Dict, core_stats={}, current_market_slot=None):
+    def _soc_stats(cls, area_dict: Dict, subdict: Dict, core_stats=None, current_market_slot=None):
+        if core_stats is None:
+            core_stats = {}
         key_name = "soc_history_%"
         if core_stats[area_dict['uuid']] == {}:
             return
@@ -138,8 +142,10 @@ class DeviceStatistics:
         cls._calc_min_max_from_sim_dict(subdict, key_name)
 
     @classmethod
-    def _load_profile_stats(cls, area_dict: Dict, subdict: Dict, core_stats={},
+    def _load_profile_stats(cls, area_dict: Dict, subdict: Dict, core_stats=None,
                             current_market_slot=None):
+        if core_stats is None:
+            core_stats = {}
         key_name = "load_profile_kWh"
         if core_stats[area_dict['uuid']] == {}:
             return
@@ -150,7 +156,11 @@ class DeviceStatistics:
 
         cls._calc_min_max_from_sim_dict(subdict, key_name)
 
-    def update(self, area_result_dict={}, core_stats={}, current_market_slot=None):
+    def update(self, area_result_dict=None, core_stats=None, current_market_slot=None):
+        if area_result_dict is None:
+            area_result_dict = {}
+        if core_stats is None:
+            core_stats = {}
         if self.should_export_plots:
             self.gather_device_statistics(
                 area_result_dict, self.device_stats_dict, {}, core_stats,
@@ -163,7 +173,9 @@ class DeviceStatistics:
     @classmethod
     def gather_device_statistics(cls, area_dict: Dict, subdict: Dict,
                                  flat_result_dict: Dict,
-                                 core_stats={}, current_market_slot=None):
+                                 core_stats=None, current_market_slot=None):
+        if core_stats is None:
+            core_stats = {}
         for child in area_dict['children']:
             if child['name'] not in subdict.keys():
                 subdict.update({child['name']: {}})
@@ -179,8 +191,8 @@ class DeviceStatistics:
     @classmethod
     def _gather_device_statistics(cls, area_dict: Dict, subdict: Dict,
                                   flat_result_dict: Dict,
-                                  core_stats={}, current_market_slot=None):
-        if core_stats.get(area_dict['uuid'], {}) == {}:
+                                  core_stats=None, current_market_slot=None):
+        if core_stats is None or core_stats.get(area_dict['uuid'], {}) == {}:
             return
         if area_dict['type'] != "area_dict":
             cls._device_price_stats(area_dict, subdict, core_stats, current_market_slot)

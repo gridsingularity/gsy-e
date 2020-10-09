@@ -20,7 +20,7 @@ import json
 import sys
 import base58
 
-from d3a.d3a_core.exceptions import D3AException
+from d3a_interface.exceptions import D3AException
 from d3a.d3a_core.util import retry_function
 from d3a.blockchain.utils import unlock_account, wait_for_node_synchronization
 from d3a_interface.utils import wait_until_timeout_blocking
