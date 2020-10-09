@@ -46,10 +46,11 @@ from d3a.d3a_core.util import NonBlockingConsole, validate_const_settings_for_si
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCommunication
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a.d3a_core.exceptions import D3AException
+from d3a_interface.exceptions import D3AException
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
+from d3a.d3a_core.global_objects import GlobalObjects
 import d3a.constants
 
 
@@ -92,6 +93,7 @@ class Simulation:
         )
         self.progress_info = SimulationProgressInfo()
         self.simulation_config = simulation_config
+        self.global_objects = GlobalObjects()
         self.use_repl = repl
         self.export_on_finish = not no_export
         self.export_path = export_path
@@ -170,6 +172,7 @@ class Simulation:
             log.info("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
+        self.area._global_objects = self.global_objects
         self.endpoint_buffer = SimulationEndpointBuffer(
             redis_job_id, self.initial_params,
             self.area, self.should_export_results)
@@ -320,6 +323,8 @@ class Simulation:
             self.live_events.handle_all_events(self.area)
 
             self.area._cycle_markets()
+
+            self.global_objects.update(self.area)
 
             gc.collect()
             process = psutil.Process(os.getpid())

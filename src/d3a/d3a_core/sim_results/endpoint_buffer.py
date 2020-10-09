@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from d3a.d3a_core.sim_results.area_statistics import MarketPriceEnergyDay
+from d3a.d3a_core.sim_results.market_price_energy_day import MarketPriceEnergyDay
 from d3a.d3a_core.sim_results.area_throughput_stats import AreaThroughputStats
 from d3a.d3a_core.sim_results.bills import MarketEnergyBills, CumulativeBills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
@@ -131,8 +131,7 @@ class SimulationEndpointBuffer:
             "job_id": self.job_id,
             "random_seed": self.random_seed,
             "unmatched_loads": self.market_unmatched_loads.unmatched_loads,
-            "price_energy_day": convert_pendulum_to_str_in_dict(
-                self.price_energy_day.csv_output, {}),
+            "price_energy_day": self.price_energy_day.csv_output,
             "cumulative_grid_trades":
                 self.cumulative_grid_trades.current_trades,
             "bills": self.market_bills.bills_results,
@@ -161,6 +160,19 @@ class SimulationEndpointBuffer:
         if hasattr(area.current_market, 'trades'):
             for trade in area.current_market.trades:
                 core_stats_dict['trades'].append(trade.serializable_dict())
+        if area.strategy is None:
+            core_stats_dict['area_throughput'] = {
+                'baseline_peak_energy_import_kWh': area.baseline_peak_energy_import_kWh,
+                'baseline_peak_energy_export_kWh': area.baseline_peak_energy_export_kWh,
+                'import_capacity_kWh': area.import_capacity_kWh,
+                'export_capacity_kWh': area.export_capacity_kWh,
+                'imported_energy_kWh': area.stats.imported_energy.get(
+                    area.current_market.time_slot, 0.) if area.current_market is not None else 0.,
+                'exported_energy_kWh': area.stats.exported_energy.get(
+                    area.current_market.time_slot, 0.) if area.current_market is not None else 0.
+            }
+            core_stats_dict['grid_fee_constant'] = area.current_market.const_fee_rate \
+                if area.current_market is not None else 0.
 
         if isinstance(area.strategy, PVStrategy):
             core_stats_dict['pv_production_kWh'] = \
@@ -215,7 +227,8 @@ class SimulationEndpointBuffer:
             "percentage_completed": int(progress_info.percentage_completed)
         }
 
-        self.cumulative_grid_trades.update(area)
+        self.cumulative_grid_trades.update(self.area_result_dict,
+                                           self.flattened_area_core_stats_dict)
 
         self.market_bills.update(area)
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
@@ -232,19 +245,27 @@ class SimulationEndpointBuffer:
                                       self.flattened_area_core_stats_dict,
                                       self.current_market_time_slot_str)
 
-        self.price_energy_day.update(area)
+        self.price_energy_day.update(self.area_result_dict,
+                                     self.flattened_area_core_stats_dict,
+                                     self.current_market_time_slot_str)
 
         self.kpi.update_kpis_from_area(area)
-
-        self.area_throughput_stats.update(area)
 
         self.generate_result_report()
 
         self.bids_offers_trades.clear()
 
-        self.trade_profile.update(area)
+        self.trade_profile.update(
+            self.area_result_dict,
+            self.flattened_area_core_stats_dict,
+            self.current_market_time_slot_str
+        )
 
         self.update_area_aggregated_stats(area)
+
+        self.area_throughput_stats.update(self.area_result_dict,
+                                          self.flattened_area_core_stats_dict,
+                                          self.current_market_time_slot_str)
 
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or \
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
