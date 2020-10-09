@@ -84,16 +84,10 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
     def get_state(self):
         return {
             "energy_rate": convert_pendulum_to_str_in_dict(self.energy_rate),
-            "energy_rate_profile": convert_pendulum_to_str_in_dict(self.energy_rate_profile),
             "energy_buy_rate": convert_pendulum_to_str_in_dict(self.energy_buy_rate),
-            "buying_rate_profile": convert_pendulum_to_str_in_dict(self.buying_rate_profile)
         }
 
     def load_state(self, saved_state):
         self.energy_buy_rate = convert_str_to_pendulum_in_dict(
             saved_state["energy_buy_rate"])
-        self.buying_rate_profile = convert_str_to_pendulum_in_dict(
-            saved_state["buying_rate_profile"])
         self.energy_rate = convert_str_to_pendulum_in_dict(saved_state["energy_rate"])
-        self.energy_rate_profile = convert_str_to_pendulum_in_dict(
-            saved_state["energy_rate_profile"])

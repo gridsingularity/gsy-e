@@ -134,7 +134,6 @@ class StorageState:
             "offered_sell_kWh": convert_pendulum_to_str_in_dict(self.offered_sell_kWh),
             "pledged_buy_kWh": convert_pendulum_to_str_in_dict(self.pledged_buy_kWh),
             "offered_buy_kWh": convert_pendulum_to_str_in_dict(self.offered_buy_kWh),
-            "time_series_ess_share": self.time_series_ess_share,
             "charge_history": convert_pendulum_to_str_in_dict(self.charge_history),
             "charge_history_kWh": convert_pendulum_to_str_in_dict(self.charge_history_kWh),
             "offered_history": convert_pendulum_to_str_in_dict(self.offered_history),
@@ -150,7 +149,6 @@ class StorageState:
         self.offered_sell_kWh = convert_str_to_pendulum_in_dict(state_dict["offered_sell_kWh"])
         self.pledged_buy_kWh = convert_str_to_pendulum_in_dict(state_dict["pledged_buy_kWh"])
         self.offered_buy_kWh = convert_str_to_pendulum_in_dict(state_dict["offered_buy_kWh"])
-        self.time_series_ess_share = state_dict["time_series_ess_share"]
         self.charge_history = convert_str_to_pendulum_in_dict(state_dict["charge_history"])
         self.charge_history_kWh = convert_str_to_pendulum_in_dict(state_dict["charge_history_kWh"])
         self.offered_history = convert_str_to_pendulum_in_dict(state_dict["offered_history"])

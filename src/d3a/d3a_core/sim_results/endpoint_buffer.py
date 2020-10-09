@@ -73,7 +73,7 @@ class SimulationEndpointBuffer:
         self.bids_offers_trades = {}
         self.last_energy_trades_high_resolution = {}
 
-        self.simulation_state = {}
+        self.simulation_state = {"general": {}, "areas": {}}
 
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or \
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:

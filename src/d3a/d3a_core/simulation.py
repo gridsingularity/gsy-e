@@ -48,6 +48,7 @@ from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCommunication
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.exceptions import D3AException
+from d3a_interface.utils import format_datetime
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
@@ -138,7 +139,8 @@ class Simulation:
             "sim_status": self.sim_status,
             "stopped": self.is_stopped,
             "simulation_id": self._simulation_id,
-            "run_start": self.run_start,
+            "run_start": format_datetime(self.run_start)
+            if self.run_start is not None else "",
             "paused_time": self.paused_time,
             "slot_number": self.progress_info.current_slot_number
         }
