@@ -17,10 +17,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import d3a
+from logging import getLogger
+
 from d3a_interface.area_validator import validate_area
 from d3a_interface.utils import key_in_dict_and_not_none
 from d3a.models.strategy.external_strategies import CommandTypeNotSupported, register_area, \
     unregister_area
+
+log = getLogger(__name__)
 
 
 class RedisMarketExternalConnection:
@@ -97,8 +101,13 @@ class RedisMarketExternalConnection:
         grid_fees_response_channel = f"{self.channel_prefix}/response/grid_fees"
         payload_data = payload["data"] \
             if isinstance(payload["data"], dict) else json.loads(payload["data"])
-        validate_area(grid_fee_percentage=payload_data.get("fee_percent", None),
-                      grid_fee_constant=payload_data.get("fee_const", None))
+        try:
+            validate_area(grid_fee_percentage=payload_data.get("fee_percent", None),
+                          grid_fee_constant=payload_data.get("fee_const", None))
+        except Exception as e:
+            log.error(str(e))
+            return
+
         base_dict = {"area_uuid": self.area.uuid,
                      "command": "grid_fees"}
         if "fee_const" in payload_data and payload_data["fee_const"] is not None and \
@@ -149,7 +158,7 @@ class RedisMarketExternalConnection:
         current_market_info = self.area.current_market.info
         current_market_info["current_market_fee"] = \
             self.area.current_market.fee_class.grid_fee_rate
-        current_market_info["next_market_fee"] = str(self.area.get_grid_fee())
+        current_market_info["next_market_fee"] = self.area.get_grid_fee()
         current_market_info["last_market_stats"] = \
             self.area.stats.get_price_stats_current_market()
         current_market_info["self_sufficiency"] = \

@@ -47,7 +47,7 @@ from d3a.d3a_core.util import NonBlockingConsole, validate_const_settings_for_si
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCommunication
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a.d3a_core.exceptions import D3AException
+from d3a_interface.exceptions import D3AException
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints

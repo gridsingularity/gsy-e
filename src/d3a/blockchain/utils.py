@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import wait_until_timeout_blocking
 from logging import getLogger
-from d3a.d3a_core.exceptions import D3AException
+from d3a_interface.exceptions import D3AException
 import os
 import time
 

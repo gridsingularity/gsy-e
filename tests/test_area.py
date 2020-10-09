@@ -63,7 +63,7 @@ class TestAreaClass(unittest.TestCase):
         self.area.children = [self.area]
         self.area.grid_fee_percentage = 1
         self.dispatcher = AreaDispatcher(self.area)
-        self.stats = AreaStats(self.area._markets)
+        self.stats = AreaStats(self.area._markets, self.area)
 
     def tearDown(self):
         GlobalConfig.market_count = 1
