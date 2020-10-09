@@ -21,7 +21,6 @@ from logging import getLogger
 
 from d3a_interface.area_validator import validate_area
 from d3a_interface.utils import key_in_dict_and_not_none
-from d3a_interface.exceptions import D3AException
 from d3a.models.strategy.external_strategies import CommandTypeNotSupported, register_area, \
     unregister_area
 
@@ -105,7 +104,7 @@ class RedisMarketExternalConnection:
         try:
             validate_area(grid_fee_percentage=payload_data.get("fee_percent", None),
                           grid_fee_constant=payload_data.get("fee_const", None))
-        except D3AException as e:
+        except Exception as e:
             log.error(str(e))
             return
 
