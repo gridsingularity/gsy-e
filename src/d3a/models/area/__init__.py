@@ -126,12 +126,12 @@ class Area:
             "area_stats": self.stats.get_state()
         }
 
-    def load_state(self, saved_state):
+    def restore_state(self, saved_state):
         if self.strategy is not None:
-            self.strategy.load_state(saved_state)
+            self.strategy.restore_state(saved_state)
 
         self.current_tick = saved_state["current_tick"]
-        self.stats.load_state(saved_state)
+        self.stats.restore_state(saved_state)
 
     def area_reconfigure_event(self, **kwargs):
         if self.strategy is not None:

@@ -50,7 +50,7 @@ class PVState:
     def get_state(self):
         return {"available_energy_kWh": convert_pendulum_to_str_in_dict(self.available_energy_kWh)}
 
-    def load_state(self, state_dict):
+    def restore_state(self, state_dict):
         self.available_energy_kWh = state_dict["available_energy_kWh"]
 
 
@@ -63,7 +63,7 @@ class LoadState:
     def get_state(self):
         return {"desired_energy_Wh": convert_pendulum_to_str_in_dict(self.desired_energy_Wh)}
 
-    def load_state(self, state_dict):
+    def restore_state(self, state_dict):
         self.desired_energy_Wh = state_dict["desired_energy_Wh"]
 
 
@@ -144,7 +144,7 @@ class StorageState:
             "battery_energy_per_slot": self._battery_energy_per_slot,
         }
 
-    def load_state(self, state_dict):
+    def restore_state(self, state_dict):
         self.pledged_sell_kWh = convert_str_to_pendulum_in_dict(state_dict["pledged_sell_kWh"])
         self.offered_sell_kWh = convert_str_to_pendulum_in_dict(state_dict["offered_sell_kWh"])
         self.pledged_buy_kWh = convert_str_to_pendulum_in_dict(state_dict["pledged_buy_kWh"])

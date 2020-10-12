@@ -427,9 +427,9 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                 "Strategy does not have a state. "
                 "State is required to support save state functionality.")
 
-    def load_state(self, saved_state):
+    def restore_state(self, saved_state):
         try:
-            self.state.load_state(saved_state)
+            self.state.restore_state(saved_state)
         except AttributeError:
             raise D3AException(
                 "Strategy does not have a state. "

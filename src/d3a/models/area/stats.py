@@ -52,7 +52,7 @@ class AreaStats:
             "imported_energy": convert_pendulum_to_str_in_dict(self.imported_energy),
         }
 
-    def load_state(self, saved_state):
+    def restore_state(self, saved_state):
         self.rate_stats_market = convert_str_to_pendulum_in_dict(saved_state["rate_stats_market"])
         self.exported_energy = convert_str_to_pendulum_in_dict(saved_state["exported_energy"])
         self.imported_energy = convert_str_to_pendulum_in_dict(saved_state["imported_energy"])

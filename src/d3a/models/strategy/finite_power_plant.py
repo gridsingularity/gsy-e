@@ -54,7 +54,7 @@ class FinitePowerPlant(CommercialStrategy):
                 self.max_available_power_kW)
         }
 
-    def load_state(self, saved_state):
+    def restore_state(self, saved_state):
         self.energy_rate = convert_str_to_pendulum_in_dict(saved_state["energy_rate"])
         self.max_available_power_kW = convert_str_to_pendulum_in_dict(
             saved_state["max_available_power_kW"])
