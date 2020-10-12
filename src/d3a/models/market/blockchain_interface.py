@@ -19,8 +19,19 @@ import uuid
 from d3a.events.event_structures import MarketEvent
 from d3a.d3a_core.exceptions import InvalidTrade
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a.models.market import Market
+from d3a.models.market.blockchain_utils import get_function_metadata, \
+    address_to_hex, swap_byte_order, BOB_ADDRESS, ALICE_ADDRESS, \
+    test_value, test_rate, main_address, mnemonic, hex2, default_url, \
+    template_node_address_type
+from substrateinterface import SubstrateInterface, SubstrateRequestException, Keypair
+from pathlib import Path
 import platform
+import random
+import logging
 
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 if platform.python_implementation() != "PyPy" and \
         ConstSettings.BlockchainSettings.BC_INSTALLED is True:
@@ -59,11 +70,85 @@ class NonBlockchainInterface:
         pass
 
 
+class SubstrateBlockchainInterface(Market):
+    def __init__(self, time_slot=None, bc=None, notification_listener=None,
+                 readonly=False, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
+                 transfer_fees=None, name=None):
+        super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
+                         transfer_fees, name)
+        self.contracts = {'main': main_address}
+        self.substrate = SubstrateInterface(
+            url=default_url,
+            address_type=template_node_address_type,
+            type_registry_preset='default'
+        )
+
+    def compose_call(self, data, contract_address):
+        call = self.substrate.compose_call(
+            call_module='Contracts',
+            call_function='call',
+            call_params={
+                'dest': contract_address,
+                'value': 1 * 10**18,
+                'gas_limit': 1000000000000,
+                'data': data
+            }
+        )
+        return call
+
+    def simple_contract_call(self, contract_address, function, path):
+        data = get_function_metadata(function, path)
+        call = self.compose_call(data, contract_address)
+        return call
+
+    def storage_contract_call(self, contract_address, function, path):
+        trade_id = random.randint(10, 32)
+        logger.info('TRADE ID {}'.format(trade_id))
+        data = get_function_metadata(function, path) + hex2(trade_id) + \
+            address_to_hex(ALICE_ADDRESS) + address_to_hex(BOB_ADDRESS) + \
+            swap_byte_order(hex2(test_value)) + '000000000000000000' + hex2(test_rate)
+        call = self.compose_call(data, contract_address)
+        return trade_id, call
+
+    def create_new_offer(self, energy, price, seller):
+        return str(uuid.uuid4())
+
+    def cancel_offer(self, offer):
+        pass
+
+    def change_offer(self, offer, original_offer, residual_offer):
+        pass
+
+    def handle_blockchain_trade_event(self, offer, buyer, original_offer, residual_offer):
+        return str(uuid.uuid4()), residual_offer
+
+    def track_trade_event(self, trade):
+        path = Path.cwd().joinpath('src', 'd3a', 'models', 'market', 'metadata.json')
+        trade_id, call = self.storage_contract_call(
+            self.contracts['main'],
+            "trade",
+            str(path)
+        )
+        keypair = Keypair.create_from_mnemonic(mnemonic)
+        extrinsic = self.substrate.create_signed_extrinsic(call=call, keypair=keypair)
+
+        try:
+            result = self.substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+            logger.info("Extrinsic '{}' sent and included in block '{}'".format(
+                result['extrinsic_hash'], result['block_hash']))
+
+        except SubstrateRequestException as e:
+            logger.info("Failed to send: {}".format(e))
+
+    def bc_listener(self):
+        pass
+
+
 class MarketBlockchainInterface:
     def __init__(self, bc):
-        self.offers_deleted = {}  # type: Dict[str, Offer]
-        self.offers_changed = {}  # type: Dict[str, (Offer, Offer)]
-        self._trades_by_id = {}  # type: Dict[str, Trade]
+        self.offers_deleted = {}
+        self.offers_changed = {}
+        self._trades_by_id = {}
 
         self.bc_interface = bc
         self.bc_contract = create_market_contract(bc,

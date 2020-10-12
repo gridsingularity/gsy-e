@@ -21,6 +21,7 @@ from collections import namedtuple
 from enum import Enum
 from math import isclose
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
 from d3a import limit_float_precision
 from d3a.d3a_core.util import generate_market_slot_list
 
@@ -46,12 +47,24 @@ class PVState:
         self.available_energy_kWh = \
             {slot: 0. for slot in generate_market_slot_list()}
 
+    def get_state(self):
+        return {"available_energy_kWh": convert_pendulum_to_str_in_dict(self.available_energy_kWh)}
+
+    def restore_state(self, state_dict):
+        self.available_energy_kWh = state_dict["available_energy_kWh"]
+
 
 class LoadState:
     def __init__(self):
         self.desired_energy_Wh = \
             {slot: 0. for slot in generate_market_slot_list()}
         self.total_energy_demanded_wh = 0
+
+    def get_state(self):
+        return {"desired_energy_Wh": convert_pendulum_to_str_in_dict(self.desired_energy_Wh)}
+
+    def restore_state(self, state_dict):
+        self.desired_energy_Wh = state_dict["desired_energy_Wh"]
 
 
 class ESSEnergyOrigin(Enum):
@@ -114,6 +127,37 @@ class StorageState:
         self._used_storage = initial_capacity_kWh
         self._battery_energy_per_slot = 0.0
         self._used_storage_share = [EnergyOrigin(initial_energy_origin, initial_capacity_kWh)]
+
+    def get_state(self):
+        return {
+            "pledged_sell_kWh": convert_pendulum_to_str_in_dict(self.pledged_sell_kWh),
+            "offered_sell_kWh": convert_pendulum_to_str_in_dict(self.offered_sell_kWh),
+            "pledged_buy_kWh": convert_pendulum_to_str_in_dict(self.pledged_buy_kWh),
+            "offered_buy_kWh": convert_pendulum_to_str_in_dict(self.offered_buy_kWh),
+            "charge_history": convert_pendulum_to_str_in_dict(self.charge_history),
+            "charge_history_kWh": convert_pendulum_to_str_in_dict(self.charge_history_kWh),
+            "offered_history": convert_pendulum_to_str_in_dict(self.offered_history),
+            "used_history": convert_pendulum_to_str_in_dict(self.used_history),
+            "energy_to_buy_dict": convert_pendulum_to_str_in_dict(self.energy_to_buy_dict),
+            "energy_to_sell_dict": convert_pendulum_to_str_in_dict(self.energy_to_sell_dict),
+            "used_storage": self._used_storage,
+            "battery_energy_per_slot": self._battery_energy_per_slot,
+        }
+
+    def restore_state(self, state_dict):
+        self.pledged_sell_kWh = convert_str_to_pendulum_in_dict(state_dict["pledged_sell_kWh"])
+        self.offered_sell_kWh = convert_str_to_pendulum_in_dict(state_dict["offered_sell_kWh"])
+        self.pledged_buy_kWh = convert_str_to_pendulum_in_dict(state_dict["pledged_buy_kWh"])
+        self.offered_buy_kWh = convert_str_to_pendulum_in_dict(state_dict["offered_buy_kWh"])
+        self.charge_history = convert_str_to_pendulum_in_dict(state_dict["charge_history"])
+        self.charge_history_kWh = convert_str_to_pendulum_in_dict(state_dict["charge_history_kWh"])
+        self.offered_history = convert_str_to_pendulum_in_dict(state_dict["offered_history"])
+        self.used_history = convert_str_to_pendulum_in_dict(state_dict["used_history"])
+        self.energy_to_buy_dict = convert_str_to_pendulum_in_dict(state_dict["energy_to_buy_dict"])
+        self.energy_to_sell_dict = convert_str_to_pendulum_in_dict(
+            state_dict["energy_to_sell_dict"])
+        self._used_storage = state_dict["used_storage"]
+        self._battery_energy_per_slot = state_dict["battery_energy_per_slot"]
 
     @property
     def used_storage(self):

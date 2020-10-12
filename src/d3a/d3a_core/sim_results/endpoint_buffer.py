@@ -73,6 +73,8 @@ class SimulationEndpointBuffer:
         self.bids_offers_trades = {}
         self.last_energy_trades_high_resolution = {}
 
+        self.simulation_state = {"general": {}, "areas": {}}
+
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or \
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
             self.area_market_stocks_stats = OfferBidTradeGraphStats()
@@ -126,6 +128,7 @@ class SimulationEndpointBuffer:
                 self.last_energy_trades_high_resolution, {}),
             "bids_offers_trades": self.bids_offers_trades,
             "results_area_uuids": list(self.result_area_uuids),
+            "simulation_state": self.simulation_state
         }
 
     def generate_json_report(self):
@@ -145,9 +148,10 @@ class SimulationEndpointBuffer:
                 self.trade_profile.traded_energy_profile, {}, ui_format=True),
             "kpi": self.kpi.performance_indices,
             "area_throughput": self.area_throughput_stats.results,
+            "simulation_state": self.simulation_state
         }
 
-    def _populate_core_stats(self, area):
+    def _populate_core_stats_and_sim_state(self, area):
         if area.uuid not in self.flattened_area_core_stats_dict:
             self.flattened_area_core_stats_dict[area.uuid] = {}
         if self.current_market_time_slot_str == "":
@@ -224,16 +228,19 @@ class SimulationEndpointBuffer:
 
         self.flattened_area_core_stats_dict[area.uuid] = core_stats_dict
 
-        for child in area.children:
-            self._populate_core_stats(child)
+        self.simulation_state["areas"][area.uuid] = area.get_state()
 
-    def update_stats(self, area, simulation_status, progress_info):
+        for child in area.children:
+            self._populate_core_stats_and_sim_state(child)
+
+    def update_stats(self, area, simulation_status, progress_info, sim_state):
         self.status = simulation_status
         if area.current_market is not None:
             self.current_market_time_slot_str = area.current_market.time_slot_str
             self.current_market_time_slot_unix = area.current_market.time_slot.timestamp()
             self.current_market_time_slot = area.current_market.time_slot
-        self._populate_core_stats(area)
+        self.simulation_state["general"] = sim_state
+        self._populate_core_stats_and_sim_state(area)
         self.simulation_progress = {
             "eta_seconds": progress_info.eta.seconds,
             "elapsed_time_seconds": progress_info.elapsed_time.seconds,
