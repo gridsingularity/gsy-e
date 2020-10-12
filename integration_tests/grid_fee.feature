@@ -13,7 +13,7 @@ Feature: GridFee integration tests
   Examples: Minimum Offer Age
      | min_offer_age | slot_length | tick_length |
      |       0       |     60      |     60      |
-     |       5       |     60      |     15      |
+     |       5       |     60      |     10      |
      |       9       |     60      |     5       |
 
   Scenario Outline: Grid fees are calculated based on the original bid rate
@@ -83,7 +83,7 @@ Feature: GridFee integration tests
   Examples: Minimum Offer Age
      | min_offer_age | slot_length | tick_length |
      |       0       |     60      |     60      |
-     |       5       |     60      |     15      |
+     |       5       |     60      |     10      |
      |       9       |     60      |     5       |
 
   Scenario Outline: Constant grid fees are calculated correctly on pay as bid market

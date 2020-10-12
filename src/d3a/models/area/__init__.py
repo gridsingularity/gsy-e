@@ -336,10 +336,14 @@ class Area:
                     market.match_offers_bids()
 
         self.events.update_events(self.now)
+
+    def update_area_current_tick(self):
         self.current_tick += 1
         if self._markets:
             for market in self._markets.markets.values():
                 market.update_clock(self.current_tick_in_slot)
+        for child in self.children:
+            child.update_area_current_tick()
 
     def tick_and_dispatch(self):
         if d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP:
