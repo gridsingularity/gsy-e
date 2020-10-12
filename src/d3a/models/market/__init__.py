@@ -65,9 +65,8 @@ class Market:
                  grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
                  transfer_fees: TransferFees = None, name=None):
         self.name = name
-        self.bc = bc
         if bc is not None:
-            self.bc_interface = SubstrateBlockchainInterface()
+            self.bc_interface = SubstrateBlockchainInterface(bc)
         else:
             self.bc_interface = NonBlockchainInterface()
         self.id = str(uuid.uuid4())

@@ -59,8 +59,10 @@ class TestAreaClass(unittest.TestCase):
         self.config.end_date = self.config.start_date + self.config.sim_duration
         self.area = Area("test_area", None, None, self.strategy,
                          self.appliance, self.config, None, grid_fee_percentage=1)
-        self.area.parent = self.area
-        self.area.children = [self.area]
+        self.area_child = Area("test_area_c", None, None, self.strategy,
+                               self.appliance, self.config, None, grid_fee_percentage=1)
+        self.area_child.parent = self.area
+        self.area.children = [self.area_child]
         self.area.grid_fee_percentage = 1
         self.dispatcher = AreaDispatcher(self.area)
         self.stats = AreaStats(self.area._markets, self.area)
@@ -81,7 +83,7 @@ class TestAreaClass(unittest.TestCase):
         assert list(self.area.next_market.offers.values())[0].price == 1.05
 
     def test_markets_are_cycled_according_to_market_count(self):
-        self.area._bc = False
+        self.area._bc = None
         for i in range(2, 97):
             self.config.market_count = i
             self.config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
@@ -93,7 +95,7 @@ class TestAreaClass(unittest.TestCase):
                          config=GlobalConfig, grid_fee_percentage=5)
         self.area.config.market_count = 1
         self.area.activate()
-        self.area._bc = False
+        self.area._bc = None
 
         self.area._cycle_markets(False, False, False)
         assert len(self.area.past_markets) == 0
@@ -114,7 +116,7 @@ class TestAreaClass(unittest.TestCase):
                          config=GlobalConfig, grid_fee_percentage=5)
         self.area.config.market_count = 1
         self.area.activate()
-        self.area._bc = False
+        self.area._bc = None
 
         self.area._cycle_markets(False, False, False)
         assert len(self.area.past_markets) == 0

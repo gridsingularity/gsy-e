@@ -18,24 +18,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import uuid
 from d3a.events.event_structures import MarketEvent
 from d3a.d3a_core.exceptions import InvalidTrade
+from d3a.blockchain import ENABLE_SUBSTRATE
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a.models.market.blockchain_utils import get_function_metadata, \
-    address_to_hex, swap_byte_order, BOB_ADDRESS, ALICE_ADDRESS, \
-    test_value, test_rate, main_address, mnemonic, hex2, default_url, \
-    template_node_address_type
-from substrateinterface import SubstrateInterface, SubstrateRequestException, Keypair
 from pathlib import Path
 import platform
 import random
 import logging
 
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+
 
 if platform.python_implementation() != "PyPy" and \
         ConstSettings.BlockchainSettings.BC_INSTALLED is True:
     from d3a.models.market.blockchain_utils import create_market_contract, create_new_offer, \
         cancel_offer, trade_offer
+    if ENABLE_SUBSTRATE is True:
+        from d3a.models.market.blockchain_utils import get_function_metadata, \
+            address_to_hex, swap_byte_order, BOB_ADDRESS, ALICE_ADDRESS, \
+            test_value, test_rate, main_address, mnemonic, hex2
+        from substrateinterface import SubstrateRequestException, Keypair  # NOQA
 
 
 BC_EVENT_MAP = {
@@ -70,13 +71,9 @@ class NonBlockchainInterface:
 
 
 class SubstrateBlockchainInterface:
-    def __init__(self):
+    def __init__(self, bc):
         self.contracts = {'main': main_address}
-        self.substrate = SubstrateInterface(
-            url=default_url,
-            address_type=template_node_address_type,
-            type_registry_preset='default'
-        )
+        self.substrate = bc
 
     def compose_call(self, data, contract_address):
         call = self.substrate.compose_call(
