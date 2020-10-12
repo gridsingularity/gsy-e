@@ -55,10 +55,8 @@ requests==2.22.0          # via docker, ipfshttpclient, substrate-interface, web
 retrying==1.3.3           # via plotly
 rlp==1.2.0                # via eth-account, eth-rlp
 rq==1.2.0                 # via -r requirements/base.in
-scalecodec==0.10.16       # via substrate-interface
 six==1.14.0               # via attrdict, docker, ipfshttpclient, jsonschema, multiaddr, parsimonious, pip-tools, plotly, protobuf, pyrsistent, python-dateutil, python-rex, retrying, websocket-client
 sortedcontainers==2.1.0   # via -r requirements/base.in
-substrate-interface==0.9.19  # via -r requirements/base.in
 toolz==0.10.0             # via cytoolz
 typing-extensions==3.7.4.1  # via web3
 unidecode==0.4.21         # via awesome-slugify

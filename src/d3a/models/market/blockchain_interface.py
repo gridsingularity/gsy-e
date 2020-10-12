@@ -19,18 +19,16 @@ import uuid
 from d3a.events.event_structures import MarketEvent
 from d3a.d3a_core.exceptions import InvalidTrade
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a.models.market import Market
 from d3a.models.market.blockchain_utils import get_function_metadata, \
     address_to_hex, swap_byte_order, BOB_ADDRESS, ALICE_ADDRESS, \
-    test_value, test_rate, main_address, mnemonic, hex2, default_url
+    test_value, test_rate, main_address, mnemonic, hex2, default_url, \
+    template_node_address_type
 from substrateinterface import SubstrateInterface, SubstrateRequestException, Keypair
 from pathlib import Path
 import platform
 import random
 import logging
-
-logging.basicConfig(filename="trades.log",
-                    format='%(asctime)s %(message)s',
-                    filemode='w')
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -72,12 +70,16 @@ class NonBlockchainInterface:
         pass
 
 
-class SubstrateBlockchainInterface():
-    def __init__(self):
+class SubstrateBlockchainInterface(Market):
+    def __init__(self, time_slot=None, bc=None, notification_listener=None,
+                 readonly=False, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
+                 transfer_fees=None, name=None):
+        super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
+                         transfer_fees, name)
         self.contracts = {'main': main_address}
         self.substrate = SubstrateInterface(
             url=default_url,
-            address_type=42,
+            address_type=template_node_address_type,
             type_registry_preset='default'
         )
 
@@ -132,11 +134,11 @@ class SubstrateBlockchainInterface():
 
         try:
             result = self.substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
-            print("Extrinsic '{}' sent and included in block '{}'".format(
+            logger.info("Extrinsic '{}' sent and included in block '{}'".format(
                 result['extrinsic_hash'], result['block_hash']))
 
         except SubstrateRequestException as e:
-            print("Failed to send: {}".format(e))
+            logger.info("Failed to send: {}".format(e))
 
     def bc_listener(self):
         pass
