@@ -252,7 +252,6 @@ class MarketEnergyBills:
     def update(self, area_dict, area_core_stats):
         self._update_market_fees(area_dict, area_core_stats)
         bills = self._energy_bills(area_dict, area_core_stats)
-        # print(f"bills: {bills}")
         flattened = {}
         self._flatten_energy_bills(bills, flattened)
         self.bills_results = self._accumulate_by_children(area_dict, flattened, {})

@@ -316,7 +316,8 @@ class StorageExternalMixin(ExternalMixin):
                 if "bills" in self.device.stats.aggregated_stats else None
             current_market_info["area_uuid"] = self.device.uuid
             current_market_info["last_market_maker_rate"] = \
-                get_current_market_maker_rate(self.area.current_market.time_slot)
+                get_current_market_maker_rate(self.area.current_market.time_slot) \
+                if self.area.current_market else None
             if self.connected:
                 current_market_info['last_market_stats'] = \
                     self.market_area.stats.get_price_stats_current_market()
@@ -378,7 +379,7 @@ class StorageExternalMixin(ExternalMixin):
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id", None)
             }
-        except Exception as e:
+        except Exception:
             return {
                 "command": "offer_delete", "status": "error",
                 "area_uuid": self.device.uuid,
@@ -395,7 +396,7 @@ class StorageExternalMixin(ExternalMixin):
                 "command": "list_offers", "status": "ready", "offer_list": filtered_offers,
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id", None)}
-        except Exception as e:
+        except Exception:
             return {
                 "command": "list_offers", "status": "error",
                 "area_uuid": self.device.uuid,
@@ -416,7 +417,7 @@ class StorageExternalMixin(ExternalMixin):
                 return {
                     "command": "update_offer", "status": "error",
                     "area_uuid": self.device.uuid,
-                    "error_message": f"Update offer is only possible if the old offer exist",
+                    "error_message": "Update offer is only possible if the old offer exist",
                     "transaction_id": arguments.get("transaction_id", None)}
 
             for offer, iterated_market_id in open_offers.items():
@@ -462,7 +463,7 @@ class StorageExternalMixin(ExternalMixin):
                     "offer": offer.to_JSON_string(),
                     "transaction_id": arguments.get("transaction_id", None),
                 }
-            except Exception as e:
+            except Exception:
                 return {
                     "command": "offer", "status": "error",
                     "area_uuid": self.device.uuid,
@@ -496,7 +497,7 @@ class StorageExternalMixin(ExternalMixin):
                 return {
                     "command": "update_bid", "status": "error",
                     "area_uuid": self.device.uuid,
-                    "error_message": f"Updated bid would only work if the old exist in market.",
+                    "error_message": "Updated bid would only work if the old exist in market.",
                     "transaction_id": arguments.get("transaction_id", None)}
 
     def _bid_aggregator(self, arguments):
@@ -517,7 +518,7 @@ class StorageExternalMixin(ExternalMixin):
                 "command": "bid", "status": "ready", "bid": bid.to_JSON_string(),
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id", None)}
-        except Exception as e:
+        except Exception:
             return {
                 "command": "bid", "status": "error",
                 "area_uuid": self.device.uuid,
@@ -543,7 +544,7 @@ class StorageExternalMixin(ExternalMixin):
                 "command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id", None)}
-        except Exception as e:
+        except Exception:
             return {
                 "command": "bid_delete", "status": "error",
                 "area_uuid": self.device.uuid,
