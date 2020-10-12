@@ -14,5 +14,6 @@ plotly
 python-rex
 redis
 rq
+substrate-interface
 web3
 sortedcontainers
