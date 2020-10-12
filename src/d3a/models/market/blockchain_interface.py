@@ -19,7 +19,6 @@ import uuid
 from d3a.events.event_structures import MarketEvent
 from d3a.d3a_core.exceptions import InvalidTrade
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a.models.market import Market
 from d3a.models.market.blockchain_utils import get_function_metadata, \
     address_to_hex, swap_byte_order, BOB_ADDRESS, ALICE_ADDRESS, \
     test_value, test_rate, main_address, mnemonic, hex2, default_url, \
@@ -70,12 +69,8 @@ class NonBlockchainInterface:
         pass
 
 
-class SubstrateBlockchainInterface(Market):
-    def __init__(self, time_slot=None, bc=None, notification_listener=None,
-                 readonly=False, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
-                 transfer_fees=None, name=None):
-        super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
-                         transfer_fees, name)
+class SubstrateBlockchainInterface:
+    def __init__(self):
         self.contracts = {'main': main_address}
         self.substrate = SubstrateInterface(
             url=default_url,
