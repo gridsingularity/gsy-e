@@ -36,8 +36,6 @@ test_value = 10000000000000000
 test_rate = 12
 main_address = "ADDRESS_OF_YOUR_DEPLOYED_CONTRACT"
 mnemonic = "MNEMONIC_TO_RESTORE_YOUR_KEYPAIR"
-default_url = "ws://127.0.0.1:9944"
-template_node_address_type = 42
 
 
 class InvalidBlockchainOffer(D3AException):

@@ -16,20 +16,27 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from logging import getLogger
-from typing import Dict, List, Optional  # noqa
-from substrateinterface import SubstrateInterface
+import platform
+from d3a_interface.constants_limits import ConstSettings
 
 
-log = getLogger(__name__)
-default_url = "ws://127.0.0.1:9944"
+ENABLE_SUBSTRATE = False
+
+if platform.python_implementation() != "PyPy" and \
+        ConstSettings.BlockchainSettings.BC_INSTALLED is True and \
+        ENABLE_SUBSTRATE is True:
+    from substrateinterface import SubstrateInterface
+
+
+DEFAULT_SUBSTRATE_URL = "ws://127.0.0.1:9944"
+TEMPLATE_NODE_ADDRESS_TYPE = 42
 
 
 class BlockChainInterface:
 
     def __init__(self):
         self.substrate = SubstrateInterface(
-            url=default_url,
-            address_type=42,
+            url=DEFAULT_SUBSTRATE_URL,
+            address_type=TEMPLATE_NODE_ADDRESS_TYPE,
             type_registry_preset='default'
         )
