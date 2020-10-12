@@ -1,0 +1,1119 @@
+{
+  "registry": {
+    "strings": [
+      "Storage",
+      "erc20",
+      "__ink_private",
+      "__ink_storage",
+      "total_supply",
+      "Value",
+      "ink_core",
+      "storage",
+      "value",
+      "cell",
+      "SyncCell",
+      "sync_cell",
+      "Key",
+      "ink_primitives",
+      "balances",
+      "HashMap",
+      "collections",
+      "hash_map",
+      "impls",
+      "AccountId",
+      "env",
+      "types",
+      "len",
+      "entries",
+      "SyncChunk",
+      "chunk",
+      "sync_chunk",
+      "Entry",
+      "Occupied",
+      "OccupiedEntry",
+      "key",
+      "val",
+      "Removed",
+      "cells_key",
+      "allowances",
+      "trades",
+      "Hash",
+      "new",
+      "initial_supply",
+      "Balance",
+      "balance_of",
+      "owner",
+      "approve",
+      "spender",
+      "bool",
+      "allowance",
+      "transfer",
+      "to",
+      "trade",
+      "id",
+      "u8",
+      "buyer",
+      "seller",
+      "rate",
+      "i8",
+      "get_trades",
+      "Transfer",
+      "from",
+      "Option",
+      "None",
+      "Some",
+      "Approval",
+      "Trade",
+      "hash"
+    ],
+    "types": [
+      {
+        "id": {
+          "custom.name": 1,
+          "custom.namespace": [
+            2,
+            2,
+            3,
+            4
+          ],
+          "custom.params": []
+        },
+        "def": {
+          "struct.fields": [
+            {
+              "name": 5,
+              "type": 2
+            },
+            {
+              "name": 15,
+              "type": 8
+            },
+            {
+              "name": 35,
+              "type": 16
+            },
+            {
+              "name": 36,
+              "type": 21
+            }
+          ]
+        }
+      },
+      {
+        "id": {
+          "custom.name": 6,
+          "custom.namespace": [
+            7,
+            8,
+            9
+          ],
+          "custom.params": [
+            3
+          ]
+        },
+        "def": {
+          "struct.fields": [
+            {
+              "name": 10,
+              "type": 4
+            }
+          ]
+        }
+      },
+      {
+        "id": "u128",
+        "def": "builtin"
+      },
+      {
+        "id": {
+          "custom.name": 11,
+          "custom.namespace": [
+            7,
+            8,
+            10,
+            12
+          ],
+          "custom.params": [
+            3
+          ]
+        },
+        "def": {
+          "struct.fields": [
+            {
+              "name": 10,
+              "type": 5
+            }
+          ]
+        }
+      },
+      {
+        "id": {
+          "custom.name": 13,
+          "custom.namespace": [
+            14
+          ],
+          "custom.params": []
+        },
+        "def": {
+          "tuple_struct.types": [
+            6
+          ]
+        }
+      },
+      {
+        "id": {
+          "array.len": 32,
+          "array.type": 7
+        },
+        "def": "builtin"
+      },
+      {
+        "id": "u8",
+        "def": "builtin"
+      },
+      {
+        "id": {
+          "custom.name": 16,
+          "custom.namespace": [
+            7,
+            8,
+            17,
+            18,
+            19
+          ],
+          "custom.params": [
+            9,
+            3
+          ]
+        },
+        "def": {
+          "struct.fields": [
+            {
+              "name": 23,
+              "type": 10
+            },
+            {
+              "name": 24,
+              "type": 13
+            }
+          ]
+        }
+      },
+      {
+        "id": {
+          "custom.name": 20,
+          "custom.namespace": [
+            7,
+            21,
+            22
+          ],
+          "custom.params": []
+        },
+        "def": {
+          "tuple_struct.types": [
+            6
+          ]
+        }
+      },
+      {
+        "id": {
+          "custom.name": 6,
+          "custom.namespace": [
+            7,
+            8,
+            9
+          ],
+          "custom.params": [
+            11
+          ]
+        },
+        "def": {
+          "struct.fields": [
+            {
+              "name": 10,
+              "type": 12
+            }
+          ]
+        }
+      },
+      {
+        "id": "u32",
+        "def": "builtin"
+      },
+      {
+        "id": {
+          "custom.name": 11,
+          "custom.namespace": [
+            7,
+            8,
+            10,
+            12
+          ],
+          "custom.params": [
+            11
+          ]
+        },
+        "def": {
+          "struct.fields": [
+            {
+              "name": 10,
+              "type": 5
+            }
+          ]
+        }
+      },
+      {
+        "id": {
+          "custom.name": 25,
+          "custom.namespace": [
+            7,
+            8,
+            26,
+            27,
+            26
+          ],
+          "custom.params": [
+            14
+          ]
+        },
+        "def": {
+          "struct.fields": [
+            {
+              "name": 34,
+              "type": 5
+            }
+          ]
+        }
+      },
+      {
+        "id": {
+          "custom.name": 28,
+          "custom.namespace": [
+            7,
+            8,
+            17,
+            18,
+            19
+          ],
+          "custom.params": [
+            9,
+            3
+          ]
+        },
+        "def": {
+          "enum.variants": [
+            {
+              "tuple_struct_variant.name": 29,
+              "tuple_struct_variant.types": [
+                15
+              ]
+            },
+            {
+              "unit_variant.name": 33
+            }
+          ]
+        }
+      },
+      {
+        "id": {
+          "custom.name": 30,
+          "custom.namespace": [
+            7,
+            8,
+            17,
+            18,
+            19
+          ],
+          "custom.params": [
+            9,
+            3
+          ]
+        },
+        "def": {
+          "struct.fields": [
+            {
+              "name": 31,
+              "type": 9
+            },
+            {
+              "name": 32,
+              "type": 3
+            }
+          ]
+        }
+      },
+      {
+        "id": {
+          "custom.name": 16,
+          "custom.namespace": [
+            7,
+            8,
+            17,
+            18,
+            19
+          ],
+          "custom.params": [
+            17,
+            3
+          ]
+        },
+        "def": {
+          "struct.fields": [
+            {
+              "name": 23,
+              "type": 10
+            },
+            {
+              "name": 24,
+              "type": 18
+            }
+          ]
+        }
+      },
+      {
+        "id": [
+          9,
+          9
+        ],
+        "def": "builtin"
+      },
+      {
+        "id": {
+          "custom.name": 25,
+          "custom.namespace": [
+            7,
+            8,
+            26,
+            27,
+            26
+          ],
+          "custom.params": [
+            19
+          ]
+        },
+        "def": {
+          "struct.fields": [
+            {
+              "name": 34,
+              "type": 5
+            }
+          ]
+        }
+      },
+      {
+        "id": {
+          "custom.name": 28,
+          "custom.namespace": [
+            7,
+            8,
+            17,
+            18,
+            19
+          ],
+          "custom.params": [
+            17,
+            3
+          ]
+        },
+        "def": {
+          "enum.variants": [
+            {
+              "tuple_struct_variant.name": 29,
+              "tuple_struct_variant.types": [
+                20
+              ]
+            },
+            {
+              "unit_variant.name": 33
+            }
+          ]
+        }
+      },
+      {
+        "id": {
+          "custom.name": 30,
+          "custom.namespace": [
+            7,
+            8,
+            17,
+            18,
+            19
+          ],
+          "custom.params": [
+            17,
+            3
+          ]
+        },
+        "def": {
+          "struct.fields": [
+            {
+              "name": 31,
+              "type": 17
+            },
+            {
+              "name": 32,
+              "type": 3
+            }
+          ]
+        }
+      },
+      {
+        "id": {
+          "custom.name": 16,
+          "custom.namespace": [
+            7,
+            8,
+            17,
+            18,
+            19
+          ],
+          "custom.params": [
+            22,
+            23
+          ]
+        },
+        "def": {
+          "struct.fields": [
+            {
+              "name": 23,
+              "type": 10
+            },
+            {
+              "name": 24,
+              "type": 25
+            }
+          ]
+        }
+      },
+      {
+        "id": {
+          "custom.name": 37,
+          "custom.namespace": [
+            7,
+            21,
+            22
+          ],
+          "custom.params": []
+        },
+        "def": {
+          "tuple_struct.types": [
+            6
+          ]
+        }
+      },
+      {
+        "id": [
+          9,
+          9,
+          3,
+          24
+        ],
+        "def": "builtin"
+      },
+      {
+        "id": "i8",
+        "def": "builtin"
+      },
+      {
+        "id": {
+          "custom.name": 25,
+          "custom.namespace": [
+            7,
+            8,
+            26,
+            27,
+            26
+          ],
+          "custom.params": [
+            26
+          ]
+        },
+        "def": {
+          "struct.fields": [
+            {
+              "name": 34,
+              "type": 5
+            }
+          ]
+        }
+      },
+      {
+        "id": {
+          "custom.name": 28,
+          "custom.namespace": [
+            7,
+            8,
+            17,
+            18,
+            19
+          ],
+          "custom.params": [
+            22,
+            23
+          ]
+        },
+        "def": {
+          "enum.variants": [
+            {
+              "tuple_struct_variant.name": 29,
+              "tuple_struct_variant.types": [
+                27
+              ]
+            },
+            {
+              "unit_variant.name": 33
+            }
+          ]
+        }
+      },
+      {
+        "id": {
+          "custom.name": 30,
+          "custom.namespace": [
+            7,
+            8,
+            17,
+            18,
+            19
+          ],
+          "custom.params": [
+            22,
+            23
+          ]
+        },
+        "def": {
+          "struct.fields": [
+            {
+              "name": 31,
+              "type": 22
+            },
+            {
+              "name": 32,
+              "type": 23
+            }
+          ]
+        }
+      },
+      {
+        "id": "bool",
+        "def": "builtin"
+      },
+      {
+        "id": {
+          "custom.name": 59,
+          "custom.namespace": [],
+          "custom.params": [
+            9
+          ]
+        },
+        "def": {
+          "enum.variants": [
+            {
+              "unit_variant.name": 60
+            },
+            {
+              "tuple_struct_variant.name": 61,
+              "tuple_struct_variant.types": [
+                9
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "storage": {
+    "struct.type": 1,
+    "struct.fields": [
+      {
+        "name": 5,
+        "layout": {
+          "struct.type": 2,
+          "struct.fields": [
+            {
+              "name": 10,
+              "layout": {
+                "range.offset": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "range.len": 1,
+                "range.elem_type": 3
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": 15,
+        "layout": {
+          "struct.type": 8,
+          "struct.fields": [
+            {
+              "name": 23,
+              "layout": {
+                "struct.type": 10,
+                "struct.fields": [
+                  {
+                    "name": 10,
+                    "layout": {
+                      "range.offset": "0x0000000000000000000000000000000000000000000000000000000000000001",
+                      "range.len": 1,
+                      "range.elem_type": 11
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": 24,
+              "layout": {
+                "range.offset": "0x0000000000000000000000000000000000000000000000000000000000000002",
+                "range.len": 4294967295,
+                "range.elem_type": 14
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": 35,
+        "layout": {
+          "struct.type": 16,
+          "struct.fields": [
+            {
+              "name": 23,
+              "layout": {
+                "struct.type": 10,
+                "struct.fields": [
+                  {
+                    "name": 10,
+                    "layout": {
+                      "range.offset": "0x0000000000000000000000000000000000000000000000000000000100000001",
+                      "range.len": 1,
+                      "range.elem_type": 11
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": 24,
+              "layout": {
+                "range.offset": "0x0000000000000000000000000000000000000000000000000000000100000002",
+                "range.len": 4294967295,
+                "range.elem_type": 19
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": 36,
+        "layout": {
+          "struct.type": 21,
+          "struct.fields": [
+            {
+              "name": 23,
+              "layout": {
+                "struct.type": 10,
+                "struct.fields": [
+                  {
+                    "name": 10,
+                    "layout": {
+                      "range.offset": "0x0000000000000000000000000000000000000000000000000000000200000001",
+                      "range.len": 1,
+                      "range.elem_type": 11
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": 24,
+              "layout": {
+                "range.offset": "0x0000000000000000000000000000000000000000000000000000000200000002",
+                "range.len": 4294967295,
+                "range.elem_type": 26
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "contract": {
+    "name": 2,
+    "constructors": [
+      {
+        "name": 38,
+        "selector": "[\"0x5E\",\"0xBD\",\"0x88\",\"0xD6\"]",
+        "args": [
+          {
+            "name": 39,
+            "type": {
+              "ty": 3,
+              "display_name": [
+                40
+              ]
+            }
+          }
+        ],
+        "docs": []
+      }
+    ],
+    "messages": [
+      {
+        "name": 5,
+        "selector": "[\"0x92\",\"0x5D\",\"0x93\",\"0x38\"]",
+        "mutates": false,
+        "args": [],
+        "return_type": {
+          "ty": 3,
+          "display_name": [
+            40
+          ]
+        },
+        "docs": []
+      },
+      {
+        "name": 41,
+        "selector": "[\"0x26\",\"0xBB\",\"0x1D\",\"0xE4\"]",
+        "mutates": false,
+        "args": [
+          {
+            "name": 42,
+            "type": {
+              "ty": 9,
+              "display_name": [
+                20
+              ]
+            }
+          }
+        ],
+        "return_type": {
+          "ty": 3,
+          "display_name": [
+            40
+          ]
+        },
+        "docs": []
+      },
+      {
+        "name": 43,
+        "selector": "[\"0xCA\",\"0x60\",\"0xB3\",\"0x19\"]",
+        "mutates": true,
+        "args": [
+          {
+            "name": 44,
+            "type": {
+              "ty": 9,
+              "display_name": [
+                20
+              ]
+            }
+          },
+          {
+            "name": 9,
+            "type": {
+              "ty": 3,
+              "display_name": [
+                40
+              ]
+            }
+          }
+        ],
+        "return_type": {
+          "ty": 28,
+          "display_name": [
+            45
+          ]
+        },
+        "docs": []
+      },
+      {
+        "name": 46,
+        "selector": "[\"0x70\",\"0x76\",\"0x39\",\"0xB6\"]",
+        "mutates": false,
+        "args": [
+          {
+            "name": 42,
+            "type": {
+              "ty": 9,
+              "display_name": [
+                20
+              ]
+            }
+          },
+          {
+            "name": 44,
+            "type": {
+              "ty": 9,
+              "display_name": [
+                20
+              ]
+            }
+          }
+        ],
+        "return_type": {
+          "ty": 3,
+          "display_name": [
+            40
+          ]
+        },
+        "docs": []
+      },
+      {
+        "name": 47,
+        "selector": "[\"0x27\",\"0x03\",\"0x28\",\"0xC9\"]",
+        "mutates": true,
+        "args": [
+          {
+            "name": 48,
+            "type": {
+              "ty": 9,
+              "display_name": [
+                20
+              ]
+            }
+          },
+          {
+            "name": 9,
+            "type": {
+              "ty": 3,
+              "display_name": [
+                40
+              ]
+            }
+          }
+        ],
+        "return_type": {
+          "ty": 28,
+          "display_name": [
+            45
+          ]
+        },
+        "docs": []
+      },
+      {
+        "name": 49,
+        "selector": "[\"0x8F\",\"0xCE\",\"0x85\",\"0x45\"]",
+        "mutates": true,
+        "args": [
+          {
+            "name": 50,
+            "type": {
+              "ty": 7,
+              "display_name": [
+                51
+              ]
+            }
+          },
+          {
+            "name": 52,
+            "type": {
+              "ty": 9,
+              "display_name": [
+                20
+              ]
+            }
+          },
+          {
+            "name": 53,
+            "type": {
+              "ty": 9,
+              "display_name": [
+                20
+              ]
+            }
+          },
+          {
+            "name": 9,
+            "type": {
+              "ty": 3,
+              "display_name": [
+                40
+              ]
+            }
+          },
+          {
+            "name": 54,
+            "type": {
+              "ty": 24,
+              "display_name": [
+                55
+              ]
+            }
+          }
+        ],
+        "return_type": {
+          "ty": 28,
+          "display_name": [
+            45
+          ]
+        },
+        "docs": []
+      },
+      {
+        "name": 56,
+        "selector": "[\"0x52\",\"0xBD\",\"0x11\",\"0xC0\"]",
+        "mutates": false,
+        "args": [
+          {
+            "name": 50,
+            "type": {
+              "ty": 7,
+              "display_name": [
+                51
+              ]
+            }
+          }
+        ],
+        "return_type": {
+          "ty": 23,
+          "display_name": []
+        },
+        "docs": []
+      }
+    ],
+    "events": [
+      {
+        "name": 57,
+        "args": [
+          {
+            "name": 58,
+            "indexed": true,
+            "type": {
+              "ty": 29,
+              "display_name": [
+                59
+              ]
+            },
+            "docs": []
+          },
+          {
+            "name": 48,
+            "indexed": true,
+            "type": {
+              "ty": 29,
+              "display_name": [
+                59
+              ]
+            },
+            "docs": []
+          },
+          {
+            "name": 9,
+            "indexed": false,
+            "type": {
+              "ty": 3,
+              "display_name": [
+                40
+              ]
+            },
+            "docs": []
+          }
+        ],
+        "docs": []
+      },
+      {
+        "name": 62,
+        "args": [
+          {
+            "name": 42,
+            "indexed": true,
+            "type": {
+              "ty": 29,
+              "display_name": [
+                59
+              ]
+            },
+            "docs": []
+          },
+          {
+            "name": 44,
+            "indexed": true,
+            "type": {
+              "ty": 29,
+              "display_name": [
+                59
+              ]
+            },
+            "docs": []
+          },
+          {
+            "name": 9,
+            "indexed": true,
+            "type": {
+              "ty": 3,
+              "display_name": [
+                40
+              ]
+            },
+            "docs": []
+          }
+        ],
+        "docs": []
+      },
+      {
+        "name": 63,
+        "args": [
+          {
+            "name": 64,
+            "indexed": false,
+            "type": {
+              "ty": 22,
+              "display_name": [
+                37
+              ]
+            },
+            "docs": []
+          },
+          {
+            "name": 52,
+            "indexed": true,
+            "type": {
+              "ty": 29,
+              "display_name": [
+                59
+              ]
+            },
+            "docs": []
+          },
+          {
+            "name": 53,
+            "indexed": true,
+            "type": {
+              "ty": 29,
+              "display_name": [
+                59
+              ]
+            },
+            "docs": []
+          },
+          {
+            "name": 9,
+            "indexed": false,
+            "type": {
+              "ty": 3,
+              "display_name": [
+                40
+              ]
+            },
+            "docs": []
+          },
+          {
+            "name": 54,
+            "indexed": false,
+            "type": {
+              "ty": 24,
+              "display_name": [
+                55
+              ]
+            },
+            "docs": []
+          }
+        ],
+        "docs": []
+      }
+    ],
+    "docs": []
+  }
+}

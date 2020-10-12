@@ -7,7 +7,7 @@
 attrdict==2.0.1           # via -r requirements/base.txt, eth-account
 attrs==19.3.0             # via -r requirements/base.txt, hypothesis, jsonschema, pytest
 awesome-slugify==1.6.5    # via -r requirements/base.txt
-base58==2.0.0             # via -r requirements/base.txt, multiaddr
+base58==2.0.1             # via -r requirements/base.txt, multiaddr
 behave==1.2.6             # via -r requirements/tests.in
 cached-property==1.5.1    # via -r requirements/base.txt
 certifi==2019.11.28       # via -r requirements/base.txt, requests
