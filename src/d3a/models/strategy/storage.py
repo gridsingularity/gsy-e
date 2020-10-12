@@ -33,7 +33,6 @@ from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a_interface.utils import key_in_dict_and_not_none
-from d3a_interface.exceptions import D3AException
 
 log = getLogger(__name__)
 
@@ -181,7 +180,7 @@ class StorageStrategy(BidEnabledStrategy):
                                  initial_buying_rate, final_buying_rate,
                                  energy_rate_increase_per_update, energy_rate_decrease_per_update,
                                  bid_fit_to_limit, offer_fit_to_limit)
-        except D3AException as e:
+        except Exception as e:
             log.error(str(e))
             return
 
