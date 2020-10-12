@@ -13,9 +13,7 @@ try:
         REQUIREMENTS.extend(
             ['d3a-interface @ '
              'git+https://github.com/gridsingularity/d3a-interface.git',
-             'py-solc @ git+https://github.com/Jonasmpi/py-solc.git',
-             'substrate-interface @ '
-             'git+https://github.com/gridsingularity/py-substrate-interface.git'
+             'py-solc @ git+https://github.com/Jonasmpi/py-solc.git'
              ])
 except OSError:
     # Shouldn't happen
