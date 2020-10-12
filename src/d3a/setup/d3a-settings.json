@@ -181,16 +181,6 @@
         1,
         2
       ],
-      "FEE_PERCENTAGE": 0,
-      "FEE_PERCENTAGE_LIMIT": [
-        0,
-        100
-      ],
-      "FEE_CONSTANT": 0,
-      "FEE_CONSTANT_LIMIT": [
-        0,
-        9223372036854775807
-      ],
       "MARKET_TYPE": 1,
       "MARKET_TYPE_LIMIT": [
         1,
