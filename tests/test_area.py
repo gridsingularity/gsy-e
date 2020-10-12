@@ -190,6 +190,33 @@ class TestAreaClass(unittest.TestCase):
         assert len(self.area.all_markets) == 5
         assert len(self.area.balancing_markets) == 5
 
+    def test_get_restore_state_get_called_on_all_areas(self):
+        strategy = MagicMock(spec=StorageStrategy)
+        bat = Area(name="battery", strategy=strategy)
+
+        house = Area(name="House", children=[bat])
+        house.stats.get_state = MagicMock()
+        house.stats.restore_state = MagicMock()
+        area = Area(name="Street", children=[house])
+        area.stats.get_state = MagicMock()
+        area.stats.restore_state = MagicMock()
+        area.parent = Area(name="GRID")
+
+        area.get_state()
+        area.stats.get_state.assert_called_once()
+        area.restore_state({"current_tick": 200, "area_stats": None})
+        area.stats.restore_state.assert_called_once()
+        assert area.current_tick == 200
+
+        house.get_state()
+        house.stats.get_state.assert_called_once()
+        house.restore_state({"current_tick": 2432, "area_stats": None})
+        house.stats.restore_state.assert_called_once()
+        assert house.current_tick == 2432
+
+        bat.get_state()
+        strategy.get_state.assert_called_once()
+
 
 class TestEventDispatcher(unittest.TestCase):
 

@@ -118,6 +118,21 @@ class Area:
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available is True else None
 
+    def get_state(self):
+        if self.strategy is not None:
+            return self.strategy.get_state()
+        return {
+            "current_tick": self.current_tick,
+            "area_stats": self.stats.get_state()
+        }
+
+    def restore_state(self, saved_state):
+        if self.strategy is not None:
+            self.strategy.restore_state(saved_state)
+
+        self.current_tick = saved_state["current_tick"]
+        self.stats.restore_state(saved_state)
+
     def area_reconfigure_event(self, **kwargs):
         if self.strategy is not None:
             self.strategy.area_reconfigure_event(**kwargs)

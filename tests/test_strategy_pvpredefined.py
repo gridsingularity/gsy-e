@@ -76,10 +76,6 @@ class FakeArea:
         )
 
     @property
-    def historical_avg_rate(self):
-        return 30
-
-    @property
     def all_markets(self):
         return [self.test_market]
 

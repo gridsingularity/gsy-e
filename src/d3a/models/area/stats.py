@@ -24,6 +24,7 @@ from d3a.constants import TIME_ZONE
 from d3a import limit_float_precision
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name, add_or_create_key, \
     area_sells_to_child, child_buys_from_area
+from d3a_interface.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
 
 default_trade_stats_dict = {
     "min_trade_rate": None,
@@ -35,17 +36,26 @@ default_trade_stats_dict = {
 
 class AreaStats:
     def __init__(self, area_markets, area):
-        self._accumulated_past_price = 0
-        self._accumulated_past_energy = 0
         self._markets = area_markets
         self._area = area
         self.aggregated_stats = {}
         self.market_bills = {}
         self.rate_stats_market = {}
-        self.market_trades = {}
         self.kpi = {}
         self.exported_energy = {}
         self.imported_energy = {}
+
+    def get_state(self):
+        return {
+            "rate_stats_market": convert_pendulum_to_str_in_dict(self.rate_stats_market),
+            "exported_energy": convert_pendulum_to_str_in_dict(self.exported_energy),
+            "imported_energy": convert_pendulum_to_str_in_dict(self.imported_energy),
+        }
+
+    def restore_state(self, saved_state):
+        self.rate_stats_market = convert_str_to_pendulum_in_dict(saved_state["rate_stats_market"])
+        self.exported_energy = convert_str_to_pendulum_in_dict(saved_state["exported_energy"])
+        self.imported_energy = convert_str_to_pendulum_in_dict(saved_state["imported_energy"])
 
     def update_aggregated_stats(self, area_stats):
         self.aggregated_stats = area_stats
@@ -70,53 +80,6 @@ class AreaStats:
     def get_last_market_stats_for_grid_tree(self):
         return {key.lower().replace(" ", "_"): self._extract_from_bills(key)
                 for key in ["Accumulated Trades", "External Trades"]}
-
-    def update_accumulated(self):
-        self._accumulated_past_price = sum(
-            market.accumulated_trade_price
-            for market in self._markets.past_markets.values()
-        )
-        self._accumulated_past_energy = sum(
-            market.accumulated_trade_energy
-            for market in self._markets.past_markets.values()
-        )
-
-    @property
-    def _offer_count(self):
-        return sum(
-            len(m.offers)
-            for m in self._markets.all_spot_markets
-        )
-
-    @property
-    def _trade_count(self):
-        return sum(
-            len(m.trades)
-            for m in self._markets.all_spot_markets
-        )
-
-    @property
-    def historical_avg_rate(self):
-        price = sum(
-            market.accumulated_trade_price
-            for market in self._markets.markets.values()
-        ) + self._accumulated_past_price
-        energy = sum(
-            market.accumulated_trade_energy
-            for market in self._markets.markets.values()
-        ) + self._accumulated_past_energy
-        return price / energy if energy else 0
-
-    @property
-    def historical_min_max_price(self):
-        min_max_prices = [
-            (m.min_trade_price, m.max_trade_price)
-            for m in self._markets.all_spot_markets
-        ]
-        return (
-            min(p[0] for p in min_max_prices),
-            max(p[1] for p in min_max_prices)
-        )
 
     def report_accounting(self, market, reporter, value, time):
         slot = market.time_slot
