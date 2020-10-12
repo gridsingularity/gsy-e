@@ -307,6 +307,3 @@ class SimulationEndpointBuffer:
             "penalty_energy":
                 self.cumulative_bills.cumulative_bills_results[area_dict['uuid']]["penalty_energy"]
         })
-        # area.stats.update_aggregated_stats({"bills": bills})
-        #
-        # area.stats.kpi.update(self.kpi.performance_indices_redis.get(area_dict['uuid'], {}))

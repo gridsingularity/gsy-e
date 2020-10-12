@@ -129,12 +129,6 @@ class KPIState:
     def _accumulate_energy_trace(self, core_stats):
         for target_area_uuid in self.areas_to_trace_list:
             target_core_stats = core_stats.get(target_area_uuid, {})
-            # if c_area not in self.accounted_markets:
-            #     self.accounted_markets[c_area] = []
-            # for market in c_area.past_markets:
-            #     if market.time_slot_str in self.accounted_markets[c_area]:
-            #         continue
-            #     self.accounted_markets[c_area].append(market.time_slot_str)
             for trade in target_core_stats.get('trades', []):
                 self._accumulate_self_consumption(trade)
                 self._accumulate_self_production(trade)

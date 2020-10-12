@@ -184,7 +184,7 @@ class MarketEnergyBills:
                     market_fee=0.0,
                     type=area_dict['type'])
 
-    def _get_child_data(self, area_dict, area_core_stats):
+    def _get_child_data(self, area_dict):
         if area_dict['name'] not in self.bills_results:
             self.bills_results[area_dict['name']] =  \
                 {child['name']: self._default_area_dict(child)
@@ -217,7 +217,7 @@ class MarketEnergyBills:
                 bought=0.0, sold=0.0, spent=0.0, earned=0.0,
                 total_energy=0.0, total_cost=0.0, market_fee=0.0)
 
-        result = self._get_child_data(area_dict, area_core_stats)
+        result = self._get_child_data(area_dict)
         for trade in area_core_stats[area_dict['uuid']]['trades']:
             buyer = area_name_from_area_or_iaa_name(trade['buyer'])
             seller = area_name_from_area_or_iaa_name(trade['seller'])
