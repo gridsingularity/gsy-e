@@ -1187,10 +1187,46 @@
       
 
 
-  <li class="md-nav__item">
-    <a href="../api/" title="API" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
+    
+    <label class="md-nav__link" for="nav-4">
       API
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-4">
+        API
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../api/" title="Asset API" class="md-nav__link">
+      Asset API
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-api/" title="Market API" class="md-nav__link">
+      Market API
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
     
@@ -1284,13 +1320,13 @@
 This will run separate <code>d3a-simulation</code>s with all 4 alternative pricing schemes in parallel for the selected setup file. 
 The results of each simulation are stored in separate subfolders in the <code>export-path</code>.</p>
 <p>If you want to run a simulation only for one specific pricing scheme, set it via a <code>ConstSetting</code> in the setup file in which you are configuring your grid, e.g. by adding the following line:</p>
-<pre class="codehilite"><code>ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = 1</code></pre>
-
+<div class="codehilite"><pre><span></span><code>ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = 1
+</code></pre></div>
 
 <p>(You should not set this parameter and use the <code>--compare-alt-pricing</code> cli parameter combined)</p>
 <p>The feed-in-tariff (FIT) is a percentage that is set in the <code>ConstSetting</code>s as well, the default is 50%. Set this parameter yourself via a <code>ConstSetting</code> in the setup file in which you are configuring your grid, by adding the following line (e.g. FIT = 60% of <code>market_maker_rate</code>):</p>
-<pre class="codehilite"><code>ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE = 60</code></pre>
-
+<div class="codehilite"><pre><span></span><code>ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE = 60
+</code></pre></div>
 
 <p>For more information we refer to Alternative Pricing Mechanisms.</p>
 <h2 id="alternative-pricing-mechanisms">Alternative Pricing Mechanisms<a class="headerlink" href="#alternative-pricing-mechanisms" title="Permanent link">&para;</a></h2>

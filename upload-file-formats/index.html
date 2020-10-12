@@ -1182,10 +1182,46 @@
       
 
 
-  <li class="md-nav__item">
-    <a href="../api/" title="API" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
+    
+    <label class="md-nav__link" for="nav-4">
       API
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-4">
+        API
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../api/" title="Asset API" class="md-nav__link">
+      Asset API
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-api/" title="Market API" class="md-nav__link">
+      Market API
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
     
@@ -1265,23 +1301,23 @@
 Two time formats are supported, see below. Power set-points are given in Watts. D3A handles any conversions to energy (in kWh).</p>
 <p><code>hh:mm</code></p>
 <p>Example:</p>
-<pre class="codehilite"><code>INTERVAL;POWER(W):
+<div class="codehilite"><pre><span></span><code>INTERVAL;POWER(W):
 00:00;10
 00:15;10
 00:30;10
 00:45;10
-01:00;10</code></pre>
-
+01:00;10
+</code></pre></div>
 
 <p><code>YYYY-MM-DDThh:mm</code></p>
 <p>Example:</p>
-<pre class="codehilite"><code>INTERVAL,POWER(W)
+<div class="codehilite"><pre><span></span><code>INTERVAL,POWER(W)
 2019-01-01T00:00,10.0
 2019-01-01T00:15,10.0
 2019-01-01T00:30,10.0
 2019-01-01T00:45,10.0
-2019-01-01T01:00,10.0</code></pre>
-
+2019-01-01T01:00,10.0
+</code></pre></div>
 
 <p><strong>Warning</strong> : 
 If you upload csv files with date information (second example), you should also set the start-date of the simulation (the start-date of your csv files and the one of your simulation should be identical).</p>

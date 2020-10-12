@@ -1210,10 +1210,46 @@
       
 
 
-  <li class="md-nav__item">
-    <a href="../api/" title="API" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
+    
+    <label class="md-nav__link" for="nav-4">
       API
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-4">
+        API
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../api/" title="Asset API" class="md-nav__link">
+      Asset API
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-api/" title="Market API" class="md-nav__link">
+      Market API
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
     
@@ -1319,13 +1355,13 @@
 <p>Any device first has to get registered before actually placing offers in balancing market.</p>
 <p><strong>HOW TO REGISTER A DEVICE IN THE REGISTRY IN THE SETUP FILE:</strong></p>
 <p>The balancing device registry is a dictionary that contains the names of the devices as keys and the balancing rates as the tuple values: (demand balancing rate, supply balancing rate). </p>
-<pre class="codehilite"><code>device_registry_dict = {
+<div class="codehilite"><pre><span></span><code>device_registry_dict = {
     &quot;H1 General Load&quot;: (33, 35),
     &quot;H2 General Load&quot;: (33, 35),
     &quot;H1 Storage1&quot;: (33, 35),
     &quot;H1 Storage2&quot;: (33, 35),
-}</code></pre>
-
+}
+</code></pre></div>
 
 <h2 id="devices">Devices<a class="headerlink" href="#devices" title="Permanent link">&para;</a></h2>
 <p>Currently, <a href="../load-strategy/">Load Strategy</a> / <a href="../ess-strategy/">Storage Strategy</a> / <a href="../infinite-power-plant-strategy/">Infinite Power Plant (Commercial Producer)</a> can place balancing offers only if they are registered in "Device Registry".</p>

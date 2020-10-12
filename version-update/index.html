@@ -1202,10 +1202,46 @@
       
 
 
-  <li class="md-nav__item">
-    <a href="../api/" title="API" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
+    
+    <label class="md-nav__link" for="nav-4">
       API
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-4">
+        API
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../api/" title="Asset API" class="md-nav__link">
+      Asset API
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-api/" title="Market API" class="md-nav__link">
+      Market API
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
     
@@ -1303,23 +1339,23 @@
 <p>The D3A is often updated with new features. These steps allow you to update to the most current version</p>
 <h3 id="update-the-d3a">Update the D3A<a class="headerlink" href="#update-the-d3a" title="Permanent link">&para;</a></h3>
 <p>Open a terminal and activate the d3a virtual environment as described in the Installation Instructions for your OS. Then type:</p>
-<pre class="codehilite"><code>git pull origin/master
-fab sync</code></pre>
-
+<div class="codehilite"><pre><span></span><code>git pull origin/master
+fab sync
+</code></pre></div>
 
 <p>If fab sync does not work on your machine, please try:</p>
-<pre class="codehilite"><code>pip install -e .</code></pre>
-
+<div class="codehilite"><pre><span></span><code>pip install -e .
+</code></pre></div>
 
 <p>The D3A should now be up to date.</p>
 <h3 id="update-the-api-client">Update the API Client<a class="headerlink" href="#update-the-api-client" title="Permanent link">&para;</a></h3>
 <p>Open a terminal and activate the API client virtual environment as described in the <a href="../api/">API Installation Instructions</a>. Then type:</p>
-<pre class="codehilite"><code>pip uninstall d3a-api-client</code></pre>
-
+<div class="codehilite"><pre><span></span><code>pip uninstall d3a-api-client
+</code></pre></div>
 
 <p>Press <code>y</code> when prompted. Once the uninstall is complete, type:</p>
-<pre class="codehilite"><code>pip install git+https://github.com/gridsingularity/d3a-api-client.git</code></pre>
-
+<div class="codehilite"><pre><span></span><code>pip install git+https://github.com/gridsingularity/d3a-api-client.git
+</code></pre></div>
 
 <p>Now, the API client should be up to date.</p>
                 
@@ -1357,13 +1393,13 @@ fab sync</code></pre>
           </a>
         
         
-          <a href="../api/" title="API" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../api/" title="Asset API" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                API
+                Asset API
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

@@ -13,7 +13,7 @@
         <meta name="description" content="Wiki for the D3A by Grid Singularity">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/d3a/d3a-documentation/grid-setup/">
+        <link rel="canonical" href="https://gridsingularity.github.io/d3a/d3a-documentation/collaboration/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -42,7 +42,7 @@
     
     
       
-        <title>Initial Grid Setup - D3A Wiki</title>
+        <title>Collaboration - D3A Wiki</title>
       
     
     
@@ -110,6 +110,10 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
+      <a href="#introduction" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
     
       <header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid">
@@ -131,7 +135,7 @@
               D3A Wiki
             </span>
             <span class="md-header-nav__topic">
-              Initial Grid Setup
+              Collaboration
             </span>
           
         </div>
@@ -251,12 +255,10 @@
       
       
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
     
     <label class="md-nav__link" for="nav-2">
       User Interface (d3a.io)
@@ -308,12 +310,10 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4">
     
     <label class="md-nav__link" for="nav-2-4">
       Simulation Configuration
@@ -353,12 +353,10 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4-3" type="checkbox" id="nav-2-4-3" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4-3" type="checkbox" id="nav-2-4-3">
     
     <label class="md-nav__link" for="nav-2-4-3">
       Grid Modelling
@@ -374,18 +372,11 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-    
-    <a href="./" title="Initial Grid Setup" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../grid-setup/" title="Initial Grid Setup" class="md-nav__link">
       Initial Grid Setup
     </a>
-    
   </li>
 
         
@@ -1227,37 +1218,103 @@
               </div>
             
             
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" title="Introduction" class="md-nav__link">
+    Introduction
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#user-roles" title="User roles" class="md-nav__link">
+    User roles
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#exchange-operator" title="Exchange Operator" class="md-nav__link">
+    Exchange Operator
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#grid-operator" title="Grid Operator" class="md-nav__link">
+    Grid Operator
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#researcher" title="Researcher" class="md-nav__link">
+    Researcher
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-connect" title="How to connect" class="md-nav__link">
+    How to connect
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
           
           <div class="md-content">
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/gridsingularity/d3a/wiki/edit/master/docs/grid-setup.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/gridsingularity/d3a/wiki/edit/master/docs/collaboration.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                  <h1>Initial Grid Setup</h1>
+                  <h1>Collaboration</h1>
                 
-                <p>On this page the user can set up the architecture of the grid by adding Areas and Energy Resources. You can define up to 1000 nodes. Each area or energy resource is considered as 1 node.</p>
-<p><img alt="img" src="../img/grid-setup-1.png" /></p>
-<p><a href="../areas/">Areas</a> are made up of a spot market in which all connected Energy Resources, sub-areas and parent areas trade energy. Areas can potentially house multiple markets of different market types. This feature will be available in the future.</p>
-<p>After creating the first area the user has to define a <a href="../market-maker/">Market Maker</a>.</p>
-<p>There are 4 different types of basic energy resources available (for detailed settings descriptions follow the individual links):</p>
+                <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p>Collaboration is a type of simulation that allows multiple D3A's users to participate inside the same grid. These user can act in a collaborative or competitive way, to optimize specific metrics. Users can connect through the <a href="../api/">API client</a> to actively engage in the collaboration. As part of collaborations, users have different role that influence their capabilities and their objectives : </p>
+<h2 id="user-roles">User roles<a class="headerlink" href="#user-roles" title="Permanent link">&para;</a></h2>
+<h3 id="exchange-operator">Exchange Operator<a class="headerlink" href="#exchange-operator" title="Permanent link">&para;</a></h3>
+<p>The exchange operator (EO) is responsible to build the digital twin of the electrical grid, including energy resources, in a collaboration. Once the <a href="../grid-setup/">setup</a> is set the EO can open an external connection to devices and markets. By doing so, it allows other users to register to those nodes. Once the EO has approved the registration of external users for those devices and markets, they gain control on those.</p>
+<p>The exchange operator is also in charge of expanding the grid (with <a href="../events/">events</a>) to new user desiring to connect to the exchange.</p>
+<h3 id="grid-operator">Grid Operator<a class="headerlink" href="#grid-operator" title="Permanent link">&para;</a></h3>
+<p>The grid operator roles is designed towards Distribution System Operators (DSOs) and Transmission System Operators (TSOs). Those users have the possibility to register to different markets, on different grid level in the collaboration. Once registered and approved by the EO, they can control their owned markets with the API client. Through this latter grid operators can change <a href="../constant-fees/">grid fees</a> in order to influence trades to optimize specific metrics (e.g. <a href="../kpis/#peak-percentage">peak percentage</a>).</p>
+<h3 id="researcher">Researcher<a class="headerlink" href="#researcher" title="Permanent link">&para;</a></h3>
+<p>The researcher is designed towards meters, PV and batteries vendors, communities leaders, energy management companies and data scientists. Researchers can register to devices (<a href="../load/">Load</a>, <a href="../pv-strategy/">PV</a> and <a href="../storage/">Storage</a>) and once approved by the EO are responsible of buying and selling energy on markets. While the collaboration is running they are sending bids and offers, for their respective owned devices through the API to the exchange.</p>
+<h2 id="how-to-connect">How to connect<a class="headerlink" href="#how-to-connect" title="Permanent link">&para;</a></h2>
+<p>If you desire to connect to a collaboration (in the framework of an event such as the Chaos Experiments hack) please follow these following steps : </p>
 <ul>
-<li><a href="../pv/">PV</a></li>
-<li><a href="../storage/">Storage</a></li>
-<li><a href="../load/">Load</a></li>
-<li><a href="../power-plant/">Power Plant</a></li>
+<li>Go to the collaboration page from your account. On this page are listed all collaborations made in the D3A. For every simulation you are allowed to see the settings and the grid setup.</li>
+<li>If the collaboration you wish to participate in is public, you can click on <em>Registry and Scoreboard</em>. On this page is listed every markets and devices of the collaboration. For the ones that have their API connection opened, you can apply to them. The EO on his side will see that you have applied and is able to either approve or deny your request.</li>
+<li>Once you're approved you can start your API script </li>
 </ul>
-<p><img alt="img" src="../img/grid-setup-2.png" /></p>
-<p>The user can also insert <a href="../libraries/">Libraries</a>, which are customized energy resources available from the D3A community. A list of these energy resources with a search function appears when clicking on "LIBRARY" on the upper right corner.</p>
-<p><img alt="img" src="../img/grid-setup-3.png" /></p>
-<p>Once ready, the user can to the <a href="../results/">Results</a> page and run the simulation.</p>
-<p><img alt="img" src="../img/grid-setup-6.png" style="height:50px;width:50px" /></p>
-<p>When the simulation is running, the user can : </p>
-<p><img alt="img" src="../img/grid-setup-7.png" style="height:40px;width:100px" /> Pause it</p>
-<p><img alt="img" src="../img/grid-setup-8.png" style="height:40px;width:100px" /> Abort it (Warning, after aborting the user will not be able to resume the simulation!)</p>
-<p>The user can duplicate the number of Areas or Energy Resources by clicking on the +/- buttons shown below (energy resource or area settings view).</p>
-<p><img alt="img" src="../img/grid-setup-5.png" /></p>
                 
                   
                 
@@ -1274,41 +1331,6 @@
       
         
 <footer class="md-footer">
-  
-    <div class="md-footer-nav">
-      <nav class="md-footer-nav__inner md-grid">
-        
-          <a href="../general-settings/" title="General Settings" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
-            </div>
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
-                  Previous
-                </span>
-                General Settings
-              </span>
-            </div>
-          </a>
-        
-        
-          <a href="../pv/" title="PV" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
-                  Next
-                </span>
-                PV
-              </span>
-            </div>
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
-            </div>
-          </a>
-        
-      </nav>
-    </div>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">

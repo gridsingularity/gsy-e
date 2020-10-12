@@ -1222,10 +1222,46 @@
       
 
 
-  <li class="md-nav__item">
-    <a href="../api/" title="API" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
+    
+    <label class="md-nav__link" for="nav-4">
       API
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-4">
+        API
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../api/" title="Asset API" class="md-nav__link">
+      Asset API
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-api/" title="Market API" class="md-nav__link">
+      Market API
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
     
@@ -1344,23 +1380,23 @@
 <h5 id="install-vagrant-by-navigating-to-httpsvagrantupcom">Install Vagrant by navigating to https://vagrantup.com<a class="headerlink" href="#install-vagrant-by-navigating-to-httpsvagrantupcom" title="Permanent link">&para;</a></h5>
 <p>This is a software wrapper around virtualbox and other supervisors, that allows easy creation, download, and installation of virtual machines.</p>
 <p>After vagrant is installed, run the following commands to download the VM image and install it on your local machine</p>
-<pre class="codehilite"><code>vagrant init spyrostz/d3a --box-version 1
-vagrant up</code></pre>
-
+<div class="codehilite"><pre><span></span><code>vagrant init spyrostz/d3a --box-version 1
+vagrant up
+</code></pre></div>
 
 <h5 id="login-to-vagrant-virtual-machine">Login to vagrant Virtual Machine<a class="headerlink" href="#login-to-vagrant-virtual-machine" title="Permanent link">&para;</a></h5>
-<pre class="codehilite"><code>vagrant ssh</code></pre>
-
+<div class="codehilite"><pre><span></span><code>vagrant ssh
+</code></pre></div>
 
 <p>Activate the d3a environment used to run simulations in one terminal:</p>
-<pre class="codehilite"><code>source envs/d3a/bin/activate</code></pre>
-
+<div class="codehilite"><pre><span></span><code>source envs/d3a/bin/activate
+</code></pre></div>
 
 <p>Now, if you run <code>d3a run -–help</code> , the help of d3a should be shown.</p>
 <h3 id="setting-up-the-api-client-for-custom-trading-strategies-optional">Setting Up the API Client for Custom Trading Strategies (Optional)<a class="headerlink" href="#setting-up-the-api-client-for-custom-trading-strategies-optional" title="Permanent link">&para;</a></h3>
 <p>Open a second terminal, activate vagrant with vagrant ssh, and activate the api client if you'd like to experiment with custom trading or grid fee strategies:</p>
-<pre class="codehilite"><code>source envs/api-client/bin/activate</code></pre>
-
+<div class="codehilite"><pre><span></span><code>source envs/api-client/bin/activate
+</code></pre></div>
 
 <p>You may now follow the instructions on the <a href="../api/">API documentation</a> file to get started with custom trading strategies</p>
                 

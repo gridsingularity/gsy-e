@@ -1151,10 +1151,46 @@
       
 
 
-  <li class="md-nav__item">
-    <a href="../api/" title="API" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
+    
+    <label class="md-nav__link" for="nav-4">
       API
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-4">
+        API
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../api/" title="Asset API" class="md-nav__link">
+      Asset API
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-api/" title="Market API" class="md-nav__link">
+      Market API
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
     
@@ -1206,16 +1242,17 @@
 </ul>
 <p>Corresponding code: <code>src/3a/models/strategy/finite_power_plant.py</code></p>
 <p>How to add a finite power plant to the <code>setup-file</code>:</p>
-<pre class="codehilite"><code>profile_kW = {
+<div class="codehilite"><pre><span></span><code>profile_kW = {
     0: 0.1,
     8: 0.15,
     12: 0.2,
     19: 0.15,
     22: 0.1
 }         
-Area('Finite Power Plant', strategy=FinitePowerPlant(energy_rate=31.3,
+Area(&#39;Finite Power Plant&#39;, strategy=FinitePowerPlant(energy_rate=31.3,
                                                      max_available_power_kW=profile_kW),
-                           appliance=SwitchableAppliance()),</code></pre>
+                           appliance=SwitchableAppliance()),
+</code></pre></div>
                 
                   
                 
