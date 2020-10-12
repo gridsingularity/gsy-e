@@ -32,7 +32,6 @@ class KPIState:
         self.total_energy_produced_wh = 0
         self.total_self_consumption_wh = 0
         self.self_consumption_buffer_wh = 0
-        self.accounted_markets = {}
 
     def accumulate_devices(self, area_dict):
         for child in area_dict['children']:
