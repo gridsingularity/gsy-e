@@ -135,7 +135,6 @@ class Simulation:
             "paused": self.paused,
             "slowdown": self.slowdown,
             "seed": self.initial_params["seed"],
-            "pause_after": self.pause_after,
             "sim_status": self.sim_status,
             "stopped": self.is_stopped,
             "simulation_id": self._simulation_id,
