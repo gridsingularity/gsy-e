@@ -21,6 +21,7 @@ import uuid
 from pendulum import DateTime
 from parameterized import parameterized
 import os
+from typing import Dict  # NOQA
 
 from d3a.constants import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
@@ -33,7 +34,7 @@ from d3a.constants import TIME_FORMAT
 from d3a.d3a_core.util import d3a_path
 
 
-ENERGY_FORECAST = {}  # type: Dict[Time, float]
+ENERGY_FORECAST = {}  # type: Dict[DateTime, float]
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 
@@ -64,10 +65,6 @@ class FakeArea:
         return DateTime.now(tz=TIME_ZONE).start_of('day') + (
             self.config.tick_length * self.current_tick
         )
-
-    @property
-    def historical_avg_rate(self):
-        return 30
 
     @property
     def all_markets(self):

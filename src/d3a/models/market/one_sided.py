@@ -25,7 +25,7 @@ from d3a.models.market import Market, lock_market_action
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade
 from d3a.d3a_core.util import short_offer_bid_log_str
-from d3a.models.market.blockchain_interface import MarketBlockchainInterface, \
+from d3a.models.market.blockchain_interface import SubstrateBlockchainInterface, \
     NonBlockchainInterface
 from d3a_interface.constants_limits import ConstSettings
 
@@ -39,9 +39,10 @@ class OneSidedMarket(Market):
                  transfer_fees=None, name=None, in_sim_duration=True):
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          transfer_fees, name)
-        self.bc_interface = MarketBlockchainInterface(bc) \
-            if bc is not None \
-            else NonBlockchainInterface()
+        if bc is not None:
+            self.bc_interface = SubstrateBlockchainInterface()
+        else:
+            self.bc_interface = NonBlockchainInterface()
         self.in_sim_duration = in_sim_duration
 
     def __repr__(self):  # pragma: no cover

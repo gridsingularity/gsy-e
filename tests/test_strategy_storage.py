@@ -101,10 +101,6 @@ class FakeArea:
         return {self.now: self.test_balancing_market}
 
     @property
-    def historical_avg_rate(self):
-        return 30
-
-    @property
     def config(self):
         configuration = SimulationConfig(
                 sim_duration=Duration(hours=24),

@@ -24,7 +24,7 @@ from d3a.constants import TIME_ZONE
 from d3a import limit_float_precision
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name, add_or_create_key, \
     area_sells_to_child, child_buys_from_area
-
+from d3a_interface.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
 
 default_trade_stats_dict = {
     "min_trade_rate": None,
@@ -35,77 +35,51 @@ default_trade_stats_dict = {
 
 
 class AreaStats:
-    def __init__(self, area_markets):
-        self._accumulated_past_price = 0
-        self._accumulated_past_energy = 0
+    def __init__(self, area_markets, area):
         self._markets = area_markets
+        self._area = area
         self.aggregated_stats = {}
         self.market_bills = {}
         self.rate_stats_market = {}
-        self.market_trades = {}
         self.kpi = {}
         self.exported_energy = {}
         self.imported_energy = {}
 
+    def get_state(self):
+        return {
+            "rate_stats_market": convert_pendulum_to_str_in_dict(self.rate_stats_market),
+            "exported_energy": convert_pendulum_to_str_in_dict(self.exported_energy),
+            "imported_energy": convert_pendulum_to_str_in_dict(self.imported_energy),
+        }
+
+    def restore_state(self, saved_state):
+        self.rate_stats_market = convert_str_to_pendulum_in_dict(saved_state["rate_stats_market"])
+        self.exported_energy = convert_str_to_pendulum_in_dict(saved_state["exported_energy"])
+        self.imported_energy = convert_str_to_pendulum_in_dict(saved_state["imported_energy"])
+
     def update_aggregated_stats(self, area_stats):
         self.aggregated_stats = area_stats
+
+    def _extract_from_bills(self, trade_key):
+        if self.current_market is None:
+            return {}
+        return {key: self.aggregated_stats["bills"][trade_key][key]
+                for key in ["earned", "spent", "bought", "sold"]} \
+            if "bills" in self.aggregated_stats \
+               and trade_key in self.aggregated_stats["bills"] else {}
 
     def update_area_market_stats(self):
         if self.current_market is not None:
             self.market_bills[self.current_market.time_slot] = \
-                {key: self.aggregated_stats["bills"]["Accumulated Trades"][key]
-                 for key in ["earned", "spent", "bought", "sold"]} \
-                if "bills" in self.aggregated_stats \
-                   and "Accumulated Trades" in self.aggregated_stats["bills"] else None
+                {key: self._extract_from_bills(key)
+                 for key in ["Accumulated Trades"]}
             self.rate_stats_market[self.current_market.time_slot] = \
                 self.min_max_avg_median_rate_current_market()
+            self._aggregate_exported_imported_energy()
 
-    def update_accumulated(self):
-        self._accumulated_past_price = sum(
-            market.accumulated_trade_price
-            for market in self._markets.past_markets.values()
-        )
-        self._accumulated_past_energy = sum(
-            market.accumulated_trade_energy
-            for market in self._markets.past_markets.values()
-        )
-
-    @property
-    def _offer_count(self):
-        return sum(
-            len(m.offers)
-            for m in self._markets.all_spot_markets
-        )
-
-    @property
-    def _trade_count(self):
-        return sum(
-            len(m.trades)
-            for m in self._markets.all_spot_markets
-        )
-
-    @property
-    def historical_avg_rate(self):
-        price = sum(
-            market.accumulated_trade_price
-            for market in self._markets.markets.values()
-        ) + self._accumulated_past_price
-        energy = sum(
-            market.accumulated_trade_energy
-            for market in self._markets.markets.values()
-        ) + self._accumulated_past_energy
-        return price / energy if energy else 0
-
-    @property
-    def historical_min_max_price(self):
-        min_max_prices = [
-            (m.min_trade_price, m.max_trade_price)
-            for m in self._markets.all_spot_markets
-        ]
-        return (
-            min(p[0] for p in min_max_prices),
-            max(p[1] for p in min_max_prices)
-        )
+    def get_last_market_stats_for_grid_tree(self):
+        return {key.lower().replace(" ", "_"): self._extract_from_bills(key)
+                for key in ["Accumulated Trades", "External Trades"]}
 
     def report_accounting(self, market, reporter, value, time):
         slot = market.time_slot
@@ -164,8 +138,8 @@ class AreaStats:
             except ValueError:
                 return {"ERROR": f"Time string '{time_slot_str}' is not following "
                                  f"the format '{DATE_TIME_FORMAT}'"}
-            out_dict[time_slot_str] = self.rate_stats_market.get(
-                time_slot, default_trade_stats_dict)
+            out_dict[time_slot_str] = copy(self.rate_stats_market.get(
+                time_slot, default_trade_stats_dict))
             out_dict[time_slot_str]["market_bill"] = self._get_market_bills(time_slot)
             if dso:
                 out_dict[time_slot_str]["area_throughput"] = \
@@ -173,18 +147,22 @@ class AreaStats:
 
         return out_dict
 
-    def aggregate_exported_imported_energy(self, area):
-        if self.current_market is None:
+    def _aggregate_exported_imported_energy(self):
+        if self._area.current_market is None:
             return None
 
-        child_names = [area_name_from_area_or_iaa_name(c.name) for c in area.children]
-        for trade in self.current_market.trades:
-            if child_buys_from_area(trade, area.name, child_names):
-                add_or_create_key(self.exported_energy, self.current_market.time_slot,
-                                  trade.offer.energy)
-            if area_sells_to_child(trade, area.name, child_names):
-                add_or_create_key(self.imported_energy, self.current_market.time_slot,
-                                  trade.offer.energy)
+        self.imported_energy = {}
+        self.exported_energy = {}
+
+        child_names = [area_name_from_area_or_iaa_name(c.name) for c in self._area.children]
+        if getattr(self.current_market, 'trades', None) is not None:
+            for trade in self.current_market.trades:
+                if child_buys_from_area(trade, self._area.name, child_names):
+                    add_or_create_key(self.exported_energy, self.current_market.time_slot,
+                                      trade.offer.energy)
+                if area_sells_to_child(trade, self._area.name, child_names):
+                    add_or_create_key(self.imported_energy, self.current_market.time_slot,
+                                      trade.offer.energy)
         if self.current_market.time_slot not in self.imported_energy:
             self.imported_energy[self.current_market.time_slot] = 0.
         if self.current_market.time_slot not in self.exported_energy:

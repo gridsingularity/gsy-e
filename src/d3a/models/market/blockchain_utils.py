@@ -16,8 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
+import json
+import sys
+import base58
 
-from d3a.d3a_core.exceptions import D3AException
+from d3a_interface.exceptions import D3AException
 from d3a.d3a_core.util import retry_function
 from d3a.blockchain.utils import unlock_account, wait_for_node_synchronization
 from d3a_interface.utils import wait_until_timeout_blocking
@@ -26,6 +29,15 @@ log = getLogger(__name__)
 
 
 BC_NUM_FACTOR = 10 ** 10
+BOB_ADDRESS = "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
+ALICE_ADDRESS = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+
+test_value = 10000000000000000
+test_rate = 12
+main_address = "ADDRESS_OF_YOUR_DEPLOYED_CONTRACT"
+mnemonic = "MNEMONIC_TO_RESTORE_YOUR_KEYPAIR"
+default_url = "ws://127.0.0.1:9944"
+template_node_address_type = 42
 
 
 class InvalidBlockchainOffer(D3AException):
@@ -34,6 +46,40 @@ class InvalidBlockchainOffer(D3AException):
 
 class InvalidBlockchainTrade(D3AException):
     pass
+
+
+def get_function_metadata(function_name, path):
+    with open(path) as json_file:
+        metadata = json.load(json_file)
+        name = metadata['registry']['strings'].index(function_name) + 1
+
+    function_bytes_repr = '0x'
+    for constructor in metadata['contract']['messages']:
+        if constructor['name'] == name:
+            bytes_repr = constructor['selector'].strip('[').strip(']').split(',')
+            function_bytes_repr = '0x'
+            for byte in bytes_repr:
+                function_bytes_repr += byte[3:-1]
+    return function_bytes_repr.lower()
+
+
+def address_to_hex(address):
+    try:
+        hex_address = base58.b58decode(address).hex()[2:-4]
+        return hex_address
+    except ValueError:
+        print("Unexpected error: could not convert address to hex", sys.exc_info()[0])
+        raise
+
+
+def swap_byte_order(hex_value):
+    s = hex_value.lstrip('0x')
+    return ''.join(list(map(''.join, zip(*[iter(s)]*2)))[::-1])
+
+
+def hex2(v):
+    s = hex(v)[2:]
+    return s if len(s) % 2 == 0 else '0' + s
 
 
 def create_market_contract(bc_interface, duration_s, listeners=[]):
@@ -87,12 +133,12 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
     def get_offer_id():
         return bc_contract.events.NewOffer().processReceipt(tx_receipt)[0]['args']["offerId"]
 
-    wait_until_timeout_blocking(lambda: get_offer_id() is not 0, timeout=20)
+    wait_until_timeout_blocking(lambda: get_offer_id() != 0, timeout=20)
 
     offer_id = get_offer_id()
 
     log.debug(f"offer_id: {offer_id}")
-    assert offer_id is not 0
+    assert offer_id != 0
     return offer_id
 
 
@@ -122,8 +168,8 @@ def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
     new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
     if len(new_trade_retval) == 0:
         wait_until_timeout_blocking(lambda:
-                                    len(bc_contract.events.NewTrade().processReceipt(tx_receipt))
-                                    is not 0,
+                                    len(bc_contract.events.NewTrade().processReceipt(
+                                        tx_receipt)) != 0,
                                     timeout=20)
         new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
         log.debug(f"new_trade_retval after retry: {new_trade_retval}")
