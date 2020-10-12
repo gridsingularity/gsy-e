@@ -38,7 +38,7 @@ def check_for_connected_and_reply(redis, channel_name, is_connected):
         redis.publish_json(
             channel_name, {
                 "status": "error",
-                "error_message": f"Client should be registered in order to access this area."})
+                "error_message": "Client should be registered in order to access this area."})
         return False
     return True
 
@@ -167,7 +167,7 @@ class ExternalMixin:
                 "transaction_id": arguments.get("transaction_id", None),
                 "area_uuid": self.device.uuid
             }
-        except Exception as e:
+        except Exception:
             return {
                 "command": "device_info", "status": "error",
                 "error_message": f"Error when handling device info on area {self.device.name}.",
@@ -284,9 +284,7 @@ class ExternalMixin:
                 self.redis.publish_json(deactivate_event_channel, deactivate_msg)
 
             if self.is_aggregator_controlled:
-                self.redis.aggregator._publish_all_events_from_one_type(
-                    self.redis, deactivate_msg, "finish"
-                )
+                self.redis.aggregator.add_batch_finished_event(self.owner.uuid, "finish")
 
     def _bid_aggregator(self, command):
         raise CommandTypeNotSupported(

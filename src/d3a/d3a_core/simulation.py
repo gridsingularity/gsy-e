@@ -403,6 +403,8 @@ class Simulation:
 
         self.sim_status = "finished"
         self.deactivate_areas(self.area)
+        self.simulation_config.external_redis_communicator.\
+            publish_aggregator_commands_responses_events()
 
         if not self.is_stopped:
             self._update_progress_info(slot_count - 1, slot_count)
