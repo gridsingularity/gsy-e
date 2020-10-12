@@ -16,25 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from copy import deepcopy
-from itertools import chain
+from itertools import chain  # NOQA
 from d3a.d3a_core.util import round_floats_for_ui
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
 from d3a_interface.constants_limits import ConstSettings
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.pv import PVStrategy
 from d3a.constants import DEVICE_PENALTY_RATE
-from d3a import constants
-
-
-def _get_past_markets_from_area(area, past_market_types):
-    if not hasattr(area, past_market_types) or getattr(area, past_market_types) is None:
-        return []
-    if constants.D3A_TEST_RUN:
-        return getattr(area, past_market_types)
-    else:
-        if len(getattr(area, past_market_types)) < 1:
-            return []
-        return [getattr(area, past_market_types)[-1]]
+from d3a import constants  # NOQA
 
 
 class CumulativeBills:
@@ -45,20 +32,16 @@ class CumulativeBills:
         self.cumulative_bills_results = {}
         self.update_cumulative_bills(area)
 
-    def _calculate_device_penalties(self, area):
-        if len(area.children) > 0:
-            return
+    def _calculate_device_penalties(self, area, area_core_stats):
+        if len(area['children']) > 0 or area_core_stats == {}:
+            return 0.0
 
-        if isinstance(area.strategy, LoadHoursStrategy):
-            return sum(
-                area.strategy.energy_requirement_Wh.get(market.time_slot, 0) / 1000.0
-                for market in _get_past_markets_from_area(area.parent, "past_markets"))
-        elif isinstance(area.strategy, PVStrategy):
-            return sum(
-                area.strategy.state.available_energy_kWh.get(market.time_slot, 0)
-                for market in _get_past_markets_from_area(area.parent, "past_markets"))
+        if area['type'] in ['LoadHoursStrategy', 'DefinedLoadStrategy']:
+            return area_core_stats['energy_requirement_kWh']
+        elif area['type'] in ['PVStrategy', 'PVPredefinedStrategy']:
+            return area_core_stats['available_energy_kWh']
         else:
-            return None
+            return 0.0
 
     @property
     def cumulative_bills(self):
@@ -73,13 +56,13 @@ class CumulativeBills:
             for uuid, results in self.cumulative_bills_results.items()
         }
 
-    def update_cumulative_bills(self, area):
-        for child in area.children:
-            self.update_cumulative_bills(child)
+    def update_cumulative_bills(self, area_dict, core_stats, current_market_time_slot):
+        for child in area_dict['children']:
+            self.update_cumulative_bills(child, core_stats, current_market_time_slot)
 
-        if area.uuid not in self.cumulative_bills_results:
-            self.cumulative_bills_results[area.uuid] = {
-                "name": area.name,
+        if area_dict['uuid'] not in self.cumulative_bills_results:
+            self.cumulative_bills_results[area_dict['uuid']] = {
+                "name": area_dict['name'],
                 "spent_total": 0.0,
                 "earned": 0.0,
                 "penalties": 0.0,
@@ -87,11 +70,11 @@ class CumulativeBills:
                 "total": 0.0,
             }
 
-        if area.strategy is None:
-            all_child_results = [self.cumulative_bills_results[c.uuid]
-                                 for c in area.children]
-            self.cumulative_bills_results[area.uuid] = {
-                "name": area.name,
+        if area_dict['type'] == "Area":
+            all_child_results = [self.cumulative_bills_results[c['uuid']]
+                                 for c in area_dict['children']]
+            self.cumulative_bills_results[area_dict['uuid']] = {
+                "name": area_dict['name'],
                 "spent_total": sum(c["spent_total"] for c in all_child_results),
                 "earned": sum(c["earned"] for c in all_child_results),
                 "penalties": sum(c["penalties"] for c in all_child_results
@@ -101,34 +84,33 @@ class CumulativeBills:
                 "total": sum(c["total"] for c in all_child_results),
             }
         else:
-            trades = [m.trades
-                      for m in _get_past_markets_from_area(area.parent, "past_markets")]
-            trades = list(chain(*trades))
+            parent_area_stats = core_stats.get(area_dict['parent_uuid'], {})
+            trades = parent_area_stats.get('trades', [])
 
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                spent_total = sum(trade.offer.price + trade.fee_price
+                spent_total = sum(trade['price'] + trade['fee_price']
                                   for trade in trades
-                                  if trade.buyer == area.name) / 100.0
-                earned = sum(trade.offer.price
+                                  if trade['buyer'] == area_dict['name']) / 100.0
+                earned = sum(trade['price']
                              for trade in trades
-                             if trade.seller == area.name) / 100.0
+                             if trade['seller'] == area_dict['name']) / 100.0
             else:
-                spent_total = sum(trade.offer.price
+                spent_total = sum(trade['price']
                                   for trade in trades
-                                  if trade.buyer == area.name) / 100.0
-                earned = sum(trade.offer.price - trade.fee_price
+                                  if trade['buyer'] == area_dict['name']) / 100.0
+                earned = sum(trade['price'] - trade['fee_price']
                              for trade in trades
-                             if trade.seller == area.name) / 100.0
-            penalty_energy = self._calculate_device_penalties(area)
-            if penalty_energy is None:
-                penalty_energy = 0.0
+                             if trade['seller'] == area_dict['name']) / 100.0
+            penalty_energy = self._calculate_device_penalties(
+                area_dict, core_stats.get(area_dict['uuid'], {})
+            )
             penalty_cost = penalty_energy * DEVICE_PENALTY_RATE / 100.0
             total = spent_total - earned + penalty_cost
-            self.cumulative_bills_results[area.uuid]["spent_total"] += spent_total
-            self.cumulative_bills_results[area.uuid]["earned"] += earned
-            self.cumulative_bills_results[area.uuid]["penalties"] += penalty_cost
-            self.cumulative_bills_results[area.uuid]["penalty_energy"] += penalty_energy
-            self.cumulative_bills_results[area.uuid]["total"] += total
+            self.cumulative_bills_results[area_dict['uuid']]["spent_total"] += spent_total
+            self.cumulative_bills_results[area_dict['uuid']]["earned"] += earned
+            self.cumulative_bills_results[area_dict['uuid']]["penalties"] += penalty_cost
+            self.cumulative_bills_results[area_dict['uuid']]["penalty_energy"] += penalty_energy
+            self.cumulative_bills_results[area_dict['uuid']]["total"] += total
 
 
 class MarketEnergyBills:
@@ -142,142 +124,139 @@ class MarketEnergyBills:
 
     @staticmethod
     def _store_bought_trade(result_dict, trade):
+        trade_price = trade['price'] / 100.
         # Division by 100 to convert cents to Euros
-        fee_price = trade.fee_price / 100. if trade.fee_price is not None else 0.
-        result_dict['bought'] += trade.offer.energy
+        fee_price = trade['fee_price'] / 100. if trade['fee_price'] is not None else 0.
+        result_dict['bought'] += trade['energy']
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
-            result_dict['spent'] += trade.offer.price / 100.
-            result_dict['total_cost'] += trade.offer.price / 100. + fee_price
+            result_dict['spent'] += trade_price
+            result_dict['total_cost'] += trade_price + fee_price
         else:
-            result_dict['spent'] += trade.offer.price / 100. - fee_price
-            result_dict['total_cost'] += trade.offer.price / 100.
-        result_dict['total_energy'] += trade.offer.energy
+            result_dict['spent'] += trade_price - fee_price
+            result_dict['total_cost'] += trade_price
+        result_dict['total_energy'] += trade['energy']
         result_dict['market_fee'] += fee_price
 
     @staticmethod
     def _store_sold_trade(result_dict, trade):
         # Division by 100 to convert cents to Euros
-        fee_price = trade.fee_price if trade.fee_price is not None else 0.
-        result_dict['sold'] += trade.offer.energy
-        result_dict['total_energy'] -= trade.offer.energy
+        fee_price = trade['fee_price'] / 100. if trade['fee_price'] is not None else 0.
+        result_dict['sold'] += trade['energy']
+        result_dict['total_energy'] -= trade['energy']
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
-            trade_price = trade.offer.price
+            trade_price = trade['price'] / 100.
         else:
-            trade_price = trade.offer.price - fee_price
-        result_dict['earned'] += trade_price / 100.
-        result_dict['total_cost'] -= trade_price / 100.
+            trade_price = trade['price'] / 100. - fee_price
+        result_dict['earned'] += trade_price
+        result_dict['total_cost'] -= trade_price
 
-    def _store_outgoing_external_trade(self, trade, area):
-        fee_price = trade.fee_price if trade.fee_price is not None else 0.
-        self.external_trades[area.name]['sold'] += trade.offer.energy
+    def _store_outgoing_external_trade(self, trade, area_dict):
+        fee_price = trade['fee_price'] if trade['fee_price'] is not None else 0.
+        self.external_trades[area_dict['name']]['sold'] += trade['energy']
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
-            self.external_trades[area.name]['earned'] += trade.offer.price / 100.
-            self.external_trades[area.name]['total_cost'] -= trade.offer.price / 100.
+            self.external_trades[area_dict['name']]['earned'] += trade['price']
+            self.external_trades[area_dict['name']]['total_cost'] -= trade['price']
         else:
-            self.external_trades[area.name]['earned'] += \
-                (trade.offer.price - fee_price) / 100.
-            self.external_trades[area.name]['total_cost'] -= \
-                (trade.offer.price - fee_price) / 100.
-        self.external_trades[area.name]['total_energy'] -= trade.offer.energy
-        self.external_trades[area.name]['market_fee'] += fee_price / 100.
+            self.external_trades[area_dict['name']]['earned'] += \
+                (trade['price'] - fee_price) / 100.
+            self.external_trades[area_dict['name']]['total_cost'] -= \
+                (trade['price'] - fee_price) / 100.
+        self.external_trades[area_dict['name']]['total_energy'] -= trade['energy']
+        self.external_trades[area_dict['name']]['market_fee'] += fee_price / 100.
 
-    def _store_incoming_external_trade(self, trade, area):
-        fee_price = trade.fee_price / 100. if trade.fee_price is not None else 0.
-        self.external_trades[area.name]['bought'] += trade.offer.energy
+    def _store_incoming_external_trade(self, trade, area_dict):
+        trade_price = trade['price'] / 100.
+        fee_price = trade['fee_price'] / 100. if trade['fee_price'] is not None else 0.
+        self.external_trades[area_dict['name']]['bought'] += trade['energy']
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
-            self.external_trades[area.name]['spent'] += \
-                trade.offer.price / 100.
-            self.external_trades[area.name]['total_cost'] += \
-                trade.offer.price / 100. + fee_price
+            self.external_trades[area_dict['name']]['spent'] += trade_price
+            self.external_trades[area_dict['name']]['total_cost'] += trade_price + fee_price
         else:
-            self.external_trades[area.name]['spent'] += \
-                trade.offer.price / 100. - fee_price
-            self.external_trades[area.name]['total_cost'] += \
-                trade.offer.price / 100.
-        self.external_trades[area.name]['total_energy'] += trade.offer.energy
+            self.external_trades[area_dict['name']]['spent'] += trade_price - fee_price
+            self.external_trades[area_dict['name']]['total_cost'] += trade_price
+        self.external_trades[area_dict['name']]['total_energy'] += trade['energy']
 
     @classmethod
-    def _default_area_dict(cls, area):
+    def _default_area_dict(cls, area_dict):
         return dict(bought=0.0, sold=0.0,
                     spent=0.0, earned=0.0,
                     total_energy=0.0, total_cost=0.0,
                     market_fee=0.0,
-                    type=area.display_type)
+                    type=area_dict['type'])
 
-    def _get_child_data(self, area):
-        if area.name not in self.bills_results:
-            self.bills_results[area.name] =  \
-                {child.name: self._default_area_dict(child)
-                    for child in area.children}
+    def _get_child_data(self, area_dict):
+        if area_dict['name'] not in self.bills_results:
+            self.bills_results[area_dict['name']] =  \
+                {child['name']: self._default_area_dict(child)
+                    for child in area_dict['children']}
         else:
             # TODO: find a better way to handle this.
             # is only triggered once:
             # when a child is added to an area both triggered by a live event
-            if area.children and "bought" in self.bills_results[area.name]:
-                self.bills_results[area.name] = {}
-            for child in area.children:
-                self.bills_results[area.name][child.name] = self._default_area_dict(child) \
-                    if child.name not in self.bills_results[area.name] else \
-                    self.bills_results[area.name][child.name]
+            if area_dict['children'] and "bought" in self.bills_results[area_dict['name']]:
+                self.bills_results[area_dict['name']] = {}
+            for child in area_dict['children']:
+                self.bills_results[area_dict['name']][child['name']] = \
+                    self._default_area_dict(child) \
+                    if child['name'] not in self.bills_results[area_dict['name']] else \
+                    self.bills_results[area_dict['name']][child['name']]
 
-        return self.bills_results[area.name]
+        return self.bills_results[area_dict['name']]
 
-    def _energy_bills(self, area, past_market_types):
+    def _energy_bills(self, area_dict, area_core_stats):
         """
         Return a bill for each of area's children with total energy bought
         and sold (in kWh) and total money earned and spent (in cents).
         Compute bills recursively for children of children etc.
         """
-        if not area.children:
+        if area_dict['children'] == []:
             return None
 
-        if area.name not in self.external_trades:
-            self.external_trades[area.name] = dict(
+        if area_dict['name'] not in self.external_trades:
+            self.external_trades[area_dict['name']] = dict(
                 bought=0.0, sold=0.0, spent=0.0, earned=0.0,
                 total_energy=0.0, total_cost=0.0, market_fee=0.0)
 
-        result = self._get_child_data(area)
-        for market in _get_past_markets_from_area(area, past_market_types):
-            for trade in market.trades:
-                buyer = area_name_from_area_or_iaa_name(trade.buyer)
-                seller = area_name_from_area_or_iaa_name(trade.seller)
-                if buyer in result:
-                    self._store_bought_trade(result[buyer], trade)
-                if seller in result:
-                    self._store_sold_trade(result[seller], trade)
-                # Outgoing external trades
-                if buyer == area_name_from_area_or_iaa_name(area.name) and seller in result:
-                    self._store_outgoing_external_trade(trade, area)
-                # Incoming external trades
-                if seller == area_name_from_area_or_iaa_name(area.name) and buyer in result:
-                    self._store_incoming_external_trade(trade, area)
-        for child in area.children:
-            child_result = self._energy_bills(child, past_market_types)
+        result = self._get_child_data(area_dict)
+        for trade in area_core_stats[area_dict['uuid']]['trades']:
+            buyer = area_name_from_area_or_iaa_name(trade['buyer'])
+            seller = area_name_from_area_or_iaa_name(trade['seller'])
+            if buyer in result:
+                self._store_bought_trade(result[buyer], trade)
+            if seller in result:
+                self._store_sold_trade(result[seller], trade)
+            # Outgoing external trades
+            if buyer == area_name_from_area_or_iaa_name(area_dict['name']) and seller in result:
+                self._store_outgoing_external_trade(trade, area_dict)
+            # Incoming external trades
+            if seller == area_name_from_area_or_iaa_name(area_dict['name']) and buyer in result:
+                self._store_incoming_external_trade(trade, area_dict)
+        for child in area_dict['children']:
+            child_result = self._energy_bills(child, area_core_stats)
             if child_result is not None:
-                result[child.name]['children'] = child_result
+                result[child['name']]['children'] = child_result
 
         return result
 
-    def _accumulate_market_fees(self, area, past_market_types):
-        if area.name not in self.market_fees:
-            self.market_fees[area.name] = 0.0
-        for market in _get_past_markets_from_area(area, past_market_types):
-            # Converting cents to Euros
-            self.market_fees[area.name] += market.market_fee / 100.0
-        for child in area.children:
-            self._accumulate_market_fees(child, past_market_types)
+    def _accumulate_market_fees(self, area_dict, area_core_stats):
+        if area_dict['name'] not in self.market_fees:
+            self.market_fees[area_dict['name']] = 0.0
+        self.market_fees[area_dict['name']] += \
+            area_core_stats[area_dict['uuid']]['market_fee'] / 100.0
+        for child in area_dict['children']:
+            self._accumulate_market_fees(child, area_core_stats)
 
-    def _update_market_fees(self, area, market_type):
-        self._accumulate_market_fees(area, market_type)
+    def _update_market_fees(self, area_dict, area_core_stats):
+        self._accumulate_market_fees(area_dict, area_core_stats)
 
-    def update(self, area):
-        market_type = "past_markets" if self.is_spot_market else "past_balancing_markets"
-        self._update_market_fees(area, market_type)
-        bills = self._energy_bills(area, market_type)
+    def update(self, area_dict, area_core_stats):
+        self._update_market_fees(area_dict, area_core_stats)
+        bills = self._energy_bills(area_dict, area_core_stats)
+        # print(f"bills: {bills}")
         flattened = {}
         self._flatten_energy_bills(bills, flattened)
-        self.bills_results = self._accumulate_by_children(area, flattened, {})
-        self._bills_for_redis(area, deepcopy(self.bills_results))
+        self.bills_results = self._accumulate_by_children(area_dict, flattened, {})
+        self._bills_for_redis(area_dict, deepcopy(self.bills_results))
 
     @classmethod
     def _flatten_energy_bills(cls, energy_bills, flat_results):
@@ -287,25 +266,27 @@ class MarketEnergyBills:
             flat_results[k] = v
             flat_results[k].pop("children", None)
 
-    def _accumulate_by_children(self, area, flattened, results):
-        if not area.children:
+    def _accumulate_by_children(self, area_dict, flattened, results):
+        if not area_dict['children']:
             # This is a device
-            results[area.name] = flattened.get(area.name, self._default_area_dict(area))
+            results[area_dict['name']] = flattened.get(area_dict['name'],
+                                                       self._default_area_dict(area_dict))
         else:
-            results[area.name] = {c.name: flattened[c.name] for c in area.children
-                                  if c.name in flattened}
+            results[area_dict['name']] = \
+                {c['name']: flattened[c['name']] for c in area_dict['children']
+                 if c['name'] in flattened}
 
-            results.update(**self._generate_external_and_total_bills(area, results))
+            results.update(**self._generate_external_and_total_bills(area_dict, results))
 
-            for c in area.children:
+            for c in area_dict['children']:
                 results.update(
                     **self._accumulate_by_children(c, flattened, results)
                 )
         return results
 
     @staticmethod
-    def _write_accumulated_stats(area, results, all_child_results, key_name):
-        results[area.name].update({key_name: {
+    def _write_accumulated_stats(area_dict, results, all_child_results, key_name):
+        results[area_dict['name']].update({key_name: {
             'bought': sum(v['bought'] for v in all_child_results),
             'sold': sum(v['sold'] for v in all_child_results),
             'spent': sum(v['spent'] for v in all_child_results),
@@ -329,14 +310,14 @@ class MarketEnergyBills:
                     "total_cost": -1 * market_fee
                     }}
 
-    def _generate_external_and_total_bills(self, area, results):
+    def _generate_external_and_total_bills(self, area_dict, results):
 
-        all_child_results = [v for v in results[area.name].values()]
-        self._write_accumulated_stats(area, results, all_child_results, "Accumulated Trades")
-        total_market_fee = results[area.name]["Accumulated Trades"]["market_fee"]
-        if area.name in self.external_trades:
+        all_child_results = [v for v in results[area_dict['name']].values()]
+        self._write_accumulated_stats(area_dict, results, all_child_results, "Accumulated Trades")
+        total_market_fee = results[area_dict['name']]["Accumulated Trades"]["market_fee"]
+        if area_dict['name'] in self.external_trades:
             # External trades are the trades of the parent area
-            external = self.external_trades[area.name].copy()
+            external = self.external_trades[area_dict['name']].copy()
             # Should switch spent/earned and bought/sold, to match the perspective of the UI
             spent = external.pop("spent")
             earned = external.pop("earned")
@@ -348,32 +329,32 @@ class MarketEnergyBills:
                 "sold": bought, "market_fee": total_external_fee})
             external["total_energy"] = external["bought"] - external["sold"]
             external["total_cost"] = external["spent"] - external["earned"] + total_external_fee
-            results[area.name].update({"External Trades": external})
+            results[area_dict['name']].update({"External Trades": external})
 
             total_market_fee += total_external_fee
-            results[area.name].update(self._market_fee_section(total_market_fee))
-            totals_child_list = [results[area.name]["Accumulated Trades"],
-                                 results[area.name]["External Trades"],
-                                 results[area.name]["Market Fees"]]
+            results[area_dict['name']].update(self._market_fee_section(total_market_fee))
+            totals_child_list = [results[area_dict['name']]["Accumulated Trades"],
+                                 results[area_dict['name']]["External Trades"],
+                                 results[area_dict['name']]["Market Fees"]]
         else:
             # If root area, Accumulated Trades == Totals
-            results[area.name].update(self._market_fee_section(total_market_fee))
-            totals_child_list = [results[area.name]["Accumulated Trades"],
-                                 results[area.name]["Market Fees"]]
+            results[area_dict['name']].update(self._market_fee_section(total_market_fee))
+            totals_child_list = [results[area_dict['name']]["Accumulated Trades"],
+                                 results[area_dict['name']]["Market Fees"]]
 
-        self._write_accumulated_stats(area, results, totals_child_list, "Totals")
+        self._write_accumulated_stats(area_dict, results, totals_child_list, "Totals")
         return results
 
-    def _bills_for_redis(self, area, bills_results):
-        if area.name in bills_results:
-            self.bills_redis_results[area.uuid] = \
-                self._round_area_bill_result_redis(bills_results[area.name])
-        for child in area.children:
-            if child.children:
+    def _bills_for_redis(self, area_dict, bills_results):
+        if area_dict['name'] in bills_results:
+            self.bills_redis_results[area_dict['uuid']] = \
+                self._round_area_bill_result_redis(bills_results[area_dict['name']])
+        for child in area_dict['children']:
+            if child['children']:
                 self._bills_for_redis(child, bills_results)
-            elif child.name in bills_results:
-                self.bills_redis_results[child.uuid] = \
-                    self._round_child_bill_results(bills_results[child.name])
+            elif child['name'] in bills_results:
+                self.bills_redis_results[child['uuid']] = \
+                    self._round_child_bill_results(bills_results[child['name']])
 
     @classmethod
     def _round_child_bill_results(cls, results):

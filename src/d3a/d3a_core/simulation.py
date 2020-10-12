@@ -274,9 +274,17 @@ class Simulation:
         with NonBlockingConsole() as console:
             self._execute_simulation(slot_resume, tick_resume, console)
 
+    def update_area_stats(self, area, endpoint_buffer):
+        for child in area.children:
+            self.update_area_stats(child, endpoint_buffer)
+        bills = endpoint_buffer.market_bills.bills_redis_results.get(area.uuid, {})
+        area.stats.update_aggregated_stats({"bills": bills})
+        area.stats.kpi.update(endpoint_buffer.kpi.performance_indices_redis.get(area.uuid, {}))
+
     def _update_and_send_results(self, is_final=False):
         self.endpoint_buffer.update_stats(
             self.area, self.status, self.progress_info, self.current_state)
+        self.update_area_stats(self.area, self.endpoint_buffer)
         if self.export_on_finish and self.should_export_results and \
                 self.area.current_market is not None and d3a.constants.D3A_TEST_RUN:
             self.export.raw_data_to_json(
