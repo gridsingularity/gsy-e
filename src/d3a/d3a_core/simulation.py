@@ -27,6 +27,7 @@ import platform
 import os
 import psutil
 import gc
+import sys
 
 from pendulum import DateTime
 from pendulum import duration
@@ -47,6 +48,7 @@ from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCommunication
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.exceptions import D3AException
+from d3a_interface.utils import format_datetime
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
@@ -77,6 +79,7 @@ class SimulationProgressInfo:
         self.percentage_completed = 0
         self.next_slot_str = ""
         self.current_slot_str = ""
+        self.current_slot_number = 0
 
 
 class Simulation:
@@ -126,6 +129,22 @@ class Simulation:
 
         validate_const_settings_for_simulation()
 
+    @property
+    def current_state(self):
+        return {
+            "paused": self.paused,
+            "slowdown": self.slowdown,
+            "seed": self.initial_params["seed"],
+            "pause_after": self.pause_after,
+            "sim_status": self.sim_status,
+            "stopped": self.is_stopped,
+            "simulation_id": self._simulation_id,
+            "run_start": format_datetime(self.run_start)
+            if self.run_start is not None else "",
+            "paused_time": self.paused_time,
+            "slot_number": self.progress_info.current_slot_number
+        }
+
     def _set_traversal_length(self):
         no_of_levels = self._get_setup_levels(self.area) + 1
         num_ticks_to_propagate = no_of_levels * 2
@@ -150,7 +169,6 @@ class Simulation:
                 self.setup_module = import_module(".{}".format(self.setup_module_name),
                                                   'd3a.setup')
             else:
-                import sys
                 sys.path.append(ConstSettings.GeneralSettings.SETUP_FILE_PATH)
                 self.setup_module = import_module("{}".format(self.setup_module_name))
             log.debug("Using setup module '%s'", self.setup_module_name)
@@ -258,7 +276,8 @@ class Simulation:
             self._execute_simulation(slot_resume, tick_resume, console)
 
     def _update_and_send_results(self, is_final=False):
-        self.endpoint_buffer.update_stats(self.area, self.status, self.progress_info)
+        self.endpoint_buffer.update_stats(
+            self.area, self.status, self.progress_info, self.current_state)
         if self.export_on_finish and self.should_export_results and \
                 self.area.current_market is not None and d3a.constants.D3A_TEST_RUN:
             self.export.raw_data_to_json(
@@ -293,6 +312,7 @@ class Simulation:
             slot_no, self.simulation_config)
         self.progress_info.next_slot_str = get_market_slot_time_str(
             slot_no + 1, self.simulation_config)
+        self.progress_info.current_slot_number = slot_no
 
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
         config = self.simulation_config

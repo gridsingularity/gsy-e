@@ -16,11 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
+import sys
 from logging import getLogger
 from typing import List, Dict, Any, Union  # noqa
 from uuid import uuid4
 
-from d3a.d3a_core.exceptions import SimulationException
+from d3a.d3a_core.exceptions import SimulationException, D3AException
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
@@ -36,6 +37,9 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a import constants
 
 log = getLogger(__name__)
+
+
+INF_ENERGY = int(sys.maxsize)
 
 
 class _TradeLookerUpper:
@@ -415,6 +419,22 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     def deactivate(self):
         pass
 
+    def get_state(self):
+        try:
+            return self.state.get_state()
+        except AttributeError:
+            raise D3AException(
+                "Strategy does not have a state. "
+                "State is required to support save state functionality.")
+
+    def restore_state(self, saved_state):
+        try:
+            self.state.restore_state(saved_state)
+        except AttributeError:
+            raise D3AException(
+                "Strategy does not have a state. "
+                "State is required to support load state functionality.")
+
 
 class BidEnabledStrategy(BaseStrategy):
     def __init__(self):
@@ -491,8 +511,8 @@ class BidEnabledStrategy(BaseStrategy):
         # it needs to be updated. If this check is not there, the market cycle event will post
         # one bid twice, which actually happens on the very first market slot cycle.
         if not all(bid.buyer != self.owner.name for bid in market.get_bids().values()):
-            self.owner.log.warning(f"There is already another bid posted on the market, therefore"
-                                   f" do not repost another first bid.")
+            self.owner.log.warning("There is already another bid posted on the market, therefore"
+                                   " do not repost another first bid.")
             return None
         return self.post_bid(
             market,
