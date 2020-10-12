@@ -141,7 +141,7 @@ class PVStrategy(BaseStrategy):
         # If use_market_maker_rate is true, overwrite initial_selling_rate to market maker rate
         if self.use_market_maker_rate:
             self.area_reconfigure_event(initial_selling_rate=GlobalConfig.market_maker_rate.get(
-                self.owner.parent.next_market.time_slot, 0) +
+                self.owner.parent.next_market.time_slot, 0) -
                     self.owner.get_path_to_root_fees(),
                     validate=False)
         self._validate_rates()

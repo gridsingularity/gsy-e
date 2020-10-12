@@ -44,7 +44,7 @@ def get_setup(config):
                                 use_market_maker_rate=True),
                             appliance=SwitchableAppliance()),
                     ],
-                    grid_fee_constant=0
+                    grid_fee_constant=1
                 )
             ], grid_fee_constant=1),
             Area('Neighborhood 2', [
@@ -62,7 +62,7 @@ def get_setup(config):
                     grid_fee_constant=0
 
                 ),
-            ], grid_fee_constant=1),
+            ], grid_fee_constant=2),
             Area('Market Maker', strategy=MarketMakerStrategy(energy_rate=30), grid_fee_constant=0)
         ],
         config=config,
