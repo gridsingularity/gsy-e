@@ -5,7 +5,7 @@
     "tick_length": "15s",
     "market_count": 1,
     "cloud_coverage": 0,
-    "start_date": "2020-08-20"
+    "start_date": "2020-10-12"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -21,6 +21,7 @@
       "EXPORT_ENERGY_TRADE_PROFILE_HR": false,
       "EXPORT_OFFER_BID_TRADE_HR": false,
       "RUN_REAL_TIME": false,
+      "KEEP_PAST_MARKETS": false,
       "EVENT_DISPATCHING_VIA_REDIS": false,
       "RATE_CHANGE_PER_UPDATE_LIMIT": [
         0,
@@ -47,7 +48,7 @@
       ],
       "CONSTANT_FEE_LIMIT": [
         0,
-        200
+        9223372036854775807
       ]
     },
     "CommercialProducerSettings": {
@@ -180,16 +181,6 @@
       "VALID_FEE_TYPES": [
         1,
         2
-      ],
-      "FEE_PERCENTAGE": 0,
-      "FEE_PERCENTAGE_LIMIT": [
-        0,
-        100
-      ],
-      "FEE_CONSTANT": 0,
-      "FEE_CONSTANT_LIMIT": [
-        0,
-        9223372036854775807
       ],
       "MARKET_TYPE": 1,
       "MARKET_TYPE_LIMIT": [

@@ -44,8 +44,9 @@ def test_baseline_peak_energy_stats(context):
                                                'peak_percentage': 50.0,
                                                'baseline_peak_energy_kWh': 0.4},
                                     'export': {'peak_energy_kWh': 0.0}},
-                        'House 1 2': {'import': {'peak_energy_kWh': 0.0, 'capacity_kWh': 2.0},
-                                      'export': {'peak_energy_kWh': 0.0, 'capacity_kWh': 2.0}},
+                        'House 1 2': {
+                            'import': {'peak_energy_kWh': 0.0, 'capacity_kWh': 2.0},
+                            'export': {'peak_energy_kWh': 0.0, 'capacity_kWh': 2.0}},
                         'Neighborhood 2': {'import': {'peak_energy_kWh': 0.0},
                                            'export': {'peak_energy_kWh': 0.3,
                                                       'peak_percentage': 100.0,

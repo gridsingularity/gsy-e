@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from abc import ABC, abstractmethod
-import sys
 
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.storage import StorageStrategy
@@ -25,6 +24,7 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a.models.strategy import INF_ENERGY
 from d3a.d3a_core.util import convert_unit_to_kilo
 
 
@@ -61,7 +61,7 @@ class PowerFlowBase(ABC):
                 self.add_generation_device(area, area.strategy.max_available_power_kW)
         elif isinstance(area.strategy, CommercialStrategy):
             area.power_plant = \
-                self.add_generation_device(area, int(sys.maxsize))
+                self.add_generation_device(area, INF_ENERGY)
         for child in area.children:
             self._d3a_area_to_electrical_grid(child)
 

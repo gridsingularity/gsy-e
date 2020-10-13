@@ -185,7 +185,8 @@ class LoadExternalMixin(ExternalMixin):
             current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
                 if "bills" in self.device.stats.aggregated_stats else None
             current_market_info["last_market_maker_rate"] = \
-                get_current_market_maker_rate(self.area.current_market.time_slot)
+                get_current_market_maker_rate(self.area.current_market.time_slot) \
+                if self.area.current_market else None
             if self.connected:
                 current_market_info['last_market_stats'] = \
                     self.market_area.stats.get_price_stats_current_market()
@@ -263,7 +264,7 @@ class LoadExternalMixin(ExternalMixin):
                 return {
                     "command": "update_bid", "status": "error",
                     "area_uuid": self.device.uuid,
-                    "error_message": f"Updated bid would only work if the old exist in market.",
+                    "error_message": "Updated bid would only work if the old exist in market.",
                     "transaction_id": arguments.get("transaction_id", None)}
 
     def _bid_aggregator(self, arguments):

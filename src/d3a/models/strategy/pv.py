@@ -15,10 +15,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import math
 from typing import Dict  # noqa
 from pendulum import Time  # noqa
-import math
 from pendulum import duration
+from logging import getLogger
 
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy import BaseStrategy
@@ -32,6 +33,8 @@ from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTyp
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.utils import key_in_dict_and_not_none
 from d3a import constants
+
+log = getLogger(__name__)
 
 
 class PVStrategy(BaseStrategy):
@@ -89,9 +92,8 @@ class PVStrategy(BaseStrategy):
                                                  fit_to_limit, energy_rate_decrease_per_update,
                                                  update_interval)
 
-    def area_reconfigure_event(self, validate=True, **kwargs):
-        self._area_reconfigure_prices(validate, **kwargs)
-        validate_pv_device_energy(**kwargs)
+    def area_reconfigure_event(self, **kwargs):
+        self._area_reconfigure_prices(**kwargs)
         if key_in_dict_and_not_none(kwargs, 'panel_count'):
             self.panel_count = kwargs['panel_count']
         if key_in_dict_and_not_none(kwargs, 'max_panel_power_W'):
@@ -99,39 +101,64 @@ class PVStrategy(BaseStrategy):
 
         self.produced_energy_forecast_kWh()
 
-    def _area_reconfigure_prices(self, validate=True, **kwargs):
-        if validate:
-            validate_pv_device_price(**kwargs)
-
+    def _area_reconfigure_prices(self, **kwargs):
         if key_in_dict_and_not_none(kwargs, 'initial_selling_rate'):
-            self.offer_update.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                    kwargs['initial_selling_rate'])
+            initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                  kwargs['initial_selling_rate'])
+        else:
+            initial_rate = self.offer_update.initial_rate
+
         if key_in_dict_and_not_none(kwargs, 'final_selling_rate'):
-            self.offer_update.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                  kwargs['final_selling_rate'])
+            final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                kwargs['final_selling_rate'])
+        else:
+            final_rate = self.offer_update.final_rate
         if key_in_dict_and_not_none(kwargs, 'energy_rate_decrease_per_update'):
-            self.offer_update.energy_rate_change_per_update = \
+            energy_rate_change_per_update = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                        kwargs['energy_rate_decrease_per_update'])
+        else:
+            energy_rate_change_per_update = self.offer_update.energy_rate_change_per_update
         if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
-            self.offer_update.fit_to_limit = kwargs['fit_to_limit']
+            fit_to_limit = kwargs['fit_to_limit']
+        else:
+            fit_to_limit = self.offer_update.fit_to_limit
         if key_in_dict_and_not_none(kwargs, 'update_interval'):
             if isinstance(kwargs['update_interval'], int):
                 update_interval = duration(minutes=kwargs['update_interval'])
             else:
                 update_interval = kwargs['update_interval']
-            self.offer_update.update_interval = update_interval
+        else:
+            update_interval = self.offer_update.update_interval
         if key_in_dict_and_not_none(kwargs, 'use_market_maker_rate'):
             self.use_market_maker_rate = kwargs['use_market_maker_rate']
 
-        self._validate_rates()
+        try:
+            self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
+                                 fit_to_limit)
+        except Exception as e:
+            log.error(str(e))
+            return
+
+        self.offer_update.initial_rate = initial_rate
+        self.offer_update.final_rate = final_rate
+        self.offer_update.energy_rate_change_per_update = energy_rate_change_per_update
+        self.offer_update.fit_to_limit = fit_to_limit
+        self.offer_update.update_interval = update_interval
+
         self.offer_update.update_offer(self)
 
-    def _validate_rates(self):
-        for time_slot in generate_market_slot_list():
+    @staticmethod
+    def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
+        # all parameters have to be validated for each time slot here
+        for time_slot in initial_rate.keys():
+            rate_change = None if fit_to_limit else \
+                energy_rate_change_per_update[time_slot]
             validate_pv_device_price(
-                initial_selling_rate=self.offer_update.initial_rate[time_slot],
-                final_selling_rate=self.offer_update.final_rate[time_slot])
+                initial_selling_rate=initial_rate[time_slot],
+                final_selling_rate=final_rate[time_slot],
+                energy_rate_decrease_per_update=rate_change,
+                fit_to_limit=fit_to_limit)
 
     def event_activate(self):
         self.event_activate_price()
@@ -144,7 +171,9 @@ class PVStrategy(BaseStrategy):
                 self.owner.parent.next_market.time_slot, 0) -
                     self.owner.get_path_to_root_fees(),
                     validate=False)
-        self._validate_rates()
+        self._validate_rates(self.offer_update.initial_rate, self.offer_update.final_rate,
+                             self.offer_update.energy_rate_change_per_update,
+                             self.offer_update.fit_to_limit)
         # Calculating the produced energy
         self._set_alternative_pricing_scheme()
         self.offer_update.update_on_activate()

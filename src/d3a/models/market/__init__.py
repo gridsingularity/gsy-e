@@ -35,6 +35,8 @@ from d3a.models.market.market_redis_connection import MarketRedisEventSubscriber
     MarketRedisEventPublisher, TwoSidedMarketRedisEventSubscriber
 from d3a.models.market.grid_fees.base_model import GridFees
 from d3a.models.market.grid_fees.constant_grid_fees import ConstantGridFees
+from d3a.models.market.blockchain_interface import SubstrateBlockchainInterface, \
+    NonBlockchainInterface
 
 log = getLogger(__name__)
 
@@ -63,7 +65,10 @@ class Market:
                  grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
                  transfer_fees: TransferFees = None, name=None):
         self.name = name
-        self.bc = bc
+        if bc is not None:
+            self.bc_interface = SubstrateBlockchainInterface(bc)
+        else:
+            self.bc_interface = NonBlockchainInterface()
         self.id = str(uuid.uuid4())
         self.time_slot = time_slot
         self.time_slot_str = time_slot.format(DATE_TIME_FORMAT) \
