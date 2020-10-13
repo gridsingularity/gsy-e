@@ -1088,7 +1088,7 @@ def pv_selling_rate_minus_fees(context):
     pv = list(filter(lambda x: x.name == "H2 PV", house2.children))[0]
 
     market_maker_rate = 30
-    fees_path_to_root = 1 + 2
+    fees_path_to_root = grid.grid_fee_constant + hood2.grid_fee_constant + house2.grid_fee_constant
     trades_sold = []
     for market in grid.past_markets:
         for trade in market.trades:
@@ -1110,7 +1110,7 @@ def load_buying_rate_plus_fees(context):
     load = list(filter(lambda x: x.name == "H1 General Load", house1.children))[0]
 
     market_maker_rate = 30
-    fees_path_to_root = 3 + 4
+    fees_path_to_root = grid.grid_fee_constant + hood1.grid_fee_constant + house1.grid_fee_constant
     trades_bought = []
     for market in grid.past_markets:
         for trade in market.trades:
