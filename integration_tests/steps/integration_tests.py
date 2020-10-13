@@ -1080,6 +1080,50 @@ def identical_profiles(context):
     assert all([load_profile_ts[i] == load_profile_ts[i + 86400] for i in range(start, end, 3600)])
 
 
+@then("the PV initial selling rate subtracts grid fees")
+def pv_selling_rate_minus_fees(context):
+    grid = context.simulation.area
+    hood2 = list(filter(lambda x: x.name == "Neighborhood 2", context.simulation.area.children))[0]
+    house2 = list(filter(lambda x: x.name == "House 2", hood2.children))[0]
+    pv = list(filter(lambda x: x.name == "H2 PV", house2.children))[0]
+
+    market_maker_rate = 30
+    fees_path_to_root = grid.grid_fee_constant + hood2.grid_fee_constant + house2.grid_fee_constant
+    trades_sold = []
+    for market in grid.past_markets:
+        for trade in market.trades:
+            assert trade.buyer is not pv.name
+            trade.offer.market = market
+            if trade.seller == pv.name:
+                trades_sold.append(trade)
+
+    assert all([isclose(trade.offer.price / trade.offer.energy,
+                        market_maker_rate - fees_path_to_root)
+                for trade in trades_sold])
+
+
+@then("the load initial buying rate adds grid fees")
+def load_buying_rate_plus_fees(context):
+    grid = context.simulation.area
+    hood1 = list(filter(lambda x: x.name == "Neighborhood 1", context.simulation.area.children))[0]
+    house1 = list(filter(lambda x: x.name == "House 1", hood1.children))[0]
+    load = list(filter(lambda x: x.name == "H1 General Load", house1.children))[0]
+
+    market_maker_rate = 30
+    fees_path_to_root = grid.grid_fee_constant + hood1.grid_fee_constant + house1.grid_fee_constant
+    trades_bought = []
+    for market in grid.past_markets:
+        for trade in market.trades:
+            assert trade.seller is not load.name
+            trade.offer.market = market
+            if trade.buyer == load.name:
+                trades_bought.append(trade)
+
+    assert all([isclose(trade.offer.price / trade.offer.energy,
+                        market_maker_rate + fees_path_to_root)
+                for trade in trades_bought])
+
+
 def get_simulation_raw_results(context):
     area_tree_summary = glob.glob(os.path.join(context.export_path, "*", "area_tree_summary.json"))
     with open(area_tree_summary[0], "r") as sf:
