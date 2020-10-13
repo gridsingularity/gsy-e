@@ -44,9 +44,9 @@ def get_setup(config):
                                 use_market_maker_rate=True),
                             appliance=SwitchableAppliance()),
                     ],
-                    grid_fee_constant=1
+                    grid_fee_constant=4
                 )
-            ], grid_fee_constant=1),
+            ], grid_fee_constant=3),
             Area('Neighborhood 2', [
                 Area(
                     'House 2',
@@ -59,13 +59,13 @@ def get_setup(config):
                                 use_market_maker_rate=True),
                             appliance=PVAppliance()),
                     ],
-                    grid_fee_constant=0
+                    grid_fee_constant=2
 
                 ),
-            ], grid_fee_constant=2),
+            ], grid_fee_constant=1),
             Area('Market Maker', strategy=MarketMakerStrategy(energy_rate=30), grid_fee_constant=0)
         ],
         config=config,
-        grid_fee_constant=2
+        grid_fee_constant=0
     )
     return area
