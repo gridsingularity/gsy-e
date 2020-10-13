@@ -34,27 +34,33 @@ def test_baseline_peak_energy_stats(context):
         context.simulation.endpoint_buffer.area_throughput_stats.results
 
     expected_results = {'Grid': {'import': {'peak_energy_kWh': 0.0},
-                                 'export': {'peak_energy_kWh': 0.0}},
+                                 'export': {'peak_energy_kWh': 0.0},
+                                 'net_energy_flow': {'peak_energy_kWh': 0.0}},
                         'Neighborhood 1': {'import': {'peak_energy_kWh': 0.2,
                                                       'peak_percentage': 50.0,
                                                       'baseline_peak_energy_kWh': 0.4,
                                                       'capacity_kWh': 2.0},
-                                           'export': {'peak_energy_kWh': 0.0}},
+                                           'export': {'peak_energy_kWh': 0.0},
+                                           'net_energy_flow': {'peak_energy_kWh': -0.2}},
                         'House 1': {'import': {'peak_energy_kWh': 0.2,
                                                'peak_percentage': 50.0,
                                                'baseline_peak_energy_kWh': 0.4},
-                                    'export': {'peak_energy_kWh': 0.0}},
+                                    'export': {'peak_energy_kWh': 0.0},
+                                    'net_energy_flow': {'peak_energy_kWh': -0.2}},
                         'House 1 2': {
                             'import': {'peak_energy_kWh': 0.0, 'capacity_kWh': 2.0},
-                            'export': {'peak_energy_kWh': 0.0, 'capacity_kWh': 2.0}},
+                            'export': {'peak_energy_kWh': 0.0, 'capacity_kWh': 2.0},
+                            'net_energy_flow': {'peak_energy_kWh': 0.0}},
                         'Neighborhood 2': {'import': {'peak_energy_kWh': 0.0},
                                            'export': {'peak_energy_kWh': 0.3,
                                                       'peak_percentage': 100.0,
                                                       'baseline_peak_energy_kWh': 0.3,
-                                                      'capacity_kWh': 2.0}},
+                                                      'capacity_kWh': 2.0},
+                                           'net_energy_flow': {'peak_energy_kWh': 0.3}},
                         'House 2': {'import': {'peak_energy_kWh': 0.0},
                                     'export': {'peak_energy_kWh': 0.3,
                                                'peak_percentage': 100.0,
-                                               'baseline_peak_energy_kWh': 0.3}}}
+                                               'baseline_peak_energy_kWh': 0.3},
+                                    'net_energy_flow': {'peak_energy_kWh': 0.3}}}
 
     assert expected_results == area_throughput_stats

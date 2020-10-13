@@ -32,9 +32,11 @@ class AreaThroughputStats:
         area_throughput = core_stats.get(area_dict['uuid'], {}).get('area_throughput', {})
         imported_peak = round_floats_for_ui(area_throughput.get('imported_energy_kWh', 0.))
         exported_peak = round_floats_for_ui(area_throughput.get('exported_energy_kWh', 0.))
+        net_peak = round_floats_for_ui(area_throughput.get('net_energy_flow_kWh', 0.))
         area_results = {
             "import": {'peak_energy_kWh': imported_peak},
             "export": {'peak_energy_kWh': exported_peak},
+            "net_energy_flow": {'peak_energy_kWh': net_peak}
         }
 
         baseline_import = area_throughput.get('baseline_peak_energy_import_kWh', None)
