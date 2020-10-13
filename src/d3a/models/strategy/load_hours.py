@@ -226,9 +226,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def event_activate_price(self):
         # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
         if self.use_market_maker_rate:
-            self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate.get(
-                self.owner.parent.next_market.time_slot, 0) +
-                    self.owner.get_path_to_root_fees())
+            if isinstance(GlobalConfig.market_maker_rate, dict):
+                self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate.get(
+                    self.owner.parent.next_market.time_slot, 0) +
+                        self.owner.get_path_to_root_fees())
+            else:
+                self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate +
+                                            self.owner.get_path_to_root_fees())
         self._validate_rates(self.bid_update.initial_rate, self.bid_update.final_rate,
                              self.bid_update.energy_rate_change_per_update,
                              self.bid_update.fit_to_limit)
