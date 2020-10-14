@@ -53,6 +53,9 @@ class FakeArea:
     def current_market(self):
         return self.test_market
 
+    def get_path_to_root_fees(self):
+        return 0.
+
     @property
     def now(self) -> DateTime:
         """
@@ -441,6 +444,7 @@ def test_use_mmr_parameter_is_respected(strategy_type, use_mmr, expected_rate):
     pv = strategy_type(initial_selling_rate=19, use_market_maker_rate=use_mmr,
                        max_panel_power_W=200)
     pv.area = FakeArea()
+    pv.owner = pv.area
     pv.event_activate()
     assert all(v == expected_rate for v in pv.offer_update.initial_rate.values())
 
@@ -456,6 +460,7 @@ def test_use_mmr_parameter_is_respected_for_pv_profiles(use_mmr, expected_rate):
         power_profile=user_profile_path, initial_selling_rate=17, use_market_maker_rate=use_mmr,
         max_panel_power_W=200)
     pv.area = FakeArea()
+    pv.owner = pv.area
     pv.event_activate()
     assert all(v == expected_rate for v in pv.offer_update.initial_rate.values())
 

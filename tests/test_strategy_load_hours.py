@@ -63,6 +63,9 @@ class FakeArea:
     def get_future_market_from_id(self, id):
         return self._next_market
 
+    def get_path_to_root_fees(self):
+        return 0.
+
     @property
     def all_markets(self):
         return list(self.markets.values())
@@ -441,6 +444,7 @@ def test_use_market_maker_rate_parameter_is_respected(use_mmr, expected_rate):
     GlobalConfig.market_maker_rate = 9
     load = LoadHoursStrategy(200, final_buying_rate=33, use_market_maker_rate=use_mmr)
     load.area = FakeArea()
+    load.owner = load.area
     load.event_activate()
     assert all(v == expected_rate for v in load.bid_update.final_rate.values())
 
@@ -456,6 +460,7 @@ def test_use_market_maker_rate_parameter_is_respected_for_load_profiles(use_mmr,
         final_buying_rate=33,
         use_market_maker_rate=use_mmr)
     load.area = FakeArea()
+    load.owner = load.area
     load.event_activate()
     assert all(v == expected_rate for v in load.bid_update.final_rate.values())
 
@@ -482,6 +487,7 @@ def test_predefined_load_strategy_rejects_incorrect_rate_parameters(use_mmr, ini
         initial_buying_rate=initial_buying_rate,
         use_market_maker_rate=use_mmr)
     load.area = FakeArea()
+    load.owner = load.area
     with pytest.raises(D3ADeviceException):
         load.event_activate()
     with pytest.raises(D3ADeviceException):

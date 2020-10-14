@@ -198,11 +198,18 @@ class Area:
         self.grid_fee_constant = transfer_fee_const
         self.grid_fee_percentage = grid_fee_percentage
 
+    def get_path_to_root_fees(self):
+        if self.parent is not None:
+            grid_fee_constant = self.grid_fee_constant if self.grid_fee_constant else 0
+            return grid_fee_constant + self.parent.get_path_to_root_fees()
+        else:
+            return self.grid_fee_constant if self.grid_fee_constant else 0
+
     def get_grid_fee(self):
         grid_fee_type = self.config.grid_fee_type \
             if self.config is not None \
             else ConstSettings.IAASettings.GRID_FEE_TYPE
-        return self.grid_fee_constant if grid_fee_type == 1 else self.grid_fee_percentage
+        return self.get_path_to_root_fees(self) if grid_fee_type == 1 else 0
 
     def _convert_area_throughput_kva_to_kwh(self, import_capacity_kVA, export_capacity_kVA):
         self.import_capacity_kWh = \
