@@ -47,6 +47,9 @@ def before_scenario(context, scenario):
     context.simdir = "./d3a-simulation/integration_tests/"
     os.makedirs(context.simdir, exist_ok=True)
     context.resource_manager = contextlib.ExitStack()
+    from d3a_interface.constants_limits import ConstSettings
+    ConstSettings.IAASettings.MIN_OFFER_AGE = 0
+    ConstSettings.IAASettings.MIN_BID_AGE = 0
     constants.D3A_TEST_RUN = True
     context.no_export = True
     if os.environ.get("DISPATCH_EVENTS_BOTTOM_TO_TOP") == "False":
