@@ -32,29 +32,35 @@ def test_export_of_power_flow_result(context):
 def test_baseline_peak_energy_stats(context):
     area_throughput_stats = \
         context.simulation.endpoint_buffer.area_throughput_stats.results
-
-    expected_results = {'Grid': {'import': {'peak_energy_kWh': 0.0},
-                                 'export': {'peak_energy_kWh': 0.0}},
-                        'Neighborhood 1': {'import': {'peak_energy_kWh': 0.2,
-                                                      'peak_percentage': 50.0,
-                                                      'baseline_peak_energy_kWh': 0.4,
-                                                      'capacity_kWh': 2.0},
-                                           'export': {'peak_energy_kWh': 0.0}},
-                        'House 1': {'import': {'peak_energy_kWh': 0.2,
-                                               'peak_percentage': 50.0,
-                                               'baseline_peak_energy_kWh': 0.4},
-                                    'export': {'peak_energy_kWh': 0.0}},
-                        'House 1 2': {
-                            'import': {'peak_energy_kWh': 0.0, 'capacity_kWh': 2.0},
-                            'export': {'peak_energy_kWh': 0.0, 'capacity_kWh': 2.0}},
-                        'Neighborhood 2': {'import': {'peak_energy_kWh': 0.0},
-                                           'export': {'peak_energy_kWh': 0.3,
-                                                      'peak_percentage': 100.0,
-                                                      'baseline_peak_energy_kWh': 0.3,
-                                                      'capacity_kWh': 2.0}},
-                        'House 2': {'import': {'peak_energy_kWh': 0.0},
-                                    'export': {'peak_energy_kWh': 0.3,
-                                               'peak_percentage': 100.0,
-                                               'baseline_peak_energy_kWh': 0.3}}}
-
-    assert expected_results == area_throughput_stats
+    for area_name, market_value in area_throughput_stats.items():
+        if area_name in ['Grid', 'House 1 2']:
+            assert all(stats['import']['peak_energy_kWh'] == 0
+                       for market_time, stats in market_value.items())
+            assert all(stats['export']['peak_energy_kWh'] == 0
+                       for market_time, stats in market_value.items())
+            assert all(stats['net_energy_flow']['peak_energy_kWh'] == 0
+                       for market_time, stats in market_value.items())
+        elif area_name in ['Neighborhood 1', 'House 1']:
+            assert all(stats['import']['peak_energy_kWh'] == 0.2
+                       for market_time, stats in market_value.items())
+            assert all(stats['import']['baseline_peak_energy_kWh'] == 0.4
+                       for market_time, stats in market_value.items())
+            assert all(stats['import']['peak_percentage'] == 50.0
+                       for market_time, stats in market_value.items())
+            assert all(stats['export']['peak_energy_kWh'] == 0
+                       for market_time, stats in market_value.items())
+            assert all(stats['net_energy_flow']['peak_energy_kWh'] == -0.2
+                       for market_time, stats in market_value.items())
+        elif area_name in ['Neighborhood 2', 'House 2']:
+            assert all(stats['import']['peak_energy_kWh'] == 0.
+                       for market_time, stats in market_value.items())
+            assert all(stats['export']['peak_energy_kWh'] == 0.3
+                       for market_time, stats in market_value.items())
+            assert all(stats['export']['baseline_peak_energy_kWh'] == 0.3
+                       for market_time, stats in market_value.items())
+            assert all(stats['export']['peak_percentage'] == 100.0
+                       for market_time, stats in market_value.items())
+            assert all(stats['net_energy_flow']['peak_energy_kWh'] == 0.3
+                       for market_time, stats in market_value.items())
+        else:
+            assert False

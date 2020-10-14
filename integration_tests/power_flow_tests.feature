@@ -8,7 +8,7 @@ Feature: Run power flow integration tests
      Then the export functionality of power flow result
 
   Scenario: BaselinePeakEnergyStats are correctly calculated
-    Given we have a scenario named two_sided_market/one_pv_one_load
+    Given we have a scenario named power_flow/baseline_peak_energy
     And d3a is installed
     When we run the simulation with setup file power_flow.baseline_peak_energy and parameters [24, 60, 60, 1]
     Then BaselinePeakEnergyStats are correctly calculated
