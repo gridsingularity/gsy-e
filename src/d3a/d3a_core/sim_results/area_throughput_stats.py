@@ -72,11 +72,11 @@ class AreaThroughputStats:
             area_results["export"].update(
                 {'capacity_kWh': round_floats_for_ui(export_capacity)}
             )
-        area_throughput_time = {}
-        area_throughput_time[current_market_time_slot_str] = area_results
+        area_throughput_profile = {}
+        area_throughput_profile[current_market_time_slot_str] = area_results
 
-        create_subdict_or_update(self.results, area_dict['name'], area_throughput_time)
-        create_subdict_or_update(self.results_redis, area_dict['uuid'], area_throughput_time)
+        create_subdict_or_update(self.results, area_dict['name'], area_throughput_profile)
+        create_subdict_or_update(self.results_redis, area_dict['uuid'], area_throughput_profile)
 
         for child in area_dict['children']:
             if child['type'] == "Area":
