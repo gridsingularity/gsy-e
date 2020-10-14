@@ -26,15 +26,19 @@ class AreaThroughputStats:
         self.imported_energy = {}
 
     def update(self, area_dict, core_stats, current_market_time_slot_str):
+        if current_market_time_slot_str == "":
+            return
         self.update_results(area_dict, core_stats, current_market_time_slot_str)
 
     def update_results(self, area_dict, core_stats, current_market_time_slot_str):
         area_throughput = core_stats.get(area_dict['uuid'], {}).get('area_throughput', {})
         imported_peak = round_floats_for_ui(area_throughput.get('imported_energy_kWh', 0.))
         exported_peak = round_floats_for_ui(area_throughput.get('exported_energy_kWh', 0.))
+        net_peak = round_floats_for_ui(area_throughput.get('net_energy_flow_kWh', 0.))
         area_results = {
             "import": {'peak_energy_kWh': imported_peak},
             "export": {'peak_energy_kWh': exported_peak},
+            "net_energy_flow": {'peak_energy_kWh': net_peak}
         }
 
         baseline_import = area_throughput.get('baseline_peak_energy_import_kWh', None)
@@ -68,9 +72,11 @@ class AreaThroughputStats:
             area_results["export"].update(
                 {'capacity_kWh': round_floats_for_ui(export_capacity)}
             )
+        area_throughput_profile = {}
+        area_throughput_profile[current_market_time_slot_str] = area_results
 
-        create_subdict_or_update(self.results, area_dict['name'], area_results)
-        create_subdict_or_update(self.results_redis, area_dict['uuid'], area_results)
+        create_subdict_or_update(self.results, area_dict['name'], area_throughput_profile)
+        create_subdict_or_update(self.results_redis, area_dict['uuid'], area_throughput_profile)
 
         for child in area_dict['children']:
             if child['type'] == "Area":
