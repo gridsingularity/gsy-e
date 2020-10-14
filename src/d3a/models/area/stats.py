@@ -44,6 +44,7 @@ class AreaStats:
         self.kpi = {}
         self.exported_energy = {}
         self.imported_energy = {}
+        self.net_energy_flow = {}
 
     def get_state(self):
         return {
@@ -153,6 +154,7 @@ class AreaStats:
 
         self.imported_energy = {}
         self.exported_energy = {}
+        self.net_energy_flow = {}
 
         child_names = [area_name_from_area_or_iaa_name(c.name) for c in self._area.children]
         if getattr(self.current_market, 'trades', None) is not None:
@@ -167,3 +169,6 @@ class AreaStats:
             self.imported_energy[self.current_market.time_slot] = 0.
         if self.current_market.time_slot not in self.exported_energy:
             self.exported_energy[self.current_market.time_slot] = 0.
+        self.net_energy_flow[self.current_market.time_slot] = \
+            self.exported_energy[self.current_market.time_slot] - \
+            self.imported_energy[self.current_market.time_slot]
