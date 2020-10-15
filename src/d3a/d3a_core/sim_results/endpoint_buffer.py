@@ -46,6 +46,7 @@ class SimulationEndpointBuffer:
         self.job_id = job_id
         self.result_area_uuids = set()
         self.current_market_time_slot_str = ""
+        self.current_market_ui_time_slot_str = ""
         self.current_market_time_slot_unix = None
         self.current_market_time_slot = None
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
@@ -236,9 +237,12 @@ class SimulationEndpointBuffer:
             self._populate_core_stats_and_sim_state(child)
 
     def update_stats(self, area, simulation_status, progress_info, sim_state):
+        from d3a_interface.constants_limits import DATE_TIME_UI_FORMAT
         self.status = simulation_status
         if area.current_market is not None:
             self.current_market_time_slot_str = area.current_market.time_slot_str
+            self.current_market_ui_time_slot_str = \
+                area.current_market.time_slot.format(DATE_TIME_UI_FORMAT)
             self.current_market_time_slot_unix = area.current_market.time_slot.timestamp()
             self.current_market_time_slot = area.current_market.time_slot
         self.simulation_state["general"] = sim_state
@@ -282,7 +286,7 @@ class SimulationEndpointBuffer:
         self.trade_profile.update(
             self.area_result_dict,
             self.flattened_area_core_stats_dict,
-            self.current_market_time_slot_str
+            self.current_market_ui_time_slot_str
         )
 
         self.area_throughput_stats.update(self.area_result_dict,
