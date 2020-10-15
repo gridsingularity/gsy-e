@@ -155,7 +155,7 @@ class RedisMarketExternalConnection:
         if self.area.current_market is None:
             return
         market_event_channel = f"{self.channel_prefix}/market-events/market"
-        current_market_info = self.area.current_market.info
+        current_market_info = self.area.next_market.info
         current_market_info["current_market_fee"] = \
             self.area.current_market.fee_class.grid_fee_rate
         current_market_info["next_market_fee"] = self.area.get_grid_fee()
