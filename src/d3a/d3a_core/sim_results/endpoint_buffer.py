@@ -21,7 +21,7 @@ from d3a.d3a_core.sim_results.area_throughput_stats import AreaThroughputStats
 from d3a.d3a_core.sim_results.bills import MarketEnergyBills, CumulativeBills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
 from d3a.d3a_core.sim_results.export_unmatched_loads import MarketUnmatchedLoads
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, DATE_TIME_UI_FORMAT
 from d3a.d3a_core.sim_results.kpi import KPI
 from d3a.d3a_core.sim_results.area_market_stock_stats import OfferBidTradeGraphStats
 from d3a_interface.utils import convert_pendulum_to_str_in_dict
@@ -237,7 +237,6 @@ class SimulationEndpointBuffer:
             self._populate_core_stats_and_sim_state(child)
 
     def update_stats(self, area, simulation_status, progress_info, sim_state):
-        from d3a_interface.constants_limits import DATE_TIME_UI_FORMAT
         self.status = simulation_status
         if area.current_market is not None:
             self.current_market_time_slot_str = area.current_market.time_slot_str
