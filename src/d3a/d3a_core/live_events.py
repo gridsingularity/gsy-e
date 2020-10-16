@@ -4,6 +4,9 @@ import traceback
 from d3a.d3a_core.area_serializer import area_from_dict
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.area.event_dispatcher import DispatcherFactory
+from d3a_interface.utils import key_in_dict_and_not_none
+from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
+from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 
 
 class LiveEventException(D3AException):
@@ -46,6 +49,20 @@ class UpdateAreaEvent:
     def apply(self, area):
         if area.uuid != self.area_uuid:
             return False
+        if key_in_dict_and_not_none(self.area_params, 'type'):
+            if self.area_params['type'] == "MarketMaker":
+                strategy_obj = MarketMakerStrategy
+                del self.area_params['type']
+                del self.area_params['number_of_clones']
+                del self.area_params['energy_rate_profile_uuid']
+                self.area_params = {'strategy_object': strategy_obj(**self.area_params)}
+            elif self.area_params['type'] == "InfiniteBus":
+                strategy_obj = InfiniteBusStrategy
+                del self.area_params['type']
+                del self.area_params['number_of_clones']
+                del self.area_params['energy_rate_profile_uuid']
+                del self.area_params['buying_rate_profile_uuid']
+                self.area_params = {'strategy_object': strategy_obj(**self.area_params)}
 
         area.area_reconfigure_event(**self.area_params)
 

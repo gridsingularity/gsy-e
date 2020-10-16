@@ -136,25 +136,14 @@ class Area:
         self.stats.restore_state(saved_state)
 
     def area_reconfigure_event(self, **kwargs):
-        if key_in_dict_and_not_none(kwargs, 'type'):
-            from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
-            from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
-            if kwargs['type'] == "MarketMaker":
-                strategy_obj = MarketMakerStrategy
-                del kwargs['type']
-                del kwargs['number_of_clones']
-                del kwargs['energy_rate_profile_uuid']
-                self.str_buffer = strategy_obj(**kwargs)
-            elif kwargs['type'] == "InfiniteBus":
-                strategy_obj = InfiniteBusStrategy
-                del kwargs['type']
-                del kwargs['number_of_clones']
-                del kwargs['energy_rate_profile_uuid']
-                del kwargs['buying_rate_profile_uuid']
-                self.str_buffer = strategy_obj(**kwargs)
+        if key_in_dict_and_not_none(kwargs, 'strategy_object'):
+            self.strategy = kwargs['strategy_object']
+            self.strategy.area = self.parent
+            self.strategy.owner = self
+            self.strategy.event_activate()
+            self.strategy.event_market_cycle()
         elif self.strategy is not None:
-            # self.strategy.area_reconfigure_event(**kwargs)
-            self.str_kwargs_buffer = kwargs
+            self.strategy.area_reconfigure_event(**kwargs)
         grid_fee_constant = kwargs["grid_fee_constant"] \
             if key_in_dict_and_not_none(kwargs, 'grid_fee_constant') \
             else self.grid_fee_constant
@@ -342,17 +331,6 @@ class Area:
                                           self.strategy.trigger_aggregator_commands)
 
     def tick(self):
-        if self.str_buffer is not None:
-            self.strategy = self.str_buffer
-            self.strategy.area = self.parent
-            self.strategy.owner = self
-            self.strategy.event_activate()
-            self.strategy.event_market_cycle()
-            self.str_buffer = None
-        elif self.str_kwargs_buffer is not None:
-            self.strategy.area_reconfigure_event(**self.str_kwargs_buffer)
-            self.str_kwargs_buffer = None
-
         self._consume_commands_from_aggregator()
 
         if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
