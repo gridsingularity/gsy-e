@@ -91,9 +91,7 @@ class TestLiveEvents(unittest.TestCase):
         self.area_grid.activate()
 
         self.live_events.add_event(event_dict)
-
         self.live_events.handle_all_events(self.area_grid)
-        self.area1.tick()
         assert self.area1.strategy.avg_power_W == 234
         assert self.area1.strategy.hrs_per_day[0] == 6
         assert self.area1.strategy.hrs_of_day == [0, 1, 2, 3, 4, 5, 6, 7]
@@ -115,7 +113,6 @@ class TestLiveEvents(unittest.TestCase):
 
         self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
-        self.area2.tick()
         assert self.area2.strategy.panel_count == 12
         assert set(self.area2.strategy.offer_update.initial_rate.values()) == {68}
         assert set(self.area2.strategy.offer_update.final_rate.values()) == {42}
@@ -139,7 +136,6 @@ class TestLiveEvents(unittest.TestCase):
 
         self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
-        self.area3.tick()
         assert self.area3.strategy.cap_price_strategy is False
         assert set(self.area3.strategy.offer_update.initial_rate.values()) == {123}
         assert set(self.area3.strategy.offer_update.final_rate.values()) == {120}

@@ -53,16 +53,16 @@ class UpdateAreaEvent:
             if self.area_params['type'] == "MarketMaker":
                 strategy_obj = MarketMakerStrategy
                 del self.area_params['type']
-                del self.area_params['number_of_clones']
                 del self.area_params['energy_rate_profile_uuid']
                 self.area_params = {'strategy_object': strategy_obj(**self.area_params)}
             elif self.area_params['type'] == "InfiniteBus":
                 strategy_obj = InfiniteBusStrategy
-                del self.area_params['type']
-                del self.area_params['number_of_clones']
                 del self.area_params['energy_rate_profile_uuid']
                 del self.area_params['buying_rate_profile_uuid']
                 self.area_params = {'strategy_object': strategy_obj(**self.area_params)}
+
+            del self.area_params['type']
+            del self.area_params['number_of_clones']
 
         area.area_reconfigure_event(**self.area_params)
 

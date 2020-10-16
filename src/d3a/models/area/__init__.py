@@ -117,8 +117,6 @@ class Area:
         log.debug(f"External connection {external_connection_available} for area {self.name}")
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available is True else None
-        self.str_buffer = None
-        self.str_kwargs_buffer = None
 
     def get_state(self):
         if self.strategy is not None:
