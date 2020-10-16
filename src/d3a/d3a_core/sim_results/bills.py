@@ -19,8 +19,9 @@ from copy import deepcopy
 from itertools import chain  # NOQA
 from d3a.d3a_core.util import round_floats_for_ui
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
+from d3a.d3a_core.sim_results import _is_load_node_type, _is_pv_node_type
 from d3a_interface.constants_limits import ConstSettings
-from d3a.constants import DEVICE_PENALTY_RATE
+from d3a.constants import LOAD_PENALTY_RATE, PV_PENALTY_RATE
 from d3a import constants  # NOQA
 
 
@@ -104,7 +105,14 @@ class CumulativeBills:
             penalty_energy = self._calculate_device_penalties(
                 area_dict, core_stats.get(area_dict['uuid'], {})
             )
-            penalty_cost = penalty_energy * DEVICE_PENALTY_RATE / 100.0
+
+            if _is_load_node_type(area_dict):
+                penalty_cost = penalty_energy * LOAD_PENALTY_RATE / 100.0
+            elif _is_pv_node_type(area_dict):
+                penalty_cost = penalty_energy * PV_PENALTY_RATE / 100.0
+            else:
+                penalty_cost = 0.0
+
             total = spent_total - earned + penalty_cost
             self.cumulative_bills_results[area_dict['uuid']]["spent_total"] += spent_total
             self.cumulative_bills_results[area_dict['uuid']]["earned"] += earned

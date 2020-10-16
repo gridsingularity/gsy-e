@@ -56,7 +56,7 @@ class AggregatorHandler:
         self.already_sent_grid_stats = True
 
     def add_batch_market_event(self, device_uuid, event, global_objects):
-        if self.already_sent_grid_stats or not global_objects.area_tree_dict:
+        if not self.already_sent_grid_stats and global_objects.area_tree_dict:
             self._add_grid_stats_to_market_event(device_uuid, global_objects)
         self._add_batch_event(device_uuid, event, self.batch_market_cycle_events)
 

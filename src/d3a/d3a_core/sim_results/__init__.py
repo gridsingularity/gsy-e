@@ -14,6 +14,10 @@ def _is_producer_node_type(area):
                             "CommercialStrategy", "FinitePowerPlant", "MarketMakerStrategy"]
 
 
+def _is_pv_node_type(area):
+    return area['type'] in ["PVStrategy", "PVUserProfileStrategy", "PVPredefinedStrategy"]
+
+
 def _is_prosumer_node_type(area):
     return area['type'] == "StorageStrategy"
 

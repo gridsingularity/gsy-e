@@ -21,7 +21,7 @@ import glob
 import ast
 from behave import then
 from math import isclose
-from d3a.constants import DEVICE_PENALTY_RATE
+from d3a.constants import LOAD_PENALTY_RATE, PV_PENALTY_RATE
 
 
 @then('{kpi} of {expected_kpis} are correctly reported')
@@ -93,10 +93,26 @@ def available_energy_equals_to_penalties(context, pv_name):
     assert isclose(bills[str(pv.uuid)]["penalty_energy"], penalty_energy, rel_tol=0.0003)
 
 
+def _is_pv(device):
+    return device.strategy in ["PVStrategy", "PVUserProfileStrategy", "PVPredefinedStrategy"]
+
+
+def _is_load(device):
+    return device.strategy in ["LoadHoursStrategy", "DefinedLoadStrategy"]
+
+
 @then("the penalty cost of the '{device_name}' is respecting the penalty rate")
 def penalty_rate_respected(context, device_name):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     device = list(filter(lambda x: device_name in x.name, house1.children))[0]
+
+    if _is_pv(device):
+        DEVICE_PENALTY_RATE = PV_PENALTY_RATE
+    elif _is_load(device):
+        DEVICE_PENALTY_RATE = LOAD_PENALTY_RATE
+    else:
+        DEVICE_PENALTY_RATE = 0
+
     bills = context.simulation.endpoint_buffer.market_bills.bills_redis_results
     assert isclose(bills[str(device.uuid)]["penalty_cost"],
                    bills[str(device.uuid)]["penalty_energy"] * DEVICE_PENALTY_RATE / 100.0,
