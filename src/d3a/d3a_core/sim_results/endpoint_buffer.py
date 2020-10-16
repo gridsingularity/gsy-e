@@ -21,7 +21,7 @@ from d3a.d3a_core.sim_results.area_throughput_stats import AreaThroughputStats
 from d3a.d3a_core.sim_results.bills import MarketEnergyBills, CumulativeBills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
 from d3a.d3a_core.sim_results.export_unmatched_loads import MarketUnmatchedLoads
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, DATE_TIME_UI_FORMAT
 from d3a.d3a_core.sim_results.kpi import KPI
 from d3a.d3a_core.sim_results.area_market_stock_stats import OfferBidTradeGraphStats
 from d3a_interface.utils import convert_pendulum_to_str_in_dict
@@ -46,6 +46,7 @@ class SimulationEndpointBuffer:
         self.job_id = job_id
         self.result_area_uuids = set()
         self.current_market_time_slot_str = ""
+        self.current_market_ui_time_slot_str = ""
         self.current_market_time_slot_unix = None
         self.current_market_time_slot = None
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
@@ -239,6 +240,8 @@ class SimulationEndpointBuffer:
         self.status = simulation_status
         if area.current_market is not None:
             self.current_market_time_slot_str = area.current_market.time_slot_str
+            self.current_market_ui_time_slot_str = \
+                area.current_market.time_slot.format(DATE_TIME_UI_FORMAT)
             self.current_market_time_slot_unix = area.current_market.time_slot.timestamp()
             self.current_market_time_slot = area.current_market.time_slot
         self.simulation_state["general"] = sim_state
@@ -282,7 +285,7 @@ class SimulationEndpointBuffer:
         self.trade_profile.update(
             self.area_result_dict,
             self.flattened_area_core_stats_dict,
-            self.current_market_time_slot_str
+            self.current_market_ui_time_slot_str
         )
 
         self.area_throughput_stats.update(self.area_result_dict,

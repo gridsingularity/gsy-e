@@ -19,7 +19,7 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import round_floats_for_ui, area_name_from_area_or_iaa_name
 from d3a_interface.sim_results.aggregate_results import merge_energy_trade_profile_to_global
 from d3a.d3a_core.util import add_or_create_key
-from d3a_interface.utils import key_in_dict_and_not_none, str_to_pendulum_datetime
+from d3a_interface.utils import key_in_dict_and_not_none, ui_str_to_pendulum_datetime
 
 
 class EnergyTradeProfile:
@@ -141,7 +141,7 @@ class EnergyTradeProfile:
                     for target in profile[k][sold_bought][dev].keys():
                         outdict[k][sold_bought][dev][target] = {}
                         for timestamp_str in profile[k][sold_bought][dev][target].keys():
-                            datetime_obj = str_to_pendulum_datetime(timestamp_str)
+                            datetime_obj = ui_str_to_pendulum_datetime(timestamp_str)
                             outdict[k][sold_bought][dev][target][datetime_obj] = \
                                 profile[k][sold_bought][dev][target][timestamp_str]
         return outdict
