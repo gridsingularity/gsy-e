@@ -21,7 +21,7 @@ def is_pv_node_type(area):
 
 
 def is_prosumer_node_type(area):
-    return area['type'] == ["StorageStrategy", "StorageExternalStrategy"]
+    return area['type'] in ["StorageStrategy", "StorageExternalStrategy"]
 
 
 def is_buffer_node_type(area):
