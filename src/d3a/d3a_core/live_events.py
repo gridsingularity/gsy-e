@@ -50,19 +50,21 @@ class UpdateAreaEvent:
         if area.uuid != self.area_uuid:
             return False
         if key_in_dict_and_not_none(self.area_params, 'type'):
+            if area.strategy is None:
+                return False
             if self.area_params['type'] == "MarketMaker":
                 strategy_obj = MarketMakerStrategy
                 del self.area_params['type']
-                del self.area_params['energy_rate_profile_uuid']
+                self.area_params.pop('number_of_clones', None)
+                self.area_params.pop('energy_rate_profile_uuid', None)
                 self.area_params = {'strategy_object': strategy_obj(**self.area_params)}
             elif self.area_params['type'] == "InfiniteBus":
                 strategy_obj = InfiniteBusStrategy
-                del self.area_params['energy_rate_profile_uuid']
-                del self.area_params['buying_rate_profile_uuid']
+                del self.area_params['type']
+                self.area_params.pop('number_of_clones', None)
+                self.area_params.pop('energy_rate_profile_uuid', None)
+                self.area_params.pop('buying_rate_profile_uuid', None)
                 self.area_params = {'strategy_object': strategy_obj(**self.area_params)}
-
-            del self.area_params['type']
-            del self.area_params['number_of_clones']
 
         area.area_reconfigure_event(**self.area_params)
 
