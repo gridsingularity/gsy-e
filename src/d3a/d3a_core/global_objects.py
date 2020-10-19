@@ -33,7 +33,8 @@ class GlobalObjects:
                 {"last_market_slot": area.current_market.time_slot_str,
                  "last_market_bill": area.stats.get_last_market_stats_for_grid_tree(),
                  "last_market_stats": area.stats.get_price_stats_current_market(),
-                 "last_market_fee": str(area.current_market.fee_class.grid_fee_rate),
+                 "last_market_fee": area.current_market.fee_class.grid_fee_rate,
+                 "next_market_fee": area.get_grid_fee(),
                  "children": {}})
             for child in area.children:
                 self._create_grid_tree_dict(child, outdict[area.name]["children"])
