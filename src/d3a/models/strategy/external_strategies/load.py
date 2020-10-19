@@ -58,7 +58,7 @@ class LoadExternalMixin(ExternalMixin):
     def _list_bids_impl(self, arguments, response_channel):
         try:
             filtered_bids = [{"id": v.id, "price": v.price, "energy": v.energy}
-                             for _, v in self.market.get_bids().items()
+                             for _, v in self.next_market.get_bids().items()
                              if v.buyer == self.device.name]
             self.redis.publish_json(
                 response_channel,
@@ -82,7 +82,7 @@ class LoadExternalMixin(ExternalMixin):
         try:
             arguments = json.loads(payload["data"])
             if ("bid" in arguments and arguments["bid"] is not None) and \
-                    not self.is_bid_posted(self.market, arguments["bid"]):
+                    not self.is_bid_posted(self.next_market, arguments["bid"]):
                 raise Exception("Bid_id is not associated with any posted bid.")
         except Exception as e:
             self.redis.publish_json(
@@ -99,7 +99,8 @@ class LoadExternalMixin(ExternalMixin):
     def _delete_bid_impl(self, arguments, response_channel):
         try:
             to_delete_bid_id = arguments["bid"] if "bid" in arguments else None
-            deleted_bids = self.remove_bid_from_pending(self.market.id, bid_id=to_delete_bid_id)
+            deleted_bids = \
+                self.remove_bid_from_pending(self.next_market.id, bid_id=to_delete_bid_id)
             self.redis.publish_json(
                 response_channel,
                 {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
@@ -139,11 +140,11 @@ class LoadExternalMixin(ExternalMixin):
         try:
             assert self.can_bid_be_posted(
                 arguments["energy"],
-                self.energy_requirement_Wh.get(self.market.time_slot, 0.0) / 1000.0,
-                self.market)
+                self.energy_requirement_Wh.get(self.next_market.time_slot, 0.0) / 1000.0,
+                self.next_market)
 
             bid = self.post_bid(
-                self.market,
+                self.next_market,
                 arguments["price"],
                 arguments["energy"],
                 buyer_origin=arguments["buyer_origin"]
@@ -166,7 +167,7 @@ class LoadExternalMixin(ExternalMixin):
     def _device_info_dict(self):
         return {
             'energy_requirement_kWh':
-                self.energy_requirement_Wh.get(self.market.time_slot, 0.0) / 1000.0
+                self.energy_requirement_Wh.get(self.next_market.time_slot, 0.0) / 1000.0
         }
 
     def event_market_cycle(self):
@@ -176,24 +177,24 @@ class LoadExternalMixin(ExternalMixin):
             super().update_state()
             self._reset_event_tick_counter()
             market_event_channel = f"{self.channel_prefix}/events/market"
-            current_market_info = self.market.info
+            market_info = self.next_market.info
             if self.is_aggregator_controlled:
-                current_market_info.update(default_market_info)
-            current_market_info['device_info'] = self._device_info_dict
-            current_market_info["event"] = "market"
-            current_market_info["area_uuid"] = self.device.uuid
-            current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
+                market_info.update(default_market_info)
+            market_info['device_info'] = self._device_info_dict
+            market_info["event"] = "market"
+            market_info["area_uuid"] = self.device.uuid
+            market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
                 if "bills" in self.device.stats.aggregated_stats else None
-            current_market_info["last_market_maker_rate"] = \
+            market_info["last_market_maker_rate"] = \
                 get_current_market_maker_rate(self.area.current_market.time_slot) \
                 if self.area.current_market else None
             if self.connected:
-                current_market_info['last_market_stats'] = \
+                market_info['last_market_stats'] = \
                     self.market_area.stats.get_price_stats_current_market()
-                self.redis.publish_json(market_event_channel, current_market_info)
+                self.redis.publish_json(market_event_channel, market_info)
             if self.is_aggregator_controlled:
                 self.redis.aggregator.add_batch_market_event(self.device.uuid,
-                                                             current_market_info,
+                                                             market_info,
                                                              self.area.global_objects)
         else:
             super().event_market_cycle()
@@ -243,17 +244,17 @@ class LoadExternalMixin(ExternalMixin):
         assert set(arguments.keys()) == {'price', 'energy', 'type', 'transaction_id'}
         bid_rate = arguments["price"] / arguments["energy"]
         with self.lock:
-            existing_bids = list(self.get_posted_bids(self.market))
+            existing_bids = list(self.get_posted_bids(self.next_market))
             existing_bid_energy = sum([bid.energy for bid in existing_bids])
             for bid in existing_bids:
                 assert bid.buyer == self.owner.name
-                if bid.id in self.market.bids.keys():
-                    bid = self.market.bids[bid.id]
-                self.market.delete_bid(bid.id)
+                if bid.id in self.next_market.bids.keys():
+                    bid = self.next_market.bids[bid.id]
+                self.next_market.delete_bid(bid.id)
 
-                self.remove_bid_from_pending(self.market.id, bid.id)
+                self.remove_bid_from_pending(self.next_market.id, bid.id)
             if len(existing_bids) > 0:
-                updated_bid = self.post_bid(self.market, bid_rate * existing_bid_energy,
+                updated_bid = self.post_bid(self.next_market, bid_rate * existing_bid_energy,
                                             existing_bid_energy, buyer_origin=self.device.name)
                 return {
                     "command": "update_bid", "status": "ready",
@@ -274,11 +275,11 @@ class LoadExternalMixin(ExternalMixin):
 
             assert self.can_bid_be_posted(
                 arguments["energy"],
-                self.energy_requirement_Wh.get(self.market.time_slot, 0.0) / 1000.0,
-                self.market)
+                self.energy_requirement_Wh.get(self.next_market.time_slot, 0.0) / 1000.0,
+                self.next_market)
 
             bid = self.post_bid(
-                self.market,
+                self.next_market,
                 arguments["price"],
                 arguments["energy"],
                 buyer_origin=arguments["buyer_origin"]
@@ -300,7 +301,8 @@ class LoadExternalMixin(ExternalMixin):
     def _delete_bid_aggregator(self, arguments):
         try:
             to_delete_bid_id = arguments["bid"] if "bid" in arguments else None
-            deleted_bids = self.remove_bid_from_pending(self.market.id, bid_id=to_delete_bid_id)
+            deleted_bids = \
+                self.remove_bid_from_pending(self.next_market.id, bid_id=to_delete_bid_id)
             return {
                 "command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
                 "area_uuid": self.device.uuid,
@@ -319,7 +321,7 @@ class LoadExternalMixin(ExternalMixin):
     def _list_bids_aggregator(self, arguments):
         try:
             filtered_bids = [{"id": v.id, "price": v.price, "energy": v.energy}
-                             for _, v in self.market.get_bids().items()
+                             for _, v in self.next_market.get_bids().items()
                              if v.buyer == self.device.name]
             return {
                 "command": "list_bids", "status": "ready", "bid_list": filtered_bids,
