@@ -21,6 +21,7 @@ from statistics import mean
 
 from d3a.d3a_core.util import round_floats_for_ui
 from d3a_interface.utils import key_in_dict_and_not_none
+from d3a_interface.constants_limits import ConstSettings
 
 
 class MarketPriceEnergyDay:
@@ -49,11 +50,18 @@ class MarketPriceEnergyDay:
             price_lists[area_dict['uuid']] = OrderedDict()
         if current_market_slot not in price_lists[area_dict['uuid']].keys():
             price_lists[area_dict['uuid']][current_market_slot] = []
-        trade_rates = [
-            # Convert from cents to euro
-            t['energy_rate'] / 100.0
-            for t in core_stats.get(area_dict['uuid'], {}).get('trades', [])
-        ]
+        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            trade_rates = [
+                # Convert from cents to euro
+                (t['energy_rate'] + (t['fee_price'] / t['energy'])) / 100.0
+                for t in core_stats.get(area_dict['uuid'], {}).get('trades', [])
+            ]
+        else:
+            trade_rates = [
+                # Convert from cents to euro
+                t['energy_rate'] / 100.0
+                for t in core_stats.get(area_dict['uuid'], {}).get('trades', [])
+            ]
         price_lists[area_dict['uuid']][current_market_slot].extend(trade_rates)
 
     def update(self, area_result_dict=None, core_stats=None, current_market_slot=None):
