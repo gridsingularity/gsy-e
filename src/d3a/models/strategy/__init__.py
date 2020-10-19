@@ -132,8 +132,13 @@ class Offers:
     def posted_offer_energy(self, market_id):
         return sum(o.energy for o in self.posted_in_market(market_id))
 
+    def sold_offer_energy(self, market_id):
+        return sum(o.energy for o in self.sold_in_market(market_id))
+
     def can_offer_be_posted(self, offer_energy, available_energy, market):
-        posted_energy = (offer_energy + self.posted_offer_energy(market.id))
+        posted_energy = (offer_energy
+                         + self.posted_offer_energy(market.id)
+                         - self.sold_offer_energy(market.id))
         return posted_energy <= available_energy
 
     def sold_in_market(self, market_id):
