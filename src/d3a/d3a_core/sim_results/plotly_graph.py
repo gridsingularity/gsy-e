@@ -72,7 +72,7 @@ OPAQUE_ALPHA = 1
 TRANSPARENT_ALPHA = 0.4
 
 
-def _invert(inlist: list): return [-1 * l for l in inlist]
+def _invert(inlist: list): return [-1 * ll for ll in inlist]
 
 
 def _get_color(key, alpha):
@@ -172,7 +172,7 @@ class PlotlyGraph:
             pad={"t": len(market_slot_data_mapping)},
             steps=steps
         )]
-        output_file = os.path.join(stats_plot_dir, f"offer_bid_trade_history.html")
+        output_file = os.path.join(stats_plot_dir, "offer_bid_trade_history.html")
         barmode = "group"
         title = f"OFFER BID TRADE AREA: {area_name}"
         xtitle = 'Time'
@@ -268,7 +268,7 @@ class PlotlyGraph:
             fill=None,
             fillcolor=fill_color,
             line=dict(color='rgba(255,255,255,0)'),
-            name=f"longterm max",
+            name="longterm max",
             showlegend=False,
             hoverinfo='y+name',
             xaxis="x",
@@ -281,7 +281,7 @@ class PlotlyGraph:
             fill=None,
             fillcolor=fill_color,
             line=dict(color='rgba(255,255,255,0)'),
-            name=f"longterm min",
+            name="longterm min",
             showlegend=False,
             hoverinfo='y+name',
             xaxis="x",
@@ -467,6 +467,8 @@ class PlotlyGraph:
 
     @classmethod
     def prepare_input(cls, device_dict, var_name, invert_y=False):
+        if var_name not in device_dict:
+            return [], [], [], []
         x = list(device_dict[var_name].keys())
         y = list(device_dict[var_name].values())
         y_lower = list(device_dict["min_" + var_name].values())
