@@ -35,7 +35,7 @@ class RedisMarketExternalConnection:
         self.connected = False
 
     @property
-    def market(self):
+    def next_market(self):
         return self.area.next_market
 
     @property
@@ -159,7 +159,7 @@ class RedisMarketExternalConnection:
         if self.area.current_market is None:
             return
         market_event_channel = f"{self.channel_prefix}/market-events/market"
-        market_info = self.market.info
+        market_info = self.next_market.info
         market_info["current_market_fee"] = \
             self.area.current_market.fee_class.grid_fee_rate
         market_info["next_market_fee"] = self.area.get_grid_fee()
