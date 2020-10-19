@@ -174,24 +174,24 @@ class PVExternalMixin(ExternalMixin):
         if not self.should_use_default_strategy:
             self._reset_event_tick_counter()
             market_event_channel = f"{self.channel_prefix}/events/market"
-            current_market_info = self.market.info
+            market_info = self.market.info
             if self.is_aggregator_controlled:
-                current_market_info.update(default_market_info)
-            current_market_info['device_info'] = self._device_info_dict
-            current_market_info["event"] = "market"
-            current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
+                market_info.update(default_market_info)
+            market_info['device_info'] = self._device_info_dict
+            market_info["event"] = "market"
+            market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
                 if "bills" in self.device.stats.aggregated_stats else None
-            current_market_info["area_uuid"] = self.device.uuid
-            current_market_info["last_market_maker_rate"] = \
+            market_info["area_uuid"] = self.device.uuid
+            market_info["last_market_maker_rate"] = \
                 get_current_market_maker_rate(self.area.current_market.time_slot) \
                 if self.area.current_market else None
             if self.connected:
-                current_market_info['last_market_stats'] = \
+                market_info['last_market_stats'] = \
                     self.market_area.stats.get_price_stats_current_market()
-                self.redis.publish_json(market_event_channel, current_market_info)
+                self.redis.publish_json(market_event_channel, market_info)
             if self.is_aggregator_controlled:
                 self.redis.aggregator.add_batch_market_event(self.device.uuid,
-                                                             current_market_info,
+                                                             market_info,
                                                              self.area.global_objects)
         else:
             super().event_market_cycle()
@@ -336,6 +336,9 @@ class PVExternalMixin(ExternalMixin):
                 "area_uuid": self.device.uuid
             }
         except Exception as e:
+            print(self.owner.name)
+            print(f"{str(e)}. {traceback.format_exc()}")
+            assert False
             logging.error(f"Failed to post PV offer. Exception {str(e)}. {traceback.format_exc()}")
             return {
                 "command": "offer", "status": "error",
