@@ -336,9 +336,6 @@ class PVExternalMixin(ExternalMixin):
                 "area_uuid": self.device.uuid
             }
         except Exception as e:
-            print(self.owner.name)
-            print(f"{str(e)}. {traceback.format_exc()}")
-            assert False
             logging.error(f"Failed to post PV offer. Exception {str(e)}. {traceback.format_exc()}")
             return {
                 "command": "offer", "status": "error",

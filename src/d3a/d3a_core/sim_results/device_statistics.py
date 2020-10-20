@@ -1,7 +1,8 @@
 from typing import Dict
 from d3a import limit_float_precision
 from d3a_interface.utils import create_or_update_subdict
-
+from d3a.d3a_core.sim_results import is_load_node_type, is_cell_tower_type, is_pv_node_type, \
+    is_prosumer_node_type
 FILL_VALUE = None
 
 
@@ -194,19 +195,18 @@ class DeviceStatistics:
                                   core_stats=None, current_market_slot=None):
         if core_stats is None or core_stats.get(area_dict['uuid'], {}) == {}:
             return
+
         if area_dict['type'] != "area_dict":
             cls._device_price_stats(area_dict, subdict, core_stats, current_market_slot)
             cls._device_energy_stats(area_dict, subdict, core_stats, current_market_slot)
 
-        if area_dict['type'] in ["PVStrategy", "PVUserProfileStrategy",
-                                 "PVPredefinedStrategy"]:
+        if is_pv_node_type(area_dict):
             cls._pv_production_stats(area_dict, subdict, core_stats, current_market_slot)
 
-        elif area_dict['type'] == "StorageStrategy":
+        elif is_prosumer_node_type(area_dict):
             cls._soc_stats(area_dict, subdict, core_stats, current_market_slot)
 
-        elif area_dict['type'] in ["LoadHoursStrategy", "DefinedLoadStrategy",
-                                   "CellTowerLoadHoursStrategy"]:
+        elif is_load_node_type(area_dict) or is_cell_tower_type(area_dict):
             cls._load_profile_stats(area_dict, subdict, core_stats, current_market_slot)
 
         elif area_dict['type'] == "FinitePowerPlant":

@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.d3a_core.util import if_not_in_list_append
-from d3a.d3a_core.sim_results import _is_load_node_type, _is_buffer_node_type, \
-    _is_prosumer_node_type, _is_producer_node_type
+from d3a.d3a_core.sim_results import is_load_node_type, is_buffer_node_type, \
+    is_prosumer_node_type, is_producer_node_type
 
 
 class KPIState:
@@ -35,15 +35,15 @@ class KPIState:
 
     def accumulate_devices(self, area_dict):
         for child in area_dict['children']:
-            if _is_producer_node_type(child):
+            if is_producer_node_type(child):
                 if_not_in_list_append(self.producer_list, child['name'])
                 if_not_in_list_append(self.areas_to_trace_list, child['parent_uuid'])
-            elif _is_load_node_type(child):
+            elif is_load_node_type(child):
                 if_not_in_list_append(self.consumer_list, child['name'])
                 if_not_in_list_append(self.areas_to_trace_list, child['parent_uuid'])
-            elif _is_prosumer_node_type(child):
+            elif is_prosumer_node_type(child):
                 if_not_in_list_append(self.ess_list, child['name'])
-            elif _is_buffer_node_type(child):
+            elif is_buffer_node_type(child):
                 if_not_in_list_append(self.buffer_list, child['name'])
             if child['children']:
                 self.accumulate_devices(child)
@@ -51,7 +51,7 @@ class KPIState:
     def _accumulate_total_energy_demanded(self, area_dict, core_stats):
         for child in area_dict['children']:
             child_stats = core_stats.get(child['uuid'], {})
-            if _is_load_node_type(child):
+            if is_load_node_type(child):
                 self.total_energy_demanded_wh += child_stats.get('total_energy_demanded_wh', 0)
             if child['children']:
                 self._accumulate_total_energy_demanded(child, core_stats)
