@@ -424,6 +424,9 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     def deactivate(self):
         pass
 
+    def event_activate_price(self):
+        pass
+
     def get_state(self):
         try:
             return self.state.get_state()
