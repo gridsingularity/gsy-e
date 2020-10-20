@@ -17,7 +17,8 @@ def is_producer_node_type(area):
 
 def is_pv_node_type(area):
     return area['type'] in ["PVStrategy", "PVUserProfileStrategy", "PVPredefinedStrategy",
-                            "PVExternalStrategy", "PVUserProfileExternalStrategy"]
+                            "PVExternalStrategy", "PVUserProfileExternalStrategy",
+                            "PVPredefinedExternalStrategy"]
 
 
 def is_prosumer_node_type(area):
