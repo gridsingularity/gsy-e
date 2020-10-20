@@ -1693,27 +1693,23 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
 </code></pre></div>
 
 <p>Then run:</p>
-<div class="codehilite"><pre><span></span><code>d3a -l INFO run -t 15s -s 15m --setup chaos_experiment.chaos_experiment_babysteps --enable-external-connection
-</code></pre></div>
-
-<p>Note that this uses the simpler version of the full setup file to test, and runs more quickly. To run the full community in the <code>chaos_experiment</code> template, run:</p>
-<div class="codehilite"><pre><span></span><code>d3a -l INFO run -t 15s -s 15m --setup chaos_experiment.chaos_experiment_training --start-date 2014-02-01 --enable-external-connection
+<div class="codehilite"><pre><span></span><code>d3a -l INFO run -t 15s -s 15m --setup odyssey_momentum.odyssey_training --start-date 2014-10-01 --enable-external-connection
 </code></pre></div>
 
 <p>After a few seconds, trading should begin, and should look something like the below.
 <img alt="img" src="../img/api-1.png" /></p>
 <h3 id="launch-smart-agents">Launch smart agents<a class="headerlink" href="#launch-smart-agents" title="Permanent link">&para;</a></h3>
 <p>Open a new terminal to run your trading strategy script (python file). In this python file you can code the trading strategy for the assets you manage. A template python script is provided. You are also able to print some information that you will get with your API calls.</p>
-<p>You can run your script in the terminal. First navigate to the folder <code>d3a/src/d3a/setup/chaos_experiment/</code></p>
+<p>You can run your script in the terminal. First navigate to the folder <code>d3a/src/d3a/setup/odyssey_momentum/</code></p>
 <p>Then run</p>
-<div class="codehilite"><pre><span></span><code>python oracle_api_template.py
+<div class="codehilite"><pre><span></span><code>python assets_api_template.py
 </code></pre></div>
 
 <h3 id="grid-setup-file-configuration">Grid Setup File Configuration<a class="headerlink" href="#grid-setup-file-configuration" title="Permanent link">&para;</a></h3>
 <p>Backend simulations require modifications to the setup files to allow API connections. When you connect to the web application, the grid operator will make the necessary changes instead. This section is only relevant if you’re modifying your own setup files.</p>
 <h4 id="open-device-for-external-connection">Open Device for external connection<a class="headerlink" href="#open-device-for-external-connection" title="Permanent link">&para;</a></h4>
 <p>In the setup file, a device must be designated as open to external connection via the API. This is controlled when setting up the simulation in the setup file by designating the ExternalStrategy for each relevant device: </p>
-<div class="python codehilite"><pre><span></span><code><span class="n">Area</span><span class="p">(</span> <span class="s1">&#39;house-1-s&#39;</span><span class="p">,</span>
+<div class="codehilite"><pre><span></span><code><span class="n">Area</span><span class="p">(</span> <span class="s1">&#39;house-1-s&#39;</span><span class="p">,</span>
               <span class="p">[</span>
                      <span class="n">Area</span><span class="p">(</span><span class="s1">&#39;h1-load-s&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadProfileExternalStrategy</span><span class="p">(</span><span class="n">daily_load_profile</span><span class="o">=</span><span class="n">load1</span><span class="p">,</span>
                                                                              <span class="n">initial_buying_rate</span><span class="o">=</span><span class="n">Houses_initial_buying_rate</span><span class="p">,</span>
@@ -1735,8 +1731,8 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
 <p>By default, template strategies do not allow connections. Please also ensure that the appropriate libraries are imported (as in the template setup file provided).</p>
 <h4 id="open-area-for-external-connection">Open Area for external connection<a class="headerlink" href="#open-area-for-external-connection" title="Permanent link">&para;</a></h4>
 <p>The API supports multiple areas exposing their market statistics (e.g. min, max, avg, median price and volume of energy) to external devices. Access is controlled when setting up the simulation, using the Area class boolean argument called external_connection_available: </p>
-<div class="python codehilite"><pre><span></span><code><span class="n">Area</span><span class="p">(</span>
-         <span class="s1">&#39;House 2&#39;</span><span class="p">,</span>
+<div class="codehilite"><pre><span></span><code><span class="n">Area</span><span class="p">(</span>
+         <span class="s1">&#39;Member 2&#39;</span><span class="p">,</span>
          <span class="p">[</span> <span class="o">...</span> <span class="p">],</span> <span class="c1"># Children of the area</span>
          <span class="n">external_connection_available</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">),</span>
@@ -1751,7 +1747,7 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
 <p>When a new market slot is available the client will get notified via an event. It is possible to capture this event and perform operations after it by overriding the on_market_cycle method.</p>
 <p>Ex: <code>def on_market_cycle(self, market_info):</code></p>
 <p>In the variable market_info you will get a dictionary with information on the market and your devices. You receive information for each device you manage. The return values are the following : </p>
-<div class="python codehilite"><pre><span></span><code><span class="p">{</span>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
   <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;house2&quot;</span><span class="p">,</span> 
   <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;13023c7d-205d-4b3a-a434-02375eb277ca&quot;</span><span class="p">,</span> 
   <span class="s2">&quot;start_time&quot;</span><span class="p">:</span> <span class="c1"># start-time of the market slot, </span>
@@ -1789,7 +1785,7 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
 <h3 id="device-commands">Device Commands<a class="headerlink" href="#device-commands" title="Permanent link">&para;</a></h3>
 <h4 id="register-backend">Register - Backend<a class="headerlink" href="#register-backend" title="Permanent link">&para;</a></h4>
 <p>Devices are automatically registered to your aggregator in the provided template script. You must update the list below in the oracle template script to the devices you want to manage. Each oracle registered must have a unique name.</p>
-<div class="python codehilite"><pre><span></span><code><span class="c1"># Designate devices and markets to manage</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Designate devices and markets to manage</span>
 <span class="n">oracle_name</span> <span class="o">=</span> <span class="s1">&#39;oracle&#39;</span>
 <span class="n">load_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Load 1&#39;</span><span class="p">,</span> <span class="s1">&#39;Load 2&#39;</span><span class="p">]</span>
 <span class="n">pv_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;PV 1&#39;</span><span class="p">]</span>
@@ -1816,7 +1812,8 @@ batch_commands[device_event[&quot;area_uuid&quot;]] = [
 self.batch_command(batch_commands)
 </code></pre></div>
 
-<p>Note: The total amount of energy bid at any point is limited to the energy requirement of the device. Updating a bid during a market slot deletes other active bids.</p>
+<p>Note: The total amount of energy bid at any point is limited to the energy requirement of the device. Updating a bid during a market slot deletes other active bids.
+Additionally, the price of your bids/offers should be a positive float otherwise it will get rejected by the market.</p>
 <h4 id="trading-strategies">Trading Strategies<a class="headerlink" href="#trading-strategies" title="Permanent link">&para;</a></h4>
 <p>A simple trading strategy is available in the template agent. See the <code>TODO</code> flags there to see how you may update your trading strategy based on predictions about the market and energy requirements.</p>
                 
