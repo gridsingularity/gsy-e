@@ -22,6 +22,8 @@ import os
 from d3a.d3a_core.util import d3a_path
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.export import EXPORT_DEVICE_VARIABLES
+from d3a.d3a_core.sim_results.market_price_energy_day import MarketPriceEnergyDay
+from d3a.d3a_core.sim_results.bills import CumulativeBills
 
 
 def get_areas_from_2_house_grid(context):
@@ -307,8 +309,6 @@ def area_external_trade(context):
 @then('we test the min/max/avg trade and devices bill')
 def check_area_trade_and_bill(context):
     from integration_tests.steps.integration_tests import get_simulation_raw_results
-    from d3a.d3a_core.sim_results.market_price_energy_day import MarketPriceEnergyDay
-    from d3a.d3a_core.sim_results.bills import CumulativeBills
     get_simulation_raw_results(context)
     count = 0
     mped = MarketPriceEnergyDay(should_export_plots=False)
