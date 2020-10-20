@@ -203,22 +203,15 @@ def load_profile_scenario(context):
     context._settings.area = predefined_load_scenario
 
 
-@given('d3a uses an one-sided market')
-def one_sided_market(context):
+@given('d3a uses an {market_type} market')
+def one_sided_market(context, market_type):
     from d3a_interface.constants_limits import ConstSettings
-    ConstSettings.IAASettings.MARKET_TYPE = 1
-
-
-@given('d3a uses an two-sided pay-as-bid market')
-def two_sided_pay_as_bid_market(context):
-    from d3a_interface.constants_limits import ConstSettings
-    ConstSettings.IAASettings.MARKET_TYPE = 2
-
-
-@given('d3a uses an two-sided pay-as-clear market')
-def two_sided_pay_as_clear_market(context):
-    from d3a_interface.constants_limits import ConstSettings
-    ConstSettings.IAASettings.MARKET_TYPE = 3
+    if market_type == "one-sided":
+        ConstSettings.IAASettings.MARKET_TYPE = 1
+    elif market_type == "two-sided-pay-as-bid":
+        ConstSettings.IAASettings.MARKET_TYPE = 2
+    if market_type == "two-sided-pay-as-clear":
+        ConstSettings.IAASettings.MARKET_TYPE = 3
 
 
 @given('d3a dispatches events from top to bottom')
