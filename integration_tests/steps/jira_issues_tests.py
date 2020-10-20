@@ -22,6 +22,8 @@ import os
 from d3a.d3a_core.util import d3a_path
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.export import EXPORT_DEVICE_VARIABLES
+from d3a.d3a_core.sim_results.market_price_energy_day import MarketPriceEnergyDay
+from d3a.d3a_core.sim_results.bills import CumulativeBills
 
 
 def get_areas_from_2_house_grid(context):
@@ -302,3 +304,26 @@ def area_external_trade(context):
     ext_trade = list(filter(lambda x: x['areaName'] == "External Trades",
                             cumulative_trade[house1.uuid]))[0]['bars'][0]['energy']
     assert isclose(ext_trade, -1 * 0.666, rel_tol=1e-05)
+
+
+@then('we test the min/max/avg trade and devices bill')
+def check_area_trade_and_bill(context):
+    from integration_tests.steps.integration_tests import get_simulation_raw_results
+    get_simulation_raw_results(context)
+    count = 0
+    mped = MarketPriceEnergyDay(should_export_plots=False)
+    for time_slot, core_stats in context.raw_sim_data.items():
+        mped.update(context.area_tree_summary_data, core_stats, time_slot)
+        count += 1
+        area_data = mped.redis_output[context.name_uuid_map['Grid']]
+        assert isclose(area_data['price-energy-day'][0]['av_price'], 0.35)
+        assert area_data['price-energy-day'][0]['min_price'] == 0.35
+        assert area_data['price-energy-day'][0]['max_price'] == 0.35
+        assert area_data['price-energy-day'][0]['grid_fee_constant'] == 0.05
+    assert count == 24
+    cb = CumulativeBills()
+    for time_slot, core_stats in context.raw_sim_data.items():
+        cb.update_cumulative_bills(context.area_tree_summary_data, core_stats, time_slot)
+    assert isclose(cb.cumulative_bills_results[context.name_uuid_map['Market Maker']]['earned'],
+                   0.72)
+    assert isclose(cb.cumulative_bills_results[context.name_uuid_map['Load']]['spent_total'], 0.84)
