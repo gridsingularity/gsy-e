@@ -18,7 +18,7 @@ from d3a.models.strategy.external_strategies.storage import StorageExternalStrat
 
 
 months = ['Sep', 'Oct', 'Nov', 'Dec', 'Hack']
-month = 4  # 0 for Sep, 1 for Oct, 2 for Nov, 3 for Dec and 4 for Hackathon data (Hack data will be provided at Odyssey Momentum)
+month = 1  # 0 for Sep, 1 for Oct, 2 for Nov, 3 for Dec and 4 for Hackathon data (Hack data will be provided at Odyssey Momentum)
 
 current_dir = os.path.dirname(__file__)
 load_data = []

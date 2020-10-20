@@ -39,7 +39,7 @@ oracle_name = 'aggregator'
 load_names = ['Load 1','Load 2','Load 3','Load 4','Load 5','Load 6','Load 7','Load 8','Load 10','Load 11','Load 12',
 'Load 13','Load 14','Load 15','Load 16','Load 17','Load 18','Load 19','Load 20','Load 21','Load 22','Load 23','Load 24','Load 25']
 pv_names = ['PV 1','PV 2','PV 3','PV 4','PV 5','PV 7','PV 8','PV 9','PV 10','PV 11','PV 12','PV 13','PV 14','PV 16','PV 17','PV 18',
-'PV 19','PV 20','PV 23','PV 24','PV 25']
+'PV 19','PV 20','PV 23','PV 24','PV 25','CHP 6','CHP 13','CHP 15','CHP 21','CHP 22']
 storage_names = ['Storage 1','Storage 2','Storage 3','Storage 4','Storage 5','Storage 7','Storage 8','Storage 10','Storage 11','Storage 12','Storage 14','Storage 16','Storage 17','Storage 18',
 'Storage 19','Storage 20','Storage 23','Storage 24','Storage 25']
 
@@ -169,7 +169,7 @@ class Oracle(Aggregator_type):
         self.batt_buy_strategy = []
         for i in range(0, ticks):
             if i < ticks-1:
-                self.load_strategy.append(pred_min_price + self.grid_fee + (pred_max_price - pred_min_price) * (i/ticks))
+                self.load_strategy.append(pred_min_price + (pred_max_price - pred_min_price) * (i/ticks))
                 self.pv_strategy.append(pred_max_price - (pred_max_price - pred_min_price) * (i / ticks))
             else: # last tick guarantee match by bidding at market maker price / offering at feed in tariff price
                 self.load_strategy.append(market_maker_price+self.grid_fee)
