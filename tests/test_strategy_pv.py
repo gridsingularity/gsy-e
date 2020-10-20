@@ -436,13 +436,25 @@ def test_initial_selling_rate(pv_strategy_test10, area_test10):
 @parameterized.expand([
     [PVStrategy, True, 12, ],
     [PVStrategy, False, 19, ],
-    [PVPredefinedStrategy, True, 12, ],
-    [PVPredefinedStrategy, False, 19, ],
 ])
-def test_use_mmr_parameter_is_respected(strategy_type, use_mmr, expected_rate):
+def test_use_mmr_parameter_is_respected1(strategy_type, use_mmr, expected_rate):
     GlobalConfig.market_maker_rate = 12
     pv = strategy_type(initial_selling_rate=19, use_market_maker_rate=use_mmr,
                        max_panel_power_W=200)
+    pv.area = FakeArea()
+    pv.owner = pv.area
+    pv.event_activate()
+    assert all(v == expected_rate for v in pv.offer_update.initial_rate.values())
+
+
+@parameterized.expand([
+    [PVPredefinedStrategy, True, 12, ],
+    [PVPredefinedStrategy, False, 19, ],
+])
+def test_use_mmr_parameter_is_respected2(strategy_type, use_mmr, expected_rate):
+    GlobalConfig.market_maker_rate = 12
+    pv = strategy_type(initial_selling_rate=19, use_market_maker_rate=use_mmr,
+                       cloud_coverage=1)
     pv.area = FakeArea()
     pv.owner = pv.area
     pv.event_activate()
@@ -457,8 +469,7 @@ def test_use_mmr_parameter_is_respected_for_pv_profiles(use_mmr, expected_rate):
     GlobalConfig.market_maker_rate = 13
     user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
     pv = PVUserProfileStrategy(
-        power_profile=user_profile_path, initial_selling_rate=17, use_market_maker_rate=use_mmr,
-        max_panel_power_W=200)
+        power_profile=user_profile_path, initial_selling_rate=17, use_market_maker_rate=use_mmr)
     pv.area = FakeArea()
     pv.owner = pv.area
     pv.event_activate()
