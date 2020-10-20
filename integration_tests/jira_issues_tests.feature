@@ -154,7 +154,7 @@ Scenario: D3ASIM-2034: DSO doesnt pay the grid fee of the Grid
      And d3a uses an <market_type> market
      And export is_needed
      When we run the simulation with setup file jira.d3asim_2948 and parameters [24, 60, 60, 1]
-     Then we test the min/max/avg trade and devices bill
+     Then we test the min/max/avg area trade, devices trade and bill
   Examples: MarketSettings
      |      market_type             |
      |      one-sided               |

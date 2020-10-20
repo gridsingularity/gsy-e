@@ -24,6 +24,7 @@ from d3a.constants import TIME_ZONE
 from d3a.d3a_core.export import EXPORT_DEVICE_VARIABLES
 from d3a.d3a_core.sim_results.market_price_energy_day import MarketPriceEnergyDay
 from d3a.d3a_core.sim_results.bills import CumulativeBills
+from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
 
 
 def get_areas_from_2_house_grid(context):
@@ -306,7 +307,7 @@ def area_external_trade(context):
     assert isclose(ext_trade, -1 * 0.666, rel_tol=1e-05)
 
 
-@then('we test the min/max/avg trade and devices bill')
+@then('we test the min/max/avg area trade, devices trade and bill')
 def check_area_trade_and_bill(context):
     from integration_tests.steps.integration_tests import get_simulation_raw_results
     get_simulation_raw_results(context)
@@ -321,9 +322,25 @@ def check_area_trade_and_bill(context):
         assert area_data['price-energy-day'][0]['max_price'] == 0.35
         assert area_data['price-energy-day'][0]['grid_fee_constant'] == 0.05
     assert count == 24
+    count = 0
     cb = CumulativeBills()
     for time_slot, core_stats in context.raw_sim_data.items():
+        count += 1
         cb.update_cumulative_bills(context.area_tree_summary_data, core_stats, time_slot)
     assert isclose(cb.cumulative_bills_results[context.name_uuid_map['Market Maker']]['earned'],
                    0.72)
     assert isclose(cb.cumulative_bills_results[context.name_uuid_map['Load']]['spent_total'], 0.84)
+    assert count == 24
+
+    dev_stats = DeviceStatistics(should_export_plots=False)
+
+    count = 0
+    for time_slot, core_stats in context.raw_sim_data.items():
+        count += 1
+        dev_stats.update(context.area_tree_summary_data, core_stats, time_slot)
+        current_mmr_stats = dev_stats.current_stats_dict[context.name_uuid_map['Market Maker']]
+        assert isclose(current_mmr_stats['trade_price_eur'][time_slot][0], 0.30)
+        current_load_stats = dev_stats.current_stats_dict[context.name_uuid_map['Load']]
+        assert isclose(current_load_stats['trade_price_eur'][time_slot][0], 0.35)
+
+    assert count == 24

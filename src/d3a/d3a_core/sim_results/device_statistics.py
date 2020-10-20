@@ -3,6 +3,7 @@ from d3a import limit_float_precision
 from d3a_interface.utils import create_or_update_subdict
 from d3a.d3a_core.sim_results import is_load_node_type, is_cell_tower_type, is_pv_node_type, \
     is_prosumer_node_type
+from d3a_interface.constants_limits import ConstSettings
 FILL_VALUE = None
 
 
@@ -49,8 +50,19 @@ class DeviceStatistics:
         area_core_trades = core_stats[area_dict['uuid']].get('trades', [])
         trade_price_list = []
         for t in area_core_trades:
-            if t['seller'] == area_dict['name'] or t['buyer'] == area_dict['name']:
-                trade_price_list.append(t['energy_rate'] / 100.0)
+            if t['seller'] == area_dict['name']:
+                if ConstSettings.IAASettings.MARKET_TYPE == 1:
+                    trade_rate = t['energy_rate'] / 100.0
+                else:
+                    trade_rate = (t['energy_rate'] - t['fee_price'] / t['energy']) / 100.0
+                trade_price_list.append(trade_rate)
+            elif t['buyer'] == area_dict['name']:
+                if ConstSettings.IAASettings.MARKET_TYPE == 1:
+                    trade_rate = (t['energy_rate'] + t['fee_price'] / t['energy']) / 100.0
+                else:
+                    trade_rate = t['energy_rate'] / 100.0
+                trade_price_list.append(trade_rate)
+
         if trade_price_list:
             create_or_update_subdict(
                 subdict, key_name,
