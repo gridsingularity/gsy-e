@@ -36,7 +36,7 @@ Feature: GridFee integration tests
   Scenario Outline: Grid fees are calculated based on the clearing rate for pay as clear while dispatching top to bottom
      Given we have a scenario named grid_fees/non_compounded_grid_fees
      And d3a is installed
-     And d3a uses an two-sided pay-as-clear market
+     And d3a uses an two-sided-pay-as-clear market
      And the minimum offer age is <min_offer_age>
      And d3a dispatches events from top to bottom
      When we run the simulation with setup file grid_fees.non_compounded_grid_fees and parameters [24, 60, 60, 1]
@@ -54,7 +54,7 @@ Feature: GridFee integration tests
   Scenario Outline: Grid fees are calculated based on the clearing rate for pay as clear while dispatching bottom to top
      Given we have a scenario named grid_fees/non_compounded_grid_fees
      And d3a is installed
-     And d3a uses an two-sided pay-as-clear market
+     And d3a uses an two-sided-pay-as-clear market
      And the minimum offer age is <min_offer_age>
      And d3a dispatches events from bottom to top
      When we run the simulation with setup file grid_fees.non_compounded_grid_fees and parameters [24, 60, 60, 1]
@@ -106,7 +106,7 @@ Feature: GridFee integration tests
   Scenario Outline: Constant grid fees are calculated correctly on pay as clear market
      Given we have a scenario named grid_fees/constant_grid_fees
      And d3a is installed
-     And d3a uses an two-sided pay-as-clear market
+     And d3a uses an two-sided-pay-as-clear market
      And the minimum offer age is <min_offer_age>
      And d3a dispatches events from top to bottom
      When we run the simulation with setup file grid_fees.constant_grid_fees and parameters [24, 60, 60, 1]
