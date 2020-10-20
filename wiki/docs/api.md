@@ -42,7 +42,7 @@ workon d3a
 
 Then run:
 ```
-d3a -l INFO run -t 15s -s 15m --setup odyssey_momentum.odyssey_training --start-date 2014-09-01 --enable-external-connection
+d3a -l INFO run -t 15s -s 15m --setup odyssey_momentum.odyssey_training --start-date 2014-10-01 --enable-external-connection
 ```
 
 After a few seconds, trading should begin, and should look something like the below.
