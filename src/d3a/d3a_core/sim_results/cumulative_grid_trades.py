@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a.d3a_core.sim_results import _is_cell_tower_type, _is_load_node_type, \
-    _is_producer_node_type, _is_prosumer_node_type, _is_buffer_node_type, area_sells_to_child, \
+from d3a.d3a_core.sim_results import is_cell_tower_type, is_load_node_type, \
+    is_producer_node_type, is_prosumer_node_type, is_buffer_node_type, area_sells_to_child, \
     child_buys_from_area
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name, add_or_create_key, \
     make_iaa_name_from_dict, subtract_or_create_key, round_floats_for_ui
@@ -51,21 +51,21 @@ class CumulativeGridTrades:
     def accumulate_grid_trades_all_devices(cls, area_dict, flattened_area_core_stats_dict,
                                            accumulated_trades):
         for child_dict in area_dict['children']:
-            if _is_cell_tower_type(child_dict):
+            if is_cell_tower_type(child_dict):
                 accumulated_trades = CumulativeGridTrades._accumulate_load_trades(
                     child_dict, area_dict, flattened_area_core_stats_dict, accumulated_trades,
                     is_cell_tower=True
                 )
-            if _is_load_node_type(child_dict):
+            if is_load_node_type(child_dict):
                 accumulated_trades = CumulativeGridTrades._accumulate_load_trades(
                     child_dict, area_dict, flattened_area_core_stats_dict, accumulated_trades,
                     is_cell_tower=False
                 )
-            if _is_producer_node_type(child_dict):
+            if is_producer_node_type(child_dict):
                 accumulated_trades = CumulativeGridTrades._accumulate_producer_trades(
                     child_dict, area_dict, flattened_area_core_stats_dict, accumulated_trades
                 )
-            elif _is_prosumer_node_type(child_dict) or _is_buffer_node_type(child_dict):
+            elif is_prosumer_node_type(child_dict) or is_buffer_node_type(child_dict):
                 accumulated_trades = \
                     CumulativeGridTrades._accumulate_storage_trade(
                         child_dict, area_dict, flattened_area_core_stats_dict, accumulated_trades

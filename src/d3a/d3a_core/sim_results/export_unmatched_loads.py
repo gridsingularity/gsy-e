@@ -20,6 +20,7 @@ from itertools import product
 from d3a_interface.constants_limits import GlobalConfig
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a_interface.sim_results.aggregate_results import merge_unmatched_load_results_to_global
+from d3a.d3a_core.sim_results import is_load_node_type, is_cell_tower_type
 
 DATE_HOUR_FORMAT = "YYYY-MM-DDTHH"
 
@@ -53,7 +54,7 @@ class ExportUnmatchedLoads:
 
     def count_load_devices_in_setup(self, area):
         for child in area['children']:
-            if child['type'] in ["LoadHoursStrategy", "DefinedLoadStrategy"]:
+            if is_load_node_type(child):
                 self.load_count += 1
             if child['children']:
                 self.count_load_devices_in_setup(child)
@@ -82,8 +83,7 @@ class ExportUnmatchedLoads:
                     child, core_stats, indict[area_dict['name']], current_market_time_slot_str
                 )
             else:
-                if child['type'] in ["LoadHoursStrategy", "DefinedLoadStrategy",
-                                     "CellTowerLoadHoursStrategy"] and \
+                if (is_load_node_type(child) or is_cell_tower_type(child)) and \
                         core_stats.get(child['uuid'], {}) != {}:
                     indict[area_dict['name']][child['name']] = \
                         self._calculate_unmatched_loads_leaf_area(child, core_stats,
@@ -192,9 +192,7 @@ class ExportUnmatchedLoads:
         if area_dict['children']:
             indict[area_dict['name']] = {}
             for child in area_dict['children']:
-                if child['children'] or \
-                        child['type'] in ["LoadHoursStrategy", "DefinedLoadStrategy",
-                                          "CellTowerLoadHoursStrategy"]:
+                if child['children'] or is_load_node_type(child) or is_cell_tower_type(child):
                     if child['name'] in indict:
                         indict[area_dict['name']][child['name']] = indict[child['name']]
                     self.arrange_output(indict, child)

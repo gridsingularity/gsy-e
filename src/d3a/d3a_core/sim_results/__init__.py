@@ -1,28 +1,31 @@
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
 
 
-def _is_cell_tower_type(area):
+def is_cell_tower_type(area):
     return area['type'] == "CellTowerLoadHoursStrategy"
 
 
-def _is_load_node_type(area):
-    return area['type'] in ["LoadHoursStrategy", "DefinedLoadStrategy"]
+def is_load_node_type(area):
+    return area['type'] in ["LoadHoursStrategy", "DefinedLoadStrategy",
+                            "LoadHoursExternalStrategy", "LoadProfileExternalStrategy"]
 
 
-def _is_producer_node_type(area):
+def is_producer_node_type(area):
     return area['type'] in ["PVStrategy", "PVUserProfileStrategy", "PVPredefinedStrategy",
                             "CommercialStrategy", "FinitePowerPlant", "MarketMakerStrategy"]
 
 
-def _is_pv_node_type(area):
-    return area['type'] in ["PVStrategy", "PVUserProfileStrategy", "PVPredefinedStrategy"]
+def is_pv_node_type(area):
+    return area['type'] in ["PVStrategy", "PVUserProfileStrategy", "PVPredefinedStrategy",
+                            "PVExternalStrategy", "PVUserProfileExternalStrategy",
+                            "PVPredefinedExternalStrategy"]
 
 
-def _is_prosumer_node_type(area):
-    return area['type'] == "StorageStrategy"
+def is_prosumer_node_type(area):
+    return area['type'] in ["StorageStrategy", "StorageExternalStrategy"]
 
 
-def _is_buffer_node_type(area):
+def is_buffer_node_type(area):
     return area['type'] == "InfiniteBusStrategy"
 
 

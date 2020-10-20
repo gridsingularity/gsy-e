@@ -38,7 +38,7 @@ class PVPredefinedStrategy(PVStrategy):
     """
     parameters = ('panel_count', 'initial_selling_rate', 'final_selling_rate', 'cloud_coverage',
                   'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
-                  'max_panel_power_W', 'use_market_maker_rate')
+                  'use_market_maker_rate')
 
     def __init__(
             self, panel_count: int = 1,
@@ -48,7 +48,6 @@ class PVPredefinedStrategy(PVStrategy):
             fit_to_limit: bool = True,
             update_interval=None,
             energy_rate_decrease_per_update=None,
-            max_panel_power_W: float = None,
             use_market_maker_rate: bool = False):
         """
         Constructor of PVPredefinedStrategy
@@ -59,7 +58,6 @@ class PVPredefinedStrategy(PVStrategy):
         :param fit_to_limit: Linear curve following initial_selling_rate & final_selling_rate
         :param update_interval: Interval after which PV will update its offer
         :param energy_rate_decrease_per_update: Slope of PV Offer change per update
-        :param max_panel_power_W: Peak power per panel
         """
 
         if update_interval is None:
@@ -72,7 +70,7 @@ class PVPredefinedStrategy(PVStrategy):
                          fit_to_limit=fit_to_limit,
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
-                         max_panel_power_W=max_panel_power_W,
+                         max_panel_power_W=None,
                          use_market_maker_rate=use_market_maker_rate
                          )
         self.cloud_coverage = cloud_coverage
@@ -132,7 +130,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
     """
     parameters = ('power_profile', 'panel_count', 'initial_selling_rate', 'final_selling_rate',
                   'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
-                  'max_panel_power_W', 'use_market_maker_rate')
+                  'use_market_maker_rate')
 
     def __init__(
             self, power_profile, panel_count: int = 1,
@@ -142,7 +140,6 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
             update_interval=duration(
                 minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
             energy_rate_decrease_per_update=None,
-            max_panel_power_W: float = None,
             use_market_maker_rate: bool = False):
         """
         Constructor of PVUserProfileStrategy
@@ -158,7 +155,6 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
                          fit_to_limit=fit_to_limit,
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
-                         max_panel_power_W=max_panel_power_W,
                          use_market_maker_rate=use_market_maker_rate)
         self._power_profile_W = power_profile
 

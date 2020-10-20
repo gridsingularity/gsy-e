@@ -176,7 +176,7 @@ class ExternalMixin:
             }
 
     @property
-    def market(self):
+    def next_market(self):
         return self.market_area.next_market
 
     @property
