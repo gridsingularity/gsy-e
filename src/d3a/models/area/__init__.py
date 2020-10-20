@@ -186,6 +186,13 @@ class Area:
         self.baseline_peak_energy_export_kWh = baseline_peak_energy_export_kWh
         self.export_capacity_kWh = export_capacity_kWh
         self.import_capacity_kWh = import_capacity_kWh
+        self._update_descendants_strategy_prices()
+
+    def _update_descendants_strategy_prices(self):
+        if self.strategy is not None:
+            self.strategy.event_activate_price()
+        for child in self.children:
+            child._update_descendants_strategy_prices()
 
     def _set_grid_fees(self, transfer_fee_const, grid_fee_percentage):
         grid_fee_type = self.config.grid_fee_type \
