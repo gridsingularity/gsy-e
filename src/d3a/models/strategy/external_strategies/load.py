@@ -140,6 +140,7 @@ class LoadExternalMixin(ExternalMixin):
         try:
             assert self.can_bid_be_posted(
                 arguments["energy"],
+                arguments["price"],
                 self.energy_requirement_Wh.get(self.next_market.time_slot, 0.0) / 1000.0,
                 self.next_market)
 
@@ -275,6 +276,7 @@ class LoadExternalMixin(ExternalMixin):
 
             assert self.can_bid_be_posted(
                 arguments["energy"],
+                arguments["price"],
                 self.energy_requirement_Wh.get(self.next_market.time_slot, 0.0) / 1000.0,
                 self.next_market)
 
