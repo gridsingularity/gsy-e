@@ -48,4 +48,5 @@ Vagrant.configure("2") do |config|
     deactivate
 
   SHELL
+  config.vm.synced_folder ".", "/vagrant/"
 end
