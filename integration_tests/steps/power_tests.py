@@ -32,7 +32,9 @@ def test_export_of_power_flow_result(context):
 def test_baseline_peak_energy_stats(context):
     area_throughput_stats = \
         context.simulation.endpoint_buffer.area_throughput_stats.results
+    stats_area_name = []
     for area_name, market_value in area_throughput_stats.items():
+        stats_area_name.append(area_name)
         if area_name in ['Grid', 'House 1 2']:
             assert all(stats['import']['peak_energy_kWh'] == 0
                        for market_time, stats in market_value.items())
@@ -64,3 +66,6 @@ def test_baseline_peak_energy_stats(context):
                        for market_time, stats in market_value.items())
         else:
             assert False
+
+    assert stats_area_name == ['Grid', 'Neighborhood 1', 'House 1', 'House 1 2',
+                               'Neighborhood 2', 'House 2']
