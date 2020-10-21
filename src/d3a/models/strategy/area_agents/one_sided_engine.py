@@ -143,7 +143,7 @@ class IAAEngine:
                 f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
             try:
-                if ConstSettings.IAASettings.MARKET_TYPE == 1 and trade is not None:
+                if ConstSettings.IAASettings.MARKET_TYPE == 1:
                     # One sided market should subtract the fees
                     trade_offer_rate = trade.offer.energy_rate - \
                                        trade.fee_price / trade.offer.energy
