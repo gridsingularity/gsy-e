@@ -34,13 +34,10 @@ class WindUserProfileStrategy(PVUserProfileStrategy):
                  fit_to_limit: bool = True,
                  update_interval=duration(
                      minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
-                 energy_rate_decrease_per_update=None,
-                 max_wind_turbine_power_W: float =
-                 ConstSettings.WindSettings.MAX_WIND_TURBINE_OUTPUT_W
+                 energy_rate_decrease_per_update=None
                  ):
         super().__init__(power_profile=power_profile, initial_selling_rate=initial_selling_rate,
                          final_selling_rate=final_selling_rate,
                          fit_to_limit=fit_to_limit, update_interval=update_interval,
-                         energy_rate_decrease_per_update=energy_rate_decrease_per_update,
-                         max_panel_power_W=max_wind_turbine_power_W
+                         energy_rate_decrease_per_update=energy_rate_decrease_per_update
                          )

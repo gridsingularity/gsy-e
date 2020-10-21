@@ -499,7 +499,8 @@ def test_iaa_event_trade_buys_accepted_offer(iaa2):
                                  pendulum.now(tz=TIME_ZONE),
                                  iaa2.higher_market.forwarded_offer,
                                  'owner',
-                                 'someone_else'),
+                                 'someone_else',
+                                 fee_price=0.0),
                      market_id=iaa2.higher_market.id)
     assert len(iaa2.lower_market.calls_energy) == 1
 
@@ -546,7 +547,8 @@ def test_iaa_event_trade_buys_partial_accepted_offer(iaa2):
                                  accepted_offer,
                                  'owner',
                                  'someone_else',
-                                 'residual_offer'),
+                                 'residual_offer',
+                                 fee_price=0.0),
                      market_id=iaa2.higher_market.id)
     assert iaa2.lower_market.calls_energy[0] == 1
 
@@ -621,7 +623,8 @@ def test_iaa_event_offer_split_and_trade_correctly_populate_forwarded_offer_entr
                                  accepted,
                                  'owner',
                                  'someone_else',
-                                 residual),
+                                 residual,
+                                 fee_price=0.0),
                      market_id=iaa2.lower_market.id)
 
     # after the trade event:

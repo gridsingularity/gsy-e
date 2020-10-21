@@ -19,8 +19,7 @@ from copy import deepcopy
 from itertools import chain  # NOQA
 from d3a.d3a_core.util import round_floats_for_ui
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
-from d3a.d3a_core.sim_results import _is_load_node_type, _is_pv_node_type
-from d3a_interface.constants_limits import ConstSettings
+from d3a.d3a_core.sim_results import is_load_node_type, is_pv_node_type
 from d3a.constants import LOAD_PENALTY_RATE, PV_PENALTY_RATE
 from d3a import constants  # NOQA
 
@@ -29,17 +28,13 @@ class CumulativeBills:
     def __init__(self):
         self.cumulative_bills_results = {}
 
-    def update(self, area):
-        self.cumulative_bills_results = {}
-        self.update_cumulative_bills(area)
-
     def _calculate_device_penalties(self, area, area_core_stats):
         if len(area['children']) > 0 or area_core_stats == {}:
             return 0.0
 
-        if area['type'] in ['LoadHoursStrategy', 'DefinedLoadStrategy']:
+        if is_load_node_type(area):
             return area_core_stats['energy_requirement_kWh']
-        elif area['type'] in ['PVStrategy', 'PVPredefinedStrategy']:
+        elif is_pv_node_type(area):
             return area_core_stats['available_energy_kWh']
         else:
             return 0.0
@@ -88,27 +83,19 @@ class CumulativeBills:
             parent_area_stats = core_stats.get(area_dict['parent_uuid'], {})
             trades = parent_area_stats.get('trades', [])
 
-            if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                spent_total = sum(trade['price'] + trade['fee_price']
-                                  for trade in trades
-                                  if trade['buyer'] == area_dict['name']) / 100.0
-                earned = sum(trade['price']
-                             for trade in trades
-                             if trade['seller'] == area_dict['name']) / 100.0
-            else:
-                spent_total = sum(trade['price']
-                                  for trade in trades
-                                  if trade['buyer'] == area_dict['name']) / 100.0
-                earned = sum(trade['price'] - trade['fee_price']
-                             for trade in trades
-                             if trade['seller'] == area_dict['name']) / 100.0
+            spent_total = sum(trade['price']
+                              for trade in trades
+                              if trade['buyer'] == area_dict['name']) / 100.0
+            earned = sum(trade['price'] - trade['fee_price']
+                         for trade in trades
+                         if trade['seller'] == area_dict['name']) / 100.0
             penalty_energy = self._calculate_device_penalties(
                 area_dict, core_stats.get(area_dict['uuid'], {})
             )
 
-            if _is_load_node_type(area_dict):
+            if is_load_node_type(area_dict):
                 penalty_cost = penalty_energy * LOAD_PENALTY_RATE / 100.0
-            elif _is_pv_node_type(area_dict):
+            elif is_pv_node_type(area_dict):
                 penalty_cost = penalty_energy * PV_PENALTY_RATE / 100.0
             else:
                 penalty_cost = 0.0
@@ -128,6 +115,7 @@ class MarketEnergyBills:
         self.bills_results = {}
         self.bills_redis_results = {}
         self.market_fees = {}
+        self.cumulative_fee_charged_per_market = 0.
         self.external_trades = {}
 
     @staticmethod
@@ -136,12 +124,8 @@ class MarketEnergyBills:
         # Division by 100 to convert cents to Euros
         fee_price = trade['fee_price'] / 100. if trade['fee_price'] is not None else 0.
         result_dict['bought'] += trade['energy']
-        if ConstSettings.IAASettings.MARKET_TYPE == 1:
-            result_dict['spent'] += trade_price
-            result_dict['total_cost'] += trade_price + fee_price
-        else:
-            result_dict['spent'] += trade_price - fee_price
-            result_dict['total_cost'] += trade_price
+        result_dict['spent'] += trade_price - fee_price
+        result_dict['total_cost'] += trade_price
         result_dict['total_energy'] += trade['energy']
         result_dict['market_fee'] += fee_price
 
@@ -151,24 +135,17 @@ class MarketEnergyBills:
         fee_price = trade['fee_price'] / 100. if trade['fee_price'] is not None else 0.
         result_dict['sold'] += trade['energy']
         result_dict['total_energy'] -= trade['energy']
-        if ConstSettings.IAASettings.MARKET_TYPE == 1:
-            trade_price = trade['price'] / 100.
-        else:
-            trade_price = trade['price'] / 100. - fee_price
+        trade_price = trade['price'] / 100. - fee_price
         result_dict['earned'] += trade_price
         result_dict['total_cost'] -= trade_price
 
     def _store_outgoing_external_trade(self, trade, area_dict):
         fee_price = trade['fee_price'] if trade['fee_price'] is not None else 0.
         self.external_trades[area_dict['name']]['sold'] += trade['energy']
-        if ConstSettings.IAASettings.MARKET_TYPE == 1:
-            self.external_trades[area_dict['name']]['earned'] += trade['price']
-            self.external_trades[area_dict['name']]['total_cost'] -= trade['price']
-        else:
-            self.external_trades[area_dict['name']]['earned'] += \
-                (trade['price'] - fee_price) / 100.
-            self.external_trades[area_dict['name']]['total_cost'] -= \
-                (trade['price'] - fee_price) / 100.
+        self.external_trades[area_dict['name']]['earned'] += \
+            (trade['price'] - fee_price) / 100.
+        self.external_trades[area_dict['name']]['total_cost'] -= \
+            (trade['price'] - fee_price) / 100.
         self.external_trades[area_dict['name']]['total_energy'] -= trade['energy']
         self.external_trades[area_dict['name']]['market_fee'] += fee_price / 100.
 
@@ -176,12 +153,8 @@ class MarketEnergyBills:
         trade_price = trade['price'] / 100.
         fee_price = trade['fee_price'] / 100. if trade['fee_price'] is not None else 0.
         self.external_trades[area_dict['name']]['bought'] += trade['energy']
-        if ConstSettings.IAASettings.MARKET_TYPE == 1:
-            self.external_trades[area_dict['name']]['spent'] += trade_price
-            self.external_trades[area_dict['name']]['total_cost'] += trade_price + fee_price
-        else:
-            self.external_trades[area_dict['name']]['spent'] += trade_price - fee_price
-            self.external_trades[area_dict['name']]['total_cost'] += trade_price
+        self.external_trades[area_dict['name']]['spent'] += trade_price - fee_price
+        self.external_trades[area_dict['name']]['total_cost'] += trade_price
         self.external_trades[area_dict['name']]['total_energy'] += trade['energy']
 
     @classmethod
@@ -257,8 +230,16 @@ class MarketEnergyBills:
     def _update_market_fees(self, area_dict, area_core_stats):
         self._accumulate_market_fees(area_dict, area_core_stats)
 
+    def _accumulate_grid_fee_charged(self, area_dict, area_core_stats):
+        area_stats = area_core_stats.get(area_dict['uuid'])
+        for trade in area_stats.get('trades', []):
+            self.cumulative_fee_charged_per_market += trade['fee_price'] / 100.
+        for child in area_dict['children']:
+            self._accumulate_grid_fee_charged(child, area_core_stats)
+
     def update(self, area_dict, area_core_stats):
         self._update_market_fees(area_dict, area_core_stats)
+        self._accumulate_grid_fee_charged(area_dict, area_core_stats)
         bills = self._energy_bills(area_dict, area_core_stats)
         flattened = {}
         self._flatten_energy_bills(bills, flattened)

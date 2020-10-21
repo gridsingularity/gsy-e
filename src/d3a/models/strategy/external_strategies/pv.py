@@ -143,6 +143,7 @@ class PVExternalMixin(ExternalMixin):
         try:
             assert self.can_offer_be_posted(
                 arguments["energy"],
+                arguments["price"],
                 self.state.available_energy_kWh.get(self.next_market.time_slot, 0.0),
                 self.next_market)
             offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
@@ -321,6 +322,7 @@ class PVExternalMixin(ExternalMixin):
         try:
             assert self.can_offer_be_posted(
                 arguments["energy"],
+                arguments["price"],
                 self.state.available_energy_kWh.get(self.next_market.time_slot, 0.0),
                 self.next_market)
             offer_arguments = {k: v
@@ -336,9 +338,6 @@ class PVExternalMixin(ExternalMixin):
                 "area_uuid": self.device.uuid
             }
         except Exception as e:
-            print(self.owner.name)
-            print(f"{str(e)}. {traceback.format_exc()}")
-            assert False
             logging.error(f"Failed to post PV offer. Exception {str(e)}. {traceback.format_exc()}")
             return {
                 "command": "offer", "status": "error",
