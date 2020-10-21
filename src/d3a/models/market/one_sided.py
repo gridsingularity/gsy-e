@@ -84,7 +84,7 @@ class OneSidedMarket(Market):
         if adapt_price_with_fees:
             price = self._update_new_offer_price_with_fee(price, original_offer_price, energy)
 
-        if price <= 0.0:
+        if price < 0.0:
             raise MarketException("Negative price after taxes, offer cannot be posted.")
 
         if offer_id is None:
