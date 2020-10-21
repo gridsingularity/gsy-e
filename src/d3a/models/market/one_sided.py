@@ -23,7 +23,7 @@ from d3a.events.event_structures import MarketEvent
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.market import Market, lock_market_action
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
-    OfferNotFoundException, InvalidTrade
+    OfferNotFoundException, InvalidTrade, MarketException
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a_interface.constants_limits import ConstSettings
 
@@ -83,6 +83,9 @@ class OneSidedMarket(Market):
 
         if adapt_price_with_fees:
             price = self._update_new_offer_price_with_fee(price, original_offer_price, energy)
+
+        if price <= 0.0:
+            raise MarketException("Negative price after taxes, offer cannot be posted.")
 
         if offer_id is None:
             offer_id = self.bc_interface.create_new_offer(energy, price, seller)

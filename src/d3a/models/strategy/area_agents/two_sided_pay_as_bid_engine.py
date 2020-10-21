@@ -48,15 +48,23 @@ class TwoSidedPayAsBidEngine(IAAEngine):
         if self.owner.name == self.markets.target.name:
             return
 
-        forwarded_bid = self.markets.target.bid(
-            price=(self.markets.source.fee_class.update_forwarded_bid_with_fee(
-                bid.price / bid.energy, bid.original_bid_price / bid.energy)) * bid.energy,
-            energy=bid.energy,
-            buyer=self.owner.name,
-            seller=self.markets.target.name,
-            original_bid_price=bid.original_bid_price,
-            buyer_origin=bid.buyer_origin
-        )
+        if bid.price < 0.0:
+            self.owner.log.debug("Offer is not forwarded because price < 0")
+            return
+        try:
+            forwarded_bid = self.markets.target.bid(
+                price=(self.markets.source.fee_class.update_forwarded_bid_with_fee(
+                    bid.price / bid.energy, bid.original_bid_price / bid.energy)) * bid.energy,
+                energy=bid.energy,
+                buyer=self.owner.name,
+                seller=self.markets.target.name,
+                original_bid_price=bid.original_bid_price,
+                buyer_origin=bid.buyer_origin
+            )
+        except MarketException:
+            self.owner.log.debug("Bid is not forwarded because grid fees of the target market "
+                                 "lead to a negative bid price.")
+            return
 
         self._add_to_forward_bids(bid, forwarded_bid)
         self.owner.log.trace(f"Forwarding bid {bid} to {forwarded_bid}")
@@ -112,7 +120,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             # Bid was traded in target market, buy in source
             market_bid = self.markets.source.bids[bid_info.source_bid.id]
             assert bid_trade.offer.energy <= market_bid.energy, \
-                f"Traded bid on target market has more energy than the market bid."
+                "Traded bid on target market has more energy than the market bid."
 
             source_rate = bid_info.source_bid.energy_rate
             target_rate = bid_info.target_bid.energy_rate
