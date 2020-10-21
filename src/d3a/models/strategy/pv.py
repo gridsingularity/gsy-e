@@ -257,14 +257,17 @@ class PVStrategy(BaseStrategy):
                 offer_price = \
                     self.offer_update.initial_rate[market.time_slot] * \
                     self.state.available_energy_kWh[market.time_slot]
-                offer = market.offer(
-                    offer_price,
-                    self.state.available_energy_kWh[market.time_slot],
-                    self.owner.name,
-                    original_offer_price=offer_price,
-                    seller_origin=self.owner.name
-                )
-                self.offers.post(offer, market.id)
+                try:
+                    offer = market.offer(
+                        offer_price,
+                        self.state.available_energy_kWh[market.time_slot],
+                        self.owner.name,
+                        original_offer_price=offer_price,
+                        seller_origin=self.owner.name
+                    )
+                    self.offers.post(offer, market.id)
+                except MarketException:
+                    pass
 
     def event_trade(self, *, market_id, trade):
         super().event_trade(market_id=market_id, trade=trade)
