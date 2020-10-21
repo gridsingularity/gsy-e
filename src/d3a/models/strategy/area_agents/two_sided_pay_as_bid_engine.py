@@ -48,8 +48,8 @@ class TwoSidedPayAsBidEngine(IAAEngine):
         if self.owner.name == self.markets.target.name:
             return
 
-        if bid.price <= 0.0:
-            self.owner.log.debug("Offer is not forwarded because price < 0")
+        if bid.price < 0.0:
+            self.owner.log.debug("Bid is not forwarded because price < 0")
             return
         try:
             forwarded_bid = self.markets.target.bid(
