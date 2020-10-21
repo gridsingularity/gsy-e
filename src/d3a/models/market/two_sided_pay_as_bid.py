@@ -63,7 +63,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, seller: str, buyer_origin,
-            bid_id: str = None, original_bid_price=None, adapt_price_with_fees=True) -> Bid:
+            bid_id: str = None, original_bid_price=None, adapt_price_with_fees=True,
+            add_to_history=True) -> Bid:
         if energy <= 0:
             raise InvalidBid()
 
@@ -76,7 +77,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   self.now, price, energy, buyer, seller, original_bid_price, buyer_origin)
         self.bids[bid.id] = bid
-        self.bid_history.append(bid)
+        if add_to_history is True:
+            self.bid_history.append(bid)
         log.debug(f"[BID][NEW][{self.time_slot_str}] {bid}")
         return bid
 
@@ -102,7 +104,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
                                 seller=original_bid.seller,
                                 original_bid_price=original_accepted_price,
                                 buyer_origin=original_bid.buyer_origin,
-                                adapt_price_with_fees=False)
+                                adapt_price_with_fees=False,
+                                add_to_history=False)
 
         residual_price = (1 - energy / original_bid.energy) * original_bid.price
         residual_energy = original_bid.energy - energy
@@ -116,7 +119,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
                                 seller=original_bid.seller,
                                 original_bid_price=original_residual_price,
                                 buyer_origin=original_bid.buyer_origin,
-                                adapt_price_with_fees=False)
+                                adapt_price_with_fees=False,
+                                add_to_history=True)
 
         log.debug(f"[BID][SPLIT][{self.time_slot_str}, {self.name}] "
                   f"({short_offer_bid_log_str(original_bid)} into "

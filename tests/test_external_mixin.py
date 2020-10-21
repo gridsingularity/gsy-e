@@ -124,20 +124,20 @@ class TestExternalMixin(unittest.TestCase):
     def test_device_info_dict_for_load_strategy_reports_required_energy(self):
         strategy = LoadHoursExternalStrategy(100)
         self._create_and_activate_strategy_area(strategy)
-        strategy.energy_requirement_Wh[strategy.market.time_slot] = 0.987
+        strategy.energy_requirement_Wh[strategy.next_market.time_slot] = 0.987
         assert strategy._device_info_dict["energy_requirement_kWh"] == 0.000987
 
     def test_device_info_dict_for_pv_strategy_reports_available_energy(self):
         strategy = PVExternalStrategy(2, max_panel_power_W=160)
         self._create_and_activate_strategy_area(strategy)
-        strategy.state.available_energy_kWh[strategy.market.time_slot] = 1.123
+        strategy.state.available_energy_kWh[strategy.next_market.time_slot] = 1.123
         assert strategy._device_info_dict["available_energy_kWh"] == 1.123
 
     def test_device_info_dict_for_storage_strategy_reports_battery_stats(self):
         strategy = StorageExternalStrategy(battery_capacity_kWh=0.5)
         self._create_and_activate_strategy_area(strategy)
-        strategy.state.energy_to_sell_dict[strategy.market.time_slot] = 0.02
-        strategy.state.energy_to_buy_dict[strategy.market.time_slot] = 0.03
+        strategy.state.energy_to_sell_dict[strategy.next_market.time_slot] = 0.02
+        strategy.state.energy_to_buy_dict[strategy.next_market.time_slot] = 0.03
         strategy.state._used_storage = 0.01
         assert strategy._device_info_dict["energy_to_sell"] == 0.02
         assert strategy._device_info_dict["energy_to_buy"] == 0.03

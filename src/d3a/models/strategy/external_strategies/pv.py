@@ -23,6 +23,8 @@ from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
+from d3a.d3a_core.redis_connections.aggregator_connection import default_market_info
+from d3a.d3a_core.util import get_current_market_maker_rate
 
 
 class PVExternalMixin(ExternalMixin):
@@ -57,7 +59,7 @@ class PVExternalMixin(ExternalMixin):
     def _list_offers_impl(self, arguments, response_channel):
         try:
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
-                               for _, v in self.market.get_offers().items()
+                               for _, v in self.next_market.get_offers().items()
                                if v.seller == self.device.name]
             self.redis.publish_json(
                 response_channel,
@@ -81,7 +83,7 @@ class PVExternalMixin(ExternalMixin):
         try:
             arguments = json.loads(payload["data"])
             if ("offer" in arguments and arguments["offer"] is not None) and \
-                    not self.offers.is_offer_posted(self.market.id, arguments["offer"]):
+                    not self.offers.is_offer_posted(self.next_market.id, arguments["offer"]):
                 raise Exception("Offer_id is not associated with any posted offer.")
         except Exception as e:
             logging.error(f"Error when handling delete offer request. Payload {payload}. "
@@ -98,8 +100,8 @@ class PVExternalMixin(ExternalMixin):
     def _delete_offer_impl(self, arguments, response_channel):
         try:
             to_delete_offer_id = arguments["offer"] if "offer" in arguments else None
-            deleted_offers = \
-                self.offers.remove_offer_from_cache_and_market(self.market, to_delete_offer_id)
+            deleted_offers = self.offers.remove_offer_from_cache_and_market(
+                self.next_market, to_delete_offer_id)
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer_delete", "status": "ready",
@@ -141,11 +143,12 @@ class PVExternalMixin(ExternalMixin):
         try:
             assert self.can_offer_be_posted(
                 arguments["energy"],
-                self.state.available_energy_kWh.get(self.market.time_slot, 0.0),
-                self.market)
+                arguments["price"],
+                self.state.available_energy_kWh.get(self.next_market.time_slot, 0.0),
+                self.next_market)
             offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
-            offer = self.market.offer(**offer_arguments)
-            self.offers.post(offer, self.market.id)
+            offer = self.next_market.offer(**offer_arguments)
+            self.offers.post(offer, self.next_market.id)
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer", "status": "ready", "offer": offer.to_JSON_string(),
@@ -163,7 +166,7 @@ class PVExternalMixin(ExternalMixin):
     @property
     def _device_info_dict(self):
         return {
-            'available_energy_kWh': self.state.available_energy_kWh[self.market.time_slot]
+            'available_energy_kWh': self.state.available_energy_kWh[self.next_market.time_slot]
         }
 
     def event_market_cycle(self):
@@ -172,18 +175,25 @@ class PVExternalMixin(ExternalMixin):
         if not self.should_use_default_strategy:
             self._reset_event_tick_counter()
             market_event_channel = f"{self.channel_prefix}/events/market"
-            current_market_info = self.market.info
-            current_market_info['device_info'] = self._device_info_dict
-            current_market_info["event"] = "market"
-            current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"]
-            current_market_info["area_uuid"] = self.device.uuid
-            current_market_info['last_market_stats'] = \
-                self.market_area.stats.get_price_stats_current_market()
-            if self.connected:
-                self.redis.publish_json(market_event_channel, current_market_info)
-
+            market_info = self.next_market.info
             if self.is_aggregator_controlled:
-                self.redis.aggregator.add_batch_market_event(self.device.uuid, current_market_info)
+                market_info.update(default_market_info)
+            market_info['device_info'] = self._device_info_dict
+            market_info["event"] = "market"
+            market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
+                if "bills" in self.device.stats.aggregated_stats else None
+            market_info["area_uuid"] = self.device.uuid
+            market_info["last_market_maker_rate"] = \
+                get_current_market_maker_rate(self.area.current_market.time_slot) \
+                if self.area.current_market else None
+            if self.connected:
+                market_info['last_market_stats'] = \
+                    self.market_area.stats.get_price_stats_current_market()
+                self.redis.publish_json(market_event_channel, market_info)
+            if self.is_aggregator_controlled:
+                self.redis.aggregator.add_batch_market_event(self.device.uuid,
+                                                             market_info,
+                                                             self.area.global_objects)
         else:
             super().event_market_cycle()
 
@@ -198,15 +208,11 @@ class PVExternalMixin(ExternalMixin):
         if not self.connected:
             super().event_activate_price()
 
-    def _area_reconfigure_prices(self, validate=True, **kwargs):
+    def _area_reconfigure_prices(self, **kwargs):
         if not self.connected:
-            super()._area_reconfigure_prices(validate, **kwargs)
+            super()._area_reconfigure_prices(**kwargs)
 
     def event_tick(self):
-        if self.is_aggregator_controlled:
-            self.redis.aggregator.consume_all_area_commands(self.device.uuid,
-                                                            self.trigger_aggregator_commands)
-
         if not self.connected and not self.is_aggregator_controlled:
             super().event_tick()
         else:
@@ -234,20 +240,20 @@ class PVExternalMixin(ExternalMixin):
 
     def _delete_offer_aggregator(self, arguments):
         if ("offer" in arguments and arguments["offer"] is not None) and \
-                not self.offers.is_offer_posted(self.market.id, arguments["offer"]):
+                not self.offers.is_offer_posted(self.next_market.id, arguments["offer"]):
             raise Exception("Offer_id is not associated with any posted offer.")
 
         try:
             to_delete_offer_id = arguments["offer"] if "offer" in arguments else None
-            deleted_offers = \
-                self.offers.remove_offer_from_cache_and_market(self.market, to_delete_offer_id)
+            deleted_offers = self.offers.remove_offer_from_cache_and_market(
+                self.next_market, to_delete_offer_id)
             return {
                 "command": "offer_delete", "status": "ready",
                 "area_uuid": self.device.uuid,
                 "deleted_offers": deleted_offers,
                 "transaction_id": arguments.get("transaction_id", None)
             }
-        except Exception as e:
+        except Exception:
             return {
                 "command": "offer_delete", "status": "error",
                 "area_uuid": self.device.uuid,
@@ -258,13 +264,13 @@ class PVExternalMixin(ExternalMixin):
     def _list_offers_aggregator(self, arguments):
         try:
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
-                               for _, v in self.market.get_offers().items()
+                               for _, v in self.next_market.get_offers().items()
                                if v.seller == self.device.name]
             return {
                 "command": "list_offers", "status": "ready", "offer_list": filtered_offers,
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id", None)}
-        except Exception as e:
+        except Exception:
             return {
                 "command": "list_offers", "status": "error",
                 "area_uuid": self.device.uuid,
@@ -285,7 +291,7 @@ class PVExternalMixin(ExternalMixin):
                 return {
                     "command": "update_offer", "status": "error",
                     "area_uuid": self.device.uuid,
-                    "error_message": f"Update offer is only possible if the old offer exist",
+                    "error_message": "Update offer is only possible if the old offer exist",
                     "transaction_id": arguments.get("transaction_id", None)}
 
             for offer, iterated_market_id in open_offers.items():
@@ -316,13 +322,14 @@ class PVExternalMixin(ExternalMixin):
         try:
             assert self.can_offer_be_posted(
                 arguments["energy"],
-                self.state.available_energy_kWh.get(self.market.time_slot, 0.0),
-                self.market)
+                arguments["price"],
+                self.state.available_energy_kWh.get(self.next_market.time_slot, 0.0),
+                self.next_market)
             offer_arguments = {k: v
                                for k, v in arguments.items()
                                if k not in ["transaction_id", "type"]}
-            offer = self.market.offer(**offer_arguments)
-            self.offers.post(offer, self.market.id)
+            offer = self.next_market.offer(**offer_arguments)
+            self.offers.post(offer, self.next_market.id)
             return {
                 "command": "offer",
                 "status": "ready",

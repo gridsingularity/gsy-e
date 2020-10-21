@@ -18,9 +18,10 @@ Feature: Jira Issues Tests
   Scenario: D3ASIM-662, IAA should always track offers back to its source
      Given we have a scenario named strategy_tests/home_cp_ess_load
      And d3a is installed
+     And export is_needed
      When we run the simulation with setup file strategy_tests.home_cp_ess_load and parameters [24, 60, 60, 1]
-     Then on every market slot there should be matching trades on grid and house markets
-     And there should be no unmatched loads
+     Then there should be no unmatched loads
+     And on every market slot there should be matching trades on grid and house markets
 
   @slow
   Scenario: D3ASIM-706, multi-day simulation for load and pv
@@ -47,6 +48,7 @@ Feature: Jira Issues Tests
   Scenario: D3ASIM-871, unmatched loads are not reported if hours per day are covered
      Given we have a scenario named jira/d3asim_871
      And d3a is installed
+     And export is_needed
      When we run the simulation with setup file jira.d3asim_871 and parameters [24, 60, 60, 1]
      Then there should be no unmatched loads
 
@@ -54,8 +56,7 @@ Feature: Jira Issues Tests
      Given we have a scenario named jira/d3asim_869
      And d3a is installed
      When we run the simulation with setup file jira.d3asim_869 and parameters [24, 60, 60, 1]
-     Then there should be no unmatched loads
-     And the Load of House 1 should only buy energy from IAA between 5:00 and 8:00
+     Then the Load of House 1 should only buy energy from IAA between 5:00 and 8:00
      And the Commercial Producer should never sell energy
 
   Scenario: D3ASIM-891, bids are reported correctly in csv export files
@@ -96,7 +97,7 @@ Feature: Jira Issues Tests
   Scenario: D3ASIM-1531: Trades happen in simulation with only one PAB market in the root area
     Given we have a scenario named jira/d3asim_1531
     And d3a is installed
-    And d3a uses an two-sided pay-as-bid market
+    And d3a uses an two-sided-pay-as-bid market
     When we run the simulation with setup file jira.d3asim_1531 and parameters [24, 60, 60, 1]
     Then trades happen when the load seeks energy
 
@@ -111,7 +112,7 @@ Feature: Jira Issues Tests
   Scenario: D3ASIM-1637: Pay as bid repeats clearing until all available offers and bids are exhausted
     Given we have a scenario named json_file
     And d3a is installed
-    And d3a uses an two-sided pay-as-bid market
+    And d3a uses an two-sided-pay-as-bid market
     And the file jira/d3asim_1637.json is used for the area setup
     When we run the simulation with setup file json_file and parameters [24, 30, 30, 1]
     Then there should be no unmatched loads
@@ -119,6 +120,7 @@ Feature: Jira Issues Tests
   Scenario: D3ASIM-1690: No unmatched load
     Given we have a scenario named two_sided_pay_as_clear/jira_d3asim_1690
     And d3a is installed
+    And export is_needed
     When we run the simulation with setup file two_sided_pay_as_clear.jira_d3asim_1690 and parameters [24, 60, 60, 1]
     Then there should be no unmatched loads
 
@@ -145,3 +147,16 @@ Scenario: D3ASIM-2034: DSO doesnt pay the grid fee of the Grid
     And d3a is installed
     When we run the simulation with setup file jira.d3asim_2244 and parameters [24, 15, 15, 1]
     Then cumulative grid trades correctly reports the external trade
+
+  Scenario Outline: D3ASIM-2948: min/max/avg trade rate is correctly reflected irrespective of market type
+     Given we have a scenario named jira/d3asim_2948
+     And d3a is installed
+     And d3a uses an <market_type> market
+     And export is_needed
+     When we run the simulation with setup file jira.d3asim_2948 and parameters [24, 60, 60, 1]
+     Then we test the min/max/avg trade and devices bill
+  Examples: MarketSettings
+     |      market_type             |
+     |      one-sided               |
+     |      two-sided-pay-as-bid    |
+     |      two-sided-pay-as-clear  |

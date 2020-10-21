@@ -80,15 +80,19 @@ def check_user_pv_dict_profile(context):
 @then('LoadHoursStrategy does not buy energy with rates that are higher than the provided profile')
 def check_user_rate_profile_dict(context):
     house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
-
-    unmatched, unmatched_redis = \
-        ExportUnmatchedLoads(context.simulation.area).get_current_market_results(
-            all_past_markets=True)
-    number_of_loads = 2
+    from integration_tests.steps.integration_tests import get_simulation_raw_results
+    get_simulation_raw_results(context)
+    count = 0
+    unmatched = ExportUnmatchedLoads(context.area_tree_summary_data)
+    for time_slot, core_stats in context.raw_sim_data.items():
+        unmatched_data, _ = unmatched.get_current_market_results(
+            context.area_tree_summary_data, core_stats, time_slot
+        )
+        count += get_number_of_unmatched_loads(unmatched_data)
     # There are two loads with the same final_buying_rate profile that should report unmatched
     # energy demand for the first 6 hours of the day:
-    assert get_number_of_unmatched_loads(unmatched) == int(number_of_loads * 6. * 60 /
-                                                           house.config.slot_length.minutes)
+    number_of_loads = 2
+    assert count == int(number_of_loads * 6. * 60 / house.config.slot_length.minutes)
 
 
 @then('LoadHoursStrategy buys energy with rates equal to the initial buying rate profile')
@@ -113,14 +117,9 @@ def check_min_user_rate_profile_dict(context):
 
 @then('LoadHoursStrategy buys energy at the final_buying_rate')
 def check_bid_update_frequency(context):
-    house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
-    load1 = next(filter(lambda x: x.name == "H1 General Load", house.children))
-
-    for market in house.past_markets:
-        assert len(market.trades) > 0
-        for trade in market.trades:
-            if trade.buyer == load1.name:
-                assert isclose((trade.offer.price / trade.offer.energy),
-                               (load1.strategy.bid_update.final_rate[market.time_slot]))
+    for time_slot, core_stats in context.raw_sim_data.items():
+        for trade in core_stats[context.name_uuid_map['House 1']]['trades']:
+            if trade['buyer'] == 'H1 General Load':
+                assert isclose(trade['energy_rate'], 35)
             else:
                 assert False, "All trades should be bought by load1, no other consumer."

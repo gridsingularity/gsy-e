@@ -36,7 +36,8 @@ def get_setup(config):
                                      StrategyEvents(15, {'initial_selling_rate': 40,
                                                          'update_interval': 5,
                                                          'fit_to_limit': False,
-                                                         'energy_rate_decrease_per_update': 1})]),
+                                                         'energy_rate_decrease_per_update': 1,
+                                                         'energy_rate_increase_per_update': 1})]),
                 ]
             ),
             Area('Grid Load', strategy=LoadHoursStrategy(avg_power_W=10,

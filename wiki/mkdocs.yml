@@ -69,7 +69,9 @@ nav:
         - 'Mac': 'ios-installation-instructions.md'
         - 'Virtual Machine': 'installation-instructions-vm.md'
         - 'Version Updates': 'version-update.md'
-- API: 'api.md'
+- API:
+  - Asset API: 'api.md'
+  - Market API: 'grid-api.md'
 - FAQ: 'faq.md'
 - FAQ Odyssey hackathon: 'faq-odyssey.md'
 

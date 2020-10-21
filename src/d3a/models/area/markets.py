@@ -27,6 +27,7 @@ from d3a.models.market import Market # noqa
 from d3a_interface.constants_limits import ConstSettings
 from collections import OrderedDict
 from d3a.d3a_core.util import is_timeslot_in_simulation_duration
+from d3a import constants
 
 
 class AreaMarkets:
@@ -63,7 +64,6 @@ class AreaMarkets:
             self._market_rotation(current_time=current_time, markets=self.balancing_markets,
                                   past_markets=self.past_balancing_markets,
                                   area_agent=dispatcher.balancing_agents)
-        stats.update_accumulated()
         self._indexed_future_markets = {
             m.id: m for m in self.all_future_spot_markets
         }
@@ -79,7 +79,7 @@ class AreaMarkets:
                                .format(t=timeframe, m=past_markets[timeframe].name))
 
     def _delete_past_markets(self, past_markets, timeframe):
-        if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+        if not constants.D3A_TEST_RUN:
             delete_markets = [pm for pm in past_markets if
                               pm not in self.markets.values()]
             for pm in delete_markets:

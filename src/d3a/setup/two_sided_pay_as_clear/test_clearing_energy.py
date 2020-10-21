@@ -28,6 +28,8 @@ def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 3
     ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
     ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT = 1
+    ConstSettings.IAASettings.MIN_OFFER_AGE = 0
+    ConstSettings.IAASettings.MIN_BID_AGE = 0
 
     area = Area(
         'Grid',
