@@ -11,8 +11,8 @@ def is_load_node_type(area):
 
 
 def is_producer_node_type(area):
-    return area['type'] in ["PVStrategy", "PVUserProfileStrategy", "PVPredefinedStrategy",
-                            "CommercialStrategy", "FinitePowerPlant", "MarketMakerStrategy"]
+    return area['type'] in ["CommercialStrategy", "FinitePowerPlant", "MarketMakerStrategy"] or \
+           is_pv_node_type(area)
 
 
 def is_pv_node_type(area):
