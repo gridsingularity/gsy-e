@@ -134,17 +134,9 @@ class Area:
         self.stats.restore_state(saved_state)
 
     def area_reconfigure_event(self, **kwargs):
-        if key_in_dict_and_not_none(kwargs, 'strategy_object'):
-            self.strategy = kwargs['strategy_object']
-            self.activate()
-            # self.strategy.area = self.parent
-            # self.strategy.owner = self
-            self.strategy.event_activate()
-            self.strategy.event_market_cycle()
-            return
-        elif self.strategy is not None:
+        if self.strategy is not None:
             self.strategy.area_reconfigure_event(**kwargs)
-            return
+            return True
 
         grid_fee_constant = kwargs["grid_fee_constant"] \
             if key_in_dict_and_not_none(kwargs, 'grid_fee_constant') \
