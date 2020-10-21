@@ -17,13 +17,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import d3a
+from logging import getLogger
+
 from d3a_interface.area_validator import validate_area
+from d3a_interface.utils import key_in_dict_and_not_none
+from d3a.models.strategy.external_strategies import CommandTypeNotSupported, register_area, \
+    unregister_area
+
+log = getLogger(__name__)
 
 
 class RedisMarketExternalConnection:
     def __init__(self, area):
         self.area = area
-        self.redis_db = None
+        self.redis_com = None
+        self.aggregator = None
+        self.connected = False
+
+    @property
+    def next_market(self):
+        return self.area.next_market
+
+    @property
+    def is_aggregator_controlled(self):
+        return self.aggregator.is_controlling_device(self.area.uuid)
 
     @property
     def channel_prefix(self):
@@ -40,83 +57,154 @@ class RedisMarketExternalConnection:
     def _grid_fees_channel(self):
         return f"{self.channel_prefix}/grid_fees"
 
-    def sub_to_area_event(self):
-        self.redis_db = self.area.config.external_redis_communicator
-        self.redis_db.sub_to_multiple_channels({
+    @staticmethod
+    def _get_transaction_id(payload):
+        data = json.loads(payload["data"])
+        if key_in_dict_and_not_none(data, "transaction_id"):
+            return data["transaction_id"]
+        else:
+            raise ValueError("transaction_id not in payload or None")
+
+    def _register(self, payload):
+        self._connected = register_area(self.redis_com, self.channel_prefix, self.connected,
+                                        self._get_transaction_id(payload),
+                                        area_uuid=self.area.uuid)
+
+    def _unregister(self, payload):
+        self._connected = unregister_area(self.redis_com, self.channel_prefix, self.connected,
+                                          self._get_transaction_id(payload))
+
+    def sub_to_external_channels(self):
+        self.redis_com = self.area.config.external_redis_communicator
+        sub_channel_dict = {
             f"{self.channel_prefix}/market_stats": self.market_stats_callback,
             f"{self.channel_prefix}/dso_market_stats": self.dso_market_stats_callback,
-            f"{self.channel_prefix}/grid_fees": self.set_grid_fees_callback
-        })
+            f"{self.channel_prefix}/grid_fees": self.set_grid_fees_callback,
+            f"{self.channel_prefix}/register_participant": self._register,
+            f"{self.channel_prefix}/unregister_participant": self._unregister}
+        if self.area.config.external_redis_communicator.is_enabled:
+            self.aggregator = self.area.config.external_redis_communicator.aggregator
+        self.redis_com.sub_to_multiple_channels(sub_channel_dict)
 
     def market_stats_callback(self, payload):
         market_stats_response_channel = f"{self.channel_prefix}/response/market_stats"
-        payload_data = json.loads(payload["data"])
+        payload_data = payload["data"] \
+            if isinstance(payload["data"], dict) else json.loads(payload["data"])
         ret_val = {"status": "ready",
+                   "area_uuid": self.area.uuid,
                    "command": "market_stats",
                    "market_stats":
-                       self.area.stats.get_market_stats(payload_data["market_slots"]),
-                   "transaction_id": payload_data.get("transaction_id", None)}
-        self.redis_db.publish_json(market_stats_response_channel, ret_val)
+                       self.area.stats.get_market_stats(payload_data["market_slots"])}
+        if self.is_aggregator_controlled:
+            return ret_val
+        else:
+            ret_val["transaction_id"] = payload_data.get("transaction_id", None)
+            self.redis_com.publish_json(market_stats_response_channel, ret_val)
 
     def set_grid_fees_callback(self, payload):
         grid_fees_response_channel = f"{self.channel_prefix}/response/grid_fees"
-        payload_data = json.loads(payload["data"])
-        validate_area(grid_fee_percentage=payload_data.get("fee_percent", None),
-                      grid_fee_constant=payload_data.get("fee_const", None))
+        payload_data = payload["data"] \
+            if isinstance(payload["data"], dict) else json.loads(payload["data"])
+        try:
+            validate_area(grid_fee_percentage=payload_data.get("fee_percent", None),
+                          grid_fee_constant=payload_data.get("fee_const", None))
+        except Exception as e:
+            log.error(str(e))
+            return
+
+        base_dict = {"area_uuid": self.area.uuid,
+                     "command": "grid_fees"}
         if "fee_const" in payload_data and payload_data["fee_const"] is not None and \
                 self.area.config.grid_fee_type == 1:
             self.area.grid_fee_constant = payload_data["fee_const"]
-            self.redis_db.publish_json(grid_fees_response_channel, {
-                "status": "ready", "command": "grid_fees",
+            ret_val = {
+                "status": "ready",
                 "market_fee_const": str(self.area.grid_fee_constant),
-                "transaction_id": payload_data.get("transaction_id", None)}
-             )
+                **base_dict}
         elif "fee_percent" in payload_data and payload_data["fee_percent"] is not None and \
                 self.area.config.grid_fee_type == 2:
             self.area.grid_fee_percentage = payload_data["fee_percent"]
-            self.redis_db.publish_json(grid_fees_response_channel, {
-                "status": "ready", "command": "grid_fees",
+            ret_val = {
+                "status": "ready",
                 "market_fee_percent": str(self.area.grid_fee_percentage),
-                "transaction_id": payload_data.get("transaction_id", None)}
-             )
+                **base_dict}
         else:
-            self.redis_db.publish_json(grid_fees_response_channel, {
-                "command": "grid_fees", "status": "error",
+            ret_val = {
+                "status": "error",
                 "error_message": "GridFee parameter conflicting with GlobalConfigFeeType",
-                "transaction_id": payload_data.get("transaction_id", None)}
-             )
+                **base_dict}
+
+        if self.is_aggregator_controlled:
+            return ret_val
+        else:
+            ret_val["transaction_id"] = payload_data.get("transaction_id", None)
+            self.redis_com.publish_json(grid_fees_response_channel, ret_val)
 
     def dso_market_stats_callback(self, payload):
         dso_market_stats_response_channel = f"{self.channel_prefix}/response/dso_market_stats"
-        payload_data = json.loads(payload["data"])
+        payload_data = payload["data"] \
+            if isinstance(payload["data"], dict) else json.loads(payload["data"])
         ret_val = {"status": "ready",
+                   "area_uuid": self.area.uuid,
                    "command": "dso_market_stats",
                    "market_stats":
-                       self.area.stats.get_market_stats(payload_data["market_slots"]),
-                   "fee_type": str(self.area.config.grid_fee_type),
-                   "market_fee_const": str(self.area.grid_fee_constant),
-                   "market_fee_percent": str(self.area.grid_fee_percentage),
-                   "transaction_id": payload_data.get("transaction_id", None)}
-        self.redis_db.publish_json(dso_market_stats_response_channel, ret_val)
+                       self.area.stats.get_market_stats(payload_data["market_slots"], dso=True)}
+        if self.is_aggregator_controlled:
+            return ret_val
+        else:
+            ret_val["transaction_id"] = payload_data.get("transaction_id", None)
+            self.redis_com.publish_json(dso_market_stats_response_channel, ret_val)
 
     def event_market_cycle(self):
         if self.area.current_market is None:
             return
         market_event_channel = f"{self.channel_prefix}/market-events/market"
-        current_market_info = self.area.current_market.info
-        current_market_info['last_market_stats'] = \
+        market_info = self.next_market.info
+        market_info["current_market_fee"] = \
+            self.area.current_market.fee_class.grid_fee_rate
+        market_info["next_market_fee"] = self.area.get_grid_fee()
+        market_info["last_market_stats"] = \
             self.area.stats.get_price_stats_current_market()
-        current_market_info["self_sufficiency"] = \
-            self.area.endpoint_stats["kpi"].get("self_sufficiency", None)
-        current_market_info["market_fee"] = self.area.grid_fee_constant
+        market_info["self_sufficiency"] = \
+            self.area.stats.kpi.get("self_sufficiency", None)
+        market_info["area_uuid"] = self.area.uuid
         data = {"status": "ready",
                 "event": "market",
-                "market_info": current_market_info}
-        self.redis_db.publish_json(market_event_channel, data)
+                "market_info": market_info}
+        if self.is_aggregator_controlled:
+            self.aggregator.add_batch_market_event(self.area.uuid, market_info,
+                                                   self.area.global_objects)
+        else:
+            self.redis_com.publish_json(market_event_channel, data)
 
     def deactivate(self):
         deactivate_event_channel = f"{self.channel_prefix}/events/finish"
         deactivate_msg = {
             "event": "finish"
         }
-        self.redis_db.publish_json(deactivate_event_channel, deactivate_msg)
+        self.redis_com.publish_json(deactivate_event_channel, deactivate_msg)
+
+    def trigger_aggregator_commands(self, command):
+        if "type" not in command:
+            return {
+                "status": "error",
+                "area_uuid": self.area.uuid,
+                "message": "Invalid command type"}
+
+        try:
+            if command["type"] == "grid_fees":
+                return self.set_grid_fees_callback(command)
+            elif command["type"] == "market_stats":
+                return self.market_stats_callback(command)
+            elif command["type"] == "dso_market_stats":
+                return self.dso_market_stats_callback(command)
+            else:
+                return {
+                    "command": command["type"], "status": "error",
+                    "area_uuid": self.area.uuid,
+                    "message": f"Command type not supported for device {self.area.uuid}"}
+        except CommandTypeNotSupported as e:
+            return {
+                "command": command["type"], "status": "error",
+                "area_uuid": self.area.uuid,
+                "message": str(e)}

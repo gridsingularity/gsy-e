@@ -21,9 +21,9 @@ from pendulum import today
 import os
 from d3a.d3a_core.util import d3a_path
 from d3a.constants import TIME_ZONE
-from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
-    get_number_of_unmatched_loads
 from d3a.d3a_core.export import EXPORT_DEVICE_VARIABLES
+from d3a.d3a_core.sim_results.market_price_energy_day import MarketPriceEnergyDay
+from d3a.d3a_core.sim_results.bills import CumulativeBills
 
 
 def get_areas_from_2_house_grid(context):
@@ -112,26 +112,13 @@ def step_impl(context):
 
 @then('on every market slot there should be matching trades on grid and house markets')
 def check_matching_trades(context):
-    house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
-    grid = context.simulation.area
-
-    for market in grid.past_markets:
-        timeslot = market.time_slot
-        assert house1.get_past_market(timeslot)
-        grid_trades = grid.get_past_market(timeslot).trades
-        house_trades = house1.get_past_market(timeslot).trades
+    for time_slot, core_stats in context.raw_sim_data.items():
+        grid_trades = core_stats[context.name_uuid_map['Grid']]['trades']
+        house_trades = core_stats[context.name_uuid_map['House 1']]['trades']
         assert len(grid_trades) == len(house_trades)
         assert all(
-            any(t.offer.energy == th.offer.energy and t.buyer == th.seller for th in house_trades)
+            any(t['energy'] == th['energy'] and t['buyer'] == th['seller'] for th in house_trades)
             for t in grid_trades)
-
-
-@then('there should be no unmatched loads')
-def no_unmatched_loads(context):
-    unmatched, unmatched_redis = \
-        ExportUnmatchedLoads(context.simulation.area).get_current_market_results(
-            all_past_markets=True)
-    assert get_number_of_unmatched_loads(unmatched) == 0
 
 
 @then('pv produces the same energy on each corresponding time slot regardless of the day')
@@ -312,9 +299,31 @@ def storage_decreases_bid_rate(context):
 
 @then('cumulative grid trades correctly reports the external trade')
 def area_external_trade(context):
-    cumulative_trade = context.simulation.endpoint_buffer.cumulative_grid_trades.\
-        current_trades_redis
+    cumulative_trade = context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     ext_trade = list(filter(lambda x: x['areaName'] == "External Trades",
                             cumulative_trade[house1.uuid]))[0]['bars'][0]['energy']
     assert isclose(ext_trade, -1 * 0.666, rel_tol=1e-05)
+
+
+@then('we test the min/max/avg trade and devices bill')
+def check_area_trade_and_bill(context):
+    from integration_tests.steps.integration_tests import get_simulation_raw_results
+    get_simulation_raw_results(context)
+    count = 0
+    mped = MarketPriceEnergyDay(should_export_plots=False)
+    for time_slot, core_stats in context.raw_sim_data.items():
+        mped.update(context.area_tree_summary_data, core_stats, time_slot)
+        count += 1
+        area_data = mped.redis_output[context.name_uuid_map['Grid']]
+        assert isclose(area_data['price-energy-day'][0]['av_price'], 0.35)
+        assert area_data['price-energy-day'][0]['min_price'] == 0.35
+        assert area_data['price-energy-day'][0]['max_price'] == 0.35
+        assert area_data['price-energy-day'][0]['grid_fee_constant'] == 0.05
+    assert count == 24
+    cb = CumulativeBills()
+    for time_slot, core_stats in context.raw_sim_data.items():
+        cb.update_cumulative_bills(context.area_tree_summary_data, core_stats, time_slot)
+    assert isclose(cb.cumulative_bills_results[context.name_uuid_map['Market Maker']]['earned'],
+                   0.72)
+    assert isclose(cb.cumulative_bills_results[context.name_uuid_map['Load']]['spent_total'], 0.84)

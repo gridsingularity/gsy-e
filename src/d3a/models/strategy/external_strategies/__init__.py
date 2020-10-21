@@ -23,6 +23,7 @@ from d3a.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from collections import namedtuple
 from d3a.models.market.market_structures import Offer
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.utils import key_in_dict_and_not_none
 
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
@@ -37,18 +38,18 @@ def check_for_connected_and_reply(redis, channel_name, is_connected):
         redis.publish_json(
             channel_name, {
                 "status": "error",
-                "error_message": f"Client should be registered in order to access this area."})
+                "error_message": "Client should be registered in order to access this area."})
         return False
     return True
 
 
-def register_area(redis, channel_prefix, is_connected, transaction_id, device_uuid=None):
+def register_area(redis, channel_prefix, is_connected, transaction_id, area_uuid=None):
     register_response_channel = f'{channel_prefix}/response/register_participant'
     try:
         redis.publish_json(
             register_response_channel,
             {"command": "register", "status": "ready", "registered": True,
-             "transaction_id": transaction_id, "device_uuid": device_uuid})
+             "transaction_id": transaction_id, "device_uuid": area_uuid})
         return True
     except Exception as e:
         logging.error(f"Error when registering to area {channel_prefix}: "
@@ -56,7 +57,7 @@ def register_area(redis, channel_prefix, is_connected, transaction_id, device_uu
         redis.publish_json(
             register_response_channel,
             {"command": "register", "status": "error", "transaction_id": transaction_id,
-             "device_uuid": device_uuid,
+             "device_uuid": area_uuid,
              "error_message": f"Error when registering to area {channel_prefix}."})
         return is_connected
 
@@ -116,7 +117,7 @@ class ExternalMixin:
     @staticmethod
     def _get_transaction_id(payload):
         data = json.loads(payload["data"])
-        if "transaction_id" in data and data["transaction_id"] is not None:
+        if key_in_dict_and_not_none(data, "transaction_id"):
             return data["transaction_id"]
         else:
             raise ValueError("transaction_id not in payload or None")
@@ -124,7 +125,7 @@ class ExternalMixin:
     def _register(self, payload):
         self._connected = register_area(self.redis, self.channel_prefix, self.connected,
                                         self._get_transaction_id(payload),
-                                        device_uuid=self.device.uuid)
+                                        area_uuid=self.device.uuid)
 
     def _unregister(self, payload):
         self._connected = unregister_area(self.redis, self.channel_prefix, self.connected,
@@ -166,7 +167,7 @@ class ExternalMixin:
                 "transaction_id": arguments.get("transaction_id", None),
                 "area_uuid": self.device.uuid
             }
-        except Exception as e:
+        except Exception:
             return {
                 "command": "device_info", "status": "error",
                 "error_message": f"Error when handling device info on area {self.device.name}.",
@@ -175,7 +176,7 @@ class ExternalMixin:
             }
 
     @property
-    def market(self):
+    def next_market(self):
         return self.market_area.next_market
 
     @property
@@ -283,9 +284,7 @@ class ExternalMixin:
                 self.redis.publish_json(deactivate_event_channel, deactivate_msg)
 
             if self.is_aggregator_controlled:
-                self.redis.aggregator._publish_all_events_from_one_type(
-                    self.redis, deactivate_msg, "finish"
-                )
+                self.redis.aggregator.add_batch_finished_event(self.owner.uuid, "finish")
 
     def _bid_aggregator(self, command):
         raise CommandTypeNotSupported(

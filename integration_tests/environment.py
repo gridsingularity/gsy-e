@@ -22,7 +22,8 @@ import os
 import d3a.constants
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import update_advanced_settings, constsettings_to_dict
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.constants_limits import GlobalConfig
+from d3a import constants
 
 """
 before_step(context, step), after_step(context, step)
@@ -46,7 +47,11 @@ def before_scenario(context, scenario):
     context.simdir = "./d3a-simulation/integration_tests/"
     os.makedirs(context.simdir, exist_ok=True)
     context.resource_manager = contextlib.ExitStack()
-    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
+    from d3a_interface.constants_limits import ConstSettings
+    ConstSettings.IAASettings.MIN_OFFER_AGE = 0
+    ConstSettings.IAASettings.MIN_BID_AGE = 0
+    constants.D3A_TEST_RUN = True
+    context.no_export = True
     if os.environ.get("DISPATCH_EVENTS_BOTTOM_TO_TOP") == "False":
         d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = False
 
@@ -63,6 +68,6 @@ def after_scenario(context, scenario):
 def before_all(context):
     context.default_const_settings = constsettings_to_dict()
     context.config.setup_logging()
-    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
+    constants.D3A_TEST_RUN = True
     if os.environ.get("DISPATCH_EVENTS_BOTTOM_TO_TOP") == "False":
         d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = False

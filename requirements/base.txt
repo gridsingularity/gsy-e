@@ -7,7 +7,7 @@
 attrdict==2.0.1           # via eth-account
 attrs==19.3.0             # via -r requirements/base.in, jsonschema
 awesome-slugify==1.6.5    # via -r requirements/base.in
-base58==2.0.0             # via multiaddr
+base58==2.0.1             # via multiaddr
 cached-property==1.5.1    # via -r requirements/base.in
 certifi==2019.11.28       # via requests
 chardet==3.0.4            # via requests
@@ -36,7 +36,7 @@ mypy-extensions==0.4.3    # via web3
 netaddr==0.7.19           # via multiaddr
 numpy==1.18.1             # via -r requirements/base.in
 parsimonious==0.8.1       # via eth-abi
-pendulum==2.0.5           # via -r requirements/base.in
+pendulum==2.1.2           # via -r requirements/base.in
 pip-tools==5.2.1          # via -r requirements/base.in
 plotly==4.4.1             # via -r requirements/base.in
 protobuf==3.11.2          # via web3
@@ -44,7 +44,7 @@ pycryptodome==3.9.4       # via eth-hash, eth-keyfile
 pyrsistent==0.15.7        # via jsonschema
 python-dateutil==2.8.1    # via pendulum
 python-rex==0.4           # via -r requirements/base.in
-pytzdata==2019.3          # via pendulum
+pytzdata==2020.1          # via pendulum
 redis==3.3.11             # via -r requirements/base.in, rq
 regex==2020.1.8           # via awesome-slugify
 requests==2.22.0          # via ipfshttpclient, web3

@@ -16,9 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-
-class D3AException(Exception):
-    pass
+from d3a_interface.exceptions import D3AException
 
 
 class SimulationException(D3AException):

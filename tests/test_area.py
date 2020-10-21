@@ -34,6 +34,7 @@ from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.models.area.event_dispatcher import AreaDispatcher
 from d3a.models.area.stats import AreaStats
+from d3a import constants
 
 
 class TestAreaClass(unittest.TestCase):
@@ -58,15 +59,17 @@ class TestAreaClass(unittest.TestCase):
         self.config.end_date = self.config.start_date + self.config.sim_duration
         self.area = Area("test_area", None, None, self.strategy,
                          self.appliance, self.config, None, grid_fee_percentage=1)
-        self.area.parent = self.area
-        self.area.children = [self.area]
+        self.area_child = Area("test_area_c", None, None, self.strategy,
+                               self.appliance, self.config, None, grid_fee_percentage=1)
+        self.area_child.parent = self.area
+        self.area.children = [self.area_child]
         self.area.grid_fee_percentage = 1
         self.dispatcher = AreaDispatcher(self.area)
-        self.stats = AreaStats(self.area._markets)
+        self.stats = AreaStats(self.area._markets, self.area)
 
     def tearDown(self):
         GlobalConfig.market_count = 1
-        ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
+        constants.D3A_TEST_RUN = False
 
     def test_respective_area_grid_fee_is_applied(self):
         self.config.grid_fee_type = 2
@@ -80,7 +83,7 @@ class TestAreaClass(unittest.TestCase):
         assert list(self.area.next_market.offers.values())[0].price == 1.05
 
     def test_markets_are_cycled_according_to_market_count(self):
-        self.area._bc = False
+        self.area._bc = None
         for i in range(2, 97):
             self.config.market_count = i
             self.config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
@@ -92,7 +95,7 @@ class TestAreaClass(unittest.TestCase):
                          config=GlobalConfig, grid_fee_percentage=5)
         self.area.config.market_count = 1
         self.area.activate()
-        self.area._bc = False
+        self.area._bc = None
 
         self.area._cycle_markets(False, False, False)
         assert len(self.area.past_markets) == 0
@@ -108,12 +111,12 @@ class TestAreaClass(unittest.TestCase):
         assert list(self.area.past_markets)[-1].time_slot == today(tz=TIME_ZONE).add(hours=1)
 
     def test_keep_past_markets(self):
-        ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
+        constants.D3A_TEST_RUN = True
         self.area = Area(name="Street", children=[Area(name="House")],
                          config=GlobalConfig, grid_fee_percentage=5)
         self.area.config.market_count = 1
         self.area.activate()
-        self.area._bc = False
+        self.area._bc = None
 
         self.area._cycle_markets(False, False, False)
         assert len(self.area.past_markets) == 0
@@ -188,6 +191,33 @@ class TestAreaClass(unittest.TestCase):
         assert len(self.area.past_balancing_markets) == 1
         assert len(self.area.all_markets) == 5
         assert len(self.area.balancing_markets) == 5
+
+    def test_get_restore_state_get_called_on_all_areas(self):
+        strategy = MagicMock(spec=StorageStrategy)
+        bat = Area(name="battery", strategy=strategy)
+
+        house = Area(name="House", children=[bat])
+        house.stats.get_state = MagicMock()
+        house.stats.restore_state = MagicMock()
+        area = Area(name="Street", children=[house])
+        area.stats.get_state = MagicMock()
+        area.stats.restore_state = MagicMock()
+        area.parent = Area(name="GRID")
+
+        area.get_state()
+        area.stats.get_state.assert_called_once()
+        area.restore_state({"current_tick": 200, "area_stats": None})
+        area.stats.restore_state.assert_called_once()
+        assert area.current_tick == 200
+
+        house.get_state()
+        house.stats.get_state.assert_called_once()
+        house.restore_state({"current_tick": 2432, "area_stats": None})
+        house.stats.restore_state.assert_called_once()
+        assert house.current_tick == 2432
+
+        bat.get_state()
+        strategy.get_state.assert_called_once()
 
 
 class TestEventDispatcher(unittest.TestCase):
