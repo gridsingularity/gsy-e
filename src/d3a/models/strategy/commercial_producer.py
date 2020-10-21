@@ -75,15 +75,6 @@ class CommercialStrategy(BaseStrategy):
         except MarketException:
             logging.error(f"Offer posted with negative energy rate {energy_rate}."
                           f"Posting offer with zero energy rate instead.")
-            offer = market.offer(
-                0.0,
-                self.energy_per_slot_kWh,
-                self.owner.name,
-                original_offer_price=0.0,
-                seller_origin=self.owner.name
-            )
-
-            self.offers.post(offer, market.id)
 
     def _offer_balancing_energy(self, market):
         if not self.is_eligible_for_balancing_market:
