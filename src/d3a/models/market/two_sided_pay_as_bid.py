@@ -74,7 +74,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         if adapt_price_with_fees:
             price = self._update_new_bid_price_with_fee(price, original_bid_price)
 
-        if price <= 0.0:
+        if price < 0.0:
             raise MarketException("Negative price after taxes, bid cannot be posted.")
 
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,

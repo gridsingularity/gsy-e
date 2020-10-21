@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import logging
 from d3a.models.strategy import BaseStrategy, INF_ENERGY
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import MarketException
@@ -72,7 +73,17 @@ class CommercialStrategy(BaseStrategy):
 
             self.offers.post(offer, market.id)
         except MarketException:
-            pass
+            logging.error(f"Offer posted with negative energy rate {energy_rate}."
+                          f"Posting offer with zero energy rate instead.")
+            offer = market.offer(
+                0.0,
+                self.energy_per_slot_kWh,
+                self.owner.name,
+                original_offer_price=0.0,
+                seller_origin=self.owner.name
+            )
+
+            self.offers.post(offer, market.id)
 
     def _offer_balancing_energy(self, market):
         if not self.is_eligible_for_balancing_market:
