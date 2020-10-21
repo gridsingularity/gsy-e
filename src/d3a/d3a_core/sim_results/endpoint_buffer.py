@@ -239,6 +239,7 @@ class SimulationEndpointBuffer:
             self._populate_core_stats_and_sim_state(child)
 
     def update_stats(self, area, simulation_status, progress_info, sim_state):
+        self.area_result_dict = self._create_area_tree_dict(area)
         self.status = simulation_status
         if area.current_market is not None:
             self.current_market_time_slot_str = area.current_market.time_slot_str

@@ -170,5 +170,5 @@ class AreaStats:
         if self.current_market.time_slot not in self.exported_energy:
             self.exported_energy[self.current_market.time_slot] = 0.
         self.net_energy_flow[self.current_market.time_slot] = \
-            self.exported_energy[self.current_market.time_slot] - \
-            self.imported_energy[self.current_market.time_slot]
+            self.imported_energy[self.current_market.time_slot] - \
+            self.exported_energy[self.current_market.time_slot]

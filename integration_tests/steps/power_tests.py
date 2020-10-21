@@ -51,7 +51,7 @@ def test_baseline_peak_energy_stats(context):
                        for market_time, stats in market_value.items())
             assert all(stats['export']['peak_energy_kWh'] == 0
                        for market_time, stats in market_value.items())
-            assert all(stats['net_energy_flow']['peak_energy_kWh'] == -0.2
+            assert all(stats['net_energy_flow']['peak_energy_kWh'] == 0.2
                        for market_time, stats in market_value.items())
         elif area_name in ['Neighborhood 2', 'House 2']:
             assert all(stats['import']['peak_energy_kWh'] == 0.
@@ -62,7 +62,7 @@ def test_baseline_peak_energy_stats(context):
                        for market_time, stats in market_value.items())
             assert all(stats['export']['peak_percentage'] == 100.0
                        for market_time, stats in market_value.items())
-            assert all(stats['net_energy_flow']['peak_energy_kWh'] == 0.3
+            assert all(stats['net_energy_flow']['peak_energy_kWh'] == -0.3
                        for market_time, stats in market_value.items())
         else:
             assert False
