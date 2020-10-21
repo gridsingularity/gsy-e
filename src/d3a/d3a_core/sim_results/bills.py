@@ -29,17 +29,13 @@ class CumulativeBills:
     def __init__(self):
         self.cumulative_bills_results = {}
 
-    def update(self, area):
-        self.cumulative_bills_results = {}
-        self.update_cumulative_bills(area)
-
     def _calculate_device_penalties(self, area, area_core_stats):
         if len(area['children']) > 0 or area_core_stats == {}:
             return 0.0
 
-        if area['type'] in ['LoadHoursStrategy', 'DefinedLoadStrategy']:
+        if is_load_node_type(area):
             return area_core_stats['energy_requirement_kWh']
-        elif area['type'] in ['PVStrategy', 'PVPredefinedStrategy']:
+        elif is_pv_node_type(area):
             return area_core_stats['available_energy_kWh']
         else:
             return 0.0
