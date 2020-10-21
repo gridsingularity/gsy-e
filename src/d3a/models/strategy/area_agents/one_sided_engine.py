@@ -72,7 +72,12 @@ class IAAEngine:
         if offer.price < 0.0:
             self.owner.log.debug("Offer is not forwarded because price < 0")
             return
-        forwarded_offer = self._offer_in_market(offer)
+        try:
+            forwarded_offer = self._offer_in_market(offer)
+        except MarketException:
+            self.owner.log.debug("Offer is not forwarded because grid fees of the target market "
+                                 "lead to a negative offer price.")
+            return
 
         self._add_to_forward_offers(offer, forwarded_offer)
         self.owner.log.trace(f"Forwarding offer {offer} to {forwarded_offer}")

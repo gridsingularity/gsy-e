@@ -21,7 +21,7 @@ from logging import getLogger
 
 from d3a.models.market import lock_market_action
 from d3a.models.market.one_sided import OneSidedMarket
-from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade
+from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade, MarketException
 from d3a.models.market.market_structures import Bid, Trade, TradeBidInfo
 from d3a.events.event_structures import MarketEvent
 from d3a.constants import FLOATING_POINT_TOLERANCE
@@ -73,6 +73,9 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
         if adapt_price_with_fees:
             price = self._update_new_bid_price_with_fee(price, original_bid_price)
+
+        if price < 0.0:
+            raise MarketException("Negative price after taxes, bid cannot be posted.")
 
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   self.now, price, energy, buyer, seller, original_bid_price, buyer_origin)
