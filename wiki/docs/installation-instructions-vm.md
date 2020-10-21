@@ -1,4 +1,10 @@
 ## How to Install D3A using a Virtual Machine (useful especially on Windows)
+### Prerequisites
+
+#####  Windows environment settings 
+1. Enable [Intel Virtualization](https://stackoverflow.com/a/34305608/13507565) on your computer in [BIOS](https://2nwiki.2n.cz/pages/viewpage.action?pageId=75202968).
+2. Go to your [Windows Features](https://www.windowscentral.com/how-manage-optional-features-windows-10) setting and disable Windows Hypervisor Platform (or Hyper-V) and enable Virtual Machine Platform.
+
 
 ##### Install VirtualBox and Vagrant
 It is recommended to use Chocolatey as a package management tool for Windows.
