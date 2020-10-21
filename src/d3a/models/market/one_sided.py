@@ -124,7 +124,7 @@ class OneSidedMarket(Market):
             fees = self.fee_class.grid_fee_rate * energy
         else:
             fees = self.fee_class.grid_fee_rate * original_price * energy_portion
-        return fees, energy * trade_rate - fees
+        return fees, energy * trade_rate
 
     @classmethod
     def _calculate_original_prices(cls, offer):

@@ -66,7 +66,7 @@ def address_to_hex(address):
         hex_address = base58.b58decode(address).hex()[2:-4]
         return hex_address
     except ValueError:
-        print("Unexpected error: could not convert address to hex", sys.exc_info()[0])
+        log.error("Unexpected error: could not convert address to hex", sys.exc_info()[0])
         raise
 
 
