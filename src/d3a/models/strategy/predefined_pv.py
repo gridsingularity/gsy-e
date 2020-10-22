@@ -169,6 +169,51 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
 
     def area_reconfigure_event(self, **kwargs):
         super().area_reconfigure_event(**kwargs)
+        print("area_reconfigure_event")
         if key_in_dict_and_not_none(kwargs, 'power_profile'):
             self._power_profile_W = kwargs['power_profile']
         self.read_config_event()
+
+
+class PVForecastStrategy(PVPredefinedStrategy):
+    """
+        Strategy responsible for reading single production forecast data via hardware API
+    """
+    parameters = ('power_profile', 'panel_count', 'initial_selling_rate', 'final_selling_rate',
+                  'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
+                  'use_market_maker_rate')
+
+    def __init__(
+            self, power_forecast_W: float = 0,
+            initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+            final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
+            fit_to_limit: bool = True,
+            update_interval=duration(
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
+            energy_rate_decrease_per_update=None,
+            use_market_maker_rate: bool = False):
+        """
+        Constructor of PVForecastStrategy
+        :param power_forecast_W: forecast for the next market slot
+        """
+        super().__init__(panel_count=1,
+                         initial_selling_rate=initial_selling_rate,
+                         final_selling_rate=final_selling_rate,
+                         fit_to_limit=fit_to_limit,
+                         update_interval=update_interval,
+                         energy_rate_decrease_per_update=energy_rate_decrease_per_update,
+                         use_market_maker_rate=use_market_maker_rate)
+        self.power_forecast_buffer_W = power_forecast_W
+
+    def event_activate_energy(self):
+        self.produced_energy_forecast_kWh()
+
+    def produced_energy_forecast_kWh(self):
+        # sets energy forecast for next_market
+        energy_forecast_kWh = (self.area.config.slot_length / duration(hours=1)) / 1000 * \
+            self.power_forecast_buffer_W
+        assert energy_forecast_kWh >= 0.0
+        slot_time = self.area.next_market.time_slot
+        print(self.area.next_market.time_slot_str, "write_to_market", self.power_forecast_buffer_W)
+        self.energy_production_forecast_kWh[slot_time] = energy_forecast_kWh
+        self.state.available_energy_kWh[slot_time] = energy_forecast_kWh

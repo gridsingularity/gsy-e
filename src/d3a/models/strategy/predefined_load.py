@@ -68,7 +68,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
             update_interval = \
                 duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
 
-        super().__init__(0, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
+        super().__init__(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
                          fit_to_limit=fit_to_limit,
                          energy_rate_increase_per_update=energy_rate_increase_per_update,
                          update_interval=update_interval,
@@ -96,14 +96,17 @@ class DefinedLoadStrategy(LoadHoursStrategy):
             daily_load_profile)
         self._update_energy_requirement(load_profile)
 
+    def _initiate_hrs_per_day(self):
+        self._simulation_start_timestamp = self.area.now
+        self.hrs_per_day = {day: self._initial_hrs_per_day
+                            for day in range(self.area.config.sim_duration.days + 1)}
+
     def _update_energy_requirement(self, load_profile):
         """
         Update required energy values for each market slot.
         :return: None
         """
-        self._simulation_start_timestamp = self.area.now
-        self.hrs_per_day = {day: self._initial_hrs_per_day
-                            for day in range(self.area.config.sim_duration.days + 1)}
+        self._initiate_hrs_per_day()
         for slot_time in generate_market_slot_list(area=self.area):
             if self._allowed_operating_hours(slot_time.hour):
                 self.energy_requirement_Wh[slot_time] = load_profile[slot_time] * 1000
@@ -126,3 +129,56 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         self._area_reconfigure_prices(**kwargs)
         if key_in_dict_and_not_none(kwargs, 'daily_load_profile'):
             self._event_activate_energy(kwargs['daily_load_profile'])
+
+
+class LoadForecastStrategy(DefinedLoadStrategy):
+    """
+        Strategy responsible for reading single forecast consumption data via hardware API
+    """
+    parameters = ('daily_load_profile', 'fit_to_limit', 'energy_rate_increase_per_update',
+                  'update_interval', 'initial_buying_rate', 'final_buying_rate',
+                  'balancing_energy_ratio', 'use_market_maker_rate')
+
+    def __init__(self, power_forecast_W: float = 0,
+                 fit_to_limit=True, energy_rate_increase_per_update=None,
+                 update_interval=None,
+                 initial_buying_rate: Union[float, dict, str] =
+                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
+                 final_buying_rate: Union[float, dict, str] =
+                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.final,
+                 balancing_energy_ratio: tuple =
+                 (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
+                  ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
+                 use_market_maker_rate: bool = False):
+        """
+        Constructor of LoadForecastStrategy
+        :param power_forecast_W: forecast for the next market slot
+        """
+        if update_interval is None:
+            update_interval = \
+                duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+
+        super().__init__(daily_load_profile=None,
+                         fit_to_limit=fit_to_limit,
+                         energy_rate_increase_per_update=energy_rate_increase_per_update,
+                         update_interval=update_interval,
+                         final_buying_rate=final_buying_rate,
+                         initial_buying_rate=initial_buying_rate,
+                         balancing_energy_ratio=balancing_energy_ratio,
+                         use_market_maker_rate=use_market_maker_rate)
+        self.power_forecast_buffer_W = power_forecast_W
+
+    def event_activate_energy(self):
+        self.update_energy_forecast()
+
+    def update_energy_forecast(self):
+        self._initiate_hrs_per_day()
+
+        # sets energy forecast for next_market
+        energy_forecast_Wh = (self.area.config.slot_length / duration(hours=1)) * \
+            self.power_forecast_buffer_W
+        assert energy_forecast_Wh >= 0.0
+        slot_time = self.area.next_market.time_slot
+        self.energy_requirement_Wh[slot_time] = energy_forecast_Wh
+        self.state.desired_energy_Wh[slot_time] = energy_forecast_Wh
+        self.state.total_energy_demanded_wh += energy_forecast_Wh

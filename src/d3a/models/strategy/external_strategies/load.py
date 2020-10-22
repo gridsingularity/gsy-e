@@ -20,7 +20,7 @@ import logging
 import traceback
 from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.predefined_load import DefinedLoadStrategy
+from d3a.models.strategy.predefined_load import DefinedLoadStrategy, LoadForecastStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
 from d3a.d3a_core.redis_connections.aggregator_connection import default_market_info
 from d3a.d3a_core.util import get_current_market_maker_rate
@@ -34,16 +34,24 @@ class LoadExternalMixin(ExternalMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def event_activate(self):
-        super().event_activate()
-        self.redis.sub_to_multiple_channels({
+    @property
+    def _channel_dict(self):
+        return {
             f'{self.channel_prefix}/register_participant': self._register,
             f'{self.channel_prefix}/unregister_participant': self._unregister,
             f'{self.channel_prefix}/bid': self._bid,
             f'{self.channel_prefix}/delete_bid': self._delete_bid,
             f'{self.channel_prefix}/list_bids': self._list_bids,
             f'{self.channel_prefix}/device_info': self._device_info,
-        })
+            }
+
+    @property
+    def channel_dict(self):
+        return self._channel_dict
+
+    def event_activate(self):
+        super().event_activate()
+        self.redis.sub_to_multiple_channels(self.channel_dict)
 
     def _list_bids(self, payload):
         self._get_transaction_id(payload)
@@ -215,22 +223,25 @@ class LoadExternalMixin(ExternalMixin):
         if self.should_use_default_strategy:
             super()._area_reconfigure_prices(**kwargs)
 
+    def handle_incoming_commands(self):
+        while len(self.pending_requests) > 0:
+            req = self.pending_requests.pop()
+            if req.request_type == "bid":
+                self._bid_impl(req.arguments, req.response_channel)
+            elif req.request_type == "delete_bid":
+                self._delete_bid_impl(req.arguments, req.response_channel)
+            elif req.request_type == "list_bids":
+                self._list_bids_impl(req.arguments, req.response_channel)
+            elif req.request_type == "device_info":
+                self._device_info_impl(req.arguments, req.response_channel)
+            else:
+                assert False, f"Incorrect incoming request name: {req}"
+
     def event_tick(self):
         if not self.connected and not self.is_aggregator_controlled:
             super().event_tick()
         else:
-            while len(self.pending_requests) > 0:
-                req = self.pending_requests.pop()
-                if req.request_type == "bid":
-                    self._bid_impl(req.arguments, req.response_channel)
-                elif req.request_type == "delete_bid":
-                    self._delete_bid_impl(req.arguments, req.response_channel)
-                elif req.request_type == "list_bids":
-                    self._list_bids_impl(req.arguments, req.response_channel)
-                elif req.request_type == "device_info":
-                    self._device_info_impl(req.arguments, req.response_channel)
-                else:
-                    assert False, f"Incorrect incoming request name: {req}"
+            self.handle_incoming_commands()
         self._dispatch_event_tick_to_external_agent()
 
     def event_offer(self, *, market_id, offer):
@@ -343,6 +354,79 @@ class LoadExternalMixin(ExternalMixin):
                 "area_uuid": self.device.uuid,
                 "error_message": f"Error when listing bids on area {self.device.name}.",
                 "transaction_id": arguments.get("transaction_id", None)}
+
+
+class LoadForecastExternalStrategy(LoadExternalMixin, LoadForecastStrategy):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @property
+    def channel_dict(self):
+        return {**self._channel_dict,
+                f'{self.channel_prefix}/set_load_power_forecast': self._set_power_forecast}
+
+    def _set_power_forecast(self, payload):
+        transaction_id = self._get_transaction_id(payload)
+        power_forecast_response_channel = \
+            f'{self.channel_prefix}/response/set_load_power_forecast'
+        if not check_for_connected_and_reply(self.redis, power_forecast_response_channel,
+                                             self.connected):
+            return
+        try:
+            arguments = json.loads(payload["data"])
+            assert set(arguments.keys()) == {'load_power_forecast', 'transaction_id'}
+        except Exception as e:
+            logging.error(
+                f"Incorrect _set_load_power_forecast request. "
+                f"Payload {payload}. Exception {str(e)}.")
+            self.redis.publish_json(
+                power_forecast_response_channel,
+                {"command": "set_load_power_forecast",
+                 "error": "Incorrect _set_load_power_forecast request. "
+                          "Available parameters: (load_power_forecast).",
+                 "transaction_id": transaction_id})
+        else:
+            self.pending_requests.append(
+                IncomingRequest("set_load_power_forecast", arguments,
+                                power_forecast_response_channel))
+
+    def _set_power_forecast_impl(self, arguments, response_channel):
+        try:
+            assert arguments["load_power_forecast"] >= 0.0
+            self.power_forecast_buffer_W = arguments["load_power_forecast"]
+            self.redis.publish_json(
+                response_channel,
+                {"command": "set_load_power_forecast", "status": "ready",
+                 "transaction_id": arguments.get("transaction_id", None)})
+        except Exception as e:
+            logging.error(f"Error when handling _set_power_forecast_impl "
+                          f"on area {self.device.name}: "
+                          f"Exception: {str(e)}, Arguments: {arguments}")
+            self.redis.publish_json(
+                response_channel,
+                {"command": "set_load_power_forecast", "status": "error",
+                 "error_message": f"Error when handling _set_power_forecast_impl "
+                                  f"on area {self.device.name} with arguments {arguments}.",
+                 "transaction_id": arguments.get("transaction_id", None)})
+
+    def event_tick(self):
+        # only deal with forecast commands here
+        if self.connected:
+            power_forecasts = []
+            for req in self.pending_requests:
+                if req.request_type == "set_load_power_forecast":
+                    self._set_power_forecast_impl(req.arguments, req.response_channel)
+                    power_forecasts.append(req)
+            # delete them from self.pending_requests
+            for req in power_forecasts:
+                self.pending_requests.remove(req)
+
+        self.handle_incoming_commands()
+
+    def event_market_cycle(self):
+        self.update_energy_forecast()
+        super().event_market_cycle()
 
 
 class LoadHoursExternalStrategy(LoadExternalMixin, LoadHoursStrategy):

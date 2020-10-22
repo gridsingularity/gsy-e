@@ -98,8 +98,7 @@ class PVStrategy(BaseStrategy):
             self.panel_count = kwargs['panel_count']
         if key_in_dict_and_not_none(kwargs, 'max_panel_power_W'):
             self.max_panel_power_W = kwargs['max_panel_power_W']
-
-        self.produced_energy_forecast_kWh()
+            self.produced_energy_forecast_kWh()
 
     def _area_reconfigure_prices(self, **kwargs):
         if key_in_dict_and_not_none(kwargs, 'initial_selling_rate'):

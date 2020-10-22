@@ -321,7 +321,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
             return
         for market in self.active_markets:
-            if self.energy_requirement_Wh[market.time_slot] > 0:
+            if market.time_slot in self.energy_requirement_Wh and \
+                    self.energy_requirement_Wh[market.time_slot] > 0:
                 if self.is_eligible_for_balancing_market:
                     bid_energy = \
                         self.energy_requirement_Wh[market.time_slot] - \
