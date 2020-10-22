@@ -94,7 +94,7 @@ class RedisMarketExternalConnection:
                    "area_uuid": self.area.uuid,
                    "command": "market_stats",
                    "market_stats":
-                       self.area.stats.get_market_stats(payload_data["market_slots"])}
+                       self.area.stats.get_last_market_stats()}
         if self.is_aggregator_controlled:
             return ret_val
         else:
