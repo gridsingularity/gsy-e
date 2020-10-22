@@ -16,12 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from copy import deepcopy
-from itertools import chain  # NOQA
 from d3a.d3a_core.util import round_floats_for_ui
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
 from d3a.d3a_core.sim_results import is_load_node_type, is_pv_node_type
 from d3a.constants import LOAD_PENALTY_RATE, PV_PENALTY_RATE
-from d3a import constants  # NOQA
+from d3a.d3a_core.sim_results import get_unified_area_type
 
 
 class CumulativeBills:
@@ -159,11 +158,12 @@ class MarketEnergyBills:
 
     @classmethod
     def _default_area_dict(cls, area_dict):
+        area_type = get_unified_area_type(deepcopy(area_dict))
         return dict(bought=0.0, sold=0.0,
                     spent=0.0, earned=0.0,
                     total_energy=0.0, total_cost=0.0,
                     market_fee=0.0,
-                    type=area_dict['type'])
+                    type=area_type)
 
     def _get_child_data(self, area_dict):
         if area_dict['name'] not in self.bills_results:
