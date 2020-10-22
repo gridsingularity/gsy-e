@@ -221,25 +221,25 @@ class PVExternalMixin(ExternalMixin):
         if not self.connected:
             super()._area_reconfigure_prices(**kwargs)
 
-    def handle_incoming_commands(self):
-        while len(self.pending_requests) > 0:
-            req = self.pending_requests.pop()
-            if req.request_type == "offer":
-                self._offer_impl(req.arguments, req.response_channel)
-            elif req.request_type == "delete_offer":
-                self._delete_offer_impl(req.arguments, req.response_channel)
-            elif req.request_type == "list_offers":
-                self._list_offers_impl(req.arguments, req.response_channel)
-            elif req.request_type == "device_info":
-                self._device_info_impl(req.arguments, req.response_channel)
-            else:
-                assert False, f"Incorrect incoming request name: {req}"
+    def _incoming_commands_callback_selection(self, req):
+        if req.request_type == "offer":
+            self._offer_impl(req.arguments, req.response_channel)
+        elif req.request_type == "delete_offer":
+            self._delete_offer_impl(req.arguments, req.response_channel)
+        elif req.request_type == "list_offers":
+            self._list_offers_impl(req.arguments, req.response_channel)
+        elif req.request_type == "device_info":
+            self._device_info_impl(req.arguments, req.response_channel)
+        else:
+            assert False, f"Incorrect incoming request name: {req}"
 
     def event_tick(self):
         if not self.connected and not self.is_aggregator_controlled:
             super().event_tick()
         else:
-            self.handle_incoming_commands()
+            while len(self.pending_requests) > 0:
+                req = self.pending_requests.pop()
+                self._incoming_commands_callback_selection(req)
         self._dispatch_event_tick_to_external_agent()
 
     def event_offer(self, *, market_id, offer):
@@ -418,19 +418,19 @@ class PVForecastExternalStrategy(PVExternalMixin, PVForecastStrategy):
                                   f"on area {self.device.name} with arguments {arguments}.",
                  "transaction_id": arguments.get("transaction_id", None)})
 
-    def event_tick(self):
-        # only deal with forecast commands here
-        if self.connected:
-            power_forecasts = []
-            for req in self.pending_requests:
-                if req.request_type == "set_pv_power_forecast":
-                    self._set_power_forecast_impl(req.arguments, req.response_channel)
-                    power_forecasts.append(req)
-            # delete them from self.pending_requests
-            for req in power_forecasts:
-                self.pending_requests.remove(req)
-
-        self.handle_incoming_commands()
+    def _incoming_commands_callback_selection(self, req):
+        if req.request_type == "offer":
+            self._offer_impl(req.arguments, req.response_channel)
+        elif req.request_type == "delete_offer":
+            self._delete_offer_impl(req.arguments, req.response_channel)
+        elif req.request_type == "list_offers":
+            self._list_offers_impl(req.arguments, req.response_channel)
+        elif req.request_type == "device_info":
+            self._device_info_impl(req.arguments, req.response_channel)
+        elif req.request_type == "set_pv_power_forecast":
+            self._set_power_forecast_impl(req.arguments, req.response_channel)
+        else:
+            assert False, f"Incorrect incoming request name: {req}"
 
     def event_market_cycle(self):
         self.produced_energy_forecast_kWh()

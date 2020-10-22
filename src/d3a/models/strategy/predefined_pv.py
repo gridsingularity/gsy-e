@@ -169,7 +169,6 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
 
     def area_reconfigure_event(self, **kwargs):
         super().area_reconfigure_event(**kwargs)
-        print("area_reconfigure_event")
         if key_in_dict_and_not_none(kwargs, 'power_profile'):
             self._power_profile_W = kwargs['power_profile']
         self.read_config_event()
