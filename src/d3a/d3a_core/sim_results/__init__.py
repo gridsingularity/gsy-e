@@ -20,9 +20,13 @@ def is_pv_node_type(area):
                             "PVPredefinedExternalStrategy"]
 
 
+def is_finite_power_plant_node_type(area):
+    return area['type'] == "FinitePowerPlant"
+
+
 def is_producer_node_type(area):
     return is_bulk_power_producer(area) or is_pv_node_type(area) or \
-           area['type'] == "FinitePowerPlant"
+           is_finite_power_plant_node_type(area)
 
 
 def is_prosumer_node_type(area):
@@ -44,7 +48,7 @@ def get_unified_area_type(area):
         return "Storage"
     elif is_bulk_power_producer(area) or is_buffer_node_type(area):
         return "MarketMaker"
-    elif area['type'] == "FinitePowerPlant":
+    elif is_finite_power_plant_node_type(area):
         return "FinitePowerPlant"
     else:
         return "Area"
