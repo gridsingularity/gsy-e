@@ -77,9 +77,13 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
            ConstSettings.IAASettings.MARKET_TYPE == 3:
             for market in self.area.all_markets:
-                self.post_bid(market,
-                              self.energy_buy_rate[market.time_slot] * INF_ENERGY, INF_ENERGY,
-                              buyer_origin=self.owner.name)
+                try:
+                    self.post_bid(market,
+                                  self.energy_buy_rate[market.time_slot] * INF_ENERGY,
+                                  INF_ENERGY,
+                                  buyer_origin=self.owner.name)
+                except MarketException:
+                    pass
 
     def get_state(self):
         return {

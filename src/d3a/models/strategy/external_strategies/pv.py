@@ -279,6 +279,13 @@ class PVExternalMixin(ExternalMixin):
 
     def _update_offer_aggregator(self, arguments):
         assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
+        if arguments['price'] < 0.0:
+            return {
+                "command": "update_offer", "status": "error",
+                "area_uuid": self.device.uuid,
+                "error_message": "Update offer is only possible with positive price.",
+                "transaction_id": arguments.get("transaction_id", None)}
+
         with self.lock:
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
