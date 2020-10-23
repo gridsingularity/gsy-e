@@ -117,7 +117,7 @@ class Area:
         log.debug(f"External connection {external_connection_available} for area {self.name}")
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available is True else None
-        self.should_update_child_strategies = True
+        self.should_update_child_strategies = False
 
     def get_state(self):
         if self.strategy is not None:
@@ -303,7 +303,7 @@ class Area:
         if deactivate:
             return
 
-        if self.should_update_child_strategies:
+        if self.should_update_child_strategies is True:
             self._update_descendants_strategy_prices()
             self.should_update_child_strategies = False
 
