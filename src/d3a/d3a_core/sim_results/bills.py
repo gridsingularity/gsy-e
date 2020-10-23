@@ -232,8 +232,7 @@ class MarketEnergyBills:
 
     def _accumulate_grid_fee_charged(self, area_dict, area_core_stats):
         area_stats = area_core_stats.get(area_dict['uuid'])
-        for trade in area_stats.get('trades', []):
-            self.cumulative_fee_charged_per_market += trade['fee_price'] / 100.
+        self.cumulative_fee_charged_per_market += area_stats.get('market_fee', 0.) / 100.
         for child in area_dict['children']:
             self._accumulate_grid_fee_charged(child, area_core_stats)
 
