@@ -136,7 +136,7 @@ class RedisMarketExternalConnection:
                 "error_message": "GridFee parameter conflicting with GlobalConfigFeeType",
                 **base_dict}
 
-        self.area._update_descendants_strategy_prices()
+        self.area.should_update_child_strategies = True
 
         if self.is_aggregator_controlled:
             return ret_val
