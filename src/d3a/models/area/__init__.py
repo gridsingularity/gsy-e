@@ -256,7 +256,7 @@ class Area:
             self.grid_fee_percentage = 0
 
         # Cycle markets without triggering it's own event chain.
-        self._cycle_markets(_trigger_event=False)
+        self.cycle_markets(_trigger_event=False)
 
         if not self.strategy and self.parent is not None:
             self.log.debug("No strategy. Using inter area agent.")
@@ -267,13 +267,13 @@ class Area:
             self.redis_ext_conn.sub_to_external_channels()
 
     def deactivate(self):
-        self._cycle_markets(deactivate=True)
+        self.cycle_markets(deactivate=True)
         if self.redis_ext_conn is not None:
             self.redis_ext_conn.deactivate()
         if self.strategy:
             self.strategy.deactivate()
 
-    def _cycle_markets(self, _trigger_event=True, _market_cycle=False, deactivate=False):
+    def cycle_markets(self, _trigger_event=True, _market_cycle=False, deactivate=False):
         """
         Remove markets for old time slots, add markets for new slots.
         Trigger `MARKET_CYCLE` event to allow child markets to also cycle.
