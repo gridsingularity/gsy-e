@@ -24,6 +24,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
 from d3a_interface.utils import key_in_dict_and_not_none
+# from d3a_interface.exceptions import D3AException
 """
 Create a load that uses a profile as input for its power values
 """
@@ -135,7 +136,7 @@ class LoadForecastStrategy(DefinedLoadStrategy):
     """
         Strategy responsible for reading single forecast consumption data via hardware API
     """
-    parameters = ('daily_load_profile', 'fit_to_limit', 'energy_rate_increase_per_update',
+    parameters = ('power_forecast_W', 'fit_to_limit', 'energy_rate_increase_per_update',
                   'update_interval', 'initial_buying_rate', 'final_buying_rate',
                   'balancing_energy_ratio', 'use_market_maker_rate')
 
@@ -177,7 +178,6 @@ class LoadForecastStrategy(DefinedLoadStrategy):
         # sets energy forecast for next_market
         energy_forecast_Wh = (self.area.config.slot_length / duration(hours=1)) * \
             self.power_forecast_buffer_W
-        assert energy_forecast_Wh >= 0.0
         slot_time = self.area.next_market.time_slot
         self.energy_requirement_Wh[slot_time] = energy_forecast_Wh
         self.state.desired_energy_Wh[slot_time] = energy_forecast_Wh

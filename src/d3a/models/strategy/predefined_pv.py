@@ -25,7 +25,7 @@ from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTyp
 from d3a.d3a_core.util import d3a_path
 from typing import Dict
 from d3a_interface.utils import key_in_dict_and_not_none
-
+# from d3a_interface.exceptions import D3AException
 """
 Creates a PV that uses a profile as input for its power values, either predefined or provided
 by the user.
@@ -178,7 +178,7 @@ class PVForecastStrategy(PVPredefinedStrategy):
     """
         Strategy responsible for reading single production forecast data via hardware API
     """
-    parameters = ('power_profile', 'panel_count', 'initial_selling_rate', 'final_selling_rate',
+    parameters = ('power_forecast_W', 'panel_count', 'initial_selling_rate', 'final_selling_rate',
                   'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
                   'use_market_maker_rate')
 
@@ -211,8 +211,6 @@ class PVForecastStrategy(PVPredefinedStrategy):
         # sets energy forecast for next_market
         energy_forecast_kWh = (self.area.config.slot_length / duration(hours=1)) / 1000 * \
             self.power_forecast_buffer_W
-        assert energy_forecast_kWh >= 0.0
         slot_time = self.area.next_market.time_slot
-        print(self.area.next_market.time_slot_str, "write_to_market", self.power_forecast_buffer_W)
         self.energy_production_forecast_kWh[slot_time] = energy_forecast_kWh
         self.state.available_energy_kWh[slot_time] = energy_forecast_kWh
