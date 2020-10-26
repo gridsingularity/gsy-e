@@ -16,9 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from numpy import random
+from logging import getLogger
 from pendulum import duration, DateTime  # NOQA
 from typing import Union, Dict  # NOQA
 from collections import namedtuple
+
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import LoadState
@@ -33,6 +35,8 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.utils import key_in_dict_and_not_none
 from d3a import constants
+
+log = getLogger(__name__)
 
 BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
@@ -111,15 +115,18 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                  update_interval=update_interval, rate_limit_object=min)
         self.fit_to_limit = fit_to_limit
 
-    def _validate_rates(self):
-        for time_slot in generate_market_slot_list():
-            rate_change = None if self.fit_to_limit else \
-                self.bid_update.energy_rate_change_per_update[time_slot]
+    @staticmethod
+    def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
+                        fit_to_limit):
+        # all parameters have to be validated for each time slot here
+        for time_slot in initial_rate.keys():
+            rate_change = None if fit_to_limit else \
+                energy_rate_change_per_update[time_slot]
             validate_load_device_price(
-                initial_buying_rate=self.bid_update.initial_rate[time_slot],
+                initial_buying_rate=initial_rate[time_slot],
                 energy_rate_increase_per_update=rate_change,
-                final_buying_rate=self.bid_update.final_rate[time_slot],
-                fit_to_limit=self.bid_update.fit_to_limit)
+                final_buying_rate=final_rate[time_slot],
+                fit_to_limit=fit_to_limit)
 
     def event_activate(self):
         self._calculate_active_markets()
@@ -160,27 +167,49 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def _area_reconfigure_prices(self, **kwargs):
         if key_in_dict_and_not_none(kwargs, 'initial_buying_rate'):
-            self.bid_update.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                  kwargs['initial_buying_rate'])
+            initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                  kwargs['initial_buying_rate'])
+        else:
+            initial_rate = self.bid_update.initial_rate
         if key_in_dict_and_not_none(kwargs, 'final_buying_rate'):
-            self.bid_update.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                kwargs['final_buying_rate'])
+            final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                kwargs['final_buying_rate'])
+        else:
+            final_rate = self.bid_update.final_rate
         if key_in_dict_and_not_none(kwargs, 'energy_rate_increase_per_update'):
-            self.bid_update.energy_rate_change_per_update = \
+            energy_rate_change_per_update = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                        kwargs['energy_rate_increase_per_update'])
+
+        else:
+            energy_rate_change_per_update = self.bid_update.energy_rate_change_per_update
         if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
-            self.bid_update.fit_to_limit = kwargs['fit_to_limit']
+            fit_to_limit = kwargs['fit_to_limit']
+        else:
+            fit_to_limit = self.bid_update.fit_to_limit
         if key_in_dict_and_not_none(kwargs, 'update_interval'):
             if isinstance(kwargs['update_interval'], int):
                 update_interval = duration(minutes=kwargs['update_interval'])
             else:
                 update_interval = kwargs['update_interval']
-            self.bid_update.update_interval = update_interval
+        else:
+            update_interval = self.bid_update.update_interval
+
         if key_in_dict_and_not_none(kwargs, 'use_market_maker_rate'):
             self.use_market_maker_rate = kwargs['use_market_maker_rate']
 
-        self._validate_rates()
+        try:
+            self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
+                                 fit_to_limit)
+        except Exception as e:
+            log.error(str(e))
+            return
+
+        self.bid_update.initial_rate = initial_rate
+        self.bid_update.final_rate = final_rate
+        self.bid_update.energy_rate_change_per_update = energy_rate_change_per_update
+        self.bid_update.fit_to_limit = fit_to_limit
+        self.bid_update.update_interval = update_interval
 
     def area_reconfigure_event(self, **kwargs):
         if key_in_dict_and_not_none(kwargs, 'hrs_per_day') or \
@@ -197,8 +226,16 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def event_activate_price(self):
         # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
         if self.use_market_maker_rate:
-            self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate)
-        self._validate_rates()
+            if isinstance(GlobalConfig.market_maker_rate, dict):
+                self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate.get(
+                    self.owner.parent.next_market.time_slot, 0) +
+                        self.owner.get_path_to_root_fees())
+            else:
+                self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate +
+                                            self.owner.get_path_to_root_fees())
+        self._validate_rates(self.bid_update.initial_rate, self.bid_update.final_rate,
+                             self.bid_update.energy_rate_change_per_update,
+                             self.bid_update.fit_to_limit)
         self.bid_update.update_on_activate()
         self._set_alternative_pricing_scheme()
 
@@ -292,10 +329,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
                         self.state.desired_energy_Wh[market.time_slot]
                 else:
                     bid_energy = self.energy_requirement_Wh[market.time_slot]
-                if not self.are_bids_posted(market.id):
-                    self.post_first_bid(market, bid_energy)
-                else:
-                    self.bid_update.update_market_cycle_bids(self)
+                try:
+                    if not self.are_bids_posted(market.id):
+                        self.post_first_bid(market, bid_energy)
+                    else:
+                        self.bid_update.update_market_cycle_bids(self)
+                except MarketException:
+                    pass
 
     def event_balancing_market_cycle(self):
         for market in self.active_markets:

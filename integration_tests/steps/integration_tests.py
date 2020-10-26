@@ -31,10 +31,9 @@ from d3a.models.config import SimulationConfig
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.simulation import Simulation
 from d3a.d3a_core.util import d3a_path
+from d3a_interface.utils import get_area_name_uuid_mapping
 from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
 from d3a_interface.constants_limits import ConstSettings
-from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
-    get_number_of_unmatched_loads
 from d3a import constants
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
@@ -204,22 +203,15 @@ def load_profile_scenario(context):
     context._settings.area = predefined_load_scenario
 
 
-@given('d3a uses an one-sided market')
-def one_sided_market(context):
+@given('d3a uses an {market_type} market')
+def one_sided_market(context, market_type):
     from d3a_interface.constants_limits import ConstSettings
-    ConstSettings.IAASettings.MARKET_TYPE = 1
-
-
-@given('d3a uses an two-sided pay-as-bid market')
-def two_sided_pay_as_bid_market(context):
-    from d3a_interface.constants_limits import ConstSettings
-    ConstSettings.IAASettings.MARKET_TYPE = 2
-
-
-@given('d3a uses an two-sided pay-as-clear market')
-def two_sided_pay_as_clear_market(context):
-    from d3a_interface.constants_limits import ConstSettings
-    ConstSettings.IAASettings.MARKET_TYPE = 3
+    if market_type == "one-sided":
+        ConstSettings.IAASettings.MARKET_TYPE = 1
+    elif market_type == "two-sided-pay-as-bid":
+        ConstSettings.IAASettings.MARKET_TYPE = 2
+    if market_type == "two-sided-pay-as-clear":
+        ConstSettings.IAASettings.MARKET_TYPE = 3
 
 
 @given('d3a dispatches events from top to bottom')
@@ -298,6 +290,16 @@ def run_sim_console_alt_price(context, scenario):
     os.makedirs(context.export_path, exist_ok=True)
     os.system("d3a -l FATAL run -d 2h -t 15s --setup={scenario} --export-path={export_path} "
               "--compare-alt-pricing".format(export_path=context.export_path, scenario=scenario))
+
+
+@when('we run the d3a simulation on console with {scenario} for {hours} hrs slot_length: '
+      '{slot_length}m, tick_length: {tick_length}s and markets: {market_count}')
+def run_simulation_via_console(context, scenario, hours, slot_length,
+                               tick_length, market_count):
+    context.export_path = os.path.join(context.simdir, scenario)
+    os.makedirs(context.export_path, exist_ok=True)
+    os.system(f"d3a -l FATAL run -d {hours}h -t {tick_length}s -s {slot_length}m "
+              f"-m {market_count} --seed 0 --setup={scenario} --export-path={context.export_path}")
 
 
 @when('we run the d3a simulation with cloud_coverage [{cloud_coverage}] and {scenario}')
@@ -630,6 +632,12 @@ def run_sim_market_count(context, scenario):
     context.simulation_4 = context.simulation
 
 
+@given('export {flag}')
+@when('export {flag}')
+def export_logic(context, flag):
+    context.no_export = True if flag == 'isnt_needed' else False
+
+
 @when('we run the simulation with setup file {scenario} and parameters '
       '[{total_duration}, {slot_length}, {tick_length}, {market_count}]')
 @then('we run the simulation with setup file {scenario} and parameters '
@@ -652,9 +660,9 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
     paused = False
     pause_after = duration()
     repl = False
-    no_export = True
-    export_path = None
     export_subdir = None
+    context.export_path = os.path.join(context.simdir, scenario)
+    os.makedirs(context.export_path, exist_ok=True)
     try:
         context.simulation = Simulation(
             scenario,
@@ -665,8 +673,8 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
             paused,
             pause_after,
             repl,
-            no_export,
-            export_path,
+            context.no_export,
+            context.export_path,
             export_subdir,
         )
         context.simulation.run()
@@ -678,21 +686,20 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
 @then('we test the output of the simulation of '
       '{scenario} [{sim_duration}, {slot_length}, {tick_length}]')
 def test_output(context, scenario, sim_duration, slot_length, tick_length):
+    from integration_tests.steps.integration_tests import get_simulation_raw_results
+    get_simulation_raw_results(context)
 
     if scenario in ["default_2a", "default_2b", "default_3"]:
-        unmatched_loads, unmatched_loads_redis = \
-            ExportUnmatchedLoads(context.simulation.area).get_current_market_results(
-                all_past_markets=True)
-        assert get_number_of_unmatched_loads(unmatched_loads) == 0
-    # (check if number of last slot is the maximal number of slots):
-    no_of_slots = int(int(sim_duration) * 60 / int(slot_length))
-    assert no_of_slots == context.simulation.area.current_slot
+        from integration_tests.steps.two_sided_market import no_unmatched_loads
+        no_unmatched_loads(context)
+
+    # (check if simulation successfully finished):
+    assert len(context.raw_sim_data.keys()) == 24
     if scenario == "default":
-        street1 = list(filter(lambda x: x.name == "Street 1", context.simulation.area.children))[0]
-        house1 = list(filter(lambda x: x.name == "S1 House 1", street1.children))[0]
-        permanent_load = list(filter(lambda x: x.name == "S1 H1 Load", house1.children))[0]
-        energy_profile = [ki for ki in permanent_load.strategy.state.desired_energy_Wh.values()]
-        assert all([permanent_load.strategy.energy == ei for ei in energy_profile])
+        assert {"Street 1", "S1 House 1", "S1 H1 Load"}.\
+            issubset(set(context.name_uuid_map.keys()))
+        for time_slot, core_stats in context.raw_sim_data.items():
+            assert 'load_profile_kWh' in core_stats[context.name_uuid_map['S1 H1 Load']].keys()
 
 
 @then('the energy bills report the correct accumulated traded energy price')
@@ -922,12 +929,12 @@ def test_infinite_plant_energy_rate(context, plant_name):
     for market in grid.past_markets:
         for trade in market.trades:
             assert trade.buyer is not finite.name
-            trade.offer.market = market
+            trade.offer.next_market = market
             if trade.seller == finite.name:
                 trades_sold.append(trade)
 
     assert all([isclose(trade.offer.price / trade.offer.energy,
-                        market_maker_rate[trade.offer.market.time_slot])
+                        market_maker_rate[trade.offer.next_market.time_slot])
                 for trade in trades_sold])
     assert len(trades_sold) > 0
 
@@ -1059,6 +1066,67 @@ def identical_cumulative_bills(context):
 def identical_profiles(context):
     device_stats_dict = context.simulation.endpoint_buffer.device_statistics.device_stats_dict
     load_profile = device_stats_dict['House 1']['H1 DefinedLoad']['load_profile_kWh']
-    for time_slot, value in load_profile.items():
-        if time_slot.add(days=1) < today(tz=TIME_ZONE).add(days=2):
-            assert value == load_profile[time_slot.add(days=1)]
+    load_profile_ts = {int(from_format(time_slot, DATE_TIME_FORMAT).timestamp()): value
+                       for time_slot, value in load_profile.items()}
+    start = int(list(load_profile_ts.keys())[0])
+    end = int(list(load_profile_ts.keys())[23])
+    assert all([load_profile_ts[i] == load_profile_ts[i + 86400] for i in range(start, end, 3600)])
+
+
+@then("the PV initial selling rate subtracts grid fees")
+def pv_selling_rate_minus_fees(context):
+    grid = context.simulation.area
+    hood2 = list(filter(lambda x: x.name == "Neighborhood 2", context.simulation.area.children))[0]
+    house2 = list(filter(lambda x: x.name == "House 2", hood2.children))[0]
+    pv = list(filter(lambda x: x.name == "H2 PV", house2.children))[0]
+
+    market_maker_rate = 30
+    fees_path_to_root = grid.grid_fee_constant + hood2.grid_fee_constant + house2.grid_fee_constant
+    trades_sold = []
+    for market in grid.past_markets:
+        for trade in market.trades:
+            assert trade.buyer is not pv.name
+            trade.offer.next_market = market
+            if trade.seller == pv.name:
+                trades_sold.append(trade)
+
+    assert all([isclose(trade.offer.price / trade.offer.energy,
+                        market_maker_rate - fees_path_to_root)
+                for trade in trades_sold])
+
+
+@then("the load initial buying rate adds grid fees")
+def load_buying_rate_plus_fees(context):
+    grid = context.simulation.area
+    hood1 = list(filter(lambda x: x.name == "Neighborhood 1", context.simulation.area.children))[0]
+    house1 = list(filter(lambda x: x.name == "House 1", hood1.children))[0]
+    load = list(filter(lambda x: x.name == "H1 General Load", house1.children))[0]
+
+    market_maker_rate = 30
+    fees_path_to_root = grid.grid_fee_constant + hood1.grid_fee_constant + house1.grid_fee_constant
+    trades_bought = []
+    for market in grid.past_markets:
+        for trade in market.trades:
+            assert trade.seller is not load.name
+            trade.offer.next_market = market
+            if trade.buyer == load.name:
+                trades_bought.append(trade)
+
+    assert all([isclose(trade.offer.price / trade.offer.energy,
+                        market_maker_rate + fees_path_to_root)
+                for trade in trades_bought])
+
+
+def get_simulation_raw_results(context):
+    area_tree_summary = glob.glob(os.path.join(context.export_path, "*", "area_tree_summary.json"))
+    with open(area_tree_summary[0], "r") as sf:
+        context.area_tree_summary_data = json.load(sf)
+    context.name_uuid_map = get_area_name_uuid_mapping(context.area_tree_summary_data)
+
+    raw_data_dir_path = glob.glob(os.path.join(context.export_path, "*", "raw_data", "*"))
+    context.raw_sim_data = {}
+    for raw in raw_data_dir_path:
+        time = raw.split("/")[-1].split('.')[0]
+        with open(raw, "r") as sf:
+            parsed_raw_data = json.load(sf)
+            context.raw_sim_data[time] = parsed_raw_data

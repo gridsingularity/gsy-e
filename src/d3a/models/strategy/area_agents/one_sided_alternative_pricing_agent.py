@@ -15,12 +15,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import sys
-
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.sim_results.area_statistics import _is_house_node
 from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy import INF_ENERGY
 from d3a_interface.constants_limits import ConstSettings
 
 
@@ -74,7 +73,7 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
 
     def event_market_cycle(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            energy_per_slot = int(sys.maxsize)
+            energy_per_slot = INF_ENERGY
             energy_rate = self.owner.config.market_maker_rate[self.lower_market.time_slot]
 
             self.lower_market.offer(

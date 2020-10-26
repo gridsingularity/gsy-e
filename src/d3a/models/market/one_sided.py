@@ -23,10 +23,8 @@ from d3a.events.event_structures import MarketEvent
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.market import Market, lock_market_action
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
-    OfferNotFoundException, InvalidTrade
+    OfferNotFoundException, InvalidTrade, MarketException
 from d3a.d3a_core.util import short_offer_bid_log_str
-from d3a.models.market.blockchain_interface import MarketBlockchainInterface, \
-    NonBlockchainInterface
 from d3a_interface.constants_limits import ConstSettings
 
 log = getLogger(__name__)
@@ -39,9 +37,6 @@ class OneSidedMarket(Market):
                  transfer_fees=None, name=None, in_sim_duration=True):
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          transfer_fees, name)
-        self.bc_interface = MarketBlockchainInterface(bc) \
-            if bc is not None \
-            else NonBlockchainInterface()
         self.in_sim_duration = in_sim_duration
 
     def __repr__(self):  # pragma: no cover
@@ -89,6 +84,9 @@ class OneSidedMarket(Market):
         if adapt_price_with_fees:
             price = self._update_new_offer_price_with_fee(price, original_offer_price, energy)
 
+        if price < 0.0:
+            raise MarketException("Negative price after taxes, offer cannot be posted.")
+
         if offer_id is None:
             offer_id = self.bc_interface.create_new_offer(energy, price, seller)
         offer = Offer(offer_id, self.now, price, energy, seller, original_offer_price,
@@ -129,7 +127,7 @@ class OneSidedMarket(Market):
             fees = self.fee_class.grid_fee_rate * energy
         else:
             fees = self.fee_class.grid_fee_rate * original_price * energy_portion
-        return fees, energy * trade_rate - fees
+        return fees, energy * trade_rate
 
     @classmethod
     def _calculate_original_prices(cls, offer):

@@ -64,7 +64,6 @@ class AreaMarkets:
             self._market_rotation(current_time=current_time, markets=self.balancing_markets,
                                   past_markets=self.past_balancing_markets,
                                   area_agent=dispatcher.balancing_agents)
-        stats.update_accumulated()
         self._indexed_future_markets = {
             m.id: m for m in self.all_future_spot_markets
         }
