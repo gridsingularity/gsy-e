@@ -87,7 +87,7 @@ class TestAreaClass(unittest.TestCase):
         for i in range(2, 97):
             self.config.market_count = i
             self.config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
-            self.area._cycle_markets(False, False)
+            self.area.cycle_markets(False, False)
             assert len(self.area.all_markets) == i
 
     def test_delete_past_markets_instead_of_last(self):
@@ -97,7 +97,7 @@ class TestAreaClass(unittest.TestCase):
         self.area.activate()
         self.area._bc = None
 
-        self.area._cycle_markets(False, False, False)
+        self.area.cycle_markets(False, False, False)
         assert len(self.area.past_markets) == 0
 
         current_time = today(tz=TIME_ZONE).add(hours=1)
@@ -118,7 +118,7 @@ class TestAreaClass(unittest.TestCase):
         self.area.activate()
         self.area._bc = None
 
-        self.area._cycle_markets(False, False, False)
+        self.area.cycle_markets(False, False, False)
         assert len(self.area.past_markets) == 0
 
         current_time = today(tz=TIME_ZONE).add(hours=1)
@@ -186,7 +186,7 @@ class TestAreaClass(unittest.TestCase):
 
         assert len(self.area.balancing_markets) == 5
         self.area.current_tick = 900
-        self.area._cycle_markets()
+        self.area.cycle_markets()
         assert len(self.area.past_markets) == 1
         assert len(self.area.past_balancing_markets) == 1
         assert len(self.area.all_markets) == 5
@@ -258,7 +258,7 @@ class TestEventDispatcher(unittest.TestCase):
         assert self.area.dispatcher._should_dispatch_to_strategies_appliances(
             AreaEvent.MARKET_CYCLE)
 
-    @parameterized.expand([(AreaEvent.MARKET_CYCLE, "_cycle_markets"),
+    @parameterized.expand([(AreaEvent.MARKET_CYCLE, "cycle_markets"),
                            (AreaEvent.ACTIVATE, "activate"),
                            (AreaEvent.TICK, "tick")])
     def test_event_listener_calls_area_methods_for_area_events(self, event_type, area_method):

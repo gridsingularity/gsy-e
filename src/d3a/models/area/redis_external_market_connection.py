@@ -102,6 +102,8 @@ class RedisMarketExternalConnection:
             self.redis_com.publish_json(market_stats_response_channel, ret_val)
 
     def set_grid_fees_callback(self, payload):
+        # TODO: This function should reuse the area_reconfigure_event function
+        # since they share the same functionality.
         grid_fees_response_channel = f"{self.channel_prefix}/response/grid_fees"
         payload_data = payload["data"] \
             if isinstance(payload["data"], dict) else json.loads(payload["data"])
@@ -133,6 +135,8 @@ class RedisMarketExternalConnection:
                 "status": "error",
                 "error_message": "GridFee parameter conflicting with GlobalConfigFeeType",
                 **base_dict}
+
+        self.area.should_update_child_strategies = True
 
         if self.is_aggregator_controlled:
             return ret_val
