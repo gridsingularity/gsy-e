@@ -177,6 +177,24 @@ def offer_or_bid_from_JSON_string(offer_or_bid, current_time):
         return Bid(**offer_bid_dict)
 
 
+def _is_offer(offer_or_bid):
+    offer_bid_dict = json.loads(offer_or_bid)
+    object_type = offer_bid_dict.pop("type")
+    if object_type == "Offer":
+        return True
+    else:
+        return False
+
+
+def _is_bid(offer_or_bid):
+    offer_bid_dict = json.loads(offer_or_bid)
+    object_type = offer_bid_dict.pop("type")
+    if object_type == "Bid":
+        return True
+    else:
+        return False
+
+
 class TradeBidInfo(namedtuple('TradeBidInfo',
                               ('original_bid_rate', 'propagated_bid_rate',
                                'original_offer_rate', 'propagated_offer_rate',
@@ -252,6 +270,20 @@ def trade_from_JSON_string(trade_string, current_time):
         trade_dict['residual'] = offer_or_bid_from_JSON_string(trade_dict['residual'],
                                                                current_time)
     trade_dict['time'] = parse(trade_dict['time'])
+    if 'offer_bid_trade_info' in trade_dict:
+        if len(trade_dict['offer_bid_trade_info']) == 5:
+            trade_dict['offer_bid_trade_info'] = TradeBidInfo(*trade_dict['offer_bid_trade_info'])
+        elif len(trade_dict['offer_bid_trade_info']) == 3:
+            if _is_bid(trade_string):
+                trade_dict['offer_bid_trade_info'].insert(2, None)
+                trade_dict['offer_bid_trade_info'].insert(3, None)
+                trade_dict['offer_bid_trade_info'] = TradeBidInfo(
+                    *trade_dict['offer_bid_trade_info'])
+            elif _is_offer(trade_string):
+                trade_dict['offer_bid_trade_info'].insert(0, None)
+                trade_dict['offer_bid_trade_info'].insert(1, None)
+                trade_dict['offer_bid_trade_info'] = TradeBidInfo(
+                    *trade_dict['offer_bid_trade_info'])
     # if 'offer_bid_trade_info' in trade_dict:
     #     trade_dict['offer_bid_trade_info'] = TradeBidInfo(*trade_dict['offer_bid_trade_info'])
     return Trade(**trade_dict)
