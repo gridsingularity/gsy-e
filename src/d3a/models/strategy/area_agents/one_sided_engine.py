@@ -31,7 +31,7 @@ ResidualInfo = namedtuple('ResidualInfo', ('forwarded', 'age'))
 
 class IAAEngine:
     def __init__(self, name: str, market_1, market_2, min_offer_age: int,
-                 owner: "InterAreaAgent"):
+                 owner):
         self.name = name
         self.markets = Markets(market_1, market_2)
         self.min_offer_age = min_offer_age
@@ -72,7 +72,12 @@ class IAAEngine:
         if offer.price < 0.0:
             self.owner.log.debug("Offer is not forwarded because price < 0")
             return
-        forwarded_offer = self._offer_in_market(offer)
+        try:
+            forwarded_offer = self._offer_in_market(offer)
+        except MarketException:
+            self.owner.log.debug("Offer is not forwarded because grid fees of the target market "
+                                 "lead to a negative offer price.")
+            return
 
         self._add_to_forward_offers(offer, forwarded_offer)
         self.owner.log.trace(f"Forwarding offer {offer} to {forwarded_offer}")
@@ -143,7 +148,13 @@ class IAAEngine:
                 f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
             try:
-                trade_offer_rate = trade.offer.energy_rate
+                if ConstSettings.IAASettings.MARKET_TYPE == 1:
+                    # One sided market should subtract the fees
+                    trade_offer_rate = trade.offer.energy_rate - \
+                                       trade.fee_price / trade.offer.energy
+                else:
+                    # trade_offer_rate not used in two sided markets, trade_bid_info used instead
+                    trade_offer_rate = None
                 updated_trade_bid_info = \
                     self.markets.source.fee_class.update_forwarded_offer_trade_original_info(
                         trade.offer_bid_trade_info, offer_info.source_offer)

@@ -312,7 +312,8 @@ class SimulationEndpointBuffer:
         if self.current_market_time_slot_str == "":
             return
         for area_uuid, area_result in self.flattened_area_core_stats_dict.items():
-            self.bids_offers_trades[area_uuid] = area_result
+            self.bids_offers_trades[area_uuid] = \
+                {k: area_result[k] for k in ('offers', 'bids', 'trades')}
 
     def _merge_cumulative_bills_into_bills_for_market_info(self, area_dict):
         bills = self.market_bills.bills_redis_results[area_dict['uuid']]
