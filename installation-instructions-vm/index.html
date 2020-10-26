@@ -1154,8 +1154,8 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#windows-environment-settings" title="Windows environment settings" class="md-nav__link">
-    Windows environment settings
+  <a href="#windows-environment-settings-not-always-required" title="Windows environment settings (not always required)" class="md-nav__link">
+    Windows environment settings (not always required)
   </a>
   
 </li>
@@ -1358,8 +1358,8 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#windows-environment-settings" title="Windows environment settings" class="md-nav__link">
-    Windows environment settings
+  <a href="#windows-environment-settings-not-always-required" title="Windows environment settings (not always required)" class="md-nav__link">
+    Windows environment settings (not always required)
   </a>
   
 </li>
@@ -1445,7 +1445,7 @@
                 
                 <h2 id="how-to-install-d3a-using-a-virtual-machine-useful-especially-on-windows">How to Install D3A using a Virtual Machine (useful especially on Windows)<a class="headerlink" href="#how-to-install-d3a-using-a-virtual-machine-useful-especially-on-windows" title="Permanent link">&para;</a></h2>
 <h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
-<h5 id="windows-environment-settings">Windows environment settings<a class="headerlink" href="#windows-environment-settings" title="Permanent link">&para;</a></h5>
+<h5 id="windows-environment-settings-not-always-required">Windows environment settings (not always required)<a class="headerlink" href="#windows-environment-settings-not-always-required" title="Permanent link">&para;</a></h5>
 <ol>
 <li>Enable <a href="https://stackoverflow.com/a/34305608/13507565">Intel Virtualization</a> on your computer in <a href="https://2nwiki.2n.cz/pages/viewpage.action?pageId=75202968">BIOS</a>.</li>
 <li>Go to your <a href="https://www.windowscentral.com/how-manage-optional-features-windows-10">Windows Features</a> setting and disable Windows Hypervisor Platform (or Hyper-V) and enable Virtual Machine Platform.</li>
@@ -1529,7 +1529,7 @@ d3a run
 
 <h5 id="how-to-get-d3a-api-client-in-vagrant">How to get d3a-api-client in Vagrant<a class="headerlink" href="#how-to-get-d3a-api-client-in-vagrant" title="Permanent link">&para;</a></h5>
 <p>To run a d3a api client script you need to be working under the <code>api-client</code> environment</p>
-<div class="codehilite"><pre><span></span><code>source envs/api-client/bin/activate
+<div class="codehilite"><pre><span></span><code>source /home/vagrant/envs/api-client/bin/activate
 </code></pre></div>
 
 <p>To run your API script, run the following command (templates <a href="https://github.com/gridsingularity/d3a/tree/master/src/d3a/setup/odyssey_momentum">here</a>) : </p>
