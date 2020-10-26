@@ -25,7 +25,7 @@ from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTyp
 from d3a.d3a_core.util import d3a_path
 from typing import Dict
 from d3a_interface.utils import key_in_dict_and_not_none
-# from d3a_interface.exceptions import D3AException
+
 """
 Creates a PV that uses a profile as input for its power values, either predefined or provided
 by the user.

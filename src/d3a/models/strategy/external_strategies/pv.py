@@ -376,48 +376,6 @@ class PVForecastExternalStrategy(PVExternalMixin, PVForecastStrategy):
         return {**self._channel_dict,
                 f'{self.channel_prefix}/set_power_forecast': self._set_power_forecast}
 
-    # def _set_power_forecast(self, payload):
-    #     transaction_id = self._get_transaction_id(payload)
-    #     power_forecast_response_channel = f'{self.channel_prefix}/response/set_pv_power_forecast'
-    #     if not check_for_connected_and_reply(self.redis, power_forecast_response_channel,
-    #                                          self.connected):
-    #         return
-    #     try:
-    #         arguments = json.loads(payload["data"])
-    #         assert set(arguments.keys()) == {'pv_power_forecast', 'transaction_id'}
-    #     except Exception as e:
-    #         logging.error(
-    #             f"Incorrect _set_power_forecast request. Payload {payload}. Exception {str(e)}.")
-    #         self.redis.publish_json(
-    #             power_forecast_response_channel,
-    #             {"command": "set_pv_power_forecast",
-    #              "error": "Incorrect _set_power_forecast request. "
-    #                       "Available parameters: (pv_power_forecast).",
-    #              "transaction_id": transaction_id})
-    #     else:
-    #         self.pending_requests.append(
-    #             IncomingRequest("set_pv_power_forecast", arguments,
-    #                             power_forecast_response_channel))
-    #
-    # def _set_power_forecast_impl(self, arguments, response_channel):
-    #     try:
-    #         assert arguments["pv_power_forecast"] >= 0.0
-    #         self.power_forecast_buffer_W = arguments["pv_power_forecast"]
-    #         self.redis.publish_json(
-    #             response_channel,
-    #             {"command": "set_pv_power_forecast", "status": "ready",
-    #              "transaction_id": arguments.get("transaction_id", None)})
-    #     except Exception as e:
-    #         logging.error(f"Error when handling _set_power_forecast_impl "
-    #                       f"on area {self.device.name}: "
-    #                       f"Exception: {str(e)}, Arguments: {arguments}")
-    #         self.redis.publish_json(
-    #             response_channel,
-    #             {"command": "set_pv_power_forecast", "status": "error",
-    #              "error_message": f"Error when handling _set_power_forecast_impl "
-    #                               f"on area {self.device.name} with arguments {arguments}.",
-    #              "transaction_id": arguments.get("transaction_id", None)})
-
     def _incoming_commands_callback_selection(self, req):
         if req.request_type == "offer":
             self._offer_impl(req.arguments, req.response_channel)
