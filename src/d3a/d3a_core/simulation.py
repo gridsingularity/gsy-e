@@ -351,7 +351,7 @@ class Simulation:
 
             self.global_objects.update(self.area)
 
-            self.area._cycle_markets()
+            self.area.cycle_markets()
 
             gc.collect()
             process = psutil.Process(os.getpid())
