@@ -16,11 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
+import sys
 from logging import getLogger
 from typing import List, Dict, Any, Union  # noqa
 from uuid import uuid4
 
-from d3a.d3a_core.exceptions import SimulationException
+from d3a.d3a_core.exceptions import SimulationException, D3AException
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
@@ -36,6 +37,9 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a import constants
 
 log = getLogger(__name__)
+
+
+INF_ENERGY = int(sys.maxsize)
 
 
 class _TradeLookerUpper:
@@ -128,9 +132,14 @@ class Offers:
     def posted_offer_energy(self, market_id):
         return sum(o.energy for o in self.posted_in_market(market_id))
 
-    def can_offer_be_posted(self, offer_energy, available_energy, market):
-        posted_energy = (offer_energy + self.posted_offer_energy(market.id))
-        return posted_energy <= available_energy
+    def sold_offer_energy(self, market_id):
+        return sum(o.energy for o in self.sold_in_market(market_id))
+
+    def can_offer_be_posted(self, offer_energy, offer_price, available_energy, market):
+        posted_energy = (offer_energy
+                         + self.posted_offer_energy(market.id)
+                         - self.sold_offer_energy(market.id))
+        return posted_energy <= available_energy and offer_price >= 0.0
 
     def sold_in_market(self, market_id):
         return self.sold[market_id] if market_id in self.sold else {}
@@ -409,11 +418,30 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             assert trade.offer.energy_rate >= \
                 offer.energy_rate - FLOATING_POINT_TOLERANCE
 
-    def can_offer_be_posted(self, offer_energy, available_energy, market):
-        return self.offers.can_offer_be_posted(offer_energy, available_energy, market)
+    def can_offer_be_posted(self, offer_energy, offer_price, available_energy, market):
+        return self.offers.can_offer_be_posted(offer_energy, offer_price, available_energy, market)
 
     def deactivate(self):
         pass
+
+    def event_activate_price(self):
+        pass
+
+    def get_state(self):
+        try:
+            return self.state.get_state()
+        except AttributeError:
+            raise D3AException(
+                "Strategy does not have a state. "
+                "State is required to support save state functionality.")
+
+    def restore_state(self, saved_state):
+        try:
+            self.state.restore_state(saved_state)
+        except AttributeError:
+            raise D3AException(
+                "Strategy does not have a state. "
+                "State is required to support load state functionality.")
 
 
 class BidEnabledStrategy(BaseStrategy):
@@ -434,9 +462,9 @@ class BidEnabledStrategy(BaseStrategy):
         self.add_bid_to_posted(market.id, bid)
         return bid
 
-    def can_bid_be_posted(self, bid_energy, required_energy_kWh, market):
+    def can_bid_be_posted(self, bid_energy, bid_price, required_energy_kWh, market):
         posted_energy = (bid_energy + self.posted_bid_energy(market.id))
-        return posted_energy <= required_energy_kWh
+        return posted_energy <= required_energy_kWh and bid_price >= 0.0
 
     def is_bid_posted(self, market, bid_id):
         return bid_id in [bid.id for bid in self.get_posted_bids(market)]
@@ -491,8 +519,8 @@ class BidEnabledStrategy(BaseStrategy):
         # it needs to be updated. If this check is not there, the market cycle event will post
         # one bid twice, which actually happens on the very first market slot cycle.
         if not all(bid.buyer != self.owner.name for bid in market.get_bids().values()):
-            self.owner.log.warning(f"There is already another bid posted on the market, therefore"
-                                   f" do not repost another first bid.")
+            self.owner.log.warning("There is already another bid posted on the market, therefore"
+                                   " do not repost another first bid.")
             return None
         return self.post_bid(
             market,

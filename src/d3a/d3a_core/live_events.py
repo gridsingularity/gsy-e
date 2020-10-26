@@ -24,6 +24,8 @@ class CreateAreaEvent:
             # The order of the following activation calls matters:
             self.created_area.parent = area
             area.children.append(self.created_area)
+            if not area._markets.markets:
+                area.cycle_markets(_trigger_event=False)
             self.created_area.activate(current_tick=area.current_tick)
             if self.created_area.strategy:
                 self.created_area.strategy.event_activate()

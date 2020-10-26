@@ -304,9 +304,9 @@ def test_can_offer_be_posted(base):
     base.offers.post(Offer('id', pendulum.now(), price=1, energy=12, seller='A'), market.id)
     base.offers.post(Offer('id2', pendulum.now(), price=1, energy=13, seller='A'), market.id)
     base.offers.post(Offer('id3', pendulum.now(), price=1, energy=20, seller='A'), market.id)
-    assert base.can_offer_be_posted(4.999, 50, market) is True
-    assert base.can_offer_be_posted(5.0, 50, market) is True
-    assert base.can_offer_be_posted(5.001, 50, market) is False
+    assert base.can_offer_be_posted(4.999, 1, 50, market) is True
+    assert base.can_offer_be_posted(5.0, 1, 50, market) is True
+    assert base.can_offer_be_posted(5.001, 1, 50, market) is False
 
 
 def test_can_bid_be_posted(base):
@@ -318,6 +318,6 @@ def test_can_bid_be_posted(base):
     base.post_bid(market, 1, 23)
     base.post_bid(market, 1, 27)
     base.post_bid(market, 1, 10)
-    assert base.can_bid_be_posted(9.999, 70, market) is True
-    assert base.can_bid_be_posted(10.0, 70, market) is True
-    assert base.can_bid_be_posted(10.001, 70, market) is False
+    assert base.can_bid_be_posted(9.999, 1, 70, market) is True
+    assert base.can_bid_be_posted(10.0, 1, 70, market) is True
+    assert base.can_bid_be_posted(10.001, 1, 70, market) is False

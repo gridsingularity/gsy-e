@@ -37,6 +37,8 @@ def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.LoadSettings.INITIAL_BUYING_RATE = 0
     ConstSettings.LoadSettings.FINAL_BUYING_RATE = 35
+    ConstSettings.IAASettings.MIN_BID_AGE = 0
+    ConstSettings.IAASettings.MIN_OFFER_AGE = 0
 
     area = Area(
         'Grid',

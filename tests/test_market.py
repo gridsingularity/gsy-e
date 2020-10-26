@@ -759,7 +759,8 @@ class MarketStateMachine(RuleBasedStateMachine):
     def new_actor(self, actor):
         return actor
 
-    @rule(target=offers, seller=actors, energy=st.integers(min_value=1), price=st.integers())
+    @rule(target=offers, seller=actors, energy=st.integers(min_value=1),
+          price=st.integers(min_value=0))
     def offer(self, seller, energy, price):
         return self.market.offer(price, energy, seller, seller)
 

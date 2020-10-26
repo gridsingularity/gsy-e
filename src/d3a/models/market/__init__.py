@@ -35,6 +35,8 @@ from d3a.models.market.market_redis_connection import MarketRedisEventSubscriber
     MarketRedisEventPublisher, TwoSidedMarketRedisEventSubscriber
 from d3a.models.market.grid_fees.base_model import GridFees
 from d3a.models.market.grid_fees.constant_grid_fees import ConstantGridFees
+from d3a.models.market.blockchain_interface import SubstrateBlockchainInterface, \
+    NonBlockchainInterface
 
 log = getLogger(__name__)
 
@@ -63,7 +65,10 @@ class Market:
                  grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
                  transfer_fees: TransferFees = None, name=None):
         self.name = name
-        self.bc = bc
+        if bc is not None:
+            self.bc_interface = SubstrateBlockchainInterface(bc)
+        else:
+            self.bc_interface = NonBlockchainInterface()
         self.id = str(uuid.uuid4())
         self.time_slot = time_slot
         self.time_slot_str = time_slot.format(DATE_TIME_FORMAT) \
@@ -77,6 +82,7 @@ class Market:
         self.bids = {}  # type: Dict[str, Bid]
         self.bid_history = []  # type: List[Bid]
         self.trades = []  # type: List[Trade]
+        self.const_fee_rate = None
 
         self._create_fee_handler(grid_fee_type, transfer_fees)
         self.market_fee = 0
@@ -112,6 +118,7 @@ class Market:
                 self.fee_class = ConstantGridFees(0.0)
             else:
                 self.fee_class = ConstantGridFees(transfer_fees.transfer_fee_const)
+            self.const_fee_rate = self.fee_class.grid_fee_rate
         else:
             if transfer_fees.grid_fee_percentage is None or \
                     transfer_fees.grid_fee_percentage <= 0.0:
