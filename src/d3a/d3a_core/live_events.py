@@ -4,7 +4,6 @@ import traceback
 from d3a.d3a_core.area_serializer import area_from_dict
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.area.event_dispatcher import DispatcherFactory
-from d3a_interface.utils import key_in_dict_and_not_none
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 
@@ -50,14 +49,13 @@ class UpdateAreaEvent:
         if area.uuid != self.area_uuid:
             return False
         self.sanitize_live_event_paramters_for_strategy_update()
-        if key_in_dict_and_not_none(self.area_params, 'type'):
+        area_type = self.area_params.pop("type", None)
+        if area_type is not None:
             if area.strategy is None:
                 return False
-            if self.area_params['type'] == "MarketMaker":
-                del self.area_params['type']
+            if area_type == "MarketMaker":
                 area.strategy = MarketMakerStrategy(**self.area_params)
-            elif self.area_params['type'] == "InfiniteBus":
-                del self.area_params['type']
+            elif area_type == "InfiniteBus":
                 area.strategy = InfiniteBusStrategy(**self.area_params)
             else:
                 return False
