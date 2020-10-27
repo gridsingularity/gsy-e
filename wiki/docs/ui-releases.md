@@ -4,7 +4,7 @@ The following features were implemented :
 * [Detailed energy trade profile graph](results.md#detailed-energy-trade-profile). Zoom in to each 15 minute market slot to view the scheduled trades with 1 minute resolution. 
 * Grid Operator user can change grid parameters inside a collaboration and while it is running, like [grid fees](constant-fees.md) or the transformer capacity.
 * Allow collaboration participants to register for [events](events.md) while the simulation is running. Allows users to simulate a growing community.
-* Information Aggregator to compile and send average market measurements to assist data scientists in building smart strategies to trade through the [API](api.md).
+* Information Aggregator to compile and send average market measurements to assist data scientists in building smart strategies to trade through the [API](assets-api.md).
 
 
 
@@ -43,7 +43,7 @@ The following features were implemented :
 
 * [Grid fees](percentage-fees.md) configuration
 * User roles, including 'Collaborations' feature for multi user testing and Grid Singularity-hosted challenges
-* [API](api.md) connection to energy devices allowing bids and offers to be submitted by external algorithms 
+* [API](assets-api.md) connection to energy devices allowing bids and offers to be submitted by external algorithms 
 
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/8un6qw_CGjI" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
