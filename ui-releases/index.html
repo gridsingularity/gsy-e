@@ -110,7 +110,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#version-070" tabindex="1" class="md-skip">
+      <a href="#version-090" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -311,6 +311,20 @@
   
     <label class="md-nav__title" for="__toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#version-090" title="Version 0.9.0" class="md-nav__link">
+    Version 0.9.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#version-080" title="Version 0.8.0" class="md-nav__link">
+    Version 0.8.0
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#version-070" title="Version 0.7.0" class="md-nav__link">
@@ -1235,7 +1249,19 @@
 
 
   <li class="md-nav__item">
-    <a href="../api/" title="Asset API" class="md-nav__link">
+    <a href="../api-overview/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../assets-api/" title="Asset API" class="md-nav__link">
       Asset API
     </a>
   </li>
@@ -1301,6 +1327,20 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#version-090" title="Version 0.9.0" class="md-nav__link">
+    Version 0.9.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#version-080" title="Version 0.8.0" class="md-nav__link">
+    Version 0.8.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#version-070" title="Version 0.7.0" class="md-nav__link">
     Version 0.7.0
   </a>
@@ -1363,13 +1403,34 @@
                 
                   <h1>Releases</h1>
                 
-                <h2 id="version-070">Version 0.7.0<a class="headerlink" href="#version-070" title="Permanent link">&para;</a></h2>
+                <h2 id="version-090">Version 0.9.0<a class="headerlink" href="#version-090" title="Permanent link">&para;</a></h2>
+<p>The following features were implemented : </p>
+<ul>
+<li><a href="../grid-api/">Market API</a>, developed for grid operators. This API allows the user to read metrics from the connected market and set grid fees for the market while a collaboration is running</li>
+<li>Easier registration to the asset and market <a href="../api-overview/">API</a>, by allowing users and exchange operators to send and approve all registrations at once</li>
+<li>Minimum bid and offer age parameter which is set by default to prioritize local energy trading</li>
+<li>Grid fees added to <a href="../results/#energy-pricing">Energy Pricing</a> graph for each market</li>
+<li>Total grid fees reported in the scoreboard page for each collaboration</li>
+<li>Net Energy calculation added to <a href="../results/#energy-trade-profile">Energy Trade Profile</a> graph in order to calculate the peak energy at an assigned node in the simulation based off of the net energy flow instead of a summation of trades</li>
+<li>Updated load final selling rate and PV initial buying rate in the <a href="../how-strategies-adjust-prices/">template strategies</a> which now take the total <a href="../constant-fees/">grid fees</a> into account in addition to the <a href="../market-maker/">market maker</a> rate. This guarantees that loads are able to buy from the market maker using the template strategy even when grid fees are set.</li>
+<li>Users can now run three simulations and collaborations at once (previous limit was two)</li>
+</ul>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/x32D7zl1mig" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+<h2 id="version-080">Version 0.8.0<a class="headerlink" href="#version-080" title="Permanent link">&para;</a></h2>
+<p>The following features were implemented : </p>
+<ul>
+<li>Simulation Location Map. Users can geo-tag all energy resources and markets in their simulation to make a map view of the simulation and results. A summary of all simulations can be viewed in a global map, to see where Grid Singularity is running simulations all over the world!</li>
+</ul>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/2ylGNMjbhDY" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+<h2 id="version-070">Version 0.7.0<a class="headerlink" href="#version-070" title="Permanent link">&para;</a></h2>
 <p>The following features were implemented : </p>
 <ul>
 <li><a href="../results/#detailed-energy-trade-profile">Detailed energy trade profile graph</a>. Zoom in to each 15 minute market slot to view the scheduled trades with 1 minute resolution. </li>
 <li>Grid Operator user can change grid parameters inside a collaboration and while it is running, like <a href="../constant-fees/">grid fees</a> or the transformer capacity.</li>
 <li>Allow collaboration participants to register for <a href="../events/">events</a> while the simulation is running. Allows users to simulate a growing community.</li>
-<li>Information Aggregator to compile and send average market measurements to assist data scientists in building smart strategies to trade through the <a href="../api/">API</a>.</li>
+<li>Information Aggregator to compile and send average market measurements to assist data scientists in building smart strategies to trade through the <a href="../assets-api/">API</a>.</li>
 </ul>
 <iframe width="560" height="315" src="https://www.youtube.com/embed/RrYMdITH1CA" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
@@ -1402,7 +1463,7 @@
 <ul>
 <li><a href="../percentage-fees/">Grid fees</a> configuration</li>
 <li>User roles, including 'Collaborations' feature for multi user testing and Grid Singularity-hosted challenges</li>
-<li><a href="../api/">API</a> connection to energy devices allowing bids and offers to be submitted by external algorithms </li>
+<li><a href="../assets-api/">API</a> connection to energy devices allowing bids and offers to be submitted by external algorithms </li>
 </ul>
 <iframe width="560" height="315" src="https://www.youtube.com/embed/8un6qw_CGjI" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 

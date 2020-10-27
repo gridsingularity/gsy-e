@@ -1164,7 +1164,19 @@
 
 
   <li class="md-nav__item">
-    <a href="../api/" title="Asset API" class="md-nav__link">
+    <a href="../api-overview/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../assets-api/" title="Asset API" class="md-nav__link">
       Asset API
     </a>
   </li>
@@ -1705,7 +1717,7 @@
 <li>Gathering and locally storing the information passed to the agent through the API during simulations</li>
 <li>Processing the data outputs of simulations (exported to the <code>d3a-simulation</code> folder after each simulation)</li>
 </ol>
-<p>The information passed through the API is what will be available to be used in collaborative simulations such as at the hackathon. It is recommended your agents be trained on this data. Data includes past market data (min, max, avg, and median prices), amount of energy traded, trading events, and power curves. Exact data structures are available in the <a href="../api/">API documentation</a>.</p>
+<p>The information passed through the API is what will be available to be used in collaborative simulations such as at the hackathon. It is recommended your agents be trained on this data. Data includes past market data (min, max, avg, and median prices), amount of energy traded, trading events, and power curves. Exact data structures are available in the <a href="../assets-api/">API documentation</a>.</p>
 <h3 id="what-are-penalties-and-how-are-they-avoided">What are penalties and how are they avoided?<a class="headerlink" href="#what-are-penalties-and-how-are-they-avoided" title="Permanent link">&para;</a></h3>
 <p>Penalties are incurred if the power curve of a device is not exactly met. The penalty for any energy withstanding is currently set to the market maker rate + 10%, but is subject to change.</p>
 <p>For example if a load is required to buy 1 kWh but only buys 0.8 kWh, the remaining 0.2 kWh will be penalised at the market maker rate + 10%. The same is true if a PV generates 1 kWh but only sells 0.8 kWh. </p>
@@ -1715,7 +1727,7 @@
 <h2 id="simulation-and-api-setup">Simulation and API Setup<a class="headerlink" href="#simulation-and-api-setup" title="Permanent link">&para;</a></h2>
 <h3 id="how-do-i-create-a-simulation-and-train-and-test-my-trading-bot">How do I create a simulation and train and test my trading bot ?<a class="headerlink" href="#how-do-i-create-a-simulation-and-train-and-test-my-trading-bot" title="Permanent link">&para;</a></h3>
 <p>You will train your agent locally on the backend code, and will interact with the frontend at <a href="http://d3a.io/">d3a.io</a> during the hackathon.</p>
-<p>Review this document describing how to install and interact with simulations via the <a href="../api/">API</a>, which discusses connecting to the backend and to d3a.io.</p>
+<p>Review this document describing how to install and interact with simulations via the <a href="../assets-api/">API</a>, which discusses connecting to the backend and to d3a.io.</p>
 <p>To run simulations on our frontend at d3a.io, follow the steps on our wiki to <a href="../faq/#how-do-i-setup-a-simulation-in-the-frontend">create and run simulations on d3a.io</a>.</p>
 <h2 id="technical-information">Technical information<a class="headerlink" href="#technical-information" title="Permanent link">&para;</a></h2>
 <p>Please note that this information is subject to change as the challenge details are refined.</p>
