@@ -16,17 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from d3a.d3a_core.sim_results.market_price_energy_day import MarketPriceEnergyDay
-from d3a.d3a_core.sim_results.area_throughput_stats import AreaThroughputStats
-from d3a.d3a_core.sim_results.bills import MarketEnergyBills, CumulativeBills
-from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
-from d3a.d3a_core.sim_results.export_unmatched_loads import MarketUnmatchedLoads
+from d3a_interface.sim_results.market_price_energy_day import MarketPriceEnergyDay
+from d3a_interface.sim_results.area_throughput_stats import AreaThroughputStats
+from d3a_interface.sim_results.bills import MarketEnergyBills, CumulativeBills
+from d3a_interface.sim_results.device_statistics import DeviceStatistics
+from d3a_interface.sim_results.export_unmatched_loads import MarketUnmatchedLoads
 from d3a_interface.constants_limits import ConstSettings, DATE_TIME_UI_FORMAT
-from d3a.d3a_core.sim_results.kpi import KPI
+from d3a_interface.sim_results.kpi import KPI
 from d3a.d3a_core.sim_results.area_market_stock_stats import OfferBidTradeGraphStats
 from d3a_interface.utils import convert_pendulum_to_str_in_dict
-from d3a.d3a_core.sim_results.energy_trade_profile import EnergyTradeProfile
-from d3a.d3a_core.sim_results.cumulative_grid_trades import CumulativeGridTrades
+from d3a_interface.sim_results.energy_trade_profile import EnergyTradeProfile
+from d3a_interface.sim_results.cumulative_grid_trades import CumulativeGridTrades
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy

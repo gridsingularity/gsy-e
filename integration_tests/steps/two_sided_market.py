@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from math import isclose
-from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
+from d3a_interface.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
     get_number_of_unmatched_loads
 from d3a.models.market.market_structures import Offer, Bid
 

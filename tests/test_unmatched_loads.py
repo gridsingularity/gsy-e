@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from pendulum import duration, today
 from copy import deepcopy
-from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads
+from d3a_interface.sim_results.export_unmatched_loads import ExportUnmatchedLoads
 from unittest.mock import MagicMock
 import unittest
 from d3a.models.area import Area
@@ -28,7 +28,7 @@ from d3a.models.state import LoadState
 from d3a.models.config import SimulationConfig
 from d3a.models.market import Market
 from d3a.constants import DATE_TIME_FORMAT, TIME_ZONE
-from d3a.d3a_core.sim_results.export_unmatched_loads import get_number_of_unmatched_loads
+from d3a_interface.sim_results.export_unmatched_loads import get_number_of_unmatched_loads
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.models.market.market_structures import Trade, Bid
 

@@ -21,7 +21,7 @@ from math import isclose
 
 from d3a.setup.strategy_tests import user_profile_load_csv  # NOQA
 from d3a.setup.strategy_tests import user_profile_load_csv_multiday  # NOQA
-from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads,\
+from d3a_interface.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
     get_number_of_unmatched_loads
 from d3a.constants import FLOATING_POINT_TOLERANCE
 
