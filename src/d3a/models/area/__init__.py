@@ -137,7 +137,7 @@ class Area:
     def area_reconfigure_event(self, **kwargs):
         if self.strategy is not None:
             self.strategy.area_reconfigure_event(**kwargs)
-            return
+            return True
 
         grid_fee_constant = kwargs["grid_fee_constant"] \
             if key_in_dict_and_not_none(kwargs, 'grid_fee_constant') \
