@@ -270,7 +270,7 @@ def trade_from_JSON_string(trade_string, current_time):
         trade_dict['residual'] = offer_or_bid_from_JSON_string(trade_dict['residual'],
                                                                current_time)
     trade_dict['time'] = parse(trade_dict['time'])
-    if 'offer_bid_trade_info' in trade_dict:
+    if 'offer_bid_trade_info' in trade_dict and trade_dict['offer_bid_trade_info'] is not None:
         if len(trade_dict['offer_bid_trade_info']) == 5:
             trade_dict['offer_bid_trade_info'] = TradeBidInfo(*trade_dict['offer_bid_trade_info'])
         elif len(trade_dict['offer_bid_trade_info']) == 3:
@@ -284,8 +284,6 @@ def trade_from_JSON_string(trade_string, current_time):
                 trade_dict['offer_bid_trade_info'].insert(1, None)
                 trade_dict['offer_bid_trade_info'] = TradeBidInfo(
                     *trade_dict['offer_bid_trade_info'])
-    # if 'offer_bid_trade_info' in trade_dict:
-    #     trade_dict['offer_bid_trade_info'] = TradeBidInfo(*trade_dict['offer_bid_trade_info'])
     return Trade(**trade_dict)
 
 
