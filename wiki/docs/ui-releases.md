@@ -1,3 +1,27 @@
+##Version 0.9.0
+The following features were implemented : 
+
+* [Market API](grid-api.md), developed for grid operators. This API allows the user to read metrics from the connected market and set grid fees for the market while a collaboration is running
+* Easier registration to the asset and market [API](api-overview.md), by allowing users and exchange operators to send and approve all registrations at once
+* Minimum bid and offer age parameter which is set by default to prioritize local energy trading
+* Grid fees added to [Energy Pricing](results.md#energy-pricing) graph for each market
+* Total grid fees reported in the scoreboard page for each collaboration
+* Net Energy calculation added to [Energy Trade Profile](results.md#energy-trade-profile) graph in order to calculate the peak energy at an assigned node in the simulation based off of the net energy flow instead of a summation of trades
+* Updated load final selling rate and PV initial buying rate in the [template strategies](how-strategies-adjust-prices.md) which now take the total [grid fees](constant-fees.md) into account in addition to the [market maker](market-maker.md) rate. This guarantees that loads are able to buy from the market maker using the template strategy even when grid fees are set.
+* Users can now run three simulations and collaborations at once (previous limit was two)
+
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/x32D7zl1mig" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+
+##Version 0.8.0
+The following features were implemented : 
+
+* Simulation Location Map. Users can geo-tag all energy resources and markets in their simulation to make a map view of the simulation and results. A summary of all simulations can be viewed in a global map, to see where Grid Singularity is running simulations all over the world!
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/2ylGNMjbhDY" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+
 ##Version 0.7.0
 The following features were implemented : 
 
