@@ -23,7 +23,7 @@ with open("README.rst", "r") as readme:
     README = readme.read()
 
 # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
-VERSION = '0.8.0'
+VERSION = '0.9.0'
 
 setup(
     name="d3a",
