@@ -81,7 +81,7 @@ class GridFees(BaseClassGridFees):
             propagated_bid_rate=market_bid.energy_rate,
             original_offer_rate=trade_original_info.original_offer_rate,
             propagated_offer_rate=trade_original_info.propagated_offer_rate,
-            trade_rate=trade_original_info.trade_rate_source)
+            trade_rate=trade_original_info.trade_rate)
         return trade_offer_info
 
     def update_forwarded_offer_trade_original_info(self, trade_original_info, market_offer):
@@ -92,7 +92,7 @@ class GridFees(BaseClassGridFees):
             propagated_bid_rate=trade_original_info.propagated_bid_rate,
             original_offer_rate=market_offer.original_offer_price / market_offer.energy,
             propagated_offer_rate=market_offer.energy_rate,
-            trade_rate=trade_original_info.trade_rate_source)
+            trade_rate=trade_original_info.trade_rate)
         return trade_bid_info
 
     def propagate_original_bid_info_on_offer_trade(self, trade_original_info):
