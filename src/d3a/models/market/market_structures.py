@@ -195,17 +195,18 @@ def _is_bid(offer_or_bid):
         return False
 
 
-class TradeBidInfo(namedtuple('TradeBidInfo',
-                              ('original_bid_rate', 'propagated_bid_rate',
-                               'original_offer_rate', 'propagated_offer_rate',
-                               'trade_rate'))):
+class TradeBidOfferInfo(namedtuple('TradeBidOfferInfo', ('original_bid_rate',
+                                                         'propagated_bid_rate',
+                                                         'original_offer_rate',
+                                                         'propagated_offer_rate',
+                                                         'trade_rate'))):
     def to_JSON_string(self):
         return json.dumps(self._asdict(), default=my_converter)
 
 
 def trade_bid_info_from_JSON_string(info_string):
     info_dict = json.loads(info_string)
-    return TradeBidInfo(**info_dict)
+    return TradeBidOfferInfo(**info_dict)
 
 
 class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'residual',
@@ -272,17 +273,18 @@ def trade_from_JSON_string(trade_string, current_time):
     trade_dict['time'] = parse(trade_dict['time'])
     if 'offer_bid_trade_info' in trade_dict and trade_dict['offer_bid_trade_info'] is not None:
         if len(trade_dict['offer_bid_trade_info']) == 5:
-            trade_dict['offer_bid_trade_info'] = TradeBidInfo(*trade_dict['offer_bid_trade_info'])
+            trade_dict['offer_bid_trade_info'] = TradeBidOfferInfo(
+                *trade_dict['offer_bid_trade_info'])
         elif len(trade_dict['offer_bid_trade_info']) == 3:
             if _is_bid(trade_string):
                 trade_dict['offer_bid_trade_info'].insert(2, None)
                 trade_dict['offer_bid_trade_info'].insert(3, None)
-                trade_dict['offer_bid_trade_info'] = TradeBidInfo(
+                trade_dict['offer_bid_trade_info'] = TradeBidOfferInfo(
                     *trade_dict['offer_bid_trade_info'])
             elif _is_offer(trade_string):
                 trade_dict['offer_bid_trade_info'].insert(0, None)
                 trade_dict['offer_bid_trade_info'].insert(1, None)
-                trade_dict['offer_bid_trade_info'] = TradeBidInfo(
+                trade_dict['offer_bid_trade_info'] = TradeBidOfferInfo(
                     *trade_dict['offer_bid_trade_info'])
     return Trade(**trade_dict)
 

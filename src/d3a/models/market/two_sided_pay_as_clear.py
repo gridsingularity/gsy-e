@@ -21,7 +21,7 @@ from collections import OrderedDict
 
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.market_structures import MarketClearingState, BidOfferMatch, \
-    TradeBidInfo, Clearing
+    TradeBidOfferInfo, Clearing
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.d3a_core.util import add_or_create_key
 from d3a.constants import FLOATING_POINT_TOLERANCE
@@ -178,7 +178,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                 original_bid_rate, propagated_bid_rate, clearing_rate
             )
 
-            trade_bid_info = TradeBidInfo(
+            trade_bid_info = TradeBidOfferInfo(
                 original_bid_rate=original_bid_rate,
                 propagated_bid_rate=propagated_bid_rate,
                 original_offer_rate=offer_original_rate,

@@ -33,7 +33,7 @@ from d3a.models.area.event_dispatcher import RedisAreaDispatcher, AreaDispatcher
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import RedisCommunicator
 from d3a.events.event_structures import AreaEvent, MarketEvent
 from d3a.models.market.market_structures import Offer, Trade, offer_from_JSON_string, \
-    trade_from_JSON_string, TradeBidInfo
+    trade_from_JSON_string, TradeBidOfferInfo
 
 log = getLogger(__name__)
 
@@ -261,7 +261,7 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
     def test_publish_event_converts_python_objects_to_json(self):
         offer = Offer("1", now(), 2, 3, "A")
         trade = Trade("2", now(), Offer("accepted", now(), 7, 8, "Z"), "B", "C",
-                      None, None, TradeBidInfo(None, None, None, None, None))
+                      None, None, TradeBidOfferInfo(None, None, None, None, None))
         new_offer = Offer("3", now(), 4, 5, "D")
         existing_offer = Offer("4", now(), 5, 6, "E")
         kwargs = {"offer": offer,

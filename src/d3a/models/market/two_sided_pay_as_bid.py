@@ -22,7 +22,7 @@ from logging import getLogger
 from d3a.models.market import lock_market_action
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade, MarketException
-from d3a.models.market.market_structures import Bid, Trade, TradeBidInfo
+from d3a.models.market.market_structures import Bid, Trade, TradeBidOfferInfo
 from d3a.events.event_structures import MarketEvent
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import short_offer_bid_log_str
@@ -250,7 +250,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
                 original_bid_rate = bid.original_bid_price / bid.energy
                 matched_rate = bid.energy_rate
 
-                trade_bid_info = TradeBidInfo(
+                trade_bid_info = TradeBidOfferInfo(
                     original_bid_rate=original_bid_rate,
                     propagated_bid_rate=bid.price/bid.energy,
                     original_offer_rate=offer.original_offer_price/offer.energy,

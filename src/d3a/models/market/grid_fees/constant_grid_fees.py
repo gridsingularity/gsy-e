@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.market.grid_fees import BaseClassGridFees
-from d3a.models.market.market_structures import TradeBidInfo
+from d3a.models.market.market_structures import TradeBidOfferInfo
 
 
 class ConstantGridFees(BaseClassGridFees):
@@ -59,38 +59,50 @@ class ConstantGridFees(BaseClassGridFees):
     def update_forwarded_bid_trade_original_info(self, trade_original_info, market_bid):
         if not trade_original_info:
             return None
-        original_offer_rate, offer_rate, trade_rate_source = trade_original_info
-        return [market_bid.original_bid_price / market_bid.energy,
-                market_bid.energy_rate,
-                original_offer_rate,
-                offer_rate,
-                trade_rate_source]
+        trade_offer_info = TradeBidOfferInfo(
+            original_bid_rate=market_bid.original_bid_price / market_bid.energy,
+            propagated_bid_rate=market_bid.energy_rate,
+            original_offer_rate=trade_original_info.original_offer_rate,
+            propagated_offer_rate=trade_original_info.propagated_offer_rate,
+            trade_rate=trade_original_info.trade_rate)
+        return trade_offer_info
 
     def update_forwarded_offer_trade_original_info(self, trade_original_info, market_offer):
         if not trade_original_info:
             return None
-        original_bid_rate, bid_rate, trade_rate_source = trade_original_info
-        trade_bid_info = TradeBidInfo(
-            original_bid_rate=original_bid_rate, propagated_bid_rate=bid_rate,
+        trade_bid_info = TradeBidOfferInfo(
+            original_bid_rate=trade_original_info.original_bid_rate,
+            propagated_bid_rate=trade_original_info.propagated_bid_rate,
             original_offer_rate=market_offer.original_offer_price / market_offer.energy,
             propagated_offer_rate=market_offer.energy_rate,
-            trade_rate=trade_rate_source)
+            trade_rate=trade_original_info.trade_rate)
         return trade_bid_info
 
     def propagate_original_bid_info_on_offer_trade(self, trade_original_info):
         if trade_original_info is None:
             return None
-        original_bid_rate, bid_rate, _, _, trade_rate_source = trade_original_info
-        bid_rate = bid_rate - self.grid_fee_rate
-        return [original_bid_rate, bid_rate, trade_rate_source]
+        bid_rate = trade_original_info.original_bid_rate * self.grid_fee_rate
+        trade_bid_info = TradeBidOfferInfo(
+            original_bid_rate=trade_original_info.original_bid_rate,
+            propagated_bid_rate=bid_rate,
+            original_offer_rate=None,
+            propagated_offer_rate=None,
+            trade_rate=trade_original_info.trade_rate)
+        return trade_bid_info
 
     def propagate_original_offer_info_on_bid_trade(self, trade_original_info, ignore_fees=False):
-        _, _, original_offer_rate, offer_rate, trade_rate_source = trade_original_info
-        offer_rate = offer_rate + self.grid_fee_rate if not ignore_fees else offer_rate
-        return [original_offer_rate, offer_rate, trade_rate_source]
+        grid_fee_rate = self.grid_fee_rate if not ignore_fees else 0.0
+        offer_rate = trade_original_info.original_offer_rate + \
+            trade_original_info.original_offer_rate * grid_fee_rate \
+            if not ignore_fees else trade_original_info.original_offer_rate
+        trade_offer_info = TradeBidOfferInfo(
+            original_bid_rate=None,
+            propagated_bid_rate=None,
+            original_offer_rate=trade_original_info.original_offer_rate,
+            propagated_offer_rate=offer_rate,
+            trade_rate=trade_original_info.trade_rate)
+        return trade_offer_info
 
     def calculate_trade_price_and_fees(self, trade_bid_info):
-        original_bid_rate, bid_rate, original_offer_rate, \
-            offer_rate, trade_rate_source = trade_bid_info
-
+        bid_rate = trade_bid_info.original_bid_rate
         return bid_rate - self.grid_fee_rate, self.grid_fee_rate, bid_rate
