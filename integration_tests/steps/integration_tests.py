@@ -240,7 +240,7 @@ def set_min_offer_age(context, min_offer_age):
 def running_the_simulation(context):
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.ERROR)
+    root_logger.setLevel(logging.CRITICAL)
 
     slowdown = 0
     seed = 0
@@ -306,7 +306,7 @@ def run_simulation_via_console(context, scenario, hours, slot_length,
 def run_sim_with_config_setting(context, cloud_coverage, scenario):
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.ERROR)
+    root_logger.setLevel(logging.CRITICAL)
 
     simulation_config = SimulationConfig(duration(hours=int(24)),
                                          duration(minutes=int(60)),
@@ -511,7 +511,7 @@ def monkeypatch_ctrl_callback(context, method):
 @when('the configured simulation is running')
 def configd_sim_run(context):
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.ERROR)
+    root_logger.setLevel(logging.CRITICAL)
     context.simulation.run()
 
 
@@ -645,7 +645,7 @@ def export_logic(context, flag):
 def run_sim(context, scenario, total_duration, slot_length, tick_length, market_count):
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.ERROR)
+    root_logger.setLevel(logging.CRITICAL)
 
     simulation_config = SimulationConfig(duration(hours=int(total_duration)),
                                          duration(minutes=int(slot_length)),
