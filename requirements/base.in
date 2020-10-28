@@ -4,7 +4,6 @@ cached_property
 click
 click-default-group
 colorlog
-dill
 numpy
 pendulum==2.1.2
 pip-tools
