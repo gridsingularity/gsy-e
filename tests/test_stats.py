@@ -74,7 +74,7 @@ class FakeOffer:
         self.id = str(uuid4())
 
 
-def _trade(price, buyer, energy=1, seller=None, fee_price=None):
+def _trade(price, buyer, energy=1, seller=None, fee_price=0.):
     return Trade('id', now(tz=constants.TIME_ZONE), FakeOffer(price, energy, seller),
                  seller, buyer, None, fee_price=fee_price)
 

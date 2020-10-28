@@ -118,6 +118,7 @@ class SimulationEndpointBuffer:
             "status": self.status,
             "progress_info": self.simulation_progress,
             "kpi": self.kpi.performance_indices_redis,
+            "cumulative_market_fees": self.market_bills.cumulative_fee_charged_per_market,
             "last_unmatched_loads": self.market_unmatched_loads.last_unmatched_loads,
             "last_energy_trade_profile": convert_pendulum_to_str_in_dict(
                 self.trade_profile.traded_energy_current, {}, ui_format=True),
@@ -142,6 +143,7 @@ class SimulationEndpointBuffer:
                 self.cumulative_grid_trades.current_trades,
             "bills": self.market_bills.bills_results,
             "cumulative_bills": self.cumulative_bills.cumulative_bills,
+            "cumulative_market_fees": self.market_bills.cumulative_fee_charged_per_market,
             "status": self.status,
             "progress_info": self.simulation_progress,
             "device_statistics": self.device_statistics.device_stats_dict,
@@ -237,6 +239,7 @@ class SimulationEndpointBuffer:
             self._populate_core_stats_and_sim_state(child)
 
     def update_stats(self, area, simulation_status, progress_info, sim_state):
+        self.area_result_dict = self._create_area_tree_dict(area)
         self.status = simulation_status
         if area.current_market is not None:
             self.current_market_time_slot_str = area.current_market.time_slot_str
@@ -309,7 +312,8 @@ class SimulationEndpointBuffer:
         if self.current_market_time_slot_str == "":
             return
         for area_uuid, area_result in self.flattened_area_core_stats_dict.items():
-            self.bids_offers_trades[area_uuid] = area_result
+            self.bids_offers_trades[area_uuid] = \
+                {k: area_result[k] for k in ('offers', 'bids', 'trades')}
 
     def _merge_cumulative_bills_into_bills_for_market_info(self, area_dict):
         bills = self.market_bills.bills_redis_results[area_dict['uuid']]

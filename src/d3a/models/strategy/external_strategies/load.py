@@ -140,6 +140,7 @@ class LoadExternalMixin(ExternalMixin):
         try:
             assert self.can_bid_be_posted(
                 arguments["energy"],
+                arguments["price"],
                 self.energy_requirement_Wh.get(self.next_market.time_slot, 0.0) / 1000.0,
                 self.next_market)
 
@@ -243,6 +244,12 @@ class LoadExternalMixin(ExternalMixin):
     def _update_bid_aggregator(self, arguments):
         assert set(arguments.keys()) == {'price', 'energy', 'type', 'transaction_id'}
         bid_rate = arguments["price"] / arguments["energy"]
+        if bid_rate < 0.0:
+            return {
+                "command": "update_bid", "status": "error",
+                "area_uuid": self.device.uuid,
+                "error_message": "Updated bid needs to have a positive price.",
+                "transaction_id": arguments.get("transaction_id", None)}
         with self.lock:
             existing_bids = list(self.get_posted_bids(self.next_market))
             existing_bid_energy = sum([bid.energy for bid in existing_bids])
@@ -275,6 +282,7 @@ class LoadExternalMixin(ExternalMixin):
 
             assert self.can_bid_be_posted(
                 arguments["energy"],
+                arguments["price"],
                 self.energy_requirement_Wh.get(self.next_market.time_slot, 0.0) / 1000.0,
                 self.next_market)
 

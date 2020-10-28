@@ -117,6 +117,7 @@ class Area:
         log.debug(f"External connection {external_connection_available} for area {self.name}")
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available is True else None
+        self.should_update_child_strategies = False
 
     def get_state(self):
         if self.strategy is not None:
@@ -136,7 +137,7 @@ class Area:
     def area_reconfigure_event(self, **kwargs):
         if self.strategy is not None:
             self.strategy.area_reconfigure_event(**kwargs)
-            return
+            return True
 
         grid_fee_constant = kwargs["grid_fee_constant"] \
             if key_in_dict_and_not_none(kwargs, 'grid_fee_constant') \
@@ -186,6 +187,13 @@ class Area:
         self.baseline_peak_energy_export_kWh = baseline_peak_energy_export_kWh
         self.export_capacity_kWh = export_capacity_kWh
         self.import_capacity_kWh = import_capacity_kWh
+        self._update_descendants_strategy_prices()
+
+    def _update_descendants_strategy_prices(self):
+        if self.strategy is not None:
+            self.strategy.event_activate_price()
+        for child in self.children:
+            child._update_descendants_strategy_prices()
 
     def _set_grid_fees(self, transfer_fee_const, grid_fee_percentage):
         grid_fee_type = self.config.grid_fee_type \
@@ -248,7 +256,7 @@ class Area:
             self.grid_fee_percentage = 0
 
         # Cycle markets without triggering it's own event chain.
-        self._cycle_markets(_trigger_event=False)
+        self.cycle_markets(_trigger_event=False)
 
         if not self.strategy and self.parent is not None:
             self.log.debug("No strategy. Using inter area agent.")
@@ -259,13 +267,13 @@ class Area:
             self.redis_ext_conn.sub_to_external_channels()
 
     def deactivate(self):
-        self._cycle_markets(deactivate=True)
+        self.cycle_markets(deactivate=True)
         if self.redis_ext_conn is not None:
             self.redis_ext_conn.deactivate()
         if self.strategy:
             self.strategy.deactivate()
 
-    def _cycle_markets(self, _trigger_event=True, _market_cycle=False, deactivate=False):
+    def cycle_markets(self, _trigger_event=True, _market_cycle=False, deactivate=False):
         """
         Remove markets for old time slots, add markets for new slots.
         Trigger `MARKET_CYCLE` event to allow child markets to also cycle.
@@ -294,6 +302,10 @@ class Area:
 
         if deactivate:
             return
+
+        if self.should_update_child_strategies is True:
+            self._update_descendants_strategy_prices()
+            self.should_update_child_strategies = False
 
         # Clear `current_market` cache
         self.__dict__.pop('current_market', None)

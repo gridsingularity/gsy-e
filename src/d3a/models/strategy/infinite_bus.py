@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy import BidEnabledStrategy, INF_ENERGY
 from d3a.d3a_core.exceptions import MarketException
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
     read_and_convert_identity_profile_to_float
@@ -37,6 +37,10 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         self.buying_rate_profile = buying_rate_profile
         self.energy_rate = energy_sell_rate
         self.energy_rate_profile = energy_rate_profile
+        # This is done to support the UI which handles the Infinite Bus only as a Market Maker.
+        # If one plans to allow multiple Infinite Bus devices in the grid, this should be
+        # amended.
+        GlobalConfig.market_maker_rate = self.energy_rate
 
     def event_activate(self):
         if self.energy_rate_profile is not None:
@@ -77,9 +81,13 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
            ConstSettings.IAASettings.MARKET_TYPE == 3:
             for market in self.area.all_markets:
-                self.post_bid(market,
-                              self.energy_buy_rate[market.time_slot] * INF_ENERGY, INF_ENERGY,
-                              buyer_origin=self.owner.name)
+                try:
+                    self.post_bid(market,
+                                  self.energy_buy_rate[market.time_slot] * INF_ENERGY,
+                                  INF_ENERGY,
+                                  buyer_origin=self.owner.name)
+                except MarketException:
+                    pass
 
     def get_state(self):
         return {

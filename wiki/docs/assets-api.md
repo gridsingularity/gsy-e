@@ -1,27 +1,5 @@
-# API documentation
+# Asset API documentation
 The D3A API client allows you to create agents that follow custom trading strategies to buy and sell energy in the energy market. The agent can request and receive information through the API, feed that information into an algorithm, and post bids or offers on a live simulated exchange. This document covers installation and descriptions of the functions available.
-
-### API Client Installation
-Note, if you are running the d3a using a virtual machine and vagrant, the latest api-client is already installed on your machine and you can skip to the `Launch Simulation` section below. If you are running the d3a locally, please follow the following instructions.
-
-#### Install Redis server. Open a new terminal and type
-``` 
-brew install redis
-```
-
-#### Install d3a-client
-```
-mkvirtualenv d3a-api-env
-pip install git+https://github.com/gridsingularity/d3a-api-client.git
-```
-
-#### Update d3a-client (as needed when an update is deployed)
-
-```
-pip uninstall d3a-api-client
-pip install git+https://github.com/gridsingularity/d3a-api-client.git
-```
-
 
 ### Using the API Client with a Running Simulation
 
@@ -42,12 +20,7 @@ workon d3a
 
 Then run:
 ```
-d3a -l INFO run -t 15s -s 15m --setup chaos_experiment.chaos_experiment_babysteps --enable-external-connection
-```
-
-Note that this uses the simpler version of the full setup file to test, and runs more quickly. To run the full community in the `chaos_experiment` template, run:
-```
-d3a -l INFO run -t 15s -s 15m --setup chaos_experiment.chaos_experiment_training --start-date 2014-02-01 --enable-external-connection
+d3a -l INFO run -t 15s -s 15m --setup odyssey_momentum.odyssey_training --start-date 2014-10-01 --enable-external-connection
 ```
 
 After a few seconds, trading should begin, and should look something like the below.
@@ -56,11 +29,11 @@ After a few seconds, trading should begin, and should look something like the be
 ### Launch smart agents
 Open a new terminal to run your trading strategy script (python file). In this python file you can code the trading strategy for the assets you manage. A template python script is provided. You are also able to print some information that you will get with your API calls.
 
-You can run your script in the terminal. First navigate to the folder `d3a/src/d3a/setup/chaos_experiment/`
+You can run your script in the terminal. First navigate to the folder `d3a/src/d3a/setup/odyssey_momentum/`
 
 Then run
 ```
-python oracle_api_template.py
+python assets_api_template.py
 ```
 
 ### Grid Setup File Configuration
@@ -94,7 +67,7 @@ By default, template strategies do not allow connections. Please also ensure tha
 The API supports multiple areas exposing their market statistics (e.g. min, max, avg, median price and volume of energy) to external devices. Access is controlled when setting up the simulation, using the Area class boolean argument called external_connection_available: 
 ```python
 Area(
-         'House 2',
+         'Member 2',
          [ ... ], # Children of the area
          external_connection_available=True
 ),
@@ -193,6 +166,7 @@ self.batch_command(batch_commands)
 ```
 
 Note: The total amount of energy bid at any point is limited to the energy requirement of the device. Updating a bid during a market slot deletes other active bids.
+Additionally, the price of your bids/offers should be a positive float otherwise it will get rejected by the market.
 
 #### Trading Strategies
 

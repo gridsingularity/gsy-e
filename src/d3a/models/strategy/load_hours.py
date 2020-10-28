@@ -329,10 +329,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
                         self.state.desired_energy_Wh[market.time_slot]
                 else:
                     bid_energy = self.energy_requirement_Wh[market.time_slot]
-                if not self.are_bids_posted(market.id):
-                    self.post_first_bid(market, bid_energy)
-                else:
-                    self.bid_update.update_market_cycle_bids(self)
+                try:
+                    if not self.are_bids_posted(market.id):
+                        self.post_first_bid(market, bid_energy)
+                    else:
+                        self.bid_update.update_market_cycle_bids(self)
+                except MarketException:
+                    pass
 
     def event_balancing_market_cycle(self):
         for market in self.active_markets:
