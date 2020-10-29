@@ -4,6 +4,8 @@ import traceback
 from d3a.d3a_core.area_serializer import area_from_dict
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.area.event_dispatcher import DispatcherFactory
+from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
+from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 
 
 class LiveEventException(D3AException):
@@ -24,6 +26,8 @@ class CreateAreaEvent:
             # The order of the following activation calls matters:
             self.created_area.parent = area
             area.children.append(self.created_area)
+            if not area._markets.markets:
+                area.cycle_markets(_trigger_event=False)
             self.created_area.activate(current_tick=area.current_tick)
             if self.created_area.strategy:
                 self.created_area.strategy.event_activate()
@@ -46,10 +50,29 @@ class UpdateAreaEvent:
     def apply(self, area):
         if area.uuid != self.area_uuid:
             return False
-
-        area.area_reconfigure_event(**self.area_params)
+        self.sanitize_live_event_paramters_for_strategy_update()
+        area_type = self.area_params.pop("type", None)
+        if area_type is not None:
+            if area.strategy is None:
+                return False
+            if area_type == "MarketMaker":
+                area.strategy = MarketMakerStrategy(**self.area_params)
+            elif area_type == "InfiniteBus":
+                area.strategy = InfiniteBusStrategy(**self.area_params)
+            else:
+                return False
+            area.activate()
+            area.strategy.event_activate()
+            area.strategy.event_market_cycle()
+        else:
+            area.area_reconfigure_event(**self.area_params)
 
         return True
+
+    def sanitize_live_event_paramters_for_strategy_update(self):
+        self.area_params.pop('number_of_clones', None)
+        self.area_params.pop('energy_rate_profile_uuid', None)
+        self.area_params.pop('buying_rate_profile_uuid', None)
 
     def __repr__(self):
         return f"<UpdateAreaEvent - area UUID({self.area_uuid}) - params({self.area_params})>"

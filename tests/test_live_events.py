@@ -3,6 +3,8 @@ from pendulum import duration
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
+from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
+from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.area import Area
 from d3a.models.config import SimulationConfig
 from d3a.models.appliance.switchable import SwitchableAppliance
@@ -168,6 +170,62 @@ class TestLiveEvents(unittest.TestCase):
             987 * self.config.slot_length.total_minutes() / 60.0
         assert self.area_house1.export_capacity_kWh == \
             765 * self.config.slot_length.total_minutes() / 60.0
+
+    def test_update_area_event_can_switch_strategy_from_market_maker_to_infinite_bus(self):
+        self.strategy_mmr = MarketMakerStrategy(energy_rate=30)
+        self.area_mmr = Area("mmr", None, None, self.strategy_mmr, SwitchableAppliance(),
+                             self.config, None, grid_fee_percentage=0)
+        self.area_mmr.parent = self.area_grid
+        self.area_grid.children.append(self.area_mmr)
+
+        event_dict = {
+            "eventType": "update_area",
+            "area_uuid": self.area_mmr.uuid,
+            "area_representation": {'type': 'InfiniteBus'}
+        }
+
+        self.area_grid.activate()
+
+        self.live_events.add_event(event_dict)
+        self.live_events.handle_all_events(self.area_grid)
+        assert type(self.area_mmr.strategy) == InfiniteBusStrategy
+
+    def test_update_area_event_can_switch_strategy_from_infinite_bus_to_market_maker(self):
+        self.strategy_mmr = InfiniteBusStrategy(energy_sell_rate=30, energy_buy_rate=25)
+        self.area_mmr = Area("mmr", None, None, self.strategy_mmr, SwitchableAppliance(),
+                             self.config, None, grid_fee_percentage=0)
+        self.area_mmr.parent = self.area_grid
+        self.area_grid.children.append(self.area_mmr)
+
+        event_dict = {
+            "eventType": "update_area",
+            "area_uuid": self.area_mmr.uuid,
+            "area_representation": {'type': 'MarketMaker'}
+        }
+
+        self.area_grid.activate()
+
+        self.live_events.add_event(event_dict)
+        self.live_events.handle_all_events(self.area_grid)
+        assert type(self.area_mmr.strategy) == MarketMakerStrategy
+
+    def test_update_area_event_cannot_switch_non_strategy_area_to_any_strategy(self):
+        self.area_mmr = Area("mmr", None, None, None, SwitchableAppliance(),
+                             self.config, None, grid_fee_percentage=0)
+        self.area_mmr.parent = self.area_grid
+        self.area_grid.children.append(self.area_mmr)
+
+        event_dict = {
+            "eventType": "update_area",
+            "area_uuid": self.area_mmr.uuid,
+            "area_representation": {'type': 'MarketMaker'}
+        }
+
+        self.area_grid.activate()
+
+        self.live_events.add_event(event_dict)
+        self.live_events.handle_all_events(self.area_grid)
+        assert self.area_mmr.strategy is None
 
     def test_create_area_event_failing_due_to_wrong_parameter_settings_no_exception_raised(self):
         event_dict = {

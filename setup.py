@@ -12,7 +12,7 @@ try:
         # TODO: Workaround for https://github.com/ethereum/py-solc/issues/64
         REQUIREMENTS.extend(
             ['d3a-interface @ '
-             'git+https://github.com/gridsingularity/d3a-interface.git',
+             f'git+https://github.com/gridsingularity/d3a-interface.git@{d3a_interface_branch}',
              'py-solc @ git+https://github.com/Jonasmpi/py-solc.git'
              ])
 except OSError:
@@ -23,7 +23,7 @@ with open("README.rst", "r") as readme:
     README = readme.read()
 
 # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
-VERSION = '0.8.0'
+VERSION = '0.9.0'
 
 setup(
     name="d3a",
