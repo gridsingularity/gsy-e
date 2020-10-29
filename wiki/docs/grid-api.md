@@ -1,30 +1,6 @@
 # Market API documentation
 The D3A API client allows you to create agents that manage different markets. The agent can request and receive information through the API, feed that information into a tariff model, and change grid fees on a live simulated exchange. The grid API is designed for grid operators to manage a specific market. The structure is designed so that multiple markets can be managed with a single script. Notably this allows markets to share information in order to have a better overall grid management. This document covers installation and descriptions of the functions available.
 
-![img](img/grid-api-1.png)
-
-
-### API Client Installation
-
-#### Install Redis server. Open a new terminal and type
-``` 
-brew install redis
-```
-
-#### Install d3a-client
-```
-mkvirtualenv d3a-api-env
-pip install git+https://github.com/gridsingularity/d3a-api-client.git
-```
-
-#### Update d3a-client (as needed when an update is deployed)
-
-```
-pip uninstall d3a-api-client
-pip install git+https://github.com/gridsingularity/d3a-api-client.git
-```
-
-
 ### API command
 The grid api can function once at the end of every market slots. When a the current market is finished the client will get notified via an event. It is possible to capture this event and perform operations after it by overriding the on_market_cycle method.
 
