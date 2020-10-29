@@ -20,7 +20,7 @@ from typing import Dict  # NOQA
 from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent  # NOQA
 from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
 from d3a.d3a_core.exceptions import BidNotFound, MarketException
-from d3a.models.market.market_structures import Bid, TradeBidOfferInfo
+from d3a.models.market.market_structures import Bid
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.constants import FLOATING_POINT_TOLERANCE
 
@@ -132,16 +132,9 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             if bid_trade.offer_bid_trade_info is not None:
                 # Adapt trade_offer_info received by the trade to include source market grid fees,
                 # which was skipped when accepting the bid during the trade operation.
-                trade_offer_info = TradeBidOfferInfo(
-                    original_bid_rate=bid_trade.offer_bid_trade_info.original_bid_rate,
-                    propagated_bid_rate=bid_trade.offer_bid_trade_info.propagated_bid_rate,
-                    original_offer_rate=bid_trade.offer_bid_trade_info.original_offer_rate,
-                    propagated_offer_rate=bid_trade.offer_bid_trade_info.propagated_offer_rate,
-                    trade_rate=bid_trade.offer_bid_trade_info.trade_rate
-                )
                 updated_trade_offer_info = \
                     self.markets.source.fee_class.propagate_original_offer_info_on_bid_trade(
-                        trade_offer_info
+                        bid_trade.offer_bid_trade_info
                     )
             else:
                 updated_trade_offer_info = bid_trade.offer_bid_trade_info
