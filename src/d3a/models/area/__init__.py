@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import traceback
 from logging import getLogger
 from typing import List  # noqa
 from cached_property import cached_property
@@ -190,10 +191,15 @@ class Area:
         self._update_descendants_strategy_prices()
 
     def _update_descendants_strategy_prices(self):
-        if self.strategy is not None:
-            self.strategy.event_activate_price()
-        for child in self.children:
-            child._update_descendants_strategy_prices()
+        try:
+            if self.strategy is not None:
+                self.strategy.event_activate_price()
+            for child in self.children:
+                child._update_descendants_strategy_prices()
+        except Exception as e:
+            log.error(f"area._update_descendants_strategy_prices failed. Exception: {e}. "
+                      f"Traceback: {traceback.format_exc()}")
+            return
 
     def _set_grid_fees(self, transfer_fee_const, grid_fee_percentage):
         grid_fee_type = self.config.grid_fee_type \
