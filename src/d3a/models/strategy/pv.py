@@ -181,8 +181,6 @@ class PVStrategy(BaseStrategy):
         self._validate_rates(self.offer_update.initial_rate, self.offer_update.final_rate,
                              self.offer_update.energy_rate_change_per_update,
                              self.offer_update.fit_to_limit)
-        # Calculating the produced energy
-        self._set_alternative_pricing_scheme()
         self.offer_update.update_on_activate()
 
     def event_activate_energy(self):
@@ -233,6 +231,7 @@ class PVStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         super().event_market_cycle()
+        self._set_alternative_pricing_scheme()
         self.event_market_cycle_price()
         self._delete_past_state()
 
@@ -284,22 +283,22 @@ class PVStrategy(BaseStrategy):
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+            if not self.area.next_market:
+                return
+            time_slot = self.area.next_market.time_slot
             if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
-                for time_slot in generate_market_slot_list():
-                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=0,
-                                                               final_rate=0)
+                self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=0,
+                                                           final_rate=0)
             elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
-                for time_slot in generate_market_slot_list():
-                    rate = \
-                        self.area.config.market_maker_rate[time_slot] * \
-                        ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / \
-                        100
-                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=rate,
-                                                               final_rate=rate)
+                rate = \
+                    self.area.config.market_maker_rate[time_slot] * \
+                    ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / \
+                    100
+                self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=rate,
+                                                           final_rate=rate)
             elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
-                for time_slot in generate_market_slot_list():
-                    rate = self.area.config.market_maker_rate[time_slot]
-                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=rate,
-                                                               final_rate=rate)
+                rate = self.area.config.market_maker_rate[time_slot]
+                self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=rate,
+                                                           final_rate=rate)
             else:
                 raise MarketException

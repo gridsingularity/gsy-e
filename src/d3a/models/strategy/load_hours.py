@@ -136,6 +136,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def event_market_cycle(self):
         super().event_market_cycle()
+        self._set_alternative_pricing_scheme()
         self._calculate_active_markets()
         self.update_state()
 
@@ -239,7 +240,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
                              self.bid_update.energy_rate_change_per_update,
                              self.bid_update.fit_to_limit)
         self.bid_update.update_on_activate()
-        self._set_alternative_pricing_scheme()
 
     def _find_acceptable_offer(self, market):
         offers = market.most_affordable_offers
@@ -314,10 +314,12 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            for time_slot in generate_market_slot_list():
-                final_rate = self.area.config.market_maker_rate[time_slot]
-                self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
-                                                         final_rate=final_rate)
+            if not self.area.next_market:
+                return
+            time_slot = self.area.next_market.time_slot
+            final_rate = self.area.config.market_maker_rate[time_slot]
+            self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
+                                                     final_rate=final_rate)
 
     def event_market_cycle_prices(self):
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
