@@ -19,6 +19,7 @@ from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.read_user_profile import read_and_convert_identity_profile_to_float
 from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 from d3a_interface.device_validator import validate_market_maker
+from d3a_interface.utils import key_in_dict_and_not_none
 
 
 class MarketMakerStrategy(CommercialStrategy):
@@ -41,3 +42,9 @@ class MarketMakerStrategy(CommercialStrategy):
 
     def event_activate(self):
         pass
+
+    def area_reconfigure_event(self, *args, **kwargs):
+        super().area_reconfigure_event(*args, **kwargs)
+        if key_in_dict_and_not_none(kwargs, 'grid_connected') and \
+                type(kwargs['grid_connected']) == bool:
+            self._grid_connected = kwargs['grid_connected']

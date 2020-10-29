@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import traceback
 from typing import Union
 from collections import namedtuple
 from enum import Enum
@@ -181,7 +182,8 @@ class StorageStrategy(BidEnabledStrategy):
                                  energy_rate_increase_per_update, energy_rate_decrease_per_update,
                                  bid_fit_to_limit, offer_fit_to_limit)
         except Exception as e:
-            log.error(str(e))
+            log.error(f"StorageStrategy._area_reconfigure_prices failed. Exception: {e}. "
+                      f"Traceback: {traceback.format_exc()}")
             return
 
         self.offer_update.initial_rate = initial_selling_rate
@@ -206,7 +208,7 @@ class StorageStrategy(BidEnabledStrategy):
                         energy_rate_increase_per_update, energy_rate_decrease_per_update,
                         bid_fit_to_limit, offer_fit_to_limit):
 
-        for time_slot in initial_selling_rate.keys():
+        for time_slot in generate_market_slot_list():
             bid_rate_change = None if bid_fit_to_limit else \
                 energy_rate_increase_per_update[time_slot]
             offer_rate_change = None if offer_fit_to_limit else \
@@ -339,9 +341,12 @@ class StorageStrategy(BidEnabledStrategy):
                 else:
                     energy_kWh = self.state.energy_to_buy_dict[market.time_slot]
                     if energy_kWh > 0:
-                        first_bid = self.post_first_bid(market, energy_kWh * 1000.0)
-                        if first_bid is not None:
-                            self.state.offered_buy_kWh[market.time_slot] += first_bid.energy
+                        try:
+                            first_bid = self.post_first_bid(market, energy_kWh * 1000.0)
+                            if first_bid is not None:
+                                self.state.offered_buy_kWh[market.time_slot] += first_bid.energy
+                        except MarketException:
+                            pass
 
             self.state.tick(self.area, market.time_slot)
         if self.cap_price_strategy is False:
@@ -426,8 +431,11 @@ class StorageStrategy(BidEnabledStrategy):
             self.bid_update.update_market_cycle_bids(self)
             energy_kWh = self.state.energy_to_buy_dict[current_market.time_slot]
             if energy_kWh > 0:
-                self.post_first_bid(current_market, energy_kWh * 1000.0)
-                self.state.offered_buy_kWh[current_market.time_slot] += energy_kWh
+                try:
+                    self.post_first_bid(current_market, energy_kWh * 1000.0)
+                    self.state.offered_buy_kWh[current_market.time_slot] += energy_kWh
+                except MarketException:
+                    pass
 
     def event_balancing_market_cycle(self):
         if not self.is_eligible_for_balancing_market:
@@ -506,15 +514,18 @@ class StorageStrategy(BidEnabledStrategy):
             energy = energy_sell_dict[market.time_slot]
             if not self.state.has_battery_reached_max_power(energy, market.time_slot):
                 if energy > 0.0:
-                    offer = market.offer(
-                        price=energy * selling_rate,
-                        energy=energy,
-                        seller=self.owner.name,
-                        original_offer_price=energy * selling_rate,
-                        seller_origin=self.owner.name
-                    )
-                    self.offers.post(offer, market.id)
-                    self.state.offered_sell_kWh[market.time_slot] += offer.energy
+                    try:
+                        offer = market.offer(
+                            price=energy * selling_rate,
+                            energy=energy,
+                            seller=self.owner.name,
+                            original_offer_price=energy * selling_rate,
+                            seller_origin=self.owner.name
+                        )
+                        self.offers.post(offer, market.id)
+                        self.state.offered_sell_kWh[market.time_slot] += offer.energy
+                    except MarketException:
+                        pass
 
     def select_market_to_sell(self):
         if StorageSettings.SELL_ON_MOST_EXPENSIVE_MARKET:
