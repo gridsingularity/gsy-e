@@ -229,15 +229,12 @@ class Simulation:
             if initial_slot == 0:
                 self.run_start = DateTime.now(tz=TIME_ZONE)
                 self.paused_time = 0
-                slot_resume = 0
-            else:
-                slot_resume = initial_slot
 
             tick_resume = 0
             try:
-                self._run_cli_execute_cycle(slot_resume, tick_resume) \
+                self._run_cli_execute_cycle(initial_slot, tick_resume) \
                     if self._started_from_cli \
-                    else self._execute_simulation(slot_resume, tick_resume)
+                    else self._execute_simulation(initial_slot, tick_resume)
             except KeyboardInterrupt:
                 break
             except SimulationResetException:
