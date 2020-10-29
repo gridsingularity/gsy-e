@@ -21,7 +21,7 @@ from copy import deepcopy
 import json
 from pendulum import DateTime, parse
 from d3a.events import MarketEvent
-from d3a_interface.utils import datetime_to_string_incl_seconds
+from d3a_interface.utils import datetime_to_string_incl_seconds, key_in_dict_and_not_none
 
 Clearing = namedtuple('Clearing', ('rate', 'energy'))
 
@@ -271,7 +271,7 @@ def trade_from_JSON_string(trade_string, current_time):
         trade_dict['residual'] = offer_or_bid_from_JSON_string(trade_dict['residual'],
                                                                current_time)
     trade_dict['time'] = parse(trade_dict['time'])
-    if 'offer_bid_trade_info' in trade_dict and trade_dict['offer_bid_trade_info'] is not None:
+    if key_in_dict_and_not_none(trade_dict, 'offer_bid_trade_info'):
         if len(trade_dict['offer_bid_trade_info']) == 5:
             trade_dict['offer_bid_trade_info'] = TradeBidOfferInfo(
                 *trade_dict['offer_bid_trade_info'])
