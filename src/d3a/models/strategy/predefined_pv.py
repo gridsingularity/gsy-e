@@ -16,14 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pathlib
-
+from typing import Dict
 from pendulum import DateTime, duration
+
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.util import d3a_path
-from typing import Dict
 from d3a_interface.utils import key_in_dict_and_not_none
 
 """
@@ -172,45 +172,3 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         if key_in_dict_and_not_none(kwargs, 'power_profile'):
             self._power_profile_W = kwargs['power_profile']
         self.read_config_event()
-
-
-class PVForecastStrategy(PVPredefinedStrategy):
-    """
-        Strategy responsible for reading single production forecast data via hardware API
-    """
-    parameters = ('power_forecast_W', 'panel_count', 'initial_selling_rate', 'final_selling_rate',
-                  'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
-                  'use_market_maker_rate')
-
-    def __init__(
-            self, power_forecast_W: float = 0,
-            initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-            final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
-            fit_to_limit: bool = True,
-            update_interval=duration(
-                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
-            energy_rate_decrease_per_update=None,
-            use_market_maker_rate: bool = False):
-        """
-        Constructor of PVForecastStrategy
-        :param power_forecast_W: forecast for the next market slot
-        """
-        super().__init__(panel_count=1,
-                         initial_selling_rate=initial_selling_rate,
-                         final_selling_rate=final_selling_rate,
-                         fit_to_limit=fit_to_limit,
-                         update_interval=update_interval,
-                         energy_rate_decrease_per_update=energy_rate_decrease_per_update,
-                         use_market_maker_rate=use_market_maker_rate)
-        self.power_forecast_buffer_W = power_forecast_W
-
-    def event_activate_energy(self):
-        self.produced_energy_forecast_kWh()
-
-    def produced_energy_forecast_kWh(self):
-        # sets energy forecast for next_market
-        energy_forecast_kWh = (self.area.config.slot_length / duration(hours=1)) / 1000 * \
-            self.power_forecast_buffer_W
-        slot_time = self.area.next_market.time_slot
-        self.energy_production_forecast_kWh[slot_time] = energy_forecast_kWh
-        self.state.available_energy_kWh[slot_time] = energy_forecast_kWh

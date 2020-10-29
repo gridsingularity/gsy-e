@@ -18,12 +18,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import logging
 import traceback
+from pendulum import duration
+from typing import Union
 from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.predefined_load import DefinedLoadStrategy, LoadForecastStrategy
+from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
 from d3a.d3a_core.redis_connections.aggregator_connection import default_market_info
 from d3a.d3a_core.util import get_current_market_maker_rate
+from d3a_interface.constants_limits import ConstSettings
 
 
 class LoadExternalMixin(ExternalMixin):
@@ -35,7 +38,7 @@ class LoadExternalMixin(ExternalMixin):
         super().__init__(*args, **kwargs)
 
     @property
-    def _channel_dict(self):
+    def channel_dict(self):
         return {
             f'{self.channel_prefix}/register_participant': self._register,
             f'{self.channel_prefix}/unregister_participant': self._unregister,
@@ -43,11 +46,7 @@ class LoadExternalMixin(ExternalMixin):
             f'{self.channel_prefix}/delete_bid': self._delete_bid,
             f'{self.channel_prefix}/list_bids': self._list_bids,
             f'{self.channel_prefix}/device_info': self._device_info,
-            }
-
-    @property
-    def channel_dict(self):
-        return self._channel_dict
+        }
 
     def event_activate(self):
         super().event_activate()
@@ -356,14 +355,47 @@ class LoadExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id", None)}
 
 
-class LoadForecastExternalStrategy(LoadExternalMixin, LoadForecastStrategy):
+class LoadForecastExternalStrategy(LoadExternalMixin, DefinedLoadStrategy):
+    """
+        Strategy responsible for reading single forecast consumption data via hardware API
+    """
+    parameters = ('power_forecast_W', 'fit_to_limit', 'energy_rate_increase_per_update',
+                  'update_interval', 'initial_buying_rate', 'final_buying_rate',
+                  'balancing_energy_ratio', 'use_market_maker_rate')
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, power_forecast_W: float = 0,
+                 fit_to_limit=True, energy_rate_increase_per_update=None,
+                 update_interval=None,
+                 initial_buying_rate: Union[float, dict, str] =
+                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
+                 final_buying_rate: Union[float, dict, str] =
+                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.final,
+                 balancing_energy_ratio: tuple =
+                 (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
+                  ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
+                 use_market_maker_rate: bool = False):
+        """
+        Constructor of LoadForecastStrategy
+        :param power_forecast_W: forecast for the next market slot
+        """
+        if update_interval is None:
+            update_interval = \
+                duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+
+        super().__init__(daily_load_profile=None,
+                         fit_to_limit=fit_to_limit,
+                         energy_rate_increase_per_update=energy_rate_increase_per_update,
+                         update_interval=update_interval,
+                         final_buying_rate=final_buying_rate,
+                         initial_buying_rate=initial_buying_rate,
+                         balancing_energy_ratio=balancing_energy_ratio,
+                         use_market_maker_rate=use_market_maker_rate)
+
+        self.power_forecast_buffer_W = power_forecast_W
 
     @property
     def channel_dict(self):
-        return {**self._channel_dict,
+        return {**super().channel_dict,
                 f'{self.channel_prefix}/set_power_forecast': self._set_power_forecast}
 
     def _incoming_commands_callback_selection(self, req):
@@ -383,6 +415,20 @@ class LoadForecastExternalStrategy(LoadExternalMixin, LoadForecastStrategy):
     def event_market_cycle(self):
         self.update_energy_forecast()
         super().event_market_cycle()
+
+    def event_activate_energy(self):
+        self.update_energy_forecast()
+
+    def update_energy_forecast(self):
+        self._initiate_hrs_per_day()
+
+        # sets energy forecast for next_market
+        energy_forecast_Wh = (self.area.config.slot_length / duration(hours=1)) * \
+            self.power_forecast_buffer_W
+        slot_time = self.area.next_market.time_slot
+        self.energy_requirement_Wh[slot_time] = energy_forecast_Wh
+        self.state.desired_energy_Wh[slot_time] = energy_forecast_Wh
+        self.state.total_energy_demanded_wh += energy_forecast_Wh
 
 
 class LoadHoursExternalStrategy(LoadExternalMixin, LoadHoursStrategy):
