@@ -44,7 +44,7 @@ def get_setup(config):
     ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR = False
 
     Load_initial_buying_rate = 11
-    Load_final_buying_rate = 29.2
+    Load_final_buying_rate = 30
 
     PV_initial = 27
     PV_final = 0
