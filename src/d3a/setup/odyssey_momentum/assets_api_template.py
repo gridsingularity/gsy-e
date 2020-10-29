@@ -392,6 +392,7 @@ else:
 # Register selected devices to oracle
 def register_device_list(device_names, device_args, device_uuid_map):
     for d in device_names:
+        print(device_names)
         if RUN_ON_D3A_WEB:
             uuid = get_area_uuid_from_area_name_and_collaboration_id(device_args["simulation_id"], d, device_args["domain_name"])
             device_args['device_id'] = uuid

@@ -39,7 +39,7 @@ def get_setup(config):
 
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 1
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = 21.2
+    ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = 22
     ConstSettings.StorageSettings.MIN_ALLOWED_SOC = 0
     ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR = False
 
@@ -47,7 +47,7 @@ def get_setup(config):
     Load_final_buying_rate = 29.2
 
     PV_initial = 27
-    PV_final = 11
+    PV_final = 0
 
     batt_ini_sell = 23
     batt_fin_sell = 19.6
@@ -562,7 +562,7 @@ def get_setup(config):
                 ], grid_fee_constant=4, external_connection_available=True),
 
 
-            Area('Market maker and FiT', strategy=InfiniteBusStrategy(energy_buy_rate=19, energy_sell_rate=21.2),
+            Area('Market maker and FiT', strategy=InfiniteBusStrategy(energy_buy_rate=21.9, energy_sell_rate=22),
                  appliance=SimpleAppliance()),
 
         ],
