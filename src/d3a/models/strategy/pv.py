@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import traceback
 import math
 from typing import Dict  # noqa
 from pendulum import Time  # noqa
@@ -137,7 +138,8 @@ class PVStrategy(BaseStrategy):
             self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
                                  fit_to_limit)
         except Exception as e:
-            log.error(str(e))
+            log.error(f"PVStrategy._area_reconfigure_prices failed. Exception: {e}. "
+                      f"Traceback: {traceback.format_exc()}")
             return
 
         self.offer_update.initial_rate = initial_rate
@@ -151,7 +153,7 @@ class PVStrategy(BaseStrategy):
     @staticmethod
     def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
         # all parameters have to be validated for each time slot here
-        for time_slot in initial_rate.keys():
+        for time_slot in generate_market_slot_list():
             rate_change = None if fit_to_limit else \
                 energy_rate_change_per_update[time_slot]
             validate_pv_device_price(
@@ -257,14 +259,17 @@ class PVStrategy(BaseStrategy):
                 offer_price = \
                     self.offer_update.initial_rate[market.time_slot] * \
                     self.state.available_energy_kWh[market.time_slot]
-                offer = market.offer(
-                    offer_price,
-                    self.state.available_energy_kWh[market.time_slot],
-                    self.owner.name,
-                    original_offer_price=offer_price,
-                    seller_origin=self.owner.name
-                )
-                self.offers.post(offer, market.id)
+                try:
+                    offer = market.offer(
+                        offer_price,
+                        self.state.available_energy_kWh[market.time_slot],
+                        self.owner.name,
+                        original_offer_price=offer_price,
+                        seller_origin=self.owner.name
+                    )
+                    self.offers.post(offer, market.id)
+                except MarketException:
+                    pass
 
     def event_trade(self, *, market_id, trade):
         super().event_trade(market_id=market_id, trade=trade)

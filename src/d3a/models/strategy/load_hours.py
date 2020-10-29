@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import traceback
 from numpy import random
 from logging import getLogger
 from pendulum import duration, DateTime  # NOQA
@@ -119,7 +120,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
                         fit_to_limit):
         # all parameters have to be validated for each time slot here
-        for time_slot in initial_rate.keys():
+        for time_slot in generate_market_slot_list():
             rate_change = None if fit_to_limit else \
                 energy_rate_change_per_update[time_slot]
             validate_load_device_price(
@@ -202,7 +203,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
                                  fit_to_limit)
         except Exception as e:
-            log.error(str(e))
+            log.error(f"LoadHours._area_reconfigure_prices failed. Exception: {e}. "
+                      f"Traceback: {traceback.format_exc()}")
             return
 
         self.bid_update.initial_rate = initial_rate
@@ -329,10 +331,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
                         self.state.desired_energy_Wh[market.time_slot]
                 else:
                     bid_energy = self.energy_requirement_Wh[market.time_slot]
-                if not self.are_bids_posted(market.id):
-                    self.post_first_bid(market, bid_energy)
-                else:
-                    self.bid_update.update_market_cycle_bids(self)
+                try:
+                    if not self.are_bids_posted(market.id):
+                        self.post_first_bid(market, bid_energy)
+                    else:
+                        self.bid_update.update_market_cycle_bids(self)
+                except MarketException:
+                    pass
 
     def event_balancing_market_cycle(self):
         for market in self.active_markets:

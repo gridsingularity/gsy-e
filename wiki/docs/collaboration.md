@@ -1,6 +1,6 @@
 ## Introduction
 
-Collaboration is a type of simulation that allows multiple D3A's users to participate inside the same grid. These user can act in a collaborative or competitive way, to optimize specific metrics. Users can connect through the [API client](api.md) to actively engage in the collaboration. As part of collaborations, users have different role that influence their capabilities and their objectives : 
+Collaboration is a type of simulation that allows multiple D3A's users to participate inside the same grid. These user can act in a collaborative or competitive way, to optimize specific metrics. Users can connect through the [API client](assets-api.md) to actively engage in the collaboration. As part of collaborations, users have different role that influence their capabilities and their objectives : 
 
 ##User roles
 

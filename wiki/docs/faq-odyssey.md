@@ -99,7 +99,7 @@ Data can be gathered in two ways, by:
 1. Gathering and locally storing the information passed to the agent through the API during simulations
 2. Processing the data outputs of simulations (exported to the `d3a-simulation` folder after each simulation)
 
-The information passed through the API is what will be available to be used in collaborative simulations such as at the hackathon. It is recommended your agents be trained on this data. Data includes past market data (min, max, avg, and median prices), amount of energy traded, trading events, and power curves. Exact data structures are available in the [API documentation](api.md).
+The information passed through the API is what will be available to be used in collaborative simulations such as at the hackathon. It is recommended your agents be trained on this data. Data includes past market data (min, max, avg, and median prices), amount of energy traded, trading events, and power curves. Exact data structures are available in the [API documentation](assets-api.md).
 
 ### What are penalties and how are they avoided?
 
@@ -119,7 +119,7 @@ A grid fee is a [percentage](percentage-fees.md) of trade price or a [constant v
 
 You will train your agent locally on the backend code, and will interact with the frontend at [d3a.io](http://d3a.io/) during the hackathon.
 
-Review this document describing how to install and interact with simulations via the [API](api.md), which discusses connecting to the backend and to d3a.io.
+Review this document describing how to install and interact with simulations via the [API](assets-api.md), which discusses connecting to the backend and to d3a.io.
 
 To run simulations on our frontend at d3a.io, follow the steps on our wiki to [create and run simulations on d3a.io](faq.md#how-do-i-setup-a-simulation-in-the-frontend).
 
