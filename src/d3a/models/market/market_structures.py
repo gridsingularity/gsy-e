@@ -203,6 +203,10 @@ class TradeBidOfferInfo(namedtuple('TradeBidOfferInfo', ('original_bid_rate',
     def to_JSON_string(self):
         return json.dumps(self._asdict(), default=my_converter)
 
+    @classmethod
+    def len(cls):
+        return len(cls._fields)
+
 
 def trade_bid_info_from_JSON_string(info_string):
     info_dict = json.loads(info_string)
@@ -272,7 +276,7 @@ def trade_from_JSON_string(trade_string, current_time):
                                                                current_time)
     trade_dict['time'] = parse(trade_dict['time'])
     if key_in_dict_and_not_none(trade_dict, 'offer_bid_trade_info'):
-        if len(trade_dict['offer_bid_trade_info']) == 5:
+        if len(trade_dict['offer_bid_trade_info']) == TradeBidOfferInfo.len():
             trade_dict['offer_bid_trade_info'] = TradeBidOfferInfo(
                 *trade_dict['offer_bid_trade_info'])
         elif len(trade_dict['offer_bid_trade_info']) == 3:
