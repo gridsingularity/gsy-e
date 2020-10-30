@@ -314,11 +314,6 @@ class Simulation:
                 self.progress_info.eta
             )
 
-            if self.is_stopped:
-                log.info("Received stop command.")
-                sleep(5)
-                break
-
             self.live_events.handle_all_events(self.area)
 
             self.global_objects.update(self.area)
@@ -372,6 +367,11 @@ class Simulation:
             self._update_and_send_results()
             if self.export_on_finish and self.should_export_results:
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
+
+            if self.is_stopped:
+                log.info("Received stop command.")
+                sleep(5)
+                break
 
         self.sim_status = "finished"
         self.deactivate_areas(self.area)
@@ -570,21 +570,31 @@ def run_simulation(setup_module_name="", simulation_config=None, simulation_even
         if "pricing_scheme" in kwargs:
             ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = \
                 kwargs.pop("pricing_scheme")
-        simulation = Simulation(
-            setup_module_name=setup_module_name,
-            simulation_config=simulation_config,
-            simulation_events=simulation_events,
-            slowdown=slowdown,
-            redis_job_id=redis_job_id,
-            **kwargs
-        )
 
+        if saved_sim_state is None:
+            simulation = Simulation(
+                setup_module_name=setup_module_name,
+                simulation_config=simulation_config,
+                simulation_events=simulation_events,
+                slowdown=slowdown,
+                redis_job_id=redis_job_id,
+                **kwargs
+            )
+        else:
+            simulation = Simulation(
+                setup_module_name=setup_module_name,
+                simulation_config=simulation_config,
+                simulation_events=simulation_events,
+                slowdown=saved_sim_state["general"]["slowdown"],
+                redis_job_id=saved_sim_state["general"]["simulation_id"],
+                **kwargs
+            )
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
 
     if saved_sim_state is not None:
         simulation.restore_global_state(saved_sim_state["general"])
         simulation.restore_area_state(saved_sim_state["areas"])
-        simulation.run(initial_slot=saved_sim_state["slot_number"])
+        simulation.run(initial_slot=saved_sim_state["general"]["slot_number"])
     else:
         simulation.run()

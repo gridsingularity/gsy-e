@@ -51,7 +51,8 @@ class PVState:
         return {"available_energy_kWh": convert_pendulum_to_str_in_dict(self.available_energy_kWh)}
 
     def restore_state(self, state_dict):
-        self.available_energy_kWh = state_dict["available_energy_kWh"]
+        self.available_energy_kWh = convert_str_to_pendulum_in_dict(
+            state_dict["available_energy_kWh"])
 
 
 class LoadState:
@@ -64,7 +65,8 @@ class LoadState:
         return {"desired_energy_Wh": convert_pendulum_to_str_in_dict(self.desired_energy_Wh)}
 
     def restore_state(self, state_dict):
-        self.desired_energy_Wh = state_dict["desired_energy_Wh"]
+        self.desired_energy_Wh = convert_str_to_pendulum_in_dict(
+            state_dict["desired_energy_Wh"])
 
 
 class ESSEnergyOrigin(Enum):

@@ -164,7 +164,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 to_delete.append(k)
         for k in to_delete:
             del self.energy_requirement_Wh[k]
-            del self.state.desired_energy_Wh[k]
+            self.state.desired_energy_Wh.pop(k, None)
 
     def _area_reconfigure_prices(self, **kwargs):
         if key_in_dict_and_not_none(kwargs, 'initial_buying_rate'):
