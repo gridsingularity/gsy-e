@@ -77,9 +77,14 @@ class FakeArea:
                 self.test_market,
                 self.test_market]
 
+
+class FakeAreaTimeSlot(FakeArea):
+    def __init__(self):
+        super().__init__()
+
     @property
-    def next_market(self):
-        return self._next_market
+    def all_markets(self):
+        return [self._next_market]
 
     def create_next_market(self, time_slot):
         self._next_market = FakeMarketTimeSlot(time_slot)
@@ -289,13 +294,27 @@ def pv_test6(area_test3):
     return p
 
 
-def testing_produced_energy_forecast_real_data(pv_test6, market_test3):
+@pytest.fixture()
+def area_test66():
+    return FakeAreaTimeSlot()
 
-    pv_test6.event_activate()
+
+@pytest.fixture()
+def pv_test66(area_test66):
+    p = PVStrategy()
+    p.area = area_test66
+    p.owner = area_test66
+    p.offers.posted = {}
+    return p
+
+
+def testing_produced_energy_forecast_real_data(pv_test66):
+
+    pv_test66.event_activate()
     # prepare whole day of energy_production_forecast_kWh:
     for time_slot in generate_market_slot_list():
-        pv_test6.area.create_next_market(time_slot)
-        pv_test6.set_produced_energy_forecast_kWh_next_market(reconfigure=False)
+        pv_test66.area.create_next_market(time_slot)
+        pv_test66.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
     morning_time = pendulum.today(tz=TIME_ZONE).at(hour=8, minute=20, second=0)
     afternoon_time = pendulum.today(tz=TIME_ZONE).at(hour=16, minute=40, second=0)
 
@@ -307,23 +326,23 @@ def testing_produced_energy_forecast_real_data(pv_test6, market_test3):
     morning_counts = Counts('morning')
     afternoon_counts = Counts('afternoon')
     evening_counts = Counts('evening')
-    for (time, power) in pv_test6.energy_production_forecast_kWh.items():
+    for (time, power) in pv_test66.energy_production_forecast_kWh.items():
         if time < morning_time:
             morning_counts.total += 1
             morning_counts.count = morning_counts.count + 1 \
-                if pv_test6.energy_production_forecast_kWh[time] == 0 else morning_counts.count
+                if pv_test66.energy_production_forecast_kWh[time] == 0 else morning_counts.count
         elif morning_time < time < afternoon_time:
             afternoon_counts.total += 1
             afternoon_counts.count = afternoon_counts.count + 1 \
-                if pv_test6.energy_production_forecast_kWh[time] > 0.001 \
+                if pv_test66.energy_production_forecast_kWh[time] > 0.001 \
                 else afternoon_counts.count
         elif time > afternoon_time:
             evening_counts.total += 1
             evening_counts.count = evening_counts.count + 1 \
-                if pv_test6.energy_production_forecast_kWh[time] == 0 else evening_counts.count
+                if pv_test66.energy_production_forecast_kWh[time] == 0 else evening_counts.count
 
     total_count = morning_counts.total + afternoon_counts.total + evening_counts.total
-    assert len(list(pv_test6.energy_production_forecast_kWh.items())) == total_count
+    assert len(list(pv_test66.energy_production_forecast_kWh.items())) == total_count
 
     # Morning power generation is less we check this by percentage wise counts in the morning
 

@@ -44,8 +44,7 @@ StorageSettings = ConstSettings.StorageSettings
 
 class PVState:
     def __init__(self):
-        self.available_energy_kWh = \
-            {slot: 0. for slot in generate_market_slot_list()}
+        self.available_energy_kWh = {}
 
     def get_state(self):
         return {"available_energy_kWh": convert_pendulum_to_str_in_dict(self.available_energy_kWh)}
@@ -56,8 +55,7 @@ class PVState:
 
 class LoadState:
     def __init__(self):
-        self.desired_energy_Wh = \
-            {slot: 0. for slot in generate_market_slot_list()}
+        self.desired_energy_Wh = {}
         self.total_energy_demanded_wh = 0
 
     def get_state(self):

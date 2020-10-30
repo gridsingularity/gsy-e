@@ -26,7 +26,7 @@ Is also used for integrationtest.
 
 class CustomPvStrategy(PVStrategy):
 
-    def set_produced_energy_forecast_kWh_next_market(self, reconfigure=True):
+    def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
         """
         Returns flat PV production curve.
         """

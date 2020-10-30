@@ -83,18 +83,20 @@ class PVPredefinedStrategy(PVStrategy):
     def read_config_event(self):
         # this is to trigger to read from self.area.config.cloud_coverage:
         self.cloud_coverage = None
-        self.set_produced_energy_forecast_kWh_next_market(reconfigure=True)
+        self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
 
-    def set_produced_energy_forecast_kWh_next_market(self, reconfigure=True):
+    def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
         self._power_profile_index = self.cloud_coverage \
             if self.cloud_coverage is not None else self.area.config.cloud_coverage
         if reconfigure:
             self._read_predefined_profile_for_pv()
-        slot_time = self.area.next_market.time_slot
-        self.energy_production_forecast_kWh[slot_time] = \
-            self.power_profile[slot_time] * self.panel_count
-        self.state.available_energy_kWh[slot_time] = \
-            self.energy_production_forecast_kWh[slot_time]
+        for market in self.area.all_markets:
+            slot_time = market.time_slot
+            if slot_time not in self.energy_production_forecast_kWh or reconfigure:
+                self.energy_production_forecast_kWh[slot_time] = \
+                    self.power_profile[slot_time] * self.panel_count
+                self.state.available_energy_kWh[slot_time] = \
+                    self.energy_production_forecast_kWh[slot_time]
 
     def _read_predefined_profile_for_pv(self):
         """
@@ -124,7 +126,7 @@ class PVPredefinedStrategy(PVStrategy):
         if key_in_dict_and_not_none(kwargs, 'cloud_coverage'):
             self.cloud_coverage = kwargs['cloud_coverage']
             self._read_predefined_profile_for_pv()
-            self.set_produced_energy_forecast_kWh_next_market(reconfigure=True)
+            self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
 
 
 class PVUserProfileStrategy(PVPredefinedStrategy):
@@ -174,4 +176,4 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         super().area_reconfigure_event(**kwargs)
         if key_in_dict_and_not_none(kwargs, 'power_profile'):
             self._power_profile_W = kwargs['power_profile']
-        self._read_predefined_profile_for_pv()
+        self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)

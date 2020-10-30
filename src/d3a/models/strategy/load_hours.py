@@ -137,7 +137,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def event_market_cycle(self):
         super().event_market_cycle()
-        self._update_energy_requirement()
+        self._update_energy_requirement_future_markets()
         self._set_alternative_pricing_scheme()
         self._calculate_active_markets()
         self.update_state()
@@ -224,7 +224,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                 for day in range(self.area.config.sim_duration.days + 1)}
         if key_in_dict_and_not_none(kwargs, 'avg_power_W'):
             self.avg_power_W = kwargs['avg_power_W']
-            self._update_energy_requirement()
+            self._update_energy_requirement_future_markets()
 
         self._area_reconfigure_prices(**kwargs)
 
@@ -402,7 +402,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.hrs_per_day = {day: self._initial_hrs_per_day
                             for day in range(self.area.config.sim_duration.days + 1)}
         self._simulation_start_timestamp = self.area.now
-        self._update_energy_requirement()
+        self._update_energy_requirement_future_markets()
 
     @property
     def active_markets(self):
@@ -438,13 +438,18 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if len(hrs_of_day) < hrs_per_day:
             raise ValueError("Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
 
-    def _update_energy_requirement(self):
+    def _update_energy_requirement_future_markets(self):
         self.energy_per_slot_Wh = (self.avg_power_W /
                                    (duration(hours=1) / self.area.config.slot_length))
-        slot_time = self.area.next_market.time_slot
-        if self._allowed_operating_hours(slot_time):
-            self.energy_requirement_Wh[slot_time] = self.energy_per_slot_Wh
-            self.state.desired_energy_Wh[slot_time] = self.energy_per_slot_Wh
+        for market in self.area.all_markets:
+            slot_time = market.time_slot
+            if slot_time not in self.energy_requirement_Wh:
+                if self._allowed_operating_hours(slot_time):
+                    self.energy_requirement_Wh[slot_time] = self.energy_per_slot_Wh
+                    self.state.desired_energy_Wh[slot_time] = self.energy_per_slot_Wh
+                else:
+                    self.energy_requirement_Wh[slot_time] = 0.
+                    self.state.desired_energy_Wh[slot_time] = 0.
 
     def _allowed_operating_hours(self, time):
         return time.hour in self.hrs_of_day

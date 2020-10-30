@@ -81,17 +81,17 @@ class FakeArea:
     def all_markets(self):
         return [self.test_market]
 
+
+class FakeAreaTimeSlot(FakeArea):
+    def __init__(self):
+        super().__init__(0)
+
     @property
-    def next_market(self):
-        return self._next_market
+    def all_markets(self):
+        return [self._next_market]
 
     def create_next_market(self, time_slot):
         self._next_market = FakeMarketTimeSlot(time_slot)
-
-
-class FakeMarketTimeSlot:
-    def __init__(self, time_slot):
-        self.time_slot = time_slot
 
 
 class FakeMarket:
@@ -100,6 +100,7 @@ class FakeMarket:
         self.id = str(count)
         self.created_offers = []
         self.offers = {'id': Offer(id='id', time=pendulum.now(), price=10, energy=0.5, seller='A')}
+        self._time_slot = TIME
 
     def offer(self, price, energy, seller, original_offer_price=None, seller_origin=None):
         offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy, seller,
@@ -110,7 +111,7 @@ class FakeMarket:
 
     @property
     def time_slot(self):
-        return TIME
+        return self._time_slot
 
     @property
     def time_slot_str(self):
@@ -118,6 +119,12 @@ class FakeMarket:
 
     def delete_offer(self, offer_id):
         return
+
+
+class FakeMarketTimeSlot(FakeMarket):
+    def __init__(self, time_slot):
+        super().__init__(0)
+        self._time_slot = time_slot
 
 
 class FakeTrade:
@@ -238,13 +245,27 @@ def pv_test6(area_test3):
     return p
 
 
-def testing_produced_energy_forecast_real_data(pv_test6):
+@pytest.fixture()
+def area_test66():
+    return FakeAreaTimeSlot()
 
-    pv_test6.event_activate()
+
+@pytest.fixture()
+def pv_test66(area_test66):
+    p = PVPredefinedStrategy(cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE)
+    p.area = area_test66
+    p.owner = area_test66
+    p.offers.posted = {}
+    return p
+
+
+def testing_produced_energy_forecast_real_data(pv_test66):
+
+    pv_test66.event_activate()
     # prepare whole day of energy_production_forecast_kWh:
     for time_slot in generate_market_slot_list():
-        pv_test6.area.create_next_market(time_slot)
-        pv_test6.set_produced_energy_forecast_kWh_next_market(reconfigure=False)
+        pv_test66.area.create_next_market(time_slot)
+        pv_test66.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
 
     morning_time = pendulum.today(tz=TIME_ZONE).at(hour=5, minute=10, second=0)
     afternoon_time = pendulum.today(tz=TIME_ZONE).at(hour=19, minute=10, second=0)
@@ -257,24 +278,23 @@ def testing_produced_energy_forecast_real_data(pv_test6):
     morning_counts = Counts('morning')
     afternoon_counts = Counts('afternoon')
     evening_counts = Counts('evening')
-    for (time, power) in pv_test6.energy_production_forecast_kWh.items():
+    for (time, power) in pv_test66.energy_production_forecast_kWh.items():
         if time < morning_time:
             morning_counts.total += 1
             morning_counts.count = morning_counts.count + 1 \
-                if pv_test6.energy_production_forecast_kWh[time] == 0 else morning_counts.count
+                if pv_test66.energy_production_forecast_kWh[time] == 0 else morning_counts.count
         elif morning_time < time < afternoon_time:
             afternoon_counts.total += 1
             afternoon_counts.count = afternoon_counts.count + 1 \
-                if pv_test6.energy_production_forecast_kWh[time] > 0.001 \
+                if pv_test66.energy_production_forecast_kWh[time] > 0.001 \
                 else afternoon_counts.count
         elif time > afternoon_time:
             evening_counts.total += 1
             evening_counts.count = evening_counts.count + 1 \
-                if pv_test6.energy_production_forecast_kWh[time] == 0 else evening_counts.count
+                if pv_test66.energy_production_forecast_kWh[time] == 0 else evening_counts.count
 
     total_count = morning_counts.total + afternoon_counts.total + evening_counts.total
-    assert len(list(pv_test6.energy_production_forecast_kWh.items())) == total_count
-
+    assert len(list(pv_test66.energy_production_forecast_kWh.items())) == total_count
     morning_count_percent = (morning_counts.count / morning_counts.total) * 100
     assert morning_count_percent > 90
 
@@ -335,9 +355,9 @@ def pv_test_cloudy(area_test7):
 # DEACTIVATED because not really needed any more
 # def test_power_profiles(pv_test_sunny, pv_test_partial, pv_test_cloudy):
 #
-#     pv_test_sunny.set_produced_energy_forecast_kWh_next_market()
-#     pv_test_partial.set_produced_energy_forecast_kWh_next_market()
-#     pv_test_cloudy.set_produced_energy_forecast_kWh_next_market()
+#     pv_test_sunny.set_produced_energy_forecast_kWh_future_markets()
+#     pv_test_partial.set_produced_energy_forecast_kWh_future_markets()
+#     pv_test_cloudy.set_produced_energy_forecast_kWh_future_markets()
 #
 #     assert sum(pv_test_sunny.energy_production_forecast_kWh.values()) > 0
 #     assert sum(pv_test_partial.energy_production_forecast_kWh.values()) > 0
