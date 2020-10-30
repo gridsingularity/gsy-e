@@ -236,6 +236,7 @@ class StorageStrategy(BidEnabledStrategy):
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
 
     def event_activate(self):
+        self.state.add_default_values_to_state_profiles(self.area)
         self.event_activate_energy()
         self.event_activate_price()
 
@@ -417,6 +418,7 @@ class StorageStrategy(BidEnabledStrategy):
         current_market = self.area.next_market
         past_market = self.area.last_past_market
 
+        self.state.add_default_values_to_state_profiles(self.area)
         self.state.market_cycle(
             past_market.time_slot if past_market else current_market.time_slot,
             current_market.time_slot
@@ -569,6 +571,10 @@ class StorageStrategy(BidEnabledStrategy):
         super().event_offer(market_id=market_id, offer=offer)
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
             market = self.area.get_future_market_from_id(market_id)
+            # sometimes the offer event arrives earlier than the market_cycle event,
+            # so the default values have to be written here too:
+            self.state.add_default_values_to_state_profiles(self.area)
+
             if offer.id in market.offers and \
                     offer.seller != self.owner.name and \
                     offer.seller != self.area.name:

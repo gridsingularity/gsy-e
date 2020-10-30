@@ -459,6 +459,11 @@ def create_subdict_or_update(indict, key, subdict):
     return indict
 
 
+def write_default_to_dict(indict, key, default_value):
+    if key not in indict:
+        indict[key] = default_value
+
+
 def convert_str_to_pause_after_interval(start_time, input_str):
     pause_time = str_to_pendulum_datetime(input_str)
     return pause_time - start_time
