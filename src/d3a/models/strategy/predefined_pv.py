@@ -17,13 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pathlib
 
-from pendulum import DateTime, duration
-from d3a.d3a_core.util import generate_market_slot_list
+from pendulum import duration
 from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.util import d3a_path
-from typing import Dict
 from d3a_interface.utils import key_in_dict_and_not_none
 
 """
@@ -54,7 +52,12 @@ class PVPredefinedStrategy(PVStrategy):
         :param panel_count: Number of solar panels for this PV plant
         :param initial_selling_rate: Upper Threshold for PV offers
         :param final_selling_rate: Lower Threshold for PV offers
-        :param cloud_coverage: cloud conditions. 0=sunny, 1=partially cloudy, 2=cloudy
+        :param cloud_coverage: cloud conditions.
+                                0=sunny,
+                                1=partially cloudy,
+                                2=cloudy,
+                                4=use global profile
+                                None=use global cloud_coverage (default)
         :param fit_to_limit: Linear curve following initial_selling_rate & final_selling_rate
         :param update_interval: Interval after which PV will update its offer
         :param energy_rate_decrease_per_update: Slope of PV Offer change per update
@@ -75,29 +78,28 @@ class PVPredefinedStrategy(PVStrategy):
                          )
         self.cloud_coverage = cloud_coverage
         self._power_profile_index = cloud_coverage
-
-    def produced_energy_forecast_kWh(self):
-        # TODO: Need to have 2-stage initialization as well, because the area objects are not
-        # created when the constructor is executed if we inherit from a mixin class,
-        # therefore config cannot be read at that point
-        self.read_config_event()
+        self.power_profile = {}
 
     def read_config_event(self):
+        # this is to trigger to read from self.area.config.cloud_coverage:
+        self.cloud_coverage = None
+        self.set_produced_energy_forecast_kWh_next_market(reconfigure=True)
+
+    def set_produced_energy_forecast_kWh_next_market(self, reconfigure=True):
         self._power_profile_index = self.cloud_coverage \
             if self.cloud_coverage is not None else self.area.config.cloud_coverage
-        data = self._read_predefined_profile_for_pv()
+        if reconfigure:
+            self._read_predefined_profile_for_pv()
+        slot_time = self.area.next_market.time_slot
+        self.energy_production_forecast_kWh[slot_time] = \
+            self.power_profile[slot_time] * self.panel_count
+        self.state.available_energy_kWh[slot_time] = \
+            self.energy_production_forecast_kWh[slot_time]
 
-        for slot_time in generate_market_slot_list(area=self.area):
-            self.energy_production_forecast_kWh[slot_time] = \
-                data[slot_time] * self.panel_count
-            self.state.available_energy_kWh[slot_time] = \
-                self.energy_production_forecast_kWh[slot_time]
-
-    def _read_predefined_profile_for_pv(self) -> Dict[DateTime, float]:
+    def _read_predefined_profile_for_pv(self):
         """
         Reads profile data from the predefined power profiles. Reads config and constructor
         parameters and selects the appropriate predefined profile.
-        :return: key value pairs of time to energy in kWh
         """
         if self._power_profile_index is None or self._power_profile_index == 4:
             if self.owner.config.pv_user_profile is not None:
@@ -111,17 +113,18 @@ class PVPredefinedStrategy(PVStrategy):
         elif self._power_profile_index == 2:  # 2:cloudy
             profile_path = pathlib.Path(d3a_path + '/resources/Solar_Curve_W_cloudy.csv')
         else:
-            raise ValueError("Energy_profile has to be in [0,1,2]")
+            raise ValueError("Energy_profile has to be in [0,1,2,4]")
 
         # Populate energy production forecast data
-        return read_arbitrary_profile(
+        self.power_profile = read_arbitrary_profile(
             InputProfileTypes.POWER, str(profile_path))
 
     def area_reconfigure_event(self, **kwargs):
         super().area_reconfigure_event(**kwargs)
         if key_in_dict_and_not_none(kwargs, 'cloud_coverage'):
             self.cloud_coverage = kwargs['cloud_coverage']
-        self.read_config_event()
+            self._read_predefined_profile_for_pv()
+            self.set_produced_energy_forecast_kWh_next_market(reconfigure=True)
 
 
 class PVUserProfileStrategy(PVPredefinedStrategy):
@@ -158,12 +161,12 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
                          use_market_maker_rate=use_market_maker_rate)
         self._power_profile_W = power_profile
 
-    def _read_predefined_profile_for_pv(self) -> Dict[DateTime, float]:
+    def _read_predefined_profile_for_pv(self):
         """
         Reads profile data from the power profile. Handles csv files and dicts.
         :return: key value pairs of time to energy in kWh
         """
-        return read_arbitrary_profile(
+        self.power_profile = read_arbitrary_profile(
             InputProfileTypes.POWER,
             self._power_profile_W)
 
@@ -171,4 +174,4 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         super().area_reconfigure_event(**kwargs)
         if key_in_dict_and_not_none(kwargs, 'power_profile'):
             self._power_profile_W = kwargs['power_profile']
-        self.read_config_event()
+        self._read_predefined_profile_for_pv()

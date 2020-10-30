@@ -32,6 +32,7 @@ from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.exceptions import D3ADeviceException
 from d3a.constants import TIME_FORMAT
 from d3a.d3a_core.util import d3a_path
+from d3a.d3a_core.util import generate_market_slot_list
 
 
 ENERGY_FORECAST = {}  # type: Dict[DateTime, float]
@@ -45,6 +46,7 @@ class FakeArea:
         self.appliance = None
         self.name = 'FakeArea'
         self.test_market = FakeMarket(0)
+        self._next_market = FakeMarket(0)
 
     def get_future_market_from_id(self, id):
         return self.test_market
@@ -74,6 +76,18 @@ class FakeArea:
         return [self.test_market,
                 self.test_market,
                 self.test_market]
+
+    @property
+    def next_market(self):
+        return self._next_market
+
+    def create_next_market(self, time_slot):
+        self._next_market = FakeMarketTimeSlot(time_slot)
+
+
+class FakeMarketTimeSlot:
+    def __init__(self, time_slot):
+        self.time_slot = time_slot
 
 
 class FakeMarket:
@@ -278,6 +292,10 @@ def pv_test6(area_test3):
 def testing_produced_energy_forecast_real_data(pv_test6, market_test3):
 
     pv_test6.event_activate()
+    # prepare whole day of energy_production_forecast_kWh:
+    for time_slot in generate_market_slot_list():
+        pv_test6.area.create_next_market(time_slot)
+        pv_test6.set_produced_energy_forecast_kWh_next_market(reconfigure=False)
     morning_time = pendulum.today(tz=TIME_ZONE).at(hour=8, minute=20, second=0)
     afternoon_time = pendulum.today(tz=TIME_ZONE).at(hour=16, minute=40, second=0)
 

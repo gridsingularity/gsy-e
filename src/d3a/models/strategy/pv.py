@@ -100,7 +100,7 @@ class PVStrategy(BaseStrategy):
         if key_in_dict_and_not_none(kwargs, 'max_panel_power_W'):
             self.max_panel_power_W = kwargs['max_panel_power_W']
 
-        self.produced_energy_forecast_kWh()
+        self.set_produced_energy_forecast_kWh_next_market(reconfigure=True)
 
     def _area_reconfigure_prices(self, **kwargs):
         if key_in_dict_and_not_none(kwargs, 'initial_selling_rate'):
@@ -186,26 +186,26 @@ class PVStrategy(BaseStrategy):
     def event_activate_energy(self):
         if self.max_panel_power_W is None:
             self.max_panel_power_W = self.area.config.max_panel_power_W
-        self.produced_energy_forecast_kWh()
+        self.set_produced_energy_forecast_kWh_next_market(reconfigure=True)
 
     def event_tick(self):
         self.offer_update.update_offer(self)
         self.offer_update.increment_update_counter_all_markets(self)
 
-    def produced_energy_forecast_kWh(self):
+    def set_produced_energy_forecast_kWh_next_market(self, reconfigure=True):
         # This forecast ist based on the real PV system data provided by enphase
         # They can be found in the tools folder
         # A fit of a gaussian function to those data results in a formula Energy(time)
-        for slot_time in generate_market_slot_list(area=self.area):
-            if slot_time >= self.area.now:
-                difference_to_midnight_in_minutes = \
-                    slot_time.diff(self.area.now.start_of("day")).in_minutes() % (60 * 24)
-                self.energy_production_forecast_kWh[slot_time] = \
-                    self.gaussian_energy_forecast_kWh(
-                        difference_to_midnight_in_minutes) * self.panel_count
-                self.state.available_energy_kWh[slot_time] = \
-                    self.energy_production_forecast_kWh[slot_time]
-                assert self.energy_production_forecast_kWh[slot_time] >= 0.0
+        slot_time = self.area.next_market.time_slot
+        # if slot_time >= self.area.now:
+        difference_to_midnight_in_minutes = \
+            slot_time.diff(self.area.now.start_of("day")).in_minutes() % (60 * 24)
+        self.energy_production_forecast_kWh[slot_time] = \
+            self.gaussian_energy_forecast_kWh(
+                difference_to_midnight_in_minutes) * self.panel_count
+        self.state.available_energy_kWh[slot_time] = \
+            self.energy_production_forecast_kWh[slot_time]
+        assert self.energy_production_forecast_kWh[slot_time] >= 0.0
 
     def gaussian_energy_forecast_kWh(self, time_in_minutes=0):
         # The sun rises at approx 6:30 and sets at 18hr
@@ -231,6 +231,7 @@ class PVStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         super().event_market_cycle()
+        self.set_produced_energy_forecast_kWh_next_market(reconfigure=False)
         self._set_alternative_pricing_scheme()
         self.event_market_cycle_price()
         self._delete_past_state()
