@@ -19,7 +19,6 @@ from typing import Union
 from pendulum import duration
 
 from d3a_interface.constants_limits import ConstSettings
-from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
@@ -83,6 +82,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         Runs on activate event.
         :return: None
         """
+        self._simulation_start_timestamp = self.area.now
         self._event_activate_energy(self.daily_load_profile)
         del self.daily_load_profile
 
@@ -91,24 +91,23 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         Reads the power profile data and calculates the required energy
         for each slot.
         """
-        load_profile = read_arbitrary_profile(
+        self.load_profile = read_arbitrary_profile(
             InputProfileTypes.POWER,
             daily_load_profile)
-        self._update_energy_requirement(load_profile)
+        self._update_energy_requirement()
 
-    def _update_energy_requirement(self, load_profile):
+    def _update_energy_requirement(self):
         """
         Update required energy values for each market slot.
         :return: None
         """
-        self._simulation_start_timestamp = self.area.now
         self.hrs_per_day = {day: self._initial_hrs_per_day
                             for day in range(self.area.config.sim_duration.days + 1)}
-        for slot_time in generate_market_slot_list(area=self.area):
-            if self._allowed_operating_hours(slot_time.hour):
-                self.energy_requirement_Wh[slot_time] = load_profile[slot_time] * 1000
-                self.state.desired_energy_Wh[slot_time] = load_profile[slot_time] * 1000
-                self.state.total_energy_demanded_wh += load_profile[slot_time] * 1000
+        slot_time = self.area.next_market.time_slot
+        if self._allowed_operating_hours(slot_time.hour):
+            self.energy_requirement_Wh[slot_time] = self.load_profile[slot_time] * 1000
+            self.state.desired_energy_Wh[slot_time] = self.load_profile[slot_time] * 1000
+            self.state.total_energy_demanded_wh += self.load_profile[slot_time] * 1000
 
     def _operating_hours(self, energy):
         """
