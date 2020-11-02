@@ -26,7 +26,7 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
 from d3a.d3a_core.redis_connections.aggregator_connection import default_market_info
-from d3a.d3a_core.util import get_current_market_maker_rate
+from d3a.d3a_core.util import get_current_market_maker_rate, convert_W_to_kWh
 from d3a_interface.constants_limits import ConstSettings
 
 
@@ -400,18 +400,10 @@ class PVForecastExternalStrategy(PVExternalMixin, PVPredefinedStrategy):
                 f'{self.channel_prefix}/set_power_forecast': self._set_power_forecast}
 
     def _incoming_commands_callback_selection(self, req):
-        if req.request_type == "offer":
-            self._offer_impl(req.arguments, req.response_channel)
-        elif req.request_type == "delete_offer":
-            self._delete_offer_impl(req.arguments, req.response_channel)
-        elif req.request_type == "list_offers":
-            self._list_offers_impl(req.arguments, req.response_channel)
-        elif req.request_type == "device_info":
-            self._device_info_impl(req.arguments, req.response_channel)
-        elif req.request_type == "set_power_forecast":
+        if req.request_type == "set_power_forecast":
             self._set_power_forecast_impl(req.arguments, req.response_channel)
         else:
-            assert False, f"Incorrect incoming request name: {req}"
+            super()._incoming_commands_callback_selection(req)
 
     def event_market_cycle(self):
         self.produced_energy_forecast_kWh()
@@ -422,8 +414,9 @@ class PVForecastExternalStrategy(PVExternalMixin, PVPredefinedStrategy):
 
     def produced_energy_forecast_kWh(self):
         # sets energy forecast for next_market
-        energy_forecast_kWh = (self.area.config.slot_length / duration(hours=1)) / 1000 * \
-            self.power_forecast_buffer_W
+        energy_forecast_kWh = convert_W_to_kWh(self.power_forecast_buffer_W,
+                                               self.area.config.slot_length)
+
         slot_time = self.area.next_market.time_slot
         self.energy_production_forecast_kWh[slot_time] = energy_forecast_kWh
         self.state.available_energy_kWh[slot_time] = energy_forecast_kWh

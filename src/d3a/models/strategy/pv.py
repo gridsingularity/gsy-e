@@ -21,7 +21,7 @@ from pendulum import Time  # noqa
 from pendulum import duration
 from logging import getLogger
 
-from d3a.d3a_core.util import generate_market_slot_list
+from d3a.d3a_core.util import generate_market_slot_list, convert_W_to_kWh
 from d3a.models.strategy import BaseStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.device_validator import validate_pv_device_energy, validate_pv_device_price
@@ -224,9 +224,7 @@ class PVStrategy(BaseStrategy):
                     / 38.60) ** 2
                  )
             )
-        # /1000 is needed to convert Wh into kWh
-        w_to_wh_factor = (self.area.config.slot_length / duration(hours=1))
-        return round((gauss_forecast / 1000) * w_to_wh_factor, 4)
+        return round(convert_W_to_kWh(gauss_forecast, self.area.config.slot_length), 4)
 
     def event_market_cycle(self):
         super().event_market_cycle()

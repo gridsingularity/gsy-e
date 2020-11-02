@@ -25,7 +25,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
 from d3a.d3a_core.redis_connections.aggregator_connection import default_market_info
-from d3a.d3a_core.util import get_current_market_maker_rate
+from d3a.d3a_core.util import get_current_market_maker_rate, convert_W_to_Wh
 from d3a_interface.constants_limits import ConstSettings
 
 
@@ -399,32 +399,23 @@ class LoadForecastExternalStrategy(LoadExternalMixin, DefinedLoadStrategy):
                 f'{self.channel_prefix}/set_power_forecast': self._set_power_forecast}
 
     def _incoming_commands_callback_selection(self, req):
-        if req.request_type == "bid":
-            self._bid_impl(req.arguments, req.response_channel)
-        elif req.request_type == "delete_bid":
-            self._delete_bid_impl(req.arguments, req.response_channel)
-        elif req.request_type == "list_bids":
-            self._list_bids_impl(req.arguments, req.response_channel)
-        elif req.request_type == "device_info":
-            self._device_info_impl(req.arguments, req.response_channel)
-        elif req.request_type == "set_power_forecast":
+        if req.request_type == "set_power_forecast":
             self._set_power_forecast_impl(req.arguments, req.response_channel)
         else:
-            assert False, f"Incorrect incoming request name: {req}"
+            super()._incoming_commands_callback_selection(req)
 
     def event_market_cycle(self):
         self.update_energy_forecast()
         super().event_market_cycle()
 
     def event_activate_energy(self):
+        self._initiate_hrs_per_day()
         self.update_energy_forecast()
 
     def update_energy_forecast(self):
-        self._initiate_hrs_per_day()
-
         # sets energy forecast for next_market
-        energy_forecast_Wh = (self.area.config.slot_length / duration(hours=1)) * \
-            self.power_forecast_buffer_W
+        energy_forecast_Wh = convert_W_to_Wh(self.power_forecast_buffer_W,
+                                             self.area.config.slot_length)
         slot_time = self.area.next_market.time_slot
         self.energy_requirement_Wh[slot_time] = energy_forecast_Wh
         self.state.desired_energy_Wh[slot_time] = energy_forecast_Wh
