@@ -180,10 +180,7 @@ def offer_or_bid_from_JSON_string(offer_or_bid, current_time):
 def _is_offer(offer_or_bid):
     offer_bid_dict = json.loads(offer_or_bid)
     object_type = offer_bid_dict.pop("type")
-    if object_type == "Offer":
-        return True
-    else:
-        return False
+    return object_type == "Offer"
 
 
 def _is_bid(offer_or_bid):
