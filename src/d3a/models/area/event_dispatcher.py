@@ -113,7 +113,7 @@ class AreaDispatcher:
                 self._should_dispatch_to_strategies_appliances(event_type):
             self.area.tick_and_dispatch()
         if event_type is AreaEvent.MARKET_CYCLE:
-            self.area._cycle_markets(_trigger_event=True)
+            self.area.cycle_markets(_trigger_event=True)
         elif event_type is AreaEvent.ACTIVATE:
             self.area.activate()
         if self._should_dispatch_to_strategies_appliances(event_type):
