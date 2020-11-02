@@ -177,21 +177,6 @@ def offer_or_bid_from_JSON_string(offer_or_bid, current_time):
         return Bid(**offer_bid_dict)
 
 
-def _is_offer(offer_or_bid):
-    offer_bid_dict = json.loads(offer_or_bid)
-    object_type = offer_bid_dict.pop("type")
-    return object_type == "Offer"
-
-
-def _is_bid(offer_or_bid):
-    offer_bid_dict = json.loads(offer_or_bid)
-    object_type = offer_bid_dict.pop("type")
-    if object_type == "Bid":
-        return True
-    else:
-        return False
-
-
 class TradeBidOfferInfo(namedtuple('TradeBidOfferInfo', ('original_bid_rate',
                                                          'propagated_bid_rate',
                                                          'original_offer_rate',
