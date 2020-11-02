@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from pendulum import duration, DateTime  # NOQA
+from pendulum import DateTime  # NOQA
 from typing import Dict  # NOQA
 from collections import namedtuple
 from enum import Enum
@@ -23,7 +23,7 @@ from math import isclose
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
 from d3a import limit_float_precision
-from d3a.d3a_core.util import generate_market_slot_list
+from d3a.d3a_core.util import generate_market_slot_list, convert_kW_to_kWh
 
 StorageSettings = ConstSettings.StorageSettings
 
@@ -191,8 +191,8 @@ class StorageState:
                - self.offered_buy_kWh[time_slot]
 
     def set_battery_energy_per_slot(self, slot_length):
-        self._battery_energy_per_slot = self.max_abs_battery_power_kW * \
-                                        (slot_length / duration(hours=1))
+        self._battery_energy_per_slot = convert_kW_to_kWh(self.max_abs_battery_power_kW,
+                                                          slot_length)
 
     def has_battery_reached_max_power(self, energy, time_slot):
         return limit_float_precision(abs(energy
