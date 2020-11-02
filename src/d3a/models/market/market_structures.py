@@ -276,20 +276,15 @@ def trade_from_JSON_string(trade_string, current_time):
                                                                current_time)
     trade_dict['time'] = parse(trade_dict['time'])
     if key_in_dict_and_not_none(trade_dict, 'offer_bid_trade_info'):
-        if len(trade_dict['offer_bid_trade_info']) == TradeBidOfferInfo.len():
-            trade_dict['offer_bid_trade_info'] = TradeBidOfferInfo(
-                *trade_dict['offer_bid_trade_info'])
-        elif len(trade_dict['offer_bid_trade_info']) == 3:
-            if _is_bid(trade_string):
-                trade_dict['offer_bid_trade_info'].insert(2, None)
-                trade_dict['offer_bid_trade_info'].insert(3, None)
-                trade_dict['offer_bid_trade_info'] = TradeBidOfferInfo(
-                    *trade_dict['offer_bid_trade_info'])
-            elif _is_offer(trade_string):
-                trade_dict['offer_bid_trade_info'].insert(0, None)
-                trade_dict['offer_bid_trade_info'].insert(1, None)
-                trade_dict['offer_bid_trade_info'] = TradeBidOfferInfo(
-                    *trade_dict['offer_bid_trade_info'])
+        keys = ['original_bid_rate',
+                'propagated_bid_rate',
+                'original_offer_rate',
+                'propagated_offer_rate',
+                'trade_rate']
+        values = trade_dict['offer_bid_trade_info']
+        trade_dict['offer_bid_trade_info'] = dict(zip(keys, values))
+        trade_dict['offer_bid_trade_info'] = TradeBidOfferInfo(
+            **trade_dict['offer_bid_trade_info'])
     return Trade(**trade_dict)
 
 
