@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from pendulum import duration, today
 from copy import deepcopy
-from d3a_interface.sim_results.export_unmatched_loads import ExportUnmatchedLoads
 from unittest.mock import MagicMock
 import unittest
 from d3a.models.area import Area
@@ -108,10 +107,10 @@ class TestUnmatchedLoad(unittest.TestCase):
                 epb.area_result_dict, epb.flattened_area_core_stats_dict,
                 current_market_time_slot_str=mock_market.time_slot)
 
-            unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(epb.area_result_dict).\
-                get_current_market_results(
-                area_dict=epb.area_result_dict, core_stats=epb.flattened_area_core_stats_dict,
-                current_market_time_slot_str=mock_market.time_slot)
+            unmatched_loads, unmatched_loads_redis = \
+                epb.market_unmatched_loads.export_unmatched_loads.get_current_market_results(
+                    area_dict=epb.area_result_dict, core_stats=epb.flattened_area_core_stats_dict,
+                    current_market_time_slot_str=mock_market.time_slot)
 
             assert list(unmatched_loads['Grid'].keys()) == ['House1']
             assert get_number_of_unmatched_loads(unmatched_loads) == 0
@@ -148,10 +147,10 @@ class TestUnmatchedLoad(unittest.TestCase):
             epb.market_unmatched_loads.update_unmatched_loads(
                 epb.area_result_dict, epb.flattened_area_core_stats_dict,
                 current_market_time_slot_str=mock_market.time_slot_str)
-            unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(epb.area_result_dict).\
-                get_current_market_results(
-                area_dict=epb.area_result_dict, core_stats=epb.flattened_area_core_stats_dict,
-                current_market_time_slot_str=mock_market.time_slot_str)
+            unmatched_loads, unmatched_loads_redis = \
+                epb.market_unmatched_loads.export_unmatched_loads.get_current_market_results(
+                    area_dict=epb.area_result_dict, core_stats=epb.flattened_area_core_stats_dict,
+                    current_market_time_slot_str=mock_market.time_slot_str)
             cumulative_unmatched_load += get_number_of_unmatched_loads(unmatched_loads)
         assert cumulative_unmatched_load == 20
 
@@ -188,10 +187,10 @@ class TestUnmatchedLoad(unittest.TestCase):
             epb.market_unmatched_loads.update_unmatched_loads(
                 epb.area_result_dict, epb.flattened_area_core_stats_dict,
                 current_market_time_slot_str=mock_market.time_slot_str)
-            unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(epb.area_result_dict).\
-                get_current_market_results(
-                area_dict=epb.area_result_dict, core_stats=epb.flattened_area_core_stats_dict,
-                current_market_time_slot_str=mock_market.time_slot_str)
+            unmatched_loads, unmatched_loads_redis = \
+                epb.market_unmatched_loads.export_unmatched_loads.get_current_market_results(
+                    area_dict=epb.area_result_dict, core_stats=epb.flattened_area_core_stats_dict,
+                    current_market_time_slot_str=mock_market.time_slot_str)
             cumulative_unmatched_load += get_number_of_unmatched_loads(unmatched_loads)
 
         assert cumulative_unmatched_load == 10
@@ -244,10 +243,10 @@ class TestUnmatchedLoad(unittest.TestCase):
             epb.market_unmatched_loads.update_unmatched_loads(
                 epb.area_result_dict, epb.flattened_area_core_stats_dict,
                 current_market_time_slot_str=mock_market.time_slot_str)
-            unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(epb.area_result_dict).\
-                get_current_market_results(
-                area_dict=epb.area_result_dict, core_stats=epb.flattened_area_core_stats_dict,
-                current_market_time_slot_str=mock_market.time_slot_str)
+            unmatched_loads, unmatched_loads_redis = \
+                epb.market_unmatched_loads.export_unmatched_loads.get_current_market_results(
+                    area_dict=epb.area_result_dict, core_stats=epb.flattened_area_core_stats_dict,
+                    current_market_time_slot_str=mock_market.time_slot_str)
             cumulative_unmatched_load += get_number_of_unmatched_loads(unmatched_loads)
 
         assert cumulative_unmatched_load == 30
@@ -283,10 +282,10 @@ class TestUnmatchedLoad(unittest.TestCase):
             epb.market_unmatched_loads.update_unmatched_loads(
                 epb.area_result_dict, epb.flattened_area_core_stats_dict,
                 current_market_time_slot_str=mock_market.time_slot_str)
-            unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(epb.area_result_dict).\
-                get_current_market_results(
-                area_dict=epb.area_result_dict, core_stats=epb.flattened_area_core_stats_dict,
-                current_market_time_slot_str=mock_market.time_slot_str)
+            unmatched_loads, unmatched_loads_redis = \
+                epb.market_unmatched_loads.export_unmatched_loads.get_current_market_results(
+                    area_dict=epb.area_result_dict, core_stats=epb.flattened_area_core_stats_dict,
+                    current_market_time_slot_str=mock_market.time_slot_str)
             cumulative_unmatched_load += get_number_of_unmatched_loads(unmatched_loads)
 
         assert cumulative_unmatched_load == 20
@@ -311,11 +310,11 @@ class TestUnmatchedLoad(unittest.TestCase):
         epb.market_unmatched_loads.update_unmatched_loads(
             epb.area_result_dict, epb.flattened_area_core_stats_dict,
             current_market_time_slot_str=mock_market.time_slot_str)
-        unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(epb.area_result_dict). \
-            get_current_market_results(
-            area_dict=epb.area_result_dict, core_stats=epb.flattened_area_core_stats_dict,
-            current_market_time_slot_str=mock_market.time_slot_str)
-
+        unmatched_loads, unmatched_loads_redis = \
+            epb.market_unmatched_loads.export_unmatched_loads.get_current_market_results(
+                area_dict=epb.area_result_dict, core_stats=epb.flattened_area_core_stats_dict,
+                current_market_time_slot_str=mock_market.time_slot_str
+            )
         assert get_number_of_unmatched_loads(unmatched_loads) == 0
         assert "type" not in unmatched_loads["House1"]
         assert unmatched_loads["House1"]["load1"]["type"] == "LoadHoursStrategy"
