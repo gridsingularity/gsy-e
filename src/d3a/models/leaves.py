@@ -28,9 +28,9 @@ from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfil
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy, \
-    LoadProfileExternalStrategy
+    LoadProfileExternalStrategy, LoadForecastExternalStrategy
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy, \
-    PVPredefinedExternalStrategy, PVUserProfileExternalStrategy
+    PVPredefinedExternalStrategy, PVUserProfileExternalStrategy, PVForecastExternalStrategy
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 
@@ -43,6 +43,14 @@ external_strategies_mapping = {
     StorageStrategy: StorageExternalStrategy
 }
 
+forecast_strategy_mapping = {
+    PVPredefinedStrategy: PVForecastExternalStrategy,
+    PVStrategy: PVForecastExternalStrategy,
+    PVUserProfileStrategy: PVForecastExternalStrategy,
+    DefinedLoadStrategy: LoadForecastExternalStrategy,
+    LoadHoursStrategy: LoadForecastExternalStrategy
+}
+
 
 class Leaf(Area):
     """
@@ -53,7 +61,9 @@ class Leaf(Area):
     appliance_type = SimpleAppliance
 
     def __init__(self, name, config=None, uuid=None, **kwargs):
-        if kwargs.get("allow_external_connection", False) is True:
+        if kwargs.get("forecast_stream_enabled", False) is True:
+            self.strategy_type = forecast_strategy_mapping[self.strategy_type]
+        elif kwargs.get("allow_external_connection", False) is True:
             self.strategy_type = external_strategies_mapping[self.strategy_type]
         super(Leaf, self).__init__(
             name=name,

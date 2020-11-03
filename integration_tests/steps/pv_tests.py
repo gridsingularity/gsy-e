@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from math import isclose
-from pendulum import duration
 from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import DEFAULT_PRECISION
 
@@ -95,9 +94,10 @@ def pv_const_energy(context):
 
 @then('the load buys at most the energy equivalent of {power_W} W')
 def load_buys_200_W(context, power_W):
+    from d3a.d3a_core.util import convert_W_to_kWh
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     load = list(filter(lambda x: "Load" in x.name, house1.children))[0]
-    max_desired_energy = float(power_W) * (house1.config.slot_length / duration(hours=1)) / 1000.0
+    max_desired_energy = convert_W_to_kWh(float(power_W), house1.config.slot_length)
     total_energy_per_slot = []
     for market in house1.past_markets:
         total_energy = sum(trade.offer.energy
