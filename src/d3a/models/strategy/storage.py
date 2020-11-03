@@ -34,6 +34,7 @@ from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a_interface.utils import key_in_dict_and_not_none
+from d3a import constants
 
 log = getLogger(__name__)
 
@@ -103,8 +104,8 @@ class StorageStrategy(BidEnabledStrategy):
                                  update_interval=update_interval)
         for time_slot in generate_market_slot_list():
             validate_storage_device(
-                initial_selling_rate=self.offer_update.initial_rate[time_slot],
-                final_selling_rate=self.offer_update.final_rate[time_slot])
+                initial_selling_rate=self.offer_update.active_initial_rate_profile[time_slot],
+                final_selling_rate=self.offer_update.active_final_rate_profile[time_slot])
         self.bid_update = \
             UpdateFrequencyMixin(
                 initial_rate=initial_buying_rate,
@@ -116,8 +117,8 @@ class StorageStrategy(BidEnabledStrategy):
             )
         for time_slot in generate_market_slot_list():
             validate_storage_device(
-                initial_buying_rate=self.bid_update.initial_rate[time_slot],
-                final_buying_rate=self.bid_update.final_rate[time_slot])
+                initial_buying_rate=self.bid_update.active_initial_rate_profile[time_slot],
+                final_buying_rate=self.bid_update.active_final_rate_profile[time_slot])
         self.state = \
             StorageState(initial_soc=initial_soc,
                          initial_energy_origin=initial_energy_origin,
@@ -134,34 +135,36 @@ class StorageStrategy(BidEnabledStrategy):
             initial_selling_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                           kwargs['initial_selling_rate'])
         else:
-            initial_selling_rate = self.offer_update.initial_rate
+            initial_selling_rate = self.offer_update.active_initial_rate_profile
         if key_in_dict_and_not_none(kwargs, 'final_selling_rate'):
             final_selling_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                         kwargs['final_selling_rate'])
         else:
-            final_selling_rate = self.offer_update.final_rate
+            final_selling_rate = self.offer_update.active_final_rate_profile
         if key_in_dict_and_not_none(kwargs, 'initial_buying_rate'):
             initial_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                          kwargs['initial_buying_rate'])
         else:
-            initial_buying_rate = self.bid_update.initial_rate
+            initial_buying_rate = self.bid_update.active_initial_rate_profile
         if key_in_dict_and_not_none(kwargs, 'final_buying_rate'):
             final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                        kwargs['final_buying_rate'])
         else:
-            final_buying_rate = self.bid_update.final_rate
+            final_buying_rate = self.bid_update.active_final_rate_profile
         if key_in_dict_and_not_none(kwargs, 'energy_rate_decrease_per_update'):
             energy_rate_decrease_per_update = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                        kwargs['energy_rate_decrease_per_update'])
         else:
-            energy_rate_decrease_per_update = self.offer_update.energy_rate_change_per_update
+            energy_rate_decrease_per_update = \
+                self.offer_update.active_energy_rate_change_per_update_profile
         if key_in_dict_and_not_none(kwargs, 'energy_rate_increase_per_update'):
             energy_rate_increase_per_update = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                        kwargs['energy_rate_increase_per_update'])
         else:
-            energy_rate_increase_per_update = self.bid_update.energy_rate_change_per_update
+            energy_rate_increase_per_update = \
+                self.bid_update.active_energy_rate_change_per_update_profile
         if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
             bid_fit_to_limit = kwargs['fit_to_limit']
             offer_fit_to_limit = kwargs['fit_to_limit']
@@ -186,12 +189,14 @@ class StorageStrategy(BidEnabledStrategy):
                       f"Traceback: {traceback.format_exc()}")
             return
 
-        self.offer_update.initial_rate = initial_selling_rate
-        self.offer_update.final_rate = final_selling_rate
-        self.bid_update.initial_rate = initial_buying_rate
-        self.bid_update.final_rate = final_buying_rate
-        self.bid_update.energy_rate_change_per_update = energy_rate_increase_per_update
-        self.offer_update.energy_rate_change_per_update = energy_rate_decrease_per_update
+        self.offer_update.active_initial_rate_profile = initial_selling_rate
+        self.offer_update.active_final_rate_profile = final_selling_rate
+        self.bid_update.active_initial_rate_profile = initial_buying_rate
+        self.bid_update.active_final_rate_profile = final_buying_rate
+        self.bid_update.active_energy_rate_change_per_update_profile = \
+            energy_rate_increase_per_update
+        self.offer_update.active_energy_rate_change_per_update_profile = \
+            energy_rate_decrease_per_update
         self.bid_update.fit_to_limit = bid_fit_to_limit
         self.offer_update.fit_to_limit = offer_fit_to_limit
         self.bid_update.update_interval = update_interval
@@ -199,8 +204,8 @@ class StorageStrategy(BidEnabledStrategy):
 
     def area_reconfigure_event(self, **kwargs):
         self._area_reconfigure_prices(**kwargs)
-        self.offer_update.update_on_activate()
-        self.bid_update.update_on_activate()
+        self.offer_update.update_and_populate_price_settings(self.area)
+        self.bid_update.update_and_populate_price_settings(self.area)
 
     @staticmethod
     def _validate_rates(initial_selling_rate, final_selling_rate,
@@ -224,13 +229,13 @@ class StorageStrategy(BidEnabledStrategy):
         self.state.calculate_soc_for_time_slot(self.area.next_market.time_slot)
 
     def event_activate_price(self):
-        self._validate_rates(self.offer_update.initial_rate, self.offer_update.final_rate,
-                             self.bid_update.initial_rate, self.bid_update.final_rate,
-                             self.bid_update.energy_rate_change_per_update,
-                             self.offer_update.energy_rate_change_per_update,
+        self._validate_rates(self.offer_update.active_initial_rate_profile,
+                             self.offer_update.active_final_rate_profile,
+                             self.bid_update.active_initial_rate_profile,
+                             self.bid_update.active_final_rate_profile,
+                             self.bid_update.active_energy_rate_change_per_update_profile,
+                             self.offer_update.active_energy_rate_change_per_update_profile,
                              self.bid_update.fit_to_limit, self.offer_update.fit_to_limit)
-        self.offer_update.update_on_activate()
-        self.bid_update.update_on_activate()
 
     def event_activate_energy(self):
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
@@ -239,6 +244,8 @@ class StorageStrategy(BidEnabledStrategy):
         self.state.add_default_values_to_state_profiles(self.area)
         self.event_activate_energy()
         self.event_activate_price()
+        self.offer_update.update_and_populate_price_settings(self.area)
+        self.bid_update.update_and_populate_price_settings(self.area)
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
@@ -412,6 +419,8 @@ class StorageStrategy(BidEnabledStrategy):
     def event_market_cycle(self):
         super().event_market_cycle()
         self._set_alternative_pricing_scheme()
+        self.offer_update.update_and_populate_price_settings(self.area)
+        self.bid_update.update_and_populate_price_settings(self.area)
         self.offer_update.update_market_cycle_offers(self)
         for market in self.area.all_markets[:-1]:
             self.bid_update.update_counter[market.time_slot] = 0
@@ -438,6 +447,8 @@ class StorageStrategy(BidEnabledStrategy):
                     self.state.offered_buy_kWh[current_market.time_slot] += energy_kWh
                 except MarketException:
                     pass
+
+        self._delete_past_state()
 
     def event_balancing_market_cycle(self):
         if not self.is_eligible_for_balancing_market:
@@ -573,9 +584,39 @@ class StorageStrategy(BidEnabledStrategy):
             market = self.area.get_future_market_from_id(market_id)
             # sometimes the offer event arrives earlier than the market_cycle event,
             # so the default values have to be written here too:
+            self.offer_update.update_and_populate_price_settings(self.area)
+            self.bid_update.update_and_populate_price_settings(self.area)
             self.state.add_default_values_to_state_profiles(self.area)
 
             if offer.id in market.offers and \
                     offer.seller != self.owner.name and \
                     offer.seller != self.area.name:
                 self.buy_energy(market, offer)
+
+    def _delete_past_state(self):
+        if constants.D3A_TEST_RUN is True or \
+                self.area.current_market is None:
+            return
+        to_delete = []
+        for k in self.bid_update.initial_rate.keys():
+            if k < self.area.current_market.time_slot:
+                to_delete.append(k)
+        for k in to_delete:
+            del self.state.pledged_sell_kWh[k]
+            del self.state.offered_sell_kWh[k]
+            del self.state.pledged_buy_kWh[k]
+            del self.state.offered_buy_kWh[k]
+            del self.state.charge_history[k]
+            del self.state.charge_history_kWh[k]
+            del self.state.offered_history[k]
+            del self.state.used_history[k]
+            del self.state.energy_to_buy_dict[k]
+            del self.state.energy_to_sell_dict[k]
+            del self.bid_update.initial_rate[k]
+            del self.bid_update.final_rate[k]
+            del self.bid_update.energy_rate_change_per_update[k]
+            del self.bid_update.update_counter[k]
+            del self.offer_update.initial_rate[k]
+            del self.offer_update.final_rate[k]
+            del self.offer_update.energy_rate_change_per_update[k]
+            del self.offer_update.update_counter[k]

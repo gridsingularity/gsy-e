@@ -311,7 +311,6 @@ def read_arbitrary_profile(profile_type: InputProfileTypes,
     or a dict with hourly data (Dict[int, float])
     or a dict with arbitrary time data (Dict[str, float])
     or a string containing a serialized dict of the aforementioned structure
-    :param copy:
     :return: a mapping from time to profile values
     """
 

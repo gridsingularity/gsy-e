@@ -72,7 +72,7 @@ def test_non_attr_param():
     area1 = Area('area1', [], None, PVStrategy())
     recovered1 = area_from_string(area_to_string(area1))
     assert recovered1.strategy.max_panel_power_W is None
-    assert recovered1.strategy.offer_update.final_rate[area1.config.start_date] == \
+    assert recovered1.strategy.offer_update.active_final_rate_profile[area1.config.start_date] == \
         ConstSettings.PVSettings.SELLING_RATE_RANGE.final
 
 

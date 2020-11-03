@@ -133,10 +133,12 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def event_activate(self):
         self._calculate_active_markets()
         self.event_activate_price()
+        self.bid_update.update_and_populate_price_settings(self.area)
         self.event_activate_energy()
 
     def event_market_cycle(self):
         super().event_market_cycle()
+        self.bid_update.update_and_populate_price_settings(self.area)
         self._update_energy_requirement_future_markets()
         self._set_alternative_pricing_scheme()
         self._calculate_active_markets()
@@ -148,7 +150,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
             if self.hrs_per_day[current_day] <= FLOATING_POINT_TOLERANCE:
                 self.energy_requirement_Wh[market.time_slot] = 0.0
                 self.state.desired_energy_Wh[market.time_slot] = 0.0
-        self.event_market_cycle_prices()
+        self.post_or_update_bid()
         if self.area.current_market:
             self._cycled_market.add(self.area.current_market.time_slot)
             self.state.total_energy_demanded_wh += \
@@ -168,25 +170,29 @@ class LoadHoursStrategy(BidEnabledStrategy):
         for k in to_delete:
             del self.energy_requirement_Wh[k]
             del self.state.desired_energy_Wh[k]
+            del self.bid_update.initial_rate[k]
+            del self.bid_update.final_rate[k]
+            del self.bid_update.energy_rate_change_per_update[k]
+            del self.bid_update.update_counter[k]
 
     def _area_reconfigure_prices(self, **kwargs):
         if key_in_dict_and_not_none(kwargs, 'initial_buying_rate'):
             initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                   kwargs['initial_buying_rate'])
         else:
-            initial_rate = self.bid_update.initial_rate
+            initial_rate = self.bid_update.active_initial_rate_profile
         if key_in_dict_and_not_none(kwargs, 'final_buying_rate'):
             final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                 kwargs['final_buying_rate'])
         else:
-            final_rate = self.bid_update.final_rate
+            final_rate = self.bid_update.active_final_rate_profile
         if key_in_dict_and_not_none(kwargs, 'energy_rate_increase_per_update'):
             energy_rate_change_per_update = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                        kwargs['energy_rate_increase_per_update'])
-
         else:
-            energy_rate_change_per_update = self.bid_update.energy_rate_change_per_update
+            energy_rate_change_per_update = \
+                self.bid_update.active_energy_rate_change_per_update_profile
         if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
             fit_to_limit = kwargs['fit_to_limit']
         else:
@@ -210,9 +216,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
                       f"Traceback: {traceback.format_exc()}")
             return
 
-        self.bid_update.initial_rate = initial_rate
-        self.bid_update.final_rate = final_rate
-        self.bid_update.energy_rate_change_per_update = energy_rate_change_per_update
+        self.bid_update.active_initial_rate_profile = initial_rate
+        self.bid_update.active_final_rate_profile = final_rate
+        self.bid_update.active_energy_rate_change_per_update_profile = \
+            energy_rate_change_per_update
         self.bid_update.fit_to_limit = fit_to_limit
         self.bid_update.update_interval = update_interval
 
@@ -227,6 +234,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self._update_energy_requirement_future_markets()
 
         self._area_reconfigure_prices(**kwargs)
+        self.bid_update.update_and_populate_price_settings(self.area)
 
     def event_activate_price(self):
         # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
@@ -238,10 +246,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
             else:
                 self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate +
                                             self.owner.get_path_to_root_fees())
-        self._validate_rates(self.bid_update.initial_rate, self.bid_update.final_rate,
-                             self.bid_update.energy_rate_change_per_update,
+        self._validate_rates(self.bid_update.active_initial_rate_profile,
+                             self.bid_update.active_final_rate_profile,
+                             self.bid_update.active_energy_rate_change_per_update_profile,
                              self.bid_update.fit_to_limit)
-        self.bid_update.update_on_activate()
 
     def _find_acceptable_offer(self, market):
         offers = market.most_affordable_offers
@@ -323,7 +331,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
                                                      final_rate=final_rate)
 
-    def event_market_cycle_prices(self):
+    def post_or_update_bid(self):
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
             return
         for market in self.active_markets:

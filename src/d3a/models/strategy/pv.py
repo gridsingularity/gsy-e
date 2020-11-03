@@ -95,6 +95,8 @@ class PVStrategy(BaseStrategy):
 
     def area_reconfigure_event(self, **kwargs):
         self._area_reconfigure_prices(**kwargs)
+        self.offer_update.update_and_populate_price_settings(self.area)
+
         if key_in_dict_and_not_none(kwargs, 'panel_count'):
             self.panel_count = kwargs['panel_count']
         if key_in_dict_and_not_none(kwargs, 'max_panel_power_W'):
@@ -107,19 +109,20 @@ class PVStrategy(BaseStrategy):
             initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                   kwargs['initial_selling_rate'])
         else:
-            initial_rate = self.offer_update.initial_rate
+            initial_rate = self.offer_update.active_initial_rate_profile
 
         if key_in_dict_and_not_none(kwargs, 'final_selling_rate'):
             final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                 kwargs['final_selling_rate'])
         else:
-            final_rate = self.offer_update.final_rate
+            final_rate = self.offer_update.active_final_rate_profile
         if key_in_dict_and_not_none(kwargs, 'energy_rate_decrease_per_update'):
             energy_rate_change_per_update = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                        kwargs['energy_rate_decrease_per_update'])
         else:
-            energy_rate_change_per_update = self.offer_update.energy_rate_change_per_update
+            energy_rate_change_per_update = \
+                self.offer_update.active_energy_rate_change_per_update_profile
         if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
             fit_to_limit = kwargs['fit_to_limit']
         else:
@@ -142,13 +145,12 @@ class PVStrategy(BaseStrategy):
                       f"Traceback: {traceback.format_exc()}")
             return
 
-        self.offer_update.initial_rate = initial_rate
-        self.offer_update.final_rate = final_rate
-        self.offer_update.energy_rate_change_per_update = energy_rate_change_per_update
+        self.offer_update.active_initial_rate_profile = initial_rate
+        self.offer_update.active_final_rate_profile = final_rate
+        self.offer_update.active_energy_rate_change_per_update_profile = \
+            energy_rate_change_per_update
         self.offer_update.fit_to_limit = fit_to_limit
         self.offer_update.update_interval = update_interval
-
-        self.offer_update.update_offer(self)
 
     @staticmethod
     def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
@@ -165,23 +167,24 @@ class PVStrategy(BaseStrategy):
     def event_activate(self):
         self.event_activate_price()
         self.event_activate_energy()
+        self.offer_update.update_and_populate_price_settings(self.area)
 
     def event_activate_price(self):
         # If use_market_maker_rate is true, overwrite initial_selling_rate to market maker rate
         if self.use_market_maker_rate:
             if isinstance(GlobalConfig.market_maker_rate, dict):
-                self.area_reconfigure_event(initial_selling_rate=GlobalConfig
-                                            .market_maker_rate.get(
+                self._area_reconfigure_prices(initial_selling_rate=GlobalConfig
+                                              .market_maker_rate.get(
                                                 self.owner.parent.next_market.time_slot, 0) -
-                                            self.owner.get_path_to_root_fees(),
-                                            validate=False)
+                                              self.owner.get_path_to_root_fees(),
+                                              validate=False)
             else:
-                self.area_reconfigure_event(initial_selling_rate=GlobalConfig.market_maker_rate -
-                                            self.owner.get_path_to_root_fees(), validate=False)
-        self._validate_rates(self.offer_update.initial_rate, self.offer_update.final_rate,
-                             self.offer_update.energy_rate_change_per_update,
+                self._area_reconfigure_prices(initial_selling_rate=GlobalConfig.market_maker_rate -
+                                              self.owner.get_path_to_root_fees(), validate=False)
+        self._validate_rates(self.offer_update.active_initial_rate_profile,
+                             self.offer_update.active_final_rate_profile,
+                             self.offer_update.active_energy_rate_change_per_update_profile,
                              self.offer_update.fit_to_limit)
-        self.offer_update.update_on_activate()
 
     def event_activate_energy(self):
         if self.max_panel_power_W is None:
@@ -249,8 +252,13 @@ class PVStrategy(BaseStrategy):
         for k in to_delete:
             self.state.available_energy_kWh.pop(k, None)
             self.energy_production_forecast_kWh.pop(k, None)
+            del self.offer_update.initial_rate[k]
+            del self.offer_update.final_rate[k]
+            del self.offer_update.energy_rate_change_per_update[k]
+            del self.offer_update.update_counter[k]
 
     def event_market_cycle_price(self):
+        self.offer_update.update_and_populate_price_settings(self.area)
         self.offer_update.update_market_cycle_offers(self)
 
         # Iterate over all markets open in the future

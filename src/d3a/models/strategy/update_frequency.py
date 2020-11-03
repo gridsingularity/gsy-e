@@ -21,7 +21,7 @@ from pendulum import duration
 from d3a.d3a_core.exceptions import MarketException
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a.d3a_core.util import generate_market_slot_list
+from d3a.d3a_core.util import write_default_to_dict
 
 
 class UpdateFrequencyMixin:
@@ -30,20 +30,36 @@ class UpdateFrequencyMixin:
                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
                  rate_limit_object=max):
         self.fit_to_limit = fit_to_limit
-        self.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                   initial_rate)
-        self.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                 final_rate)
+        self.active_initial_rate_profile = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                                  initial_rate)
+        self.initial_rate = {}
+        self.active_final_rate_profile = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                                final_rate)
+        self.final_rate = {}
         if fit_to_limit is False:
-            self.energy_rate_change_per_update = \
-                read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                       energy_rate_change_per_update)
+            self.active_energy_rate_change_per_update_profile = \
+                read_arbitrary_profile(InputProfileTypes.IDENTITY, energy_rate_change_per_update)
         else:
-            self.energy_rate_change_per_update = None
+            self.active_energy_rate_change_per_update_profile = {}
+
+        self.energy_rate_change_per_update = {}
         self.update_interval = update_interval
-        self.update_counter = read_arbitrary_profile(InputProfileTypes.IDENTITY, 0)
+        self.update_counter = {}
         self.number_of_available_updates = 0
         self.rate_limit_object = rate_limit_object
+
+    def _populate_profiles(self, area):
+        for market in area.all_markets:
+            # TODO: select in active profiles only time and day and not date and time
+            if self.fit_to_limit is False:
+                self.energy_rate_change_per_update[market.time_slot] = \
+                    self.active_energy_rate_change_per_update_profile[market.time_slot]
+            self.initial_rate[market.time_slot] = \
+                self.active_initial_rate_profile[market.time_slot]
+            self.final_rate[market.time_slot] = \
+                self.active_final_rate_profile[market.time_slot]
+            self._set_or_update_energy_rate_change_per_update(market.time_slot)
+            write_default_to_dict(self.update_counter, market.time_slot, 0)
 
     def reassign_mixin_arguments(self, time_slot, initial_rate=None, final_rate=None,
                                  fit_to_limit=None, energy_rate_change_per_update=None,
@@ -60,23 +76,25 @@ class UpdateFrequencyMixin:
         if update_interval is not None:
             self.update_interval = update_interval
 
-        self.update_on_activate()
+        self.number_of_available_updates = \
+            self._calculate_number_of_available_updates_per_slot
+        self._set_or_update_energy_rate_change_per_update(time_slot)
 
-    def _set_or_update_energy_rate_change_per_update(self):
+    def _set_or_update_energy_rate_change_per_update(self, time_slot):
         energy_rate_change_per_update = {}
-        for slot in generate_market_slot_list():
-            if self.fit_to_limit:
-                energy_rate_change_per_update[slot] = \
-                    (self.initial_rate[slot] - self.final_rate[slot]) / \
-                    self.number_of_available_updates
-            else:
-                if self.rate_limit_object is min:
-                    energy_rate_change_per_update[slot] = \
-                        -1 * self.energy_rate_change_per_update[slot]
-                elif self.rate_limit_object is max:
-                    energy_rate_change_per_update[slot] = \
-                        self.energy_rate_change_per_update[slot]
-        self.energy_rate_change_per_update = energy_rate_change_per_update
+        if self.fit_to_limit:
+            energy_rate_change_per_update[time_slot] = \
+                (self.active_initial_rate_profile[time_slot] -
+                 self.active_final_rate_profile[time_slot]) / \
+                self.number_of_available_updates
+        else:
+            if self.rate_limit_object is min:
+                energy_rate_change_per_update[time_slot] = \
+                    -1 * self.active_energy_rate_change_per_update_profile[time_slot]
+            elif self.rate_limit_object is max:
+                energy_rate_change_per_update[time_slot] = \
+                    self.active_energy_rate_change_per_update_profile[time_slot]
+        self.energy_rate_change_per_update.update(energy_rate_change_per_update)
 
     @property
     def _calculate_number_of_available_updates_per_slot(self):
@@ -84,13 +102,13 @@ class UpdateFrequencyMixin:
             max(int((GlobalConfig.slot_length.seconds / self.update_interval.seconds) - 1), 1)
         return number_of_available_updates
 
-    def update_on_activate(self):
+    def update_and_populate_price_settings(self, area):
         assert ConstSettings.GeneralSettings.MIN_UPDATE_INTERVAL * 60 <= \
                self.update_interval.seconds < GlobalConfig.slot_length.seconds
 
         self.number_of_available_updates = \
             self._calculate_number_of_available_updates_per_slot
-        self._set_or_update_energy_rate_change_per_update()
+        self._populate_profiles(area)
 
     def get_updated_rate(self, time_slot):
         calculated_rate = \
@@ -118,7 +136,7 @@ class UpdateFrequencyMixin:
 
     def time_for_price_update(self, strategy, time_slot):
         return self.elapsed_seconds(strategy) >= \
-               self.update_interval.seconds * (self.update_counter[time_slot])
+               self.update_interval.seconds * self.update_counter[time_slot]
 
     def update_energy_price(self, market, strategy):
         if market.id not in strategy.offers.open.values():
