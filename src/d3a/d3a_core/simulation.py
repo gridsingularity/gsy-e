@@ -284,14 +284,24 @@ class Simulation:
                 duration(seconds=self.paused_time)
         )
 
-        self.progress_info.eta = (run_duration / (slot_no + 1) * slot_count) - run_duration
+        if d3a.constants.IS_CANARY_NETWORK:
+            self.progress_info.eta = None
+            self.progress_info.percentage_completed = 0.0
+        else:
+            self.progress_info.eta = (run_duration / (slot_no + 1) * slot_count) - run_duration
+            self.progress_info.percentage_completed = (slot_no + 1) / slot_count * 100
+
         self.progress_info.elapsed_time = run_duration
-        self.progress_info.percentage_completed = (slot_no + 1) / slot_count * 100
         self.progress_info.current_slot_str = get_market_slot_time_str(
             slot_no, self.simulation_config)
         self.progress_info.next_slot_str = get_market_slot_time_str(
             slot_no + 1, self.simulation_config)
         self.progress_info.current_slot_number = slot_no
+
+    def set_area_current_tick(self, area, current_tick):
+        area.current_tick = current_tick
+        for child in area.children:
+            self.set_area_current_tick(child, current_tick)
 
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
         config = self.simulation_config
@@ -301,6 +311,30 @@ class Simulation:
         self.simulation_config.external_redis_communicator.sub_to_aggregator()
         self.simulation_config.external_redis_communicator.start_communication()
         self._update_and_send_results()
+
+        if d3a.constants.IS_CANARY_NETWORK is True:
+            slot_count = sys.maxsize
+            import datetime
+
+            ConstSettings.GeneralSettings.RUN_REAL_TIME = True
+
+            today = datetime.date.today()
+            seconds_since_midnight = time.time() - time.mktime(today.timetuple())
+
+            slot_resume = int(seconds_since_midnight // config.slot_length.seconds)
+            seconds_elapsed_in_slot = seconds_since_midnight % config.slot_length.total_seconds()
+            ticks_elapsed_in_slot = seconds_elapsed_in_slot // config.tick_length.total_seconds()
+            tick_resume = int(ticks_elapsed_in_slot)
+
+            seconds_elapsed_in_tick = seconds_elapsed_in_slot % config.tick_length.total_seconds()
+
+            seconds_until_next_tick = config.tick_length.total_seconds() - seconds_elapsed_in_tick
+
+            ticks_since_midnight = int(seconds_since_midnight // config.tick_length.seconds)
+            self.set_area_current_tick(self.area, ticks_since_midnight)
+
+            sleep(seconds_until_next_tick)
+
         for slot_no in range(slot_resume, slot_count):
 
             self._update_progress_info(slot_no, slot_count)
