@@ -19,8 +19,7 @@ import logging
 from logging import getLogger
 
 import click
-import dill
-from click.types import Choice, File
+from click.types import Choice
 from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
 from multiprocessing import Process
@@ -134,7 +133,7 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
             for pricing_scheme in range(0, 4):
                 kwargs["pricing_scheme"] = pricing_scheme
                 p = Process(target=run_simulation, args=(setup_module_name, simulation_config,
-                                                         None, slowdown, None, kwargs)
+                                                         None, slowdown, None, None, kwargs)
                             )
                 p.start()
                 processes.append(p)
@@ -145,15 +144,8 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
         else:
             if pause_at is not None:
                 kwargs["pause_after"] = convert_str_to_pause_after_interval(start_date, pause_at)
-            run_simulation(setup_module_name, simulation_config, None, slowdown, None,
+            run_simulation(setup_module_name, simulation_config, None, slowdown, None, None,
                            kwargs)
 
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
-
-
-@main.command()
-@click.argument('save-file', type=File(mode='rb'))
-def resume(save_file):
-    simulation = dill.load(save_file)
-    simulation.run(resume=True)

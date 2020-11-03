@@ -34,21 +34,24 @@ from d3a_interface.settings_validators import validate_global_settings
 from zlib import decompress
 import pickle
 
+log = logging.getLogger()
+
 
 def decompress_and_decode_queued_strings(queued_string):
     return pickle.loads(decompress(queued_string))
 
 
 @job('d3a')
-def start(scenario, settings, events, aggregator_device_mapping):
+def start(scenario, settings, events, aggregator_device_mapping, saved_state):
     logging.getLogger().setLevel(logging.ERROR)
 
     scenario = decompress_and_decode_queued_strings(scenario)
-    logging.getLogger().error(f"Scenario details are : {0}: {scenario}")
-    logging.getLogger().error(f"Settings details are : {0}: {settings}")
-    logging.getLogger().error(f"Events details are : {0}: {events}")
-    logging.getLogger().error(f"Aggregator device mapping details are : {0}: "
-                              f"{aggregator_device_mapping}")
+    saved_state = decompress_and_decode_queued_strings(saved_state)
+    log.error(f"Scenario: {scenario}")
+    log.error(f"Settings: {settings}")
+    log.error(f"Events: {events}")
+    log.error(f"Aggregator device mapping: {aggregator_device_mapping}")
+    log.error(f"Previous simulation state: {saved_state}")
 
     job = get_current_job()
     job.save_meta()
@@ -125,6 +128,7 @@ def start(scenario, settings, events, aggregator_device_mapping):
                        simulation_events=events,
                        slowdown=slowdown_factor,
                        redis_job_id=job.id,
+                       saved_sim_state=saved_state,
                        kwargs=kwargs)
     except Exception:
         import traceback
