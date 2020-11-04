@@ -25,7 +25,8 @@ from logging import getLogger
 from d3a import limit_float_precision
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import MarketException
-from d3a.d3a_core.util import area_name_from_area_or_iaa_name, generate_market_slot_list
+from d3a.d3a_core.util import area_name_from_area_or_iaa_name, \
+    find_timestamp_of_same_weekday_and_time
 from d3a.models.state import StorageState, ESSEnergyOrigin, EnergyOrigin
 from d3a.models.strategy import BidEnabledStrategy
 from d3a_interface.constants_limits import ConstSettings
@@ -102,10 +103,11 @@ class StorageStrategy(BidEnabledStrategy):
                                  fit_to_limit=fit_to_limit,
                                  energy_rate_change_per_update=energy_rate_decrease_per_update,
                                  update_interval=update_interval)
-        for time_slot in generate_market_slot_list():
+        for time_slot in self.offer_update.active_initial_rate_profile.keys():
             validate_storage_device(
                 initial_selling_rate=self.offer_update.active_initial_rate_profile[time_slot],
-                final_selling_rate=self.offer_update.active_final_rate_profile[time_slot])
+                final_selling_rate=find_timestamp_of_same_weekday_and_time(
+                    self.offer_update.active_final_rate_profile, time_slot))
         self.bid_update = \
             UpdateFrequencyMixin(
                 initial_rate=initial_buying_rate,
@@ -115,10 +117,11 @@ class StorageStrategy(BidEnabledStrategy):
                 update_interval=update_interval,
                 rate_limit_object=min
             )
-        for time_slot in generate_market_slot_list():
+        for time_slot in self.bid_update.active_initial_rate_profile.keys():
             validate_storage_device(
                 initial_buying_rate=self.bid_update.active_initial_rate_profile[time_slot],
-                final_buying_rate=self.bid_update.active_final_rate_profile[time_slot])
+                final_buying_rate=find_timestamp_of_same_weekday_and_time(
+                    self.bid_update.active_final_rate_profile, time_slot))
         self.state = \
             StorageState(initial_soc=initial_soc,
                          initial_energy_origin=initial_energy_origin,
@@ -213,15 +216,18 @@ class StorageStrategy(BidEnabledStrategy):
                         energy_rate_increase_per_update, energy_rate_decrease_per_update,
                         bid_fit_to_limit, offer_fit_to_limit):
 
-        for time_slot in generate_market_slot_list():
+        for time_slot in initial_selling_rate.keys():
             bid_rate_change = None if bid_fit_to_limit else \
-                energy_rate_increase_per_update[time_slot]
+                find_timestamp_of_same_weekday_and_time(energy_rate_increase_per_update, time_slot)
             offer_rate_change = None if offer_fit_to_limit else \
-                energy_rate_decrease_per_update[time_slot]
+                find_timestamp_of_same_weekday_and_time(energy_rate_decrease_per_update, time_slot)
             validate_storage_device(initial_selling_rate=initial_selling_rate[time_slot],
-                                    final_selling_rate=final_selling_rate[time_slot],
-                                    initial_buying_rate=initial_buying_rate[time_slot],
-                                    final_buying_rate=final_buying_rate[time_slot],
+                                    final_selling_rate=find_timestamp_of_same_weekday_and_time(
+                                        final_selling_rate, time_slot),
+                                    initial_buying_rate=find_timestamp_of_same_weekday_and_time(
+                                        initial_buying_rate, time_slot),
+                                    final_buying_rate=find_timestamp_of_same_weekday_and_time(
+                                        final_buying_rate, time_slot),
                                     energy_rate_increase_per_update=bid_rate_change,
                                     energy_rate_decrease_per_update=offer_rate_change)
 
@@ -249,9 +255,8 @@ class StorageStrategy(BidEnabledStrategy):
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            if not self.area.next_market:
-                return
-            time_slot = self.area.next_market.time_slot
+            for market in self.area.all_markets:
+                time_slot = market.time_slot
             if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
                 self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
                                                          final_rate=0)

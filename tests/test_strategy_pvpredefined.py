@@ -388,12 +388,10 @@ def test_correct_time_expansion_read_arbitrary_profile():
     assert (list(mmr.keys())[-1] - today(tz=TIME_ZONE)).days == 1
     GlobalConfig.sim_duration = duration(hours=48)
     mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
-    assert (list(mmr.keys())[-1] - today(tz=TIME_ZONE)).days == 2
+    assert list(mmr.keys())[-1] == today(tz=TIME_ZONE).add(days=1, hours=23, minutes=45)
     GlobalConfig.sim_duration = duration(hours=49)
     mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
-    # read_arbitrary_profile expands until 01:00 after the last day in sim_duration
-    # because of the future markets
-    assert (sorted(list(mmr.keys()))[-1] == today(tz=TIME_ZONE).add(hours=49))
+    assert list(mmr.keys())[-1] == today(tz=TIME_ZONE).add(days=2, minutes=45)
 
 
 def test_predefined_pv_constructor_rejects_incorrect_parameters():

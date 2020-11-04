@@ -36,7 +36,7 @@ from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setL
 from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.exceptions import D3AException
-from d3a.constants import DATE_FORMAT
+from d3a.constants import DATE_FORMAT, IS_CANARY_NETWORK
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit
 from d3a_interface.utils import generate_market_slot_list_from_config, str_to_pendulum_datetime,\
     format_datetime
@@ -332,16 +332,22 @@ def update_advanced_settings(advanced_settings):
         update_nested_settings(setting_class, settings_class_name, advanced_settings)
 
 
-def generate_market_slot_list(area=None):
-    """
-    Returns a list of all slot times
-    """
-    config = GlobalConfig if area is None else area.config
-    if not hasattr(config, 'market_slot_list') or len(config.market_slot_list) == 0:
-        config.market_slot_list = generate_market_slot_list_from_config(
-            config.sim_duration, config.start_date, config.market_count, config.slot_length
-        )
-    return config.market_slot_list
+def generate_market_slot_list(start_date=None, time_span=None):
+    if start_date is None:
+        start_date = GlobalConfig.start_date
+    if time_span is None:
+        time_span = GlobalConfig.sim_duration
+    sim_duration_plus_future_markets = time_span + GlobalConfig.slot_length * \
+        (GlobalConfig.market_count - 1)
+    market_slot_list = \
+        generate_market_slot_list_from_config(sim_duration=sim_duration_plus_future_markets,
+                                              start_date=start_date,
+                                              market_count=GlobalConfig.market_count,
+                                              slot_length=GlobalConfig.slot_length)
+
+    if not hasattr(GlobalConfig, 'market_slot_list') or len(GlobalConfig.market_slot_list) == 0:
+        GlobalConfig.market_slot_list = market_slot_list
+    return market_slot_list
 
 
 def get_market_slot_time_str(slot_number, config):
@@ -530,3 +536,12 @@ def get_current_market_maker_rate(market_slot):
 def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
     return transfer_capacity_kWA * slot_length.total_minutes() / 60.0 \
         if transfer_capacity_kWA is not None else 0.
+
+
+def find_timestamp_of_same_weekday_and_time(indict, time_slot):
+    if IS_CANARY_NETWORK:
+        for key in indict.keys():
+            if key.weekday() == time_slot.weekday() and key.time == time_slot.time:
+                return indict[key]
+    else:
+        return indict[time_slot]

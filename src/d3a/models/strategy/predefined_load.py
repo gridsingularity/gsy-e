@@ -23,6 +23,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
 from d3a_interface.utils import key_in_dict_and_not_none
+from d3a.d3a_core.util import find_timestamp_of_same_weekday_and_time
 """
 Create a load that uses a profile as input for its power values
 """
@@ -107,8 +108,10 @@ class DefinedLoadStrategy(LoadHoursStrategy):
             slot_time = market.time_slot
             if slot_time not in self.energy_requirement_Wh:
                 if self._allowed_operating_hours(slot_time.hour):
-                    self.energy_requirement_Wh[slot_time] = self.load_profile[slot_time] * 1000
-                    self.state.desired_energy_Wh[slot_time] = self.load_profile[slot_time] * 1000
+                    load_energy_kWh = \
+                        find_timestamp_of_same_weekday_and_time(self.load_profile, slot_time)
+                    self.energy_requirement_Wh[slot_time] = load_energy_kWh * 1000
+                    self.state.desired_energy_Wh[slot_time] = load_energy_kWh * 1000
 
     def _operating_hours(self, energy):
         """

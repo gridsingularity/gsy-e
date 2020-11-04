@@ -22,7 +22,7 @@ from pendulum import Time  # noqa
 from pendulum import duration
 from logging import getLogger
 
-from d3a.d3a_core.util import generate_market_slot_list
+from d3a.d3a_core.util import find_timestamp_of_same_weekday_and_time
 from d3a.models.strategy import BaseStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.device_validator import validate_pv_device_energy, validate_pv_device_price
@@ -155,12 +155,12 @@ class PVStrategy(BaseStrategy):
     @staticmethod
     def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
         # all parameters have to be validated for each time slot here
-        for time_slot in generate_market_slot_list():
+        for time_slot in initial_rate.keys():
             rate_change = None if fit_to_limit else \
-                energy_rate_change_per_update[time_slot]
+                find_timestamp_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
             validate_pv_device_price(
                 initial_selling_rate=initial_rate[time_slot],
-                final_selling_rate=final_rate[time_slot],
+                final_selling_rate=find_timestamp_of_same_weekday_and_time(final_rate, time_slot),
                 energy_rate_decrease_per_update=rate_change,
                 fit_to_limit=fit_to_limit)
 
@@ -293,22 +293,21 @@ class PVStrategy(BaseStrategy):
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            if not self.area.next_market:
-                return
-            time_slot = self.area.next_market.time_slot
-            if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
-                self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=0,
-                                                           final_rate=0)
-            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
-                rate = \
-                    self.area.config.market_maker_rate[time_slot] * \
-                    ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / \
-                    100
-                self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=rate,
-                                                           final_rate=rate)
-            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
-                rate = self.area.config.market_maker_rate[time_slot]
-                self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=rate,
-                                                           final_rate=rate)
-            else:
-                raise MarketException
+            for market in self.area.all_markets:
+                time_slot = market.time_slot
+                if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
+                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=0,
+                                                               final_rate=0)
+                elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
+                    rate = \
+                        self.area.config.market_maker_rate[time_slot] * \
+                        ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / \
+                        100
+                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=rate,
+                                                               final_rate=rate)
+                elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
+                    rate = self.area.config.market_maker_rate[time_slot]
+                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=rate,
+                                                               final_rate=rate)
+                else:
+                    raise MarketException

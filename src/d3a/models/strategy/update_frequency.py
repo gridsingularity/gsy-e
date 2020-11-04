@@ -21,7 +21,7 @@ from pendulum import duration
 from d3a.d3a_core.exceptions import MarketException
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a.d3a_core.util import write_default_to_dict
+from d3a.d3a_core.util import write_default_to_dict, find_timestamp_of_same_weekday_and_time
 
 
 class UpdateFrequencyMixin:
@@ -50,14 +50,17 @@ class UpdateFrequencyMixin:
 
     def _populate_profiles(self, area):
         for market in area.all_markets:
-            # TODO: select in active profiles only time and day and not date and time
+            time_slot = market.time_slot
             if self.fit_to_limit is False:
-                self.energy_rate_change_per_update[market.time_slot] = \
-                    self.active_energy_rate_change_per_update_profile[market.time_slot]
-            self.initial_rate[market.time_slot] = \
-                self.active_initial_rate_profile[market.time_slot]
-            self.final_rate[market.time_slot] = \
-                self.active_final_rate_profile[market.time_slot]
+                self.energy_rate_change_per_update[time_slot] = \
+                    find_timestamp_of_same_weekday_and_time(
+                        self.active_energy_rate_change_per_update_profile, time_slot)
+            self.initial_rate[time_slot] = \
+                find_timestamp_of_same_weekday_and_time(self.active_initial_rate_profile,
+                                                        time_slot)
+            self.final_rate[time_slot] = \
+                find_timestamp_of_same_weekday_and_time(self.active_final_rate_profile,
+                                                        time_slot)
             self._set_or_update_energy_rate_change_per_update(market.time_slot)
             write_default_to_dict(self.update_counter, market.time_slot, 0)
 
@@ -65,13 +68,13 @@ class UpdateFrequencyMixin:
                                  fit_to_limit=None, energy_rate_change_per_update=None,
                                  update_interval=None):
         if initial_rate is not None:
-            self.initial_rate[time_slot] = initial_rate
+            self.active_initial_rate_profile[time_slot] = initial_rate
         if final_rate is not None:
-            self.final_rate[time_slot] = final_rate
+            self.active_final_rate_profile[time_slot] = final_rate
         if fit_to_limit is not None:
             self.fit_to_limit = fit_to_limit
         if energy_rate_change_per_update is not None:
-            self.energy_rate_change_per_update[time_slot] = \
+            self.active_energy_rate_change_per_update_profile[time_slot] = \
                 energy_rate_change_per_update
         if update_interval is not None:
             self.update_interval = update_interval

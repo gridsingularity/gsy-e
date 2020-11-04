@@ -22,7 +22,7 @@ from pendulum import duration, DateTime  # NOQA
 from typing import Union, Dict  # NOQA
 from collections import namedtuple
 
-from d3a.d3a_core.util import generate_market_slot_list
+from d3a.d3a_core.util import find_timestamp_of_same_weekday_and_time
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import LoadState
 from d3a.models.strategy import BidEnabledStrategy
@@ -121,13 +121,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
                         fit_to_limit):
         # all parameters have to be validated for each time slot here
-        for time_slot in generate_market_slot_list():
+        for time_slot in initial_rate.keys():
             rate_change = None if fit_to_limit else \
-                energy_rate_change_per_update[time_slot]
+                find_timestamp_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
             validate_load_device_price(
                 initial_buying_rate=initial_rate[time_slot],
                 energy_rate_increase_per_update=rate_change,
-                final_buying_rate=final_rate[time_slot],
+                final_buying_rate=find_timestamp_of_same_weekday_and_time(final_rate, time_slot),
                 fit_to_limit=fit_to_limit)
 
     def event_activate(self):
@@ -324,12 +324,11 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            if not self.area.next_market:
-                return
-            time_slot = self.area.next_market.time_slot
-            final_rate = self.area.config.market_maker_rate[time_slot]
-            self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
-                                                     final_rate=final_rate)
+            for market in self.area.all_markets:
+                time_slot = self.area.next_market.time_slot
+                final_rate = self.area.config.market_maker_rate[time_slot]
+                self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
+                                                         final_rate=final_rate)
 
     def post_or_update_bid(self):
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
