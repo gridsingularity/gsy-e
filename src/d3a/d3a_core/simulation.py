@@ -26,6 +26,7 @@ import os
 import psutil
 import gc
 import sys
+import datetime
 
 from pendulum import DateTime
 from pendulum import duration
@@ -314,9 +315,6 @@ class Simulation:
 
         if d3a.constants.IS_CANARY_NETWORK is True:
             slot_count = sys.maxsize
-            import datetime
-
-            ConstSettings.GeneralSettings.RUN_REAL_TIME = True
 
             today = datetime.date.today()
             seconds_since_midnight = time.time() - time.mktime(today.timetuple())
@@ -400,7 +398,7 @@ class Simulation:
                     else:
                         sleep(diff_slowdown)
 
-                if ConstSettings.GeneralSettings.RUN_REAL_TIME:
+                if d3a.constants.IS_CANARY_NETWORK:
                     sleep(abs(tick_lengths_s - realtime_tick_length))
 
             self._update_and_send_results()
