@@ -1,14 +1,14 @@
 ##Version 0.9.0
 The following features were implemented : 
 
-* [Market API](grid-api.md), developed for grid operators. This API allows the user to read metrics from the connected market and set grid fees for the market while a collaboration is running
-* Easier registration to the asset and market [API](api-overview.md), by allowing users and exchange operators to send and approve all registrations at once
-* Minimum bid and offer age parameter which is set by default to prioritize local energy trading
-* Grid fees added to [Energy Pricing](results.md#energy-pricing) graph for each market
-* Total grid fees reported in the scoreboard page for each collaboration
-* Net Energy calculation added to [Energy Trade Profile](results.md#energy-trade-profile) graph in order to calculate the peak energy at an assigned node in the simulation based off of the net energy flow instead of a summation of trades
-* Updated load final selling rate and PV initial buying rate in the [template strategies](how-strategies-adjust-prices.md) which now take the total [grid fees](constant-fees.md) into account in addition to the [market maker](market-maker.md) rate. This guarantees that loads are able to buy from the market maker using the template strategy even when grid fees are set.
-* Users can now run three simulations and collaborations at once (previous limit was two)
+* [Market API](grid-api.md), which allows grid operators and researchers to monitor metrics and set grid fees in the select local energy market simulation collaboration 
+* Easier registration for researchers and grid operators to manage multiple assets and use market [API](api-overview.md) through the Registry page.
+* Bids and offers are prioritised in their first market by setting a wait time of 2 ticks before allowing them to propagate to higher markets in the grid hierarchy. This wait time is set in the backend as the minimum bid or offer age parameter. 
+* [Grid fees](constant-fees.md) integrated in the Results page - [Energy Pricing](results.md#energy-pricing) graph for each market 
+* Total grid fees reported in the Scoreboard page that demonstrates market performance metrics for each collaboration simulation.
+* Net Energy calculation added to Results page - [Energy Trade Profile](results.md#energy-trade-profile) graph in order to calculate the peak energy at a market node in the simulation. The current peak imports and exports were previously calculated based on the cumulative trades, but are now calculated from the net energy consumption, which can be a net import or export.
+* Updated [load final selling rate and PV initial buying rate](how-strategies-adjust-prices.md) in the [template strategies](how-strategies-adjust-prices.md) now take the total grid fees into account in addition to the market maker (usually utility) rate. 
+* Users can now run three simulations and/or collaborations at once (previous limit was two)
 
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/x32D7zl1mig" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

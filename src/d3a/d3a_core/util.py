@@ -545,3 +545,15 @@ def find_timestamp_of_same_weekday_and_time(indict, time_slot):
                 return indict[key]
     else:
         return indict[time_slot]
+
+
+def convert_W_to_kWh(power_W, slot_length):
+    return (slot_length / duration(hours=1)) * power_W / 1000
+
+
+def convert_W_to_Wh(power_W, slot_length):
+    return (slot_length / duration(hours=1)) * power_W
+
+
+def convert_kW_to_kWh(power_W, slot_length):
+    return convert_W_to_Wh(power_W, slot_length)

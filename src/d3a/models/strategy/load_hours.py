@@ -22,7 +22,7 @@ from pendulum import duration, DateTime  # NOQA
 from typing import Union, Dict  # NOQA
 from collections import namedtuple
 
-from d3a.d3a_core.util import find_timestamp_of_same_weekday_and_time
+from d3a.d3a_core.util import find_timestamp_of_same_weekday_and_time, convert_W_to_Wh
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import LoadState
 from d3a.models.strategy import BidEnabledStrategy
@@ -446,8 +446,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
             raise ValueError("Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
 
     def _update_energy_requirement_future_markets(self):
-        self.energy_per_slot_Wh = (self.avg_power_W /
-                                   (duration(hours=1) / self.area.config.slot_length))
+        self.energy_per_slot_Wh = convert_W_to_Wh(self.avg_power_W, self.area.config.slot_length)
         for market in self.area.all_markets:
             slot_time = market.time_slot
             if slot_time not in self.energy_requirement_Wh:

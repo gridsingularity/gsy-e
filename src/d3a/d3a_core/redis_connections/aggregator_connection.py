@@ -71,6 +71,9 @@ class AggregatorHandler:
 
     def aggregator_callback(self, payload):
         message = json.loads(payload["data"])
+        if d3a.constants.EXTERNAL_CONNECTION_WEB is True and \
+                message['config_uuid'] != d3a.constants.COLLABORATION_ID:
+            return
         if message["type"] == "CREATE":
             self._create_aggregator(message)
         elif message["type"] == "DELETE":

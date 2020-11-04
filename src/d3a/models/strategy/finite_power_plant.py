@@ -15,12 +15,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from pendulum import duration
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.device_validator import validate_finite_diesel_generator
 from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
-from d3a.d3a_core.util import find_timestamp_of_same_weekday_and_time
+from d3a.d3a_core.util import find_timestamp_of_same_weekday_and_time, convert_kW_to_kWh
 
 
 class FinitePowerPlant(CommercialStrategy):
@@ -45,8 +44,8 @@ class FinitePowerPlant(CommercialStrategy):
         power_from_profile = \
             find_timestamp_of_same_weekday_and_time(self.max_available_power_kW,
                                                     self.area.next_market.time_slot)
-        self.energy_per_slot_kWh = power_from_profile / \
-            (duration(hours=1) / self.area.config.slot_length)
+        self.energy_per_slot_kWh = convert_kW_to_kWh(power_from_profile,
+                                                     self.area.config.slot_length)
         if self.energy_per_slot_kWh <= 0.0:
             return
         super().event_market_cycle()

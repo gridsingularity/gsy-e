@@ -20,8 +20,6 @@ from importlib import import_module
 from logging import getLogger
 import time
 from time import sleep
-from pathlib import Path
-import dill
 import click
 import platform
 import os
@@ -31,8 +29,6 @@ import sys
 
 from pendulum import DateTime
 from pendulum import duration
-from pendulum.period import Period
-from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
 
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, SIMULATION_PAUSE_TIMEOUT
@@ -48,7 +44,7 @@ from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCommunication
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.exceptions import D3AException
-from d3a_interface.utils import format_datetime
+from d3a_interface.utils import format_datetime, str_to_pendulum_datetime
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
@@ -128,21 +124,6 @@ class Simulation:
         deserialize_events_to_areas(simulation_events, self.area)
 
         validate_const_settings_for_simulation()
-
-    @property
-    def current_state(self):
-        return {
-            "paused": self.paused,
-            "slowdown": self.slowdown,
-            "seed": self.initial_params["seed"],
-            "sim_status": self.sim_status,
-            "stopped": self.is_stopped,
-            "simulation_id": self._simulation_id,
-            "run_start": format_datetime(self.run_start)
-            if self.run_start is not None else "",
-            "paused_time": self.paused_time,
-            "slot_number": self.progress_info.current_slot_number
-        }
 
     def _set_traversal_length(self):
         no_of_levels = self._get_setup_levels(self.area) + 1
@@ -241,28 +222,19 @@ class Simulation:
         for child in area.children:
             self.deactivate_areas(child)
 
-    def run(self, resume=False) -> (Period, duration):
+    def run(self, initial_slot=0):
         self.sim_status = "running"
-        if resume:
-            log.critical("Resuming simulation")
-            self._info()
         self.is_stopped = False
         while True:
-            if resume:
-                # FIXME: Fix resume time calculation
-                if self.run_start is None or self.paused_time is None:
-                    raise RuntimeError("Can't resume without saved state")
-                slot_resume, tick_resume = divmod(self.area.current_tick,
-                                                  self.simulation_config.ticks_per_slot)
-            else:
+            if initial_slot == 0:
                 self.run_start = DateTime.now(tz=TIME_ZONE)
                 self.paused_time = 0
-                slot_resume = tick_resume = 0
 
+            tick_resume = 0
             try:
-                self._run_cli_execute_cycle(slot_resume, tick_resume) \
+                self._run_cli_execute_cycle(initial_slot, tick_resume) \
                     if self._started_from_cli \
-                    else self._execute_simulation(slot_resume, tick_resume)
+                    else self._execute_simulation(initial_slot, tick_resume)
             except KeyboardInterrupt:
                 break
             except SimulationResetException:
@@ -448,15 +420,14 @@ class Simulation:
         while True:
             cmd = console.get_char(timeout)
             if cmd:
-                if cmd not in {'i', 'p', 'q', 'r', 'S', 'R', 's', '+', '-'}:
+                if cmd not in {'i', 'p', 'q', 'r', 'R', 's', '+', '-'}:
                     log.critical("Invalid command. Valid commands:\n"
                                  "  [i] info\n"
                                  "  [p] pause\n"
                                  "  [q] quit\n"
                                  "  [r] reset\n"
-                                 "  [S] stop\n"
+                                 "  [s] stop\n"
                                  "  [R] start REPL\n"
-                                 "  [s] save state\n"
                                  "  [+] increase slowdown\n"
                                  "  [-] decrease slowdown")
                     continue
@@ -477,8 +448,6 @@ class Simulation:
                 elif cmd == 'q':
                     raise KeyboardInterrupt()
                 elif cmd == 's':
-                    self.save_state()
-                elif cmd == 'S':
                     self.stop()
                 elif cmd == '+':
                     if self.slowdown <= SLOWDOWN_FACTOR - SLOWDOWN_STEP:
@@ -547,17 +516,6 @@ class Simulation:
         log.debug("Ctrl-D to quit.")
         embed({'root_area': self.area})
 
-    def save_state(self):
-        save_dir = Path('.d3a')
-        save_dir.mkdir(exist_ok=True)
-        save_file_name = save_dir.joinpath(
-            "saved-state_{:%Y%m%dT%H%M%S}.pickle".format(DateTime.now(tz=TIME_ZONE))
-        )
-        with save_file_name.open('wb') as save_file:
-            dill.dump(self, save_file, protocol=HIGHEST_PROTOCOL)
-        log.critical("Saved state to %s", save_file_name.resolve())
-        return save_file_name
-
     @property
     def status(self):
         if self.is_timed_out:
@@ -569,21 +527,45 @@ class Simulation:
         else:
             return self.sim_status
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        state['_random_state'] = random.getstate()
-        del state['setup_module']
-        return state
+    @property
+    def current_state(self):
+        return {
+            "paused": self.paused,
+            "slowdown": self.slowdown,
+            "seed": self.initial_params["seed"],
+            "sim_status": self.sim_status,
+            "stopped": self.is_stopped,
+            "simulation_id": self._simulation_id,
+            "run_start": format_datetime(self.run_start)
+            if self.run_start is not None else "",
+            "paused_time": self.paused_time,
+            "slot_number": self.progress_info.current_slot_number
+        }
 
-    def __setstate__(self, state):
-        random.setstate(state.pop('_random_state'))
-        self.__dict__.update(state)
-        self._load_setup_module()
+    @classmethod
+    def _restore_area_state(cls, area, saved_area_state):
+        area.restore_state(saved_area_state[area.uuid])
+        for child in area.children:
+            cls._restore_area_state(child, saved_area_state)
+
+    def restore_area_state(self, saved_area_state):
+        self._restore_area_state(self.area, saved_area_state)
+
+    def restore_global_state(self, saved_state):
+        self.paused = saved_state["paused"]
+        self.slowdown = saved_state["slowdown"]
+        self.initial_params["seed"] = saved_state["seed"]
+        self.sim_status = saved_state["sim_status"]
+        self.is_stopped = saved_state["stopped"]
+        self._simulation_id = saved_state["simulation_id"]
+        if saved_state["run_start"] != "":
+            self.run_start = str_to_pendulum_datetime(saved_state["run_start"])
+        self.paused_time = saved_state["paused_time"]
+        self.progress_info.current_slot_number = saved_state["slot_number"]
 
 
 def run_simulation(setup_module_name="", simulation_config=None, simulation_events=None,
-                   slowdown=None, redis_job_id=None, kwargs=None):
-
+                   slowdown=None, redis_job_id=None, saved_sim_state=None, kwargs=None):
     try:
         if "pricing_scheme" in kwargs:
             ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = \
@@ -600,4 +582,9 @@ def run_simulation(setup_module_name="", simulation_config=None, simulation_even
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
 
-    simulation.run()
+    if saved_sim_state is not None:
+        simulation.restore_global_state(saved_sim_state["general"])
+        simulation.restore_area_state(saved_sim_state["areas"])
+        simulation.run(initial_slot=saved_sim_state["slot_number"])
+    else:
+        simulation.run()

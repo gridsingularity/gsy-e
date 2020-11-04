@@ -23,7 +23,7 @@ from pendulum import duration, from_format, from_timestamp, today, DateTime
 from typing import Dict
 from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, TIME_ZONE, IS_CANARY_NETWORK
 from d3a_interface.constants_limits import GlobalConfig, DATE_TIME_FORMAT_SECONDS
-from d3a.d3a_core.util import generate_market_slot_list
+from d3a.d3a_core.util import generate_market_slot_list, convert_kW_to_kWh
 
 """
 Exposes mixins that can be used from strategy classes.
@@ -170,7 +170,7 @@ def _calculate_energy_from_power_profile(profile_data_W: Dict[DateTime, float],
         if first_index <= len(second_power_list_W):
             avg_power_kW.append(second_power_list_W[first_index] / 1000.)
 
-    slot_energy_kWh = list(map(lambda x: x / (duration(hours=1) / slot_length), avg_power_kW))
+    slot_energy_kWh = list(map(lambda x: convert_kW_to_kWh(x, slot_length), avg_power_kW))
 
     return {from_timestamp(slot_time_list[ii]): energy
             for ii, energy in enumerate(slot_energy_kWh)
