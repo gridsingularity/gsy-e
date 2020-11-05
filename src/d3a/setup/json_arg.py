@@ -25,6 +25,7 @@ def get_setup(config):
         if "collaboration_uuid" in area_description:
             d3a.constants.COLLABORATION_ID = area_description.pop("collaboration_uuid")
             d3a.constants.EXTERNAL_CONNECTION_WEB = True
+            d3a.constants.IS_CANARY_NETWORK = area_description.pop("is_canary_network", False)
         return area_from_dict(area_description, config)
     except AttributeError as ex:
         raise RuntimeError('Area not found') from ex
