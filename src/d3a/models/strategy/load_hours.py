@@ -325,7 +325,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             for market in self.area.all_markets:
-                time_slot = self.area.next_market.time_slot
+                time_slot = market.time_slot
                 final_rate = self.area.config.market_maker_rate[time_slot]
                 self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
                                                          final_rate=final_rate)

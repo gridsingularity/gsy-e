@@ -95,10 +95,12 @@ class UpdateFrequencyMixin:
         else:
             if self.rate_limit_object is min:
                 energy_rate_change_per_update[time_slot] = \
-                    -1 * self.active_energy_rate_change_per_update_profile[time_slot]
+                    -1 * find_timestamp_of_same_weekday_and_time(
+                        self.active_energy_rate_change_per_update_profile, time_slot)
             elif self.rate_limit_object is max:
                 energy_rate_change_per_update[time_slot] = \
-                    self.active_energy_rate_change_per_update_profile[time_slot]
+                    find_timestamp_of_same_weekday_and_time(
+                        self.active_energy_rate_change_per_update_profile, time_slot)
         self.energy_rate_change_per_update.update(energy_rate_change_per_update)
 
     @property
