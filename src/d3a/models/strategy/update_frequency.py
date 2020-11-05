@@ -87,8 +87,10 @@ class UpdateFrequencyMixin:
         energy_rate_change_per_update = {}
         if self.fit_to_limit:
             energy_rate_change_per_update[time_slot] = \
-                (self.active_initial_rate_profile[time_slot] -
-                 self.active_final_rate_profile[time_slot]) / \
+                (find_timestamp_of_same_weekday_and_time(
+                    self.active_initial_rate_profile, time_slot) -
+                 find_timestamp_of_same_weekday_and_time(
+                     self.active_final_rate_profile, time_slot)) / \
                 self.number_of_available_updates
         else:
             if self.rate_limit_object is min:

@@ -538,11 +538,16 @@ def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
         if transfer_capacity_kWA is not None else 0.
 
 
-def find_timestamp_of_same_weekday_and_time(indict, time_slot):
+def find_timestamp_of_same_weekday_and_time(indict, time_slot, ignore_not_found=False):
     if IS_CANARY_NETWORK:
+        # This implementation is not optimal. Ideally, the values would be stored in a nested_dict:
+        # profile = {day_of_week: {time_of_day: value}
         for key in indict.keys():
-            if key.weekday() == time_slot.weekday() and key.time == time_slot.time:
+            if key.weekday() == time_slot.weekday() and key.time() == time_slot.time():
                 return indict[key]
+        if not ignore_not_found:
+            log.error(f"Weekday and time not found in dict for {time_slot}")
+        return
     else:
         return indict[time_slot]
 
