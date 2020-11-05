@@ -21,7 +21,7 @@ The D3A should now be up to date.
 
 ### Update the API Client
 
-Open a terminal and activate the API client virtual environment as described in the [API Installation Instructions](api.md). Then type:
+Open a terminal and activate the API client virtual environment as described in the [API Installation Instructions](assets-api.md). Then type:
 
 ```
 pip uninstall d3a-api-client

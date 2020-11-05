@@ -35,6 +35,7 @@ from d3a_interface.utils import get_area_name_uuid_mapping
 from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
 from d3a_interface.constants_limits import ConstSettings
 from d3a import constants
+from d3a.d3a_core.util import convert_W_to_Wh, convert_W_to_kWh, convert_kW_to_kWh
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
 ACCUMULATED_KEYS_LIST = ["Accumulated Trades", "External Trades", "Totals", "Market Fees"]
@@ -827,8 +828,8 @@ def check_load_profile(context):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     load = list(filter(lambda x: x.name == "H1 Load", house1.children))[0]
     for timepoint, energy in load.strategy.state.desired_energy_Wh.items():
-        assert energy == context._device_profile[timepoint] / \
-               (duration(hours=1) / load.config.slot_length)
+        assert energy == convert_W_to_Wh(context._device_profile[timepoint],
+                                         load.config.slot_length)
 
 
 @then('the predefined PV follows the PV profile')
@@ -859,12 +860,11 @@ def check_user_pv_dict_profile(context):
     profile_data = user_profile
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
         if timepoint.hour in profile_data.keys():
-            assert energy == profile_data[timepoint.hour] / \
-                   (duration(hours=1) / pv.config.slot_length) / 1000.0
+            assert energy == convert_W_to_kWh(profile_data[timepoint.hour], pv.config.slot_length)
         else:
             if int(timepoint.hour) > int(list(user_profile.keys())[-1]):
-                assert energy == user_profile[list(user_profile.keys())[-1]] / \
-                   (duration(hours=1) / pv.config.slot_length) / 1000.0
+                assert energy == convert_W_to_kWh(user_profile[list(user_profile.keys())[-1]],
+                                                  pv.config.slot_length)
             else:
                 assert energy == 0
 
@@ -952,8 +952,8 @@ def test_finite_plant_max_power(context, plant_name):
             if trade.seller == finite.name:
                 trades_sold.append(trade)
         assert sum([trade.offer.energy for trade in trades_sold]) <= \
-            finite.strategy.max_available_power_kW[market.time_slot] / \
-            (duration(hours=1) / finite.config.slot_length)
+            convert_kW_to_kWh(finite.strategy.max_available_power_kW[market.time_slot],
+                              finite.config.slot_length)
 
 
 @then("the results are the same for each simulation run")

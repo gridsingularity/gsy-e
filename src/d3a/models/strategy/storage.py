@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import traceback
 from typing import Union
 from collections import namedtuple
 from enum import Enum
@@ -181,7 +182,8 @@ class StorageStrategy(BidEnabledStrategy):
                                  energy_rate_increase_per_update, energy_rate_decrease_per_update,
                                  bid_fit_to_limit, offer_fit_to_limit)
         except Exception as e:
-            log.error(str(e))
+            log.error(f"StorageStrategy._area_reconfigure_prices failed. Exception: {e}. "
+                      f"Traceback: {traceback.format_exc()}")
             return
 
         self.offer_update.initial_rate = initial_selling_rate
@@ -206,7 +208,7 @@ class StorageStrategy(BidEnabledStrategy):
                         energy_rate_increase_per_update, energy_rate_decrease_per_update,
                         bid_fit_to_limit, offer_fit_to_limit):
 
-        for time_slot in initial_selling_rate.keys():
+        for time_slot in generate_market_slot_list():
             bid_rate_change = None if bid_fit_to_limit else \
                 energy_rate_increase_per_update[time_slot]
             offer_rate_change = None if offer_fit_to_limit else \

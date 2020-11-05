@@ -15,13 +15,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import traceback
 from numpy import random
 from logging import getLogger
 from pendulum import duration, DateTime  # NOQA
 from typing import Union, Dict  # NOQA
 from collections import namedtuple
 
-from d3a.d3a_core.util import generate_market_slot_list
+from d3a.d3a_core.util import generate_market_slot_list, convert_W_to_Wh
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import LoadState
 from d3a.models.strategy import BidEnabledStrategy
@@ -119,7 +120,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
                         fit_to_limit):
         # all parameters have to be validated for each time slot here
-        for time_slot in initial_rate.keys():
+        for time_slot in generate_market_slot_list():
             rate_change = None if fit_to_limit else \
                 energy_rate_change_per_update[time_slot]
             validate_load_device_price(
@@ -202,7 +203,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
                                  fit_to_limit)
         except Exception as e:
-            log.error(str(e))
+            log.error(f"LoadHours._area_reconfigure_prices failed. Exception: {e}. "
+                      f"Traceback: {traceback.format_exc()}")
             return
 
         self.bid_update.initial_rate = initial_rate
@@ -433,8 +435,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
             raise ValueError("Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
 
     def assign_energy_requirement(self, avg_power_W):
-        self.energy_per_slot_Wh = (avg_power_W /
-                                   (duration(hours=1) / self.area.config.slot_length))
+        self.energy_per_slot_Wh = convert_W_to_Wh(avg_power_W, self.area.config.slot_length)
         for slot_time in generate_market_slot_list(area=self.area):
             if self._allowed_operating_hours(slot_time) and slot_time >= self.area.now:
                 self.energy_requirement_Wh[slot_time] = self.energy_per_slot_Wh

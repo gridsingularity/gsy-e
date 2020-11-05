@@ -20,7 +20,6 @@
       "EXPORT_DEVICE_PLOTS": true,
       "EXPORT_ENERGY_TRADE_PROFILE_HR": false,
       "EXPORT_OFFER_BID_TRADE_HR": false,
-      "RUN_REAL_TIME": false,
       "EVENT_DISPATCHING_VIA_REDIS": false,
       "RATE_CHANGE_PER_UPDATE_LIMIT": [
         0,

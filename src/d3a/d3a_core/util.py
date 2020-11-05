@@ -525,3 +525,15 @@ def get_current_market_maker_rate(market_slot):
 def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
     return transfer_capacity_kWA * slot_length.total_minutes() / 60.0 \
         if transfer_capacity_kWA is not None else 0.
+
+
+def convert_W_to_kWh(power_W, slot_length):
+    return (slot_length / duration(hours=1)) * power_W / 1000
+
+
+def convert_W_to_Wh(power_W, slot_length):
+    return (slot_length / duration(hours=1)) * power_W
+
+
+def convert_kW_to_kWh(power_W, slot_length):
+    return convert_W_to_Wh(power_W, slot_length)

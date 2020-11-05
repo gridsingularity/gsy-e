@@ -70,7 +70,8 @@ nav:
         - 'Virtual Machine': 'installation-instructions-vm.md'
         - 'Version Updates': 'version-update.md'
 - API:
-  - Asset API: 'api.md'
+  - Overview: 'api-overview.md'
+  - Asset API: 'assets-api.md'
   - Market API: 'grid-api.md'
 - FAQ: 'faq.md'
 - FAQ Odyssey hackathon: 'faq-odyssey.md'

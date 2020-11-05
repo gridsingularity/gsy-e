@@ -15,13 +15,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import traceback
 import math
 from typing import Dict  # noqa
 from pendulum import Time  # noqa
 from pendulum import duration
 from logging import getLogger
 
-from d3a.d3a_core.util import generate_market_slot_list
+from d3a.d3a_core.util import generate_market_slot_list, convert_W_to_kWh
 from d3a.models.strategy import BaseStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.device_validator import validate_pv_device_energy, validate_pv_device_price
@@ -98,7 +99,6 @@ class PVStrategy(BaseStrategy):
             self.panel_count = kwargs['panel_count']
         if key_in_dict_and_not_none(kwargs, 'max_panel_power_W'):
             self.max_panel_power_W = kwargs['max_panel_power_W']
-
         self.produced_energy_forecast_kWh()
 
     def _area_reconfigure_prices(self, **kwargs):
@@ -137,7 +137,8 @@ class PVStrategy(BaseStrategy):
             self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
                                  fit_to_limit)
         except Exception as e:
-            log.error(str(e))
+            log.error(f"PVStrategy._area_reconfigure_prices failed. Exception: {e}. "
+                      f"Traceback: {traceback.format_exc()}")
             return
 
         self.offer_update.initial_rate = initial_rate
@@ -151,7 +152,7 @@ class PVStrategy(BaseStrategy):
     @staticmethod
     def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
         # all parameters have to be validated for each time slot here
-        for time_slot in initial_rate.keys():
+        for time_slot in generate_market_slot_list():
             rate_change = None if fit_to_limit else \
                 energy_rate_change_per_update[time_slot]
             validate_pv_device_price(
@@ -225,9 +226,7 @@ class PVStrategy(BaseStrategy):
                     / 38.60) ** 2
                  )
             )
-        # /1000 is needed to convert Wh into kWh
-        w_to_wh_factor = (self.area.config.slot_length / duration(hours=1))
-        return round((gauss_forecast / 1000) * w_to_wh_factor, 4)
+        return round(convert_W_to_kWh(gauss_forecast, self.area.config.slot_length), 4)
 
     def event_market_cycle(self):
         super().event_market_cycle()
