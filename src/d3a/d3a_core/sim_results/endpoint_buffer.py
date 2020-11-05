@@ -250,7 +250,7 @@ class SimulationEndpointBuffer:
         self.simulation_state["general"] = sim_state
         self._populate_core_stats_and_sim_state(area)
         self.simulation_progress = {
-            "eta_seconds": progress_info.eta.seconds,
+            "eta_seconds": progress_info.eta.seconds if progress_info.eta else None,
             "elapsed_time_seconds": progress_info.elapsed_time.seconds,
             "percentage_completed": int(progress_info.percentage_completed)
         }
