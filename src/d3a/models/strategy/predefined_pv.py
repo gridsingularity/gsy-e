@@ -123,11 +123,9 @@ class PVPredefinedStrategy(PVStrategy):
             InputProfileTypes.POWER, str(profile_path))
 
     def area_reconfigure_event(self, **kwargs):
-        super().area_reconfigure_event(**kwargs)
         if key_in_dict_and_not_none(kwargs, 'cloud_coverage'):
             self.cloud_coverage = kwargs['cloud_coverage']
-            self._read_predefined_profile_for_pv()
-            self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
+        super().area_reconfigure_event(**kwargs)
 
 
 class PVUserProfileStrategy(PVPredefinedStrategy):

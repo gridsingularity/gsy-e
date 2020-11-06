@@ -77,14 +77,15 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                          balancing_energy_ratio=balancing_energy_ratio,
                          use_market_maker_rate=use_market_maker_rate)
         self.daily_load_profile = daily_load_profile
+        self.load_profile = {}
 
     def event_activate_energy(self):
         """
         Runs on activate event.
         :return: None
         """
-        self._simulation_start_timestamp = self.area.now
         self._event_activate_energy(self.daily_load_profile)
+        super().event_activate_energy()
         del self.daily_load_profile
 
     def _event_activate_energy(self, daily_load_profile):
@@ -95,23 +96,19 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         self.load_profile = read_arbitrary_profile(
             InputProfileTypes.POWER,
             daily_load_profile)
-        self._update_energy_requirement_future_markets()
 
     def _update_energy_requirement_future_markets(self):
         """
         Update required energy values for each market slot.
         :return: None
         """
-        self.hrs_per_day = {day: self._initial_hrs_per_day
-                            for day in range(self.area.config.sim_duration.days + 1)}
         for market in self.area.all_markets:
             slot_time = market.time_slot
             if slot_time not in self.energy_requirement_Wh:
-                if self._allowed_operating_hours(slot_time.hour):
-                    load_energy_kWh = \
-                        find_timestamp_of_same_weekday_and_time(self.load_profile, slot_time)
-                    self.energy_requirement_Wh[slot_time] = load_energy_kWh * 1000
-                    self.state.desired_energy_Wh[slot_time] = load_energy_kWh * 1000
+                load_energy_kWh = \
+                    find_timestamp_of_same_weekday_and_time(self.load_profile, slot_time)
+                self.energy_requirement_Wh[slot_time] = load_energy_kWh * 1000
+                self.state.desired_energy_Wh[slot_time] = load_energy_kWh * 1000
 
     def _operating_hours(self, energy):
         """

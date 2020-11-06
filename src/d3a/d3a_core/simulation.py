@@ -32,7 +32,7 @@ from pendulum import DateTime
 from pendulum import duration
 from ptpython.repl import embed
 
-from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, SIMULATION_PAUSE_TIMEOUT
+from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, SIMULATION_PAUSE_TIMEOUT, RUN_IN_REALTIME
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.d3a_core.export import ExportAndPlot
 from d3a.models.config import SimulationConfig
@@ -285,7 +285,7 @@ class Simulation:
                 duration(seconds=self.paused_time)
         )
 
-        if d3a.constants.IS_CANARY_NETWORK:
+        if RUN_IN_REALTIME:
             self.progress_info.eta = None
             self.progress_info.percentage_completed = 0.0
         else:
@@ -313,7 +313,7 @@ class Simulation:
         self.simulation_config.external_redis_communicator.start_communication()
         self._update_and_send_results()
 
-        if d3a.constants.IS_CANARY_NETWORK is True:
+        if RUN_IN_REALTIME:
             slot_count = sys.maxsize
 
             today = datetime.date.today()
@@ -398,7 +398,7 @@ class Simulation:
                     else:
                         sleep(diff_slowdown)
 
-                if d3a.constants.IS_CANARY_NETWORK:
+                if RUN_IN_REALTIME:
                     sleep(abs(tick_lengths_s - realtime_tick_length))
 
             self._update_and_send_results()

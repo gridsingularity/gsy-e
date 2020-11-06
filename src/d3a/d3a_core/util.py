@@ -26,17 +26,16 @@ import inspect
 import os
 
 from click.types import ParamType
-from pendulum import duration, from_format
+from pendulum import duration, from_format, datetime
 from rex import rex
 from pkgutil import walk_packages
-from datetime import timedelta
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 
 from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.exceptions import D3AException
-from d3a.constants import DATE_FORMAT, IS_CANARY_NETWORK
+from d3a.constants import DATE_FORMAT, IS_CANARY_NETWORK, TIME_ZONE
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit
 from d3a_interface.utils import generate_market_slot_list_from_config, str_to_pendulum_datetime,\
     format_datetime
@@ -293,11 +292,11 @@ def read_settings_from_file(settings_file):
         advanced_settings = settings["advanced_settings"]
         simulation_settings = {
             "sim_duration": IntervalType('H:M')(
-                settings["basic_settings"].get('sim_duration', timedelta(hours=24))),
+                settings["basic_settings"].get('sim_duration', duration(hours=24))),
             "slot_length": IntervalType('M:S')(
-                settings["basic_settings"].get('slot_length', timedelta(minutes=15))),
+                settings["basic_settings"].get('slot_length', duration(minutes=15))),
             "tick_length": IntervalType('M:S')(
-                settings["basic_settings"].get('tick_length', timedelta(seconds=15))),
+                settings["basic_settings"].get('tick_length', duration(seconds=15))),
             "market_count": settings["basic_settings"].get('market_count', 1),
             "cloud_coverage": settings["basic_settings"].get(
                 'cloud_coverage', advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"])
@@ -540,14 +539,19 @@ def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
 
 def find_timestamp_of_same_weekday_and_time(indict, time_slot, ignore_not_found=False):
     if IS_CANARY_NETWORK:
-        # This implementation is not optimal. Ideally, the values would be stored in a nested_dict:
-        # profile = {day_of_week: {time_of_day: value}
-        for key in indict.keys():
-            if key.weekday() == time_slot.weekday() and key.time() == time_slot.time():
-                return indict[key]
-        if not ignore_not_found:
-            log.error(f"Weekday and time not found in dict for {time_slot}")
-        return
+        start_time = list(indict.keys())[0]
+        key = datetime(year=start_time.year, month=start_time.month, day=start_time.day,
+                       hour=time_slot.hour, minute=time_slot.minute, tz=TIME_ZONE).add(
+            days=abs(time_slot.weekday() - start_time.weekday()))
+
+        if key in indict:
+            return indict[key]
+        else:
+            if not ignore_not_found:
+                log.error(f"Weekday and time not found in dict for {time_slot}")
+                assert False
+            return
+
     else:
         return indict[time_slot]
 
