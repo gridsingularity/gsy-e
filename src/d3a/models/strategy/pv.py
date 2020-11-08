@@ -109,20 +109,20 @@ class PVStrategy(BaseStrategy):
             initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                   kwargs['initial_selling_rate'])
         else:
-            initial_rate = self.offer_update.active_initial_rate_profile
+            initial_rate = self.offer_update.initial_rate_profile_buffer
 
         if key_in_dict_and_not_none(kwargs, 'final_selling_rate'):
             final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                 kwargs['final_selling_rate'])
         else:
-            final_rate = self.offer_update.active_final_rate_profile
+            final_rate = self.offer_update.final_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, 'energy_rate_decrease_per_update'):
             energy_rate_change_per_update = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                        kwargs['energy_rate_decrease_per_update'])
         else:
             energy_rate_change_per_update = \
-                self.offer_update.active_energy_rate_change_per_update_profile
+                self.offer_update.energy_rate_change_per_update_profile_buffer
         if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
             fit_to_limit = kwargs['fit_to_limit']
         else:
@@ -145,9 +145,9 @@ class PVStrategy(BaseStrategy):
                       f"Traceback: {traceback.format_exc()}")
             return
 
-        self.offer_update.active_initial_rate_profile = initial_rate
-        self.offer_update.active_final_rate_profile = final_rate
-        self.offer_update.active_energy_rate_change_per_update_profile = \
+        self.offer_update.initial_rate_profile_buffer = initial_rate
+        self.offer_update.final_rate_profile_buffer = final_rate
+        self.offer_update.energy_rate_change_per_update_profile_buffer = \
             energy_rate_change_per_update
         self.offer_update.fit_to_limit = fit_to_limit
         self.offer_update.update_interval = update_interval
@@ -181,9 +181,9 @@ class PVStrategy(BaseStrategy):
             else:
                 self._area_reconfigure_prices(initial_selling_rate=GlobalConfig.market_maker_rate -
                                               self.owner.get_path_to_root_fees(), validate=False)
-        self._validate_rates(self.offer_update.active_initial_rate_profile,
-                             self.offer_update.active_final_rate_profile,
-                             self.offer_update.active_energy_rate_change_per_update_profile,
+        self._validate_rates(self.offer_update.initial_rate_profile_buffer,
+                             self.offer_update.final_rate_profile_buffer,
+                             self.offer_update.energy_rate_change_per_update_profile_buffer,
                              self.offer_update.fit_to_limit)
 
     def event_activate_energy(self):

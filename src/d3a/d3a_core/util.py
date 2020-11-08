@@ -25,6 +25,7 @@ import d3a
 import inspect
 import os
 
+from collections import OrderedDict
 from click.types import ParamType
 from pendulum import duration, from_format, datetime
 from rex import rex
@@ -292,11 +293,11 @@ def read_settings_from_file(settings_file):
         advanced_settings = settings["advanced_settings"]
         simulation_settings = {
             "sim_duration": IntervalType('H:M')(
-                settings["basic_settings"].get('sim_duration', duration(hours=24))),
+                settings["basic_settings"].get('sim_duration', GlobalConfig.sim_duration)),
             "slot_length": IntervalType('M:S')(
-                settings["basic_settings"].get('slot_length', duration(minutes=15))),
+                settings["basic_settings"].get('slot_length', GlobalConfig.slot_length)),
             "tick_length": IntervalType('M:S')(
-                settings["basic_settings"].get('tick_length', duration(seconds=15))),
+                settings["basic_settings"].get('tick_length', GlobalConfig.tick_length)),
             "market_count": settings["basic_settings"].get('market_count', 1),
             "cloud_coverage": settings["basic_settings"].get(
                 'cloud_coverage', advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"])
@@ -331,11 +332,8 @@ def update_advanced_settings(advanced_settings):
         update_nested_settings(setting_class, settings_class_name, advanced_settings)
 
 
-def generate_market_slot_list(start_date=None, time_span=None):
-    if start_date is None:
-        start_date = GlobalConfig.start_date
-    if time_span is None:
-        time_span = GlobalConfig.sim_duration
+def generate_market_slot_list(start_date=GlobalConfig.start_date,
+                              time_span=GlobalConfig.sim_duration):
     sim_duration_plus_future_markets = time_span + GlobalConfig.slot_length * \
         (GlobalConfig.market_count - 1)
     market_slot_list = \
@@ -344,7 +342,7 @@ def generate_market_slot_list(start_date=None, time_span=None):
                                               market_count=GlobalConfig.market_count,
                                               slot_length=GlobalConfig.slot_length)
 
-    if not hasattr(GlobalConfig, 'market_slot_list') or len(GlobalConfig.market_slot_list) == 0:
+    if not getattr(GlobalConfig, 'market_slot_list', []):
         GlobalConfig.market_slot_list = market_slot_list
     return market_slot_list
 
@@ -540,12 +538,12 @@ def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
 def find_timestamp_of_same_weekday_and_time(indict, time_slot, ignore_not_found=False):
     if IS_CANARY_NETWORK:
         start_time = list(indict.keys())[0]
-        key = datetime(year=start_time.year, month=start_time.month, day=start_time.day,
-                       hour=time_slot.hour, minute=time_slot.minute, tz=TIME_ZONE).add(
+        timestamp_key = datetime(year=start_time.year, month=start_time.month, day=start_time.day,
+                                 hour=time_slot.hour, minute=time_slot.minute, tz=TIME_ZONE).add(
             days=abs(time_slot.weekday() - start_time.weekday()))
 
-        if key in indict:
-            return indict[key]
+        if timestamp_key in indict:
+            return indict[timestamp_key]
         else:
             if not ignore_not_found:
                 log.error(f"Weekday and time not found in dict for {time_slot}")
@@ -566,3 +564,10 @@ def convert_W_to_Wh(power_W, slot_length):
 
 def convert_kW_to_kWh(power_W, slot_length):
     return convert_W_to_Wh(power_W, slot_length)
+
+
+def return_ordered_dict(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        return OrderedDict(sorted(function(*args, **kwargs).items()))
+    return wrapper

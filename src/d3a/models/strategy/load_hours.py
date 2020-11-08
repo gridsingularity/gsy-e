@@ -180,19 +180,19 @@ class LoadHoursStrategy(BidEnabledStrategy):
             initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                   kwargs['initial_buying_rate'])
         else:
-            initial_rate = self.bid_update.active_initial_rate_profile
+            initial_rate = self.bid_update.initial_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, 'final_buying_rate'):
             final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                 kwargs['final_buying_rate'])
         else:
-            final_rate = self.bid_update.active_final_rate_profile
+            final_rate = self.bid_update.final_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, 'energy_rate_increase_per_update'):
             energy_rate_change_per_update = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                        kwargs['energy_rate_increase_per_update'])
         else:
             energy_rate_change_per_update = \
-                self.bid_update.active_energy_rate_change_per_update_profile
+                self.bid_update.energy_rate_change_per_update_profile_buffer
         if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
             fit_to_limit = kwargs['fit_to_limit']
         else:
@@ -216,9 +216,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
                       f"Traceback: {traceback.format_exc()}")
             return
 
-        self.bid_update.active_initial_rate_profile = initial_rate
-        self.bid_update.active_final_rate_profile = final_rate
-        self.bid_update.active_energy_rate_change_per_update_profile = \
+        self.bid_update.initial_rate_profile_buffer = initial_rate
+        self.bid_update.final_rate_profile_buffer = final_rate
+        self.bid_update.energy_rate_change_per_update_profile_buffer = \
             energy_rate_change_per_update
         self.bid_update.fit_to_limit = fit_to_limit
         self.bid_update.update_interval = update_interval
@@ -246,9 +246,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
             else:
                 self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate +
                                             self.owner.get_path_to_root_fees())
-        self._validate_rates(self.bid_update.active_initial_rate_profile,
-                             self.bid_update.active_final_rate_profile,
-                             self.bid_update.active_energy_rate_change_per_update_profile,
+        self._validate_rates(self.bid_update.initial_rate_profile_buffer,
+                             self.bid_update.final_rate_profile_buffer,
+                             self.bid_update.energy_rate_change_per_update_profile_buffer,
                              self.bid_update.fit_to_limit)
 
     def _find_acceptable_offer(self, market):

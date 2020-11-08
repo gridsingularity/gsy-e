@@ -103,11 +103,11 @@ class StorageStrategy(BidEnabledStrategy):
                                  fit_to_limit=fit_to_limit,
                                  energy_rate_change_per_update=energy_rate_decrease_per_update,
                                  update_interval=update_interval)
-        for time_slot in self.offer_update.active_initial_rate_profile.keys():
+        for time_slot in self.offer_update.initial_rate_profile_buffer.keys():
             validate_storage_device(
-                initial_selling_rate=self.offer_update.active_initial_rate_profile[time_slot],
+                initial_selling_rate=self.offer_update.initial_rate_profile_buffer[time_slot],
                 final_selling_rate=find_timestamp_of_same_weekday_and_time(
-                    self.offer_update.active_final_rate_profile, time_slot))
+                    self.offer_update.final_rate_profile_buffer, time_slot))
         self.bid_update = \
             UpdateFrequencyMixin(
                 initial_rate=initial_buying_rate,
@@ -117,11 +117,11 @@ class StorageStrategy(BidEnabledStrategy):
                 update_interval=update_interval,
                 rate_limit_object=min
             )
-        for time_slot in self.bid_update.active_initial_rate_profile.keys():
+        for time_slot in self.bid_update.initial_rate_profile_buffer.keys():
             validate_storage_device(
-                initial_buying_rate=self.bid_update.active_initial_rate_profile[time_slot],
+                initial_buying_rate=self.bid_update.initial_rate_profile_buffer[time_slot],
                 final_buying_rate=find_timestamp_of_same_weekday_and_time(
-                    self.bid_update.active_final_rate_profile, time_slot))
+                    self.bid_update.final_rate_profile_buffer, time_slot))
         self.state = \
             StorageState(initial_soc=initial_soc,
                          initial_energy_origin=initial_energy_origin,
@@ -138,36 +138,36 @@ class StorageStrategy(BidEnabledStrategy):
             initial_selling_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                           kwargs['initial_selling_rate'])
         else:
-            initial_selling_rate = self.offer_update.active_initial_rate_profile
+            initial_selling_rate = self.offer_update.initial_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, 'final_selling_rate'):
             final_selling_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                         kwargs['final_selling_rate'])
         else:
-            final_selling_rate = self.offer_update.active_final_rate_profile
+            final_selling_rate = self.offer_update.final_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, 'initial_buying_rate'):
             initial_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                          kwargs['initial_buying_rate'])
         else:
-            initial_buying_rate = self.bid_update.active_initial_rate_profile
+            initial_buying_rate = self.bid_update.initial_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, 'final_buying_rate'):
             final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                        kwargs['final_buying_rate'])
         else:
-            final_buying_rate = self.bid_update.active_final_rate_profile
+            final_buying_rate = self.bid_update.final_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, 'energy_rate_decrease_per_update'):
             energy_rate_decrease_per_update = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                        kwargs['energy_rate_decrease_per_update'])
         else:
             energy_rate_decrease_per_update = \
-                self.offer_update.active_energy_rate_change_per_update_profile
+                self.offer_update.energy_rate_change_per_update_profile_buffer
         if key_in_dict_and_not_none(kwargs, 'energy_rate_increase_per_update'):
             energy_rate_increase_per_update = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                        kwargs['energy_rate_increase_per_update'])
         else:
             energy_rate_increase_per_update = \
-                self.bid_update.active_energy_rate_change_per_update_profile
+                self.bid_update.energy_rate_change_per_update_profile_buffer
         if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
             bid_fit_to_limit = kwargs['fit_to_limit']
             offer_fit_to_limit = kwargs['fit_to_limit']
@@ -192,13 +192,13 @@ class StorageStrategy(BidEnabledStrategy):
                       f"Traceback: {traceback.format_exc()}")
             return
 
-        self.offer_update.active_initial_rate_profile = initial_selling_rate
-        self.offer_update.active_final_rate_profile = final_selling_rate
-        self.bid_update.active_initial_rate_profile = initial_buying_rate
-        self.bid_update.active_final_rate_profile = final_buying_rate
-        self.bid_update.active_energy_rate_change_per_update_profile = \
+        self.offer_update.initial_rate_profile_buffer = initial_selling_rate
+        self.offer_update.final_rate_profile_buffer = final_selling_rate
+        self.bid_update.initial_rate_profile_buffer = initial_buying_rate
+        self.bid_update.final_rate_profile_buffer = final_buying_rate
+        self.bid_update.energy_rate_change_per_update_profile_buffer = \
             energy_rate_increase_per_update
-        self.offer_update.active_energy_rate_change_per_update_profile = \
+        self.offer_update.energy_rate_change_per_update_profile_buffer = \
             energy_rate_decrease_per_update
         self.bid_update.fit_to_limit = bid_fit_to_limit
         self.offer_update.fit_to_limit = offer_fit_to_limit
@@ -235,12 +235,12 @@ class StorageStrategy(BidEnabledStrategy):
         self.state.calculate_soc_for_time_slot(self.area.next_market.time_slot)
 
     def event_activate_price(self):
-        self._validate_rates(self.offer_update.active_initial_rate_profile,
-                             self.offer_update.active_final_rate_profile,
-                             self.bid_update.active_initial_rate_profile,
-                             self.bid_update.active_final_rate_profile,
-                             self.bid_update.active_energy_rate_change_per_update_profile,
-                             self.offer_update.active_energy_rate_change_per_update_profile,
+        self._validate_rates(self.offer_update.initial_rate_profile_buffer,
+                             self.offer_update.final_rate_profile_buffer,
+                             self.bid_update.initial_rate_profile_buffer,
+                             self.bid_update.final_rate_profile_buffer,
+                             self.bid_update.energy_rate_change_per_update_profile_buffer,
+                             self.offer_update.energy_rate_change_per_update_profile_buffer,
                              self.bid_update.fit_to_limit, self.offer_update.fit_to_limit)
 
     def event_activate_energy(self):

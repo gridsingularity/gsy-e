@@ -30,17 +30,17 @@ class UpdateFrequencyMixin:
                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
                  rate_limit_object=max):
         self.fit_to_limit = fit_to_limit
-        self.active_initial_rate_profile = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+        self.initial_rate_profile_buffer = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                                   initial_rate)
         self.initial_rate = {}
-        self.active_final_rate_profile = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+        self.final_rate_profile_buffer = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                                 final_rate)
         self.final_rate = {}
         if fit_to_limit is False:
-            self.active_energy_rate_change_per_update_profile = \
+            self.energy_rate_change_per_update_profile_buffer = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY, energy_rate_change_per_update)
         else:
-            self.active_energy_rate_change_per_update_profile = {}
+            self.energy_rate_change_per_update_profile_buffer = {}
 
         self.energy_rate_change_per_update = {}
         self.update_interval = update_interval
@@ -54,12 +54,12 @@ class UpdateFrequencyMixin:
             if self.fit_to_limit is False:
                 self.energy_rate_change_per_update[time_slot] = \
                     find_timestamp_of_same_weekday_and_time(
-                        self.active_energy_rate_change_per_update_profile, time_slot)
+                        self.energy_rate_change_per_update_profile_buffer, time_slot)
             self.initial_rate[time_slot] = \
-                find_timestamp_of_same_weekday_and_time(self.active_initial_rate_profile,
+                find_timestamp_of_same_weekday_and_time(self.initial_rate_profile_buffer,
                                                         time_slot)
             self.final_rate[time_slot] = \
-                find_timestamp_of_same_weekday_and_time(self.active_final_rate_profile,
+                find_timestamp_of_same_weekday_and_time(self.final_rate_profile_buffer,
                                                         time_slot)
             self._set_or_update_energy_rate_change_per_update(market.time_slot)
             write_default_to_dict(self.update_counter, market.time_slot, 0)
@@ -68,13 +68,13 @@ class UpdateFrequencyMixin:
                                  fit_to_limit=None, energy_rate_change_per_update=None,
                                  update_interval=None):
         if initial_rate is not None:
-            self.active_initial_rate_profile[time_slot] = initial_rate
+            self.initial_rate_profile_buffer[time_slot] = initial_rate
         if final_rate is not None:
-            self.active_final_rate_profile[time_slot] = final_rate
+            self.final_rate_profile_buffer[time_slot] = final_rate
         if fit_to_limit is not None:
             self.fit_to_limit = fit_to_limit
         if energy_rate_change_per_update is not None:
-            self.active_energy_rate_change_per_update_profile[time_slot] = \
+            self.energy_rate_change_per_update_profile_buffer[time_slot] = \
                 energy_rate_change_per_update
         if update_interval is not None:
             self.update_interval = update_interval
@@ -88,19 +88,19 @@ class UpdateFrequencyMixin:
         if self.fit_to_limit:
             energy_rate_change_per_update[time_slot] = \
                 (find_timestamp_of_same_weekday_and_time(
-                    self.active_initial_rate_profile, time_slot) -
+                    self.initial_rate_profile_buffer, time_slot) -
                  find_timestamp_of_same_weekday_and_time(
-                     self.active_final_rate_profile, time_slot)) / \
+                     self.final_rate_profile_buffer, time_slot)) / \
                 self.number_of_available_updates
         else:
             if self.rate_limit_object is min:
                 energy_rate_change_per_update[time_slot] = \
                     -1 * find_timestamp_of_same_weekday_and_time(
-                        self.active_energy_rate_change_per_update_profile, time_slot)
+                        self.energy_rate_change_per_update_profile_buffer, time_slot)
             elif self.rate_limit_object is max:
                 energy_rate_change_per_update[time_slot] = \
                     find_timestamp_of_same_weekday_and_time(
-                        self.active_energy_rate_change_per_update_profile, time_slot)
+                        self.energy_rate_change_per_update_profile_buffer, time_slot)
         self.energy_rate_change_per_update.update(energy_rate_change_per_update)
 
     @property

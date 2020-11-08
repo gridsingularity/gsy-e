@@ -21,11 +21,12 @@ import ast
 from enum import Enum
 from pendulum import duration, from_format, from_timestamp, today, DateTime
 from typing import Dict
-from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, TIME_ZONE, IS_CANARY_NETWORK, \
-    CN_PROFILE_EXPANSION_DAYS
+
+from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, TIME_ZONE, CN_PROFILE_EXPANSION_DAYS, \
+    IS_CANARY_NETWORK
 from d3a_interface.constants_limits import GlobalConfig, DATE_TIME_FORMAT_SECONDS
 from d3a.d3a_core.util import generate_market_slot_list, convert_kW_to_kWh, \
-    find_timestamp_of_same_weekday_and_time
+    find_timestamp_of_same_weekday_and_time, return_ordered_dict
 
 """
 Exposes mixins that can be used from strategy classes.
@@ -307,6 +308,7 @@ def copy_profile_to_multiple_days(profile):
     return profile
 
 
+@return_ordered_dict
 def read_arbitrary_profile(profile_type: InputProfileTypes,
                            input_profile) -> Dict[DateTime, float]:
     """
