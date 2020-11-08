@@ -333,8 +333,8 @@ class Simulation:
 
             sleep(seconds_until_next_tick)
 
+        simulation_time_counter = time.time()
         for slot_no in range(slot_resume, slot_count):
-
             self._update_progress_info(slot_no, slot_count)
 
             log.warning(
@@ -364,7 +364,6 @@ class Simulation:
 
             for tick_no in range(tick_resume, config.ticks_per_slot):
                 tick_start = time.time()
-
                 self._handle_paused(console, tick_start)
 
                 # reset tick_resume after possible resume
@@ -386,8 +385,11 @@ class Simulation:
                 self.simulation_config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()
 
-                realtime_tick_length = time.time() - tick_start
-                if self.slowdown and realtime_tick_length < tick_lengths_s:
+                realtime_tick_length = time.time() - simulation_time_counter
+
+                if d3a.constants.RUN_IN_REALTIME:
+                    sleep(abs(tick_lengths_s - realtime_tick_length))
+                elif self.slowdown and realtime_tick_length < tick_lengths_s:
                     # Simulation runs faster than real time but a slowdown was
                     # requested
                     tick_diff = tick_lengths_s - realtime_tick_length
@@ -397,9 +399,7 @@ class Simulation:
                         self._handle_input(console, diff_slowdown)
                     else:
                         sleep(diff_slowdown)
-
-                if d3a.constants.RUN_IN_REALTIME:
-                    sleep(abs(tick_lengths_s - realtime_tick_length))
+                simulation_time_counter = time.time()
 
             self._update_and_send_results()
             if self.export_on_finish and self.should_export_results:
