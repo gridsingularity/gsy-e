@@ -21,8 +21,8 @@ import ast
 from enum import Enum
 from pendulum import duration, from_format, from_timestamp, today, DateTime
 from typing import Dict
-from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, TIME_ZONE, IS_CANARY_NETWORK, \
-    CN_PROFILE_EXPANSION_DAYS
+import d3a.constants
+from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, TIME_ZONE, CN_PROFILE_EXPANSION_DAYS
 from d3a_interface.constants_limits import GlobalConfig, DATE_TIME_FORMAT_SECONDS
 from d3a.d3a_core.util import generate_market_slot_list, convert_kW_to_kWh, \
     find_timestamp_of_same_weekday_and_time
@@ -60,7 +60,7 @@ def default_profile_dict(val=None) -> Dict[DateTime, int]:
     """
     if val is None:
         val = 0
-    if IS_CANARY_NETWORK:
+    if d3a.constants.IS_CANARY_NETWORK:
         market_slot_list = \
             generate_market_slot_list(start_date=today(tz=TIME_ZONE),
                                       time_span=duration(
@@ -197,7 +197,7 @@ def _fill_gaps_in_profile(input_profile: Dict = None) -> Dict:
         current_val = 0
 
     for time in out_profile.keys():
-        if IS_CANARY_NETWORK:
+        if d3a.constants.IS_CANARY_NETWORK:
             temp_val = find_timestamp_of_same_weekday_and_time(input_profile, time,
                                                                ignore_not_found=True)
             if temp_val is not None:
@@ -329,7 +329,7 @@ def read_arbitrary_profile(profile_type: InputProfileTypes,
 
     if profile is not None:
         filled_profile = _fill_gaps_in_profile(profile)
-        if not IS_CANARY_NETWORK:
+        if not d3a.constants.IS_CANARY_NETWORK:
             _eval_time_period_consensus(filled_profile)
 
         if profile_type == InputProfileTypes.POWER:
