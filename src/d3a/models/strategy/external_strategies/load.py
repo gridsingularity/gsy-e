@@ -409,7 +409,7 @@ class LoadForecastExternalStrategy(LoadExternalMixin, DefinedLoadStrategy):
         super().event_market_cycle()
 
     def event_activate_energy(self):
-        self._initiate_hrs_per_day()
+        # self._initiate_hrs_per_day()
         self.update_energy_forecast()
 
     def update_energy_forecast(self):

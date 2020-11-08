@@ -147,7 +147,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def update_state(self):
         for market in self.active_markets:
             current_day = self._get_day_of_timestamp(market.time_slot)
-            if self.hrs_per_day[current_day] <= FLOATING_POINT_TOLERANCE:
+            if current_day not in self.hrs_per_day or \
+                    self.hrs_per_day[current_day] <= FLOATING_POINT_TOLERANCE:
                 self.energy_requirement_Wh[market.time_slot] = 0.0
                 self.state.desired_energy_Wh[market.time_slot] = 0.0
         self.post_or_update_bid()
@@ -465,6 +466,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 * (self.area.config.slot_length / duration(hours=1)))
 
     def _get_day_of_timestamp(self, time_slot):
+        if self._simulation_start_timestamp is None:
+            return 0
         return (time_slot - self._simulation_start_timestamp).days
 
 

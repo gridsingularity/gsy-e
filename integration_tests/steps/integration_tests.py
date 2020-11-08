@@ -32,7 +32,7 @@ from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTyp
 from d3a.d3a_core.simulation import Simulation
 from d3a.d3a_core.util import d3a_path
 from d3a_interface.utils import get_area_name_uuid_mapping
-from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE, IS_CANARY_NETWORK
+from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
 from d3a_interface.constants_limits import ConstSettings
 from d3a import constants
 from d3a.d3a_core.util import convert_W_to_Wh, convert_W_to_kWh, convert_kW_to_kWh
@@ -468,7 +468,7 @@ def test_aggregated_result_files(context):
 def test_simulation_config_parameters(context, cloud_coverage):
     from d3a.models.read_user_profile import default_profile_dict
     assert context.simulation.simulation_config.cloud_coverage == int(cloud_coverage)
-    day_factor = 24 * 7 if IS_CANARY_NETWORK else 24
+    day_factor = 24 * 7 if constants.IS_CANARY_NETWORK else 24
     assert len(context.simulation.simulation_config.market_maker_rate) == \
         day_factor / context.simulation.simulation_config.slot_length.hours + \
         context.simulation.simulation_config.market_count

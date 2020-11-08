@@ -33,10 +33,11 @@ from pkgutil import walk_packages
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 
+import d3a.constants
 from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.exceptions import D3AException
-from d3a.constants import DATE_FORMAT, IS_CANARY_NETWORK, TIME_ZONE
+from d3a.constants import DATE_FORMAT, TIME_ZONE
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit
 from d3a_interface.utils import generate_market_slot_list_from_config, str_to_pendulum_datetime,\
     format_datetime
@@ -536,7 +537,7 @@ def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
 
 
 def find_timestamp_of_same_weekday_and_time(indict, time_slot, ignore_not_found=False):
-    if IS_CANARY_NETWORK:
+    if d3a.constants.IS_CANARY_NETWORK:
         start_time = list(indict.keys())[0]
         timestamp_key = datetime(year=start_time.year, month=start_time.month, day=start_time.day,
                                  hour=time_slot.hour, minute=time_slot.minute, tz=TIME_ZONE).add(
