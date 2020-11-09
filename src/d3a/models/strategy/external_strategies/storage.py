@@ -330,6 +330,7 @@ class StorageExternalMixin(ExternalMixin):
                 self.redis.aggregator.add_batch_market_event(self.device.uuid,
                                                              market_info,
                                                              self.area.global_objects)
+            self._delete_past_state()
         else:
             super().event_market_cycle()
 

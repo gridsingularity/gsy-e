@@ -184,7 +184,6 @@ class PVExternalMixin(ExternalMixin):
         self.register_on_market_cycle()
         if not self.should_use_default_strategy:
             self.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
-            self._delete_past_state()
             self._reset_event_tick_counter()
             market_event_channel = f"{self.channel_prefix}/events/market"
             market_info = self.next_market.info
@@ -206,6 +205,7 @@ class PVExternalMixin(ExternalMixin):
                 self.redis.aggregator.add_batch_market_event(self.device.uuid,
                                                              market_info,
                                                              self.area.global_objects)
+            self._delete_past_state()
         else:
             super().event_market_cycle()
 
