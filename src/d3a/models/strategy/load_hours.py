@@ -145,9 +145,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._calculate_active_markets()
         self.update_state()
 
-    def add_entry_in_hrs_per_day(self, time_slot):
+    def add_entry_in_hrs_per_day(self, time_slot, overwrite=False):
         current_day = self._get_day_of_timestamp(time_slot)
-        if current_day not in self.hrs_per_day:
+        if current_day not in self.hrs_per_day or overwrite:
             self.hrs_per_day[current_day] = self._initial_hrs_per_day
 
     def update_state(self):
@@ -234,11 +234,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if key_in_dict_and_not_none(kwargs, 'hrs_per_day') or \
                 key_in_dict_and_not_none(kwargs, 'hrs_of_day'):
             self.assign_hours_of_per_day(kwargs['hrs_of_day'], kwargs['hrs_per_day'])
-            self.add_entry_in_hrs_per_day(self.area.next_market.time_slot)
+            self.add_entry_in_hrs_per_day(self.area.next_market.time_slot, overwrite=True)
         if key_in_dict_and_not_none(kwargs, 'avg_power_W'):
             self.avg_power_W = kwargs['avg_power_W']
             self._update_energy_requirement_future_markets()
-
         self._area_reconfigure_prices(**kwargs)
         self.bid_update.update_and_populate_price_settings(self.area)
 
@@ -366,8 +365,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         if bid_trade.offer.buyer == self.owner.name:
             self.energy_requirement_Wh[market.time_slot] -= bid_trade.offer.energy * 1000.0
-            self.hrs_per_day[self._get_day_of_timestamp(market.time_slot)] -= \
-                self._operating_hours(bid_trade.offer.energy)
+            if self.hrs_per_day:
+                self.hrs_per_day[self._get_day_of_timestamp(market.time_slot)] -= \
+                    self._operating_hours(bid_trade.offer.energy)
             assert self.energy_requirement_Wh[market.time_slot] >= -FLOATING_POINT_TOLERANCE, \
                 f"Energy requirement for load {self.owner.name} fell below zero " \
                 f"({self.energy_requirement_Wh[market.time_slot]})."
