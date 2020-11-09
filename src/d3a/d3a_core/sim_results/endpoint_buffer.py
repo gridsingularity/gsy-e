@@ -177,9 +177,9 @@ class SimulationEndpointBuffer:
                 'import_capacity_kWh': area.import_capacity_kWh,
                 'export_capacity_kWh': area.export_capacity_kWh,
                 'imported_energy_kWh': area.stats.imported_traded_energy_kwh.get(
-                    area.next_market.time_slot, 0.) if area.current_market is not None else 0.,
+                    area.next_market.time_slot, 0.) if area.next_market is not None else 0.,
                 'exported_energy_kWh': area.stats.exported_traded_energy_kwh.get(
-                    area.next_market.time_slot, 0.) if area.current_market is not None else 0.,
+                    area.next_market.time_slot, 0.) if area.next_market is not None else 0.,
             }
             core_stats_dict['grid_fee_constant'] = area.next_market.const_fee_rate \
                 if area.next_market is not None else 0.

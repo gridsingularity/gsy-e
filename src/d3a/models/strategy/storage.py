@@ -603,7 +603,7 @@ class StorageStrategy(BidEnabledStrategy):
                 self.area.current_market is None:
             return
         to_delete = []
-        for market_slot in self.bid_update.initial_rate.keys():
+        for market_slot in self.state.pledged_sell_kWh.keys():
             if market_slot < self.area.current_market.time_slot:
                 to_delete.append(market_slot)
         for market_slot in to_delete:
