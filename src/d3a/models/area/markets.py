@@ -73,12 +73,12 @@ class AreaMarkets:
             if timeframe < current_time:
                 market = markets.pop(timeframe)
                 market.readonly = True
-                self._delete_past_markets(past_markets, timeframe)
+                self._delete_past_markets(past_markets)
                 past_markets[timeframe] = market
                 self.log.trace("Moving {t:%H:%M} {m} to past"
                                .format(t=timeframe, m=past_markets[timeframe].name))
 
-    def _delete_past_markets(self, past_markets, timeframe):
+    def _delete_past_markets(self, past_markets):
         if not constants.D3A_TEST_RUN:
             delete_markets = [pm for pm in past_markets if
                               pm not in self.markets.values()]

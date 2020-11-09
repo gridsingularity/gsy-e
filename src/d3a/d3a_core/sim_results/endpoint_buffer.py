@@ -226,7 +226,7 @@ class SimulationEndpointBuffer:
 
         elif type(area.strategy) in [InfiniteBusStrategy, MarketMakerStrategy]:
             core_stats_dict['energy_rate'] = \
-                area.strategy.energy_rate[area.parent.current_market.time_slot]
+                area.strategy.energy_rate.get(area.parent.current_market.time_slot, None)
             if area.parent.current_market is not None:
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
