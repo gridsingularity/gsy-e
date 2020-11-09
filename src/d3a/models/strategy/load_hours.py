@@ -365,9 +365,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         if bid_trade.offer.buyer == self.owner.name:
             self.energy_requirement_Wh[market.time_slot] -= bid_trade.offer.energy * 1000.0
-            if self.hrs_per_day:
-                self.hrs_per_day[self._get_day_of_timestamp(market.time_slot)] -= \
-                    self._operating_hours(bid_trade.offer.energy)
+            market_day = self._get_day_of_timestamp(market.time_slot)
+            if self.hrs_per_day != {} and market_day in self.hrs_per_day:
+                self.hrs_per_day[market_day] -= self._operating_hours(bid_trade.offer.energy)
             assert self.energy_requirement_Wh[market.time_slot] >= -FLOATING_POINT_TOLERANCE, \
                 f"Energy requirement for load {self.owner.name} fell below zero " \
                 f"({self.energy_requirement_Wh[market.time_slot]})."
