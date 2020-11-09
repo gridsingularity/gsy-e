@@ -112,6 +112,7 @@ class SimulationEndpointBuffer:
         return {
             "job_id": self.job_id,
             "current_market": self.current_market_time_slot_str,
+            "current_market_ui_time_slot_str": self.current_market_ui_time_slot_str,
             "random_seed": self.random_seed,
             "status": self.status,
             "progress_info": self.simulation_progress,

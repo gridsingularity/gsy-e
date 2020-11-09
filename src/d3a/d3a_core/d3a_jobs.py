@@ -43,7 +43,7 @@ def decompress_and_decode_queued_strings(queued_string):
 
 @job('d3a')
 def start(scenario, settings, events, aggregator_device_mapping, saved_state):
-    logging.getLogger().setLevel(logging.ERROR)
+    logging.getLogger().setLevel(logging.INFO)
 
     scenario = decompress_and_decode_queued_strings(scenario)
     saved_state = decompress_and_decode_queued_strings(saved_state)

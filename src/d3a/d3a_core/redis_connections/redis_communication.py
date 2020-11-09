@@ -22,9 +22,9 @@ import time
 from logging import getLogger
 from redis import StrictRedis
 from redis.exceptions import ConnectionError
-from rq import get_current_job, Queue
+from rq import get_current_job
 from rq.exceptions import NoSuchJobError
-from d3a_interface.results_validator import results_validator
+from d3a_interface.results_validator import results_validator  # NOQA
 from d3a_interface.constants_limits import HeartBeat
 from d3a_interface.utils import RepeatingTimer
 from zlib import compress
@@ -48,8 +48,6 @@ class RedisSimulationCommunication:
     def __init__(self, simulation, simulation_id, live_events):
         if simulation_id is None:
             return
-        self.queue = Queue('results', connection=StrictRedis.from_url(REDIS_URL,
-                                                                      retry_on_timeout=True))
         self._live_events = live_events
         self._simulation_id = simulation_id
         self._simulation = simulation
@@ -189,7 +187,7 @@ class RedisSimulationCommunication:
         if not self.is_enabled():
             return
         result_report = endpoint_buffer.generate_result_report()
-        results_validator(result_report)
+        # results_validator(result_report)
 
         results = json.dumps(result_report)
         message_size = utf8len(results)
@@ -201,8 +199,7 @@ class RedisSimulationCommunication:
 
         results = results.encode('utf-8')
         results = compress(results)
-        self.queue.enqueue('config.results_jobss.your_func', results,
-                           job_id=result_report['job_id'])
+        self.redis_db.publish(self.result_channel, results)
         self._handle_redis_job_metadata()
 
     def write_zip_results(self, zip_results):
@@ -245,15 +242,5 @@ class RedisSimulationCommunication:
 
 
 def publish_job_error_output(job_id, traceback):
-    queue = Queue('results', connection=StrictRedis.from_url(REDIS_URL,
-                                                             retry_on_timeout=True))
-    result_report = {
-        "job_id": job_id,
-        "status": "failed",
-        "errors": str(traceback)
-    }
-    results = json.dumps(result_report)
-    results = results.encode('utf-8')
-    results = compress(results)
-    queue.enqueue('config.results_jobss.your_func', results,
-                  job_id=job_id)
+    StrictRedis.from_url(REDIS_URL).\
+        publish(f"{ERROR_CHANNEL}/{job_id}", json.dumps({"errors": traceback}))

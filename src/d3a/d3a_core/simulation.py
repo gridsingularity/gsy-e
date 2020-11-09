@@ -64,6 +64,8 @@ SLOWDOWN_FACTOR = 100
 SLOWDOWN_STEP = 5
 RANDOM_SEED_MAX_VALUE = 1000000
 
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
+
 
 class SimulationResetException(Exception):
     pass
@@ -610,7 +612,6 @@ def run_simulation(setup_module_name="", simulation_config=None, simulation_even
             redis_job_id=redis_job_id,
             **kwargs
         )
-
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
 
