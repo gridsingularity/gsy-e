@@ -36,10 +36,14 @@ class AreaThroughputStats:
         area_throughput = core_stats.get(area_dict['uuid'], {}).get('area_throughput', {})
         imported_peak = round_floats_for_ui(area_throughput.get('imported_energy_kWh', 0.))
         exported_peak = round_floats_for_ui(area_throughput.get('exported_energy_kWh', 0.))
-        net_peak = round_floats_for_ui(area_throughput.get('net_energy_flow_kWh', 0.))
+        net_peak = round_floats_for_ui(imported_peak - exported_peak)
+        import_peak_energy_net_kWh = net_peak if net_peak > 0 else 0.
+        export_peak_energy_net_kWh = abs(net_peak) if net_peak < 0 else 0.
         area_results = {
-            "import": {'peak_energy_kWh': imported_peak},
-            "export": {'peak_energy_kWh': exported_peak},
+            "import": {'peak_energy_trade_kWh': imported_peak,
+                       "peak_energy_net_kWh": import_peak_energy_net_kWh},
+            "export": {'peak_energy_trade_kWh': exported_peak,
+                       "peak_energy_net_kWh": export_peak_energy_net_kWh},
             "net_energy_flow": {'peak_energy_kWh': net_peak}
         }
 
@@ -49,19 +53,19 @@ class AreaThroughputStats:
                 (baseline_export is not None and baseline_export > 0):
             if baseline_import is not None and baseline_import > 0:
                 peak_percentage = round_floats_for_ui(
-                    area_results['import']['peak_energy_kWh'] / baseline_import * 100
+                    area_results['import']['peak_energy_net_kWh'] / baseline_import * 100
                 )
                 area_results["import"].update(
                     {'peak_percentage': peak_percentage,
-                     'baseline_peak_energy_kWh': baseline_import}
+                     'baseline_peak_energy_kWh': round_floats_for_ui(baseline_import)}
                 )
             if baseline_export is not None and baseline_export > 0:
                 peak_percentage = round_floats_for_ui(
-                    area_results['export']['peak_energy_kWh'] / baseline_export * 100
+                    area_results['export']['peak_energy_net_kWh'] / baseline_export * 100
                 )
                 area_results["export"].update(
                     {'peak_percentage': peak_percentage,
-                     'baseline_peak_energy_kWh': baseline_export}
+                     'baseline_peak_energy_kWh': round_floats_for_ui(baseline_export)}
                 )
 
         import_capacity = area_throughput.get('import_capacity_kWh', None)

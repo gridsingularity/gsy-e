@@ -12,3 +12,10 @@ Feature: Run power flow integration tests
     And d3a is installed
     When we run the simulation with setup file power_flow.baseline_peak_energy and parameters [24, 60, 60, 1]
     Then BaselinePeakEnergyStats are correctly calculated
+
+  Scenario: NetEnergyFlowStats are correctly calculated
+    Given we have a scenario named power_flow/net_energy_flow
+    And d3a is installed
+    And export is_needed
+    When we run the simulation with setup file power_flow.net_energy_flow and parameters [24, 60, 60, 1]
+    Then NetEnergyFlowStats are correctly calculated

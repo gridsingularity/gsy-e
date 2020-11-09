@@ -16,19 +16,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
-from pendulum import duration
 from d3a.models.read_user_profile import _readCSV
 
 
 @then('the UserProfileWind follows the Wind profile of csv')
 def check_wind_csv_profile(context):
+    from d3a.d3a_core.util import convert_W_to_kWh
     wind = list(filter(lambda x: x.name == "Wind Turbine", context.simulation.area.children))[0]
     from d3a.setup.strategy_tests.user_profile_wind_csv import user_profile_path
     profile_data = _readCSV(user_profile_path)
     for timepoint, energy in wind.strategy.energy_production_forecast_kWh.items():
         if timepoint in profile_data.keys():
-            actual_energy = profile_data[timepoint] * \
-                            (wind.config.slot_length / duration(hours=1)) / 1000.0
+            actual_energy = convert_W_to_kWh(profile_data[timepoint], wind.config.slot_length)
             assert energy == actual_energy
         else:
             assert energy == 0

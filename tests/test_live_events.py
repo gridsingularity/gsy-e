@@ -97,7 +97,7 @@ class TestLiveEvents(unittest.TestCase):
         assert self.area1.strategy.avg_power_W == 234
         assert self.area1.strategy.hrs_per_day[0] == 6
         assert self.area1.strategy.hrs_of_day == [0, 1, 2, 3, 4, 5, 6, 7]
-        assert set(self.area1.strategy.bid_update.energy_rate_change_per_update.values()) == {3}
+        assert set(self.area1.strategy.bid_update.energy_rate_change_per_update.values()) == {-3}
         assert self.area1.strategy.bid_update.update_interval.minutes == 9
         assert set(self.area1.strategy.bid_update.initial_rate.values()) == {12}
 
@@ -144,7 +144,8 @@ class TestLiveEvents(unittest.TestCase):
         assert set(self.area3.strategy.offer_update.energy_rate_change_per_update.values()) == {13}
         assert set(self.area3.strategy.bid_update.initial_rate.values()) == {2}
         assert set(self.area3.strategy.bid_update.final_rate.values()) == {101}
-        assert set(self.area3.strategy.bid_update.energy_rate_change_per_update.values()) == {-4}
+        assert self.area3.strategy.bid_update.energy_rate_change_per_update[
+                   self.area_house2.next_market.time_slot] == -4
         assert self.area3.strategy.offer_update.update_interval.minutes == 14
         assert self.area3.strategy.bid_update.update_interval.minutes == 14
 
