@@ -250,10 +250,10 @@ class PVStrategy(BaseStrategy):
         for market_slot in to_delete:
             self.state.available_energy_kWh.pop(market_slot, None)
             self.energy_production_forecast_kWh.pop(market_slot, None)
-            del self.offer_update.initial_rate[market_slot]
-            del self.offer_update.final_rate[market_slot]
-            del self.offer_update.energy_rate_change_per_update[market_slot]
-            del self.offer_update.update_counter[market_slot]
+            self.offer_update.initial_rate.pop(market_slot, None)
+            self.offer_update.final_rate.pop(market_slot, None)
+            self.offer_update.energy_rate_change_per_update.pop(market_slot, None)
+            self.offer_update.update_counter.pop(market_slot, None)
 
     def event_market_cycle_price(self):
         self.offer_update.update_and_populate_price_settings(self.area)

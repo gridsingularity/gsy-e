@@ -169,12 +169,12 @@ class LoadHoursStrategy(BidEnabledStrategy):
             if market_slot < self.area.current_market.time_slot:
                 to_delete.append(market_slot)
         for market_slot in to_delete:
-            del self.energy_requirement_Wh[market_slot]
-            del self.state.desired_energy_Wh[market_slot]
-            del self.bid_update.initial_rate[market_slot]
-            del self.bid_update.final_rate[market_slot]
-            del self.bid_update.energy_rate_change_per_update[market_slot]
-            del self.bid_update.update_counter[market_slot]
+            self.energy_requirement_Wh.pop(market_slot, None)
+            self.state.desired_energy_Wh.pop(market_slot, None)
+            self.bid_update.initial_rate.pop(market_slot, None)
+            self.bid_update.final_rate.pop(market_slot, None)
+            self.bid_update.energy_rate_change_per_update.pop(market_slot, None)
+            self.bid_update.update_counter.pop(market_slot, None)
 
     def _area_reconfigure_prices(self, **kwargs):
         if key_in_dict_and_not_none(kwargs, 'initial_buying_rate'):
