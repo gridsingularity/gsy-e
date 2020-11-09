@@ -603,25 +603,25 @@ class StorageStrategy(BidEnabledStrategy):
                 self.area.current_market is None:
             return
         to_delete = []
-        for market_slot in self.bid_update.initial_rate.keys():
+        for market_slot in self.state.pledged_sell_kWh.keys():
             if market_slot < self.area.current_market.time_slot:
                 to_delete.append(market_slot)
         for market_slot in to_delete:
-            del self.state.pledged_sell_kWh[market_slot]
-            del self.state.offered_sell_kWh[market_slot]
-            del self.state.pledged_buy_kWh[market_slot]
-            del self.state.offered_buy_kWh[market_slot]
-            del self.state.charge_history[market_slot]
-            del self.state.charge_history_kWh[market_slot]
-            del self.state.offered_history[market_slot]
-            del self.state.used_history[market_slot]
-            del self.state.energy_to_buy_dict[market_slot]
-            del self.state.energy_to_sell_dict[market_slot]
-            del self.bid_update.initial_rate[market_slot]
-            del self.bid_update.final_rate[market_slot]
-            del self.bid_update.energy_rate_change_per_update[market_slot]
-            del self.bid_update.update_counter[market_slot]
-            del self.offer_update.initial_rate[market_slot]
-            del self.offer_update.final_rate[market_slot]
-            del self.offer_update.energy_rate_change_per_update[market_slot]
-            del self.offer_update.update_counter[market_slot]
+            self.state.pledged_sell_kWh.pop(market_slot, None)
+            self.state.offered_sell_kWh.pop(market_slot, None)
+            self.state.pledged_buy_kWh.pop(market_slot, None)
+            self.state.offered_buy_kWh.pop(market_slot, None)
+            self.state.charge_history.pop(market_slot, None)
+            self.state.charge_history_kWh.pop(market_slot, None)
+            self.state.offered_history.pop(market_slot, None)
+            self.state.used_history.pop(market_slot, None)
+            self.state.energy_to_buy_dict.pop(market_slot, None)
+            self.state.energy_to_sell_dict.pop(market_slot, None)
+            self.bid_update.initial_rate.pop(market_slot, None)
+            self.bid_update.final_rate.pop(market_slot, None)
+            self.bid_update.energy_rate_change_per_update.pop(market_slot, None)
+            self.bid_update.update_counter.pop(market_slot, None)
+            self.offer_update.initial_rate.pop(market_slot, None)
+            self.offer_update.final_rate.pop(market_slot, None)
+            self.offer_update.energy_rate_change_per_update.pop(market_slot, None)
+            self.offer_update.update_counter.pop(market_slot, None)

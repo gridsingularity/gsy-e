@@ -333,8 +333,11 @@ def update_advanced_settings(advanced_settings):
         update_nested_settings(setting_class, settings_class_name, advanced_settings)
 
 
-def generate_market_slot_list(start_date=GlobalConfig.start_date,
-                              time_span=GlobalConfig.sim_duration):
+def generate_market_slot_list(start_date=None, time_span=None):
+    if not start_date:
+        start_date = GlobalConfig.start_date
+    if not time_span:
+        time_span = GlobalConfig.sim_duration
     sim_duration_plus_future_markets = time_span + GlobalConfig.slot_length * \
         (GlobalConfig.market_count - 1)
     market_slot_list = \

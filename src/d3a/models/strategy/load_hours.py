@@ -138,11 +138,17 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def event_market_cycle(self):
         super().event_market_cycle()
+        self.add_entry_in_hrs_per_day(self.area.next_market.time_slot)
         self.bid_update.update_and_populate_price_settings(self.area)
         self._update_energy_requirement_future_markets()
         self._set_alternative_pricing_scheme()
         self._calculate_active_markets()
         self.update_state()
+
+    def add_entry_in_hrs_per_day(self, time_slot):
+        current_day = self._get_day_of_timestamp(time_slot)
+        if current_day not in self.hrs_per_day:
+            self.hrs_per_day[current_day] = self._initial_hrs_per_day
 
     def update_state(self):
         for market in self.active_markets:
@@ -228,8 +234,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if key_in_dict_and_not_none(kwargs, 'hrs_per_day') or \
                 key_in_dict_and_not_none(kwargs, 'hrs_of_day'):
             self.assign_hours_of_per_day(kwargs['hrs_of_day'], kwargs['hrs_per_day'])
-            self.hrs_per_day = {day: self._initial_hrs_per_day
-                                for day in range(self.area.config.sim_duration.days + 1)}
+            self.add_entry_in_hrs_per_day(self.area.next_market.time_slot)
         if key_in_dict_and_not_none(kwargs, 'avg_power_W'):
             self.avg_power_W = kwargs['avg_power_W']
             self._update_energy_requirement_future_markets()
@@ -407,8 +412,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                                                          self.owner.name)
 
     def event_activate_energy(self):
-        self.hrs_per_day = {day: self._initial_hrs_per_day
-                            for day in range(self.area.config.sim_duration.days + 1)}
+        self.hrs_per_day = {0: self._initial_hrs_per_day}
         self._simulation_start_timestamp = self.area.now
         self._update_energy_requirement_future_markets()
 
