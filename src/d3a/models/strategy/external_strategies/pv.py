@@ -417,6 +417,17 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
         return {**super().channel_dict,
                 f'{self.channel_prefix}/set_power_forecast': self._set_power_forecast}
 
+    def event_tick(self):
+        # Need to repeat he pending request parsing in order to handle power forecasts
+        # from the MQTT subscriber (non-connected admin)
+        for req in self.pending_requests:
+            if req.request_type == "set_power_forecast":
+                self._set_power_forecast_impl(req.arguments, req.response_channel)
+
+        self.pending_requests = [req for req in self.pending_requests
+                                 if req.request_type not in "set_power_forecast"]
+        super().event_tick()
+
     def _incoming_commands_callback_selection(self, req):
         if req.request_type == "set_power_forecast":
             self._set_power_forecast_impl(req.arguments, req.response_channel)
