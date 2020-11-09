@@ -184,6 +184,7 @@ class LoadExternalMixin(ExternalMixin):
         self._reject_all_pending_requests()
         self.register_on_market_cycle()
         if not self.should_use_default_strategy:
+            self.add_entry_in_hrs_per_day(self.area.next_market.time_slot)
             self._update_energy_requirement_future_markets()
             self._reset_event_tick_counter()
             market_event_channel = f"{self.channel_prefix}/events/market"
@@ -201,6 +202,9 @@ class LoadExternalMixin(ExternalMixin):
             if self.connected:
                 market_info['last_market_stats'] = \
                     self.market_area.stats.get_price_stats_current_market()
+                # print(self.device.name, self.device.uuid)
+                # print(self.area.name, self.area.uuid)
+                # print("sending device_info", market_info["device_info"])
                 self.redis.publish_json(market_event_channel, market_info)
             if self.is_aggregator_controlled:
                 self.redis.aggregator.add_batch_market_event(self.device.uuid,
@@ -413,7 +417,7 @@ class LoadForecastExternalStrategy(LoadExternalMixin, DefinedLoadStrategy):
         super().event_market_cycle()
 
     def event_activate_energy(self):
-        # self._initiate_hrs_per_day()
+        self.hrs_per_day = {0: self._initial_hrs_per_day}
         self.update_energy_forecast()
 
     def update_energy_forecast(self):
