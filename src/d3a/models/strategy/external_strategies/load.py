@@ -359,7 +359,15 @@ class LoadExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id", None)}
 
 
-class LoadForecastExternalStrategy(LoadExternalMixin, DefinedLoadStrategy):
+class LoadHoursExternalStrategy(LoadExternalMixin, LoadHoursStrategy):
+    pass
+
+
+class LoadProfileExternalStrategy(LoadExternalMixin, DefinedLoadStrategy):
+    pass
+
+
+class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
     """
         Strategy responsible for reading single forecast consumption data via hardware API
     """
@@ -423,11 +431,3 @@ class LoadForecastExternalStrategy(LoadExternalMixin, DefinedLoadStrategy):
         self.energy_requirement_Wh[slot_time] = energy_forecast_Wh
         self.state.desired_energy_Wh[slot_time] = energy_forecast_Wh
         self.state.total_energy_demanded_wh += energy_forecast_Wh
-
-
-class LoadHoursExternalStrategy(LoadExternalMixin, LoadHoursStrategy):
-    pass
-
-
-class LoadProfileExternalStrategy(LoadExternalMixin, DefinedLoadStrategy):
-    pass

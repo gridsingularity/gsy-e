@@ -354,6 +354,7 @@ class Simulation:
             self.global_objects.update(self.area)
 
             self.area.cycle_markets()
+            self._update_and_send_results()
 
             gc.collect()
             process = psutil.Process(os.getpid())
@@ -400,7 +401,6 @@ class Simulation:
 
                 simulation_time_counter = time.time()
 
-            self._update_and_send_results()
             if self.export_on_finish and self.should_export_results:
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
 
