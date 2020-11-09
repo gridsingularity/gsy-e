@@ -151,6 +151,7 @@ class SimulationEndpointBuffer:
                 self.trade_profile.traded_energy_profile, {}, ui_format=True),
             "kpi": self.kpi.performance_indices,
             "area_throughput": self.area_throughput_stats.results,
+            "simulation_state": self.simulation_state
         }
 
     def _populate_core_stats_and_sim_state(self, area):
@@ -159,17 +160,17 @@ class SimulationEndpointBuffer:
         if self.current_market_time_slot_str == "":
             return
         core_stats_dict = {'bids': [], 'offers': [], 'trades': [], 'market_fee': 0.0}
-        if hasattr(area.next_market, 'offer_history'):
-            for offer in area.next_market.offer_history:
+        if hasattr(area.current_market, 'offer_history'):
+            for offer in area.current_market.offer_history:
                 core_stats_dict['offers'].append(offer.serializable_dict())
-        if hasattr(area.next_market, 'bid_history'):
-            for bid in area.next_market.bid_history:
+        if hasattr(area.current_market, 'bid_history'):
+            for bid in area.current_market.bid_history:
                 core_stats_dict['bids'].append(bid.serializable_dict())
-        if hasattr(area.next_market, 'trades'):
-            for trade in area.next_market.trades:
+        if hasattr(area.current_market, 'trades'):
+            for trade in area.current_market.trades:
                 core_stats_dict['trades'].append(trade.serializable_dict())
-        if hasattr(area.next_market, 'market_fee'):
-            core_stats_dict['market_fee'] = area.next_market.market_fee
+        if hasattr(area.current_market, 'market_fee'):
+            core_stats_dict['market_fee'] = area.current_market.market_fee
         if area.strategy is None:
             core_stats_dict['area_throughput'] = {
                 'baseline_peak_energy_import_kWh': area.baseline_peak_energy_import_kWh,
@@ -177,12 +178,12 @@ class SimulationEndpointBuffer:
                 'import_capacity_kWh': area.import_capacity_kWh,
                 'export_capacity_kWh': area.export_capacity_kWh,
                 'imported_energy_kWh': area.stats.imported_traded_energy_kwh.get(
-                    area.next_market.time_slot, 0.) if area.current_market is not None else 0.,
+                    area.current_market.time_slot, 0.) if area.current_market is not None else 0.,
                 'exported_energy_kWh': area.stats.exported_traded_energy_kwh.get(
-                    area.next_market.time_slot, 0.) if area.current_market is not None else 0.,
+                    area.current_market.time_slot, 0.) if area.current_market is not None else 0.,
             }
-            core_stats_dict['grid_fee_constant'] = area.next_market.const_fee_rate \
-                if area.next_market is not None else 0.
+            core_stats_dict['grid_fee_constant'] = area.current_market.const_fee_rate \
+                if area.current_market is not None else 0.
 
         if isinstance(area.strategy, PVStrategy):
             core_stats_dict['pv_production_kWh'] = \
@@ -190,15 +191,15 @@ class SimulationEndpointBuffer:
                                                                  0)
             core_stats_dict['available_energy_kWh'] = \
                 area.strategy.state.available_energy_kWh.get(self.current_market_time_slot, 0)
-            if area.parent.next_market is not None:
-                for t in area.strategy.trades[area.parent.next_market]:
+            if area.parent.current_market is not None:
+                for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
 
         elif isinstance(area.strategy, StorageStrategy):
             core_stats_dict['soc_history_%'] = \
                 area.strategy.state.charge_history.get(self.current_market_time_slot, 0)
-            if area.parent.next_market is not None:
-                for t in area.strategy.trades[area.parent.next_market]:
+            if area.parent.current_market is not None:
+                for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
 
         elif isinstance(area.strategy, LoadHoursStrategy):
@@ -211,21 +212,21 @@ class SimulationEndpointBuffer:
                 area.strategy.energy_requirement_Wh.get(
                     self.current_market_time_slot, 0) / 1000.0
 
-            if area.parent.next_market is not None:
-                for t in area.strategy.trades[area.parent.next_market]:
+            if area.parent.current_market is not None:
+                for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
 
         elif type(area.strategy) == FinitePowerPlant:
             core_stats_dict['production_kWh'] = area.strategy.energy_per_slot_kWh
-            if area.parent.next_market is not None:
-                for t in area.strategy.trades[area.parent.next_market]:
+            if area.parent.current_market is not None:
+                for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
 
         elif type(area.strategy) in [InfiniteBusStrategy, MarketMakerStrategy]:
-            if area.parent.next_market is not None:
+            if area.parent.current_market is not None:
                 core_stats_dict['energy_rate'] = \
-                    area.strategy.energy_rate.get(area.parent.next_market.time_slot, None)
-                for t in area.strategy.trades[area.parent.next_market]:
+                    area.strategy.energy_rate.get(area.parent.current_market.time_slot, None)
+                for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
 
         self.flattened_area_core_stats_dict[area.uuid] = core_stats_dict
@@ -238,12 +239,12 @@ class SimulationEndpointBuffer:
     def update_stats(self, area, simulation_status, progress_info, sim_state):
         self.area_result_dict = self._create_area_tree_dict(area)
         self.status = simulation_status
-        if area.next_market is not None:
-            self.current_market_time_slot_str = area.next_market.time_slot_str
+        if area.current_market is not None:
+            self.current_market_time_slot_str = area.current_market.time_slot_str
             self.current_market_ui_time_slot_str = \
-                area.next_market.time_slot.format(DATE_TIME_UI_FORMAT)
-            self.current_market_time_slot_unix = area.next_market.time_slot.timestamp()
-            self.current_market_time_slot = area.next_market.time_slot
+                area.current_market.time_slot.format(DATE_TIME_UI_FORMAT)
+            self.current_market_time_slot_unix = area.current_market.time_slot.timestamp()
+            self.current_market_time_slot = area.current_market.time_slot
         self.simulation_state["general"] = sim_state
         self._populate_core_stats_and_sim_state(area)
         self.simulation_progress = {

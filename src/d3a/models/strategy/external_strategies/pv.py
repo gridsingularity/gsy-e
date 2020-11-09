@@ -370,7 +370,19 @@ class PVExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id", None)}
 
 
-class PVForecastExternalStrategy(PVExternalMixin, PVPredefinedStrategy):
+class PVExternalStrategy(PVExternalMixin, PVStrategy):
+    pass
+
+
+class PVUserProfileExternalStrategy(PVExternalMixin, PVUserProfileStrategy):
+    pass
+
+
+class PVPredefinedExternalStrategy(PVExternalMixin, PVPredefinedStrategy):
+    pass
+
+
+class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
     """
         Strategy responsible for reading single production forecast data via hardware API
     """
@@ -426,15 +438,3 @@ class PVForecastExternalStrategy(PVExternalMixin, PVPredefinedStrategy):
         slot_time = self.area.next_market.time_slot
         self.energy_production_forecast_kWh[slot_time] = energy_forecast_kWh
         self.state.available_energy_kWh[slot_time] = energy_forecast_kWh
-
-
-class PVExternalStrategy(PVExternalMixin, PVStrategy):
-    pass
-
-
-class PVUserProfileExternalStrategy(PVExternalMixin, PVUserProfileStrategy):
-    pass
-
-
-class PVPredefinedExternalStrategy(PVExternalMixin, PVPredefinedStrategy):
-    pass
