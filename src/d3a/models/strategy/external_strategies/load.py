@@ -150,7 +150,7 @@ class LoadExternalMixin(ExternalMixin):
                 arguments["energy"],
                 arguments["price"],
                 find_object_of_same_weekday_and_time(
-                    self.energy_requirement_Wh.get, self.next_market.time_slot) / 1000.0,
+                    self.energy_requirement_Wh, self.next_market.time_slot) / 1000.0,
                 self.next_market)
 
             bid = self.post_bid(
@@ -177,13 +177,14 @@ class LoadExternalMixin(ExternalMixin):
     def _device_info_dict(self):
         return {
             'energy_requirement_kWh': find_object_of_same_weekday_and_time(
-                    self.energy_requirement_Wh.get, self.next_market.time_slot) / 1000.0
+                    self.energy_requirement_Wh, self.next_market.time_slot) / 1000.0
         }
 
     def event_market_cycle(self):
         self._reject_all_pending_requests()
         self.register_on_market_cycle()
         if not self.should_use_default_strategy:
+            self._update_energy_requirement_future_markets()
             super().update_state()
             self._reset_event_tick_counter()
             market_event_channel = f"{self.channel_prefix}/events/market"
@@ -296,7 +297,7 @@ class LoadExternalMixin(ExternalMixin):
                 arguments["energy"],
                 arguments["price"],
                 find_object_of_same_weekday_and_time(
-                    self.energy_requirement_Wh.get, self.next_market.time_slot) / 1000.0,
+                    self.energy_requirement_Wh, self.next_market.time_slot) / 1000.0,
                 self.next_market)
 
             bid = self.post_bid(

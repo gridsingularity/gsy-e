@@ -548,7 +548,6 @@ def find_object_of_same_weekday_and_time(indict, time_slot, ignore_not_found=Fal
         else:
             if not ignore_not_found:
                 log.error(f"Weekday and time not found in dict for {time_slot}")
-                assert False
             return
 
     else:

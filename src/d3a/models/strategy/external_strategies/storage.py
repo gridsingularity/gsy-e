@@ -303,6 +303,7 @@ class StorageExternalMixin(ExternalMixin):
         self.register_on_market_cycle()
         if not self.should_use_default_strategy:
             self._reset_event_tick_counter()
+            self.state.add_default_values_to_state_profiles(self.area)
             self.state.market_cycle(
                 self.market_area.current_market.time_slot
                 if self.market_area.current_market else None,

@@ -183,6 +183,8 @@ class PVExternalMixin(ExternalMixin):
         self._reject_all_pending_requests()
         self.register_on_market_cycle()
         if not self.should_use_default_strategy:
+            self.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
+            self._delete_past_state()
             self._reset_event_tick_counter()
             market_event_channel = f"{self.channel_prefix}/events/market"
             market_info = self.next_market.info
