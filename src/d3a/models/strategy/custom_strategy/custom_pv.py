@@ -20,7 +20,7 @@ from d3a.models.strategy.pv import PVStrategy
 
 class CustomPvStrategy(PVStrategy):
 
-    def produced_energy_forecast_kWh(self):
+    def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
         """
         Overwrites d3a.models.strategy.pv.produced_energy_forecast_kWh
         Is called on every ACTIVATE event.

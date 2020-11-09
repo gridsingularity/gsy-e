@@ -26,12 +26,12 @@ Is also used for integrationtest.
 
 class CustomPvStrategy(PVStrategy):
 
-    def produced_energy_forecast_kWh(self):
+    def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
         """
         Returns flat PV production curve.
         """
 
-        for slot_time in generate_market_slot_list(area=self.area):
+        for slot_time in generate_market_slot_list():
             self.energy_production_forecast_kWh[slot_time] = 100
 
     def calculate_initial_sell_rate(self, current_time_h):

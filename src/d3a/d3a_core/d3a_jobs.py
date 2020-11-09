@@ -19,20 +19,22 @@ import logging
 from os import environ, getpid
 import ast
 import json
+import pickle
 
 from datetime import datetime
 from pendulum import now, duration, instance
 from redis import StrictRedis
 from rq import Connection, Worker, get_current_job
 from rq.decorators import job
+from zlib import decompress
 
 from d3a.models.config import SimulationConfig
 from d3a.d3a_core.util import available_simulation_scenarios, update_advanced_settings
 from d3a.d3a_core.simulation import run_simulation
 from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 from d3a_interface.settings_validators import validate_global_settings
-from zlib import decompress
-import pickle
+import d3a.constants
+
 
 log = logging.getLogger()
 
@@ -46,6 +48,11 @@ def start(scenario, settings, events, aggregator_device_mapping, saved_state):
     logging.getLogger().setLevel(logging.ERROR)
 
     scenario = decompress_and_decode_queued_strings(scenario)
+    if "collaboration_uuid" in scenario:
+        d3a.constants.COLLABORATION_ID = scenario.pop("collaboration_uuid")
+        d3a.constants.EXTERNAL_CONNECTION_WEB = True
+        d3a.constants.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
+        d3a.constants.RUN_IN_REALTIME = d3a.constants.IS_CANARY_NETWORK
     saved_state = decompress_and_decode_queued_strings(saved_state)
     log.error(f"Scenario: {scenario}")
     log.error(f"Settings: {settings}")
