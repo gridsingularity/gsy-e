@@ -322,13 +322,13 @@ class Simulation:
             slot_resume = int(seconds_since_midnight // config.slot_length.seconds)
             seconds_elapsed_in_slot = seconds_since_midnight % config.slot_length.total_seconds()
             ticks_elapsed_in_slot = seconds_elapsed_in_slot // config.tick_length.total_seconds()
-            tick_resume = int(ticks_elapsed_in_slot)
+            tick_resume = int(ticks_elapsed_in_slot) + 1
 
             seconds_elapsed_in_tick = seconds_elapsed_in_slot % config.tick_length.total_seconds()
 
             seconds_until_next_tick = config.tick_length.total_seconds() - seconds_elapsed_in_tick
 
-            ticks_since_midnight = int(seconds_since_midnight // config.tick_length.seconds)
+            ticks_since_midnight = int(seconds_since_midnight // config.tick_length.seconds) + 1
             self.set_area_current_tick(self.area, ticks_since_midnight)
 
             sleep(seconds_until_next_tick)

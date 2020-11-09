@@ -173,11 +173,11 @@ class PVStrategy(BaseStrategy):
         # If use_market_maker_rate is true, overwrite initial_selling_rate to market maker rate
         if self.use_market_maker_rate:
             if isinstance(GlobalConfig.market_maker_rate, dict):
-                self._area_reconfigure_prices(initial_selling_rate=GlobalConfig
-                                              .market_maker_rate.get(
-                                                self.owner.parent.next_market.time_slot, 0) -
-                                              self.owner.get_path_to_root_fees(),
-                                              validate=False)
+                self._area_reconfigure_prices(
+                    initial_selling_rate=find_timestamp_of_same_weekday_and_time(
+                        GlobalConfig.market_maker_rate, self.owner.parent.next_market.time_slot
+                    ) - self.owner.get_path_to_root_fees(),
+                    validate=False)
             else:
                 self._area_reconfigure_prices(initial_selling_rate=GlobalConfig.market_maker_rate -
                                               self.owner.get_path_to_root_fees(), validate=False)
