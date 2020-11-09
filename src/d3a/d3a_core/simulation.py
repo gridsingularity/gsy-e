@@ -317,8 +317,7 @@ class Simulation:
 
             today = datetime.date.today()
             seconds_since_midnight = time.time() - time.mktime(today.timetuple())
-
-            slot_resume = int(seconds_since_midnight // config.slot_length.seconds)
+            slot_resume = int(seconds_since_midnight // config.slot_length.seconds) + 1
             seconds_elapsed_in_slot = seconds_since_midnight % config.slot_length.seconds
             ticks_elapsed_in_slot = seconds_elapsed_in_slot // config.tick_length.seconds
             tick_resume = int(ticks_elapsed_in_slot) + 1

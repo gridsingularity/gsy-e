@@ -379,7 +379,7 @@ class PVForecastExternalStrategy(PVExternalMixin, PVPredefinedStrategy):
                   'use_market_maker_rate')
 
     def __init__(
-            self, power_forecast_W: float = 0,
+            self, power_forecast_W: float = 0, panel_count=1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
             final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
             fit_to_limit: bool = True,
@@ -391,7 +391,7 @@ class PVForecastExternalStrategy(PVExternalMixin, PVPredefinedStrategy):
         Constructor of PVForecastStrategy
         :param power_forecast_W: forecast for the next market slot
         """
-        super().__init__(panel_count=1,
+        super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
                          final_selling_rate=final_selling_rate,
                          fit_to_limit=fit_to_limit,
