@@ -15,11 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from numpy import random
-from importlib import import_module
-from logging import getLogger
+
 import time
-from time import sleep
 import click
 import platform
 import os
@@ -28,9 +25,12 @@ import gc
 import sys
 import datetime
 
-from pendulum import DateTime
-from pendulum import duration
+from pendulum import DateTime, duration
 from ptpython.repl import embed
+from time import sleep
+from numpy import random
+from importlib import import_module
+from logging import getLogger
 
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, SIMULATION_PAUSE_TIMEOUT
 from d3a.d3a_core.exceptions import SimulationException
@@ -306,7 +306,7 @@ class Simulation:
 
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
         config = self.simulation_config
-        tick_lengths_s = config.tick_length.total_seconds()
+        tick_lengths_s = config.tick_length.seconds
         slot_count = int(config.sim_duration / config.slot_length)
 
         self.simulation_config.external_redis_communicator.sub_to_aggregator()
@@ -320,13 +320,13 @@ class Simulation:
             seconds_since_midnight = time.time() - time.mktime(today.timetuple())
 
             slot_resume = int(seconds_since_midnight // config.slot_length.seconds)
-            seconds_elapsed_in_slot = seconds_since_midnight % config.slot_length.total_seconds()
-            ticks_elapsed_in_slot = seconds_elapsed_in_slot // config.tick_length.total_seconds()
+            seconds_elapsed_in_slot = seconds_since_midnight % config.slot_length.seconds
+            ticks_elapsed_in_slot = seconds_elapsed_in_slot // config.tick_length.seconds
             tick_resume = int(ticks_elapsed_in_slot) + 1
 
-            seconds_elapsed_in_tick = seconds_elapsed_in_slot % config.tick_length.total_seconds()
+            seconds_elapsed_in_tick = seconds_elapsed_in_slot % config.tick_length.seconds
 
-            seconds_until_next_tick = config.tick_length.total_seconds() - seconds_elapsed_in_tick
+            seconds_until_next_tick = config.tick_length.seconds - seconds_elapsed_in_tick
 
             ticks_since_midnight = int(seconds_since_midnight // config.tick_length.seconds) + 1
             self.set_area_current_tick(self.area, ticks_since_midnight)
@@ -362,6 +362,7 @@ class Simulation:
             mbs_used = process.memory_info().rss / 1000000.0
             log.debug(f"Used {mbs_used} MBs.")
 
+            simulation_time_counter = time.time()
             for tick_no in range(tick_resume, config.ticks_per_slot):
                 tick_start = time.time()
                 self._handle_paused(console, tick_start)
@@ -386,7 +387,6 @@ class Simulation:
                     publish_aggregator_commands_responses_events()
 
                 realtime_tick_length = time.time() - simulation_time_counter
-
                 if d3a.constants.RUN_IN_REALTIME:
                     sleep(abs(tick_lengths_s - realtime_tick_length))
                 elif self.slowdown and realtime_tick_length < tick_lengths_s:
@@ -399,6 +399,7 @@ class Simulation:
                         self._handle_input(console, diff_slowdown)
                     else:
                         sleep(diff_slowdown)
+
                 simulation_time_counter = time.time()
 
             self._update_and_send_results()

@@ -22,7 +22,7 @@ from pendulum import Time  # noqa
 from pendulum import duration
 from logging import getLogger
 
-from d3a.d3a_core.util import find_timestamp_of_same_weekday_and_time, convert_W_to_kWh
+from d3a.d3a_core.util import find_object_of_same_weekday_and_time, convert_W_to_kWh
 from d3a.models.strategy import BaseStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.device_validator import validate_pv_device_energy, validate_pv_device_price
@@ -157,10 +157,10 @@ class PVStrategy(BaseStrategy):
         # all parameters have to be validated for each time slot here
         for time_slot in initial_rate.keys():
             rate_change = None if fit_to_limit else \
-                find_timestamp_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
+                find_object_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
             validate_pv_device_price(
                 initial_selling_rate=initial_rate[time_slot],
-                final_selling_rate=find_timestamp_of_same_weekday_and_time(final_rate, time_slot),
+                final_selling_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
                 energy_rate_decrease_per_update=rate_change,
                 fit_to_limit=fit_to_limit)
 
@@ -174,7 +174,7 @@ class PVStrategy(BaseStrategy):
         if self.use_market_maker_rate:
             if isinstance(GlobalConfig.market_maker_rate, dict):
                 self._area_reconfigure_prices(
-                    initial_selling_rate=find_timestamp_of_same_weekday_and_time(
+                    initial_selling_rate=find_object_of_same_weekday_and_time(
                         GlobalConfig.market_maker_rate, self.owner.parent.next_market.time_slot
                     ) - self.owner.get_path_to_root_fees(),
                     validate=False)
@@ -244,16 +244,16 @@ class PVStrategy(BaseStrategy):
             return
 
         to_delete = []
-        for k in self.state.available_energy_kWh.keys():
-            if k < self.area.current_market.time_slot:
-                to_delete.append(k)
-        for k in to_delete:
-            self.state.available_energy_kWh.pop(k, None)
-            self.energy_production_forecast_kWh.pop(k, None)
-            del self.offer_update.initial_rate[k]
-            del self.offer_update.final_rate[k]
-            del self.offer_update.energy_rate_change_per_update[k]
-            del self.offer_update.update_counter[k]
+        for market_slot in self.state.available_energy_kWh.keys():
+            if market_slot < self.area.current_market.time_slot:
+                to_delete.append(market_slot)
+        for market_slot in to_delete:
+            self.state.available_energy_kWh.pop(market_slot, None)
+            self.energy_production_forecast_kWh.pop(market_slot, None)
+            del self.offer_update.initial_rate[market_slot]
+            del self.offer_update.final_rate[market_slot]
+            del self.offer_update.energy_rate_change_per_update[market_slot]
+            del self.offer_update.update_counter[market_slot]
 
     def event_market_cycle_price(self):
         self.offer_update.update_and_populate_price_settings(self.area)

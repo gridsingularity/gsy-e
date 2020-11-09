@@ -29,7 +29,7 @@ from d3a.d3a_core.util import convert_W_to_Wh
 @then('the DefinedLoadStrategy follows the {single_or_multi} day Load profile provided as csv')
 def check_load_profile_csv(context, single_or_multi):
     from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
-    from d3a.d3a_core.util import find_timestamp_of_same_weekday_and_time
+    from d3a.d3a_core.util import find_object_of_same_weekday_and_time
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     load = next(filter(lambda x: x.name == "H1 DefinedLoad", house1.children))
     if single_or_multi == "single":
@@ -38,7 +38,7 @@ def check_load_profile_csv(context, single_or_multi):
         path = user_profile_load_csv_multiday.profile_path
     input_profile = read_arbitrary_profile(InputProfileTypes.POWER, path)
     for timepoint, energy in load.strategy.state.desired_energy_Wh.items():
-        assert energy == find_timestamp_of_same_weekday_and_time(input_profile, timepoint) * 1000
+        assert energy == find_object_of_same_weekday_and_time(input_profile, timepoint) * 1000
 
 
 @then('load only accepted offers lower than final_buying_rate')

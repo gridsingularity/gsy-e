@@ -21,7 +21,7 @@ from pendulum import duration
 from d3a.d3a_core.exceptions import MarketException
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a.d3a_core.util import write_default_to_dict, find_timestamp_of_same_weekday_and_time
+from d3a.d3a_core.util import write_default_to_dict, find_object_of_same_weekday_and_time
 
 
 class UpdateFrequencyMixin:
@@ -53,14 +53,14 @@ class UpdateFrequencyMixin:
             time_slot = market.time_slot
             if self.fit_to_limit is False:
                 self.energy_rate_change_per_update[time_slot] = \
-                    find_timestamp_of_same_weekday_and_time(
+                    find_object_of_same_weekday_and_time(
                         self.energy_rate_change_per_update_profile_buffer, time_slot)
             self.initial_rate[time_slot] = \
-                find_timestamp_of_same_weekday_and_time(self.initial_rate_profile_buffer,
-                                                        time_slot)
+                find_object_of_same_weekday_and_time(self.initial_rate_profile_buffer,
+                                                     time_slot)
             self.final_rate[time_slot] = \
-                find_timestamp_of_same_weekday_and_time(self.final_rate_profile_buffer,
-                                                        time_slot)
+                find_object_of_same_weekday_and_time(self.final_rate_profile_buffer,
+                                                     time_slot)
             self._set_or_update_energy_rate_change_per_update(market.time_slot)
             write_default_to_dict(self.update_counter, market.time_slot, 0)
 
@@ -87,19 +87,19 @@ class UpdateFrequencyMixin:
         energy_rate_change_per_update = {}
         if self.fit_to_limit:
             energy_rate_change_per_update[time_slot] = \
-                (find_timestamp_of_same_weekday_and_time(
+                (find_object_of_same_weekday_and_time(
                     self.initial_rate_profile_buffer, time_slot) -
-                 find_timestamp_of_same_weekday_and_time(
+                 find_object_of_same_weekday_and_time(
                      self.final_rate_profile_buffer, time_slot)) / \
                 self.number_of_available_updates
         else:
             if self.rate_limit_object is min:
                 energy_rate_change_per_update[time_slot] = \
-                    -1 * find_timestamp_of_same_weekday_and_time(
+                    -1 * find_object_of_same_weekday_and_time(
                         self.energy_rate_change_per_update_profile_buffer, time_slot)
             elif self.rate_limit_object is max:
                 energy_rate_change_per_update[time_slot] = \
-                    find_timestamp_of_same_weekday_and_time(
+                    find_object_of_same_weekday_and_time(
                         self.energy_rate_change_per_update_profile_buffer, time_slot)
         self.energy_rate_change_per_update.update(energy_rate_change_per_update)
 

@@ -26,7 +26,7 @@ from d3a import limit_float_precision
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name, \
-    find_timestamp_of_same_weekday_and_time
+    find_object_of_same_weekday_and_time
 from d3a.models.state import StorageState, ESSEnergyOrigin, EnergyOrigin
 from d3a.models.strategy import BidEnabledStrategy
 from d3a_interface.constants_limits import ConstSettings
@@ -106,7 +106,7 @@ class StorageStrategy(BidEnabledStrategy):
         for time_slot in self.offer_update.initial_rate_profile_buffer.keys():
             validate_storage_device(
                 initial_selling_rate=self.offer_update.initial_rate_profile_buffer[time_slot],
-                final_selling_rate=find_timestamp_of_same_weekday_and_time(
+                final_selling_rate=find_object_of_same_weekday_and_time(
                     self.offer_update.final_rate_profile_buffer, time_slot))
         self.bid_update = \
             UpdateFrequencyMixin(
@@ -120,7 +120,7 @@ class StorageStrategy(BidEnabledStrategy):
         for time_slot in self.bid_update.initial_rate_profile_buffer.keys():
             validate_storage_device(
                 initial_buying_rate=self.bid_update.initial_rate_profile_buffer[time_slot],
-                final_buying_rate=find_timestamp_of_same_weekday_and_time(
+                final_buying_rate=find_object_of_same_weekday_and_time(
                     self.bid_update.final_rate_profile_buffer, time_slot))
         self.state = \
             StorageState(initial_soc=initial_soc,
@@ -218,15 +218,15 @@ class StorageStrategy(BidEnabledStrategy):
 
         for time_slot in initial_selling_rate.keys():
             bid_rate_change = None if bid_fit_to_limit else \
-                find_timestamp_of_same_weekday_and_time(energy_rate_increase_per_update, time_slot)
+                find_object_of_same_weekday_and_time(energy_rate_increase_per_update, time_slot)
             offer_rate_change = None if offer_fit_to_limit else \
-                find_timestamp_of_same_weekday_and_time(energy_rate_decrease_per_update, time_slot)
+                find_object_of_same_weekday_and_time(energy_rate_decrease_per_update, time_slot)
             validate_storage_device(initial_selling_rate=initial_selling_rate[time_slot],
-                                    final_selling_rate=find_timestamp_of_same_weekday_and_time(
+                                    final_selling_rate=find_object_of_same_weekday_and_time(
                                         final_selling_rate, time_slot),
-                                    initial_buying_rate=find_timestamp_of_same_weekday_and_time(
+                                    initial_buying_rate=find_object_of_same_weekday_and_time(
                                         initial_buying_rate, time_slot),
-                                    final_buying_rate=find_timestamp_of_same_weekday_and_time(
+                                    final_buying_rate=find_object_of_same_weekday_and_time(
                                         final_buying_rate, time_slot),
                                     energy_rate_increase_per_update=bid_rate_change,
                                     energy_rate_decrease_per_update=offer_rate_change)
@@ -603,25 +603,25 @@ class StorageStrategy(BidEnabledStrategy):
                 self.area.current_market is None:
             return
         to_delete = []
-        for k in self.bid_update.initial_rate.keys():
-            if k < self.area.current_market.time_slot:
-                to_delete.append(k)
-        for k in to_delete:
-            del self.state.pledged_sell_kWh[k]
-            del self.state.offered_sell_kWh[k]
-            del self.state.pledged_buy_kWh[k]
-            del self.state.offered_buy_kWh[k]
-            del self.state.charge_history[k]
-            del self.state.charge_history_kWh[k]
-            del self.state.offered_history[k]
-            del self.state.used_history[k]
-            del self.state.energy_to_buy_dict[k]
-            del self.state.energy_to_sell_dict[k]
-            del self.bid_update.initial_rate[k]
-            del self.bid_update.final_rate[k]
-            del self.bid_update.energy_rate_change_per_update[k]
-            del self.bid_update.update_counter[k]
-            del self.offer_update.initial_rate[k]
-            del self.offer_update.final_rate[k]
-            del self.offer_update.energy_rate_change_per_update[k]
-            del self.offer_update.update_counter[k]
+        for market_slot in self.bid_update.initial_rate.keys():
+            if market_slot < self.area.current_market.time_slot:
+                to_delete.append(market_slot)
+        for market_slot in to_delete:
+            del self.state.pledged_sell_kWh[market_slot]
+            del self.state.offered_sell_kWh[market_slot]
+            del self.state.pledged_buy_kWh[market_slot]
+            del self.state.offered_buy_kWh[market_slot]
+            del self.state.charge_history[market_slot]
+            del self.state.charge_history_kWh[market_slot]
+            del self.state.offered_history[market_slot]
+            del self.state.used_history[market_slot]
+            del self.state.energy_to_buy_dict[market_slot]
+            del self.state.energy_to_sell_dict[market_slot]
+            del self.bid_update.initial_rate[market_slot]
+            del self.bid_update.final_rate[market_slot]
+            del self.bid_update.energy_rate_change_per_update[market_slot]
+            del self.bid_update.update_counter[market_slot]
+            del self.offer_update.initial_rate[market_slot]
+            del self.offer_update.final_rate[market_slot]
+            del self.offer_update.energy_rate_change_per_update[market_slot]
+            del self.offer_update.update_counter[market_slot]

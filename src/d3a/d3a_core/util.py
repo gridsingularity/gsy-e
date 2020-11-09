@@ -536,7 +536,7 @@ def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
         if transfer_capacity_kWA is not None else 0.
 
 
-def find_timestamp_of_same_weekday_and_time(indict, time_slot, ignore_not_found=False):
+def find_object_of_same_weekday_and_time(indict, time_slot, ignore_not_found=False):
     if d3a.constants.IS_CANARY_NETWORK:
         start_time = list(indict.keys())[0]
         timestamp_key = datetime(year=start_time.year, month=start_time.month, day=start_time.day,

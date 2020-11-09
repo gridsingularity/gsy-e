@@ -291,10 +291,8 @@ class Area:
         initial area activation.
         """
 
-        ticks_per_slot = int(self.config.slot_length.total_seconds() /
-                             self.config.tick_length.total_seconds())
-        ticks_in_slot = int(self.current_tick % ticks_per_slot)
-        tick_at_the_slot_start = self.current_tick - ticks_in_slot
+        current_tick_in_slot = int(self.current_tick % self.config.ticks_per_slot)
+        tick_at_the_slot_start = self.current_tick - current_tick_in_slot
         if tick_at_the_slot_start == 0:
             now_value = self.now
         else:

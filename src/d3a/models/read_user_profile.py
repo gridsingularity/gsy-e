@@ -26,7 +26,7 @@ import d3a.constants
 from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, TIME_ZONE, CN_PROFILE_EXPANSION_DAYS
 from d3a_interface.constants_limits import GlobalConfig, DATE_TIME_FORMAT_SECONDS
 from d3a.d3a_core.util import generate_market_slot_list, convert_kW_to_kWh, \
-    find_timestamp_of_same_weekday_and_time, return_ordered_dict
+    find_object_of_same_weekday_and_time, return_ordered_dict
 
 """
 Exposes mixins that can be used from strategy classes.
@@ -199,12 +199,12 @@ def _fill_gaps_in_profile(input_profile: Dict = None) -> Dict:
 
     for time in out_profile.keys():
         if d3a.constants.IS_CANARY_NETWORK:
-            temp_val = find_timestamp_of_same_weekday_and_time(input_profile, time,
-                                                               ignore_not_found=True)
+            temp_val = find_object_of_same_weekday_and_time(input_profile, time,
+                                                            ignore_not_found=True)
             if temp_val is not None:
                 current_val = temp_val
         else:
-            if time in input_profile.keys():
+            if time in input_profile:
                 current_val = input_profile[time]
         out_profile[time] = current_val
 

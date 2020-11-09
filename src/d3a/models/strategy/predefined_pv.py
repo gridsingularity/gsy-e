@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pathlib
 from pendulum import duration
 
-from d3a.d3a_core.util import find_timestamp_of_same_weekday_and_time, d3a_path
+from d3a.d3a_core.util import find_object_of_same_weekday_and_time, d3a_path
 from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
@@ -94,7 +94,7 @@ class PVPredefinedStrategy(PVStrategy):
             slot_time = market.time_slot
             if slot_time not in self.energy_production_forecast_kWh or reconfigure:
                 self.energy_production_forecast_kWh[slot_time] = \
-                    find_timestamp_of_same_weekday_and_time(self.power_profile, slot_time)\
+                    find_object_of_same_weekday_and_time(self.power_profile, slot_time) \
                     * self.panel_count
                 self.state.available_energy_kWh[slot_time] = \
                     self.energy_production_forecast_kWh[slot_time]

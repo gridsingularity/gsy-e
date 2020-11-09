@@ -22,7 +22,7 @@ from d3a.d3a_core.exceptions import MarketException
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.device_validator import validate_commercial_producer
 from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
-from d3a.d3a_core.util import find_timestamp_of_same_weekday_and_time
+from d3a.d3a_core.util import find_object_of_same_weekday_and_time
 
 
 class CommercialStrategy(BaseStrategy):
@@ -62,7 +62,7 @@ class CommercialStrategy(BaseStrategy):
                 self._offer_balancing_energy(balancing_market)
 
     def offer_energy(self, market):
-        energy_rate = find_timestamp_of_same_weekday_and_time(self.energy_rate, market.time_slot)
+        energy_rate = find_object_of_same_weekday_and_time(self.energy_rate, market.time_slot)
         try:
             offer = market.offer(
                 self.energy_per_slot_kWh * energy_rate,

@@ -23,7 +23,7 @@ from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
     read_and_convert_identity_profile_to_float
-from d3a.d3a_core.util import find_timestamp_of_same_weekday_and_time
+from d3a.d3a_core.util import find_object_of_same_weekday_and_time
 
 
 class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
@@ -65,8 +65,8 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             if offer.seller == self.owner.name:
                 # Don't buy our own offer
                 continue
-            if offer.energy_rate <= find_timestamp_of_same_weekday_and_time(self.energy_buy_rate,
-                                                                            market.time_slot):
+            if offer.energy_rate <= find_object_of_same_weekday_and_time(self.energy_buy_rate,
+                                                                         market.time_slot):
                 try:
                     self.accept_offer(market, offer, buyer_origin=self.owner.name)
                 except MarketException:
@@ -84,8 +84,8 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
            ConstSettings.IAASettings.MARKET_TYPE == 3:
             for market in self.area.all_markets:
                 try:
-                    buy_rate = find_timestamp_of_same_weekday_and_time(self.energy_buy_rate,
-                                                                       market.time_slot)
+                    buy_rate = find_object_of_same_weekday_and_time(self.energy_buy_rate,
+                                                                    market.time_slot)
                     self.post_bid(market,
                                   buy_rate * INF_ENERGY,
                                   INF_ENERGY,

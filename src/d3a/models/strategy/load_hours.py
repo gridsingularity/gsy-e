@@ -22,7 +22,7 @@ from pendulum import duration, DateTime  # NOQA
 from typing import Union, Dict  # NOQA
 from collections import namedtuple
 
-from d3a.d3a_core.util import find_timestamp_of_same_weekday_and_time, convert_W_to_Wh
+from d3a.d3a_core.util import find_object_of_same_weekday_and_time, convert_W_to_Wh
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import LoadState
 from d3a.models.strategy import BidEnabledStrategy
@@ -123,11 +123,11 @@ class LoadHoursStrategy(BidEnabledStrategy):
         # all parameters have to be validated for each time slot here
         for time_slot in initial_rate.keys():
             rate_change = None if fit_to_limit else \
-                find_timestamp_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
+                find_object_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
             validate_load_device_price(
                 initial_buying_rate=initial_rate[time_slot],
                 energy_rate_increase_per_update=rate_change,
-                final_buying_rate=find_timestamp_of_same_weekday_and_time(final_rate, time_slot),
+                final_buying_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
                 fit_to_limit=fit_to_limit)
 
     def event_activate(self):
@@ -165,16 +165,16 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 self.area.current_market is None:
             return
         to_delete = []
-        for k in self.energy_requirement_Wh.keys():
-            if k < self.area.current_market.time_slot:
-                to_delete.append(k)
-        for k in to_delete:
-            del self.energy_requirement_Wh[k]
-            del self.state.desired_energy_Wh[k]
-            del self.bid_update.initial_rate[k]
-            del self.bid_update.final_rate[k]
-            del self.bid_update.energy_rate_change_per_update[k]
-            del self.bid_update.update_counter[k]
+        for market_slot in self.energy_requirement_Wh.keys():
+            if market_slot < self.area.current_market.time_slot:
+                to_delete.append(market_slot)
+        for market_slot in to_delete:
+            del self.energy_requirement_Wh[market_slot]
+            del self.state.desired_energy_Wh[market_slot]
+            del self.bid_update.initial_rate[market_slot]
+            del self.bid_update.final_rate[market_slot]
+            del self.bid_update.energy_rate_change_per_update[market_slot]
+            del self.bid_update.update_counter[market_slot]
 
     def _area_reconfigure_prices(self, **kwargs):
         if key_in_dict_and_not_none(kwargs, 'initial_buying_rate'):

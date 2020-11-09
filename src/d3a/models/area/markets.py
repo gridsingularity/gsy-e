@@ -134,7 +134,7 @@ class AreaMarkets:
                 self.log.trace("Adding {t:{format}} market".format(
                     t=timeframe,
                     format="%H:%M"
-                           if area.config.slot_length.total_seconds() > 60
+                           if area.config.slot_length.seconds > 60
                     else "%H:%M:%S"
                 ))
         self._indexed_future_markets = {

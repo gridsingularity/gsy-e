@@ -151,7 +151,6 @@ class SimulationEndpointBuffer:
                 self.trade_profile.traded_energy_profile, {}, ui_format=True),
             "kpi": self.kpi.performance_indices,
             "area_throughput": self.area_throughput_stats.results,
-            "simulation_state": self.simulation_state
         }
 
     def _populate_core_stats_and_sim_state(self, area):
