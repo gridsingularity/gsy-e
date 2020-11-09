@@ -42,21 +42,22 @@ class AreaStats:
         self.market_bills = {}
         self.rate_stats_market = {}
         self.kpi = {}
-        self.exported_energy = {}
-        self.imported_energy = {}
-        self.net_energy_flow = {}
+        self.exported_traded_energy_kwh = {}
+        self.imported_traded_energy_kwh = {}
 
     def get_state(self):
         return {
             "rate_stats_market": convert_pendulum_to_str_in_dict(self.rate_stats_market),
-            "exported_energy": convert_pendulum_to_str_in_dict(self.exported_energy),
-            "imported_energy": convert_pendulum_to_str_in_dict(self.imported_energy),
+            "exported_energy": convert_pendulum_to_str_in_dict(self.exported_traded_energy_kwh),
+            "imported_energy": convert_pendulum_to_str_in_dict(self.imported_traded_energy_kwh),
         }
 
     def restore_state(self, saved_state):
         self.rate_stats_market = convert_str_to_pendulum_in_dict(saved_state["rate_stats_market"])
-        self.exported_energy = convert_str_to_pendulum_in_dict(saved_state["exported_energy"])
-        self.imported_energy = convert_str_to_pendulum_in_dict(saved_state["imported_energy"])
+        self.exported_traded_energy_kwh = \
+            convert_str_to_pendulum_in_dict(saved_state["exported_energy"])
+        self.imported_traded_energy_kwh = \
+            convert_str_to_pendulum_in_dict(saved_state["imported_energy"])
 
     def update_aggregated_stats(self, area_stats):
         self.aggregated_stats = area_stats
@@ -101,10 +102,10 @@ class AreaStats:
         return self.market_bills[time_slot] if time_slot in self.market_bills.keys() else None
 
     def _get_market_area_throughput(self, time_slot):
-        return {"import": self.imported_energy[time_slot]
-                if time_slot in self.imported_energy.keys() else None,
-                "export": self.exported_energy[time_slot]
-                if time_slot in self.exported_energy.keys() else None}
+        return {"import": self.imported_traded_energy_kwh[time_slot]
+                if time_slot in self.imported_traded_energy_kwh.keys() else None,
+                "export": self.exported_traded_energy_kwh[time_slot]
+                if time_slot in self.exported_traded_energy_kwh.keys() else None}
 
     def get_price_stats_current_market(self):
         if self.current_market is None:
@@ -152,23 +153,21 @@ class AreaStats:
         if self._area.current_market is None:
             return None
 
-        self.imported_energy = {}
-        self.exported_energy = {}
-        self.net_energy_flow = {}
+        self.imported_traded_energy_kwh = {}
+        self.exported_traded_energy_kwh = {}
 
         child_names = [area_name_from_area_or_iaa_name(c.name) for c in self._area.children]
         if getattr(self.current_market, 'trades', None) is not None:
             for trade in self.current_market.trades:
                 if child_buys_from_area(trade, self._area.name, child_names):
-                    add_or_create_key(self.exported_energy, self.current_market.time_slot,
+                    add_or_create_key(self.exported_traded_energy_kwh,
+                                      self.current_market.time_slot,
                                       trade.offer.energy)
                 if area_sells_to_child(trade, self._area.name, child_names):
-                    add_or_create_key(self.imported_energy, self.current_market.time_slot,
+                    add_or_create_key(self.imported_traded_energy_kwh,
+                                      self.current_market.time_slot,
                                       trade.offer.energy)
-        if self.current_market.time_slot not in self.imported_energy:
-            self.imported_energy[self.current_market.time_slot] = 0.
-        if self.current_market.time_slot not in self.exported_energy:
-            self.exported_energy[self.current_market.time_slot] = 0.
-        self.net_energy_flow[self.current_market.time_slot] = \
-            self.imported_energy[self.current_market.time_slot] - \
-            self.exported_energy[self.current_market.time_slot]
+        if self.current_market.time_slot not in self.imported_traded_energy_kwh:
+            self.imported_traded_energy_kwh[self.current_market.time_slot] = 0.
+        if self.current_market.time_slot not in self.exported_traded_energy_kwh:
+            self.exported_traded_energy_kwh[self.current_market.time_slot] = 0.
