@@ -35,7 +35,11 @@ class Launcher:
                  queue=None,
                  max_jobs=None,
                  max_delay_seconds=2):
-        self.queue = queue or Queue('d3a', connection=StrictRedis.from_url(
+        if os.environ.get("LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE", False):
+            queue_name = "canary_network"
+        else:
+            queue_name = "d3a"
+        self.queue = queue or Queue(queue_name, connection=StrictRedis.from_url(
             REDIS_URL, retry_on_timeout=True))
         self.max_jobs = max_jobs if max_jobs is not None else int(MAX_JOBS)
         self.max_delay = timedelta(seconds=max_delay_seconds)
