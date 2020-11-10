@@ -152,8 +152,12 @@ def get_simulation_scenarios():
 def main():
     with Connection(StrictRedis.from_url(environ.get('REDIS_URL', 'redis://localhost'),
                                          retry_on_timeout=True)):
+        if environ.get("LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE", False):
+            queue_name = "canary_network"
+        else:
+            queue_name = "d3a"
         Worker(
-            ['d3a'],
+            [queue_name],
             name='simulation.{}.{:%s}'.format(getpid(), now()), log_job_description=False
         ).work()
 
