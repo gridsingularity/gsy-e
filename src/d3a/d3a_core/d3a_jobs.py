@@ -30,7 +30,7 @@ from zlib import decompress
 
 from d3a.models.config import SimulationConfig
 from d3a.d3a_core.util import available_simulation_scenarios, update_advanced_settings, \
-    get_simulation_queue
+    get_simulation_queue_name
 from d3a.d3a_core.simulation import run_simulation
 from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 from d3a_interface.settings_validators import validate_global_settings
@@ -153,9 +153,8 @@ def get_simulation_scenarios():
 def main():
     with Connection(StrictRedis.from_url(environ.get('REDIS_URL', 'redis://localhost'),
                                          retry_on_timeout=True)):
-        queue_name = get_simulation_queue()
         Worker(
-            [queue_name],
+            [get_simulation_queue_name()],
             name='simulation.{}.{:%s}'.format(getpid(), now()), log_job_description=False
         ).work()
 
