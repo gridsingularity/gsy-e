@@ -2,9 +2,7 @@ from setuptools import find_packages, setup
 import os
 
 
-d3a_interface_branch = "master"
-if "BRANCH" in os.environ:
-    d3a_interface_branch = os.environ["BRANCH"]
+d3a_interface_branch = os.environ.get("BRANCH", "master")
 
 try:
     with open('requirements/dev.txt') as req:
