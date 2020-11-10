@@ -52,10 +52,7 @@ class UpdateAreaEvent:
             return False
         self.sanitize_live_event_paramters_for_strategy_update()
         area_type = self.area_params.pop("type", None)
-        if area_type is not None:
-            if area_type == "Area":
-                area.area_reconfigure_event(**self.area_params)
-                return True
+        if area_type is not None and area_type != "Area":
             if area.strategy is None:
                 return False
             if area_type == "MarketMaker":
