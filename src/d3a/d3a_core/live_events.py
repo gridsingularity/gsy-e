@@ -51,14 +51,14 @@ class UpdateAreaEvent:
         if area.uuid != self.area_uuid:
             return False
         area_type = self.area_params.pop("type", None)
-        self.sanitize_live_event_paramters()
+        self.sanitize_live_event_parameters()
         if area_type is not None:
             if area.strategy is None:
                 return False
             if area_type == "MarketMaker":
                 area.strategy = MarketMakerStrategy(**self.area_params)
             elif area_type == "InfiniteBus":
-                # After hack to move this parameter casting at the web side
+                # TODO: After hack to move this parameter casting at the web side
                 self.area_params['energy_sell_rate'] = self.area_params.pop('energy_rate', None)
                 area.strategy = InfiniteBusStrategy(**self.area_params)
             else:
@@ -71,7 +71,7 @@ class UpdateAreaEvent:
 
         return True
 
-    def sanitize_live_event_paramters(self):
+    def sanitize_live_event_parameters(self):
         self.area_params.pop('number_of_clones', None)
         self.area_params.pop('energy_rate_profile_uuid', None)
         self.area_params.pop('buying_rate_profile_uuid', None)
