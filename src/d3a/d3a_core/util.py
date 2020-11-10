@@ -574,3 +574,10 @@ def return_ordered_dict(function):
     def wrapper(*args, **kwargs):
         return OrderedDict(sorted(function(*args, **kwargs).items()))
     return wrapper
+
+
+def get_simulation_queue():
+    if os.environ.get("LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE", False):
+        return "canary_network"
+    else:
+        return "d3a"
