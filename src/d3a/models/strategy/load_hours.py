@@ -135,12 +135,12 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.event_activate_price()
         self.bid_update.update_and_populate_price_settings(self.area)
         self.event_activate_energy()
-        self.state.total_energy_demanded_wh = self.avg_power_W
 
     def event_market_cycle(self):
         super().event_market_cycle()
         self.add_entry_in_hrs_per_day(self.area.next_market.time_slot)
         self.bid_update.update_and_populate_price_settings(self.area)
+        self._calculate_active_markets()
         self._update_energy_requirement_future_markets()
         self._set_alternative_pricing_scheme()
         self.update_state()
@@ -452,7 +452,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 else:
                     self.energy_requirement_Wh[slot_time] = 0.
                     self.state.desired_energy_Wh[slot_time] = 0.
-        self._calculate_active_markets()
+
         for market in self.active_markets:
             current_day = self._get_day_of_timestamp(market.time_slot)
             if current_day not in self.hrs_per_day or \
