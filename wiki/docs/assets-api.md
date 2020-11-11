@@ -1,27 +1,5 @@
-# API documentation
+# Asset API documentation
 The D3A API client allows you to create agents that follow custom trading strategies to buy and sell energy in the energy market. The agent can request and receive information through the API, feed that information into an algorithm, and post bids or offers on a live simulated exchange. This document covers installation and descriptions of the functions available.
-
-### API Client Installation
-Note, if you are running the d3a using a virtual machine and vagrant, the latest api-client is already installed on your machine and you can skip to the `Launch Simulation` section below. If you are running the d3a locally, please follow the following instructions.
-
-#### Install Redis server. Open a new terminal and type
-``` 
-brew install redis
-```
-
-#### Install d3a-client
-```
-mkvirtualenv d3a-api-env
-pip install git+https://github.com/gridsingularity/d3a-api-client.git
-```
-
-#### Update d3a-client (as needed when an update is deployed)
-
-```
-pip uninstall d3a-api-client
-pip install git+https://github.com/gridsingularity/d3a-api-client.git
-```
-
 
 ### Using the API Client with a Running Simulation
 

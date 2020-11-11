@@ -33,7 +33,7 @@ from d3a.models.area.event_dispatcher import RedisAreaDispatcher, AreaDispatcher
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import RedisCommunicator
 from d3a.events.event_structures import AreaEvent, MarketEvent
 from d3a.models.market.market_structures import Offer, Trade, offer_from_JSON_string, \
-    trade_from_JSON_string
+    trade_from_JSON_string, TradeBidOfferInfo
 
 log = getLogger(__name__)
 
@@ -112,11 +112,11 @@ class TestRedisEventDispatching(unittest.TestCase):
                            (AreaEvent.ACTIVATE, ),
                            (AreaEvent.BALANCING_MARKET_CYCLE, )])
     def test_receive(self, area_event):
-            payload = {"data": json.dumps({"event_type": area_event.value, "kwargs": {}})}
-            self.device1.dispatcher.area_event_dispatcher.event_listener_redis(payload)
-            response_channel = f"{self.area.uuid}/area_event_response"
-            response_data = json.dumps({"response": area_event.name.lower()})
-            mock_redis.publish.assert_any_call(response_channel, response_data)
+        payload = {"data": json.dumps({"event_type": area_event.value, "kwargs": {}})}
+        self.device1.dispatcher.area_event_dispatcher.event_listener_redis(payload)
+        response_channel = f"{self.area.uuid}/area_event_response"
+        response_data = json.dumps({"response": area_event.name.lower()})
+        mock_redis.publish.assert_any_call(response_channel, response_data)
 
     @parameterized.expand([(AreaEvent.TICK, ),
                            (AreaEvent.MARKET_CYCLE, ),
@@ -260,7 +260,8 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
 
     def test_publish_event_converts_python_objects_to_json(self):
         offer = Offer("1", now(), 2, 3, "A")
-        trade = Trade("2", now(), Offer("accepted", now(), 7, 8, "Z"), "B", "C")
+        trade = Trade("2", now(), Offer("accepted", now(), 7, 8, "Z"), "B", "C",
+                      None, None, TradeBidOfferInfo(None, None, None, None, None))
         new_offer = Offer("3", now(), 4, 5, "D")
         existing_offer = Offer("4", now(), 5, 6, "E")
         kwargs = {"offer": offer,

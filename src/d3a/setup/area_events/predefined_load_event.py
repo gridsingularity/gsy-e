@@ -38,7 +38,7 @@ def get_setup(config):
                                                       final_buying_rate=37),
                          appliance=SwitchableAppliance(),
                          event_list=[StrategyEvents(12, {'daily_load_profile': {0: 200, 12: 400}}),
-                                     StrategyEvents(15, {'initial_buying_rate': 29,
+                                     StrategyEvents(15, {'initial_buying_rate': 24,
                                                          'fit_to_limit': False,
                                                          'update_interval': 10,
                                                          'energy_rate_increase_per_update': 1})]

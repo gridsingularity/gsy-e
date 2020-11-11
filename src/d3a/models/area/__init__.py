@@ -138,7 +138,7 @@ class Area:
     def area_reconfigure_event(self, **kwargs):
         if self.strategy is not None:
             self.strategy.area_reconfigure_event(**kwargs)
-            return
+            return True
 
         grid_fee_constant = kwargs["grid_fee_constant"] \
             if key_in_dict_and_not_none(kwargs, 'grid_fee_constant') \
@@ -290,7 +290,19 @@ class Area:
         `_trigger_event` is used internally to avoid multiple event chains during
         initial area activation.
         """
-        self.events.update_events(self.now)
+
+        current_tick_in_slot = int(self.current_tick % self.config.ticks_per_slot)
+        tick_at_the_slot_start = self.current_tick - current_tick_in_slot
+        if tick_at_the_slot_start == 0:
+            now_value = self.now
+        else:
+            datetime_at_the_slot_start = self.config.start_date.add(
+                seconds=self.config.tick_length.seconds * tick_at_the_slot_start
+            )
+
+            now_value = datetime_at_the_slot_start
+
+        self.events.update_events(now_value)
 
         if not self.children:
             # Since children trade in markets we only need to populate them if there are any
@@ -300,7 +312,7 @@ class Area:
             self.budget_keeper.process_market_cycle()
 
         self.log.debug("Cycling markets")
-        self._markets.rotate_markets(self.now, self.stats, self.dispatcher)
+        self._markets.rotate_markets(now_value, self.stats, self.dispatcher)
         self.dispatcher._delete_past_agents(self.dispatcher._inter_area_agents)
 
         # area_market_stats have to updated when cycling market of each area:
@@ -317,11 +329,11 @@ class Area:
         self.__dict__.pop('current_market', None)
 
         # Markets range from one slot to market_count into the future
-        changed = self._markets.create_future_markets(self.now, True, self)
+        changed = self._markets.create_future_markets(now_value, True, self)
 
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
                 len(DeviceRegistry.REGISTRY.keys()) != 0:
-            changed_balancing_market = self._markets.create_future_markets(self.now, False, self)
+            changed_balancing_market = self._markets.create_future_markets(now_value, False, self)
         else:
             changed_balancing_market = None
 

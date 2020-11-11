@@ -4,6 +4,8 @@ import traceback
 from d3a.d3a_core.area_serializer import area_from_dict
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.area.event_dispatcher import DispatcherFactory
+from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
+from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 
 
 class LiveEventException(D3AException):
@@ -48,10 +50,33 @@ class UpdateAreaEvent:
     def apply(self, area):
         if area.uuid != self.area_uuid:
             return False
-
-        area.area_reconfigure_event(**self.area_params)
+        area_type = self.area_params.pop("type", None)
+        self.sanitize_live_event_parameters()
+        if area_type is not None and area_type != "Area":
+            if area.strategy is None:
+                return False
+            if area_type == "MarketMaker":
+                area.strategy = MarketMakerStrategy(**self.area_params)
+            elif area_type == "InfiniteBus":
+                # TODO: After hack to move this parameter casting at the web side
+                self.area_params['energy_sell_rate'] = self.area_params.pop('energy_rate', None)
+                area.strategy = InfiniteBusStrategy(**self.area_params)
+            else:
+                return False
+            area.activate()
+            area.strategy.event_activate()
+            area.strategy.event_market_cycle()
+        else:
+            area.area_reconfigure_event(**self.area_params)
 
         return True
+
+    def sanitize_live_event_parameters(self):
+        self.area_params.pop('number_of_clones', None)
+        self.area_params.pop('energy_rate_profile_uuid', None)
+        self.area_params.pop('buying_rate_profile_uuid', None)
+        self.area_params.pop("name", None)
+        self.area_params.pop("uuid", None)
 
     def __repr__(self):
         return f"<UpdateAreaEvent - area UUID({self.area_uuid}) - params({self.area_params})>"
