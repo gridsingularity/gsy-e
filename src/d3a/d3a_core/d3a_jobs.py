@@ -105,7 +105,8 @@ def start(scenario, settings, events, aggregator_device_mapping, saved_state):
         }
 
         if d3a.constants.IS_CANARY_NETWORK:
-            config_settings['start_date'] = date.today()
+            config_settings['start_date'] = \
+                instance((datetime.combine(date.today(), datetime.min.time())))
 
         validate_global_settings(config_settings)
 
