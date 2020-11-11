@@ -21,7 +21,7 @@ import ast
 import json
 import pickle
 
-from datetime import datetime
+from datetime import datetime, date
 from pendulum import now, duration, instance
 from redis import StrictRedis
 from rq import Connection, Worker, get_current_job
@@ -77,11 +77,14 @@ def start(scenario, settings, events, aggregator_device_mapping, saved_state):
 
         if events is not None:
             events = ast.literal_eval(events)
+        GlobalConfig.start_date = instance((datetime.combine(date.today(), datetime.min.time()))) \
+            if d3a.constants.IS_CANARY_NETWORK else GlobalConfig.start_date
 
         config_settings = {
             "start_date":
                 instance(datetime.combine(settings.get('start_date'), datetime.min.time()))
-                if 'start_date' in settings else GlobalConfig.start_date,
+                if 'start_date' in settings and d3a.constants.IS_CANARY_NETWORK is False
+                else GlobalConfig.start_date,
             "sim_duration":
                 duration(days=settings['duration'].days)
                 if 'duration' in settings else GlobalConfig.sim_duration,
