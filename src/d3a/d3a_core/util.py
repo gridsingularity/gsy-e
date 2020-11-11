@@ -227,7 +227,8 @@ def area_name_from_area_or_iaa_name(name):
 
 
 def is_timeslot_in_simulation_duration(config, time_slot):
-    return config.start_date <= time_slot < config.end_date
+    return config.start_date <= time_slot < config.end_date or \
+           d3a.constants.IS_CANARY_NETWORK
 
 
 def format_interval(interval, show_day=True):
