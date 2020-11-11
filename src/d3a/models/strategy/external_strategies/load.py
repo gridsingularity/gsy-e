@@ -176,8 +176,8 @@ class LoadExternalMixin(ExternalMixin):
     @property
     def _device_info_dict(self):
         return {
-            'energy_requirement_kWh': find_object_of_same_weekday_and_time(
-                    self.energy_requirement_Wh, self.next_market.time_slot) / 1000.0
+            'energy_requirement_kWh':
+                self.energy_requirement_Wh.get(self.next_market.time_slot, 0.0) / 1000.0
         }
 
     def event_market_cycle(self):
@@ -441,4 +441,3 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
         slot_time = self.area.next_market.time_slot
         self.energy_requirement_Wh[slot_time] = energy_forecast_Wh
         self.state.desired_energy_Wh[slot_time] = energy_forecast_Wh
-        self.state.total_energy_demanded_wh += energy_forecast_Wh

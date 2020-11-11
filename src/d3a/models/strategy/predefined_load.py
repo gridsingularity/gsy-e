@@ -109,6 +109,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                     find_object_of_same_weekday_and_time(self.load_profile, slot_time)
                 self.energy_requirement_Wh[slot_time] = load_energy_kWh * 1000
                 self.state.desired_energy_Wh[slot_time] = load_energy_kWh * 1000
+                self.state.total_energy_demanded_wh += load_energy_kWh * 1000
 
     def _operating_hours(self, energy):
         """
