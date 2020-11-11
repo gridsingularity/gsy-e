@@ -21,7 +21,7 @@ import ast
 import json
 import pickle
 
-from datetime import datetime
+from datetime import datetime, date
 from pendulum import now, duration, instance
 from redis import StrictRedis
 from rq import Connection, Worker, get_current_job
@@ -103,6 +103,9 @@ def start(scenario, settings, events, aggregator_device_mapping, saved_state):
             "external_connection_enabled": settings.get('external_connection_enabled', False),
             "aggregator_device_mapping": aggregator_device_mapping
         }
+
+        if d3a.constants.IS_CANARY_NETWORK:
+            config_settings['start_date'] = date.today()
 
         validate_global_settings(config_settings)
 

@@ -32,7 +32,7 @@ from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
-from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.utils import key_in_dict_and_not_none
 from d3a import constants
@@ -273,8 +273,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
             current_day = self._get_day_of_timestamp(market.time_slot)
             if acceptable_offer and \
                     self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE and \
-                    round(acceptable_offer.energy_rate, 8) <= \
-                    self.bid_update.final_rate[market.time_slot]:
+                    round(acceptable_offer.energy_rate, DEFAULT_PRECISION) <= \
+                    self.bid_update.final_rate[market.time_slot] + FLOATING_POINT_TOLERANCE:
                 max_energy = self.energy_requirement_Wh[market.time_slot] / 1000.0
                 if max_energy < FLOATING_POINT_TOLERANCE:
                     return
