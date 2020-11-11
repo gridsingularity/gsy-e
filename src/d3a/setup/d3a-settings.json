@@ -5,7 +5,7 @@
     "tick_length": "15s",
     "market_count": 1,
     "cloud_coverage": 0,
-    "start_date": "2020-10-14"
+    "start_date": "2020-10-15"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -20,7 +20,6 @@
       "EXPORT_DEVICE_PLOTS": true,
       "EXPORT_ENERGY_TRADE_PROFILE_HR": false,
       "EXPORT_OFFER_BID_TRADE_HR": false,
-      "RUN_REAL_TIME": false,
       "EVENT_DISPATCHING_VIA_REDIS": false,
       "RATE_CHANGE_PER_UPDATE_LIMIT": [
         0,
@@ -187,8 +186,8 @@
         3
       ],
       "PAY_AS_CLEAR_AGGREGATION_ALGORITHM": 1,
-      "MIN_OFFER_AGE": 0,
-      "MIN_BID_AGE": 0,
+      "MIN_OFFER_AGE": 2,
+      "MIN_BID_AGE": 2,
       "AlternativePricing": {
         "COMPARE_PRICING_SCHEMES": false,
         "PRICING_SCHEME": 0,

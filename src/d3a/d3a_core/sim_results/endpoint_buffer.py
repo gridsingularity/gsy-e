@@ -177,12 +177,10 @@ class SimulationEndpointBuffer:
                 'baseline_peak_energy_export_kWh': area.baseline_peak_energy_export_kWh,
                 'import_capacity_kWh': area.import_capacity_kWh,
                 'export_capacity_kWh': area.export_capacity_kWh,
-                'imported_energy_kWh': area.stats.imported_energy.get(
+                'imported_energy_kWh': area.stats.imported_traded_energy_kwh.get(
                     area.current_market.time_slot, 0.) if area.current_market is not None else 0.,
-                'exported_energy_kWh': area.stats.exported_energy.get(
+                'exported_energy_kWh': area.stats.exported_traded_energy_kwh.get(
                     area.current_market.time_slot, 0.) if area.current_market is not None else 0.,
-                'net_energy_flow_kWh': area.stats.net_energy_flow.get(
-                    area.current_market.time_slot, 0.) if area.current_market is not None else 0.
             }
             core_stats_dict['grid_fee_constant'] = area.current_market.const_fee_rate \
                 if area.current_market is not None else 0.
@@ -225,9 +223,9 @@ class SimulationEndpointBuffer:
                     core_stats_dict['trades'].append(t.serializable_dict())
 
         elif type(area.strategy) in [InfiniteBusStrategy, MarketMakerStrategy]:
-            core_stats_dict['energy_rate'] = \
-                area.strategy.energy_rate[area.parent.current_market.time_slot]
             if area.parent.current_market is not None:
+                core_stats_dict['energy_rate'] = \
+                    area.strategy.energy_rate.get(area.parent.current_market.time_slot, None)
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
 
@@ -250,7 +248,7 @@ class SimulationEndpointBuffer:
         self.simulation_state["general"] = sim_state
         self._populate_core_stats_and_sim_state(area)
         self.simulation_progress = {
-            "eta_seconds": progress_info.eta.seconds,
+            "eta_seconds": progress_info.eta.seconds if progress_info.eta else None,
             "elapsed_time_seconds": progress_info.elapsed_time.seconds,
             "percentage_completed": int(progress_info.percentage_completed)
         }
