@@ -140,9 +140,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
         super().event_market_cycle()
         self.add_entry_in_hrs_per_day(self.area.next_market.time_slot)
         self.bid_update.update_and_populate_price_settings(self.area)
+        self._calculate_active_markets()
         self._update_energy_requirement_future_markets()
         self._set_alternative_pricing_scheme()
-        self._calculate_active_markets()
         self.update_state()
 
     def add_entry_in_hrs_per_day(self, time_slot, overwrite=False):
@@ -151,19 +151,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self.hrs_per_day[current_day] = self._initial_hrs_per_day
 
     def update_state(self):
-        for market in self.active_markets:
-            current_day = self._get_day_of_timestamp(market.time_slot)
-            if current_day not in self.hrs_per_day or \
-                    self.hrs_per_day[current_day] <= FLOATING_POINT_TOLERANCE:
-                self.energy_requirement_Wh[market.time_slot] = 0.0
-                self.state.desired_energy_Wh[market.time_slot] = 0.0
         self.post_or_update_bid()
         if self.area.current_market:
             self._cycled_market.add(self.area.current_market.time_slot)
-            self.state.total_energy_demanded_wh += \
-                self.state.desired_energy_Wh[self.area.current_market.time_slot]
-        else:
-            self.state.total_energy_demanded_wh = 0.0
         self._delete_past_state()
 
     def _delete_past_state(self):
@@ -317,6 +307,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def event_offer(self, *, market_id, offer):
         super().event_offer(market_id=market_id, offer=offer)
         market = self.area.get_future_market_from_id(market_id)
+        # TODO: do we really need self._cycled_market ?
         if market.time_slot not in self._cycled_market:
             return
         if market.time_slot in self.energy_requirement_Wh and \
@@ -461,6 +452,18 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 else:
                     self.energy_requirement_Wh[slot_time] = 0.
                     self.state.desired_energy_Wh[slot_time] = 0.
+
+        for market in self.active_markets:
+            current_day = self._get_day_of_timestamp(market.time_slot)
+            if current_day not in self.hrs_per_day or \
+                    self.hrs_per_day[current_day] <= FLOATING_POINT_TOLERANCE:
+                self.energy_requirement_Wh[market.time_slot] = 0.0
+                self.state.desired_energy_Wh[market.time_slot] = 0.0
+        if self.area.current_market:
+            self.state.total_energy_demanded_wh += \
+                self.state.desired_energy_Wh[self.area.current_market.time_slot]
+        else:
+            self.state.total_energy_demanded_wh = 0
 
     def _allowed_operating_hours(self, time):
         return time.hour in self.hrs_of_day
