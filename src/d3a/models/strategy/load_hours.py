@@ -121,7 +121,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
                         fit_to_limit):
         # all parameters have to be validated for each time slot here
-        for time_slot in initial_rate.keys():
+        for time_slot in generate_market_slot_list():
             rate_change = None if fit_to_limit else \
                 find_object_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
             validate_load_device_price(
