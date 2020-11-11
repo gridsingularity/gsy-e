@@ -216,7 +216,7 @@ class StorageStrategy(BidEnabledStrategy):
                         energy_rate_increase_per_update, energy_rate_decrease_per_update,
                         bid_fit_to_limit, offer_fit_to_limit):
 
-        for time_slot in generate_market_slot_list():
+        for time_slot in initial_selling_rate.keys():
             bid_rate_change = None if bid_fit_to_limit else \
                 find_object_of_same_weekday_and_time(energy_rate_increase_per_update, time_slot)
             offer_rate_change = None if offer_fit_to_limit else \
