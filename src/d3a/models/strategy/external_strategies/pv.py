@@ -175,8 +175,8 @@ class PVExternalMixin(ExternalMixin):
     @property
     def _device_info_dict(self):
         return {
-            'available_energy_kWh': find_object_of_same_weekday_and_time(
-                self.state.available_energy_kWh, self.next_market.time_slot)
+            'available_energy_kWh':
+                self.state.available_energy_kWh.get(self.next_market.time_slot, 0)
         }
 
     def event_market_cycle(self):
