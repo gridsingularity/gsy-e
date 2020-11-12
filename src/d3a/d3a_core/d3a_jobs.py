@@ -159,7 +159,7 @@ def main():
                                          retry_on_timeout=True)):
         Worker(
             [get_simulation_queue_name()],
-            name='simulation.{}.{:%s}'.format(getpid(), now()), log_job_description=False
+            name=f'simulation.{getpid()}.{now().timestamp()}', log_job_description=False
         ).work()
 
 
