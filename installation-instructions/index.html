@@ -110,7 +110,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#how-to-install-d3a-on-ubuntu-1804" tabindex="1" class="md-skip">
+      <a href="#how-to-install-d3a-on-ubuntu" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -1096,6 +1096,8 @@
     
     <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
     
+      
+    
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
         Linux
@@ -1109,13 +1111,15 @@
 <nav class="md-nav md-nav--secondary">
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#how-to-install-d3a-on-ubuntu-1804" title="How to Install D3A on Ubuntu 18.04" class="md-nav__link">
-    How to Install D3A on Ubuntu 18.04
+  <a href="#ubuntu-1804" title="Ubuntu 18.04" class="md-nav__link">
+    Ubuntu 18.04
   </a>
   
     <nav class="md-nav">
@@ -1164,6 +1168,13 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ubuntu-2004" title="Ubuntu 20.04" class="md-nav__link">
+    Ubuntu 20.04
+  </a>
   
 </li>
       
@@ -1322,13 +1333,15 @@
 <nav class="md-nav md-nav--secondary">
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#how-to-install-d3a-on-ubuntu-1804" title="How to Install D3A on Ubuntu 18.04" class="md-nav__link">
-    How to Install D3A on Ubuntu 18.04
+  <a href="#ubuntu-1804" title="Ubuntu 18.04" class="md-nav__link">
+    Ubuntu 18.04
   </a>
   
     <nav class="md-nav">
@@ -1380,6 +1393,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#ubuntu-2004" title="Ubuntu 20.04" class="md-nav__link">
+    Ubuntu 20.04
+  </a>
+  
+</li>
+      
       
       
       
@@ -1399,9 +1419,8 @@
                   <a href="https://github.com/gridsingularity/d3a/wiki/edit/master/docs/installation-instructions.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                  <h1>Linux</h1>
-                
-                <h2 id="how-to-install-d3a-on-ubuntu-1804">How to Install D3A on Ubuntu 18.04<a class="headerlink" href="#how-to-install-d3a-on-ubuntu-1804" title="Permanent link">&para;</a></h2>
+                <h1 id="how-to-install-d3a-on-ubuntu">How to Install D3A on Ubuntu<a class="headerlink" href="#how-to-install-d3a-on-ubuntu" title="Permanent link">&para;</a></h1>
+<h2 id="ubuntu-1804">Ubuntu 18.04<a class="headerlink" href="#ubuntu-1804" title="Permanent link">&para;</a></h2>
 <h3 id="preparations">Preparations<a class="headerlink" href="#preparations" title="Permanent link">&para;</a></h3>
 <h5 id="in-case-you-have-not-installed-git-python36-and-pip-yet">In case you have not installed git, python3.6 and pip yet:<a class="headerlink" href="#in-case-you-have-not-installed-git-python36-and-pip-yet" title="Permanent link">&para;</a></h5>
 <div class="codehilite"><pre><span></span><code>sudo apt-get update
@@ -1457,6 +1476,15 @@ export LANG=C.UTF-8
 </li>
 </ol>
 <p>Now, if you run <code>d3a run -–help</code> , the help of d3a should be shown.</p>
+<h2 id="ubuntu-2004">Ubuntu 20.04<a class="headerlink" href="#ubuntu-2004" title="Permanent link">&para;</a></h2>
+<p>Please follow the installation instructions for <a href="#ubuntu-1804">Ubuntu 18.04</a></p>
+<p>If you see the following error when installing the d3a:</p>
+<div class="codehilite"><pre><span></span><code>error: command &#39;x86_64-linux-gnu-gcc&#39; failed with exit status 1
+</code></pre></div>
+
+<p>Installing the following packages helped in the past:</p>
+<div class="codehilite"><pre><span></span><code>sudo apt-get install build-essential python3.6-dev -y
+</code></pre></div>
                 
                   
                 
