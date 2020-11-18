@@ -243,4 +243,4 @@ class RedisSimulationCommunication:
 
 def publish_job_error_output(job_id, traceback):
     StrictRedis.from_url(REDIS_URL).\
-        publish(f"{ERROR_CHANNEL}/{job_id}", json.dumps({"errors": traceback}))
+        publish(ERROR_CHANNEL, json.dumps({"job_id": job_id, "errors": traceback}))
