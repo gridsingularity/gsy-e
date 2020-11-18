@@ -53,6 +53,8 @@ class TestAreaClass(unittest.TestCase):
         self.config = MagicMock(spec=SimulationConfig)
         self.config.slot_length = duration(minutes=15)
         self.config.tick_length = duration(seconds=15)
+        self.config.ticks_per_slot = int(self.config.slot_length.seconds /
+                                         self.config.tick_length.seconds)
         self.config.start_date = today(tz=TIME_ZONE)
         self.config.sim_duration = duration(days=1)
         self.config.grid_fee_type = 1

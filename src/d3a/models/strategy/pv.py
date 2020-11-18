@@ -22,7 +22,7 @@ from pendulum import Time  # noqa
 from pendulum import duration
 from logging import getLogger
 
-from d3a.d3a_core.util import generate_market_slot_list
+from d3a.d3a_core.util import find_object_of_same_weekday_and_time, convert_W_to_kWh
 from d3a.models.strategy import BaseStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.device_validator import validate_pv_device_energy, validate_pv_device_price
@@ -95,31 +95,34 @@ class PVStrategy(BaseStrategy):
 
     def area_reconfigure_event(self, **kwargs):
         self._area_reconfigure_prices(**kwargs)
+        self.offer_update.update_and_populate_price_settings(self.area)
+
         if key_in_dict_and_not_none(kwargs, 'panel_count'):
             self.panel_count = kwargs['panel_count']
         if key_in_dict_and_not_none(kwargs, 'max_panel_power_W'):
             self.max_panel_power_W = kwargs['max_panel_power_W']
 
-        self.produced_energy_forecast_kWh()
+        self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
 
     def _area_reconfigure_prices(self, **kwargs):
         if key_in_dict_and_not_none(kwargs, 'initial_selling_rate'):
             initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                   kwargs['initial_selling_rate'])
         else:
-            initial_rate = self.offer_update.initial_rate
+            initial_rate = self.offer_update.initial_rate_profile_buffer
 
         if key_in_dict_and_not_none(kwargs, 'final_selling_rate'):
             final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                 kwargs['final_selling_rate'])
         else:
-            final_rate = self.offer_update.final_rate
+            final_rate = self.offer_update.final_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, 'energy_rate_decrease_per_update'):
             energy_rate_change_per_update = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                        kwargs['energy_rate_decrease_per_update'])
         else:
-            energy_rate_change_per_update = self.offer_update.energy_rate_change_per_update
+            energy_rate_change_per_update = \
+                self.offer_update.energy_rate_change_per_update_profile_buffer
         if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
             fit_to_limit = kwargs['fit_to_limit']
         else:
@@ -142,64 +145,63 @@ class PVStrategy(BaseStrategy):
                       f"Traceback: {traceback.format_exc()}")
             return
 
-        self.offer_update.initial_rate = initial_rate
-        self.offer_update.final_rate = final_rate
-        self.offer_update.energy_rate_change_per_update = energy_rate_change_per_update
+        self.offer_update.initial_rate_profile_buffer = initial_rate
+        self.offer_update.final_rate_profile_buffer = final_rate
+        self.offer_update.energy_rate_change_per_update_profile_buffer = \
+            energy_rate_change_per_update
         self.offer_update.fit_to_limit = fit_to_limit
         self.offer_update.update_interval = update_interval
-
-        self.offer_update.update_offer(self)
 
     @staticmethod
     def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
         # all parameters have to be validated for each time slot here
-        for time_slot in generate_market_slot_list():
+        for time_slot in initial_rate.keys():
             rate_change = None if fit_to_limit else \
-                energy_rate_change_per_update[time_slot]
+                find_object_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
             validate_pv_device_price(
                 initial_selling_rate=initial_rate[time_slot],
-                final_selling_rate=final_rate[time_slot],
+                final_selling_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
                 energy_rate_decrease_per_update=rate_change,
                 fit_to_limit=fit_to_limit)
 
     def event_activate(self):
         self.event_activate_price()
         self.event_activate_energy()
+        self.offer_update.update_and_populate_price_settings(self.area)
 
     def event_activate_price(self):
         # If use_market_maker_rate is true, overwrite initial_selling_rate to market maker rate
         if self.use_market_maker_rate:
             if isinstance(GlobalConfig.market_maker_rate, dict):
-                self.area_reconfigure_event(initial_selling_rate=GlobalConfig
-                                            .market_maker_rate.get(
-                                                self.owner.parent.next_market.time_slot, 0) -
-                                            self.owner.get_path_to_root_fees(),
-                                            validate=False)
+                self._area_reconfigure_prices(
+                    initial_selling_rate=find_object_of_same_weekday_and_time(
+                        GlobalConfig.market_maker_rate, self.owner.parent.next_market.time_slot
+                    ) - self.owner.get_path_to_root_fees(),
+                    validate=False)
             else:
-                self.area_reconfigure_event(initial_selling_rate=GlobalConfig.market_maker_rate -
-                                            self.owner.get_path_to_root_fees(), validate=False)
-        self._validate_rates(self.offer_update.initial_rate, self.offer_update.final_rate,
-                             self.offer_update.energy_rate_change_per_update,
+                self._area_reconfigure_prices(initial_selling_rate=GlobalConfig.market_maker_rate -
+                                              self.owner.get_path_to_root_fees(), validate=False)
+        self._validate_rates(self.offer_update.initial_rate_profile_buffer,
+                             self.offer_update.final_rate_profile_buffer,
+                             self.offer_update.energy_rate_change_per_update_profile_buffer,
                              self.offer_update.fit_to_limit)
-        # Calculating the produced energy
-        self._set_alternative_pricing_scheme()
-        self.offer_update.update_on_activate()
 
     def event_activate_energy(self):
         if self.max_panel_power_W is None:
             self.max_panel_power_W = self.area.config.max_panel_power_W
-        self.produced_energy_forecast_kWh()
+        self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
 
     def event_tick(self):
         self.offer_update.update_offer(self)
         self.offer_update.increment_update_counter_all_markets(self)
 
-    def produced_energy_forecast_kWh(self):
+    def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
         # This forecast ist based on the real PV system data provided by enphase
         # They can be found in the tools folder
         # A fit of a gaussian function to those data results in a formula Energy(time)
-        for slot_time in generate_market_slot_list(area=self.area):
-            if slot_time >= self.area.now:
+        for market in self.area.all_markets:
+            slot_time = market.time_slot
+            if slot_time not in self.energy_production_forecast_kWh or reconfigure:
                 difference_to_midnight_in_minutes = \
                     slot_time.diff(self.area.now.start_of("day")).in_minutes() % (60 * 24)
                 self.energy_production_forecast_kWh[slot_time] = \
@@ -227,12 +229,12 @@ class PVStrategy(BaseStrategy):
                     / 38.60) ** 2
                  )
             )
-        # /1000 is needed to convert Wh into kWh
-        w_to_wh_factor = (self.area.config.slot_length / duration(hours=1))
-        return round((gauss_forecast / 1000) * w_to_wh_factor, 4)
+        return round(convert_W_to_kWh(gauss_forecast, self.area.config.slot_length), 4)
 
     def event_market_cycle(self):
         super().event_market_cycle()
+        self.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
+        self._set_alternative_pricing_scheme()
         self.event_market_cycle_price()
         self._delete_past_state()
 
@@ -242,14 +244,19 @@ class PVStrategy(BaseStrategy):
             return
 
         to_delete = []
-        for k in self.state.available_energy_kWh.keys():
-            if k < self.area.current_market.time_slot:
-                to_delete.append(k)
-        for k in to_delete:
-            self.state.available_energy_kWh.pop(k, None)
-            self.energy_production_forecast_kWh.pop(k, None)
+        for market_slot in self.state.available_energy_kWh.keys():
+            if market_slot < self.area.current_market.time_slot:
+                to_delete.append(market_slot)
+        for market_slot in to_delete:
+            self.state.available_energy_kWh.pop(market_slot, None)
+            self.energy_production_forecast_kWh.pop(market_slot, None)
+            self.offer_update.initial_rate.pop(market_slot, None)
+            self.offer_update.final_rate.pop(market_slot, None)
+            self.offer_update.energy_rate_change_per_update.pop(market_slot, None)
+            self.offer_update.update_counter.pop(market_slot, None)
 
     def event_market_cycle_price(self):
+        self.offer_update.update_and_populate_price_settings(self.area)
         self.offer_update.update_market_cycle_offers(self)
 
         # Iterate over all markets open in the future
@@ -284,22 +291,21 @@ class PVStrategy(BaseStrategy):
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
-                for time_slot in generate_market_slot_list():
+            for market in self.area.all_markets:
+                time_slot = market.time_slot
+                if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
                     self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=0,
                                                                final_rate=0)
-            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
-                for time_slot in generate_market_slot_list():
+                elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
                     rate = \
                         self.area.config.market_maker_rate[time_slot] * \
                         ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / \
                         100
                     self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=rate,
                                                                final_rate=rate)
-            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
-                for time_slot in generate_market_slot_list():
+                elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
                     rate = self.area.config.market_maker_rate[time_slot]
                     self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=rate,
                                                                final_rate=rate)
-            else:
-                raise MarketException
+                else:
+                    raise MarketException

@@ -30,8 +30,9 @@ class MarketMakerStrategy(CommercialStrategy):
         if energy_rate_profile is not None:
             energy_rate = read_and_convert_identity_profile_to_float(energy_rate_profile)
         else:
-            energy_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE \
-                if energy_rate is None else read_and_convert_identity_profile_to_float(energy_rate)
+            energy_rate = read_and_convert_identity_profile_to_float(
+                ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+                if energy_rate is None else energy_rate)
         GlobalConfig.market_maker_rate = energy_rate
         self._grid_connected = grid_connected
         super().__init__(energy_rate)

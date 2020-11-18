@@ -19,20 +19,23 @@ import logging
 from os import environ, getpid
 import ast
 import json
+import pickle
 
-from datetime import datetime
+from datetime import datetime, date
 from pendulum import now, duration, instance
 from redis import StrictRedis
 from rq import Connection, Worker, get_current_job
 from rq.decorators import job
+from zlib import decompress
 
 from d3a.models.config import SimulationConfig
-from d3a.d3a_core.util import available_simulation_scenarios, update_advanced_settings
+from d3a.d3a_core.util import available_simulation_scenarios, update_advanced_settings, \
+    get_simulation_queue_name
 from d3a.d3a_core.simulation import run_simulation
 from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 from d3a_interface.settings_validators import validate_global_settings
-from zlib import decompress
-import pickle
+import d3a.constants
+
 
 log = logging.getLogger()
 
@@ -46,6 +49,11 @@ def start(scenario, settings, events, aggregator_device_mapping, saved_state):
     logging.getLogger().setLevel(logging.ERROR)
 
     scenario = decompress_and_decode_queued_strings(scenario)
+    if "collaboration_uuid" in scenario:
+        d3a.constants.COLLABORATION_ID = scenario.pop("collaboration_uuid")
+        d3a.constants.EXTERNAL_CONNECTION_WEB = True
+        d3a.constants.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
+        d3a.constants.RUN_IN_REALTIME = d3a.constants.IS_CANARY_NETWORK
     saved_state = decompress_and_decode_queued_strings(saved_state)
     log.error(f"Scenario: {scenario}")
     log.error(f"Settings: {settings}")
@@ -95,6 +103,10 @@ def start(scenario, settings, events, aggregator_device_mapping, saved_state):
             "external_connection_enabled": settings.get('external_connection_enabled', False),
             "aggregator_device_mapping": aggregator_device_mapping
         }
+
+        if d3a.constants.IS_CANARY_NETWORK:
+            config_settings['start_date'] = \
+                instance((datetime.combine(date.today(), datetime.min.time())))
 
         validate_global_settings(config_settings)
 
@@ -146,8 +158,8 @@ def main():
     with Connection(StrictRedis.from_url(environ.get('REDIS_URL', 'redis://localhost'),
                                          retry_on_timeout=True)):
         Worker(
-            ['d3a'],
-            name='simulation.{}.{:%s}'.format(getpid(), now()), log_job_description=False
+            [get_simulation_queue_name()],
+            name=f'simulation.{getpid()}.{now().timestamp()}', log_job_description=False
         ).work()
 
 
