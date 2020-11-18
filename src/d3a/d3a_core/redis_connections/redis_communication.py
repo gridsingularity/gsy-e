@@ -187,7 +187,7 @@ class RedisSimulationCommunication:
         if not self.is_enabled():
             return
         result_report = endpoint_buffer.generate_result_report()
-        # results_validator(result_report)
+        results_validator(result_report)
 
         results = json.dumps(result_report)
         message_size = utf8len(results)
