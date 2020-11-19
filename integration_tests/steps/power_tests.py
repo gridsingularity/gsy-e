@@ -88,7 +88,7 @@ def test_baseline_peak_energy_stats(context):
 def test_net_energy_flow_stats(context):
     from integration_tests.steps.integration_tests import get_simulation_raw_results
     get_simulation_raw_results(context)
-    from d3a.d3a_core.sim_results.area_throughput_stats import AreaThroughputStats
+    from d3a_interface.sim_results.area_throughput_stats import AreaThroughputStats
     area_throughput = AreaThroughputStats()
     for time_slot, core_stats in context.raw_sim_data.items():
 
