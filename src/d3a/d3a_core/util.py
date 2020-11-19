@@ -546,7 +546,7 @@ def find_object_of_same_weekday_and_time(indict, time_slot, ignore_not_found=Fal
         add_days = abs(time_slot.weekday() - start_time.weekday())
         timestamp_key = datetime(year=start_time.year, month=start_time.month, day=start_time.day,
                                  hour=time_slot.hour, minute=time_slot.minute, tz=TIME_ZONE).add(
-            days=add_days if add_days < 6 else 0)
+            days=add_days if add_days < 6 else 1)
 
         if timestamp_key in indict:
             return indict[timestamp_key]

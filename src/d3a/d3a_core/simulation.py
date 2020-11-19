@@ -308,8 +308,8 @@ class Simulation:
         tick_lengths_s = config.tick_length.seconds
         slot_count = int(config.sim_duration / config.slot_length)
 
-        self.simulation_config.external_redis_communicator.sub_to_aggregator()
-        self.simulation_config.external_redis_communicator.start_communication()
+        config.external_redis_communicator.sub_to_aggregator()
+        config.external_redis_communicator.start_communication()
         self._update_and_send_results()
 
         if d3a.constants.RUN_IN_REALTIME:
