@@ -64,8 +64,6 @@ SLOWDOWN_FACTOR = 100
 SLOWDOWN_STEP = 5
 RANDOM_SEED_MAX_VALUE = 1000000
 
-REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
-
 
 class SimulationResetException(Exception):
     pass

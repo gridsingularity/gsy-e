@@ -4,8 +4,6 @@ import os
 
 d3a_interface_branch = os.environ.get("BRANCH", "master")
 
-d3a_interface_branch = "feature/D3ASIM-2928"
-
 try:
     with open('requirements/dev.txt') as req:
         REQUIREMENTS = [r.partition('#')[0] for r in req if not r.startswith('-e')]

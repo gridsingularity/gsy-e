@@ -46,7 +46,7 @@ def decompress_and_decode_queued_strings(queued_string):
 
 @job('d3a')
 def start(scenario, settings, events, aggregator_device_mapping, saved_state):
-    logging.getLogger().setLevel(logging.INFO)
+    logging.getLogger().setLevel(logging.ERROR)
 
     scenario = decompress_and_decode_queued_strings(scenario)
     if "collaboration_uuid" in scenario:
