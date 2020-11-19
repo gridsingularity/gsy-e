@@ -467,6 +467,8 @@ def test_use_market_maker_rate_parameter_is_respected_for_load_profiles(use_mmr,
 
 def test_load_constructor_rejects_incorrect_rate_parameters():
     load = LoadHoursStrategy(avg_power_W=100, initial_buying_rate=10, final_buying_rate=5)
+    load.area = FakeArea()
+    load.owner = load.area
     with pytest.raises(D3ADeviceException):
         load.event_activate()
     with pytest.raises(D3ADeviceException):

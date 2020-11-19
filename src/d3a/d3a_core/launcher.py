@@ -25,6 +25,7 @@ from subprocess import Popen
 from time import sleep
 import platform
 from d3a_interface.utils import check_redis_health
+from d3a.d3a_core.util import get_simulation_queue_name
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 MAX_JOBS = os.environ.get('D3A_MAX_JOBS_PER_POD', 2)
@@ -35,7 +36,7 @@ class Launcher:
                  queue=None,
                  max_jobs=None,
                  max_delay_seconds=2):
-        self.queue = queue or Queue('d3a', connection=StrictRedis.from_url(
+        self.queue = queue or Queue(get_simulation_queue_name(), connection=StrictRedis.from_url(
             REDIS_URL, retry_on_timeout=True))
         self.max_jobs = max_jobs if max_jobs is not None else int(MAX_JOBS)
         self.max_delay = timedelta(seconds=max_delay_seconds)

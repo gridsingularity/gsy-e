@@ -468,8 +468,9 @@ def test_aggregated_result_files(context):
 def test_simulation_config_parameters(context, cloud_coverage):
     from d3a.models.read_user_profile import default_profile_dict
     assert context.simulation.simulation_config.cloud_coverage == int(cloud_coverage)
+    day_factor = 24 * 7 if constants.IS_CANARY_NETWORK else 24
     assert len(context.simulation.simulation_config.market_maker_rate) == \
-        24 / context.simulation.simulation_config.slot_length.hours + \
+        day_factor / context.simulation.simulation_config.slot_length.hours + \
         context.simulation.simulation_config.market_count
     assert len(default_profile_dict().keys()) == len(context.simulation.simulation_config.
                                                      market_maker_rate.keys())

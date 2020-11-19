@@ -72,7 +72,7 @@ nav:
 - API:
   - Overview: 'api-overview.md'
   - Asset API: 'assets-api.md'
-  - Market API: 'grid-api.md'
+  - Grid Operators API: 'grid-api.md'
 - FAQ: 'faq.md'
 - FAQ Odyssey hackathon: 'faq-odyssey.md'
 

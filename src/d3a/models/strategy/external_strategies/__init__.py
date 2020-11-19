@@ -381,9 +381,10 @@ class ExternalMixin:
         transaction_id = self._get_transaction_id(payload)
         power_forecast_response_channel = \
             f'{self.channel_prefix}/response/set_power_forecast'
-        if not check_for_connected_and_reply(self.redis, power_forecast_response_channel,
-                                             self.connected):
-            return
+        # Deactivating register/connected requirement for power forecasts.
+        # if not check_for_connected_and_reply(self.redis, power_forecast_response_channel,
+        #                                      self.connected):
+        #     return
         try:
             arguments = json.loads(payload["data"])
             assert set(arguments.keys()) == {'power_forecast', 'transaction_id'}

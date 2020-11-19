@@ -21,9 +21,12 @@ import ast
 from enum import Enum
 from pendulum import duration, from_format, from_timestamp, today, DateTime
 from typing import Dict
-from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, TIME_ZONE
+
+import d3a.constants
+from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, TIME_ZONE, CN_PROFILE_EXPANSION_DAYS
 from d3a_interface.constants_limits import GlobalConfig, DATE_TIME_FORMAT_SECONDS
-from d3a.d3a_core.util import generate_market_slot_list, convert_kW_to_kWh
+from d3a.d3a_core.util import generate_market_slot_list, convert_kW_to_kWh, \
+    find_object_of_same_weekday_and_time, return_ordered_dict
 
 """
 Exposes mixins that can be used from strategy classes.
@@ -53,26 +56,20 @@ def _str_to_datetime(time_str, time_format) -> DateTime:
 
 def default_profile_dict(val=None) -> Dict[DateTime, int]:
     """
-    Expanding a dictionary that contains one key for every minute of the simulation time
-    The keys are pendulum (DateTime) objects
-    :return: Dict[DateTime, int]
+    Returns dictionary with default values for all market slots.
+    :param val: Default value
     """
     if val is None:
         val = 0
+    if d3a.constants.IS_CANARY_NETWORK:
+        market_slot_list = \
+            generate_market_slot_list(start_date=today(tz=TIME_ZONE),
+                                      time_span=duration(
+                                          days=CN_PROFILE_EXPANSION_DAYS))
+    else:
+        market_slot_list = generate_market_slot_list()
 
-    outdict = {}
-    iter_date = GlobalConfig.start_date
-    end_date = GlobalConfig.start_date.add(days=GlobalConfig.sim_duration.days,
-                                           hours=GlobalConfig.sim_duration.hours)
-    while iter_date <= end_date:
-        outdict[iter_date] = val
-        iter_date = iter_date.add(seconds=GlobalConfig.slot_length.seconds)
-
-    for _ in range(GlobalConfig.market_count-1):
-        outdict[iter_date] = val
-        iter_date = iter_date.add(seconds=GlobalConfig.slot_length.seconds)
-
-    return outdict
+    return {time_slot: val for time_slot in market_slot_list}
 
 
 def is_number(number):
@@ -141,7 +138,7 @@ def _readCSV(path: str) -> Dict:
                 for time_str, value in profile_data.items())
 
 
-def _calculate_energy_from_power_profile(profile_data_W: Dict[str, float],
+def _calculate_energy_from_power_profile(profile_data_W: Dict[DateTime, float],
                                          slot_length: duration) -> Dict[DateTime, float]:
     """
     Calculates energy from power profile. Does not use numpy, calculates avg power for each
@@ -150,8 +147,13 @@ def _calculate_energy_from_power_profile(profile_data_W: Dict[str, float],
     :param slot_length: slot length duration
     :return: a mapping from time to energy values in kWh
     """
-
     input_time_list = list(profile_data_W.keys())
+
+    # add one market slot in order to have another data point for integration
+    additional_time_stamp = input_time_list[-1] + slot_length
+    profile_data_W[additional_time_stamp] = profile_data_W[input_time_list[-1]]
+    input_time_list.append(additional_time_stamp)
+
     input_power_list_W = [float(dp) for dp in profile_data_W.values()]
 
     time0 = from_timestamp(0)
@@ -196,8 +198,14 @@ def _fill_gaps_in_profile(input_profile: Dict = None) -> Dict:
         current_val = 0
 
     for time in out_profile.keys():
-        if time in input_profile.keys():
-            current_val = input_profile[time]
+        if d3a.constants.IS_CANARY_NETWORK:
+            temp_val = find_object_of_same_weekday_and_time(input_profile, time,
+                                                            ignore_not_found=True)
+            if temp_val is not None:
+                current_val = temp_val
+        else:
+            if time in input_profile:
+                current_val = input_profile[time]
         out_profile[time] = current_val
 
     return out_profile
@@ -300,6 +308,7 @@ def copy_profile_to_multiple_days(profile):
     return profile
 
 
+@return_ordered_dict
 def read_arbitrary_profile(profile_type: InputProfileTypes,
                            input_profile) -> Dict[DateTime, float]:
     """
@@ -311,7 +320,6 @@ def read_arbitrary_profile(profile_type: InputProfileTypes,
     or a dict with hourly data (Dict[int, float])
     or a dict with arbitrary time data (Dict[str, float])
     or a string containing a serialized dict of the aforementioned structure
-    :param copy:
     :return: a mapping from time to profile values
     """
 
@@ -323,7 +331,8 @@ def read_arbitrary_profile(profile_type: InputProfileTypes,
 
     if profile is not None:
         filled_profile = _fill_gaps_in_profile(profile)
-        _eval_time_period_consensus(filled_profile)
+        if not d3a.constants.IS_CANARY_NETWORK:
+            _eval_time_period_consensus(filled_profile)
 
         if profile_type == InputProfileTypes.POWER:
             return _calculate_energy_from_power_profile(filled_profile, GlobalConfig.slot_length)
