@@ -609,7 +609,6 @@ def run_simulation(setup_module_name="", simulation_config=None, simulation_even
             redis_job_id=redis_job_id,
             **kwargs
         )
-
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
 

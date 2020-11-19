@@ -24,7 +24,7 @@ from redis import StrictRedis
 from redis.exceptions import ConnectionError
 from rq import get_current_job
 from rq.exceptions import NoSuchJobError
-from d3a_interface.results_validator import results_validator
+from d3a_interface.results_validator import results_validator  # NOQA
 from d3a_interface.constants_limits import HeartBeat
 from d3a_interface.utils import RepeatingTimer
 from zlib import compress
@@ -199,7 +199,6 @@ class RedisSimulationCommunication:
 
         results = results.encode('utf-8')
         results = compress(results)
-
         self.redis_db.publish(self.result_channel, results)
         self._handle_redis_job_metadata()
 
