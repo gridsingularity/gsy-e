@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.d3a_core.exceptions import MarketException
-from d3a.d3a_core.sim_results.area_statistics import _is_house_node
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy import INF_ENERGY
 from d3a_interface.constants_limits import ConstSettings
@@ -39,7 +38,7 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
         return next((c for c in area.children if c.name == name), None)
 
     def _buy_energy_alternative_pricing_schemes(self, area):
-        if not _is_house_node(self.owner):
+        if not all(child.children == [] for child in self.owner.children):
             return
         try:
             for offer in self.lower_market.sorted_offers:

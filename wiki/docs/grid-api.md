@@ -1,12 +1,12 @@
-# Market API documentation
-The D3A API client allows you to create agents that manage different markets. The agent can request and receive information through the API, feed that information into a tariff model, and change grid fees on a live simulated exchange. The grid API is designed for grid operators to manage a specific market. The structure is designed so that multiple markets can be managed with a single script. Notably this allows markets to share information in order to have a better overall grid management. This document covers installation and descriptions of the functions available.
+# Grid Operators API documentation
+The D3A API client allows you to create agents that manage different markets. The agent can request and receive information through the API, feed that information into a tariff model, and change grid fees on a live simulated exchange. The Grid Operators API is designed for grid operators to manage a specific market. The structure is designed so that multiple markets can be managed with a single script. Notably this allows markets to share information in order to have a better overall grid management. This document covers installation and descriptions of the functions available.
 
 ### API command
-The grid api can function once at the end of every market slots. When a the current market is finished the client will get notified via an event. It is possible to capture this event and perform operations after it by overriding the on_market_cycle method.
+The Grid Operators API can function once at the end of every market slots. When the current market slot is finished the client will get notified via an event. It is possible to capture this event and perform operations after it by overriding the on_market_cycle method.
 
 Ex: `def on_market_cycle(self, market_info):`
 
-The market API can send batch command, grouping different command, for different markets. 3 different commands are available : 
+The Grid Operators API can send batch command, grouping different command, for different markets. 3 different commands are available : 
 
 
 #### market stats
@@ -45,7 +45,7 @@ self.batch_command(batch_commands)
 ```
 
 ### Information
-The market api receives information concerning the markets that it manages. Different metrics are shared through the API :
+The Grid Operators API receives information concerning the markets that it manages. Different metrics are shared through the API :
 
 * Minimum, median, average and maximum trade price [€/kWh]
 * Total energy volume traded [kWh]
@@ -57,11 +57,11 @@ The market api receives information concerning the markets that it manages. Diff
 
 ### Interaction with the running exchange
 
-As explained above the Market API function at the end of each market slot. Let's take the following example and operations' order:
+As explained above the Grid Operators API function at the end of each market slot. Let's take the following example and operations' order:
 
-![img](img/grid-api-2.png)
+![img](img/grid-api-2.jpg)
 
-1. At the end of the market slot 12:45, the Market API function `on_market_cycle` is triggered.
+1. At the end of the market slot 12:45, the Grid Operators API function `on_market_cycle` is triggered.
 2. In results Client will request and receive information of the last market slot (12:45-13:00).
 3. Based on these information the Client script set new grid fee for the markets it manages.
 4. Since the new grid fees are sent at 13:00 they will be actually applied at 13:15 (15min delay)
