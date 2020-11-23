@@ -100,10 +100,10 @@ class AreaStats:
             if self.current_market.time_slot_str in self.market_bills.keys() else None
 
     def _get_current_market_area_throughput(self):
-        return {"import": self.imported_energy[self.current_market.time_slot_str]
-                if self.current_market.time_slot_str in self.imported_energy.keys() else None,
-                "export": self.exported_energy[self.current_market.time_slot_str]
-                if self.current_market.time_slot_str in self.exported_energy.keys() else None}
+        return {"import": self.imported_energy[self.current_market.time_slot]
+                if self.current_market.time_slot in self.imported_energy else None,
+                "export": self.exported_energy[self.current_market.time_slot]
+                if self.current_market.time_slot in self.exported_energy else None}
 
     def get_price_stats_current_market(self):
         if self.current_market is None:
