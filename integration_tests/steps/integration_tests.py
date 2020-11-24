@@ -548,10 +548,9 @@ def final_results(context):
     context.simulation.redis_connection.publish_results = final_res_count
 
 
-@when('the simulation is able to transmit zipped results')
+@when('the redis_connection is enabled')
 def transmit_zipped_results(context):
     context.simulation.redis_connection.is_enabled = lambda: True
-    context.simulation.redis_connection.write_zip_results = lambda _: None
 
 
 @then('intermediate results are transmitted on every slot')
