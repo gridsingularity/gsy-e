@@ -15,14 +15,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
-from d3a.models.appliance.simple import SimpleAppliance
 
 # Setup for a microgrid + DSO
 
@@ -47,14 +44,14 @@ def get_setup(config):
                                 avg_power_W=100,
                                 hrs_per_day=5, hrs_of_day=[9, 10, 11, 12, 13, 14, 15, 16],
                                 initial_buying_rate=Houses_initial_buying_rate,
-                                final_buying_rate=Houses_final_buying_rate),
-                                 appliance=SwitchableAppliance()),
+                                final_buying_rate=Houses_final_buying_rate)
+                                 ),
 
                             Area('H1 PV', strategy=PVStrategy(panel_count=3,
                                                               max_panel_power_W=250,  # to test
                                                               initial_selling_rate=30,
-                                                              final_selling_rate=0),
-                                 appliance=PVAppliance()),
+                                                              final_selling_rate=0)
+                                 ),
 
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
@@ -67,21 +64,21 @@ def get_setup(config):
                                 avg_power_W=100,
                                 hrs_per_day=5, hrs_of_day=[9, 10, 11, 12, 13, 14, 15, 16],
                                 initial_buying_rate=Houses_initial_buying_rate,
-                                final_buying_rate=Houses_final_buying_rate),
-                                 appliance=SwitchableAppliance()),
+                                final_buying_rate=Houses_final_buying_rate)
+                                 ),
 
                             Area('H2 PV', strategy=PVStrategy(panel_count=4,
                                                               max_panel_power_W=250,
                                                               initial_selling_rate=30,
-                                                              final_selling_rate=0),
-                                 appliance=PVAppliance()),
+                                                              final_selling_rate=0)
+                                 ),
 
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                 ],),
 
-            Area('DSO', strategy=InfiniteBusStrategy(energy_buy_rate=5),
-                 appliance=SimpleAppliance()),
+            Area('DSO', strategy=InfiniteBusStrategy(energy_buy_rate=5)
+                 ),
 
         ],
         config=config, grid_fee_percentage=0, grid_fee_constant=0,

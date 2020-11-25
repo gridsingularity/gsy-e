@@ -20,7 +20,7 @@ from copy import deepcopy
 from unittest.mock import MagicMock
 import unittest
 from d3a.models.area import Area
-from d3a.models.appliance.simple import SimpleAppliance
+
 from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.state import LoadState
@@ -41,8 +41,6 @@ class TestUnmatchedLoad(unittest.TestCase):
         self.config.start_date = today(tz=TIME_ZONE)
         self.config.grid_fee_type = 1
 
-        self.appliance = MagicMock(spec=SimpleAppliance)
-
         self.strategy1 = MagicMock(spec=LoadHoursStrategy)
         self.strategy1.state = MagicMock(spec=LoadState)
         self.strategy1.state.desired_energy_Wh = {}
@@ -58,11 +56,11 @@ class TestUnmatchedLoad(unittest.TestCase):
         self.strategy3.state.desired_energy_Wh = {}
         self.strategy3.energy_requirement_Wh = {}
         self.strategy3.state.total_energy_demanded_wh = 0
-        self.area1 = Area("load1", None, None, self.strategy1, self.appliance,
+        self.area1 = Area("load1", None, None, self.strategy1,
                           self.config, None, grid_fee_percentage=0)
-        self.area2 = Area("load2", None, None, self.strategy2, self.appliance,
+        self.area2 = Area("load2", None, None, self.strategy2,
                           self.config, None, grid_fee_percentage=0)
-        self.area3 = Area("load3", None, None, self.strategy3, self.appliance,
+        self.area3 = Area("load3", None, None, self.strategy3,
                           self.config, None, grid_fee_percentage=0)
 
     def tearDown(self):

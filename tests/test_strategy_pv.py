@@ -43,7 +43,6 @@ class FakeArea:
     def __init__(self):
         self.config = DEFAULT_CONFIG
         self.current_tick = 2
-        self.appliance = None
         self.name = 'FakeArea'
         self.test_market = FakeMarket(0)
         self._next_market = FakeMarket(0)
