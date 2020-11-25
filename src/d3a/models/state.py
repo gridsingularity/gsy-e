@@ -37,7 +37,7 @@ StorageSettings = ConstSettings.StorageSettings
 # The full three-classes setup is not necessary for every device:
 # - Some devices may not have a state. The state class is mainly meant to share data between
 #   strategy and appliance, so simple responses to triggers and events are not part of it,
-#   neither are unpredictable parameters that the strategy cannot take into account
+#   neither are unpredictable parameters that the strategy can not take into account
 # - If a device has no state, maybe it doesn't need its own appliance class either
 
 
