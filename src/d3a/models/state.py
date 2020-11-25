@@ -27,6 +27,19 @@ from d3a.d3a_core.util import write_default_to_dict, convert_kW_to_kWh
 
 StorageSettings = ConstSettings.StorageSettings
 
+# Complex device models should be split in three classes each:
+#
+# - a strategy class responsible for buying/selling options
+# - an appliance class responsible for actual energy transfers (drawing/serving options)
+#   (appliance class has to be reinstated if needed)
+# - a state class keeping the state of the appliance
+#
+# The full three-classes setup is not necessary for every device:
+# - Some devices may not have a state. The state class is mainly meant to share data between
+#   strategy and appliance, so simple responses to triggers and events are not part of it,
+#   neither are unpredictable parameters that the strategy cannot take into account
+# - If a device has no state, maybe it doesn't need its own appliance class either
+
 
 class PVState:
     def __init__(self):
