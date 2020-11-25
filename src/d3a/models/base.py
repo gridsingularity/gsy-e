@@ -20,7 +20,7 @@ from logging import getLogger
 from cached_property import cached_property
 
 from d3a.d3a_core.util import TaggedLogWrapper
-from d3a.models.area import Area
+from d3a.models.area import Area  # NOQA
 
 log = getLogger(__name__)
 
