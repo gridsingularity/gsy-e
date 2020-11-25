@@ -308,8 +308,8 @@ class Simulation:
         tick_lengths_s = config.tick_length.seconds
         slot_count = int(config.sim_duration / config.slot_length)
 
-        self.simulation_config.external_redis_communicator.sub_to_aggregator()
-        self.simulation_config.external_redis_communicator.start_communication()
+        config.external_redis_communicator.sub_to_aggregator()
+        config.external_redis_communicator.start_communication()
         self._update_and_send_results()
 
         if d3a.constants.RUN_IN_REALTIME:
@@ -609,7 +609,6 @@ def run_simulation(setup_module_name="", simulation_config=None, simulation_even
             redis_job_id=redis_job_id,
             **kwargs
         )
-
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
 

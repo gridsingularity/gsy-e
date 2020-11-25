@@ -38,9 +38,6 @@ COLLABORATION_ID = ""
 # or with the d3a-web. Default is to connect via Redis.
 EXTERNAL_CONNECTION_WEB = False
 
-LOAD_PENALTY_RATE = 29.2
-PV_PENALTY_RATE = 0
-
 SIMULATION_PAUSE_TIMEOUT = 600
 
 D3A_TEST_RUN = False

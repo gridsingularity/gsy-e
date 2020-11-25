@@ -24,7 +24,7 @@ from redis import StrictRedis
 from redis.exceptions import ConnectionError
 from rq import get_current_job
 from rq.exceptions import NoSuchJobError
-from d3a_interface.results_validator import results_validator
+from d3a_interface.results_validator import results_validator  # NOQA
 from d3a_interface.constants_limits import HeartBeat
 from d3a_interface.utils import RepeatingTimer
 from zlib import compress
@@ -199,32 +199,8 @@ class RedisSimulationCommunication:
 
         results = results.encode('utf-8')
         results = compress(results)
-
         self.redis_db.publish(self.result_channel, results)
         self._handle_redis_job_metadata()
-
-    def write_zip_results(self, zip_results):
-        if not self.is_enabled():
-            return
-
-        message_size_kb = os.stat(zip_results).st_size / 1000.0
-        if message_size_kb > 30000:
-            log.error(f"Do not publish simulation results bigger than 30 MB, current message "
-                      f"size {message_size_kb / 1000.0} MB.")
-            return
-
-        fp = open(zip_results, 'rb')
-        zip_data = fp.read()
-        fp.close()
-
-        zip_results_key = ZIP_RESULTS_KEY + str(self._simulation_id)
-
-        # Write results to a separate Redis key
-        self.redis_db.set(zip_results_key, zip_data)
-        # Inform d3a-web that a new zip file is available on this key
-        self.redis_db.publish(ZIP_RESULTS_CHANNEL, json.dumps(
-            {"job_id": self._simulation_id, "zip_redis_key": zip_results_key}
-        ))
 
     def publish_intermediate_results(self, endpoint_buffer):
         # Should have a different format in the future, hence the code duplication

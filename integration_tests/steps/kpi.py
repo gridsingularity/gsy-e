@@ -21,7 +21,6 @@ import glob
 import ast
 from behave import then
 from math import isclose
-from d3a.constants import LOAD_PENALTY_RATE, PV_PENALTY_RATE
 
 
 @then('{kpi} of {expected_kpis} are correctly reported')
@@ -105,11 +104,12 @@ def _is_load(device):
 def penalty_rate_respected(context, device_name):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     device = list(filter(lambda x: device_name in x.name, house1.children))[0]
+    from d3a_interface.constants_limits import ConstSettings
 
     if _is_pv(device):
-        DEVICE_PENALTY_RATE = PV_PENALTY_RATE
+        DEVICE_PENALTY_RATE = ConstSettings.PVSettings.PV_PENALTY_RATE
     elif _is_load(device):
-        DEVICE_PENALTY_RATE = LOAD_PENALTY_RATE
+        DEVICE_PENALTY_RATE = ConstSettings.LoadSettings.LOAD_PENALTY_RATE
     else:
         DEVICE_PENALTY_RATE = 0
 
