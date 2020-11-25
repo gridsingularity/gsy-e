@@ -8,7 +8,6 @@ numpy
 pendulum==2.1.2
 pip-tools
 plotly
-# TODO: Deactivating solidity compiler due to bug
 python-rex
 redis
 rq
