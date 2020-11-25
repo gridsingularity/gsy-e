@@ -23,16 +23,6 @@ After cloning this project setup a Python 3.6 virtualenv and install `fabric3`_:
     ~# pip install fabric3
 
 
-To install solidity follow the steps here:
-
-https://solidity.readthedocs.io/en/v0.5.1/installing-solidity.html#binary-packages
-
-To install the dependencies run the following command::
-
-    ~# fab sync
-
-
-
 The Simulation
 ==============
 
