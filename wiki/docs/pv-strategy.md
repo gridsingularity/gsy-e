@@ -11,7 +11,7 @@ The PV strategy determines the price of the PV offers on the spot market. It als
 
 
 
-For information buying rate decrease behaviour, please see: [Energy Rate Settings and Behaviour](how-strategies-adjust-prices.md). 
+For information buying rate decrease behaviour, please see: [Energy Rate Settings and Behaviour](how-strategies-adjust-prices.md).
 
 
 
@@ -28,11 +28,10 @@ How to add a PV device to the setup-file:
 ```
 Area('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
                                   final_selling_rate=5, fit_to_limit=True,
-                                  update_interval=duration(minutes=5)),
-     appliance=PVAppliance()),
+                                  update_interval=duration(minutes=5)))
 ```
 
-In order to understand how the strategy is actually decreasing its `offered_rate` in the case of not getting traded, see the following diagram. 
+In order to understand how the strategy is actually decreasing its `offered_rate` in the case of not getting traded, see the following diagram.
 
 ####  Relation of different parameters for energy pricing
 
