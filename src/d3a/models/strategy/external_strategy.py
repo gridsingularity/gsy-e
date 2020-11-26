@@ -171,7 +171,7 @@ class RedisExternalStrategyConnection(TwoSidedMarketRedisEventSubscriber):
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['seller'] = self.area.name
             arguments['seller_origin'] = self.area.name
-        except Exception as e:
+        except Exception:
             self.publish(
                 self._offer_response_channel,
                 {"error": "Incorrect offer request. Available parameters: (price, energy)."}
@@ -197,7 +197,6 @@ class RedisExternalStrategyConnection(TwoSidedMarketRedisEventSubscriber):
             arguments = self._parse_payload(payload)
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['buyer'] = self.area.name
-            arguments['seller'] = self.area.parent.name
             arguments['buyer_origin'] = self.area.name
         except Exception:
             self.publish(

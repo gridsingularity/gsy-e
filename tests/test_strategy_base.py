@@ -94,9 +94,9 @@ class FakeMarket:
             return Trade('trade', 0, offer, offer.seller, 'FakeOwner',
                          seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
 
-    def bid(self, price, energy, buyer, seller, original_bid_price=None,
+    def bid(self, price, energy, buyer, original_bid_price=None,
             buyer_origin=None):
-        return Bid(123, pendulum.now(), price, energy, buyer, seller, original_bid_price,
+        return Bid(123, pendulum.now(), price, energy, buyer, original_bid_price,
                    buyer_origin=buyer_origin)
 
 
@@ -220,7 +220,6 @@ def test_accept_post_bid(base):
     assert base.get_posted_bids(market)[0] == bid
     assert bid.energy == 5
     assert bid.price == 10
-    assert bid.seller == 'FakeArea'
     assert bid.buyer == 'FakeOwner'
 
 
