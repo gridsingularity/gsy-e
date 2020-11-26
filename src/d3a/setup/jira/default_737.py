@@ -15,8 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.pv import PVAppliance
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
@@ -38,14 +36,12 @@ def get_setup(config):
                                           reservoir_capacity_kg=56.0,
                                           reservoir_initial_capacity_kg=10,
                                           production_rate_kg_h=2.8
-                    ), appliance=SwitchableAppliance()),
+                    )),
 
-            Area('PV', strategy=PVPredefinedStrategy(panel_count=1),
-                 appliance=PVAppliance()),
-
+            Area('PV', strategy=PVPredefinedStrategy(panel_count=1)),
 
             Area("Commercial Energy Producer", strategy=CommercialStrategy(),
-                 appliance=SwitchableAppliance()),
+                 )
         ],
         config=config
     )

@@ -15,15 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
 from d3a.d3a_core.util import d3a_path
 import os
@@ -40,10 +37,10 @@ def get_setup(config):
                 [
                     Area('H1 DefinedLoad',
                          strategy=DefinedLoadStrategy(daily_load_profile=profile_path,
-                                                      final_buying_rate=36),
-                         appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50),
-                         appliance=SwitchableAppliance()),
+                                                      final_buying_rate=36)
+                         ),
+                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50)
+                         ),
                 ]
             ),
             Area(
@@ -53,20 +50,18 @@ def get_setup(config):
                                                                        hrs_per_day=4,
                                                                        hrs_of_day=list(
                                                                            range(12, 16)),
-                                                                       final_buying_rate=35),
-                         appliance=SwitchableAppliance()),
-                    Area('H2 PV', strategy=PVStrategy(1, 80),
-                         appliance=PVAppliance()),
+                                                                       final_buying_rate=35)
+                         ),
+                    Area('H2 PV', strategy=PVStrategy(1, 80)
+                         ),
 
                 ]
             ),
             Area('Finite Commercial Producer',
-                 strategy=FinitePowerPlant(energy_rate=30, max_available_power_kW=0.01),
-                 appliance=SwitchableAppliance()
+                 strategy=FinitePowerPlant(energy_rate=30, max_available_power_kW=0.01)
                  ),
             Area('Commercial Energy Producer',
-                 strategy=CommercialStrategy(energy_rate=30),
-                 appliance=SimpleAppliance()
+                 strategy=CommercialStrategy(energy_rate=30)
                  ),
         ],
         config=config

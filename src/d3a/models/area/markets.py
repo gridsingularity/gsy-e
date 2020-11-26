@@ -92,7 +92,6 @@ class AreaMarkets:
                 del past_markets[pm].bids
                 del past_markets[pm].bid_history
                 del past_markets[pm].traded_energy
-                del past_markets[pm].accumulated_actual_energy_agg
                 del past_markets[pm]
 
     @staticmethod

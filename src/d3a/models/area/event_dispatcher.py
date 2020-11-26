@@ -27,7 +27,6 @@ from d3a.models.strategy.area_agents.one_sided_alternative_pricing_agent import 
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedPayAsBidAgent
 from d3a.models.strategy.area_agents.two_sided_pay_as_clear_agent import TwoSidedPayAsClearAgent
 from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
-from d3a.models.appliance.inter_area import InterAreaAppliance
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import create_subdict_or_update
 from d3a.models.area.redis_dispatcher.market_event_dispatcher import AreaRedisMarketEventDispatcher
@@ -102,7 +101,7 @@ class AreaDispatcher:
             for area_name in sorted(agents, key=lambda _: random()):
                 agents[area_name].event_listener(event_type, **kwargs)
 
-    def _should_dispatch_to_strategies_appliances(self, event_type):
+    def _should_dispatch_to_strategies(self, event_type):
         if event_type is AreaEvent.ACTIVATE:
             return True
         else:
@@ -110,17 +109,15 @@ class AreaDispatcher:
 
     def event_listener(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         if event_type is AreaEvent.TICK and \
-                self._should_dispatch_to_strategies_appliances(event_type):
+                self._should_dispatch_to_strategies(event_type):
             self.area.tick_and_dispatch()
         if event_type is AreaEvent.MARKET_CYCLE:
             self.area.cycle_markets(_trigger_event=True)
         elif event_type is AreaEvent.ACTIVATE:
             self.area.activate()
-        if self._should_dispatch_to_strategies_appliances(event_type):
+        if self._should_dispatch_to_strategies(event_type):
             if self.area.strategy:
                 self.area.strategy.event_listener(event_type, **kwargs)
-            if self.area.appliance:
-                self.area.appliance.event_listener(event_type, **kwargs)
         elif (not self.area.events.is_enabled or not self.area.events.is_connected) \
                 and event_type == AreaEvent.MARKET_CYCLE and self.area.strategy is not None:
             self.area.strategy.event_on_disabled_area()
@@ -200,10 +197,6 @@ class AreaDispatcher:
             self.area.parent.dispatcher._balancing_agents = create_subdict_or_update(
                 self.area.parent.dispatcher._balancing_agents, market.time_slot,
                 {self.area.name: ba})
-
-        if self.area.parent:
-            # Add inter area appliance to report energy
-            self.area.appliance = InterAreaAppliance(self.area.parent, self.area)
 
     def _delete_past_agents(self, area_agent_member):
         if not constants.D3A_TEST_RUN:

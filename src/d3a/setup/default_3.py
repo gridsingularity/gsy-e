@@ -15,9 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.pv import PVAppliance
-from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.pv import PVStrategy
@@ -34,8 +31,8 @@ def get_setup(config):
                     Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
                                                                        hrs_per_day=4,
                                                                        hrs_of_day=list(
-                                                                           range(12, 16))),
-                         appliance=SwitchableAppliance()),
+                                                                           range(12, 16)))
+                         ),
                 ]
             ),
             Area(
@@ -44,16 +41,15 @@ def get_setup(config):
                     Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
                                                                        hrs_per_day=4,
                                                                        hrs_of_day=list(
-                                                                           range(12, 16))),
-                         appliance=SwitchableAppliance()),
-                    Area('H2 PV', strategy=PVStrategy(6, 80),
-                         appliance=PVAppliance()),
+                                                                           range(12, 16)))
+                         ),
+                    Area('H2 PV', strategy=PVStrategy(6, 80)
+                         ),
                 ]
             ),
 
             Area('Commercial Energy Producer',
-                 strategy=CommercialStrategy(energy_rate=30),
-                 appliance=SimpleAppliance()
+                 strategy=CommercialStrategy(energy_rate=30)
                  ),
 
         ],
