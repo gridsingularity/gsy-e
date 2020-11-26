@@ -17,8 +17,7 @@ profile_kW = {
     12: 0.2,
     19: 0.15,
     22: 0.1
-}         
+}  
 Area('Finite Power Plant', strategy=FinitePowerPlant(energy_rate=31.3,
-                                                     max_available_power_kW=profile_kW),
-                           appliance=SwitchableAppliance()),
+                                                     max_available_power_kW=profile_kW))
 ```

@@ -15,10 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
-from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
@@ -73,22 +70,22 @@ def get_setup(config):
                             'House 1',
                             [
                                     Area('H1 PV', strategy=PVUserProfileStrategy(
-                                                power_profile=house1_pv_production),
-                                         appliance=PVAppliance()),
+                                                power_profile=house1_pv_production)
+                                         ),
                                     Area('H1 General Load', strategy=DefinedLoadStrategy(
                                         daily_load_profile=load_profile_path,
-                                        final_buying_rate=28),
-                                         appliance=SwitchableAppliance()),
+                                        final_buying_rate=28)
+                                         ),
                              ]),
                     Area(
                             'House 2',
                             [
-                                    Area('H2 PV', strategy=PVStrategy(30),
-                                         appliance=PVAppliance()),
+                                    Area('H2 PV', strategy=PVStrategy(30)
+                                         ),
                                     Area('H2 General Load',
                                          strategy=DefinedLoadStrategy(
                                              daily_load_profile=house2_load_dict),
-                                         appliance=SwitchableAppliance()),
+                                         )
                              ]),
                     Area(
                             'House 3',
@@ -96,7 +93,7 @@ def get_setup(config):
                                     Area('H3 General Load', strategy=DefinedLoadStrategy(
                                         daily_load_profile=house3_load_dict,
                                         final_buying_rate=25),
-                                         appliance=SwitchableAppliance()),
+                                         )
                             ]),
                     Area(
                             'House 4',
@@ -105,10 +102,10 @@ def get_setup(config):
                                          strategy=DefinedLoadStrategy(
                                              daily_load_profile=load_profile_path,
                                              final_buying_rate=24),
-                                         appliance=SwitchableAppliance()),
+                                         )
                             ]),
                     Area('Infinite Power Plant', strategy=CommercialStrategy(energy_rate=30),
-                         appliance=SimpleAppliance()),
+                         )
                             ],
             config=config
         )

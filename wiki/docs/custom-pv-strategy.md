@@ -36,6 +36,5 @@ How to add a PV device with custom profile to the setup-file:
 ```
 user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
 Area('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path,
-                                             panel_count=),
-              appliance=PVAppliance()),
+                                             panel_count=))
 ```

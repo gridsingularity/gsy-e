@@ -25,8 +25,8 @@ Area('Load', strategy=LoadHoursStrategy(avg_power_W=200,
                                         hrs_per_day=6,
                                         hrs_of_day=list(range(12, 18)),
                                         initial_buying_rate=0,
-                                        final_buying_rate=35),
-             appliance=SwitchableAppliance())
+                                        final_buying_rate=35)
+             )
 ```
 
 
@@ -46,7 +46,7 @@ For example, a user can input 5 `hrs_per_day`, for example and give a wider rang
 
 
 
-For information on buying rate decrease behaviour, please see: [Energy Rate Settings and Behaviour](https://gridsingularity.atlassian.net/wiki/spaces/D3AD/pages/1342668821/Energy+Rate+Settings+and+Behaviour). 
+For information on buying rate decrease behaviour, please see: [Energy Rate Settings and Behaviour](https://gridsingularity.atlassian.net/wiki/spaces/D3AD/pages/1342668821/Energy+Rate+Settings+and+Behaviour).
 
 #### Relation of different parameters for energy pricing
 

@@ -15,10 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a_interface.constants_limits import ConstSettings
@@ -40,16 +38,15 @@ def get_setup(config):
                 'House 1',
                 [
                     Area('H1 Storage', strategy=StorageStrategy(initial_soc=12,
-                                                                battery_capacity_kWh=50.0),
-                         appliance=SwitchableAppliance()),
+                                                                battery_capacity_kWh=50.0)
+                         ),
                 ]
             ),
             Area(
                 'House 2',
                 [
                     Area('H2 PV',
-                         strategy=PVStrategy(4, 0),
-                         appliance=PVAppliance()
+                         strategy=PVStrategy(4, 0)
                          ),
 
                 ]

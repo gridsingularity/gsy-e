@@ -15,8 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.pv import PVAppliance
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
@@ -37,11 +35,10 @@ def get_setup(config):
                     Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
                                                                        hrs_per_day=12,
                                                                        hrs_of_day=list(
-                                                                           range(7, 20))),
-                         appliance=SwitchableAppliance()),
+                                                                           range(7, 20)))
+                         ),
                     Area('H1 PV', strategy=PVStrategy(panel_count=1),
-                         appliance=PVAppliance()),
-
+                         )
                 ]
             ),
             Area(
@@ -50,8 +47,8 @@ def get_setup(config):
                     Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
                                                                        hrs_per_day=4,
                                                                        hrs_of_day=list(
-                                                                           range(12, 16))),
-                         appliance=SwitchableAppliance()),
+                                                                           range(12, 16)))
+                         ),
 
                 ]
             ),

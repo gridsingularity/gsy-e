@@ -17,10 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from pendulum import duration
 
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
 
@@ -46,7 +44,7 @@ def get_setup(config):
                         initial_buying_rate=ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
                         final_buying_rate=ConstSettings.LoadSettings.FINAL_BUYING_RATE,
                         fit_to_limit=True, update_interval=duration(minutes=14)
-                    ), appliance=SwitchableAppliance()),
+                    )),
                 ]
             ),
             Area(
@@ -55,8 +53,7 @@ def get_setup(config):
                     Area('H2 PV',
                          strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
                                              final_selling_rate=0, fit_to_limit=True,
-                                             update_interval=duration(minutes=5)),
-                         appliance=PVAppliance()
+                                             update_interval=duration(minutes=5))
                          ),
 
                 ]

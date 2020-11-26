@@ -15,8 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
@@ -29,13 +27,12 @@ def get_setup(config):
             Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
                                                                hrs_per_day=9,
                                                                hrs_of_day=list(
-                                                                   range(8, 18))),
-                 appliance=SwitchableAppliance()),
+                                                                   range(8, 18)))
+                 ),
 
             Area('Market Maker',
                  strategy=MarketMakerStrategy(energy_rate=30,
-                                              grid_connected=True),
-                 appliance=SimpleAppliance()
+                                              grid_connected=True)
                  ),
 
         ],
