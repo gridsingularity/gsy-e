@@ -15,11 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
-from d3a.models.appliance.simple import SimpleAppliance
 from d3a.d3a_core.util import d3a_path
 import os
 
@@ -42,12 +40,12 @@ def get_setup(config):
                 [
                     Area('H1 DefinedLoad',
                          strategy=DefinedLoadStrategy(daily_load_profile=profile_path,
-                                                      final_buying_rate=36),
-                         appliance=SwitchableAppliance()),
+                                                      final_buying_rate=36)
+                         ),
                 ]
             ),
-            Area('Commercial Energy Producer', strategy=CommercialStrategy(),
-                 appliance=SimpleAppliance()
+            Area('Commercial Energy Producer', strategy=CommercialStrategy()
+
                  ),
         ],
         config=config

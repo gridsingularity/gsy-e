@@ -15,11 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.area.events import StrategyEvents
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy
-from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 
 
@@ -35,7 +33,6 @@ def get_setup(config):
                                                                  power_profile={0: 200,
                                                                                 12: 400,
                                                                                 19: 0}),
-                         appliance=PVAppliance(),
                          event_list=[StrategyEvents(14, {'power_profile': {0: 200,
                                                                            14: 600,
                                                                            19: 0}})])
@@ -45,8 +42,8 @@ def get_setup(config):
                                                          hrs_per_day=24,
                                                          hrs_of_day=list(
                                                              range(0, 24)),
-                                                         final_buying_rate=35),
-                 appliance=SwitchableAppliance())
+                                                         final_buying_rate=35)
+                 )
         ],
         config=config
     )

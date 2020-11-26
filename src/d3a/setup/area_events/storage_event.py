@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.area.event_types import StrategyEvents
 from d3a.models.strategy.storage import StorageStrategy
@@ -30,7 +29,6 @@ def get_setup(config):
                 'House 1',
                 children=[
                     Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50),
-                         appliance=SwitchableAppliance(),
                          event_list=[StrategyEvents(0, {'initial_selling_rate': 31}),
                                      StrategyEvents(12, {'initial_selling_rate': 33}),
                                      StrategyEvents(15, {'initial_selling_rate': 40,
@@ -46,7 +44,7 @@ def get_setup(config):
                                                              range(0, 24)),
                                                          initial_buying_rate=35,
                                                          final_buying_rate=35),
-                 appliance=SwitchableAppliance())
+                 )
         ],
         config=config
     )

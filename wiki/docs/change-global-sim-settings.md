@@ -61,10 +61,10 @@ def get_setup(config):
             Area('General Load', strategy=LoadHoursStrategy(avg_power_W=200,
                                                             hrs_per_day=4,
                                                             hrs_of_day=list(range(12, 16)),
-                                                            final_buying_rate=35),
-                 appliance=SwitchableAppliance()),
-            Area('PV', strategy=PVStrategy(4, 80),
-                 appliance=PVAppliance()),
+                                                            final_buying_rate=35)
+                 ),
+            Area('PV', strategy=PVStrategy(4, 80)
+                 ),
         ],
         config=config
     )

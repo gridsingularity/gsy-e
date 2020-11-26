@@ -8,9 +8,7 @@ We recommend to train your smart agents on multiple configurations to achieve be
 # flake8: noqa
 import os
 import platform
-from d3a.models.appliance.pv import PVAppliance
-from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.appliance.switchable import SwitchableAppliance
+
 from d3a.models.area import Area
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
@@ -100,18 +98,18 @@ def get_setup(config):
                             Area('h1-load-s', strategy=LoadProfileExternalStrategy(daily_load_profile=load1,
                                                                                    initial_buying_rate=Houses_initial_buying_rate,
                                                                                    use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
 
                             Area('h1-pv-s', strategy=PVUserProfileExternalStrategy(power_profile=pv1,
                                                                                    initial_selling_rate=PV_initial,
                                                                                    final_selling_rate=PV_final),
-                                 appliance=PVAppliance()),
+                                 ),
 
                             Area('h1-storage-s', strategy=StorageExternalStrategy(initial_soc=50,
                                                                        min_allowed_soc=10,
                                                                        battery_capacity_kWh=5,
                                                                        max_abs_battery_power_kW=4),
-                                 appliance=SwitchableAppliance()),
+                                 ),
 
                         ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
                     ),
@@ -121,12 +119,12 @@ def get_setup(config):
                             Area('h2-load', strategy=DefinedLoadStrategy(daily_load_profile=load2,
                                                                          initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
 
                             Area('h2-pv', strategy=PVUserProfileStrategy(power_profile=pv2,
                                                                          initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          final_selling_rate=PV_final),
-                                 appliance=PVAppliance()),
+                                 ),
 
                             Area('h2-storage', strategy=StorageStrategy(initial_soc=50,
                                                                        min_allowed_soc=10,
@@ -136,7 +134,7 @@ def get_setup(config):
                                                                        final_buying_rate=15,
                                                                        initial_selling_rate=29,
                                                                        final_selling_rate=15.01),
-                                 appliance=SwitchableAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -145,12 +143,12 @@ def get_setup(config):
                             Area('h3-load', strategy=DefinedLoadStrategy(daily_load_profile=load3,
                                                                          initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
 
                             Area('h3-pv', strategy=PVUserProfileStrategy(power_profile=pv3,
                                                                          initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          final_selling_rate=PV_final),
-                                 appliance=PVAppliance()),
+                                 ),
 
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
@@ -160,12 +158,12 @@ def get_setup(config):
                             Area('h4-load', strategy=DefinedLoadStrategy(daily_load_profile=load4,
                                                                          initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
 
                             Area('h4-pv', strategy=PVUserProfileStrategy(power_profile=pv4,
                                                                          initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          final_selling_rate=PV_final),
-                                 appliance=PVAppliance()),
+                                 ),
 
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
@@ -175,7 +173,7 @@ def get_setup(config):
                             Area('h5-load', strategy=DefinedLoadStrategy(daily_load_profile=load5,
                                                                          initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -184,12 +182,12 @@ def get_setup(config):
                             Area('h6-load', strategy=DefinedLoadStrategy(daily_load_profile=load6,
                                                                          initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
 
                             Area('h6-pv', strategy=PVUserProfileStrategy(power_profile=pv6,
                                                                          initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          final_selling_rate=PV_final),
-                                 appliance=PVAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -198,12 +196,12 @@ def get_setup(config):
                             Area('h7-load', strategy=DefinedLoadStrategy(daily_load_profile=load7,
                                                                          initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
 
                             Area('h7-pv', strategy=PVUserProfileStrategy(power_profile=pv7,
                                                                          initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          final_selling_rate=PV_final),
-                                 appliance=PVAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -212,12 +210,12 @@ def get_setup(config):
                             Area('h8-load', strategy=DefinedLoadStrategy(daily_load_profile=load8,
                                                                          initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
 
                             Area('h8-pv', strategy=PVUserProfileStrategy(power_profile=pv8,
                                                                          initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          final_selling_rate=PV_final),
-                                 appliance=PVAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -226,12 +224,12 @@ def get_setup(config):
                             Area('h9-load', strategy=DefinedLoadStrategy(daily_load_profile=load9,
                                                                          initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
 
                             Area('h9-pv', strategy=PVUserProfileStrategy(power_profile=pv9,
                                                                          initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          final_selling_rate=PV_final),
-                                 appliance=PVAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -240,12 +238,12 @@ def get_setup(config):
                             Area('h10-load', strategy=DefinedLoadStrategy(daily_load_profile=load10,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
 
                             Area('h10-pv', strategy=PVUserProfileStrategy(power_profile=pv10,
                                                                           initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           final_selling_rate=PV_final),
-                                 appliance=PVAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -254,12 +252,12 @@ def get_setup(config):
                             Area('h11-load', strategy=DefinedLoadStrategy(daily_load_profile=load11,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
 
                             Area('h11-pv', strategy=PVUserProfileStrategy(power_profile=pv11,
                                                                           initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           final_selling_rate=PV_final),
-                                 appliance=PVAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -268,12 +266,12 @@ def get_setup(config):
                             Area('h12-load', strategy=DefinedLoadStrategy(daily_load_profile=load12,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
 
                             Area('h12-pv', strategy=PVUserProfileStrategy(power_profile=pv12,
                                                                           initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           final_selling_rate=PV_final),
-                                 appliance=PVAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -282,12 +280,12 @@ def get_setup(config):
                             Area('h13-load', strategy=DefinedLoadStrategy(daily_load_profile=load13,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
 
                             Area('h13-pv', strategy=PVUserProfileStrategy(power_profile=pv13,
                                                                           initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           final_selling_rate=PV_final),
-                                 appliance=PVAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -296,12 +294,12 @@ def get_setup(config):
                             Area('h14-load', strategy=DefinedLoadStrategy(daily_load_profile=load14,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
 
                             Area('h14-pv', strategy=PVUserProfileStrategy(power_profile=pv14,
                                                                           initial_selling_rate=PV_initial * round((random() - 0.5) * VARIANCE_RATES + 1, 2),
                                                                           final_selling_rate=PV_final),
-                                 appliance=PVAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -310,7 +308,7 @@ def get_setup(config):
                             Area('h15-load', strategy=DefinedLoadStrategy(daily_load_profile=load15,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -319,7 +317,7 @@ def get_setup(config):
                             Area('h16-load', strategy=DefinedLoadStrategy(daily_load_profile=load16,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -328,7 +326,7 @@ def get_setup(config):
                             Area('h17-load', strategy=DefinedLoadStrategy(daily_load_profile=load17,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -337,12 +335,12 @@ def get_setup(config):
                             Area('h18-load', strategy=DefinedLoadStrategy(daily_load_profile=load18,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
 
                             Area('h18-pv', strategy=PVUserProfileStrategy(power_profile=pv18,
                                                                           initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           final_selling_rate=PV_final),
-                                 appliance=PVAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -351,12 +349,12 @@ def get_setup(config):
                             Area('h19-load', strategy=DefinedLoadStrategy(daily_load_profile=load19,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
 
                             Area('h19-pv', strategy=PVUserProfileStrategy(power_profile=pv19,
                                                                           initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           final_selling_rate=PV_final),
-                                 appliance=PVAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -365,12 +363,12 @@ def get_setup(config):
                             Area('h20-load', strategy=DefinedLoadStrategy(daily_load_profile=load20,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
 
                             Area('h20-pv', strategy=PVUserProfileStrategy(power_profile=pv20,
                                                                           initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           final_selling_rate=PV_final),
-                                 appliance=PVAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -379,12 +377,12 @@ def get_setup(config):
                             Area('h21-load', strategy=DefinedLoadStrategy(daily_load_profile=load21,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
 
                             Area('h21-pv', strategy=PVUserProfileStrategy(power_profile=pv21,
                                                                           initial_selling_rate=PV_initial*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           final_selling_rate=PV_final),
-                                 appliance=PVAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -393,7 +391,7 @@ def get_setup(config):
                             Area('h22-load', strategy=DefinedLoadStrategy(daily_load_profile=load22,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -402,7 +400,7 @@ def get_setup(config):
                             Area('h23-load', strategy=DefinedLoadStrategy(daily_load_profile=load23,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -411,7 +409,7 @@ def get_setup(config):
                             Area('h24-load', strategy=DefinedLoadStrategy(daily_load_profile=load24,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -420,7 +418,7 @@ def get_setup(config):
                             Area('h25-load', strategy=DefinedLoadStrategy(daily_load_profile=load25,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -429,7 +427,7 @@ def get_setup(config):
                             Area('h26-load', strategy=DefinedLoadStrategy(daily_load_profile=load26,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -438,7 +436,7 @@ def get_setup(config):
                             Area('h27-load', strategy=DefinedLoadStrategy(daily_load_profile=load27,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -447,7 +445,7 @@ def get_setup(config):
                             Area('h28-load', strategy=DefinedLoadStrategy(daily_load_profile=load28,
                                                                           initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                           use_market_maker_rate=True),
-                                 appliance=SwitchableAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                 ], grid_fee_percentage=0, grid_fee_constant=0, external_connection_available=True
@@ -457,10 +455,10 @@ def get_setup(config):
             Area('Feed-in tariff', strategy=LoadHoursStrategy(avg_power_W=100000000, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
                                                               initial_buying_rate=11,
                                                               final_buying_rate=11),
-                 appliance=SwitchableAppliance()),
+                 ),
 
 
-            Area('Market Maker', strategy=MarketMakerStrategy(energy_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE, grid_connected=True), appliance=SimpleAppliance()),
+            Area('Market Maker', strategy=MarketMakerStrategy(energy_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE, grid_connected=True)),
 
 
         ],

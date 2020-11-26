@@ -15,11 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.appliance.simple import SimpleAppliance
 
 """
 Setup file for displaying the infinite power plant strategy.
@@ -46,12 +44,11 @@ def get_setup(config):
                                                                        hrs_per_day=23,
                                                                        hrs_of_day=list(
                                                                            range(0, 23)),
-                                                                       final_buying_rate=40),
-                         appliance=SwitchableAppliance()),
+                                                                       final_buying_rate=40)
+                         ),
                 ]
             ),
-            Area('Commercial Energy Producer', strategy=CommercialStrategy(),
-                 appliance=SimpleAppliance()
+            Area('Commercial Energy Producer', strategy=CommercialStrategy()
                  ),
 
         ],

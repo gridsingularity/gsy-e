@@ -24,7 +24,6 @@ from slugify import slugify
 from uuid import uuid4
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import AreaException
-from d3a.models.appliance.base import BaseAppliance
 from d3a.models.config import SimulationConfig
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.strategy import BaseStrategy
@@ -64,7 +63,6 @@ class Area:
     def __init__(self, name: str = None, children: List["Area"] = None,
                  uuid: str = None,
                  strategy: BaseStrategy = None,
-                 appliance: BaseAppliance = None,
                  config: SimulationConfig = None,
                  budget_keeper=None,
                  balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
@@ -100,7 +98,6 @@ class Area:
         if (len(self.children) > 0) and (strategy is not None):
             raise AreaException("A leaf area can not have children.")
         self.strategy = strategy
-        self.appliance = appliance
         self._config = config
         self._global_objects = None
         self.events = Events(event_list, self)
@@ -244,25 +241,19 @@ class Area:
             self.current_tick = current_tick
         if bc:
             self._bc = bc
-        for attr, kind in [(self.strategy, 'Strategy'), (self.appliance, 'Appliance')]:
-            if attr:
-                if self.parent:
-                    attr.area = self.parent
-                    attr.owner = self
-                else:
-                    raise AreaException(
-                        "{kind} {attr.__class__.__name__} "
-                        "on area {s} without parent!".format(
-                            kind=kind,
-                            attr=attr,
-                            s=self
-                        )
+        if self.strategy:
+            if self.parent:
+                self.strategy.area = self.parent
+                self.strategy.owner = self
+            else:
+                raise AreaException(
+                    f"Strategy {self.strategy.__class__.__name__} on area {self} without parent!"
                     )
 
-            if self.budget_keeper:
-                self.budget_keeper.activate()
+        if self.budget_keeper:
+            self.budget_keeper.activate()
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            self.grid_fee_percentage = 0
+            self._set_grid_fees(0, 0)
 
         # Cycle markets without triggering it's own event chain.
         self.cycle_markets(_trigger_event=False)
@@ -528,16 +519,7 @@ class Area:
         triggers = []
         if isinstance(self.strategy, TriggerMixin):
             triggers.extend(self.strategy.available_triggers)
-        if isinstance(self.appliance, TriggerMixin):
-            triggers.extend(self.appliance.available_triggers)
         return {t.name: t for t in triggers}
-
-    def _fire_trigger(self, trigger_name, **params):
-        for target in (self.strategy, self.appliance):
-            if isinstance(target, TriggerMixin):
-                for trigger in target.available_triggers:
-                    if trigger.name == trigger_name:
-                        return target.fire_trigger(trigger_name, **params)
 
     def update_config(self, **kwargs):
         if not self.config:
