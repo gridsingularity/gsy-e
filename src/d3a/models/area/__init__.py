@@ -131,7 +131,6 @@ class Area:
     def restore_state(self, saved_state):
         self.current_tick = saved_state["current_tick"]
         self.stats.restore_state(saved_state["area_stats"])
-        self.cycle_markets(_trigger_event=False, _market_cycle=True)
         if self.strategy is not None:
             self.strategy.restore_state(saved_state)
 
