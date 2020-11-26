@@ -377,7 +377,8 @@ def storage_strategy_test6(area_test6, market_test6, called):
 def test_if_trades_are_handled_correctly(storage_strategy_test6, market_test6):
     storage_strategy_test6.area.get_future_market_from_id = \
         lambda _id: market_test6 if _id == market_test6.id else None
-    storage_strategy_test6.state.add_default_values_to_state_profiles(storage_strategy_test6.area)
+    storage_strategy_test6.state.add_default_values_to_state_profiles(
+        storage_strategy_test6.future_markets_time_slots)
     storage_strategy_test6.event_trade(market_id=market_test6.id, trade=market_test6.trade)
     assert market_test6.trade.offer in \
         storage_strategy_test6.offers.sold[market_test6.id]
@@ -703,7 +704,7 @@ def storage_strategy_test13(area_test13, called):
 
 def test_storage_event_trade(storage_strategy_test11, market_test13):
     storage_strategy_test11.state.add_default_values_to_state_profiles(
-        storage_strategy_test11.area)
+        storage_strategy_test11.future_markets_time_slots)
     storage_strategy_test11.event_trade(market_id=market_test13.id, trade=market_test13.trade)
     assert storage_strategy_test11.state.pledged_sell_kWh[market_test13.time_slot] == \
         market_test13.trade.offer.energy

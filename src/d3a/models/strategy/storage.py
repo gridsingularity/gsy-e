@@ -247,7 +247,7 @@ class StorageStrategy(BidEnabledStrategy):
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
 
     def event_activate(self):
-        self.state.add_default_values_to_state_profiles(self.area)
+        self.state.add_default_values_to_state_profiles(self.future_markets_time_slots)
         self.event_activate_energy()
         self.event_activate_price()
         self.offer_update.update_and_populate_price_settings(self.area)
@@ -342,12 +342,12 @@ class StorageStrategy(BidEnabledStrategy):
             raise ValueError("energy_rate_change_per_update should be a non-negative value.")
 
     def event_tick(self):
-        self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
+        self.state.clamp_energy_to_buy_kWh(self.future_markets_time_slots)
 
         for market in self.area.all_markets:
             if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                     ConstSettings.IAASettings.MARKET_TYPE == 3:
-                self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
+                self.state.clamp_energy_to_buy_kWh(self.future_markets_time_slots)
                 if self.are_bids_posted(market.id):
                     self.bid_update.update_posted_bids_over_ticks(market, self)
                 else:
@@ -432,10 +432,10 @@ class StorageStrategy(BidEnabledStrategy):
         current_market = self.area.next_market
         past_market = self.area.last_past_market
 
-        self.state.add_default_values_to_state_profiles(self.area)
         self.state.market_cycle(
-            past_market.time_slot if past_market else current_market.time_slot,
-            current_market.time_slot
+            past_market.time_slot if past_market else None,
+            current_market.time_slot,
+            self.future_markets_time_slots
         )
 
         if self.state.used_storage > 0:
@@ -589,9 +589,10 @@ class StorageStrategy(BidEnabledStrategy):
             market = self.area.get_future_market_from_id(market_id)
             # sometimes the offer event arrives earlier than the market_cycle event,
             # so the default values have to be written here too:
+            # TODO: Evaluate for removal
             self.offer_update.update_and_populate_price_settings(self.area)
             self.bid_update.update_and_populate_price_settings(self.area)
-            self.state.add_default_values_to_state_profiles(self.area)
+            self.state.add_default_values_to_state_profiles(self.future_markets_time_slots)
 
             if offer.id in market.offers and \
                     offer.seller != self.owner.name and \

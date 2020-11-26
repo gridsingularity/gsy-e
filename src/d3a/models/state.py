@@ -133,17 +133,24 @@ class StorageState:
         }
 
     def restore_state(self, state_dict):
-        self.pledged_sell_kWh = convert_str_to_pendulum_in_dict(state_dict["pledged_sell_kWh"])
-        self.offered_sell_kWh = convert_str_to_pendulum_in_dict(state_dict["offered_sell_kWh"])
-        self.pledged_buy_kWh = convert_str_to_pendulum_in_dict(state_dict["pledged_buy_kWh"])
-        self.offered_buy_kWh = convert_str_to_pendulum_in_dict(state_dict["offered_buy_kWh"])
-        self.charge_history = convert_str_to_pendulum_in_dict(state_dict["charge_history"])
-        self.charge_history_kWh = convert_str_to_pendulum_in_dict(state_dict["charge_history_kWh"])
-        self.offered_history = convert_str_to_pendulum_in_dict(state_dict["offered_history"])
-        self.used_history = convert_str_to_pendulum_in_dict(state_dict["used_history"])
-        self.energy_to_buy_dict = convert_str_to_pendulum_in_dict(state_dict["energy_to_buy_dict"])
-        self.energy_to_sell_dict = convert_str_to_pendulum_in_dict(
-            state_dict["energy_to_sell_dict"])
+        self.pledged_sell_kWh.update(
+            convert_str_to_pendulum_in_dict(state_dict["pledged_sell_kWh"]))
+        self.offered_sell_kWh.update(
+            convert_str_to_pendulum_in_dict(state_dict["offered_sell_kWh"]))
+        self.pledged_buy_kWh.update(
+            convert_str_to_pendulum_in_dict(state_dict["pledged_buy_kWh"]))
+        self.offered_buy_kWh.update(
+            convert_str_to_pendulum_in_dict(state_dict["offered_buy_kWh"]))
+        self.charge_history.update(convert_str_to_pendulum_in_dict(state_dict["charge_history"]))
+        self.charge_history_kWh.update(
+            convert_str_to_pendulum_in_dict(state_dict["charge_history_kWh"]))
+        self.offered_history.update(
+            convert_str_to_pendulum_in_dict(state_dict["offered_history"]))
+        self.used_history.update(convert_str_to_pendulum_in_dict(state_dict["used_history"]))
+        self.energy_to_buy_dict.update(
+            convert_str_to_pendulum_in_dict(state_dict["energy_to_buy_dict"]))
+        self.energy_to_sell_dict.update(convert_str_to_pendulum_in_dict(
+            state_dict["energy_to_sell_dict"]))
         self._used_storage = state_dict["used_storage"]
         self._battery_energy_per_slot = state_dict["battery_energy_per_slot"]
 
@@ -271,9 +278,8 @@ class StorageState:
         self.charge_history[time_slot] = 100.0 * self.used_storage / self.capacity
         self.charge_history_kWh[time_slot] = self.used_storage
 
-    def add_default_values_to_state_profiles(self, area):
-        for market in area.all_markets:
-            time_slot = market.time_slot
+    def add_default_values_to_state_profiles(self, future_time_slots):
+        for time_slot in future_time_slots:
             write_default_to_dict(self.pledged_sell_kWh, time_slot, 0)
             write_default_to_dict(self.pledged_buy_kWh, time_slot, 0)
             write_default_to_dict(self.offered_sell_kWh, time_slot, 0)
@@ -292,17 +298,19 @@ class StorageState:
                                    ESSEnergyOrigin.LOCAL: 0.,
                                    ESSEnergyOrigin.EXTERNAL: 0.})
 
-    def market_cycle(self, past_time_slot, time_slot):
+    def market_cycle(self, past_time_slot, current_time_slot, all_future_time_slots):
         """
         Simulate actual Energy flow by removing pledged storage and added bought energy to the
         used_storage
         """
+        self.add_default_values_to_state_profiles(all_future_time_slots)
+
         if past_time_slot:
             self._used_storage -= self.pledged_sell_kWh[past_time_slot]
             self._used_storage += self.pledged_buy_kWh[past_time_slot]
 
-        self.calculate_soc_for_time_slot(time_slot)
-        self.offered_history[time_slot] = self.offered_sell_kWh[time_slot]
+        self.calculate_soc_for_time_slot(current_time_slot)
+        self.offered_history[current_time_slot] = self.offered_sell_kWh[current_time_slot]
 
         if past_time_slot:
             for energy_type in self._used_storage_share:
