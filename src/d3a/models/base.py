@@ -20,7 +20,6 @@ from logging import getLogger
 from cached_property import cached_property
 
 from d3a.d3a_core.util import TaggedLogWrapper
-from d3a.models.area import Area  # NOQA
 
 log = getLogger(__name__)
 
@@ -29,9 +28,9 @@ class AreaBehaviorBase:
     """Base class used by area behaviour defining classes `BaseStrategy`"""
     def __init__(self):
         # `area` is the area we trade in
-        self.area = None  # type: Area
+        self.area = None
         # `owner` is the area of which we are the strategy, usually a child of `area`
-        self.owner = None  # type: Area
+        self.owner = None
 
     @cached_property
     def _log(self):
