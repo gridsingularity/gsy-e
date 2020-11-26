@@ -15,8 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
-from d3a.models.strategy.predefined_load import DefinedLoadStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
@@ -167,12 +166,11 @@ class ExportLeafData(ExportData):
                     s.charge_history_kWh[slot],
                     s.offered_history[slot],
                     s.charge_history[slot]]
-        elif isinstance(self.area.strategy, (LoadHoursStrategy, DefinedLoadStrategy,
-                                             DefinedLoadStrategy, CellTowerLoadHoursStrategy)):
+        elif isinstance(self.area.strategy, (LoadHoursStrategy)):
             desired = self.area.strategy.state.desired_energy_Wh.get(slot, 0) / 1000
             return [desired, self._traded(market) + desired]
         elif isinstance(self.area.strategy, PVStrategy):
-            produced = market.actual_energy_agg.get(self.area.name, 0)
+            produced = self.area.strategy.state.available_energy_kWh.get(slot, 0)
             return [produced,
                     round(produced -
                           self.area.strategy.energy_production_forecast_kWh.get(slot, 0), 4),

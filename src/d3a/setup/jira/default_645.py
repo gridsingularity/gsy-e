@@ -15,12 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.appliance.simple import SimpleAppliance
-
 
 '''
 This setup file is testing the ESS buy functionality. Right now the ESS is not buying even though
@@ -41,15 +38,14 @@ def get_setup(config):
                                                                  max_abs_battery_power_kW=5,
                                                                  initial_buying_rate=0,
                                                                  final_buying_rate=16.99,
-                                                                 final_selling_rate=17.01),
-                         appliance=SwitchableAppliance()),
+                                                                 final_selling_rate=17.01)
+                         ),
                 ]
             ),
 
             Area('Commercial Energy Producer',
                  strategy=CommercialStrategy(energy_rate=15),
-                 appliance=SimpleAppliance()),
-
+                 )
         ],
         config=config
     )

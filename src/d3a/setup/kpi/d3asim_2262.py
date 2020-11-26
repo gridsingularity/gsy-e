@@ -5,9 +5,6 @@ Setup for a microgrid + DSO
 """
 import os
 
-from d3a.models.appliance.pv import PVAppliance
-from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
@@ -40,15 +37,15 @@ def get_setup(config):
                                     current_dir, "../../resources/KPI_L1.csv"),
                                 initial_buying_rate=20,
                                 final_buying_rate=30,
-                                fit_to_limit=True),
-                                 appliance=SwitchableAppliance()),
+                                fit_to_limit=True)
+                                 ),
                             Area('H1 PV', strategy=PVUserProfileStrategy(
                                 power_profile=os.path.join(
                                     current_dir, "../../resources/KPI_PV1.csv"),
                                 initial_selling_rate=20,
                                 final_selling_rate=15,
-                                fit_to_limit=True),
-                                 appliance=PVAppliance()),
+                                fit_to_limit=True)
+                                 ),
                             Area('H1 General Load evening',
                                  strategy=LoadHoursStrategy(
                                      hrs_per_day=1,
@@ -56,7 +53,7 @@ def get_setup(config):
                                      avg_power_W=2000,
                                      initial_buying_rate=20,
                                      final_buying_rate=30),
-                                 appliance=SwitchableAppliance()),
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area('central storage', strategy=StorageStrategy(
@@ -67,8 +64,8 @@ def get_setup(config):
                         initial_buying_rate=12,
                         final_buying_rate=20,
                         initial_selling_rate=29,
-                        final_selling_rate=20.01),
-                         appliance=SwitchableAppliance()),
+                        final_selling_rate=20.01)
+                         ),
                     Area(
                         'House 2',
                         [
@@ -77,15 +74,15 @@ def get_setup(config):
                                     current_dir, "../../resources/KPI_L1.csv"),
                                 initial_buying_rate=20,
                                 final_buying_rate=30,
-                                fit_to_limit=True),
-                                 appliance=SwitchableAppliance()),
+                                fit_to_limit=True)
+                                 ),
                             Area('H2 PV', strategy=PVUserProfileStrategy(
                                 power_profile=os.path.join(
                                     current_dir, "../../resources/KPI_PV2.csv"),
                                 initial_selling_rate=20,
                                 final_selling_rate=15,
-                                fit_to_limit=True),
-                                 appliance=PVAppliance()),
+                                fit_to_limit=True)
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
@@ -96,15 +93,15 @@ def get_setup(config):
                                     current_dir, "../../resources/KPI_L1.csv"),
                                 initial_buying_rate=20,
                                 final_buying_rate=30,
-                                fit_to_limit=True),
-                                 appliance=SwitchableAppliance()),
+                                fit_to_limit=True)
+                                 ),
                             Area('H3 PV', strategy=PVUserProfileStrategy(
                                 power_profile=os.path.join(
                                     current_dir, "../../resources/KPI_PV3.csv"),
                                 initial_selling_rate=20,
                                 final_selling_rate=15,
-                                fit_to_limit=True),
-                                 appliance=PVAppliance()),
+                                fit_to_limit=True)
+                                 ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
 
@@ -114,8 +111,8 @@ def get_setup(config):
             ),
             Area('Feed In Tariff', strategy=InfiniteBusStrategy(
                 energy_buy_rate=15.2,
-                energy_sell_rate=200),
-                 appliance=SimpleAppliance()),
+                energy_sell_rate=200)
+                 ),
 
             Area('Market Maker',
                  strategy=MarketMakerStrategy(energy_rate=30, grid_connected=True)

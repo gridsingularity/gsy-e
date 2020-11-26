@@ -17,8 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from pendulum import duration
 
-from d3a.models.appliance.switchable import SwitchableAppliance
-from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
@@ -53,18 +51,17 @@ def get_setup(config):
                          strategy=LoadHoursStrategy(avg_power_W=200, hrs_of_day=list(range(0, 24)),
                                                     update_interval=duration(minutes=30),
                                                     initial_buying_rate=user_profile_int,
-                                                    final_buying_rate=35),
-                         appliance=SwitchableAppliance()),
+                                                    final_buying_rate=35)
+                         ),
                     Area('H1 General Load 2',
                          strategy=LoadHoursStrategy(avg_power_W=200, hrs_of_day=list(range(0, 24)),
                                                     initial_buying_rate=user_profile_str,
-                                                    final_buying_rate=35),
-                         appliance=SwitchableAppliance()),
+                                                    final_buying_rate=35)
+                         ),
                 ]
             ),
             Area('Commercial Energy Producer',
-                 strategy=CommercialStrategy(energy_rate=9),
-                 appliance=SimpleAppliance()
+                 strategy=CommercialStrategy(energy_rate=9)
                  ),
         ],
         config=config
