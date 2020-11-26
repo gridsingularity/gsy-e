@@ -21,7 +21,7 @@ from unittest.mock import MagicMock
 import unittest
 from d3a.models.area import Area
 
-from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.state import LoadState
 from d3a.models.config import SimulationConfig
@@ -195,7 +195,7 @@ class TestUnmatchedLoad(unittest.TestCase):
 
     def test_export_unmatched_loads_reports_cell_tower_areas(self):
         house1 = Area("House1", [self.area1, self.area2])
-        ct_strategy = MagicMock(spec=CellTowerLoadHoursStrategy)
+        ct_strategy = MagicMock(spec=LoadHoursStrategy)
         ct_strategy.state = MagicMock(spec=LoadState)
         ct_strategy.state.desired_energy_Wh = {}
         ct_strategy.energy_requirement_Wh = {}

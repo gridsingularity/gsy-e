@@ -19,7 +19,7 @@ from d3a.models.area import Area
 # from d3a.models.strategy.commercial_producer import CommercialStrategy # NOQA
 from d3a.d3a_core.util import d3a_path
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
 import os
@@ -58,10 +58,10 @@ def get_setup(config):
 
                 ]
             ),
-            Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
-                                                                   hrs_per_day=24,
-                                                                   hrs_of_day=list(range(0, 24)),
-                                                                   final_buying_rate=35)
+            Area('Cell Tower', strategy=LoadHoursStrategy(avg_power_W=100,
+                                                          hrs_per_day=24,
+                                                          hrs_of_day=list(range(0, 24)),
+                                                          final_buying_rate=35)
                  )
             # Area('Commercial Energy Producer',
             #      strategy=CommercialStrategy(energy_range_wh=(40, 120), energy_price=30)
