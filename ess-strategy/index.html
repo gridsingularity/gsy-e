@@ -1401,7 +1401,7 @@
                 
                   <h1>Energy Storage System (ESS) Strategy</h1>
                 
-                <p>The ESS can buy or sell energy. </p>
+                <p>The ESS can buy or sell energy.</p>
 <p>For all cases the initial parameters of the battery can be defined:</p>
 <ul>
 <li><code>initial_soc</code>: Initial battery SOC (State of Charge) in %.</li>
@@ -1431,8 +1431,7 @@
                                          battery_capacity_kWh=1.2,
                                          max_abs_battery_power_kW=5,
                                          final_buying_rate=16.99,
-                                         final_selling_rate= 17.01)),
-               appliance=SwitchableAppliance()),
+                                         final_selling_rate= 17.01)))
 </code></pre></div>
 
 <hr />
@@ -1443,7 +1442,7 @@
 <p>As an example, considering an <code>initial_selling_rate</code> of 30 cents/kWh and a <code>final_selling_rate</code> price of 20 cents/kWh, an ESS with an SOC of 1% would sell its energy at 29.9 cents/kWh, and a battery at 100% SOC would sell its energy at 20 cents/kWh.</p>
 <h2 id="general-behaviour">General Behaviour<a class="headerlink" href="#general-behaviour" title="Permanent link">&para;</a></h2>
 <p>In general all offers and bids follow the physical constraint of the set <code>max_abs_battery_power_kW</code> Value. The accumulated energy per market slot can not exceed this power value. Here selling and buying cancel each other out meaning that if 2kWh are both sold and bought in the same market slot, the relative power is still 0.</p>
-<p>For the buying rate increase and selling rate decrease behaviour, please see: <a href="../how-strategies-adjust-prices/">How the Strategies Adjust the Prices of Offers and Bids</a>. </p>
+<p>For the buying rate increase and selling rate decrease behaviour, please see: <a href="../how-strategies-adjust-prices/">How the Strategies Adjust the Prices of Offers and Bids</a>.</p>
 <h3 id="buying-energy">Buying Energy<a class="headerlink" href="#buying-energy" title="Permanent link">&para;</a></h3>
 <h4 id="one-sided-market">One Sided Market<a class="headerlink" href="#one-sided-market" title="Permanent link">&para;</a></h4>
 <p>On every tick, the storage scans the connected market for affordable offers* if there is storage space to be filled (if the current SOC is lower than 100%). Once an offer is found, it is either fully or partially accepted, depending on the demand. The storage always seeks for 100% SOC when buying energy.</p>
@@ -1451,9 +1450,9 @@
 <h4 id="two-sided-market">Two Sided Market<a class="headerlink" href="#two-sided-market" title="Permanent link">&para;</a></h4>
 <p>On every tick, the storage either places a bid for the energy portion it needs to reach 100% SOC or updates the price of an existing bid in the market where the bid price is depending on the <code>initial_buying_rate</code>, <code>final_buying_rate</code>, <code>energy_rate_decrease_per_update</code> and <code>update_interval setting</code>.</p>
 <h3 id="selling-energy">Selling Energy<a class="headerlink" href="#selling-energy" title="Permanent link">&para;</a></h3>
-<p>At the beginning of each slot market, the storage places an offer on the market offering all the energy it has stored (not including the energy that is needed to keep the storage at least at <code>min_allowed_soc</code>). This offer gets updated on every tick following the rate decrease settings. 
-This applies to both one and two sided market types. 
-Consequently, it is possible for the storage to have both an offer and a bid placed in the same market. </p>
+<p>At the beginning of each slot market, the storage places an offer on the market offering all the energy it has stored (not including the energy that is needed to keep the storage at least at <code>min_allowed_soc</code>). This offer gets updated on every tick following the rate decrease settings.
+This applies to both one and two sided market types.
+Consequently, it is possible for the storage to have both an offer and a bid placed in the same market.</p>
                 
                   
                 

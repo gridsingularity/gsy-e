@@ -1330,8 +1330,8 @@
                                         <span class="n">hrs_per_day</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
                                         <span class="n">hrs_of_day</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">18</span><span class="p">)),</span>
                                         <span class="n">initial_buying_rate</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                                        <span class="n">final_buying_rate</span><span class="o">=</span><span class="mi">35</span><span class="p">),</span>
-             <span class="n">appliance</span><span class="o">=</span><span class="n">SwitchableAppliance</span><span class="p">())</span>
+                                        <span class="n">final_buying_rate</span><span class="o">=</span><span class="mi">35</span><span class="p">)</span>
+             <span class="p">)</span>
 </code></pre></div>
 
 <hr />
@@ -1343,7 +1343,7 @@
 <li>In case energy prices would be too high during the time-interval from 04:00 to 16:00, the load will consume from 02:00 until 04:00, turn off, and consume from 16:00 until 18:00, resulting in 1 hour of energy demand being unmatched.</li>
 </ul>
 <hr />
-<p>For information on buying rate decrease behaviour, please see: <a href="https://gridsingularity.atlassian.net/wiki/spaces/D3AD/pages/1342668821/Energy+Rate+Settings+and+Behaviour">Energy Rate Settings and Behaviour</a>. </p>
+<p>For information on buying rate decrease behaviour, please see: <a href="https://gridsingularity.atlassian.net/wiki/spaces/D3AD/pages/1342668821/Energy+Rate+Settings+and+Behaviour">Energy Rate Settings and Behaviour</a>.</p>
 <h4 id="relation-of-different-parameters-for-energy-pricing">Relation of different parameters for energy pricing<a class="headerlink" href="#relation-of-different-parameters-for-energy-pricing" title="Permanent link">&para;</a></h4>
 <p>Let's assume the user has configured its <em>LoadStrategy</em> with these parameters <code>(initial_buying_rate=0, final_buying_rate=30, fit_to_limit=True, update_interval=5mins)</code> and <code>slot_length=15min</code>. At the start of market, LOAD would place its initial bid at the rate of <code>initial_buying_rate</code>. If <code>fit_to_limit</code> is set to <code>True</code>, it will gradually increase its <code>bid_rate</code> linearly such that its <code>final_bid</code> before the end of <code>market_slot</code> should be equal to <code>final_buying_rate</code>. Number of available updates in such a case is <code>(slot_length / update_interval) -1) → (15/5 -1)=2</code>. Therefore, it is possible for a user to update its offer two times inside the same <code>market_slot</code>. The first update would happen at 5mins. The calculated <code>energy_rate_decrease_per_update → (30 - 0) / 2 → 15</code>. So, the Load will increase its <code>buying_rate</code> at the 5th min from 0 to 15 cts/kWh and at the 10th min from 15 to 30 cts/kWh.</p>
 <p><img alt="img" src="https://gridsingularity.atlassian.net/wiki/download/thumbnails/855015429/image2019-10-24_16-52-34.png?version=1&amp;modificationDate=1571928755789&amp;cacheVersion=1&amp;api=v2&amp;width=428&amp;height=250" /></p>
