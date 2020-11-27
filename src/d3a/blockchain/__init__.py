@@ -28,7 +28,7 @@ if platform.python_implementation() != "PyPy" and \
     from substrateinterface import SubstrateInterface
 
 
-DEFAULT_SUBSTRATE_URL = "ws://127.0.0.1:9944"
+DEFAULT_SUBSTRATE_URL = "wss://canvas-rpc.parity.io"
 TEMPLATE_NODE_ADDRESS_TYPE = 42
 
 
@@ -38,5 +38,5 @@ class BlockChainInterface:
         self.substrate = SubstrateInterface(
             url=DEFAULT_SUBSTRATE_URL,
             address_type=TEMPLATE_NODE_ADDRESS_TYPE,
-            type_registry_preset='default'
+            type_registry_preset='substrate-node-template'
         )
