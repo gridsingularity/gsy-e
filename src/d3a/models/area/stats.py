@@ -83,14 +83,6 @@ class AreaStats:
         return {key.lower().replace(" ", "_"): self._extract_from_bills(key)
                 for key in ["Accumulated Trades", "External Trades"]}
 
-    def report_accounting(self, market, reporter, value, time):
-        slot = market.time_slot
-        if not self._markets.all_spot_markets:
-            return
-        market_timeslots = [m.time_slot for m in self._markets.all_spot_markets]
-        if slot in market_timeslots:
-            market.set_actual_energy(time, reporter, value)
-
     @property
     def cheapest_offers(self):
         cheapest_offers = []

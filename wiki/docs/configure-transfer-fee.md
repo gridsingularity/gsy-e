@@ -1,7 +1,7 @@
 There are two fees that can be added to every trade in the grid:
 
 - constant transfer fee (in cents/kWh)
-- percentage transfer fee (in %) 
+- percentage transfer fee (in %)
 
 In a configuration you can either set constant fees or percentage fees. By default D3A use constant fees. If you want to set percentage fees you just have to add `config.grid_fee_type = 2` at the top of your file.
 
@@ -13,10 +13,10 @@ Area(
     [
         Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
                                                            hrs_per_day=6,
-                                                           final_buying_rate=35),
-             appliance=SwitchableAppliance()),
-        Area('H1 Storage1', strategy=StorageStrategy(initial_capacity_kWh=0.6),
-             appliance=SwitchableAppliance()),
+                                                           final_buying_rate=35)
+             ),
+        Area('H1 Storage1', strategy=StorageStrategy(initial_capacity_kWh=0.6)
+             ),
     ],
     grid_fee_percentage=0, transfer_fee_const=2,
 ),

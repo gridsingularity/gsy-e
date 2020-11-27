@@ -51,6 +51,5 @@ user_profile = {
         17: 100
     }
 Area('DefinedLoad', strategy=DefinedLoadStrategy(daily_load_profile=user_profile,
-                                                 max_energy_rate=35),
-                    appliance=SwitchableAppliance()),
+                                                 max_energy_rate=35))
 ```

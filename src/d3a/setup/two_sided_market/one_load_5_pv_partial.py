@@ -15,10 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
 
@@ -56,31 +54,26 @@ def get_setup(config):
                         hrs_of_day=list(range(0, 24)),
                         initial_buying_rate=ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
                         final_buying_rate=ConstSettings.LoadSettings.FINAL_BUYING_RATE
-                    ), appliance=SwitchableAppliance()),
+                    )),
                 ]
             ),
             Area(
                 'House 2',
                 [
                     Area('H2 PV1',
-                         strategy=PVStrategy(1),
-                         appliance=PVAppliance()
+                         strategy=PVStrategy(1)
                          ),
                     Area('H2 PV2',
-                         strategy=PVStrategy(1),
-                         appliance=PVAppliance()
+                         strategy=PVStrategy(1)
                          ),
                     Area('H2 PV3',
-                         strategy=PVStrategy(1),
-                         appliance=PVAppliance()
+                         strategy=PVStrategy(1)
                          ),
                     Area('H2 PV4',
-                         strategy=PVStrategy(1),
-                         appliance=PVAppliance()
+                         strategy=PVStrategy(1)
                          ),
                     Area('H2 PV5',
-                         strategy=PVStrategy(1),
-                         appliance=PVAppliance()
+                         strategy=PVStrategy(1)
                          ),
                 ]
             ),

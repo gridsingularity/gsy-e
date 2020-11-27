@@ -88,7 +88,6 @@ class Market:
         self.market_fee = 0
         # Store trades temporarily until bc event has fired
         self.traded_energy = {}
-        self.accumulated_actual_energy_agg = {}
         self.min_trade_price = sys.maxsize
         self._avg_trade_price = None
         self.max_trade_price = 0
@@ -233,16 +232,6 @@ class Market:
     def now(self) -> DateTime:
         return self.time_slot.add(
             seconds=GlobalConfig.tick_length.seconds * self.current_tick_in_slot)
-
-    def set_actual_energy(self, time, reporter, value):
-        if reporter in self.accumulated_actual_energy_agg:
-            self.accumulated_actual_energy_agg[reporter] += value
-        else:
-            self.accumulated_actual_energy_agg[reporter] = value
-
-    @property
-    def actual_energy_agg(self):
-        return self.accumulated_actual_energy_agg
 
     def bought_energy(self, buyer):
         return sum(trade.offer.energy for trade in self.trades if trade.buyer == buyer)
