@@ -46,19 +46,35 @@ class InvalidBlockchainTrade(D3AException):
     pass
 
 
-def get_function_metadata(function_name, path):
-    with open(path) as json_file:
+def parse_metadata_messages(path_to_metadata):
+    with open(path_to_metadata) as json_file:
         metadata = json.load(json_file)
-        name = metadata['registry']['strings'].index(function_name) + 1
+    messages = metadata["spec"]["messages"]
+    function_bytes = {}
+    for m in messages:
+        function_bytes[m["name"][0]] = m["selector"]
+    return function_bytes
 
-    function_bytes_repr = '0x'
-    for constructor in metadata['contract']['messages']:
-        if constructor['name'] == name:
-            bytes_repr = constructor['selector'].strip('[').strip(']').split(',')
-            function_bytes_repr = '0x'
-            for byte in bytes_repr:
-                function_bytes_repr += byte[3:-1]
-    return function_bytes_repr.lower()
+
+def parse_metadata_constructors(path_to_metadata):
+    with open(path_to_metadata) as json_file:
+        metadata = json.load(json_file)
+    constructors = metadata["spec"]["constructors"]
+    constructor_bytes = {}
+    for c in constructors:
+        constructor_bytes[c["name"][0]] = c["selector"]
+    return constructor_bytes
+
+
+def get_contract_deployment_data(constructor_name, constructor_bytes):
+    return constructor_bytes[constructor_name]
+
+
+def get_contract_code_hash(path_to_metadata):
+    with open(path_to_metadata) as json_file:
+        metadata = json.load(json_file)
+    code_hash = metadata["source"]["hash"]
+    return code_hash
 
 
 def address_to_hex(address):
