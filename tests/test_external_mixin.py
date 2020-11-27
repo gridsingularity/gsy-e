@@ -124,7 +124,7 @@ class TestExternalMixin(unittest.TestCase):
     def test_device_info_dict_for_load_strategy_reports_required_energy(self):
         strategy = LoadHoursExternalStrategy(100)
         self._create_and_activate_strategy_area(strategy)
-        strategy.energy_requirement_Wh[strategy.next_market.time_slot] = 0.987
+        strategy.state._energy_requirement_Wh[strategy.next_market.time_slot] = 0.987
         assert strategy._device_info_dict["energy_requirement_kWh"] == 0.000987
 
     def test_device_info_dict_for_pv_strategy_reports_available_energy(self):

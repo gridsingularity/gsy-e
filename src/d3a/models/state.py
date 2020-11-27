@@ -24,6 +24,7 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
 from d3a import limit_float_precision
 from d3a.d3a_core.util import write_default_to_dict, convert_kW_to_kWh
+from d3a.constants import FLOATING_POINT_TOLERANCE
 
 StorageSettings = ConstSettings.StorageSettings
 
@@ -49,21 +50,81 @@ class PVState:
         return {"available_energy_kWh": convert_pendulum_to_str_in_dict(self.available_energy_kWh)}
 
     def restore_state(self, state_dict):
-        self.available_energy_kWh = convert_str_to_pendulum_in_dict(
-            state_dict["available_energy_kWh"])
+        self.available_energy_kWh.update(convert_str_to_pendulum_in_dict(
+            state_dict["available_energy_kWh"]))
 
 
 class LoadState:
     def __init__(self):
-        self.desired_energy_Wh = {}
-        self.total_energy_demanded_wh = 0
+        self._desired_energy_Wh = {}
+        self._total_energy_demanded_Wh = 0
+        self._energy_requirement_Wh = {}
+
+    def get_energy_requirement_Wh(self, time_slot, default_value=0.0):
+        if default_value is None:
+            return self._energy_requirement_Wh[time_slot]
+        return self._energy_requirement_Wh.get(time_slot, default_value)
+
+    def get_desired_energy_Wh(self, time_slot, default_value=0.0):
+        if default_value is None:
+            return self._desired_energy_Wh[time_slot]
+        return self._desired_energy_Wh.get(time_slot, default_value)
+
+    @property
+    def total_energy_demanded_Wh(self):
+        return self._total_energy_demanded_Wh
+
+    def can_buy_more_energy(self, time_slot):
+        if time_slot not in self._energy_requirement_Wh:
+            return False
+        return self._energy_requirement_Wh[time_slot] > FLOATING_POINT_TOLERANCE
+
+    def calculate_energy_to_accept(self, offer_energy_Wh, time_slot):
+        if offer_energy_Wh > self._energy_requirement_Wh[time_slot]:
+            return self._energy_requirement_Wh[time_slot]
+        else:
+            return offer_energy_Wh
+
+    def calculate_energy_to_bid(self, time_slot):
+        return self._energy_requirement_Wh[time_slot]
+
+    def decrement_energy_requirement(self, purchased_energy_Wh, time_slot, area_name):
+        self._energy_requirement_Wh[time_slot] -= purchased_energy_Wh
+        assert self._energy_requirement_Wh[time_slot] >= -FLOATING_POINT_TOLERANCE, \
+            f"Energy requirement for load {area_name} fell below zero " \
+            f"({self._energy_requirement_Wh[time_slot]})."
+
+    def set_desired_energy(self, energy, time_slot, overwrite=False):
+        if overwrite is False and time_slot in self._energy_requirement_Wh:
+            return
+        self._energy_requirement_Wh[time_slot] = energy
+        self._desired_energy_Wh[time_slot] = energy
+
+    def get_desired_energy(self, time_slot):
+        return self._desired_energy_Wh[time_slot]
+
+    def update_total_demanded_energy(self, time_slot):
+        self._total_energy_demanded_Wh += self._desired_energy_Wh[time_slot]
+
+    def delete_past_state_values(self, current_time_slot):
+        to_delete = []
+        for market_slot in self._energy_requirement_Wh.keys():
+            if market_slot < current_time_slot:
+                to_delete.append(market_slot)
+        for market_slot in to_delete:
+            self._energy_requirement_Wh.pop(market_slot, None)
+            self._desired_energy_Wh.pop(market_slot, None)
 
     def get_state(self):
-        return {"desired_energy_Wh": convert_pendulum_to_str_in_dict(self.desired_energy_Wh)}
+        return {
+            "desired_energy_Wh": convert_pendulum_to_str_in_dict(self._desired_energy_Wh),
+            "total_energy_demanded_Wh": self._total_energy_demanded_Wh
+        }
 
     def restore_state(self, state_dict):
-        self.desired_energy_Wh = convert_str_to_pendulum_in_dict(
-            state_dict["desired_energy_Wh"])
+        self._desired_energy_Wh.update(convert_str_to_pendulum_in_dict(
+            state_dict["desired_energy_Wh"]))
+        self._total_energy_demanded_Wh = state_dict["total_energy_demanded_Wh"]
 
 
 class ESSEnergyOrigin(Enum):

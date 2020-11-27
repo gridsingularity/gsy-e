@@ -827,7 +827,7 @@ def check_load_profile(context):
 
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     load = list(filter(lambda x: x.name == "H1 Load", house1.children))[0]
-    for timepoint, energy in load.strategy.state.desired_energy_Wh.items():
+    for timepoint, energy in load.strategy.state._desired_energy_Wh.items():
         assert energy == convert_W_to_Wh(context._device_profile[timepoint],
                                          load.config.slot_length)
 

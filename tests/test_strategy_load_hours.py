@@ -260,24 +260,25 @@ def load_hours_strategy_test5(load_hours_strategy_test4, area_test2):
 # Test if daily energy requirement is calculated correctly for the device
 def test_activate_event_populates_energy_requirement(load_hours_strategy_test1):
     load_hours_strategy_test1.event_activate()
+    energy_requirement = load_hours_strategy_test1.state._energy_requirement_Wh
     assert all([energy == load_hours_strategy_test1.energy_per_slot_Wh
-                for energy in load_hours_strategy_test1.energy_requirement_Wh.values()])
-    assert all([load_hours_strategy_test1.state.desired_energy_Wh[ts] == energy
-                for ts, energy in load_hours_strategy_test1.energy_requirement_Wh.items()])
+                for energy in energy_requirement.values()])
+    assert all([load_hours_strategy_test1.state._desired_energy_Wh[ts] == energy
+                for ts, energy in energy_requirement.items()])
 
 
 # Test if daily energy requirement is calculated correctly for the device
 def test_calculate_daily_energy_req(load_hours_strategy_test1):
     load_hours_strategy_test1.event_activate()
     assert all([energy == 620/4
-                for energy in load_hours_strategy_test1.energy_requirement_Wh.values()])
+                for energy in load_hours_strategy_test1.state._energy_requirement_Wh.values()])
 
 
 # Test if device accepts the most affordable offer
 def test_device_accepts_offer(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.event_activate()
     cheapest_offer = market_test1.most_affordable_offers[0]
-    load_hours_strategy_test1.energy_requirement_Wh = \
+    load_hours_strategy_test1.state._energy_requirement_Wh = \
         {market_test1.time_slot: cheapest_offer.energy * 1000 + 1}
     load_hours_strategy_test1.event_tick()
     assert load_hours_strategy_test1.accept_offer.calls[0][0][1] == repr(cheapest_offer)
@@ -294,11 +295,11 @@ def test_event_tick(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.event_activate()
     load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
     load_hours_strategy_test1.event_market_cycle()
-    assert isclose(load_hours_strategy_test1.energy_requirement_Wh[TIME],
+    assert isclose(load_hours_strategy_test1.state._energy_requirement_Wh[TIME],
                    market_test1.most_affordable_energy * 1000)
 
     load_hours_strategy_test1.event_tick()
-    assert load_hours_strategy_test1.energy_requirement_Wh[TIME] == 0
+    assert load_hours_strategy_test1.state._energy_requirement_Wh[TIME] == 0
 
 
 def test_event_tick_with_partial_offer(load_hours_strategy_test2, market_test2):
@@ -306,9 +307,9 @@ def test_event_tick_with_partial_offer(load_hours_strategy_test2, market_test2):
     load_hours_strategy_test2.event_activate()
     load_hours_strategy_test2.area.past_markets = {TIME: market_test2}
     load_hours_strategy_test2.event_market_cycle()
-    requirement = load_hours_strategy_test2.energy_requirement_Wh[TIME] / 1000
+    requirement = load_hours_strategy_test2.state._energy_requirement_Wh[TIME] / 1000
     load_hours_strategy_test2.event_tick()
-    assert load_hours_strategy_test2.energy_requirement_Wh[TIME] == 0
+    assert load_hours_strategy_test2.state._energy_requirement_Wh[TIME] == 0
     assert float(load_hours_strategy_test2.accept_offer.calls[0][1]['energy']) == requirement
 
 
@@ -345,7 +346,7 @@ def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strat
     bid = list(load_hours_strategy_test5._bids.values())[0][0]
 
     # Increase energy requirement to cover the energy from the bid
-    load_hours_strategy_test5.energy_requirement_Wh[TIME] = 1000
+    load_hours_strategy_test5.state._energy_requirement_Wh[TIME] = 1000
     trade = Trade('idt', None, bid, 'B', load_hours_strategy_test5.owner.name, residual=partial)
     load_hours_strategy_test5.event_bid_traded(market_id=trade_market.id, bid_trade=trade)
 
@@ -367,7 +368,7 @@ def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_st
     load_hours_strategy_test5.event_market_cycle()
     bid = list(load_hours_strategy_test5._bids.values())[0][0]
     # Increase energy requirement to cover the energy from the bid + threshold
-    load_hours_strategy_test5.energy_requirement_Wh[TIME] = bid.energy * 1000 + 0.000009
+    load_hours_strategy_test5.state._energy_requirement_Wh[TIME] = bid.energy * 1000 + 0.000009
     trade = Trade('idt', None, bid, 'B', load_hours_strategy_test5.owner.name, residual=True)
     load_hours_strategy_test5.event_bid_traded(market_id=trade_market.id, bid_trade=trade)
 
@@ -416,7 +417,7 @@ def test_balancing_offers_are_created_if_device_in_registry(
 
     assert actual_balancing_demand_price == expected_balancing_demand_energy * 30
     selected_offer = area_test2.current_market.sorted_offers[0]
-    balancing_fixture.energy_requirement_Wh[area_test2.current_market.time_slot] = \
+    balancing_fixture.state._energy_requirement_Wh[area_test2.current_market.time_slot] = \
         selected_offer.energy * 1000.0
     balancing_fixture.event_trade(market_id=area_test2.current_market.id,
                                   trade=Trade(id='id',

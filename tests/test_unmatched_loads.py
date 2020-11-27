@@ -42,20 +42,11 @@ class TestUnmatchedLoad(unittest.TestCase):
         self.config.grid_fee_type = 1
 
         self.strategy1 = MagicMock(spec=LoadHoursStrategy)
-        self.strategy1.state = MagicMock(spec=LoadState)
-        self.strategy1.state.desired_energy_Wh = {}
-        self.strategy1.energy_requirement_Wh = {}
-        self.strategy1.state.total_energy_demanded_wh = 0
+        self.strategy1.state = LoadState()
         self.strategy2 = MagicMock(spec=LoadHoursStrategy)
-        self.strategy2.state = MagicMock(spec=LoadState)
-        self.strategy2.state.desired_energy_Wh = {}
-        self.strategy2.energy_requirement_Wh = {}
-        self.strategy2.state.total_energy_demanded_wh = 0
+        self.strategy2.state = LoadState()
         self.strategy3 = MagicMock(spec=DefinedLoadStrategy)
-        self.strategy3.state = MagicMock(spec=LoadState)
-        self.strategy3.state.desired_energy_Wh = {}
-        self.strategy3.energy_requirement_Wh = {}
-        self.strategy3.state.total_energy_demanded_wh = 0
+        self.strategy3.state = LoadState()
         self.area1 = Area("load1", None, None, self.strategy1,
                           self.config, None, grid_fee_percentage=0)
         self.area2 = Area("load2", None, None, self.strategy2,
@@ -74,8 +65,8 @@ class TestUnmatchedLoad(unittest.TestCase):
 
         for i in range(1, 11):
             timeslot = today(tz=TIME_ZONE).add(hours=12+i)
-            self.strategy1.state.desired_energy_Wh[timeslot] = 100
-            self.strategy2.state.desired_energy_Wh[timeslot] = 100
+            self.strategy1.state._desired_energy_Wh[timeslot] = 100
+            self.strategy2.state._desired_energy_Wh[timeslot] = 100
             mock_market = MagicMock(spec=Market)
             mock_market.time_slot = timeslot
             mock_market.time_slot_str = timeslot.format(DATE_TIME_FORMAT)
@@ -122,8 +113,8 @@ class TestUnmatchedLoad(unittest.TestCase):
 
         for i in range(1, 11):
             timeslot = today(tz=TIME_ZONE).add(hours=12+i)
-            self.strategy1.state.desired_energy_Wh[timeslot] = 100
-            self.strategy2.state.desired_energy_Wh[timeslot] = 100
+            self.strategy1.state._desired_energy_Wh[timeslot] = 100
+            self.strategy2.state._desired_energy_Wh[timeslot] = 100
             mock_market = MagicMock(spec=Market)
             mock_market.time_slot = timeslot
             mock_market.time_slot_str = timeslot.format(DATE_TIME_FORMAT)
@@ -161,8 +152,8 @@ class TestUnmatchedLoad(unittest.TestCase):
 
         for i in range(1, 11):
             timeslot = today(tz=TIME_ZONE).add(hours=12+i)
-            self.strategy1.state.desired_energy_Wh[timeslot] = 100
-            self.strategy2.state.desired_energy_Wh[timeslot] = 100
+            self.strategy1.state._desired_energy_Wh[timeslot] = 100
+            self.strategy2.state._desired_energy_Wh[timeslot] = 100
             mock_market = MagicMock(spec=Market)
             mock_market.time_slot = timeslot
             mock_market.time_slot_str = timeslot.format(DATE_TIME_FORMAT)
@@ -196,10 +187,7 @@ class TestUnmatchedLoad(unittest.TestCase):
     def test_export_unmatched_loads_reports_cell_tower_areas(self):
         house1 = Area("House1", [self.area1, self.area2])
         ct_strategy = MagicMock(spec=CellTowerLoadHoursStrategy)
-        ct_strategy.state = MagicMock(spec=LoadState)
-        ct_strategy.state.desired_energy_Wh = {}
-        ct_strategy.energy_requirement_Wh = {}
-        ct_strategy.state.total_energy_demanded_wh = 0
+        ct_strategy.state = LoadState()
         cell_tower = Area("Cell Tower", strategy=ct_strategy)
         self.grid = Area("Grid", [house1, cell_tower])
         epb = SimulationEndpointBuffer("1", {"seed": 0}, self.grid, True)
@@ -207,8 +195,8 @@ class TestUnmatchedLoad(unittest.TestCase):
 
         for i in range(1, 11):
             timeslot = today(tz=TIME_ZONE).add(hours=12+i)
-            self.strategy1.state.desired_energy_Wh[timeslot] = 100
-            self.strategy2.state.desired_energy_Wh[timeslot] = 100
+            self.strategy1.state._desired_energy_Wh[timeslot] = 100
+            self.strategy2.state._desired_energy_Wh[timeslot] = 100
 
             mock_market = MagicMock(spec=Market)
             mock_market.time_slot = timeslot
@@ -227,7 +215,7 @@ class TestUnmatchedLoad(unittest.TestCase):
                       'abc', 'load2', seller_origin='abc', buyer_origin='load2')
             ]
 
-            ct_strategy.state.desired_energy_Wh[timeslot] = 1000
+            ct_strategy.state._desired_energy_Wh[timeslot] = 1000
             cell_tower._markets.past_markets[timeslot] = deepcopy(mock_market)
             cell_tower._markets.past_markets[timeslot].trades = [
                 Trade("123", timeslot,
@@ -260,8 +248,8 @@ class TestUnmatchedLoad(unittest.TestCase):
             mock_market = MagicMock(spec=Market)
             mock_market.time_slot = timeslot
             mock_market.time_slot_str = timeslot.format(DATE_TIME_FORMAT)
-            self.strategy1.state.desired_energy_Wh[timeslot] = 100
-            self.strategy3.state.desired_energy_Wh[timeslot] = 80
+            self.strategy1.state._desired_energy_Wh[timeslot] = 100
+            self.strategy3.state._desired_energy_Wh[timeslot] = 80
             self.area1._markets.past_markets[timeslot] = deepcopy(mock_market)
             self.area1._markets.past_markets[timeslot].trades = [
                 Trade("123", timeslot,
