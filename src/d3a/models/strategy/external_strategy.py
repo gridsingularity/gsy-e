@@ -157,10 +157,11 @@ class RedisExternalStrategyConnection(TwoSidedMarketRedisEventSubscriber):
                 f"malformed args: {arguments}"
             arguments['offer_or_id'] = arguments.pop('offer')
             arguments['buyer'] = self.area.name
-        except Exception:
+        except Exception as e:
             self.publish(
                 self._offer_response_channel,
-                {"error": "Incorrect accept_offer request. Available parameters: (offer, energy)."}
+                {"error": "Incorrect accept_offer request. Available parameters: (offer, energy).",
+                 "exception": str(e)}
             )
         else:
             return self._accept_offer_impl(arguments)
@@ -171,10 +172,11 @@ class RedisExternalStrategyConnection(TwoSidedMarketRedisEventSubscriber):
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['seller'] = self.area.name
             arguments['seller_origin'] = self.area.name
-        except Exception:
+        except Exception as e:
             self.publish(
                 self._offer_response_channel,
-                {"error": "Incorrect offer request. Available parameters: (price, energy)."}
+                {"error": "Incorrect offer request. Available parameters: (price, energy).",
+                 "exception": str(e)}
             )
         else:
             return self._offer_impl(arguments)
@@ -184,10 +186,11 @@ class RedisExternalStrategyConnection(TwoSidedMarketRedisEventSubscriber):
             arguments = self._parse_payload(payload)
             assert set(arguments.keys()) == {'offer'}
             arguments['offer_or_id'] = arguments.pop('offer')
-        except Exception:
+        except Exception as e:
             self.publish(
                 self._offer_response_channel,
-                {"error": "Incorrect delete offer request. Available parameters: (offer)."}
+                {"error": "Incorrect delete offer request. Available parameters: (offer).",
+                 "exception": str(e)}
             )
         else:
             return self._delete_offer_impl(arguments)
@@ -198,10 +201,11 @@ class RedisExternalStrategyConnection(TwoSidedMarketRedisEventSubscriber):
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['buyer'] = self.area.name
             arguments['buyer_origin'] = self.area.name
-        except Exception:
+        except Exception as e:
             self.publish(
                 self._bid_response_channel,
-                {"error": "Incorrect bid request. Available parameters: (price, energy)."}
+                {"error": "Incorrect bid request. Available parameters: (price, energy).",
+                 "exception": str(e)}
             )
         else:
             return self._bid_impl(arguments)
@@ -211,10 +215,11 @@ class RedisExternalStrategyConnection(TwoSidedMarketRedisEventSubscriber):
             arguments = self._parse_payload(payload)
             assert set(arguments.keys()) == {'bid'}
             arguments['bid_or_id'] = arguments.pop('bid')
-        except Exception:
+        except Exception as e:
             self.publish(
                 self._delete_bid_response_channel,
-                {"error": "Incorrect delete bid request. Available parameters: (bid)."}
+                {"error": "Incorrect delete bid request. Available parameters: (bid).",
+                 "exception": str(e)}
             )
         else:
             return self._delete_bid_impl(arguments)
