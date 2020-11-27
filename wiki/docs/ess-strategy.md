@@ -1,4 +1,4 @@
-The ESS can buy or sell energy. 
+The ESS can buy or sell energy.
 
 For all cases the initial parameters of the battery can be defined:
 
@@ -32,8 +32,7 @@ Area('Storage', strategy=StorageStrategy(initial_soc=50,
                                          battery_capacity_kWh=1.2,
                                          max_abs_battery_power_kW=5,
                                          final_buying_rate=16.99,
-                                         final_selling_rate= 17.01)),
-               appliance=SwitchableAppliance()),
+                                         final_selling_rate= 17.01)))
 ```
 
 ------
@@ -54,7 +53,7 @@ As an example, considering an `initial_selling_rate` of 30 cents/kWh and a `fina
 
 In general all offers and bids follow the physical constraint of the set `max_abs_battery_power_kW` Value. The accumulated energy per market slot can not exceed this power value. Here selling and buying cancel each other out meaning that if 2kWh are both sold and bought in the same market slot, the relative power is still 0.
 
-For the buying rate increase and selling rate decrease behaviour, please see: [How the Strategies Adjust the Prices of Offers and Bids](how-strategies-adjust-prices.md). 
+For the buying rate increase and selling rate decrease behaviour, please see: [How the Strategies Adjust the Prices of Offers and Bids](how-strategies-adjust-prices.md).
 
 ### Buying Energy
 
@@ -70,6 +69,6 @@ On every tick, the storage either places a bid for the energy portion it needs t
 
 ### Selling Energy
 
-At the beginning of each slot market, the storage places an offer on the market offering all the energy it has stored (not including the energy that is needed to keep the storage at least at `min_allowed_soc`). This offer gets updated on every tick following the rate decrease settings. 
-This applies to both one and two sided market types. 
-Consequently, it is possible for the storage to have both an offer and a bid placed in the same market. 
+At the beginning of each slot market, the storage places an offer on the market offering all the energy it has stored (not including the energy that is needed to keep the storage at least at `min_allowed_soc`). This offer gets updated on every tick following the rate decrease settings.
+This applies to both one and two sided market types.
+Consequently, it is possible for the storage to have both an offer and a bid placed in the same market.

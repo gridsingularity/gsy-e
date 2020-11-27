@@ -15,13 +15,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
 from d3a_interface.constants_limits import ConstSettings, RateRange
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
-from d3a.models.appliance.simple import SimpleAppliance
 
 
 def get_setup(config):
@@ -52,14 +49,13 @@ def get_setup(config):
                                 initial_selling_rate=30,
                                 final_selling_rate=15.1,
                                 update_interval=1
-                            ), appliance=SwitchableAppliance())
-
+                            ))
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                 ],),
             Area('DSO', strategy=InfiniteBusStrategy(energy_sell_rate=15,
-                                                     energy_buy_rate=0),
-                 appliance=SimpleAppliance()),
+                                                     energy_buy_rate=0)
+                 ),
         ],
         config=config
     )

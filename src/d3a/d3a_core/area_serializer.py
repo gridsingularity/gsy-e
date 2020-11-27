@@ -18,13 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 
 from d3a.models.area import Area # NOQA
-from d3a.models.budget_keeper import BudgetKeeper
 from d3a.models.strategy import BaseStrategy
-from d3a.models.appliance.simple import SimpleAppliance # NOQA
-
-from d3a.models.appliance.inter_area import InterAreaAppliance  # NOQA
-from d3a.models.appliance.pv import PVAppliance  # NOQA
-from d3a.models.appliance.switchable import SwitchableAppliance # NOQA
 
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy  # NOQA
 from d3a.models.strategy.commercial_producer import CommercialStrategy  # NOQA
@@ -46,7 +40,7 @@ class AreaEncoder(json.JSONEncoder):
             return self._encode_area(obj)
         elif isinstance(obj, Leaf):
             return self._encode_leaf(obj)
-        elif isinstance(obj, (BaseStrategy, SimpleAppliance, BudgetKeeper)):
+        elif isinstance(obj, BaseStrategy):
             return self._encode_subobject(obj)
 
     def _encode_area(self, area):
@@ -57,8 +51,6 @@ class AreaEncoder(json.JSONEncoder):
             result['uuid'] = area.uuid
         if area.strategy:
             result['strategy'] = area.strategy
-        if area.appliance:
-            result['appliance'] = area.appliance
         if area.budget_keeper:
             result['budget_keeper'] = area.budget_keeper
         if area.display_type:
@@ -142,7 +134,7 @@ def area_from_dict(description, config=None):
             children = None
         grid_fee_percentage = description.get('grid_fee_percentage', None)
         grid_fee_constant = description.get('grid_fee_constant', None)
-        area = Area(name, children, uuid, optional('strategy'), optional('appliance'), config,
+        area = Area(name, children, uuid, optional('strategy'), config,
                     optional('budget_keeper'), grid_fee_percentage=grid_fee_percentage,
                     grid_fee_constant=grid_fee_constant,
                     external_connection_available=external_connection_available,

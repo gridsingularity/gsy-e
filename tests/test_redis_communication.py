@@ -25,7 +25,7 @@ from pendulum import now
 
 import d3a.models.area
 from d3a.models.area import Area
-from d3a.models.appliance.simple import SimpleAppliance
+
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
@@ -61,14 +61,11 @@ class TestRedisEventDispatching(unittest.TestCase):
 
     def setUp(self):
         ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS = True
-        self.appliance = MagicMock(spec=SimpleAppliance)
         self.load_strategy = MagicMock(spec=LoadHoursStrategy)
         self.storage_strategy = MagicMock(spec=StorageStrategy)
         self.config = MagicMock(spec=GlobalConfig)
-        self.device1 = Area(name="Load", config=self.config, strategy=self.load_strategy,
-                            appliance=self.appliance)
-        self.device2 = Area(name="Storage", config=self.config, strategy=self.storage_strategy,
-                            appliance=self.appliance)
+        self.device1 = Area(name="Load", config=self.config, strategy=self.load_strategy)
+        self.device2 = Area(name="Storage", config=self.config, strategy=self.storage_strategy)
         self.area = Area(name="Area", config=self.config,
                          children=[self.device1, self.device2])
 
@@ -132,14 +129,11 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
 
     def setUp(self):
         ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS = True
-        self.appliance = MagicMock(spec=SimpleAppliance)
         self.load_strategy = MagicMock(spec=LoadHoursStrategy)
         self.storage_strategy = MagicMock(spec=StorageStrategy)
         self.config = MagicMock(spec=GlobalConfig)
-        self.device1 = Area(name="Load", config=self.config, strategy=self.load_strategy,
-                            appliance=self.appliance)
-        self.device2 = Area(name="Storage", config=self.config, strategy=self.storage_strategy,
-                            appliance=self.appliance)
+        self.device1 = Area(name="Load", config=self.config, strategy=self.load_strategy)
+        self.device2 = Area(name="Storage", config=self.config, strategy=self.storage_strategy)
         self.area = Area(name="Area", config=self.config,
                          children=[self.device1, self.device2])
         self.area.dispatcher.market_event_dispatcher.redis = MagicMock(spec=RedisCommunicator)
