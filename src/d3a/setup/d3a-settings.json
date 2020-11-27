@@ -29,10 +29,6 @@
         0,
         9223372036854775807
       ],
-      "NUM_CLONES_LIMIT": [
-        0,
-        100
-      ],
       "MIN_NUM_TICKS": 10,
       "MIN_SLOT_LENGTH_M": 2,
       "MAX_SLOT_LENGTH_M": 60,

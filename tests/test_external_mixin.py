@@ -100,7 +100,7 @@ class TestExternalMixin(unittest.TestCase):
         self._create_and_activate_strategy_area(strategy)
         market = self.area.get_future_market_from_id(1)
         self.area._markets.markets = {1: market}
-        strategy.state.available_energy_kWh = {market.time_slot: 1000.0}
+        strategy.state._available_energy_kWh = {market.time_slot: 1000.0}
         strategy.state.pledged_sell_kWh = {market.time_slot: 0.0}
         strategy.state.offered_sell_kWh = {market.time_slot: 0.0}
         current_time = now()
@@ -130,7 +130,7 @@ class TestExternalMixin(unittest.TestCase):
     def test_device_info_dict_for_pv_strategy_reports_available_energy(self):
         strategy = PVExternalStrategy(2, max_panel_power_W=160)
         self._create_and_activate_strategy_area(strategy)
-        strategy.state.available_energy_kWh[strategy.next_market.time_slot] = 1.123
+        strategy.state._available_energy_kWh[strategy.next_market.time_slot] = 1.123
         assert strategy._device_info_dict["available_energy_kWh"] == 1.123
 
     def test_device_info_dict_for_storage_strategy_reports_battery_stats(self):

@@ -88,8 +88,11 @@ def pv_const_energy(context):
                     (offer.price / offer.energy),
                     market_maker_rate[slot] - price_dec_per_slot
                 )
-                assert isclose(offer.energy, pv.strategy.energy_production_forecast_kWh[slot] *
-                               pv.strategy.panel_count, rel_tol=0.001)
+                assert isclose(
+                    offer.energy,
+                    pv.strategy.state._energy_production_forecast_kWh[slot] *
+                    pv.strategy.panel_count,
+                    rel_tol=0.001)
 
 
 @then('the load buys at most the energy equivalent of {power_W} W')

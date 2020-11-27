@@ -92,12 +92,9 @@ class PVPredefinedStrategy(PVStrategy):
             self._read_predefined_profile_for_pv()
         for market in self.area.all_markets:
             slot_time = market.time_slot
-            if slot_time not in self.energy_production_forecast_kWh or reconfigure:
-                self.energy_production_forecast_kWh[slot_time] = \
-                    find_object_of_same_weekday_and_time(self.power_profile, slot_time) \
-                    * self.panel_count
-                self.state.available_energy_kWh[slot_time] = \
-                    self.energy_production_forecast_kWh[slot_time]
+            available_energy_kWh = find_object_of_same_weekday_and_time(
+                self.power_profile, slot_time) * self.panel_count
+            self.state.set_available_energy(available_energy_kWh, slot_time, reconfigure)
 
     def _read_predefined_profile_for_pv(self):
         """

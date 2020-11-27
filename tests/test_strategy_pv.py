@@ -149,7 +149,7 @@ def pv_test1(area_test1):
 def testing_activation(pv_test1):
     pv_test1.event_activate()
     global ENERGY_FORECAST
-    ENERGY_FORECAST = pv_test1.energy_production_forecast_kWh
+    ENERGY_FORECAST = pv_test1.state._energy_production_forecast_kWh
 
 
 """TEST2"""
@@ -171,7 +171,7 @@ def pv_test2(area_test2):
     p.area = area_test2
     p.owner = area_test2
     p.offers.posted = {}
-    p.energy_production_forecast_kWh = ENERGY_FORECAST
+    p.state._energy_production_forecast_kWh = ENERGY_FORECAST
     return p
 
 
@@ -184,8 +184,8 @@ def testing_event_tick(pv_test2, market_test2, area_test2):
     offer_id1 = list(pv_test2.offers.posted.keys())[0]
     offer1 = market_test2.offers[offer_id1]
     assert market_test2.created_offers[0].price == \
-        29.9 * pv_test2.energy_production_forecast_kWh[TIME]
-    assert pv_test2.energy_production_forecast_kWh[
+        29.9 * pv_test2.state._energy_production_forecast_kWh[TIME]
+    assert pv_test2.state._energy_production_forecast_kWh[
                pendulum.today(tz=TIME_ZONE).at(hour=0, minute=0, second=2)
            ] == 0
     area_test2.current_tick_in_slot = DEFAULT_CONFIG.ticks_per_slot - 2
@@ -289,7 +289,7 @@ def pv_test6(area_test3):
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {}
-    p.energy_production_forecast_kWh = ENERGY_FORECAST
+    p.state._energy_production_forecast_kWh = ENERGY_FORECAST
     return p
 
 
@@ -325,23 +325,25 @@ def testing_produced_energy_forecast_real_data(pv_test66):
     morning_counts = Counts('morning')
     afternoon_counts = Counts('afternoon')
     evening_counts = Counts('evening')
-    for (time, power) in pv_test66.energy_production_forecast_kWh.items():
+    for (time, power) in pv_test66.state._energy_production_forecast_kWh.items():
         if time < morning_time:
             morning_counts.total += 1
             morning_counts.count = morning_counts.count + 1 \
-                if pv_test66.energy_production_forecast_kWh[time] == 0 else morning_counts.count
+                if pv_test66.state._energy_production_forecast_kWh[time] == 0 \
+                else morning_counts.count
         elif morning_time < time < afternoon_time:
             afternoon_counts.total += 1
             afternoon_counts.count = afternoon_counts.count + 1 \
-                if pv_test66.energy_production_forecast_kWh[time] > 0.001 \
+                if pv_test66.state._energy_production_forecast_kWh[time] > 0.001 \
                 else afternoon_counts.count
         elif time > afternoon_time:
             evening_counts.total += 1
             evening_counts.count = evening_counts.count + 1 \
-                if pv_test66.energy_production_forecast_kWh[time] == 0 else evening_counts.count
+                if pv_test66.state._energy_production_forecast_kWh[time] == 0 \
+                else evening_counts.count
 
     total_count = morning_counts.total + afternoon_counts.total + evening_counts.total
-    assert len(list(pv_test66.energy_production_forecast_kWh.items())) == total_count
+    assert len(list(pv_test66.state._energy_production_forecast_kWh.items())) == total_count
 
     # Morning power generation is less we check this by percentage wise counts in the morning
 
@@ -365,7 +367,8 @@ def testing_produced_energy_forecast_real_data(pv_test66):
 def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
     pv_test6.event_activate()
     pv_test6.event_market_cycle()
-    assert market_test3.created_offers[0].energy == pv_test6.energy_production_forecast_kWh[TIME]
+    assert market_test3.created_offers[0].energy == \
+        pv_test6.state._energy_production_forecast_kWh[TIME]
     fake_trade = FakeTrade(market_test3.created_offers[0])
     fake_trade.seller = pv_test6.owner.name
     pv_test6.event_trade(market_id=market_test3.id, trade=fake_trade)
@@ -430,7 +433,7 @@ def pv_test9(area_test9):
     p.area = area_test9
     p.owner = area_test9
     p.offers.posted = {}
-    p.energy_production_forecast_kWh = ENERGY_FORECAST
+    p.state._energy_production_forecast_kWh = ENERGY_FORECAST
     return p
 
 

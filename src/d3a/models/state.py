@@ -44,14 +44,55 @@ StorageSettings = ConstSettings.StorageSettings
 
 class PVState:
     def __init__(self):
-        self.available_energy_kWh = {}
+        self._available_energy_kWh = {}
+        self._energy_production_forecast_kWh = {}
+
+    def get_energy_production_forecast_kWh(self, time_slot, default_value=None):
+        assert self._energy_production_forecast_kWh[time_slot] >= -FLOATING_POINT_TOLERANCE
+        if default_value is not None:
+            return self._energy_production_forecast_kWh.get(time_slot, default_value)
+        return self._energy_production_forecast_kWh[time_slot]
+
+    def get_available_energy_kWh(self, time_slot, default_value=None):
+        assert self._available_energy_kWh[time_slot] >= -FLOATING_POINT_TOLERANCE
+        if default_value is not None:
+            return self._available_energy_kWh.get(time_slot, default_value)
+        return self._available_energy_kWh[time_slot]
+
+    def decrement_available_energy(self, sold_energy_kWh, time_slot, area_name):
+        self._available_energy_kWh[time_slot] -= sold_energy_kWh
+        assert self._available_energy_kWh[time_slot] >= -FLOATING_POINT_TOLERANCE, \
+            f"Available energy for PV {area_name} fell below zero " \
+            f"({self._available_energy_kWh[time_slot]})."
+
+    def set_available_energy(self, energy_kWh, time_slot, overwrite=False):
+        if overwrite is False and time_slot in self._energy_production_forecast_kWh:
+            return
+        self._energy_production_forecast_kWh[time_slot] = energy_kWh
+        self._available_energy_kWh[time_slot] = energy_kWh
+        assert self._energy_production_forecast_kWh[time_slot] >= 0.0
+
+    def delete_past_state(self, current_market_time_slot):
+        to_delete = []
+        for market_slot in self._available_energy_kWh.keys():
+            if market_slot < current_market_time_slot:
+                to_delete.append(market_slot)
+        for market_slot in to_delete:
+            self._available_energy_kWh.pop(market_slot, None)
+            self._energy_production_forecast_kWh.pop(market_slot, None)
 
     def get_state(self):
-        return {"available_energy_kWh": convert_pendulum_to_str_in_dict(self.available_energy_kWh)}
+        return {
+            "available_energy_kWh": convert_pendulum_to_str_in_dict(self._available_energy_kWh),
+            "energy_production_forecast_kWh":
+                convert_pendulum_to_str_in_dict(self._energy_production_forecast_kWh)
+        }
 
     def restore_state(self, state_dict):
-        self.available_energy_kWh.update(convert_str_to_pendulum_in_dict(
-            state_dict["available_energy_kWh"]))
+        self._available_energy_kWh.update(
+            convert_str_to_pendulum_in_dict(state_dict["available_energy_kWh"]))
+        self._energy_production_forecast_kWh.update(
+            convert_str_to_pendulum_in_dict(state_dict["energy_production_forecast_kWh"]))
 
 
 class LoadState:

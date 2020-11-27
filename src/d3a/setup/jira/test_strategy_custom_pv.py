@@ -32,7 +32,7 @@ class CustomPvStrategy(PVStrategy):
         """
 
         for slot_time in generate_market_slot_list():
-            self.energy_production_forecast_kWh[slot_time] = 100
+            self.state._energy_production_forecast_kWh[slot_time] = 100
 
     def calculate_initial_sell_rate(self, current_time_h):
         """

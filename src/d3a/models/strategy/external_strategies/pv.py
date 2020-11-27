@@ -26,8 +26,7 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
 from d3a.d3a_core.redis_connections.aggregator_connection import default_market_info
-from d3a.d3a_core.util import get_current_market_maker_rate, convert_W_to_kWh, \
-    find_object_of_same_weekday_and_time
+from d3a.d3a_core.util import get_current_market_maker_rate, convert_W_to_kWh
 from d3a_interface.constants_limits import ConstSettings
 
 
@@ -152,8 +151,7 @@ class PVExternalMixin(ExternalMixin):
             assert self.can_offer_be_posted(
                 arguments["energy"],
                 arguments["price"],
-                find_object_of_same_weekday_and_time(
-                    self.state.available_energy_kWh, self.next_market.time_slot),
+                self.state.get_available_energy_kWh(self.next_market.time_slot),
                 self.next_market)
             offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
             offer = self.next_market.offer(**offer_arguments)
@@ -176,7 +174,7 @@ class PVExternalMixin(ExternalMixin):
     def _device_info_dict(self):
         return {
             'available_energy_kWh':
-                self.state.available_energy_kWh.get(self.next_market.time_slot, 0)
+                self.state.get_available_energy_kWh(self.next_market.time_slot)
         }
 
     def event_market_cycle(self):
@@ -345,8 +343,7 @@ class PVExternalMixin(ExternalMixin):
             assert self.can_offer_be_posted(
                 arguments["energy"],
                 arguments["price"],
-                find_object_of_same_weekday_and_time(
-                    self.state.available_energy_kWh, self.next_market.time_slot),
+                self.state.get_available_energy_kWh(self.next_market.time_slot),
                 self.next_market)
             offer_arguments = {k: v
                                for k, v in arguments.items()
@@ -447,5 +444,4 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
                                                self.area.config.slot_length)
 
         slot_time = self.area.next_market.time_slot
-        self.energy_production_forecast_kWh[slot_time] = energy_forecast_kWh
-        self.state.available_energy_kWh[slot_time] = energy_forecast_kWh
+        self.state.set_available_energy(energy_forecast_kWh, slot_time, overwrite=True)
