@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
@@ -70,7 +70,7 @@ def get_setup(config):
 
                 ], external_connection_available=True,
             ),
-            Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
+            Area('Cell Tower', strategy=LoadHoursStrategy(avg_power_W=100,
                                                                    hrs_per_day=24,
                                                                    hrs_of_day=list(range(0, 24)),
                                                                    final_buying_rate=35)

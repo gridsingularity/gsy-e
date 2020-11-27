@@ -476,7 +476,3 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if self._simulation_start_timestamp is None:
             return 0
         return (time_slot - self._simulation_start_timestamp).days
-
-
-class CellTowerLoadHoursStrategy(LoadHoursStrategy):
-    pass

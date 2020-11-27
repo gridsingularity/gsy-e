@@ -33,7 +33,7 @@ In the following, the corresponding setup-file is shown.
 ```
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 
 
@@ -74,7 +74,7 @@ def get_setup(config):
                 transfer_fee_pct=0, transfer_fee_const=0,
 
             ),
-            Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
+            Area('Cell Tower', strategy=LoadHoursStrategy(avg_power_W=100,
                                                                    hrs_per_day=24,
                                                                    hrs_of_day=list(range(0, 24)),
                                                                    final_buying_rate=35)

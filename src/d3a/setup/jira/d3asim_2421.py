@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
 from d3a_interface.constants_limits import ConstSettings
-from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 
 
 def get_setup(config):
@@ -46,12 +46,12 @@ def get_setup(config):
                 ]
             ),
             Area('Cell Tower',
-                 strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
-                                                     hrs_per_day=24,
-                                                     hrs_of_day=list(range(0, 24)),
-                                                     final_buying_rate=30,
-                                                     fit_to_limit=True,
-                                                     update_interval=3)
+                 strategy=LoadHoursStrategy(avg_power_W=100,
+                                            hrs_per_day=24,
+                                            hrs_of_day=list(range(0, 24)),
+                                            final_buying_rate=30,
+                                            fit_to_limit=True,
+                                            update_interval=3)
                  ),
         ],
         config=config
