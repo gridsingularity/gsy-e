@@ -24,7 +24,7 @@ from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy  # NOQ
 from d3a.models.strategy.commercial_producer import CommercialStrategy  # NOQA
 from d3a.models.strategy.pv import PVStrategy  # NOQA
 from d3a.models.strategy.storage import StorageStrategy  # NOQA
-from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy # NOQA
+from d3a.models.strategy.load_hours import LoadHoursStrategy # NOQA
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy # NOQA
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy  # NOQA
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant # NOQA

@@ -19,7 +19,7 @@ from d3a.models.area import Area
 # from d3a.models.strategy.commercial_producer import CommercialStrategy
 # from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 
 
@@ -60,10 +60,10 @@ def get_setup(config):
                 grid_fee_percentage=0, grid_fee_constant=0,
 
             ),
-            Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
-                                                                   hrs_per_day=24,
-                                                                   hrs_of_day=list(range(0, 24)),
-                                                                   final_buying_rate=35)
+            Area('Cell Tower', strategy=LoadHoursStrategy(avg_power_W=100,
+                                                          hrs_per_day=24,
+                                                          hrs_of_day=list(range(0, 24)),
+                                                          final_buying_rate=35)
                  ),
             # Area('Commercial Energy Producer',
             #      strategy=CommercialStrategy(energy_rate=30),
