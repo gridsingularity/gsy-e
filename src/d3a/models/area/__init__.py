@@ -71,7 +71,7 @@ class Area:
                  grid_fee_percentage: float = None,
                  grid_fee_constant: float = None,
                  external_connection_available: bool = False,
-                 throughput: ThroughputParameters = None
+                 throughput: ThroughputParameters = ThroughputParameters()
                  ):
         validate_area(grid_fee_constant=grid_fee_constant,
                       grid_fee_percentage=grid_fee_percentage)
@@ -80,7 +80,7 @@ class Area:
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
         self.name = name
-        self.throughput = ThroughputParameters() if throughput is None else throughput
+        self.throughput = throughput
         self.uuid = uuid if uuid is not None else str(uuid4())
         self.slug = slugify(name, to_lower=True)
         self.parent = None
