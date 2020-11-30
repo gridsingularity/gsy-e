@@ -39,6 +39,7 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a import constants
 from d3a.d3a_core.util import convert_W_to_Wh, convert_W_to_kWh, convert_kW_to_kWh
 
+
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
 ACCUMULATED_KEYS_LIST = ["Accumulated Trades", "External Trades", "Totals", "Market Fees"]
 
@@ -825,6 +826,8 @@ def generate_area_uuid_map(sim_area, results):
 
 @then('the predefined load follows the load profile')
 def check_load_profile(context):
+    if constants.IS_CANARY_NETWORK:
+        return
     if isinstance(context._device_profile, str):
         context._device_profile = context._device_profile_dict
 
@@ -961,6 +964,8 @@ def test_finite_plant_max_power(context, plant_name):
 
 @then("the results are the same for each simulation run")
 def test_sim_market_count(context):
+    if constants.IS_CANARY_NETWORK:
+        return
     grid_1 = context.simulation_1.area
     grid_4 = context.simulation_4.area
     for market_1 in grid_1.past_markets:
