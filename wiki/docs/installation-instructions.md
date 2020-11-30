@@ -1,4 +1,6 @@
-## How to Install D3A on Ubuntu 18.04
+## How to Install D3A on Linux
+
+## Ubuntu 18.04
 
 ### Preparations
 
@@ -63,3 +65,15 @@ git clone https://github.com/gridsingularity/d3a.git
     `pip install -e . `
 
 Now, if you run `d3a run -–help` , the help of d3a should be shown.
+
+## Ubuntu 20.04
+
+Please follow the installation instructions for [Ubuntu 18.04](#ubuntu-1804)
+```
+error: command 'x86_64-linux-gnu-gcc' failed with exit status 1
+```
+
+Installing the following packages was fixing the issue in the past:
+```
+sudo apt-get install build-essential python3.6-dev -y
+```

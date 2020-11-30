@@ -291,7 +291,7 @@ class ExportAndPlot:
 
     def plot_device_stats(self, area: Area, node_address_list: list):
         """
-        Wrapper for _plot_trade_partner_cell_tower
+        Wrapper for _plot_device_stats
         """
         new_node_address_list = node_address_list + [area.name]
         for child in area.children:

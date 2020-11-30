@@ -123,7 +123,7 @@ def compile(upgrade="", package=None):
         puts(green("Updating requirements"), show_prefix=True)
         for file in REQ_DIR.glob('*.in'):
             puts(blue("  - {}".format(file.name.replace(".in", ""))))
-            local('pip-compile --no-index {}{} --rebuild {}'.format(
+            local('pip-compile --max-rounds 100 --no-index {}{} --rebuild {}'.format(
                 '--upgrade' if upgrade or package else '',
                 '-package {}'.format(package) if package else '',
                 file.relative_to(HERE)

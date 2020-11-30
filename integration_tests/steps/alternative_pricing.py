@@ -41,6 +41,10 @@ def average_trade_rate_mmr_time(context, time):
 @then('average trade rate between {time1} & {time2} is {trade_rate}')
 def average_trade_rate_rate_time(context, time1, time2, trade_rate):
     trade_rates = get_trade_rates_house1(context)
+    hour_list = [tt[0].time_slot.hour for tt in trade_rates
+                 if (tt[0].time_slot.hour > int(time1)) and (tt[0].time_slot.hour < int(time2))]
+    assert min(hour_list) == int(time1) + 1
+    assert max(hour_list) == int(time2) - 1
     assert all([limit_float_precision(float(trade_rate)-tt[1]) == 0.
                 for tt in trade_rates
                 if (tt[0].time_slot.hour > int(time1)) and (tt[0].time_slot.hour < int(time2))])

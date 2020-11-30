@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import traceback
 from logging import getLogger
 from typing import List  # noqa
 from cached_property import cached_property
@@ -23,7 +24,6 @@ from slugify import slugify
 from uuid import uuid4
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import AreaException
-from d3a.models.appliance.base import BaseAppliance
 from d3a.models.config import SimulationConfig
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.strategy import BaseStrategy
@@ -63,7 +63,6 @@ class Area:
     def __init__(self, name: str = None, children: List["Area"] = None,
                  uuid: str = None,
                  strategy: BaseStrategy = None,
-                 appliance: BaseAppliance = None,
                  config: SimulationConfig = None,
                  budget_keeper=None,
                  balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
@@ -99,7 +98,6 @@ class Area:
         if (len(self.children) > 0) and (strategy is not None):
             raise AreaException("A leaf area can not have children.")
         self.strategy = strategy
-        self.appliance = appliance
         self._config = config
         self._global_objects = None
         self.events = Events(event_list, self)
@@ -137,7 +135,7 @@ class Area:
     def area_reconfigure_event(self, **kwargs):
         if self.strategy is not None:
             self.strategy.area_reconfigure_event(**kwargs)
-            return
+            return True
 
         grid_fee_constant = kwargs["grid_fee_constant"] \
             if key_in_dict_and_not_none(kwargs, 'grid_fee_constant') \
@@ -190,10 +188,15 @@ class Area:
         self._update_descendants_strategy_prices()
 
     def _update_descendants_strategy_prices(self):
-        if self.strategy is not None:
-            self.strategy.event_activate_price()
-        for child in self.children:
-            child._update_descendants_strategy_prices()
+        try:
+            if self.strategy is not None:
+                self.strategy.event_activate_price()
+            for child in self.children:
+                child._update_descendants_strategy_prices()
+        except Exception as e:
+            log.error(f"area._update_descendants_strategy_prices failed. Exception: {e}. "
+                      f"Traceback: {traceback.format_exc()}")
+            return
 
     def _set_grid_fees(self, transfer_fee_const, grid_fee_percentage):
         grid_fee_type = self.config.grid_fee_type \
@@ -235,25 +238,19 @@ class Area:
             self.current_tick = current_tick
         if bc:
             self._bc = bc
-        for attr, kind in [(self.strategy, 'Strategy'), (self.appliance, 'Appliance')]:
-            if attr:
-                if self.parent:
-                    attr.area = self.parent
-                    attr.owner = self
-                else:
-                    raise AreaException(
-                        "{kind} {attr.__class__.__name__} "
-                        "on area {s} without parent!".format(
-                            kind=kind,
-                            attr=attr,
-                            s=self
-                        )
+        if self.strategy:
+            if self.parent:
+                self.strategy.area = self.parent
+                self.strategy.owner = self
+            else:
+                raise AreaException(
+                    f"Strategy {self.strategy.__class__.__name__} on area {self} without parent!"
                     )
 
-            if self.budget_keeper:
-                self.budget_keeper.activate()
+        if self.budget_keeper:
+            self.budget_keeper.activate()
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            self.grid_fee_percentage = 0
+            self._set_grid_fees(0, 0)
 
         # Cycle markets without triggering it's own event chain.
         self.cycle_markets(_trigger_event=False)
@@ -284,7 +281,19 @@ class Area:
         `_trigger_event` is used internally to avoid multiple event chains during
         initial area activation.
         """
-        self.events.update_events(self.now)
+
+        current_tick_in_slot = int(self.current_tick % self.config.ticks_per_slot)
+        tick_at_the_slot_start = self.current_tick - current_tick_in_slot
+        if tick_at_the_slot_start == 0:
+            now_value = self.now
+        else:
+            datetime_at_the_slot_start = self.config.start_date.add(
+                seconds=self.config.tick_length.seconds * tick_at_the_slot_start
+            )
+
+            now_value = datetime_at_the_slot_start
+
+        self.events.update_events(now_value)
 
         if not self.children:
             # Since children trade in markets we only need to populate them if there are any
@@ -294,7 +303,7 @@ class Area:
             self.budget_keeper.process_market_cycle()
 
         self.log.debug("Cycling markets")
-        self._markets.rotate_markets(self.now, self.stats, self.dispatcher)
+        self._markets.rotate_markets(now_value, self.stats, self.dispatcher)
         self.dispatcher._delete_past_agents(self.dispatcher._inter_area_agents)
 
         # area_market_stats have to updated when cycling market of each area:
@@ -311,11 +320,11 @@ class Area:
         self.__dict__.pop('current_market', None)
 
         # Markets range from one slot to market_count into the future
-        changed = self._markets.create_future_markets(self.now, True, self)
+        changed = self._markets.create_future_markets(now_value, True, self)
 
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
                 len(DeviceRegistry.REGISTRY.keys()) != 0:
-            changed_balancing_market = self._markets.create_future_markets(self.now, False, self)
+            changed_balancing_market = self._markets.create_future_markets(now_value, False, self)
         else:
             changed_balancing_market = None
 
@@ -507,16 +516,7 @@ class Area:
         triggers = []
         if isinstance(self.strategy, TriggerMixin):
             triggers.extend(self.strategy.available_triggers)
-        if isinstance(self.appliance, TriggerMixin):
-            triggers.extend(self.appliance.available_triggers)
         return {t.name: t for t in triggers}
-
-    def _fire_trigger(self, trigger_name, **params):
-        for target in (self.strategy, self.appliance):
-            if isinstance(target, TriggerMixin):
-                for trigger in target.available_triggers:
-                    if trigger.name == trigger_name:
-                        return target.fire_trigger(trigger_name, **params)
 
     def update_config(self, **kwargs):
         if not self.config:

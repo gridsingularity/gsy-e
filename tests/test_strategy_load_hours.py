@@ -25,7 +25,7 @@ from math import isclose
 import os
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, BalancingOffer, Bid, Trade
-from d3a.models.appliance.simple import SimpleAppliance
+
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
@@ -171,7 +171,6 @@ class TestLoadHoursStrategyInput(unittest.TestCase):
         # when only the load tests are executed. Works fine when all tests are executed
         # though
         ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 5
-        self.appliance = MagicMock(spec=SimpleAppliance)
         self.strategy1 = MagicMock(spec=LoadHoursStrategy)
 
     def tearDown(self):
@@ -467,6 +466,8 @@ def test_use_market_maker_rate_parameter_is_respected_for_load_profiles(use_mmr,
 
 def test_load_constructor_rejects_incorrect_rate_parameters():
     load = LoadHoursStrategy(avg_power_W=100, initial_buying_rate=10, final_buying_rate=5)
+    load.area = FakeArea()
+    load.owner = load.area
     with pytest.raises(D3ADeviceException):
         load.event_activate()
     with pytest.raises(D3ADeviceException):

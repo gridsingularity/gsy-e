@@ -1,7 +1,7 @@
 ## How to Install D3A using a Virtual Machine (useful especially on Windows)
 ### Prerequisites
 
-#####  Windows environment settings 
+#####  Windows environment settings (not always required)
 1. Enable [Intel Virtualization](https://stackoverflow.com/a/34305608/13507565) on your computer in [BIOS](https://2nwiki.2n.cz/pages/viewpage.action?pageId=75202968).
 2. Go to your [Windows Features](https://www.windowscentral.com/how-manage-optional-features-windows-10) setting and disable Windows Hypervisor Platform (or Hyper-V) and enable Virtual Machine Platform.
 
@@ -84,7 +84,7 @@ d3a run
 ##### How to get d3a-api-client in Vagrant
 To run a d3a api client script you need to be working under the `api-client` environment
 ```
-source envs/api-client/bin/activate
+source /home/vagrant/envs/api-client/bin/activate
 ```
 To run your API script, run the following command (templates [here](https://github.com/gridsingularity/d3a/tree/master/src/d3a/setup/odyssey_momentum)) : 
 ```

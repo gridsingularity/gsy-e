@@ -3,10 +3,10 @@ from pendulum import duration
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
+from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
+from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.area import Area
 from d3a.models.config import SimulationConfig
-from d3a.models.appliance.switchable import SwitchableAppliance
-from d3a.models.appliance.pv import PVAppliance
 from d3a.d3a_core.live_events import LiveEvents
 
 
@@ -39,11 +39,11 @@ class TestLiveEvents(unittest.TestCase):
             fit_to_limit=False, energy_rate_increase_per_update=5,
             energy_rate_decrease_per_update=8, update_interval=9
         )
-        self.area1 = Area("load", None, None, self.strategy_load, SwitchableAppliance(),
+        self.area1 = Area("load", None, None, self.strategy_load,
                           self.config, None, grid_fee_percentage=0)
-        self.area2 = Area("pv", None, None, self.strategy_pv, PVAppliance(),
+        self.area2 = Area("pv", None, None, self.strategy_pv,
                           self.config, None, grid_fee_percentage=0)
-        self.area3 = Area("storage", None, None, self.strategy_battery, SwitchableAppliance(),
+        self.area3 = Area("storage", None, None, self.strategy_battery,
                           self.config, None, grid_fee_percentage=0)
         self.area_house1 = Area("House 1", children=[self.area1, self.area2], config=self.config)
         self.area_house2 = Area("House 2", children=[self.area3], config=self.config)
@@ -95,7 +95,7 @@ class TestLiveEvents(unittest.TestCase):
         assert self.area1.strategy.avg_power_W == 234
         assert self.area1.strategy.hrs_per_day[0] == 6
         assert self.area1.strategy.hrs_of_day == [0, 1, 2, 3, 4, 5, 6, 7]
-        assert set(self.area1.strategy.bid_update.energy_rate_change_per_update.values()) == {3}
+        assert set(self.area1.strategy.bid_update.energy_rate_change_per_update.values()) == {-3}
         assert self.area1.strategy.bid_update.update_interval.minutes == 9
         assert set(self.area1.strategy.bid_update.initial_rate.values()) == {12}
 
@@ -142,7 +142,8 @@ class TestLiveEvents(unittest.TestCase):
         assert set(self.area3.strategy.offer_update.energy_rate_change_per_update.values()) == {13}
         assert set(self.area3.strategy.bid_update.initial_rate.values()) == {2}
         assert set(self.area3.strategy.bid_update.final_rate.values()) == {101}
-        assert set(self.area3.strategy.bid_update.energy_rate_change_per_update.values()) == {-4}
+        assert self.area3.strategy.bid_update.energy_rate_change_per_update[
+                   self.area_house2.next_market.time_slot] == -4
         assert self.area3.strategy.offer_update.update_interval.minutes == 14
         assert self.area3.strategy.bid_update.update_interval.minutes == 14
 
@@ -168,6 +169,62 @@ class TestLiveEvents(unittest.TestCase):
             987 * self.config.slot_length.total_minutes() / 60.0
         assert self.area_house1.export_capacity_kWh == \
             765 * self.config.slot_length.total_minutes() / 60.0
+
+    def test_update_area_event_can_switch_strategy_from_market_maker_to_infinite_bus(self):
+        self.strategy_mmr = MarketMakerStrategy(energy_rate=30)
+        self.area_mmr = Area("mmr", None, None, self.strategy_mmr,
+                             self.config, None, grid_fee_percentage=0)
+        self.area_mmr.parent = self.area_grid
+        self.area_grid.children.append(self.area_mmr)
+
+        event_dict = {
+            "eventType": "update_area",
+            "area_uuid": self.area_mmr.uuid,
+            "area_representation": {'type': 'InfiniteBus'}
+        }
+
+        self.area_grid.activate()
+
+        self.live_events.add_event(event_dict)
+        self.live_events.handle_all_events(self.area_grid)
+        assert type(self.area_mmr.strategy) == InfiniteBusStrategy
+
+    def test_update_area_event_can_switch_strategy_from_infinite_bus_to_market_maker(self):
+        self.strategy_mmr = InfiniteBusStrategy(energy_sell_rate=30, energy_buy_rate=25)
+        self.area_mmr = Area("mmr", None, None, self.strategy_mmr,
+                             self.config, None, grid_fee_percentage=0)
+        self.area_mmr.parent = self.area_grid
+        self.area_grid.children.append(self.area_mmr)
+
+        event_dict = {
+            "eventType": "update_area",
+            "area_uuid": self.area_mmr.uuid,
+            "area_representation": {'type': 'MarketMaker'}
+        }
+
+        self.area_grid.activate()
+
+        self.live_events.add_event(event_dict)
+        self.live_events.handle_all_events(self.area_grid)
+        assert type(self.area_mmr.strategy) == MarketMakerStrategy
+
+    def test_update_area_event_cannot_switch_non_strategy_area_to_any_strategy(self):
+        self.area_mmr = Area("mmr", None, None, None,
+                             self.config, None, grid_fee_percentage=0)
+        self.area_mmr.parent = self.area_grid
+        self.area_grid.children.append(self.area_mmr)
+
+        event_dict = {
+            "eventType": "update_area",
+            "area_uuid": self.area_mmr.uuid,
+            "area_representation": {'type': 'MarketMaker'}
+        }
+
+        self.area_grid.activate()
+
+        self.live_events.add_event(event_dict)
+        self.live_events.handle_all_events(self.area_grid)
+        assert self.area_mmr.strategy is None
 
     def test_create_area_event_failing_due_to_wrong_parameter_settings_no_exception_raised(self):
         event_dict = {

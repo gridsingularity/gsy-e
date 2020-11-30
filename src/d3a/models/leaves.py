@@ -15,22 +15,19 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.pv import PVAppliance
-from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy, \
-    LoadProfileExternalStrategy
+    LoadProfileExternalStrategy, LoadForecastExternalStrategy
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy, \
-    PVPredefinedExternalStrategy, PVUserProfileExternalStrategy
+    PVPredefinedExternalStrategy, PVUserProfileExternalStrategy, PVForecastExternalStrategy
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 
@@ -43,6 +40,14 @@ external_strategies_mapping = {
     StorageStrategy: StorageExternalStrategy
 }
 
+forecast_strategy_mapping = {
+    PVPredefinedStrategy: PVForecastExternalStrategy,
+    PVStrategy: PVForecastExternalStrategy,
+    PVUserProfileStrategy: PVForecastExternalStrategy,
+    DefinedLoadStrategy: LoadForecastExternalStrategy,
+    LoadHoursStrategy: LoadForecastExternalStrategy
+}
+
 
 class Leaf(Area):
     """
@@ -50,10 +55,11 @@ class Leaf(Area):
     instantiated and serialized in a more compact format
     """
     strategy_type = None
-    appliance_type = SimpleAppliance
 
     def __init__(self, name, config=None, uuid=None, **kwargs):
-        if kwargs.get("allow_external_connection", False) is True:
+        if kwargs.get("forecast_stream_enabled", False) is True:
+            self.strategy_type = forecast_strategy_mapping[self.strategy_type]
+        elif kwargs.get("allow_external_connection", False) is True:
             self.strategy_type = external_strategies_mapping[self.strategy_type]
         super(Leaf, self).__init__(
             name=name,
@@ -61,7 +67,6 @@ class Leaf(Area):
                 key: value for key, value in kwargs.items()
                 if key in (self.strategy_type.parameters or []) and value is not None
             }),
-            appliance=self.appliance_type(),
             config=config,
             uuid=uuid
         )
@@ -86,49 +91,35 @@ class MarketMaker(Leaf):
 
 class PV(Leaf):
     strategy_type = PVStrategy
-    appliance_type = PVAppliance
 
 
 class PredefinedPV(Leaf):
     strategy_type = PVPredefinedStrategy
-    appliance_type = PVAppliance
 
 
 class PVProfile(Leaf):
     strategy_type = PVUserProfileStrategy
-    appliance_type = PVAppliance
 
 
 class LoadProfile(Leaf):
     strategy_type = DefinedLoadStrategy
-    appliance_type = SwitchableAppliance
 
 
 class Storage(Leaf):
     strategy_type = StorageStrategy
-    appliance_type = SwitchableAppliance
 
 
 class LoadHours(Leaf):
     strategy_type = LoadHoursStrategy
-    appliance_type = SwitchableAppliance
-
-
-class CellTower(Leaf):
-    strategy_type = CellTowerLoadHoursStrategy
-    appliance_type = SwitchableAppliance
 
 
 class FiniteDieselGenerator(Leaf):
     strategy_type = FinitePowerPlant
-    appliance_type = SwitchableAppliance
 
 
 class Light(Leaf):
     strategy_type = LoadHoursStrategy
-    appliance_type = SwitchableAppliance
 
 
 class TV(Leaf):
     strategy_type = LoadHoursStrategy
-    appliance_type = SwitchableAppliance

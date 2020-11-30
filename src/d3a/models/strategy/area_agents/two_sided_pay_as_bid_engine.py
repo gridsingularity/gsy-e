@@ -134,7 +134,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 # which was skipped when accepting the bid during the trade operation.
                 updated_trade_offer_info = \
                     self.markets.source.fee_class.propagate_original_offer_info_on_bid_trade(
-                        [None, None, *bid_trade.offer_bid_trade_info]
+                        bid_trade.offer_bid_trade_info
                     )
             else:
                 updated_trade_offer_info = bid_trade.offer_bid_trade_info
