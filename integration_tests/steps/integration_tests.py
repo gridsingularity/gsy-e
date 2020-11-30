@@ -683,9 +683,12 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
         )
         context.simulation.run()
     except Exception as er:
-        root_logger.critical(f"Error reported when running the simulation: {er}")
-        root_logger.critical(f"Traceback: {traceback.format_exc()}")
-        context.sim_error = er
+        if context.raise_exception_when_running_sim:
+            root_logger.critical(f"Error reported when running the simulation: {er}")
+            root_logger.critical(f"Traceback: {traceback.format_exc()}")
+            raise Exception(er)
+        else:
+            context.sim_error = er
 
 
 @then('we test the output of the simulation of '

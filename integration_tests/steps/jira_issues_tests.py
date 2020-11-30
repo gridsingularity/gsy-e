@@ -327,3 +327,8 @@ def check_area_trade_and_bill(context):
     assert isclose(cb.cumulative_bills_results[context.name_uuid_map['Market Maker']]['earned'],
                    0.72)
     assert isclose(cb.cumulative_bills_results[context.name_uuid_map['Load']]['spent_total'], 0.84)
+
+
+@given("raising exceptions when running the simulation is disabled")
+def don_not_raise_exceptions(context):
+    context.raise_exception_when_running_sim = False

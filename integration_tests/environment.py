@@ -52,6 +52,7 @@ def before_scenario(context, scenario):
     ConstSettings.IAASettings.MIN_BID_AGE = 0
     constants.D3A_TEST_RUN = True
     context.no_export = True
+    context.raise_exception_when_running_sim = True
     if os.environ.get("DISPATCH_EVENTS_BOTTOM_TO_TOP") == "False":
         d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = False
 
