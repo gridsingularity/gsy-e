@@ -138,17 +138,18 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def event_market_cycle(self):
         super().event_market_cycle()
-        self.add_entry_in_hrs_per_day(self.area.next_market.time_slot)
+        self.add_entry_in_hrs_per_day()
         self.bid_update.update_and_populate_price_settings(self.area)
         self._calculate_active_markets()
         self._update_energy_requirement_future_markets()
         self._set_alternative_pricing_scheme()
         self.update_state()
 
-    def add_entry_in_hrs_per_day(self, time_slot, overwrite=False):
-        current_day = self._get_day_of_timestamp(time_slot)
-        if current_day not in self.hrs_per_day or overwrite:
-            self.hrs_per_day[current_day] = self._initial_hrs_per_day
+    def add_entry_in_hrs_per_day(self, overwrite=False):
+        for market in self.area.all_markets:
+            current_day = self._get_day_of_timestamp(market.time_slot)
+            if current_day not in self.hrs_per_day or overwrite:
+                self.hrs_per_day[current_day] = self._initial_hrs_per_day
 
     def update_state(self):
         self.post_or_update_bid()
@@ -224,7 +225,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if key_in_dict_and_not_none(kwargs, 'hrs_per_day') or \
                 key_in_dict_and_not_none(kwargs, 'hrs_of_day'):
             self.assign_hours_of_per_day(kwargs['hrs_of_day'], kwargs['hrs_per_day'])
-            self.add_entry_in_hrs_per_day(self.area.next_market.time_slot, overwrite=True)
+            self.add_entry_in_hrs_per_day(overwrite=True)
         if key_in_dict_and_not_none(kwargs, 'avg_power_W'):
             self.avg_power_W = kwargs['avg_power_W']
             self._update_energy_requirement_future_markets()
@@ -261,6 +262,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                     return
                 acceptable_offer = offer
             current_day = self._get_day_of_timestamp(market.time_slot)
+            print(market.time_slot_str, current_day)
             if acceptable_offer and \
                     self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE and \
                     round(acceptable_offer.energy_rate, DEFAULT_PRECISION) <= \
