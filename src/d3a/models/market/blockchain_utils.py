@@ -19,6 +19,10 @@ from logging import getLogger
 import json
 import sys
 import base58
+from substrateinterface import SubstrateRequestException, Keypair
+from hashlib import blake2b
+from pathlib import Path
+import logging
 
 from d3a_interface.exceptions import D3AException
 from d3a.d3a_core.util import retry_function
@@ -75,6 +79,50 @@ def get_contract_code_hash(path_to_metadata):
         metadata = json.load(json_file)
     code_hash = metadata["source"]["hash"]
     return code_hash
+
+
+def upload_contract(substrate, path_to_wasm, mnemonic):
+
+    keypair = Keypair.create_from_mnemonic(mnemonic, address_type=42)
+    path = Path(path_to_wasm)
+    with open(path, 'rb') as fp:
+        code_bytes = fp.read()
+
+    code_hash = '0x{}'.format(blake2b(code_bytes, digest_size=32).digest().hex())
+
+    call = substrate.compose_call(
+        call_module='Contracts',
+        call_function='put_code',
+        call_params={
+            'code': '0x{}'.format(code_bytes.hex())
+        }
+    )
+
+    extrinsic = substrate.create_signed_extrinsic(call=call, keypair=keypair)
+
+    try:
+        result = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+
+        extrinsic_hash = result['extrinsic_hash']
+        block_hash = result['block_hash']
+
+        events = substrate.get_runtime_events(block_hash)
+
+        for event in events['result']:
+            if event['event_id'] == 'CodeStored':
+                event_code_hash = events['result'][1]['params'][0]['value']
+
+                # verify that the uploaded contract hash matches the local hash
+                assert event_code_hash == code_hash
+
+        logging.info('Contract uploaded, extrinsic hash: {} in block {}'.format(
+            extrinsic_hash, block_hash
+        ))
+
+        return extrinsic_hash, block_hash
+
+    except SubstrateRequestException as e:
+        logging.info("Failed to send: {}".format(e))
 
 
 def address_to_hex(address):
