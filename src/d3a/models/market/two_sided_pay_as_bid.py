@@ -62,7 +62,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         return self.bids
 
     @lock_market_action
-    def bid(self, price: float, energy: float, buyer: str, seller: str, buyer_origin,
+    def bid(self, price: float, energy: float, buyer: str, buyer_origin,
             bid_id: str = None, original_bid_price=None, adapt_price_with_fees=True,
             add_to_history=True) -> Bid:
         if energy <= 0:
@@ -78,7 +78,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
             raise MarketException("Negative price after taxes, bid cannot be posted.")
 
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
-                  self.now, price, energy, buyer, seller, original_bid_price, buyer_origin)
+                  self.now, price, energy, buyer, original_bid_price, buyer_origin)
         self.bids[bid.id] = bid
         if add_to_history is True:
             self.bid_history.append(bid)
@@ -104,7 +104,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
                                 price=original_bid.price * (energy / original_bid.energy),
                                 energy=energy,
                                 buyer=original_bid.buyer,
-                                seller=original_bid.seller,
                                 original_bid_price=original_accepted_price,
                                 buyer_origin=original_bid.buyer_origin,
                                 adapt_price_with_fees=False,
@@ -119,7 +118,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
         residual_bid = self.bid(price=residual_price,
                                 energy=residual_energy,
                                 buyer=original_bid.buyer,
-                                seller=original_bid.seller,
                                 original_bid_price=original_residual_price,
                                 buyer_origin=original_bid.buyer_origin,
                                 adapt_price_with_fees=False,
@@ -150,7 +148,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
         if market_bid is None:
             raise BidNotFound("During accept bid: " + str(bid))
 
-        seller = market_bid.seller if seller is None else seller
         buyer = market_bid.buyer if buyer is None else buyer
         energy = market_bid.energy if energy is None else energy
 
@@ -192,7 +189,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
                       )
 
         if already_tracked is False:
-            self._update_stats_after_trade(trade, bid, bid.buyer, already_tracked)
+            self._update_stats_after_trade(trade, bid, already_tracked)
             log.info(f"[TRADE][BID] [{self.name}] [{self.time_slot_str}] {trade}")
 
         self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)

@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
-from math import isclose
 from d3a.constants import DEFAULT_PRECISION
 
 
@@ -101,30 +100,6 @@ def check_capacity_dependant_sell_rate(context):
                 assert trade_rate >= break_even_sell
                 assert trade_rate <= market_maker_rate
     assert len(trades_sold) == len(house1.past_markets)
-
-
-@then("the storage offers and buys energy as expected at expected prices")
-def check_custom_storage(context):
-    house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
-    storage = list(filter(lambda x: x.name == "H1 Storage1", house1.children))[0]
-    trades_sold = []
-    for market in house1.past_markets:
-        slot = market.time_slot
-        break_even_sell = round(storage.strategy.offer_update.final_rate[slot], DEFAULT_PRECISION)
-        for id, offer in market.offers.items():
-            if offer.seller in storage.name:
-                assert isclose((offer.price / offer.energy),
-                               break_even_sell)
-        for trade in market.trades:
-            if trade.seller == storage.name:
-                trades_sold.append(trade)
-                trade_rate = round((trade.offer.price / trade.offer.energy), DEFAULT_PRECISION)
-                market_maker_rate = \
-                    round(context.simulation.area.config.
-                          market_maker_rate[slot], 2)
-                assert trade_rate >= break_even_sell
-                assert trade_rate <= market_maker_rate
-    assert len(trades_sold) > 0
 
 
 @then("the SOC reaches 100% within the first {num_slots} market slots")
