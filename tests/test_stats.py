@@ -26,6 +26,7 @@ from d3a_interface.sim_results.bills import MarketEnergyBills
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.util import make_iaa_name
 from d3a import constants
+from d3a.models.area.throughput_paramters import ThroughputParameters
 
 
 class FakeArea:
@@ -37,10 +38,7 @@ class FakeArea:
         self.strategy = None
         self.uuid = uuid4()
         self.parent = None
-        self.baseline_peak_energy_import_kWh = None
-        self.baseline_peak_energy_export_kWh = None
-        self.import_capacity_kWh = None
-        self.export_capacity_kWh = None
+        self.throughput = ThroughputParameters()
         self.stats = MagicMock()
         self.stats.imported_energy = Mock()
         self.stats.exported_energy = Mock()

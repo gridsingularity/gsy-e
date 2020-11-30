@@ -27,7 +27,7 @@ from d3a.d3a_core.exceptions import AreaException
 from d3a.models.config import SimulationConfig
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.strategy import BaseStrategy
-from d3a.d3a_core.util import TaggedLogWrapper, convert_area_throughput_kVA_to_kWh
+from d3a.d3a_core.util import TaggedLogWrapper
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.global_objects import GlobalObjects
@@ -36,6 +36,7 @@ from d3a.models.area.stats import AreaStats
 from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.events import Events
+from d3a.models.area.throughput_paramters import ThroughputParameters
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.area_validator import validate_area
 from d3a.models.area.redis_external_market_connection import RedisMarketExternalConnection
@@ -70,24 +71,16 @@ class Area:
                  grid_fee_percentage: float = None,
                  grid_fee_constant: float = None,
                  external_connection_available: bool = False,
-                 baseline_peak_energy_import_kWh: float = None,
-                 baseline_peak_energy_export_kWh: float = None,
-                 import_capacity_kVA: float = None,
-                 export_capacity_kVA: float = None
+                 throughput: ThroughputParameters = None
                  ):
         validate_area(grid_fee_constant=grid_fee_constant,
-                      grid_fee_percentage=grid_fee_percentage,
-                      baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
-                      baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
-                      import_capacity_kVA=import_capacity_kVA,
-                      export_capacity_kVA=export_capacity_kVA)
+                      grid_fee_percentage=grid_fee_percentage)
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
         self.name = name
-        self.baseline_peak_energy_import_kWh = baseline_peak_energy_import_kWh
-        self.baseline_peak_energy_export_kWh = baseline_peak_energy_export_kWh
+        self.throughput = ThroughputParameters() if throughput is None else throughput
         self.uuid = uuid if uuid is not None else str(uuid4())
         self.slug = slugify(name, to_lower=True)
         self.parent = None
@@ -108,7 +101,6 @@ class Area:
         self._markets = None
         self.dispatcher = DispatcherFactory(self)()
         self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
-        self._convert_area_throughput_kva_to_kwh(import_capacity_kVA, export_capacity_kVA)
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets, self)
@@ -146,45 +138,35 @@ class Area:
 
         baseline_peak_energy_import_kWh = kwargs["baseline_peak_energy_import_kWh"] \
             if key_in_dict_and_not_none(kwargs, 'baseline_peak_energy_import_kWh') \
-            else self.baseline_peak_energy_import_kWh
+            else self.throughput.baseline_peak_energy_import_kWh
 
         baseline_peak_energy_export_kWh = kwargs["baseline_peak_energy_export_kWh"] \
             if key_in_dict_and_not_none(kwargs, 'baseline_peak_energy_export_kWh') \
-            else self.baseline_peak_energy_export_kWh
+            else self.throughput.baseline_peak_energy_export_kWh
 
-        if key_in_dict_and_not_none(kwargs, 'import_capacity_kVA'):
-            import_capacity_kVA = kwargs["import_capacity_kVA"]
-            import_capacity_kWh = convert_area_throughput_kVA_to_kWh(import_capacity_kVA,
-                                                                     self.config.slot_length)
-        else:
-            import_capacity_kVA = None
-            import_capacity_kWh = self.import_capacity_kWh
+        import_capacity_kVA = kwargs["import_capacity_kVA"] \
+            if key_in_dict_and_not_none(kwargs, 'import_capacity_kVA') \
+            else self.throughput.import_capacity_kVA
 
-        if key_in_dict_and_not_none(kwargs, 'export_capacity_kVA'):
-            export_capacity_kVA = kwargs["export_capacity_kVA"]
-            export_capacity_kWh = convert_area_throughput_kVA_to_kWh(export_capacity_kVA,
-                                                                     self.config.slot_length)
-        else:
-            export_capacity_kVA = None
-            export_capacity_kWh = self.export_capacity_kWh
+        export_capacity_kVA = kwargs["export_capacity_kVA"] \
+            if key_in_dict_and_not_none(kwargs, 'export_capacity_kVA') \
+            else self.throughput.import_capacity_kVA
 
         try:
             validate_area(grid_fee_constant=grid_fee_constant,
-                          grid_fee_percentage=grid_fee_percentage,
-                          baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
-                          baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
-                          import_capacity_kVA=import_capacity_kVA,
-                          export_capacity_kVA=export_capacity_kVA)
+                          grid_fee_percentage=grid_fee_percentage)
 
         except Exception as e:
             log.error(str(e))
             return
 
         self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
-        self.baseline_peak_energy_import_kWh = baseline_peak_energy_import_kWh
-        self.baseline_peak_energy_export_kWh = baseline_peak_energy_export_kWh
-        self.export_capacity_kWh = export_capacity_kWh
-        self.import_capacity_kWh = import_capacity_kWh
+        self.throughput = ThroughputParameters(
+            baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
+            baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
+            import_capacity_kVA=import_capacity_kVA,
+            export_capacity_kVA=export_capacity_kVA
+        )
         self._update_descendants_strategy_prices()
 
     def _update_descendants_strategy_prices(self):
@@ -221,14 +203,6 @@ class Area:
             if self.config is not None \
             else ConstSettings.IAASettings.GRID_FEE_TYPE
         return self.grid_fee_constant if grid_fee_type == 1 else self.grid_fee_percentage
-
-    def _convert_area_throughput_kva_to_kwh(self, import_capacity_kVA, export_capacity_kVA):
-        self.import_capacity_kWh = \
-            import_capacity_kVA * self.config.slot_length.total_minutes() / 60.0 \
-            if import_capacity_kVA is not None else 0.
-        self.export_capacity_kWh = \
-            export_capacity_kVA * self.config.slot_length.total_minutes() / 60.0 \
-            if export_capacity_kVA is not None else 0.
 
     def set_events(self, event_list):
         self.events = Events(event_list, self)
