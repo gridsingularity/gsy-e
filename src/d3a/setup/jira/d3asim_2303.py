@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
@@ -39,8 +38,8 @@ def get_setup(config):
                                                                        range(10, 11)),
                                                                     initial_buying_rate=60,
                                                                     final_buying_rate=60,
-                                                                    update_interval=1),
-                                 appliance=SwitchableAppliance()),
+                                                                    update_interval=1)
+                                 ),
                          ], grid_fee_constant=2)
                 ],
                 grid_fee_constant=3,
@@ -49,13 +48,13 @@ def get_setup(config):
                 'DSO',
                 [
                     Area('Power Plant', strategy=FinitePowerPlant(energy_rate=30,
-                                                                  max_available_power_kW=1000),
-                         appliance=SwitchableAppliance()),
+                                                                  max_available_power_kW=1000)
+                         ),
                 ],
                 grid_fee_constant=10,
             ),
-            Area('Market Maker', strategy=MarketMakerStrategy(grid_connected=True, energy_rate=50),
-                 appliance=SwitchableAppliance()),
+            Area('Market Maker', strategy=MarketMakerStrategy(grid_connected=True, energy_rate=50)
+                 ),
         ], grid_fee_constant=10,
         config=config
     )

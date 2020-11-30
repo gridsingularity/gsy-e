@@ -163,7 +163,7 @@ class FakeMarket:
         offer.id = 'id'
         return offer
 
-    def bid(self, price, energy, buyer, seller, market=None, original_bid_price=None,
+    def bid(self, price, energy, buyer, market=None, original_bid_price=None,
             buyer_origin=None):
         pass
 
@@ -377,6 +377,7 @@ def storage_strategy_test6(area_test6, market_test6, called):
 def test_if_trades_are_handled_correctly(storage_strategy_test6, market_test6):
     storage_strategy_test6.area.get_future_market_from_id = \
         lambda _id: market_test6 if _id == market_test6.id else None
+    storage_strategy_test6.state.add_default_values_to_state_profiles(storage_strategy_test6.area)
     storage_strategy_test6.event_trade(market_id=market_test6.id, trade=market_test6.trade)
     assert market_test6.trade.offer in \
         storage_strategy_test6.offers.sold[market_test6.id]
@@ -701,6 +702,8 @@ def storage_strategy_test13(area_test13, called):
 
 
 def test_storage_event_trade(storage_strategy_test11, market_test13):
+    storage_strategy_test11.state.add_default_values_to_state_profiles(
+        storage_strategy_test11.area)
     storage_strategy_test11.event_trade(market_id=market_test13.id, trade=market_test13.trade)
     assert storage_strategy_test11.state.pledged_sell_kWh[market_test13.time_slot] == \
         market_test13.trade.offer.energy
@@ -879,8 +882,8 @@ def test_assert_if_trade_rate_is_lower_than_offer_rate(storage_test11):
 def test_assert_if_trade_rate_is_higher_than_bid_rate(storage_test11):
     market_id = "2"
     storage_test11._bids[market_id] = \
-        [Bid("bid_id", now(), 30, 1, buyer="FakeArea", seller="producer")]
-    expensive_bid = Bid("bid_id", now(), 31, 1, buyer="FakeArea", seller="producer")
+        [Bid("bid_id", now(), 30, 1, buyer="FakeArea")]
+    expensive_bid = Bid("bid_id", now(), 31, 1, buyer="FakeArea")
     trade = Trade("trade_id", "time", expensive_bid, storage_test11, "buyer")
 
     with pytest.raises(AssertionError):

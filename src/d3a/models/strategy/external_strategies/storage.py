@@ -303,6 +303,7 @@ class StorageExternalMixin(ExternalMixin):
         self.register_on_market_cycle()
         if not self.should_use_default_strategy:
             self._reset_event_tick_counter()
+            self.state.add_default_values_to_state_profiles(self.area)
             self.state.market_cycle(
                 self.market_area.current_market.time_slot
                 if self.market_area.current_market else None,
@@ -329,6 +330,7 @@ class StorageExternalMixin(ExternalMixin):
                 self.redis.aggregator.add_batch_market_event(self.device.uuid,
                                                              market_info,
                                                              self.area.global_objects)
+            self._delete_past_state()
         else:
             super().event_market_cycle()
 

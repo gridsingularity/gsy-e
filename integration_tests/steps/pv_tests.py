@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from math import isclose
-from pendulum import duration
 from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import DEFAULT_PRECISION
 
@@ -73,31 +72,12 @@ def pv_price_decrease(context):
         assert False
 
 
-@then("the PV offers energy as expected at an expected price")
-def pv_const_energy(context):
-    house = list(filter(lambda x: x.name == "House 2", context.simulation.area.children))[0]
-    pv = list(filter(lambda x: "H2 PV" in x.name, house.children))[0]
-    price_dec_per_slot = 0.1 * int(context.simulation.simulation_config.slot_length.seconds /
-                                   context.simulation.simulation_config.tick_length.seconds)
-    market_maker_rate = context.simulation.simulation_config.market_maker_rate
-
-    for market in house.past_markets:
-        slot = market.time_slot
-        for id, offer in market.offers.items():
-            if offer.seller == pv.name:
-                assert isclose(
-                    (offer.price / offer.energy),
-                    market_maker_rate[slot] - price_dec_per_slot
-                )
-                assert isclose(offer.energy, pv.strategy.energy_production_forecast_kWh[slot] *
-                               pv.strategy.panel_count, rel_tol=0.001)
-
-
 @then('the load buys at most the energy equivalent of {power_W} W')
 def load_buys_200_W(context, power_W):
+    from d3a.d3a_core.util import convert_W_to_kWh
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     load = list(filter(lambda x: "Load" in x.name, house1.children))[0]
-    max_desired_energy = float(power_W) * (house1.config.slot_length / duration(hours=1)) / 1000.0
+    max_desired_energy = convert_W_to_kWh(float(power_W), house1.config.slot_length)
     total_energy_per_slot = []
     for market in house1.past_markets:
         total_energy = sum(trade.offer.energy

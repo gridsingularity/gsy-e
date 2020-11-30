@@ -12,8 +12,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.switchable import SwitchableAppliance
-from d3a.models.appliance.simple import SimpleAppliance
+
+
 from d3a.models.area import Area
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.load_hours import LoadHoursStrategy
@@ -32,16 +32,16 @@ def get_setup(config):
                     Area('Load', strategy=LoadHoursStrategy(
                         avg_power_W=5000, hrs_per_day=24, hrs_of_day=list(range(24)),
                         initial_buying_rate=25, final_buying_rate=25),
-                         appliance=SwitchableAppliance()),
+                         ),
                     Area('Local Supply 1',
                          strategy=FinitePowerPlant(energy_rate=10, max_available_power_kW=1.0),
-                         appliance=SimpleAppliance()),
+                         ),
                     Area('Local Supply 2',
                          strategy=FinitePowerPlant(energy_rate=15, max_available_power_kW=1.0),
-                         appliance=SimpleAppliance()),
+                         ),
                     Area('Local Supply 3',
                          strategy=FinitePowerPlant(energy_rate=20, max_available_power_kW=1.0),
-                         appliance=SimpleAppliance()),
+                         ),
                 ],
             ),
         ],

@@ -19,11 +19,9 @@ import json
 import pytest
 
 from d3a.d3a_core.area_serializer import area_to_string, area_from_string, are_all_areas_unique
-from d3a.models.appliance.pv import PVAppliance
 from d3a.models.area import Area
 from d3a.models.leaves import PV, LoadHours, Storage
 from d3a_interface.constants_limits import ConstSettings
-from d3a.models.budget_keeper import BudgetKeeper
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
@@ -39,21 +37,6 @@ def test_area_with_children_roundtrip():
     assert recovered.name == "parent"
     assert recovered.children[0].name == "child1"
     assert recovered.children[1].name == "child2"
-
-
-def test_encode_strategy_appliance():
-    area = Area("child", [], None, PVStrategy(), PVAppliance())
-    area_dict = json.loads(area_to_string(area))
-    assert 'children' not in area_dict
-    assert area_dict['strategy']['type'] == 'PVStrategy'
-    assert area_dict['appliance']['type'] == 'PVAppliance'
-
-
-def test_strategy_appliance_roundtrip():
-    area = Area("child", [], None, PVStrategy(), PVAppliance())
-    recovered = area_from_string(area_to_string(area))
-    assert type(recovered.strategy) is PVStrategy
-    assert type(recovered.appliance) is PVAppliance
 
 
 def test_raises_unknown_class():
@@ -72,26 +55,8 @@ def test_non_attr_param():
     area1 = Area('area1', [], None, PVStrategy())
     recovered1 = area_from_string(area_to_string(area1))
     assert recovered1.strategy.max_panel_power_W is None
-    assert recovered1.strategy.offer_update.final_rate[area1.config.start_date] == \
+    assert recovered1.strategy.offer_update.final_rate_profile_buffer[area1.config.start_date] == \
         ConstSettings.PVSettings.SELLING_RATE_RANGE.final
-
-
-@pytest.fixture
-def appliance_fixture():
-    child1 = Area('child1', appliance=PVAppliance(initially_on=False))
-    child2 = Area('child2', appliance=PVAppliance())
-    return area_to_string(Area('parent', [child1, child2]))
-
-
-def test_appliance(appliance_fixture):
-    area_dict = json.loads(appliance_fixture)
-    assert area_dict['children'][0]['appliance']['type'] == 'PVAppliance'
-
-
-def test_appliance_roundtrip(appliance_fixture):
-    recovered = area_from_string(appliance_fixture)
-    assert recovered.children[1].appliance.initially_on
-    assert not recovered.children[0].appliance.is_on
 
 
 def test_leaf_deserialization():
@@ -162,25 +127,6 @@ def test_roundtrip_with_leaf(fixture_with_leaves):
     recovered = area_from_string(fixture_with_leaves)
     assert isinstance(recovered.children[0].strategy, PVStrategy)
     assert isinstance(recovered.children[1].strategy, PVStrategy)
-
-
-@pytest.fixture
-def budget_keeper_fixture():
-    child = Area('child', appliance=PVAppliance())
-    budget_keeper = BudgetKeeper(budget=100.0, days_per_period=30)
-    return area_to_string(Area('parent', [child], budget_keeper=budget_keeper))
-
-
-def test_budget_keeper(budget_keeper_fixture):
-    area_dict = json.loads(budget_keeper_fixture)
-    assert area_dict['budget_keeper']['kwargs']['budget'] == 100.0
-    assert area_dict['budget_keeper']['kwargs']['days_per_period'] == 30
-
-
-def test_budget_keeper_roundtrip(budget_keeper_fixture):
-    recovered = area_from_string(budget_keeper_fixture)
-    assert recovered.budget_keeper.budget == 100.0
-    assert recovered.budget_keeper.days_per_period == 30
 
 
 def test_area_does_not_allow_duplicate_subarea_names():

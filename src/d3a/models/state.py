@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from pendulum import duration, DateTime  # NOQA
+from pendulum import DateTime  # NOQA
 from typing import Dict  # NOQA
 from collections import namedtuple
 from enum import Enum
@@ -23,7 +23,7 @@ from math import isclose
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
 from d3a import limit_float_precision
-from d3a.d3a_core.util import generate_market_slot_list
+from d3a.d3a_core.util import write_default_to_dict, convert_kW_to_kWh
 
 StorageSettings = ConstSettings.StorageSettings
 
@@ -31,21 +31,19 @@ StorageSettings = ConstSettings.StorageSettings
 #
 # - a strategy class responsible for buying/selling options
 # - an appliance class responsible for actual energy transfers (drawing/serving options)
+#   (appliance class has to be reinstated if needed)
 # - a state class keeping the state of the appliance
 #
 # The full three-classes setup is not necessary for every device:
 # - Some devices may not have a state. The state class is mainly meant to share data between
 #   strategy and appliance, so simple responses to triggers and events are not part of it,
-#   neither are unpredictable parameters that the strategy cannot take into account (like
-#   cloud_cover in PVAppliance)
-# - If a device has no state, maybe it doesn't need its own appliance class either;
-#   SimpleAppliance may do.
+#   neither are unpredictable parameters that the strategy can not take into account
+# - If a device has no state, maybe it doesn't need its own appliance class either
 
 
 class PVState:
     def __init__(self):
-        self.available_energy_kWh = \
-            {slot: 0. for slot in generate_market_slot_list()}
+        self.available_energy_kWh = {}
 
     def get_state(self):
         return {"available_energy_kWh": convert_pendulum_to_str_in_dict(self.available_energy_kWh)}
@@ -56,8 +54,7 @@ class PVState:
 
 class LoadState:
     def __init__(self):
-        self.desired_energy_Wh = \
-            {slot: 0. for slot in generate_market_slot_list()}
+        self.desired_energy_Wh = {}
         self.total_energy_demanded_wh = 0
 
     def get_state(self):
@@ -86,7 +83,8 @@ class StorageState:
                  loss_function=1,
                  min_allowed_soc=StorageSettings.MIN_ALLOWED_SOC):
 
-        initial_capacity_kWh = capacity * initial_soc / 100
+        self.initial_soc = initial_soc
+        self.initial_capacity_kWh = capacity * initial_soc / 100
 
         self.min_allowed_soc_ratio = min_allowed_soc / 100
 
@@ -96,37 +94,25 @@ class StorageState:
         self.max_abs_battery_power_kW = max_abs_battery_power_kW
 
         # storage capacity, that is already sold:
-        self.pledged_sell_kWh = \
-            {slot: 0. for slot in generate_market_slot_list()}
+        self.pledged_sell_kWh = {}
         # storage capacity, that has been offered (but not traded yet):
-        self.offered_sell_kWh = \
-            {slot: 0. for slot in generate_market_slot_list()}
+        self.offered_sell_kWh = {}
         # energy, that has been bought:
-        self.pledged_buy_kWh = \
-            {slot: 0. for slot in generate_market_slot_list()}
+        self.pledged_buy_kWh = {}
         # energy, that the storage wants to buy (but not traded yet):
-        self.offered_buy_kWh = \
-            {slot: 0. for slot in generate_market_slot_list()}
-        self.time_series_ess_share = \
-            {slot: {ESSEnergyOrigin.UNKNOWN: 0.,
-                    ESSEnergyOrigin.LOCAL: 0.,
-                    ESSEnergyOrigin.EXTERNAL: 0.}
-             for slot in generate_market_slot_list()}
+        self.offered_buy_kWh = {}
+        self.time_series_ess_share = {}
 
-        self.charge_history = \
-            {slot: 100.0 * initial_capacity_kWh / capacity for slot in generate_market_slot_list()}
-        self.charge_history_kWh = \
-            {slot: initial_capacity_kWh for slot in generate_market_slot_list()}
-        self.offered_history = \
-            {slot: '-' for slot in generate_market_slot_list()}
-        self.used_history = \
-            {slot: '-' for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
-        self.energy_to_buy_dict = {slot: 0. for slot in generate_market_slot_list()}
-        self.energy_to_sell_dict = {slot: 0. for slot in generate_market_slot_list()}
+        self.charge_history = {}
+        self.charge_history_kWh = {}
+        self.offered_history = {}
+        self.used_history = {}  # type: Dict[DateTime, float]
+        self.energy_to_buy_dict = {}
+        self.energy_to_sell_dict = {}
 
-        self._used_storage = initial_capacity_kWh
+        self._used_storage = self.initial_capacity_kWh
         self._battery_energy_per_slot = 0.0
-        self._used_storage_share = [EnergyOrigin(initial_energy_origin, initial_capacity_kWh)]
+        self._used_storage_share = [EnergyOrigin(initial_energy_origin, self.initial_capacity_kWh)]
 
     def get_state(self):
         return {
@@ -191,8 +177,8 @@ class StorageState:
                - self.offered_buy_kWh[time_slot]
 
     def set_battery_energy_per_slot(self, slot_length):
-        self._battery_energy_per_slot = self.max_abs_battery_power_kW * \
-                                        (slot_length / duration(hours=1))
+        self._battery_energy_per_slot = convert_kW_to_kWh(self.max_abs_battery_power_kW,
+                                                          slot_length)
 
     def has_battery_reached_max_power(self, energy, time_slot):
         return limit_float_precision(abs(energy
@@ -282,6 +268,27 @@ class StorageState:
     def calculate_soc_for_time_slot(self, time_slot):
         self.charge_history[time_slot] = 100.0 * self.used_storage / self.capacity
         self.charge_history_kWh[time_slot] = self.used_storage
+
+    def add_default_values_to_state_profiles(self, area):
+        for market in area.all_markets:
+            time_slot = market.time_slot
+            write_default_to_dict(self.pledged_sell_kWh, time_slot, 0)
+            write_default_to_dict(self.pledged_buy_kWh, time_slot, 0)
+            write_default_to_dict(self.offered_sell_kWh, time_slot, 0)
+            write_default_to_dict(self.offered_buy_kWh, time_slot, 0)
+
+            write_default_to_dict(self.charge_history, time_slot, self.initial_soc)
+            write_default_to_dict(self.charge_history_kWh, time_slot, self.initial_capacity_kWh)
+
+            write_default_to_dict(self.energy_to_buy_dict, time_slot, 0)
+            write_default_to_dict(self.energy_to_sell_dict, time_slot, 0)
+            write_default_to_dict(self.offered_history, time_slot, '-')
+            write_default_to_dict(self.used_history, time_slot, '-')
+
+            write_default_to_dict(self.time_series_ess_share, time_slot,
+                                  {ESSEnergyOrigin.UNKNOWN: 0.,
+                                   ESSEnergyOrigin.LOCAL: 0.,
+                                   ESSEnergyOrigin.EXTERNAL: 0.})
 
     def market_cycle(self, past_time_slot, time_slot):
         """

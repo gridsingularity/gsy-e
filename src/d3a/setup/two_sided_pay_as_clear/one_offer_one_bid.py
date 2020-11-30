@@ -12,10 +12,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.switchable import SwitchableAppliance
+
 from d3a.models.area import Area
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.appliance.pv import PVAppliance
+
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a_interface.constants_limits import ConstSettings
 
@@ -32,10 +32,10 @@ def get_setup(config):
                     Area('House 3 Load', strategy=LoadHoursStrategy(
                         avg_power_W=100, hrs_per_day=24, hrs_of_day=list(range(24)),
                         initial_buying_rate=30, final_buying_rate=30),
-                         appliance=SwitchableAppliance()),
+                         ),
                     Area('House 2 PV',
                          strategy=PVStrategy(initial_selling_rate=10, final_selling_rate=10),
-                         appliance=PVAppliance()),
+                         ),
                 ],
             ),
         ],

@@ -27,8 +27,9 @@ TIME_ZONE = "UTC"
 os.environ["API_CLIENT_USERNAME"] = "user_name"
 os.environ["API_CLIENT_PASSWORD"] = "password"
 
+
 # set simulation parameters
-RUN_ON_D3A_WEB = False # TODO set to true if joining collaboration through UI, false if running simulation locally
+RUN_ON_D3A_WEB = False  # TODO set to true if joining collaboration through UI, false if running simulation locally
 simulation_id = 'UUID of the simulation' # TODO update simulation id with experiment id (if RUN_ON_D3A_WEB is TRUE)
 domain_name = 'https://d3aweb.gridsingularity.com' # leave as is
 websocket_domain_name = 'wss://d3aweb.gridsingularity.com/external-ws' # leave as is
@@ -44,10 +45,10 @@ storage_names = ['Storage 1','Storage 2','Storage 3','Storage 4','Storage 5','St
 'Storage 19','Storage 20','Storage 23','Storage 24','Storage 25']
 
 # set trading strategy parameters
-market_maker_price = 21.2 # leave as is
-feed_in_tariff_price = 19 # leave as is
+market_maker_price = 22.  # leave as is
+feed_in_tariff_price = 21.9  # leave as is
 # set market parameters
-ticks = 10 # leave as is
+ticks = 10  # leave as is
 
 if RUN_ON_D3A_WEB:
     Aggregator_type = Aggregator
@@ -130,11 +131,15 @@ class Oracle(Aggregator_type):
                     try:
                         self.grid_fee_Grid = stats["Grid"]["next_market_fee"]
                         self.grid_fee_Community = stats["Grid"]["children"]["Community"]["next_market_fee"]
-                    except :
+                    except:
                         pass
 
         # get total grid fee
-        self.grid_fee=self.grid_fee_Grid+self.grid_fee_Community
+        try:
+            self.grid_fee = self.grid_fee_Grid+self.grid_fee_Community
+        except:
+            pass
+
         print("Total grid fee :", self.grid_fee)
 
         # TODO do something with the arrays if needed:
@@ -173,7 +178,7 @@ class Oracle(Aggregator_type):
                 self.pv_strategy.append(pred_max_price - (pred_max_price - pred_min_price) * (i / ticks))
             else: # last tick guarantee match by bidding at market maker price / offering at feed in tariff price
                 self.load_strategy.append(market_maker_price+self.grid_fee)
-                self.pv_strategy.append(max(0, feed_in_tariff_price-self.grid_fee)) # must be non-negative
+                self.pv_strategy.append(max(0, feed_in_tariff_price-self.grid_fee))  # must be non-negative
             self.batt_buy_strategy.append(pred_min_price + (pred_med_price - pred_min_price) * (i/ticks))
             self.batt_sell_strategy.append(pred_max_price - (pred_max_price - pred_med_price) * (i / ticks))
 
@@ -268,59 +273,60 @@ class Oracle(Aggregator_type):
         ################################################
         batch_commands = {}
         for device_event in tick_info["content"]:
+            if key_in_dict_and_not_none(device_event, "area_uuid"):
 
-            # Load Strategy
-            if "energy_requirement_kWh" in device_event["device_info"] and \
-                    device_event["device_info"]["energy_requirement_kWh"] > 0.0:
-                price = self.load_strategy[i] * device_event["device_info"]["energy_requirement_kWh"]
-                energy = device_event["device_info"]["energy_requirement_kWh"]
-                batch_commands[device_event["area_uuid"]] = [
-                    {"type": "update_bid",
-                     "price": price,
-                     "energy": energy},
-                    ]
-                uuid = device_event['area_uuid']
-                print(f'{self.device_uuid_map[uuid]} BID {round(energy, 4)} kWh 'f'at {round(price / energy, 2)}/kWh')
-
-            # PV Strategy
-            if "available_energy_kWh" in device_event["device_info"] and \
-                    device_event["device_info"]["available_energy_kWh"] > 0.0:
-                price = self.pv_strategy[i] * device_event["device_info"]["available_energy_kWh"]
-                energy = device_event["device_info"]["available_energy_kWh"]
-                batch_commands[device_event["area_uuid"]] = [
-                    {"type": "update_offer",
-                     "price": price,
-                     "energy": energy},
-                    ]
-                uuid = device_event['area_uuid']
-                print(f'{self.device_uuid_map[uuid]} OFFER {round(energy, 4)} kWh 'f'at {round(price / energy, 2)}/kWh')
-
-            # Battery strategy
-            if "energy_to_buy" in device_event["device_info"]:
-                energy_to_buy = device_event["device_info"]["energy_to_buy"] + device_event["device_info"]["offered_buy_kWh"]
-                energy_to_sell = device_event["device_info"]["energy_to_sell"] + device_event["device_info"]["offered_sell_kWh"]
-                batch_commands[device_event["area_uuid"]] = []
-                uuid = device_event['area_uuid']
-                # Battery buy strategy
-                if energy_to_buy > 0.0:
-                    buy_price = self.batt_buy_strategy[i] * energy_to_buy
-                    buy_energy = energy_to_buy
-                    batch_commands[device_event["area_uuid"]].append(
+                # Load Strategy
+                if "energy_requirement_kWh" in device_event["device_info"] and \
+                        device_event["device_info"]["energy_requirement_kWh"] > 0.0:
+                    price = self.load_strategy[i] * device_event["device_info"]["energy_requirement_kWh"]
+                    energy = device_event["device_info"]["energy_requirement_kWh"]
+                    batch_commands[device_event["area_uuid"]] = [
                         {"type": "update_bid",
-                         "price": buy_price,
-                         "energy": buy_energy},
-                    )
-                    print(f'{self.device_uuid_map[uuid]} BID {round(buy_energy, 4)} kWh 'f'at {round(buy_price / buy_energy, 2)}/kWh')
-                # Battery sell strategy
-                if energy_to_sell > 0.0:
-                    sell_price = self.batt_sell_strategy[i] * energy_to_sell
-                    sell_energy = energy_to_sell
-                    batch_commands[device_event["area_uuid"]].append(
+                         "price": price,
+                         "energy": energy},
+                        ]
+                    uuid = device_event['area_uuid']
+                    print(f'{self.device_uuid_map[uuid]} BID {round(energy, 4)} kWh 'f'at {round(price / energy, 2)}/kWh')
+
+                # PV Strategy
+                if "available_energy_kWh" in device_event["device_info"] and \
+                        device_event["device_info"]["available_energy_kWh"] > 0.0:
+                    price = self.pv_strategy[i] * device_event["device_info"]["available_energy_kWh"]
+                    energy = device_event["device_info"]["available_energy_kWh"]
+                    batch_commands[device_event["area_uuid"]] = [
                         {"type": "update_offer",
-                         "price": sell_price,
-                         "energy": sell_energy},
-                    )
-                    print(f'{self.device_uuid_map[uuid]} OFFER {round(sell_energy, 4)} kWh 'f'at {round(sell_price / sell_energy, 2)}/kWh')
+                         "price": price,
+                         "energy": energy},
+                        ]
+                    uuid = device_event['area_uuid']
+                    print(f'{self.device_uuid_map[uuid]} OFFER {round(energy, 4)} kWh 'f'at {round(price / energy, 2)}/kWh')
+
+                # Battery strategy
+                if "energy_to_buy" in device_event["device_info"]:
+                    energy_to_buy = device_event["device_info"]["energy_to_buy"] + device_event["device_info"]["offered_buy_kWh"]
+                    energy_to_sell = device_event["device_info"]["energy_to_sell"] + device_event["device_info"]["offered_sell_kWh"]
+                    batch_commands[device_event["area_uuid"]] = []
+                    uuid = device_event['area_uuid']
+                    # Battery buy strategy
+                    if energy_to_buy > 0.0:
+                        buy_price = self.batt_buy_strategy[i] * energy_to_buy
+                        buy_energy = energy_to_buy
+                        batch_commands[device_event["area_uuid"]].append(
+                            {"type": "update_bid",
+                             "price": buy_price,
+                             "energy": buy_energy},
+                        )
+                        print(f'{self.device_uuid_map[uuid]} BID {round(buy_energy, 4)} kWh 'f'at {round(buy_price / buy_energy, 2)}/kWh')
+                    # Battery sell strategy
+                    if energy_to_sell > 0.0:
+                        sell_price = self.batt_sell_strategy[i] * energy_to_sell
+                        sell_energy = energy_to_sell
+                        batch_commands[device_event["area_uuid"]].append(
+                            {"type": "update_offer",
+                             "price": sell_price,
+                             "energy": sell_energy},
+                        )
+                        print(f'{self.device_uuid_map[uuid]} OFFER {round(sell_energy, 4)} kWh 'f'at {round(sell_price / sell_energy, 2)}/kWh')
 
         # submit list of bids and offers
         if batch_commands:
@@ -392,6 +398,7 @@ else:
 # Register selected devices to oracle
 def register_device_list(device_names, device_args, device_uuid_map):
     for d in device_names:
+        print('Registered device:', d)
         if RUN_ON_D3A_WEB:
             uuid = get_area_uuid_from_area_name_and_collaboration_id(device_args["simulation_id"], d, device_args["domain_name"])
             device_args['device_id'] = uuid
@@ -413,7 +420,7 @@ device_uuid_map = register_device_list(storage_names, device_args, device_uuid_m
 
 aggr.device_uuid_map = device_uuid_map
 print()
-print('Devices registered:')
+print('Summary of devices registered:')
 print(aggr.device_uuid_map)
 print()
 

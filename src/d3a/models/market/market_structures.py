@@ -21,7 +21,7 @@ from copy import deepcopy
 import json
 from pendulum import DateTime, parse
 from d3a.events import MarketEvent
-from d3a_interface.utils import datetime_to_string_incl_seconds
+from d3a_interface.utils import datetime_to_string_incl_seconds, key_in_dict_and_not_none
 
 Clearing = namedtuple('Clearing', ('rate', 'energy'))
 
@@ -110,25 +110,25 @@ def offer_from_JSON_string(offer_string, current_time):
     return offer
 
 
-class Bid(namedtuple('Bid', ('id', 'time', 'price', 'energy', 'buyer', 'seller',
+class Bid(namedtuple('Bid', ('id', 'time', 'price', 'energy', 'buyer',
                              'original_bid_price', 'buyer_origin', 'energy_rate'))):
-    def __new__(cls, id, time, price, energy, buyer, seller, original_bid_price=None,
+    def __new__(cls, id, time, price, energy, buyer, original_bid_price=None,
                 buyer_origin=None, energy_rate=None):
         if energy_rate is None:
             energy_rate = price / energy
         # overridden to give the residual field a default value
-        return super(Bid, cls).__new__(cls, str(id), time, price, energy, buyer, seller,
+        return super(Bid, cls).__new__(cls, str(id), time, price, energy, buyer,
                                        original_bid_price, buyer_origin, energy_rate)
 
     def __repr__(self):
         return (
-            "<Bid {{{s.id!s:.6s}}} [{s.buyer}] [{s.seller}] "
+            "<Bid {{{s.id!s:.6s}}} [{s.buyer}] "
             "{s.energy} kWh @ {s.price} {rate}>".format(s=self, rate=self.energy_rate)
         )
 
     def __str__(self):
         return (
-            "{{{s.id!s:.6s}}} [origin: {s.buyer_origin}] [{s.buyer}] [{s.seller}] "
+            "{{{s.id!s:.6s}}} [origin: {s.buyer_origin}] [{s.buyer}] "
             "{s.energy} kWh @ {s.price} {rate}".format(s=self, rate=self.energy_rate)
         )
 
@@ -177,17 +177,22 @@ def offer_or_bid_from_JSON_string(offer_or_bid, current_time):
         return Bid(**offer_bid_dict)
 
 
-class TradeBidInfo(namedtuple('TradeBidInfo',
-                              ('original_bid_rate', 'propagated_bid_rate',
-                               'original_offer_rate', 'propagated_offer_rate',
-                               'trade_rate'))):
+class TradeBidOfferInfo(namedtuple('TradeBidOfferInfo', ('original_bid_rate',
+                                                         'propagated_bid_rate',
+                                                         'original_offer_rate',
+                                                         'propagated_offer_rate',
+                                                         'trade_rate'))):
     def to_JSON_string(self):
         return json.dumps(self._asdict(), default=my_converter)
+
+    @classmethod
+    def len(cls):
+        return len(cls._fields)
 
 
 def trade_bid_info_from_JSON_string(info_string):
     info_dict = json.loads(info_string)
-    return TradeBidInfo(**info_dict)
+    return TradeBidOfferInfo(**info_dict)
 
 
 class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'residual',
@@ -252,8 +257,16 @@ def trade_from_JSON_string(trade_string, current_time):
         trade_dict['residual'] = offer_or_bid_from_JSON_string(trade_dict['residual'],
                                                                current_time)
     trade_dict['time'] = parse(trade_dict['time'])
-    # if 'offer_bid_trade_info' in trade_dict:
-    #     trade_dict['offer_bid_trade_info'] = TradeBidInfo(*trade_dict['offer_bid_trade_info'])
+    if key_in_dict_and_not_none(trade_dict, 'offer_bid_trade_info'):
+        keys = ['original_bid_rate',
+                'propagated_bid_rate',
+                'original_offer_rate',
+                'propagated_offer_rate',
+                'trade_rate']
+        values = trade_dict['offer_bid_trade_info']
+        trade_dict['offer_bid_trade_info'] = dict(zip(keys, values))
+        trade_dict['offer_bid_trade_info'] = TradeBidOfferInfo(
+            **trade_dict['offer_bid_trade_info'])
     return Trade(**trade_dict)
 
 

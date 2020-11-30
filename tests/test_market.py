@@ -34,7 +34,7 @@ from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
 from d3a.models.market.one_sided import OneSidedMarket
-from d3a.models.market.market_structures import Bid, Offer, Trade
+from d3a.models.market.market_structures import Bid, Offer, Trade, TradeBidOfferInfo
 from d3a.models.market.balancing import BalancingMarket
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
@@ -106,10 +106,10 @@ class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
             residual_energy = bid.energy - energy
             residual = Bid('res', bid.time, bid.price, residual_energy, bid.buyer, seller)
             traded = Bid(bid.id, bid.time, (trade_rate * energy), energy, bid.buyer, seller)
-            return Trade('trade_id', time, traded, traded.seller, bid.buyer, residual)
+            return Trade('trade_id', time, traded, bid.buyer, residual)
         else:
             traded = Bid(bid.id, bid.time, (trade_rate * energy), energy, bid.buyer, seller)
-            return Trade('trade_id', time, traded, traded.seller, bid.buyer)
+            return Trade('trade_id', time, traded, bid.buyer)
 
 
 def teardown_function():
@@ -168,32 +168,29 @@ def test_market_offer(market, offer):
 
 
 def test_market_bid(market: TwoSidedPayAsBid):
-    bid = market.bid(1, 2, 'bidder', 'seller', 'bidder')
+    bid = market.bid(1, 2, 'bidder', 'bidder')
     assert market.bids[bid.id] == bid
     assert bid.price == 1
     assert bid.energy == 2
     assert bid.buyer == 'bidder'
-    assert bid.seller == 'seller'
     assert len(bid.id) == 36
 
 
 def test_market_bid_accepts_bid_id(market: TwoSidedPayAsBid):
-    bid = market.bid(1, 2, 'bidder', 'seller', 'bidder', bid_id='123')
+    bid = market.bid(1, 2, 'bidder', 'bidder', bid_id='123')
     assert market.bids['123'] == bid
     assert bid.id == '123'
     assert bid.price == 1
     assert bid.energy == 2
     assert bid.buyer == 'bidder'
-    assert bid.seller == 'seller'
 
     # Update existing bid is tested here
-    bid = market.bid(3, 4, 'updated_bidder', 'updated_seller', 'updated_bidder', bid_id='123')
+    bid = market.bid(3, 4, 'updated_bidder', 'updated_bidder', bid_id='123')
     assert market.bids['123'] == bid
     assert bid.id == '123'
     assert isclose(bid.price, 3)
     assert bid.energy == 4
     assert bid.buyer == 'updated_bidder'
-    assert bid.seller == 'updated_seller'
 
 
 def test_market_offer_invalid(market: OneSidedMarket):
@@ -203,7 +200,7 @@ def test_market_offer_invalid(market: OneSidedMarket):
 
 def test_market_bid_invalid(market: TwoSidedPayAsBid):
     with pytest.raises(InvalidBid):
-        market.bid(10, -1, 'someone', 'noone', 'someone')
+        market.bid(10, -1, 'someone',  'someone')
 
 
 @pytest.mark.parametrize("market, offer", [
@@ -245,7 +242,7 @@ def test_market_offer_delete_readonly(market):
 
 
 def test_market_bid_delete(market: TwoSidedPayAsBid):
-    bid = market.bid(20, 10, 'someone', 'noone', 'someone')
+    bid = market.bid(20, 10, 'someone', 'someone')
     assert bid.id in market.bids
 
     market.delete_bid(bid)
@@ -253,7 +250,7 @@ def test_market_bid_delete(market: TwoSidedPayAsBid):
 
 
 def test_market_bid_delete_id(market: TwoSidedPayAsBid):
-    bid = market.bid(20, 10, 'someone', 'noone', 'someone')
+    bid = market.bid(20, 10, 'someone', 'someone')
     assert bid.id in market.bids
 
     market.delete_bid(bid.id)
@@ -300,9 +297,9 @@ def test_balancing_market_negative_offer_trade(market=BalancingMarket(time_slot=
 
 
 def test_market_bid_trade(market=TwoSidedPayAsBid(time_slot=now())):
-    bid = market.bid(20, 10, 'A', 'B', 'A', original_bid_price=20)
-
-    trade = market.accept_bid(bid, energy=10, seller='B', trade_offer_info=[2, 2, 0.5, 0.5, 2])
+    bid = market.bid(20, 10, 'A', 'A', original_bid_price=20)
+    trade_offer_info = TradeBidOfferInfo(2, 2, 0.5, 0.5, 2)
+    trade = market.accept_bid(bid, energy=10, seller='B', trade_offer_info=trade_offer_info)
     assert trade
     assert trade.id == market.trades[0].id
     assert trade.id
@@ -355,12 +352,12 @@ def test_market_trade_not_found(market, offer, accept_offer):
 
 
 def test_market_trade_bid_not_found(market=TwoSidedPayAsBid(time_slot=now())):
-    bid = market.bid(20, 10, 'A', 'B', 'A')
-
-    assert market.accept_bid(bid, 10, 'B', trade_offer_info=[2, 2, 1, 1, 2])
+    bid = market.bid(20, 10, 'A', 'A')
+    trade_offer_info = TradeBidOfferInfo(2, 2, 1, 1, 2)
+    assert market.accept_bid(bid, 10, 'B', trade_offer_info=trade_offer_info)
 
     with pytest.raises(BidNotFound):
-        market.accept_bid(bid, 10, 'B', trade_offer_info=[2, 2, 1, 1, 2])
+        market.accept_bid(bid, 10, 'B', trade_offer_info=trade_offer_info)
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
@@ -392,16 +389,15 @@ def test_market_trade_partial(market, offer, accept_offer):
 
 
 def test_market_trade_bid_partial(market=TwoSidedPayAsBid(time_slot=now())):
-    bid = market.bid(20, 20, 'A', 'B', 'A', original_bid_price=20)
-
-    trade = market.accept_bid(bid, energy=5, seller='B', trade_offer_info=[1, 1, 1, 1, 1])
+    bid = market.bid(20, 20, 'A', 'A', original_bid_price=20)
+    trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
+    trade = market.accept_bid(bid, energy=5, seller='B', trade_offer_info=trade_offer_info)
     assert trade
     assert trade.id == market.trades[0].id
     assert trade.id
     assert trade.offer is not bid
     assert trade.offer.energy == 5
     assert trade.offer.price == 5
-    assert trade.offer.seller == 'B'
     assert trade.seller == 'B'
     assert trade.buyer == 'A'
     assert trade.residual
@@ -409,15 +405,15 @@ def test_market_trade_bid_partial(market=TwoSidedPayAsBid(time_slot=now())):
     assert trade.residual.id in market.bids
     assert market.bids[trade.residual.id].energy == 15
     assert isclose(market.bids[trade.residual.id].price, 15)
-    assert market.bids[trade.residual.id].seller == 'B'
     assert market.bids[trade.residual.id].buyer == 'A'
 
 
 def test_market_accept_bid_emits_bid_split_on_partial_bid(
         called, market=TwoSidedPayAsBid(time_slot=now())):
     market.add_listener(called)
-    bid = market.bid(20, 20, 'A', 'B', 'A')
-    trade = market.accept_bid(bid, energy=1, trade_offer_info=[1, 1, 1, 1, 1])
+    bid = market.bid(20, 20, 'A', 'A')
+    trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
+    trade = market.accept_bid(bid, energy=1, trade_offer_info=trade_offer_info)
     assert all([ev != repr(MarketEvent.BID_DELETED) for c in called.calls for ev in c[0]])
     assert len(called.calls) == 2
     assert called.calls[0][0] == (repr(MarketEvent.BID_SPLIT),)
@@ -434,8 +430,9 @@ def test_market_accept_bid_always_updates_trade_stats(
         called, market_method, market=TwoSidedPayAsBid(time_slot=now())):
     setattr(market, market_method, called)
 
-    bid = market.bid(20, 20, 'A', 'B', 'A')
-    trade = market.accept_bid(bid, energy=5, seller='B', trade_offer_info=[1, 1, 1, 1, 1])
+    bid = market.bid(20, 20, 'A', 'A')
+    trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
+    trade = market.accept_bid(bid, energy=5, seller='B', trade_offer_info=trade_offer_info)
     assert trade
     assert len(getattr(market, market_method).calls) == 1
 
@@ -459,10 +456,10 @@ def test_market_trade_partial_invalid(market, offer, accept_offer, energy, excep
 @pytest.mark.parametrize('energy', (0, 21, 100, -20))
 def test_market_trade_partial_bid_invalid(
         energy, market=TwoSidedPayAsBid(time_slot=now())):
-    bid = market.bid(20, 20, 'A', 'B', 'A')
-
+    bid = market.bid(20, 20, 'A', 'A')
+    trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
     with pytest.raises(InvalidTrade):
-        market.accept_bid(bid, energy=energy, seller='A', trade_offer_info=[1, 1, 1, 1, 1])
+        market.accept_bid(bid, energy=energy, seller='A', trade_offer_info=trade_offer_info)
 
 
 def test_market_acct_simple(market=OneSidedMarket(time_slot=now())):
@@ -653,8 +650,9 @@ def test_market_accept_offer_yields_partial_trade(market, offer, accept_offer):
 
 def test_market_accept_bid_yields_partial_bid_trade(
         market=TwoSidedPayAsBid(time_slot=now())):
-    bid = market.bid(2.0, 4, 'buyer', 'seller', 'buyer')
-    trade = market.accept_bid(bid, energy=1, seller='seller', trade_offer_info=[2, 2, 1, 1, 2])
+    bid = market.bid(2.0, 4, 'buyer', 'buyer')
+    trade_offer_info = TradeBidOfferInfo(2, 2, 1, 1, 2)
+    trade = market.accept_bid(bid, energy=1, seller='seller', trade_offer_info=trade_offer_info)
     assert trade.offer.id == bid.id and trade.offer.energy == 1
 
 
@@ -726,10 +724,10 @@ def test_double_sided_pay_as_bid_market_match_offer_bids(pab_market):
     offer = Offer('offer1', now(), 2, 2, 'other', 2)
     pab_market.offers = {"offer1": offer}
 
-    source_bid = Bid('bid_id3', now(), 12, 10, 'B', 'S', original_bid_price=12)
-    pab_market.bids = {"bid_id": Bid('bid_id', now(), 10, 10, 'B', 'S'),
-                       "bid_id1": Bid('bid_id1', now(), 11, 10, 'B', 'S'),
-                       "bid_id2": Bid('bid_id2', now(), 9, 10, 'B', 'S'),
+    source_bid = Bid('bid_id3', now(), 12, 10, 'B', original_bid_price=12)
+    pab_market.bids = {"bid_id": Bid('bid_id', now(), 10, 10, 'B'),
+                       "bid_id1": Bid('bid_id1', now(), 11, 10, 'B'),
+                       "bid_id2": Bid('bid_id2', now(), 9, 10, 'B'),
                        "bid_id3": source_bid}
 
     pab_market.match_offers_bids()

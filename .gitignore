@@ -97,3 +97,11 @@ requirements/local.*
 .pytest_cache
 
 d3a-simulation
+
+# Ink contract builds
+
+src/d3a/blockchain/contracts/ink/target
+
+# Cargo.lock files
+
+Cargo.lock

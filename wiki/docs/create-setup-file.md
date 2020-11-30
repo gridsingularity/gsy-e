@@ -14,7 +14,7 @@ def get_setup(config):
 
 
 Now the user can ad more sub areas recursively by adding more instances of area to the second parameter (list) of the Area class.
-If the strategy parameter is set in the Area class, the area is converted to a leaf node, e.g. a load. 
+If the strategy parameter is set in the Area class, the area is converted to a leaf node, e.g. a load.
 The following grid architecture is given:
 
 - ***Grid***
@@ -31,14 +31,12 @@ The following grid architecture is given:
 In the following, the corresponding setup-file is shown.
 
 ```
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
-from d3a.models.appliance.pv import PVAppliance
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
- 
- 
+
+
 def get_setup(config):
     area = Area(
         'Grid',
@@ -50,12 +48,12 @@ def get_setup(config):
                                                                        hrs_per_day=6,
                                                                        hrs_of_day=list(
                                                                            range(12, 18)),
-                                                                       final_buying_rate=35),
-                         appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50),
-                         appliance=SwitchableAppliance()),
-                    Area('H1 Storage2', strategy=StorageStrategy(initial_soc=50),
-                         appliance=SwitchableAppliance()),
+                                                                       final_buying_rate=35)
+                         ),
+                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50)
+                         ),
+                    Area('H1 Storage2', strategy=StorageStrategy(initial_soc=50)
+                         ),
                 ],
                 transfer_fee_pct=0, transfer_fee_const=0,
             ),
@@ -66,21 +64,21 @@ def get_setup(config):
                                                                        hrs_per_day=4,
                                                                        hrs_of_day=list(
                                                                            range(12, 16)),
-                                                                       final_buying_rate=35),
-                         appliance=SwitchableAppliance()),
+                                                                       final_buying_rate=35)
+                         ),
                     Area('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
-                                                      final_selling_rate=5),
-                         appliance=PVAppliance()),
- 
+                                                      final_selling_rate=5)
+                         ),
+
                 ],
                 transfer_fee_pct=0, transfer_fee_const=0,
- 
+
             ),
-            Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
+            Area('Cell Tower', strategy=LoadHoursStrategy(avg_power_W=100,
                                                                    hrs_per_day=24,
                                                                    hrs_of_day=list(range(0, 24)),
-                                                                   final_buying_rate=35),
-                 appliance=SwitchableAppliance()),
+                                                                   final_buying_rate=35)
+                 ),
         ],
         config=config
     )

@@ -99,10 +99,9 @@ class FakeMarket:
         self.traded_offers.append(trade)
         return trade
 
-    def bid(self, price, energy, buyer, seller, original_bid_price=None,
+    def bid(self, price, energy, buyer, original_bid_price=None,
             buyer_origin=None):
-        bid = Bid("bid_id", pendulum.now(), price, energy, buyer,
-                  seller, buyer_origin=buyer_origin)
+        bid = Bid("bid_id", pendulum.now(), price, energy, buyer, buyer_origin=buyer_origin)
         return bid
 
 
