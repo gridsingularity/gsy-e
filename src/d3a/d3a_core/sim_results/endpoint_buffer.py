@@ -60,7 +60,7 @@ class SimulationEndpointBuffer:
         }
         self.should_export_plots = should_export_plots
         self.market_bills = MarketEnergyBills()
-        self.kpi = KPI(should_export_plots)
+        self.kpi = KPI()
         if self.should_export_plots:
             self.market_unmatched_loads = MarketUnmatchedLoads()
             self.price_energy_day = MarketPriceEnergyDay(should_export_plots)
