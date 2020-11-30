@@ -1,4 +1,4 @@
-There are 2 available APIs to interact with a running simulation. The first one is the [Asset API](assets-api.md) and allows to manage multiple assets by implementing custom trading strategies. The second API is the [Market API](grid-api.md) that allows to manage multiple markets by implementing grid fee strategies based on the market statistics.
+There are 2 available APIs to interact with a running simulation. The first one is the [Asset API](assets-api.md) and allows to manage multiple assets by implementing custom trading strategies. The second API is the [Grid Operators API](grid-api.md) that allows to manage multiple markets by implementing grid fee strategies based on the market statistics.
 
 
 

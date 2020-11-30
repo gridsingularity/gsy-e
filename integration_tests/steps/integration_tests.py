@@ -242,7 +242,7 @@ def set_min_offer_age(context, min_offer_age):
 def running_the_simulation(context):
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.CRITICAL)
+    root_logger.setLevel(logging.ERROR)
 
     slowdown = 0
     seed = 0
@@ -308,7 +308,7 @@ def run_simulation_via_console(context, scenario, hours, slot_length,
 def run_sim_with_config_setting(context, cloud_coverage, scenario):
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.CRITICAL)
+    root_logger.setLevel(logging.ERROR)
 
     simulation_config = SimulationConfig(duration(hours=int(24)),
                                          duration(minutes=int(60)),
@@ -514,7 +514,7 @@ def monkeypatch_ctrl_callback(context, method):
 @when('the configured simulation is running')
 def configd_sim_run(context):
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.CRITICAL)
+    root_logger.setLevel(logging.ERROR)
     context.simulation.run()
 
 
@@ -549,10 +549,9 @@ def final_results(context):
     context.simulation.redis_connection.publish_results = final_res_count
 
 
-@when('the simulation is able to transmit zipped results')
+@when('the redis_connection is enabled')
 def transmit_zipped_results(context):
     context.simulation.redis_connection.is_enabled = lambda: True
-    context.simulation.redis_connection.write_zip_results = lambda _: None
 
 
 @then('intermediate results are transmitted on every slot')
@@ -587,7 +586,7 @@ def min_bid_age_nr_ticks(context, min_bid_age):
 def run_sim_multiday(context, scenario, start_date, total_duration, slot_length, tick_length):
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.CRITICAL)
+    root_logger.setLevel(logging.ERROR)
     if start_date == "None":
         start_date = today(tz=TIME_ZONE)
     else:
@@ -648,7 +647,7 @@ def export_logic(context, flag):
 def run_sim(context, scenario, total_duration, slot_length, tick_length, market_count):
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.CRITICAL)
+    root_logger.setLevel(logging.ERROR)
 
     simulation_config = SimulationConfig(duration(hours=int(total_duration)),
                                          duration(minutes=int(slot_length)),

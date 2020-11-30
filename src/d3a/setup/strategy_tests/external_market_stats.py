@@ -15,11 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
-from d3a.models.appliance.pv import PVAppliance
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from d3a_interface.constants_limits import ConstSettings
@@ -39,13 +37,13 @@ def get_setup(config):
                                                                        hrs_of_day=list(
                                                                            range(12, 18)),
                                                                        final_buying_rate=35),
-                         appliance=SwitchableAppliance()),
+                         ),
                     Area('H1 Storage1', strategy=StorageStrategy(initial_soc=100,
                                                                  battery_capacity_kWh=20),
-                         appliance=SwitchableAppliance()),
+                         ),
                     Area('H1 Storage2', strategy=StorageStrategy(initial_soc=100,
                                                                  battery_capacity_kWh=20),
-                         appliance=SwitchableAppliance()),
+                         ),
                 ], external_connection_available=True
             ),
             Area(
@@ -56,17 +54,17 @@ def get_setup(config):
                                                                     hrs_of_day=list(
                                                                         range(0, 24)),
                                                                     final_buying_rate=35),
-                         appliance=SwitchableAppliance()),
+                         ),
                     Area('pv', strategy=PVExternalStrategy(panel_count=4),
-                         appliance=PVAppliance()),
+                         ),
 
                 ], external_connection_available=True
             ),
-            Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
-                                                                   hrs_per_day=24,
-                                                                   hrs_of_day=list(range(0, 24)),
-                                                                   final_buying_rate=35),
-                 appliance=SwitchableAppliance()),
+            Area('Cell Tower', strategy=LoadHoursStrategy(avg_power_W=100,
+                                                          hrs_per_day=24,
+                                                          hrs_of_day=list(range(0, 24)),
+                                                          final_buying_rate=35),
+                 ),
         ],
         config=config
     )

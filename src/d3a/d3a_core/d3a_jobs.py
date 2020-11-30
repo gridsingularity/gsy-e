@@ -21,7 +21,7 @@ import ast
 import json
 import pickle
 
-from datetime import datetime
+from datetime import datetime, date
 from pendulum import now, duration, instance
 from redis import StrictRedis
 from rq import Connection, Worker, get_current_job
@@ -104,6 +104,10 @@ def start(scenario, settings, events, aggregator_device_mapping, saved_state):
             "aggregator_device_mapping": aggregator_device_mapping
         }
 
+        if d3a.constants.IS_CANARY_NETWORK:
+            config_settings['start_date'] = \
+                instance((datetime.combine(date.today(), datetime.min.time())))
+
         validate_global_settings(config_settings)
 
         config = SimulationConfig(**config_settings)
@@ -155,7 +159,7 @@ def main():
                                          retry_on_timeout=True)):
         Worker(
             [get_simulation_queue_name()],
-            name='simulation.{}.{:%s}'.format(getpid(), now()), log_job_description=False
+            name=f'simulation.{getpid()}.{now().timestamp()}', log_job_description=False
         ).work()
 
 

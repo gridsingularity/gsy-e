@@ -22,8 +22,8 @@ import os
 from d3a.d3a_core.util import d3a_path
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.export import EXPORT_DEVICE_VARIABLES
-from d3a.d3a_core.sim_results.market_price_energy_day import MarketPriceEnergyDay
-from d3a.d3a_core.sim_results.bills import CumulativeBills
+from d3a_interface.sim_results.market_price_energy_day import MarketPriceEnergyDay
+from d3a_interface.sim_results.bills import CumulativeBills
 
 
 def get_areas_from_2_house_grid(context):

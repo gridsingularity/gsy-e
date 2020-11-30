@@ -15,12 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
-from d3a.models.appliance.pv import PVAppliance
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a_interface.constants_limits import ConstSettings
@@ -43,8 +40,8 @@ def get_setup(config):
                                                                            range(12, 18)),
                                                                        final_buying_rate=30,
                                                                        fit_to_limit=True,
-                                                                       update_interval=1),
-                         appliance=SwitchableAppliance()),
+                                                                       update_interval=1)
+                         ),
                     Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50,
                                                                  min_allowed_soc=10,
                                                                  battery_capacity_kWh=1.2,
@@ -54,8 +51,8 @@ def get_setup(config):
                                                                  final_selling_rate=25.1,
                                                                  initial_buying_rate=0,
                                                                  fit_to_limit=True,
-                                                                 update_interval=1),
-                         appliance=SwitchableAppliance()),
+                                                                 update_interval=1)
+                         ),
                 ]
             ),
             Area(
@@ -67,28 +64,28 @@ def get_setup(config):
                                                                                              16)),
                                                                        final_buying_rate=30,
                                                                        fit_to_limit=True,
-                                                                       update_interval=1),
-                         appliance=SwitchableAppliance()),
+                                                                       update_interval=1)
+                         ),
                     Area('H2 PV', strategy=PVStrategy(4,
                                                       initial_selling_rate=30,
                                                       final_selling_rate=0,
                                                       fit_to_limit=True,
-                                                      update_interval=1),
-                         appliance=PVAppliance()),
+                                                      update_interval=1)
+                         ),
 
                 ]
             ),
             Area('Cell Tower',
-                 strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
-                                                     hrs_per_day=24,
-                                                     hrs_of_day=list(range(0, 24)),
-                                                     final_buying_rate=30,
-                                                     fit_to_limit=True,
-                                                     update_interval=1),
-                 appliance=SwitchableAppliance()),
+                 strategy=LoadHoursStrategy(avg_power_W=100,
+                                            hrs_per_day=24,
+                                            hrs_of_day=list(range(0, 24)),
+                                            final_buying_rate=30,
+                                            fit_to_limit=True,
+                                            update_interval=1)
+                 ),
             Area('Market Maker', strategy=MarketMakerStrategy(energy_rate=30,
-                                                              grid_connected=True),
-                 appliance=SimpleAppliance()),
+                                                              grid_connected=True)
+                 ),
 
         ],
         config=config

@@ -25,7 +25,7 @@ from math import isclose
 import os
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, BalancingOffer, Bid, Trade
-from d3a.models.appliance.simple import SimpleAppliance
+
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
@@ -171,7 +171,6 @@ class TestLoadHoursStrategyInput(unittest.TestCase):
         # when only the load tests are executed. Works fine when all tests are executed
         # though
         ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 5
-        self.appliance = MagicMock(spec=SimpleAppliance)
         self.strategy1 = MagicMock(spec=LoadHoursStrategy)
 
     def tearDown(self):

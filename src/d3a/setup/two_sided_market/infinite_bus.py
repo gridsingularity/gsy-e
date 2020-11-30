@@ -15,13 +15,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
-from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.appliance.pv import PVAppliance
 from d3a_interface.constants_limits import ConstSettings
 
 
@@ -37,17 +34,17 @@ def get_setup(config):
                                                                        hrs_of_day=list(
                                                                            range(0, 23)),
                                                                        final_buying_rate=27,
-                                                                       initial_buying_rate=27),
-                         appliance=SwitchableAppliance()),
+                                                                       initial_buying_rate=27)
+                         ),
                     Area('H1 PV', strategy=PVStrategy(panel_count=4,
                                                       final_selling_rate=15,
-                                                      initial_selling_rate=24.1),
-                         appliance=PVAppliance()),
+                                                      initial_selling_rate=24.1)
+                         ),
                 ], grid_fee_constant=1
             ),
             Area('Infinite Bus', strategy=InfiniteBusStrategy(energy_buy_rate=24,
-                                                              energy_sell_rate=24),
-                 appliance=SimpleAppliance()
+                                                              energy_sell_rate=24)
+
                  ),
         ],
         config=config

@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from math import isclose
-from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
+from d3a_interface.sim_results.export_unmatched_loads import MarketUnmatchedLoads, \
     get_number_of_unmatched_loads
 from d3a.models.market.market_structures import Offer, Bid
 
@@ -28,9 +28,12 @@ def no_unmatched_loads(context):
     from integration_tests.steps.integration_tests import get_simulation_raw_results
     get_simulation_raw_results(context)
     count = 0
-    unmatched = ExportUnmatchedLoads(context.area_tree_summary_data)
+    unmatched = MarketUnmatchedLoads()
     for time_slot, core_stats in context.raw_sim_data.items():
-        unmatched_data, _ = unmatched.get_current_market_results(
+        unmatched.update_unmatched_loads(
+            context.area_tree_summary_data, core_stats, time_slot
+        )
+        unmatched_data, _ = unmatched.export_unmatched_loads.get_current_market_results(
             context.area_tree_summary_data, core_stats, time_slot
         )
         count += 1
@@ -43,9 +46,12 @@ def has_unmatched_loads(context):
     from integration_tests.steps.integration_tests import get_simulation_raw_results
     get_simulation_raw_results(context)
     count = 0
-    unmatched = ExportUnmatchedLoads(context.area_tree_summary_data)
+    unmatched = MarketUnmatchedLoads()
     for time_slot, core_stats in context.raw_sim_data.items():
-        unmatched_data, _ = unmatched.get_current_market_results(
+        unmatched.update_unmatched_loads(
+            context.area_tree_summary_data, core_stats, time_slot
+        )
+        unmatched_data, _ = unmatched.export_unmatched_loads.get_current_market_results(
             context.area_tree_summary_data, core_stats, time_slot
         )
         if get_number_of_unmatched_loads(unmatched_data) > 0:
