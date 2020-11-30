@@ -72,7 +72,6 @@ class UpdateAreaEvent:
         return True
 
     def sanitize_live_event_parameters(self):
-        self.area_params.pop('number_of_clones', None)
         self.area_params.pop('energy_rate_profile_uuid', None)
         self.area_params.pop('buying_rate_profile_uuid', None)
         self.area_params.pop("name", None)
