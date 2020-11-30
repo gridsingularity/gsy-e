@@ -163,7 +163,7 @@ class FakeMarket:
         offer.id = 'id'
         return offer
 
-    def bid(self, price, energy, buyer, seller, market=None, original_bid_price=None,
+    def bid(self, price, energy, buyer, market=None, original_bid_price=None,
             buyer_origin=None):
         pass
 
@@ -882,8 +882,8 @@ def test_assert_if_trade_rate_is_lower_than_offer_rate(storage_test11):
 def test_assert_if_trade_rate_is_higher_than_bid_rate(storage_test11):
     market_id = "2"
     storage_test11._bids[market_id] = \
-        [Bid("bid_id", now(), 30, 1, buyer="FakeArea", seller="producer")]
-    expensive_bid = Bid("bid_id", now(), 31, 1, buyer="FakeArea", seller="producer")
+        [Bid("bid_id", now(), 30, 1, buyer="FakeArea")]
+    expensive_bid = Bid("bid_id", now(), 31, 1, buyer="FakeArea")
     trade = Trade("trade_id", "time", expensive_bid, storage_test11, "buyer")
 
     with pytest.raises(AssertionError):

@@ -33,11 +33,3 @@ Feature: Load Tests
      And export is_needed
     When we run the simulation with setup file strategy_tests.user_rate_profile_load_dict and parameters [24, 30, 30, 4]
     Then LoadHoursStrategy does not buy energy with rates that are higher than the provided profile
-
-  Scenario: Custom Load strategy works as expected
-     Given we have a scenario named jira/d3asim_638_custom_load
-     And d3a is installed
-     And export is_needed
-     When we run the simulation with setup file jira.d3asim_638_custom_load and parameters [24, 60, 60, 4]
-     Then the load has no unmatched loads
-     And the PV always provides constant power according to load demand

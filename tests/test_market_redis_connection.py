@@ -215,7 +215,7 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
         )
 
     def test_accept_bid_calls_market_method_and_publishes_response(self):
-        bid = Bid("b_id", now(), 12, 13, "b_buyer", "b_seller")
+        bid = Bid("b_id", now(), 12, 13, "b_buyer")
         payload = {"data": json.dumps({
                 "seller": "mykonos",
                 "energy": 12,
