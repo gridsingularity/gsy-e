@@ -21,6 +21,8 @@ import os
 import importlib
 import logging
 import glob
+import traceback
+
 from math import isclose
 from pendulum import duration, today, from_format
 from behave import given, when, then
@@ -681,6 +683,7 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
         context.simulation.run()
     except Exception as er:
         root_logger.critical(f"Error reported when running the simulation: {er}")
+        root_logger.critical(f"Traceback: {traceback.format_exc()}")
         context.sim_error = er
 
 

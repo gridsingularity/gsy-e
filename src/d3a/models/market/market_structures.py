@@ -110,25 +110,25 @@ def offer_from_JSON_string(offer_string, current_time):
     return offer
 
 
-class Bid(namedtuple('Bid', ('id', 'time', 'price', 'energy', 'buyer', 'seller',
+class Bid(namedtuple('Bid', ('id', 'time', 'price', 'energy', 'buyer',
                              'original_bid_price', 'buyer_origin', 'energy_rate'))):
-    def __new__(cls, id, time, price, energy, buyer, seller, original_bid_price=None,
+    def __new__(cls, id, time, price, energy, buyer, original_bid_price=None,
                 buyer_origin=None, energy_rate=None):
         if energy_rate is None:
             energy_rate = price / energy
         # overridden to give the residual field a default value
-        return super(Bid, cls).__new__(cls, str(id), time, price, energy, buyer, seller,
+        return super(Bid, cls).__new__(cls, str(id), time, price, energy, buyer,
                                        original_bid_price, buyer_origin, energy_rate)
 
     def __repr__(self):
         return (
-            "<Bid {{{s.id!s:.6s}}} [{s.buyer}] [{s.seller}] "
+            "<Bid {{{s.id!s:.6s}}} [{s.buyer}] "
             "{s.energy} kWh @ {s.price} {rate}>".format(s=self, rate=self.energy_rate)
         )
 
     def __str__(self):
         return (
-            "{{{s.id!s:.6s}}} [origin: {s.buyer_origin}] [{s.buyer}] [{s.seller}] "
+            "{{{s.id!s:.6s}}} [origin: {s.buyer_origin}] [{s.buyer}] "
             "{s.energy} kWh @ {s.price} {rate}".format(s=self, rate=self.energy_rate)
         )
 
