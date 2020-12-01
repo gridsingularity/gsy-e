@@ -805,11 +805,12 @@ def storage_strategy_test15(area_test15, called):
                         final_selling_rate=25, initial_buying_rate=24,
                         final_buying_rate=24)
     s.owner = area_test15
-    s.area = area_test15
+    s.area = deepcopy(area_test15)
     s.area.parent = deepcopy(area_test15)
+    s.owner.name = "Storage"
     s.area.parent.name = "ParentArea"
     s.area.children = deepcopy([area_test15])
-    s.area.children[0].name = "ChildArea"
+    s.area.children[0].name = "OtherChildArea"
     s.accept_offer = called
     return s
 
@@ -820,8 +821,8 @@ def test_energy_origin(storage_strategy_test15, market_test15):
     assert storage_strategy_test15.state.get_used_storage_share[0] == EnergyOrigin(
         ESSEnergyOrigin.EXTERNAL, 15)
     storage_strategy_test15.area.current_market.trade = \
-        Trade('id', 'time', Offer('id', now(), 20, 1.0, 'ChildArea'),
-              'ChildArea', 'FakeArea')
+        Trade('id', 'time', Offer('id', now(), 20, 1.0, 'OtherChildArea'),
+              'OtherChildArea', 'Storage')
     storage_strategy_test15.event_trade(market_id=market_test15.id,
                                         trade=storage_strategy_test15.area.current_market.trade)
     assert len(storage_strategy_test15.state.get_used_storage_share) == 2
@@ -829,7 +830,8 @@ def test_energy_origin(storage_strategy_test15, market_test15):
         ESSEnergyOrigin.EXTERNAL, 15), EnergyOrigin(ESSEnergyOrigin.LOCAL, 1)]
 
     storage_strategy_test15.area.current_market.trade = \
-        Trade('id', 'time', Offer('id', now(), 20, 2.0, 'FakeArea'), 'FakeArea', 'A')
+        Trade('id', 'time', Offer('id', now(), 20, 2.0, 'Storage'),
+              'Storage', 'A')
     storage_strategy_test15.event_trade(market_id=market_test15.id,
                                         trade=storage_strategy_test15.area.current_market.trade)
     assert len(storage_strategy_test15.state.get_used_storage_share) == 2
@@ -837,14 +839,14 @@ def test_energy_origin(storage_strategy_test15, market_test15):
         ESSEnergyOrigin.EXTERNAL, 13), EnergyOrigin(ESSEnergyOrigin.LOCAL, 1)]
 
     storage_strategy_test15.area.current_market.trade = \
-        Trade('id', 'time', Offer('id', now(), 20, 1.0, 'ParentArea'),
-              'FakeArea', 'FakeArea')
+        Trade('id', 'time', Offer('id', now(), 20, 1.0, 'FakeArea'),
+              'FakeArea', 'Storage')
     storage_strategy_test15.event_trade(market_id=market_test15.id,
                                         trade=storage_strategy_test15.area.current_market.trade)
     assert len(storage_strategy_test15.state.get_used_storage_share) == 3
     assert storage_strategy_test15.state.get_used_storage_share == [EnergyOrigin(
-        ESSEnergyOrigin.EXTERNAL, 13), EnergyOrigin(ESSEnergyOrigin.LOCAL, 1),
-        EnergyOrigin(ESSEnergyOrigin.EXTERNAL, 1)]
+        ESSEnergyOrigin.EXTERNAL, 13.0), EnergyOrigin(ESSEnergyOrigin.LOCAL, 1.0),
+        EnergyOrigin(ESSEnergyOrigin.EXTERNAL, 1.0)]
 
 
 def test_storage_strategy_increases_rate_when_fit_to_limit_is_false():
