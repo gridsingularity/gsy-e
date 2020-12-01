@@ -7,7 +7,6 @@ d3a_interface_branch = os.environ.get("BRANCH", "master")
 try:
     with open('requirements/dev.txt') as req:
         REQUIREMENTS = [r.partition('#')[0] for r in req if not r.startswith('-e')]
-        # TODO: Workaround for https://github.com/ethereum/py-solc/issues/64
         REQUIREMENTS.extend(
             ['d3a-interface @ '
              f'git+https://github.com/gridsingularity/d3a-interface.git@{d3a_interface_branch}'
