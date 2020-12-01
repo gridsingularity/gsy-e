@@ -35,8 +35,9 @@ if platform.python_implementation() != "PyPy" and \
     if ENABLE_SUBSTRATE is True:
         from d3a.models.market.blockchain_utils import get_function_metadata, \
             address_to_hex, swap_byte_order, BOB_ADDRESS, ALICE_ADDRESS, \
-            test_value, test_rate, main_address, mnemonic, hex2
-        from substrateinterface import SubstrateRequestException, Keypair  # NOQA
+            test_value, test_rate, main_address, mnemonic, hex2, \
+            parse_metadata_constructors, get_contract_code_hash
+        from substrateinterface import SubstrateRequestException, Keypair, ss58_decode  # NOQA
 
 
 BC_EVENT_MAP = {
@@ -74,6 +75,89 @@ class SubstrateBlockchainInterface:
     def __init__(self, bc):
         self.contracts = {'main': main_address}
         self.substrate = bc
+
+    def load_keypair(mnemonic):
+        keypair = Keypair.create_from_mnemonic(mnemonic, address_type=42)
+        return keypair
+
+    def upload_contract(self, path_to_wasm, path_to_metadata, keypair):
+        with open(Path(path_to_wasm), 'rb') as wasm:
+            code_bytes = wasm.read()
+
+        code_hash = get_contract_code_hash(path_to_metadata)
+
+        call = self.substrate.compose_call(
+            call_module='Contracts',
+            call_function='put_code',
+            call_params={
+                'code': '0x{}'.format(code_bytes.hex())
+            }
+        )
+
+        extrinsic = self.substrate.create_signed_extrinsic(call=call, keypair=keypair)
+
+        try:
+            result = self.substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+
+            extrinsic_hash = result['extrinsic_hash']
+            block_hash = result['block_hash']
+
+            events = self.substrate.get_runtime_events(block_hash)
+
+            for event in events['result']:
+                if event['event_id'] == 'CodeStored':
+                    event_code_hash = events['result'][1]['params'][0]['value']
+
+                    # verify that the uploaded contract hash matches the local hash
+                    assert event_code_hash == code_hash
+
+            logging.info('Contract uploaded, extrinsic hash: {} in block {}'.format(
+                extrinsic_hash, block_hash
+            ))
+
+            return extrinsic_hash, block_hash
+
+        except SubstrateRequestException as e:
+            logging.info("Failed to send: {}".format(e))
+
+    def deploy_contract(self, code_hash, path_to_metadata, constructor_name, keypair):
+        constructor_bytes = parse_metadata_constructors(path_to_metadata)
+        data = constructor_bytes[constructor_name]
+        salt = salt = hex(self.substrate.get_account_nonce(keypair.ss58_address))[2:]
+        call = self.substrate.compose_call(
+            call_module='Contracts',
+            call_function='instantiate',
+            call_params={
+                'endowment': 1 * 10**12,
+                'gas_limit': 1 * 10**12,
+                'code_hash': code_hash,
+                'data': data + salt
+            }
+        )
+
+        extrinsic = self.substrate.create_signed_extrinsic(call=call, keypair=keypair)
+
+        try:
+            result = self.substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+
+            logging.info('Extrinsic hash: {} in block {}'.format(
+                result['extrinsic_hash'], result['block_hash']
+            ))
+
+            # Get contract address
+            events = self.substrate.get_runtime_events(result['block_hash'])
+            logging.info('Events', events)
+
+            for event in events['result']:
+                if event['event_id'] == 'Instantiated':
+                    contract_address = event['params'][1]['value']
+                    logging.info("Contract address: {}".format(
+                        self.substrate.ss58_encode(contract_address)
+                        ))
+            return contract_address
+
+        except SubstrateRequestException as e:
+            logging.info("Failed to send: {}".format(e))
 
     def compose_call(self, data, contract_address):
         call = self.substrate.compose_call(
