@@ -330,5 +330,5 @@ def check_area_trade_and_bill(context):
 
 
 @given("raising exceptions when running the simulation is disabled")
-def don_not_raise_exceptions(context):
+def do_not_raise_exceptions(context):
     context.raise_exception_when_running_sim = False
