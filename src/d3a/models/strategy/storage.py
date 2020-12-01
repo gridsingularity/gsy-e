@@ -257,30 +257,30 @@ class StorageStrategy(BidEnabledStrategy):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             for market in self.area.all_markets:
                 time_slot = market.time_slot
-            if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
-                self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
-                                                         final_rate=0)
-                self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=0,
-                                                           final_rate=0)
-            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
-                rate = \
-                    self.area.config.market_maker_rate[time_slot] * \
-                    ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / \
-                    100
-                self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
-                                                         final_rate=rate)
-                self.offer_update.reassign_mixin_arguments(time_slot,
-                                                           initial_rate=rate,
-                                                           final_rate=rate)
-            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
-                rate = self.area.config.market_maker_rate[time_slot]
-                self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
-                                                         final_rate=rate)
-                self.offer_update.reassign_mixin_arguments(time_slot,
-                                                           initial_rate=rate,
-                                                           final_rate=rate)
-            else:
-                raise MarketException
+                if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
+                    self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
+                                                             final_rate=0)
+                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=0,
+                                                               final_rate=0)
+                elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
+                    rate = \
+                        self.area.config.market_maker_rate[time_slot] * \
+                        ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / \
+                        100
+                    self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
+                                                             final_rate=rate)
+                    self.offer_update.reassign_mixin_arguments(time_slot,
+                                                               initial_rate=rate,
+                                                               final_rate=rate)
+                elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
+                    rate = self.area.config.market_maker_rate[time_slot]
+                    self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
+                                                             final_rate=rate)
+                    self.offer_update.reassign_mixin_arguments(time_slot,
+                                                               initial_rate=rate,
+                                                               final_rate=rate)
+                else:
+                    raise MarketException
 
     @staticmethod
     def _validate_constructor_arguments(initial_soc=None, min_allowed_soc=None,
@@ -347,7 +347,6 @@ class StorageStrategy(BidEnabledStrategy):
         for market in self.area.all_markets:
             if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                     ConstSettings.IAASettings.MARKET_TYPE == 3:
-                self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
                 if self.are_bids_posted(market.id):
                     self.bid_update.update_posted_bids_over_ticks(market, self)
                 else:
@@ -380,7 +379,7 @@ class StorageStrategy(BidEnabledStrategy):
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 # in order to omit double counting this is only applied for one sided market
                 self._track_energy_bought_type(trade)
-        if trade.offer.seller == self.owner.name:
+        if trade.seller == self.owner.name:
             self._track_energy_sell_type(trade)
             self.state.pledged_sell_kWh[market.time_slot] += trade.offer.energy
             self.state.offered_sell_kWh[market.time_slot] -= trade.offer.energy
@@ -389,6 +388,7 @@ class StorageStrategy(BidEnabledStrategy):
         for child in self.area.children:
             if child.name == trade.seller:
                 return True
+        return False
 
     # ESS Energy being utilized based on FIRST-IN FIRST-OUT mechanism
     def _track_energy_sell_type(self, trade):
@@ -416,7 +416,7 @@ class StorageStrategy(BidEnabledStrategy):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
         market = self.area.get_future_market_from_id(market_id)
 
-        if bid_trade.offer.buyer == self.owner.name:
+        if bid_trade.buyer == self.owner.name:
             self._track_energy_bought_type(bid_trade)
             self.state.pledged_buy_kWh[market.time_slot] += bid_trade.offer.energy
             self.state.offered_buy_kWh[market.time_slot] -= bid_trade.offer.energy

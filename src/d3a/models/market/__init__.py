@@ -142,17 +142,19 @@ class Market:
             for listener in sorted(self.notification_listeners, key=lambda l: random()):
                 listener(event, market_id=self.id, **kwargs)
 
-    def _update_stats_after_trade(self, trade, offer, buyer, already_tracked=False):
+    def _update_stats_after_trade(self, trade, offer_or_bid, already_tracked=False):
         # FIXME: The following updates need to be done in response to the BC event
         # TODO: For now event driven blockchain updates have been disabled in favor of a
-        # sequential approach, but once event handling is enabled this needs to be handled
+        #  sequential approach, but once event handling is enabled this needs to be handled
         if not already_tracked:
             self.trades.append(trade)
             self.market_fee += trade.fee_price
         self._update_accumulated_trade_price_energy(trade)
-        self.traded_energy = add_or_create_key(self.traded_energy, offer.seller, offer.energy)
-        self.traded_energy = subtract_or_create_key(self.traded_energy, buyer, offer.energy)
-        self._update_min_max_avg_trade_prices(offer.energy_rate)
+        self.traded_energy = \
+            add_or_create_key(self.traded_energy, trade.seller, offer_or_bid.energy)
+        self.traded_energy = \
+            subtract_or_create_key(self.traded_energy, trade.buyer, offer_or_bid.energy)
+        self._update_min_max_avg_trade_prices(offer_or_bid.energy_rate)
         # Recalculate offer min/max price since offer was removed
         self._update_min_max_avg_offer_prices()
 
@@ -237,7 +239,7 @@ class Market:
         return sum(trade.offer.energy for trade in self.trades if trade.buyer == buyer)
 
     def sold_energy(self, seller):
-        return sum(trade.offer.energy for trade in self.trades if trade.offer.seller == seller)
+        return sum(trade.offer.energy for trade in self.trades if trade.seller == seller)
 
     def total_spent(self, buyer):
         return sum(trade.offer.price for trade in self.trades if trade.buyer == buyer)
