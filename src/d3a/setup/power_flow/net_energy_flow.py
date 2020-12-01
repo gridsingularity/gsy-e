@@ -20,7 +20,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a_interface.constants_limits import ConstSettings
-from d3a.models.area.throughput_paramters import ThroughputParameters
+from d3a.models.area.throughput_parameters import ThroughputParameters
 
 
 def get_setup(config):

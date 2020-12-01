@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.models.area import Area
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
-from d3a.models.area.throughput_paramters import ThroughputParameters
+from d3a.models.area.throughput_parameters import ThroughputParameters
 
 
 def get_setup(config):

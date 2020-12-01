@@ -19,7 +19,7 @@ import json
 
 from d3a.models.area import Area # NOQA
 from d3a.models.strategy import BaseStrategy
-from d3a.models.area.throughput_paramters import ThroughputParameters
+from d3a.models.area.throughput_parameters import ThroughputParameters
 
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy  # NOQA
 from d3a.models.strategy.commercial_producer import CommercialStrategy  # NOQA

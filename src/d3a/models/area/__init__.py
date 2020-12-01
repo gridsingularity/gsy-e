@@ -36,7 +36,7 @@ from d3a.models.area.stats import AreaStats
 from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.events import Events
-from d3a.models.area.throughput_paramters import ThroughputParameters
+from d3a.models.area.throughput_parameters import ThroughputParameters
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.area_validator import validate_area
 from d3a.models.area.redis_external_market_connection import RedisMarketExternalConnection
@@ -155,18 +155,19 @@ class Area:
         try:
             validate_area(grid_fee_constant=grid_fee_constant,
                           grid_fee_percentage=grid_fee_percentage)
+            throughput = ThroughputParameters(
+                            baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
+                            baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
+                            import_capacity_kVA=import_capacity_kVA,
+                            export_capacity_kVA=export_capacity_kVA
+                        )
 
         except Exception as e:
             log.error(str(e))
             return
 
         self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
-        self.throughput = ThroughputParameters(
-            baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
-            baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
-            import_capacity_kVA=import_capacity_kVA,
-            export_capacity_kVA=export_capacity_kVA
-        )
+        self.throughput = throughput
         self._update_descendants_strategy_prices()
 
     def _update_descendants_strategy_prices(self):
