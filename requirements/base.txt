@@ -4,38 +4,28 @@
 #
 #    pip-compile --max-rounds=100 --no-index requirements/base.in
 #
-attrs==19.3.0             # via -r requirements/base.in, jsonschema
+attrs==19.3.0             # via -r requirements/base.in
 awesome-slugify==1.6.5    # via -r requirements/base.in
-base58==2.0.1             # via multiaddr
+base58==2.0.1
 cached-property==1.5.1    # via -r requirements/base.in
-certifi==2019.11.28       # via requests
-chardet==3.0.4            # via requests
 click-default-group==1.2.2  # via -r requirements/base.in
 click==7.0                # via -r requirements/base.in, click-default-group, pip-tools, rq
 colorlog==4.1.0           # via -r requirements/base.in
-idna==2.8                 # via requests
-importlib-metadata==1.4.0  # via jsonschema
 more-itertools==8.1.0     # via zipp
-multiaddr==0.0.9          # via ipfshttpclient
-netaddr==0.7.19           # via multiaddr
 numpy==1.18.1             # via -r requirements/base.in
 pendulum==2.1.2           # via -r requirements/base.in
 pip-tools==5.2.1          # via -r requirements/base.in
 plotly==4.4.1             # via -r requirements/base.in
-pyrsistent==0.15.7        # via jsonschema
 python-dateutil==2.8.1    # via pendulum
 python-rex==0.4           # via -r requirements/base.in
 pytzdata==2020.1          # via pendulum
 redis==3.3.11             # via -r requirements/base.in, rq
 regex==2020.1.8           # via awesome-slugify
-requests==2.22.0          # via ipfshttpclient, web3
 retrying==1.3.3           # via plotly
 rq==1.2.0                 # via -r requirements/base.in
-six==1.14.0               # via attrdict, ipfshttpclient, jsonschema, multiaddr, parsimonious, pip-tools, plotly, protobuf, pyrsistent, python-dateutil, python-rex, retrying
+six==1.14.0               # via attrdict, parsimonious, pip-tools, plotly, protobuf, pyrsistent, python-dateutil, python-rex, retrying
 sortedcontainers==2.1.0   # via -r requirements/base.in
 unidecode==0.4.21         # via awesome-slugify
-urllib3==1.25.8           # via requests
-varint==1.0.2             # via multiaddr
 zipp==2.0.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
