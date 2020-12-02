@@ -39,7 +39,7 @@ def test_traded_energy_rate(context):
 
 @then('buyers and sellers are not same')
 def test_different_buyer_seller(context):
-    assert all(str(trade.offer.seller) != str(trade.buyer)
+    assert all(str(trade.seller) != str(trade.buyer)
                for area in context.simulation.area.children
                for market in area.past_markets
                for trade in market.trades)

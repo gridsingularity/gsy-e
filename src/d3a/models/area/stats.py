@@ -16,11 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from copy import copy
-from pendulum import from_format
 from statistics import mean, median
 
-from d3a_interface.constants_limits import DATE_TIME_FORMAT
-from d3a.constants import TIME_ZONE
 from d3a import limit_float_precision
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name, add_or_create_key, \
     area_sells_to_child, child_buys_from_area
@@ -75,6 +72,7 @@ class AreaStats:
             self.market_bills[self.current_market.time_slot] = \
                 {key: self._extract_from_bills(key)
                  for key in ["Accumulated Trades"]}
+            self.rate_stats_market = {}
             self.rate_stats_market[self.current_market.time_slot] = \
                 self.min_max_avg_median_rate_current_market()
             self._aggregate_exported_imported_energy()
@@ -90,14 +88,15 @@ class AreaStats:
             cheapest_offers.extend(market.sorted_offers[0:1])
         return cheapest_offers
 
-    def _get_market_bills(self, time_slot):
-        return self.market_bills[time_slot] if time_slot in self.market_bills.keys() else None
+    def _get_current_market_bills(self):
+        return self.market_bills[self.current_market.time_slot_str] \
+            if self.current_market.time_slot_str in self.market_bills.keys() else None
 
-    def _get_market_area_throughput(self, time_slot):
-        return {"import": self.imported_traded_energy_kwh[time_slot]
-                if time_slot in self.imported_traded_energy_kwh.keys() else None,
-                "export": self.exported_traded_energy_kwh[time_slot]
-                if time_slot in self.exported_traded_energy_kwh.keys() else None}
+    def _get_current_market_area_throughput(self):
+        return {"import": self.imported_traded_energy_kwh[self.current_market.time_slot]
+                if self.current_market.time_slot in self.imported_traded_energy_kwh else None,
+                "export": self.exported_traded_energy_kwh[self.current_market.time_slot]
+                if self.current_market.time_slot in self.exported_traded_energy_kwh else None}
 
     def get_price_stats_current_market(self):
         if self.current_market is None:
@@ -124,20 +123,18 @@ class AreaStats:
         past_markets = list(self._markets.past_markets.values())
         return past_markets[-1] if len(past_markets) > 0 else None
 
-    def get_market_stats(self, market_slot_list, dso=False):
+    def get_last_market_stats(self, dso=False):
         out_dict = {}
-        for time_slot_str in market_slot_list:
-            try:
-                time_slot = from_format(time_slot_str, DATE_TIME_FORMAT, tz=TIME_ZONE)
-            except ValueError:
-                return {"ERROR": f"Time string '{time_slot_str}' is not following "
-                                 f"the format '{DATE_TIME_FORMAT}'"}
-            out_dict[time_slot_str] = copy(self.rate_stats_market.get(
-                time_slot, default_trade_stats_dict))
-            out_dict[time_slot_str]["market_bill"] = self._get_market_bills(time_slot)
-            if dso:
-                out_dict[time_slot_str]["area_throughput"] = \
-                    self._get_market_area_throughput(time_slot)
+        if self.current_market is None:
+            return out_dict
+        current_market_time_slot_str = self.current_market.time_slot_str
+        out_dict[current_market_time_slot_str] = copy(self.rate_stats_market.get(
+            self.current_market.time_slot, default_trade_stats_dict))
+        out_dict[current_market_time_slot_str]["market_bill"] = \
+            self._get_current_market_bills()
+        if dso:
+            out_dict[current_market_time_slot_str]["area_throughput"] = \
+                self._get_current_market_area_throughput()
 
         return out_dict
 

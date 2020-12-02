@@ -52,6 +52,7 @@ Feature: Jira Issues Tests
      When we run the simulation with setup file jira.d3asim_871 and parameters [24, 60, 60, 1]
      Then there should be no unmatched loads
 
+  @disabled
   Scenario: D3ASIM-874, alternative pricing can buy energy from IAA if there is not enough self-consumption
      Given we have a scenario named jira/d3asim_869
      And d3a is installed
@@ -91,6 +92,7 @@ Feature: Jira Issues Tests
   Scenario: D3ASIM-1535, User should not be able to add area to leaf area
     Given we have a scenario named jira/d3asim_1535
     And d3a is installed
+    And raising exceptions when running the simulation is disabled
     When we run the simulation with setup file jira.d3asim_1535 and parameters [24, 60, 60, 1]
     Then an AreaException is raised
 

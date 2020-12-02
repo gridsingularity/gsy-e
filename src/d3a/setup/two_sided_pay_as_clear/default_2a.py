@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a_interface.constants_limits import ConstSettings
@@ -66,11 +66,10 @@ def get_setup(config):
 
                 ]
             ),
-            Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
-                                                                   hrs_per_day=24,
-                                                                   hrs_of_day=list(range(0,
-                                                                                         24)),
-                                                                   final_buying_rate=35),
+            Area('Cell Tower', strategy=LoadHoursStrategy(avg_power_W=100,
+                                                          hrs_per_day=24,
+                                                          hrs_of_day=list(range(0, 24)),
+                                                          final_buying_rate=35),
                  ),
         ],
         config=config
