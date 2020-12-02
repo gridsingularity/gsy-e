@@ -138,7 +138,6 @@ class TestExternalStrategy(unittest.TestCase):
         assert bid.price == 32
         assert bid.energy == 12
         assert bid.buyer == "test_area"
-        assert bid.seller == "parent_area"
         self.external_redis.redis_db.publish.assert_called_once()
         assert self.external_redis.redis_db.publish.call_args_list[0][0][0] == \
             "parent-area/test-area/bid/response"
@@ -158,9 +157,9 @@ class TestExternalStrategy(unittest.TestCase):
     @parameterized.expand([(2, ), (3, )])
     def test_list_bids(self, market_type):
         ConstSettings.IAASettings.MARKET_TYPE = market_type
-        bid1 = self.test_market.bid(1, 2, "test_area", "A", "test_area")
-        bid2 = self.test_market.bid(2, 3, "test_area", "B", "test_area")
-        bid3 = self.test_market.bid(3, 4, "test_area", "C", "test_area")
+        bid1 = self.test_market.bid(1, 2, "test_area", "test_area")
+        bid2 = self.test_market.bid(2, 3, "test_area", "test_area")
+        bid3 = self.test_market.bid(3, 4, "test_area", "test_area")
         self.external_redis._list_bids("")
         self.external_redis.redis_db.publish.assert_called_once()
         assert self.external_redis.redis_db.publish.call_args_list[0][0][0] == \

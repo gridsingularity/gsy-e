@@ -42,8 +42,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                "{s.markets.source.time_slot:%H:%M}>".format(s=self)
 
     def _forward_bid(self, bid):
-        if bid.buyer == self.markets.target.name and \
-           bid.seller == self.markets.source.name:
+        if bid.buyer == self.markets.target.name:
             return
         if self.owner.name == self.markets.target.name:
             return
@@ -57,7 +56,6 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                     bid.price / bid.energy, bid.original_bid_price / bid.energy)) * bid.energy,
                 energy=bid.energy,
                 buyer=self.owner.name,
-                seller=self.markets.target.name,
                 original_bid_price=bid.original_bid_price,
                 buyer_origin=bid.buyer_origin
             )
@@ -206,8 +204,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
         elif market == self.markets.source and accepted_bid.id in self.forwarded_bids:
             # bid in the source market was split, also split the corresponding forwarded bid
             # in the target market
-            if not self.owner.usable_bid(accepted_bid) or \
-                    self.owner.name == accepted_bid.seller:
+            if not self.owner.usable_bid(accepted_bid):
                 return
 
             local_bid = self.forwarded_bids[original_bid.id].source_bid
