@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.models.area import Area
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
+from d3a.models.area.throughput_parameters import ThroughputParameters
 
 
 def get_setup(config):
@@ -36,13 +37,14 @@ def get_setup(config):
                              ),
                     ],
                     grid_fee_percentage=0, grid_fee_constant=0,
-                    baseline_peak_energy_import_kWh=0.4
+                    throughput=ThroughputParameters(baseline_peak_energy_import_kWh=0.4)
                 ),
                 Area(
-                      'House 1 2', [],
-                      import_capacity_kVA=2.0, export_capacity_kVA=2.0
+                      'House 1 2', [], throughput=ThroughputParameters(import_capacity_kVA=2.0,
+                                                                       export_capacity_kVA=2.0)
                   ),
-              ], baseline_peak_energy_import_kWh=0.4, import_capacity_kVA=2.0
+              ], throughput=ThroughputParameters(baseline_peak_energy_import_kWh=0.4,
+                                                 import_capacity_kVA=2.0)
               ),
             Area('Neighborhood 2',
                  [
@@ -55,10 +57,11 @@ def get_setup(config):
                                  ),
                         ],
                         grid_fee_percentage=0, grid_fee_constant=0,
-                        baseline_peak_energy_export_kWh=0.3
+                        throughput=ThroughputParameters(baseline_peak_energy_export_kWh=0.3)
 
                     ),
-                    ], baseline_peak_energy_export_kWh=0.3, export_capacity_kVA=2.0
+                    ], throughput=ThroughputParameters(baseline_peak_energy_export_kWh=0.3,
+                                                       export_capacity_kVA=2.0)
                  ),
             Area('Global Load', strategy=LoadHoursStrategy(avg_power_W=100,
                                                            hrs_per_day=24,

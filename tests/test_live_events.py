@@ -163,11 +163,11 @@ class TestLiveEvents(unittest.TestCase):
         self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
         assert self.area_house1.grid_fee_constant == 12
-        assert self.area_house1.baseline_peak_energy_import_kWh == 123
-        assert self.area_house1.baseline_peak_energy_export_kWh == 456
-        assert self.area_house1.import_capacity_kWh == \
+        assert self.area_house1.throughput.baseline_peak_energy_import_kWh == 123
+        assert self.area_house1.throughput.baseline_peak_energy_export_kWh == 456
+        assert self.area_house1.throughput.import_capacity_kWh == \
             987 * self.config.slot_length.total_minutes() / 60.0
-        assert self.area_house1.export_capacity_kWh == \
+        assert self.area_house1.throughput.export_capacity_kWh == \
             765 * self.config.slot_length.total_minutes() / 60.0
 
     def test_update_area_event_can_switch_strategy_from_market_maker_to_infinite_bus(self):
