@@ -21,7 +21,7 @@ from unittest.mock import MagicMock
 import unittest
 from d3a.models.area import Area
 
-from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.state import LoadState
 from d3a.models.config import SimulationConfig
@@ -75,13 +75,13 @@ class TestUnmatchedLoad(unittest.TestCase):
             self.area1._markets.past_markets[timeslot] = deepcopy(mock_market)
             self.area1._markets.past_markets[timeslot].trades = [
                 Trade("123", timeslot,
-                      Bid("23", timeslot, 1, 1.01, 'load1', 'abc', 1, 'load1'),
+                      Bid("23", timeslot, 1, 1.01, 'load1', 1, 'load1'),
                       'abc', 'load1', seller_origin='abc', buyer_origin='load1')
             ]
             self.area2._markets.past_markets[timeslot] = deepcopy(mock_market)
             self.area2._markets.past_markets[timeslot].trades = [
                 Trade("123", timeslot,
-                      Bid("23", timeslot, 1, 1.01, 'load2', 'abc', 1, 'load2'),
+                      Bid("23", timeslot, 1, 1.01, 'load2', 1, 'load2'),
                       'abc', 'load2', seller_origin='abc', buyer_origin='load2')
             ]
 
@@ -121,13 +121,13 @@ class TestUnmatchedLoad(unittest.TestCase):
             self.area1._markets.past_markets[timeslot] = deepcopy(mock_market)
             self.area1._markets.past_markets[timeslot].trades = [
                 Trade("123", timeslot,
-                      Bid("23", timeslot, 1, 0.07, 'load1', 'abc', 1, 'load1'),
+                      Bid("23", timeslot, 1, 0.07, 'load1', 1, 'load1'),
                       'abc', 'load1', seller_origin='abc', buyer_origin='load1')
             ]
             self.area2._markets.past_markets[timeslot] = deepcopy(mock_market)
             self.area2._markets.past_markets[timeslot].trades = [
                 Trade("123", timeslot,
-                      Bid("23", timeslot, 1, 0.09, 'load2', 'abc', 1, 'load2'),
+                      Bid("23", timeslot, 1, 0.09, 'load2', 1, 'load2'),
                       'abc', 'load2', seller_origin='abc', buyer_origin='load2')
             ]
             epb.current_market_time_slot_str = mock_market.time_slot_str
@@ -161,13 +161,13 @@ class TestUnmatchedLoad(unittest.TestCase):
             self.area1._markets.past_markets[timeslot] = deepcopy(mock_market)
             self.area1._markets.past_markets[timeslot].trades = [
                 Trade("123", timeslot,
-                      Bid("23", timeslot, 1, 0.05, 'load1', 'abc', 1, 'load1'),
+                      Bid("23", timeslot, 1, 0.05, 'load1', 1, 'load1'),
                       'abc', 'load1', seller_origin='abc', buyer_origin='load1')
             ]
             self.area2._markets.past_markets[timeslot] = deepcopy(mock_market)
             self.area2._markets.past_markets[timeslot].trades = [
                 Trade("123", timeslot,
-                      Bid("23", timeslot, 1, 1.05, 'load2', 'abc', 1, 'load2'),
+                      Bid("23", timeslot, 1, 1.05, 'load2', 1, 'load2'),
                       'abc', 'load2', seller_origin='abc', buyer_origin='load2')
             ]
             epb.current_market_time_slot_str = mock_market.time_slot_str
@@ -186,7 +186,7 @@ class TestUnmatchedLoad(unittest.TestCase):
 
     def test_export_unmatched_loads_reports_cell_tower_areas(self):
         house1 = Area("House1", [self.area1, self.area2])
-        ct_strategy = MagicMock(spec=CellTowerLoadHoursStrategy)
+        ct_strategy = MagicMock(spec=LoadHoursStrategy)
         ct_strategy.state = LoadState()
         cell_tower = Area("Cell Tower", strategy=ct_strategy)
         self.grid = Area("Grid", [house1, cell_tower])
@@ -205,13 +205,13 @@ class TestUnmatchedLoad(unittest.TestCase):
             self.area1._markets.past_markets[timeslot] = deepcopy(mock_market)
             self.area1._markets.past_markets[timeslot].trades = [
                 Trade("123", timeslot,
-                      Bid("23", timeslot, 1, 0.05, 'load1', 'abc', 1, 'load1'),
+                      Bid("23", timeslot, 1, 0.05, 'load1', 1, 'load1'),
                       'abc', 'load1', seller_origin='abc', buyer_origin='load1')
             ]
             self.area2._markets.past_markets[timeslot] = deepcopy(mock_market)
             self.area2._markets.past_markets[timeslot].trades = [
                 Trade("123", timeslot,
-                      Bid("23", timeslot, 1, 0.06, 'load2', 'abc', 1, 'load2'),
+                      Bid("23", timeslot, 1, 0.06, 'load2', 1, 'load2'),
                       'abc', 'load2', seller_origin='abc', buyer_origin='load2')
             ]
 
@@ -219,7 +219,7 @@ class TestUnmatchedLoad(unittest.TestCase):
             cell_tower._markets.past_markets[timeslot] = deepcopy(mock_market)
             cell_tower._markets.past_markets[timeslot].trades = [
                 Trade("123", timeslot,
-                      Bid("24", timeslot, 1, 0.05, 'Cell Tower', 'abc', 1, 'Cell Tower'),
+                      Bid("24", timeslot, 1, 0.05, 'Cell Tower', 1, 'Cell Tower'),
                       'abc', 'Cell Tower', seller_origin='abc', buyer_origin='Cell Tower')
             ]
             self.grid._markets.past_markets[timeslot] = deepcopy(mock_market)
@@ -253,13 +253,13 @@ class TestUnmatchedLoad(unittest.TestCase):
             self.area1._markets.past_markets[timeslot] = deepcopy(mock_market)
             self.area1._markets.past_markets[timeslot].trades = [
                 Trade("123", timeslot,
-                      Bid("23", timeslot, 1, 0.099, 'load1', 'abc', 1, 'load1'),
+                      Bid("23", timeslot, 1, 0.099, 'load1', 1, 'load1'),
                       'abc', 'load1', seller_origin='abc', buyer_origin='load1')
             ]
             self.area3._markets.past_markets[timeslot] = deepcopy(mock_market)
             self.area3._markets.past_markets[timeslot].trades = [
                 Trade("123", timeslot,
-                      Bid("23", timeslot, 1, 0.079, 'load3', 'abc', 1, 'load3'),
+                      Bid("23", timeslot, 1, 0.079, 'load3', 1, 'load3'),
                       'abc', 'load3', seller_origin='abc', buyer_origin='load3')
             ]
             epb.current_market_time_slot_str = mock_market.time_slot_str

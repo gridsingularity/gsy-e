@@ -60,7 +60,7 @@ class SimulationEndpointBuffer:
         }
         self.should_export_plots = should_export_plots
         self.market_bills = MarketEnergyBills()
-        self.kpi = KPI(should_export_plots)
+        self.kpi = KPI()
         if self.should_export_plots:
             self.market_unmatched_loads = MarketUnmatchedLoads()
             self.price_energy_day = MarketPriceEnergyDay(should_export_plots)
@@ -163,10 +163,10 @@ class SimulationEndpointBuffer:
             core_stats_dict['market_fee'] = area.current_market.market_fee
         if area.strategy is None:
             core_stats_dict['area_throughput'] = {
-                'baseline_peak_energy_import_kWh': area.baseline_peak_energy_import_kWh,
-                'baseline_peak_energy_export_kWh': area.baseline_peak_energy_export_kWh,
-                'import_capacity_kWh': area.import_capacity_kWh,
-                'export_capacity_kWh': area.export_capacity_kWh,
+                'baseline_peak_energy_import_kWh': area.throughput.baseline_peak_energy_import_kWh,
+                'baseline_peak_energy_export_kWh': area.throughput.baseline_peak_energy_export_kWh,
+                'import_capacity_kWh': area.throughput.import_capacity_kWh,
+                'export_capacity_kWh': area.throughput.export_capacity_kWh,
                 'imported_energy_kWh': area.stats.imported_traded_energy_kwh.get(
                     area.current_market.time_slot, 0.) if area.current_market is not None else 0.,
                 'exported_energy_kWh': area.stats.exported_traded_energy_kwh.get(
