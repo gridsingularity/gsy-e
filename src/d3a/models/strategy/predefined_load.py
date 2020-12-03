@@ -104,12 +104,10 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         """
         for market in self.area.all_markets:
             slot_time = market.time_slot
-            if slot_time not in self.energy_requirement_Wh:
-                load_energy_kWh = \
-                    find_object_of_same_weekday_and_time(self.load_profile, slot_time)
-                self.energy_requirement_Wh[slot_time] = load_energy_kWh * 1000
-                self.state.desired_energy_Wh[slot_time] = load_energy_kWh * 1000
-                self.state.total_energy_demanded_wh += load_energy_kWh * 1000
+            load_energy_kWh = \
+                find_object_of_same_weekday_and_time(self.load_profile, slot_time)
+            self.state.set_desired_energy(load_energy_kWh * 1000, slot_time, overwrite=False)
+            self.state.update_total_demanded_energy(slot_time)
 
     def _operating_hours(self, energy):
         """

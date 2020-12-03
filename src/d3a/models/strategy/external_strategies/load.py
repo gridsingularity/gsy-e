@@ -25,8 +25,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
 from d3a.d3a_core.redis_connections.aggregator_connection import default_market_info
-from d3a.d3a_core.util import get_current_market_maker_rate, convert_W_to_Wh, \
-    find_object_of_same_weekday_and_time
+from d3a.d3a_core.util import get_current_market_maker_rate, convert_W_to_Wh
 from d3a_interface.constants_limits import ConstSettings
 
 
@@ -149,8 +148,7 @@ class LoadExternalMixin(ExternalMixin):
             assert self.can_bid_be_posted(
                 arguments["energy"],
                 arguments["price"],
-                find_object_of_same_weekday_and_time(
-                    self.energy_requirement_Wh, self.next_market.time_slot) / 1000.0,
+                self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0,
                 self.next_market)
 
             bid = self.post_bid(
@@ -177,7 +175,7 @@ class LoadExternalMixin(ExternalMixin):
     def _device_info_dict(self):
         return {
             'energy_requirement_kWh':
-                self.energy_requirement_Wh.get(self.next_market.time_slot, 0.0) / 1000.0
+                self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0
         }
 
     def event_market_cycle(self):
@@ -297,8 +295,7 @@ class LoadExternalMixin(ExternalMixin):
             assert self.can_bid_be_posted(
                 arguments["energy"],
                 arguments["price"],
-                find_object_of_same_weekday_and_time(
-                    self.energy_requirement_Wh, self.next_market.time_slot) / 1000.0,
+                self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0,
                 self.next_market)
 
             bid = self.post_bid(
@@ -440,5 +437,4 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
         energy_forecast_Wh = convert_W_to_Wh(self.power_forecast_buffer_W,
                                              self.area.config.slot_length)
         slot_time = self.area.next_market.time_slot
-        self.energy_requirement_Wh[slot_time] = energy_forecast_Wh
-        self.state.desired_energy_Wh[slot_time] = energy_forecast_Wh
+        self.state.set_desired_energy(energy_forecast_Wh, slot_time, overwrite=True)

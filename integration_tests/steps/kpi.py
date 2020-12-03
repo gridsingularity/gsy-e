@@ -88,7 +88,7 @@ def available_energy_equals_to_penalties(context, pv_name):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     pv = list(filter(lambda x: pv_name in x.name, house1.children))[0]
     bills = context.simulation.endpoint_buffer.market_bills.bills_redis_results
-    penalty_energy = sum(v for _, v in pv.strategy.state.available_energy_kWh.items())
+    penalty_energy = sum(v for _, v in pv.strategy.state._available_energy_kWh.items())
     assert isclose(bills[str(pv.uuid)]["penalty_energy"], penalty_energy, rel_tol=0.0003)
 
 

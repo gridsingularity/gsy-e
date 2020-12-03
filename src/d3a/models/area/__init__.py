@@ -110,19 +110,21 @@ class Area:
         self.should_update_child_strategies = False
 
     def get_state(self):
+        state = {}
         if self.strategy is not None:
-            return self.strategy.get_state()
-        return {
+            state = self.strategy.get_state()
+
+        state.update(**{
             "current_tick": self.current_tick,
             "area_stats": self.stats.get_state()
-        }
+        })
+        return state
 
     def restore_state(self, saved_state):
+        self.current_tick = saved_state["current_tick"]
+        self.stats.restore_state(saved_state["area_stats"])
         if self.strategy is not None:
             self.strategy.restore_state(saved_state)
-
-        self.current_tick = saved_state["current_tick"]
-        self.stats.restore_state(saved_state)
 
     def area_reconfigure_event(self, **kwargs):
         if self.strategy is not None:
@@ -278,7 +280,7 @@ class Area:
             self.budget_keeper.process_market_cycle()
 
         self.log.debug("Cycling markets")
-        self._markets.rotate_markets(now_value, self.stats, self.dispatcher)
+        self._markets.rotate_markets(now_value, self.dispatcher)
         self.dispatcher._delete_past_agents(self.dispatcher._inter_area_agents)
 
         # area_market_stats have to updated when cycling market of each area:

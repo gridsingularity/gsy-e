@@ -177,10 +177,10 @@ class SimulationEndpointBuffer:
 
         if isinstance(area.strategy, PVStrategy):
             core_stats_dict['pv_production_kWh'] = \
-                area.strategy.energy_production_forecast_kWh.get(self.current_market_time_slot,
-                                                                 0)
+                area.strategy.state.get_energy_production_forecast_kWh(
+                    self.current_market_time_slot, 0.0)
             core_stats_dict['available_energy_kWh'] = \
-                area.strategy.state.available_energy_kWh.get(self.current_market_time_slot, 0)
+                area.strategy.state.get_available_energy_kWh(self.current_market_time_slot, 0.0)
             if area.parent.current_market is not None:
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
@@ -194,13 +194,12 @@ class SimulationEndpointBuffer:
 
         elif isinstance(area.strategy, LoadHoursStrategy):
             core_stats_dict['load_profile_kWh'] = \
-                area.strategy.state.desired_energy_Wh.get(
-                    self.current_market_time_slot, 0) / 1000.0
+                area.strategy.state.get_desired_energy_Wh(self.current_market_time_slot) / 1000.0
             core_stats_dict['total_energy_demanded_wh'] = \
-                area.strategy.state.total_energy_demanded_wh
+                area.strategy.state.total_energy_demanded_Wh
             core_stats_dict['energy_requirement_kWh'] = \
-                area.strategy.energy_requirement_Wh.get(
-                    self.current_market_time_slot, 0) / 1000.0
+                area.strategy.state.get_energy_requirement_Wh(
+                    self.current_market_time_slot) / 1000.0
 
             if area.parent.current_market is not None:
                 for t in area.strategy.trades[area.parent.current_market]:

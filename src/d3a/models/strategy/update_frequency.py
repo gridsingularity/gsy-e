@@ -48,6 +48,17 @@ class UpdateFrequencyMixin:
         self.number_of_available_updates = 0
         self.rate_limit_object = rate_limit_object
 
+    def delete_past_state_values(self, current_market_time_slot):
+        to_delete = []
+        for market_slot in self.initial_rate.keys():
+            if market_slot < current_market_time_slot:
+                to_delete.append(market_slot)
+        for market_slot in to_delete:
+            self.initial_rate.pop(market_slot, None)
+            self.final_rate.pop(market_slot, None)
+            self.energy_rate_change_per_update.pop(market_slot, None)
+            self.update_counter.pop(market_slot, None)
+
     def _populate_profiles(self, area):
         for market in area.all_markets:
             time_slot = market.time_slot
