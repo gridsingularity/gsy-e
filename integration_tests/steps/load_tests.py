@@ -37,7 +37,7 @@ def check_load_profile_csv(context, single_or_multi):
     else:
         path = user_profile_load_csv_multiday.profile_path
     input_profile = read_arbitrary_profile(InputProfileTypes.POWER, path)
-    for timepoint, energy in load.strategy.state.desired_energy_Wh.items():
+    for timepoint, energy in load.strategy.state._desired_energy_Wh.items():
         assert energy == find_object_of_same_weekday_and_time(input_profile, timepoint) * 1000
 
 
@@ -62,15 +62,15 @@ def check_user_pv_dict_profile(context):
     for market in house.past_markets:
         slot = market.time_slot
         if slot.hour in user_profile.keys():
-            assert load.strategy.state.desired_energy_Wh[slot] == \
+            assert load.strategy.state._desired_energy_Wh[slot] == \
                    convert_W_to_Wh(user_profile[slot.hour], house.config.slot_length)
         else:
             if int(slot.hour) > int(list(user_profile.keys())[-1]):
-                assert load.strategy.state.desired_energy_Wh[slot] == \
+                assert load.strategy.state._desired_energy_Wh[slot] == \
                        convert_W_to_Wh(user_profile[list(user_profile.keys())[-1]],
                                        house.config.slot_length)
             else:
-                assert load.strategy.state.desired_energy_Wh[slot] == 0
+                assert load.strategy.state._desired_energy_Wh[slot] == 0
 
 
 @then('LoadHoursStrategy does not buy energy with rates that are higher than the provided profile')
