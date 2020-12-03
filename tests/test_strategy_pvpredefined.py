@@ -210,7 +210,7 @@ def pv_test4(area_test3, called):
 
 
 def testing_event_trade(area_test3, pv_test4):
-    pv_test4.state.available_energy_kWh[area_test3.test_market.time_slot] = 1
+    pv_test4.state._available_energy_kWh[area_test3.test_market.time_slot] = 1
     pv_test4.event_trade(market_id=area_test3.test_market.id,
                          trade=Trade(id='id', time='time',
                                      offer=Offer(id='id', time=pendulum.now(), price=20,
