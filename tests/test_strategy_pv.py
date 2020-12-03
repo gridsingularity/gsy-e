@@ -441,7 +441,8 @@ def pv_test9(area_test9):
 def testing_number_of_pv_sell_offers(pv_test9, market_test9, area_test9):
     pv_test9.event_activate()
     pv_test9.event_market_cycle()
-    assert len(market_test9.created_offers) == len(area_test9.all_markets)
+    for m in area_test9.all_markets:
+        assert len(m.created_offers) == 1
 
 
 """TEST10"""
