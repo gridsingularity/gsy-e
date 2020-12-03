@@ -54,10 +54,13 @@ class PVState:
         return self._energy_production_forecast_kWh[time_slot]
 
     def get_available_energy_kWh(self, time_slot, default_value=None):
-        assert self._available_energy_kWh[time_slot] >= -FLOATING_POINT_TOLERANCE
         if default_value is not None:
-            return self._available_energy_kWh.get(time_slot, default_value)
-        return self._available_energy_kWh[time_slot]
+            available_energy = self._available_energy_kWh.get(time_slot, default_value)
+        else:
+            available_energy = self._available_energy_kWh[time_slot]
+
+        assert available_energy >= -FLOATING_POINT_TOLERANCE
+        return available_energy
 
     def decrement_available_energy(self, sold_energy_kWh, time_slot, area_name):
         self._available_energy_kWh[time_slot] -= sold_energy_kWh
