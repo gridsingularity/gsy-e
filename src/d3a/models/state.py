@@ -376,3 +376,20 @@ class StorageState:
         if past_time_slot:
             for energy_type in self._used_storage_share:
                 self.time_series_ess_share[past_time_slot][energy_type.origin] += energy_type.value
+
+    def delete_past_state_values(self, current_time_slot):
+        to_delete = []
+        for market_slot in self.pledged_sell_kWh.keys():
+            if market_slot < current_time_slot:
+                to_delete.append(market_slot)
+        for market_slot in to_delete:
+            self.pledged_sell_kWh.pop(market_slot, None)
+            self.offered_sell_kWh.pop(market_slot, None)
+            self.pledged_buy_kWh.pop(market_slot, None)
+            self.offered_buy_kWh.pop(market_slot, None)
+            self.charge_history.pop(market_slot, None)
+            self.charge_history_kWh.pop(market_slot, None)
+            self.offered_history.pop(market_slot, None)
+            self.used_history.pop(market_slot, None)
+            self.energy_to_buy_dict.pop(market_slot, None)
+            self.energy_to_sell_dict.pop(market_slot, None)
