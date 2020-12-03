@@ -177,10 +177,10 @@ class SimulationEndpointBuffer:
 
         if isinstance(area.strategy, PVStrategy):
             core_stats_dict['pv_production_kWh'] = \
-                area.strategy.energy_production_forecast_kWh.get(self.current_market_time_slot,
-                                                                 0)
+                area.strategy.state.get_energy_production_forecast_kWh(
+                    self.current_market_time_slot, 0.0)
             core_stats_dict['available_energy_kWh'] = \
-                area.strategy.state.available_energy_kWh.get(self.current_market_time_slot, 0)
+                area.strategy.state.get_available_energy_kWh(self.current_market_time_slot, 0.0)
             if area.parent.current_market is not None:
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())

@@ -170,10 +170,8 @@ class ExportLeafData(ExportData):
             desired = self.area.strategy.state.get_desired_energy_Wh(slot) / 1000
             return [desired, self._traded(market) + desired]
         elif isinstance(self.area.strategy, PVStrategy):
-            produced = self.area.strategy.state.available_energy_kWh.get(slot, 0)
-            return [produced,
-                    round(produced -
-                          self.area.strategy.energy_production_forecast_kWh.get(slot, 0), 4),
-                    self.area.strategy.energy_production_forecast_kWh.get(slot, 0)
-                    ]
+            produced = self.area.strategy.state.get_available_energy_kWh(slot, 0.0)
+            forecasted = self.area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
+            curtailed = round(produced - forecasted, 4)
+            return [produced, curtailed, forecasted]
         return []

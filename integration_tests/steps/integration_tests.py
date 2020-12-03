@@ -854,7 +854,7 @@ def check_pv_profile(context):
     profile_data = read_arbitrary_profile(
         InputProfileTypes.POWER,
         str(path))
-    for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
+    for timepoint, energy in pv.strategy.state._energy_production_forecast_kWh.items():
         if timepoint in profile_data.keys():
             assert energy == profile_data[timepoint]
         else:
@@ -867,7 +867,7 @@ def check_user_pv_dict_profile(context):
     pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
     from d3a.setup.strategy_tests.user_profile_pv_dict import user_profile
     profile_data = user_profile
-    for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
+    for timepoint, energy in pv.strategy.state._energy_production_forecast_kWh.items():
         if timepoint.hour in profile_data.keys():
             assert energy == convert_W_to_kWh(profile_data[timepoint.hour], pv.config.slot_length)
         else:
@@ -886,7 +886,7 @@ def check_pv_csv_profile(context):
     profile_data = read_arbitrary_profile(
         InputProfileTypes.POWER,
         user_profile_path)
-    for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
+    for timepoint, energy in pv.strategy.state._energy_production_forecast_kWh.items():
         if timepoint in profile_data.keys():
             assert energy == profile_data[timepoint]
         else:
@@ -901,7 +901,7 @@ def check_pv_profile_csv(context):
         InputProfileTypes.POWER,
         context._device_profile)
     produced_energy = {from_format(f'{TODAY_STR}T{k.hour:02}:{k.minute:02}', DATE_TIME_FORMAT): v
-                       for k, v in pv.strategy.energy_production_forecast_kWh.items()
+                       for k, v in pv.strategy.state._energy_production_forecast_kWh.items()
                        }
     for timepoint, energy in produced_energy.items():
         if timepoint in input_profile:
