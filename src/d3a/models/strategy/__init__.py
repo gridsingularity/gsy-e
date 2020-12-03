@@ -189,7 +189,7 @@ class Offers:
 
     def on_trade(self, market_id, trade):
         try:
-            if trade.offer.seller == self.strategy.owner.name:
+            if trade.seller == self.strategy.owner.name:
                 if trade.offer.id in self.split and trade.offer in self.posted:
                     # remove from posted as it is traded already
                     self.remove(self.split[trade.offer.id])
@@ -459,7 +459,6 @@ class BidEnabledStrategy(BaseStrategy):
             price,
             energy,
             self.owner.name,
-            self.area.name,
             original_bid_price=price,
             buyer_origin=buyer_origin
         )

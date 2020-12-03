@@ -111,11 +111,10 @@ class FakeMarket:
     def get_bids(self):
         return deepcopy(self.bids)
 
-    def bid(self, price: float, energy: float, buyer: str,
-            seller: str, original_bid_price=None,
+    def bid(self, price: float, energy: float, buyer: str, original_bid_price=None,
             buyer_origin=None) -> Bid:
         bid = Bid(id='bid_id', time=now(), price=price, energy=energy, buyer=buyer,
-                  seller=seller, original_bid_price=original_bid_price,
+                  original_bid_price=original_bid_price,
                   buyer_origin=buyer_origin)
         self.bids[bid.id] = bid
         return bid
@@ -331,7 +330,7 @@ def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy
         round(((0.1/0.155) * 0.25), 2)
 
 
-@pytest.mark.parametrize("partial", [None, Bid('test_id', now(), 123, 321, 'A', 'B')])
+@pytest.mark.parametrize("partial", [None, Bid('test_id', now(), 123, 321, 'A')])
 def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strategy_test5,
                                                                 called,
                                                                 partial):
@@ -520,8 +519,8 @@ def load_hours_strategy_test3(area_test1):
 def test_assert_if_trade_rate_is_higher_than_bid_rate(load_hours_strategy_test3):
     market_id = 0
     load_hours_strategy_test3._bids[market_id] = \
-        [Bid("bid_id", now(), 30, 1, buyer="FakeArea", seller="producer")]
-    expensive_bid = Bid("bid_id", now(), 31, 1, buyer="FakeArea", seller="producer")
+        [Bid("bid_id", now(), 30, 1, buyer="FakeArea")]
+    expensive_bid = Bid("bid_id", now(), 31, 1, buyer="FakeArea")
     trade = Trade("trade_id", "time", expensive_bid, load_hours_strategy_test3, "buyer")
 
     with pytest.raises(AssertionError):

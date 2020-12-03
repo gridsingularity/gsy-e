@@ -19,12 +19,13 @@ import json
 
 from d3a.models.area import Area # NOQA
 from d3a.models.strategy import BaseStrategy
+from d3a.models.area.throughput_parameters import ThroughputParameters
 
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy  # NOQA
 from d3a.models.strategy.commercial_producer import CommercialStrategy  # NOQA
 from d3a.models.strategy.pv import PVStrategy  # NOQA
 from d3a.models.strategy.storage import StorageStrategy  # NOQA
-from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy # NOQA
+from d3a.models.strategy.load_hours import LoadHoursStrategy # NOQA
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy # NOQA
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy  # NOQA
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
@@ -138,10 +139,12 @@ def area_from_dict(description, config=None):
                     optional('budget_keeper'), grid_fee_percentage=grid_fee_percentage,
                     grid_fee_constant=grid_fee_constant,
                     external_connection_available=external_connection_available,
-                    baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
-                    baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
-                    import_capacity_kVA=import_capacity_kVA,
-                    export_capacity_kVA=export_capacity_kVA)
+                    throughput=ThroughputParameters(
+                        baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
+                        baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
+                        import_capacity_kVA=import_capacity_kVA,
+                        export_capacity_kVA=export_capacity_kVA)
+                    )
         if "display_type" in description:
             area.display_type = description["display_type"]
         return area
