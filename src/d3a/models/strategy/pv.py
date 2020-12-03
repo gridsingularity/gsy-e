@@ -247,6 +247,9 @@ class PVStrategy(BaseStrategy):
         # Iterate over all markets open in the future
         for market in self.area.all_markets:
             offer_energy_kWh = self.state.get_available_energy_kWh(market.time_slot)
+            # We need to subtract the energy from the offers that are already posted in this
+            # market in order to validate that more offers need to be posted.
+            offer_energy_kWh -= self.offers.open_offer_energy(market.id)
             if offer_energy_kWh > 0:
                 offer_price = \
                     self.offer_update.initial_rate[market.time_slot] * offer_energy_kWh
