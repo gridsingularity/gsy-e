@@ -35,8 +35,8 @@ if platform.python_implementation() != "PyPy" and \
     if ENABLE_SUBSTRATE is True:
         from d3a.models.market.blockchain_utils import get_function_metadata, \
             address_to_hex, swap_byte_order, BOB_ADDRESS, ALICE_ADDRESS, \
-            test_value, test_rate, main_address, mnemonic, hex2, \
-            parse_metadata_constructors, get_contract_code_hash
+            test_value, test_rate, main_address, mnemonic, hex2, endowment, \
+            parse_metadata_constructors, get_contract_code_hash, gas_limit, address_type
         from substrateinterface import SubstrateRequestException, Keypair, ss58_decode  # NOQA
 
 
@@ -77,8 +77,7 @@ class SubstrateBlockchainInterface:
         self.substrate = bc
 
     def load_keypair(mnemonic):
-        keypair = Keypair.create_from_mnemonic(mnemonic, address_type=42)
-        return keypair
+        return Keypair.create_from_mnemonic(mnemonic, address_type=address_type)
 
     def upload_contract(self, path_to_wasm, path_to_metadata, keypair):
         with open(Path(path_to_wasm), 'rb') as wasm:
@@ -128,8 +127,8 @@ class SubstrateBlockchainInterface:
             call_module='Contracts',
             call_function='instantiate',
             call_params={
-                'endowment': 1 * 10**12,
-                'gas_limit': 1 * 10**12,
+                'endowment': endowment,
+                'gas_limit': gas_limit,
                 'code_hash': code_hash,
                 'data': data + salt
             }
@@ -165,8 +164,8 @@ class SubstrateBlockchainInterface:
             call_function='call',
             call_params={
                 'dest': contract_address,
-                'value': 1 * 10**18,
-                'gas_limit': 1000000000000,
+                'value': test_value,
+                'gas_limit': gas_limit,
                 'data': data
             }
         )

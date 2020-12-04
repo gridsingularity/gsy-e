@@ -32,8 +32,11 @@ BC_NUM_FACTOR = 10 ** 10
 BOB_ADDRESS = "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
 ALICE_ADDRESS = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
 
-test_value = 10000000000000000
+test_value = 1 * 10**16
 test_rate = 12
+endowment = 1 * 10**12
+gas_limit = 1 * 10**12
+address_type = 42
 main_address = "ADDRESS_OF_YOUR_DEPLOYED_CONTRACT"
 mnemonic = "MNEMONIC_TO_RESTORE_YOUR_KEYPAIR"
 
