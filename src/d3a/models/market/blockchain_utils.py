@@ -32,8 +32,11 @@ BC_NUM_FACTOR = 10 ** 10
 BOB_ADDRESS = "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
 ALICE_ADDRESS = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
 
-test_value = 10000000000000000
+test_value = 1 * 10**16
 test_rate = 12
+endowment = 1 * 10**12
+gas_limit = 1 * 10**12
+address_type = 42
 main_address = "ADDRESS_OF_YOUR_DEPLOYED_CONTRACT"
 mnemonic = "MNEMONIC_TO_RESTORE_YOUR_KEYPAIR"
 
@@ -46,19 +49,31 @@ class InvalidBlockchainTrade(D3AException):
     pass
 
 
-def get_function_metadata(function_name, path):
-    with open(path) as json_file:
+def parse_metadata_messages(path_to_metadata):
+    with open(path_to_metadata) as json_file:
         metadata = json.load(json_file)
-        name = metadata['registry']['strings'].index(function_name) + 1
+    messages = metadata["spec"]["messages"]
+    function_bytes = {}
+    for m in messages:
+        function_bytes[m["name"][0]] = m["selector"]
+    return function_bytes
 
-    function_bytes_repr = '0x'
-    for constructor in metadata['contract']['messages']:
-        if constructor['name'] == name:
-            bytes_repr = constructor['selector'].strip('[').strip(']').split(',')
-            function_bytes_repr = '0x'
-            for byte in bytes_repr:
-                function_bytes_repr += byte[3:-1]
-    return function_bytes_repr.lower()
+
+def parse_metadata_constructors(path_to_metadata):
+    with open(path_to_metadata) as json_file:
+        metadata = json.load(json_file)
+    constructors = metadata["spec"]["constructors"]
+    constructor_bytes = {}
+    for c in constructors:
+        constructor_bytes[c["name"][0]] = c["selector"]
+    return constructor_bytes
+
+
+def get_contract_code_hash(path_to_metadata):
+    with open(path_to_metadata) as json_file:
+        metadata = json.load(json_file)
+    code_hash = metadata["source"]["hash"]
+    return code_hash
 
 
 def address_to_hex(address):
