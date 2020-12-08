@@ -20,33 +20,14 @@ from pathlib import Path
 from platform import system
 
 from fabric.colors import blue, green, yellow
-from fabric.context_managers import hide, settings
+from fabric.context_managers import hide
 from fabric.decorators import task, hosts
 from fabric.operations import local
 from fabric.tasks import execute
 from fabric.utils import abort, puts
 
-SOLIUM_VERSION = '0.2.2'
 HERE = Path().resolve()
 REQ_DIR = HERE / 'requirements'
-
-
-def _ensure_solium():
-    with settings(hide('everything'), warn_only=True):
-        r = local('solium --version', capture=True)
-        installed_version = r.stdout.strip()
-        if r.return_code == 0 and installed_version == SOLIUM_VERSION:
-            return
-        r = local('npm --version', capture=True)
-        if r.return_code != 0:
-            abort("The 'npm' package manager is missing, please install it.\n"
-                  "See: https://docs.npmjs.com/getting-started/installing-node")
-        r = local('npm root --global', capture=True)
-    solium_path = Path(r.stdout.strip()).joinpath('solium')
-    if not solium_path.exists() or installed_version != SOLIUM_VERSION:
-        puts(yellow("Installing 'solium' solidity linter"))
-        with hide('running', 'stdout'):
-            local("npm install --global solium@{}".format(SOLIUM_VERSION))
 
 
 def _ensure_pre_commit():
@@ -102,7 +83,6 @@ def _pre_check():
 
 def _post_check():
     if "Darwin" in system():
-        _ensure_solium()
         _ensure_ganache_cli()
     _ensure_pre_commit()
 
