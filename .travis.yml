@@ -23,9 +23,3 @@ jobs:
          curl -LO --retry 3 https://raw.github.com/mernst/plume-lib/master/bin/trigger-travis.sh
          sh trigger-travis.sh --pro --branch $TRAVIS_BRANCH gridsingularity d3a-web $TRAVIS_ACCESS_TOKEN
        fi
-# allow solium failure until issues #55 and #65 are fixed
- allow_failures:
-   - python: 3.6
-     env: TOXENV=solium
-     install: .support/travis-install.sh
-     script: .support/travis-run.sh
