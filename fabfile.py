@@ -17,36 +17,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import os
 from pathlib import Path
-from platform import system
 
 from fabric.colors import blue, green, yellow
-from fabric.context_managers import hide, settings
+from fabric.context_managers import hide
 from fabric.decorators import task, hosts
 from fabric.operations import local
 from fabric.tasks import execute
 from fabric.utils import abort, puts
 
-SOLIUM_VERSION = '0.2.2'
 HERE = Path().resolve()
 REQ_DIR = HERE / 'requirements'
-
-
-def _ensure_solium():
-    with settings(hide('everything'), warn_only=True):
-        r = local('solium --version', capture=True)
-        installed_version = r.stdout.strip()
-        if r.return_code == 0 and installed_version == SOLIUM_VERSION:
-            return
-        r = local('npm --version', capture=True)
-        if r.return_code != 0:
-            abort("The 'npm' package manager is missing, please install it.\n"
-                  "See: https://docs.npmjs.com/getting-started/installing-node")
-        r = local('npm root --global', capture=True)
-    solium_path = Path(r.stdout.strip()).joinpath('solium')
-    if not solium_path.exists() or installed_version != SOLIUM_VERSION:
-        puts(yellow("Installing 'solium' solidity linter"))
-        with hide('running', 'stdout'):
-            local("npm install --global solium@{}".format(SOLIUM_VERSION))
 
 
 def _ensure_pre_commit():
@@ -85,12 +65,6 @@ def _ensure_pip_tools():
             local("pip install pip-tools")
 
 
-def _ensure_ganache_cli():
-    error_code = os.system('ganache-cli --version > /dev/null')
-    if error_code != 0:
-        local('npm install --global ganache-cli')
-
-
 def _pre_check():
     _ensure_venv()
     with hide('running', 'stdout'):
@@ -98,13 +72,6 @@ def _pre_check():
         # (should be after 2.2.0)
         local("pip install 'setuptools<38.0.0'")
     _ensure_pip_tools()
-
-
-def _post_check():
-    if "Darwin" in system():
-        _ensure_solium()
-        _ensure_ganache_cli()
-    _ensure_pre_commit()
 
 
 @task
@@ -146,7 +113,7 @@ def sync():
             )
         )
         local('pip install -e .')
-    _post_check()
+    _ensure_pre_commit()
 
 
 @task

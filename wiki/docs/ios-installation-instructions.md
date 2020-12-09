@@ -1,6 +1,6 @@
 ## How to Install D3A on macOS
 
-### Preparations 
+### Preparations
 
 ##### Make sure the command line compiler tools are installed:
 
@@ -64,14 +64,12 @@ cd d3a
 
 ##### Create and initialize d3a virtualenv
 ```
-brew install npm 
-npm install --global ganache-cli
 mkvirtualenv d3a
 pip install pendulum pip-tools
-pip install -e . 
+pip install -e .
 ```
 
-#####  Install 
+#####  Install
 
 #####  Done, you now should have a working d3a setup.
 
