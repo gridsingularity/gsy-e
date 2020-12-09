@@ -28,9 +28,9 @@ Changes that are cosmetic in nature and do not add anything substantial to the s
 
 #### **Do you have questions about the source code or the functionality of D3A?**
 
-* Consult our Wiki [D3A Wiki page](https://gridsingularity.atlassian.net/wiki/x/d4D5Mg)
+* Consult our Wiki [D3A Wiki page](https://gridsingularity.github.io/d3a/d3a-documentation/)
 
-* If things are still unclear: Ask any question about how to use D3A in the [D3A mailing list](https://groups.io/g/d3a).
+* If things are still unclear: Ask any question about how to use D3A in the [Grid Singularity Community Slack](https://gsycommunity.slack.com/join/shared_invite/zt-dpfxe2gk-hKFccsrr68g982odCJlrIg#/).
 
 
 #### **License**
