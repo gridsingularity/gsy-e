@@ -28,7 +28,7 @@ if platform.python_implementation() != "PyPy" and \
     from substrateinterface import SubstrateInterface
 
 
-DEFAULT_SUBSTRATE_URL = "wss://canvas-rpc.parity.io"
+DEFAULT_SUBSTRATE_URL = "wss://canvas-node.dev.gridsingularity.com/"
 TEMPLATE_NODE_ADDRESS_TYPE = 42
 
 
