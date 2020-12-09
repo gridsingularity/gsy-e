@@ -185,7 +185,10 @@ class RedisMarketExternalConnection:
         deactivate_msg = {
             "event": "finish"
         }
-        self.redis_com.publish_json(deactivate_event_channel, deactivate_msg)
+        if self.is_aggregator_controlled:
+            self.aggregator.add_batch_finished_event(self.area.uuid, deactivate_msg)
+        else:
+            self.redis_com.publish_json(deactivate_event_channel, deactivate_msg)
 
     def trigger_aggregator_commands(self, command):
         if "type" not in command:
