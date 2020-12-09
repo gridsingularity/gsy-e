@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import os
 from pathlib import Path
-from platform import system
 
 from fabric.colors import blue, green, yellow
 from fabric.context_managers import hide
@@ -66,12 +65,6 @@ def _ensure_pip_tools():
             local("pip install pip-tools")
 
 
-def _ensure_ganache_cli():
-    error_code = os.system('ganache-cli --version > /dev/null')
-    if error_code != 0:
-        local('npm install --global ganache-cli')
-
-
 def _pre_check():
     _ensure_venv()
     with hide('running', 'stdout'):
@@ -79,12 +72,6 @@ def _pre_check():
         # (should be after 2.2.0)
         local("pip install 'setuptools<38.0.0'")
     _ensure_pip_tools()
-
-
-def _post_check():
-    if "Darwin" in system():
-        _ensure_ganache_cli()
-    _ensure_pre_commit()
 
 
 @task
@@ -126,7 +113,7 @@ def sync():
             )
         )
         local('pip install -e .')
-    _post_check()
+    _ensure_pre_commit()
 
 
 @task
