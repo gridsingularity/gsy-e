@@ -122,7 +122,7 @@ class SubstrateBlockchainInterface:
     def deploy_contract(self, code_hash, path_to_metadata, constructor_name, keypair):
         constructor_bytes = parse_metadata_constructors(path_to_metadata)
         data = constructor_bytes[constructor_name]
-        salt = hex(self.substrate.get_account_nonce(keypair.ss58_address))[2:]
+        salt = hex2(self.substrate.get_account_nonce(keypair.ss58_address))
         call = self.substrate.compose_call(
             call_module='Contracts',
             call_function='instantiate',
@@ -130,7 +130,8 @@ class SubstrateBlockchainInterface:
                 'endowment': endowment,
                 'gas_limit': gas_limit,
                 'code_hash': code_hash,
-                'data': data + salt
+                'data': data,
+                'salt': salt
             }
         )
 
