@@ -33,7 +33,7 @@ class SimulationConfig:
     def __init__(self, sim_duration: duration, slot_length: duration, tick_length: duration,
                  market_count: int, cloud_coverage: int,
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-                 pv_user_profile=None, start_date: DateTime=today(tz=TIME_ZONE),
+                 pv_user_profile=None, start_date: DateTime = today(tz=TIME_ZONE),
                  max_panel_power_W=None, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
                  external_connection_enabled=True, aggregator_device_mapping=None):
 
