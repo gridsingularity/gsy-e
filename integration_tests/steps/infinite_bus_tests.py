@@ -37,7 +37,7 @@ def check_buy_behaviour_ib(context):
         for trade in core_stats[name_uuid_map['Grid']]['trades']:
             assert limit_float_precision(trade['energy_rate']) <= \
                    core_stats[name_uuid_map['Infinite Bus']]['energy_rate'] or \
-                   "Infinite Bus" is not trade['seller']
+                   "Infinite Bus" is not trade['seller']  # noqa: F632
 
             if trade['buyer'] == "H1 General Load":
                 assert trade['energy'] == \
