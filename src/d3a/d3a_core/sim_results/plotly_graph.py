@@ -30,20 +30,6 @@ from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a import limit_float_precision
 
-ENERGY_BUYER_SIGN_PLOTS = 1
-ENERGY_SELLER_SIGN_PLOTS = -1 * ENERGY_BUYER_SIGN_PLOTS
-
-alternative_pricing_subdirs = {
-    0: "d3a_pricing",
-    1: "no_scheme_pricing",
-    2: "feed_in_tariff_pricing",
-    3: "net_metering_pricing"
-}
-
-EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "pv_production_kWh", "production_kWh",
-                           "energy_buffer_kWh", "trade_price_eur", "soc_history_%",
-                           "load_profile_kWh"]
-
 green = 'rgba(20,150,20, alpha)'
 purple = 'rgba(156, 110, 177, alpha)'
 blue = 'rgba(0,0,200,alpha)'
