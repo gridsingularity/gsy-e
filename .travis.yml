@@ -1,5 +1,5 @@
 sudo: false
-dist: trusty
+dist: xenial
 language: python
 branches:
   only:
@@ -8,7 +8,7 @@ branches:
 
 jobs:
  include:
-   - python: 3.6
+   - python: 3.8
      env: TOXENV=travis
      install: .support/travis-install.sh
      script: .support/travis-run.sh
