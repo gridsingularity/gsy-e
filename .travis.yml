@@ -13,7 +13,7 @@ jobs:
      install: .support/travis-install.sh
      script: .support/travis-run.sh
 # this is to trigger a new build of d3a-web for every push to master or production
-   - python: 3.6
+   - python: 3.8
      stage: trigger downstream
      jdk: oraclejdk8
      script: |
