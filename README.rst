@@ -18,7 +18,7 @@ Basic setup
 
 (For instructions using `Docker`_ see below)
 
-After cloning this project setup a Python 3.6 virtualenv and install `fabric3`_::
+After cloning this project setup a Python 3.8 virtualenv and install `fabric3`_::
 
     ~# pip install fabric3
 
