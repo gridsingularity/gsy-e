@@ -27,6 +27,7 @@ mod trade_storage {
     pub struct TradeStorage {
         /// The trades stored in the contract.
         trades: StorageHashMap<Hash, (AccountId, AccountId, Balance, i8)>,
+        area_market_id: StorageHashMap<u128, (u128, u32)>,
     }
 
     /// Storing a trade by a call from d3a
@@ -55,10 +56,12 @@ mod trade_storage {
     impl TradeStorage {
         /// Creates a contract that stores trade data.
         #[ink(constructor)]
-        pub fn new() -> Self {
+        pub fn new(simulation_id: u128, area_id: u128, timestamp: u32) -> Self {
             let trades = StorageHashMap::new();
+            let mut area_market_id = StorageHashMap::new();
+            area_market_id.insert(simulation_id, (area_id, timestamp));
             let instance = Self {
-                trades,
+                trades, area_market_id,
             };
             instance
         }
@@ -92,6 +95,11 @@ mod trade_storage {
             let default_tuple = (AccountId::default(), AccountId::default(), 0, 0);
             let trade = self.trades.get(&hash).copied().unwrap_or(default_tuple);
             trade
+        }
+
+        #[ink(message)]
+        pub fn get_contract_identity(&self, id: u128) -> (u128, u32) {
+            self.area_market_id[&id]
         }
     }
 }
