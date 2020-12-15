@@ -253,6 +253,10 @@ class Simulation:
         area.stats.update_aggregated_stats({"bills": bills})
         area.stats.kpi.update(endpoint_buffer.kpi.performance_indices_redis.get(area.uuid, {}))
 
+    def _stop_sim_heartbeat(self):
+        if hasattr(self.redis_connection, 'heartbeat'):
+            self.redis_connection.heartbeat.cancel()
+
     def _update_and_send_results(self, is_final=False):
         self.endpoint_buffer.update_stats(
             self.area, self.status, self.progress_info, self.current_state)
@@ -266,12 +270,9 @@ class Simulation:
         if self.should_export_results:
             self.file_stats_endpoint(self.area)
             return
-        if is_final:
-            self.redis_connection.publish_results(
-                self.endpoint_buffer
-            )
-            if hasattr(self.redis_connection, 'heartbeat'):
-                self.redis_connection.heartbeat.cancel()
+        if is_final or self.is_stopped:
+            self.redis_connection.publish_results(self.endpoint_buffer)
+            self._stop_sim_heartbeat()
 
         else:
             self.redis_connection.publish_intermediate_results(
@@ -401,6 +402,7 @@ class Simulation:
 
             if self.is_stopped:
                 log.info("Received stop command.")
+                self._stop_sim_heartbeat()
                 sleep(5)
                 break
 
@@ -512,6 +514,8 @@ class Simulation:
             if time.time() - tick_start > SIMULATION_PAUSE_TIMEOUT:
                 self.is_timed_out = True
                 self.is_stopped = True
+                self.paused = False
+            if self.is_stopped:
                 self.paused = False
             sleep(0.5)
 
