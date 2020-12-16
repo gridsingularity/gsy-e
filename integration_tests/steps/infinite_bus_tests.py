@@ -32,12 +32,23 @@ def check_buy_behaviour_ib(context):
     from integration_tests.steps.two_sided_market import no_unmatched_loads
     no_unmatched_loads(context)
     name_uuid_map = get_area_name_uuid_mapping(context.area_tree_summary_data)
-
+    grid = context.simulation.area
+    bus = list(filter(lambda x: x.name == "Infinite Bus", grid.children))[0]
     for time_slot, core_stats in context.raw_sim_data.items():
         for trade in core_stats[name_uuid_map['Grid']]['trades']:
-            assert limit_float_precision(trade['energy_rate']) <= \
-                   core_stats[name_uuid_map['Infinite Bus']]['energy_rate'] or \
-                   "Infinite Bus" is not trade['seller']
+            if trade['seller'] == "Infinite Bus":
+                assert limit_float_precision(trade['energy_rate']) >= \
+                       core_stats[name_uuid_map['Infinite Bus']]['energy_rate']
+            else:
+                assert limit_float_precision(trade['energy_rate']) <= \
+                       core_stats[name_uuid_map['Infinite Bus']]['energy_rate']
+
+            if trade['buyer'] == "Infinite Bus":
+                # TODO: energy_buy_rate is not part of the raw simulation data, therefore
+                # it is obligatory to retrieve it from the strategy. This needs to change once
+                # we add the energy_buy_rate to the infinite bus result data.
+                assert limit_float_precision(trade['energy_rate']) <= \
+                       list(bus.strategy.energy_buy_rate.values())[0]
 
             if trade['buyer'] == "H1 General Load":
                 assert trade['energy'] == \

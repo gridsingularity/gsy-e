@@ -17,11 +17,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 from logging import getLogger
+import platform
 
 import click
 from click.types import Choice
 from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
+
+import multiprocessing
 from multiprocessing import Process
 from pendulum import DateTime, today
 
@@ -105,6 +108,10 @@ _setup_modules = available_simulation_scenarios
 def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_length,
         market_count, cloud_coverage, compare_alt_pricing, enable_external_connection, start_date,
         pause_at, **kwargs):
+
+    # Force the multiprocessing start method to be 'fork' on macOS.
+    if platform.system() == 'Darwin':
+        multiprocessing.set_start_method('fork')
 
     try:
         if settings_file is not None:

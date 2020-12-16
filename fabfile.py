@@ -78,6 +78,7 @@ def _pre_check():
 @hosts('localhost')
 def compile(upgrade="", package=None):
     """Update list of requirements"""
+
     if upgrade and package:
         abort("Can only specify one of `upgrade` or `package`")
     if package:
@@ -90,7 +91,7 @@ def compile(upgrade="", package=None):
         puts(green("Updating requirements"), show_prefix=True)
         for file in REQ_DIR.glob('*.in'):
             puts(blue("  - {}".format(file.name.replace(".in", ""))))
-            local('pip-compile --max-rounds 100 --no-index {}{} --rebuild {}'.format(
+            local('pip-compile --max-rounds 100 --no-emit-index-url {}{} --rebuild {}'.format(
                 '--upgrade' if upgrade or package else '',
                 '-package {}'.format(package) if package else '',
                 file.relative_to(HERE)

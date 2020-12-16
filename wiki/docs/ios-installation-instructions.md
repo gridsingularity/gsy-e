@@ -31,17 +31,17 @@ echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n eval "$(pyenv init -)"\nfi
 
 #####  Close and re-open the terminal
 
-#####  Install Python 3.6 and set as default:
+#####  Install Python 3.8 and set as default:
 
 ```
-pyenv install 3.6.3
-pyenv global 3.6.3
+pyenv install 3.8.6
+pyenv global 3.8.6
 ```
 
 #####  Install virtualenvwrapper:
 ```
 pip install virtualenvwrapper
-echo -e 'export WORKON_HOME=~/Envs\nsource ~/.pyenv/versions/3.6.3/bin/virtualenvwrapper.sh' >> ~/.bash_profile
+echo -e 'export WORKON_HOME=~/Envs\nsource ~/.pyenv/versions/3.8.6/bin/virtualenvwrapper.sh' >> ~/.bash_profile
 ```
 
 
