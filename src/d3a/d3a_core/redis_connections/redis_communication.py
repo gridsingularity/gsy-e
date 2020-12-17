@@ -69,6 +69,7 @@ class RedisSimulationCommunication:
             del self.pubsub
             return
         self.heartbeat = RepeatingTimer(HeartBeat.RATE, self.heartbeat_tick)
+        self.heartbeat.setDaemon(True)
         self.heartbeat.start()
 
     def _subscribe_to_channels(self):

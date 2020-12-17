@@ -266,13 +266,8 @@ class Simulation:
         if self.should_export_results:
             self.file_stats_endpoint(self.area)
             return
-        if is_final:
-            self.redis_connection.publish_results(
-                self.endpoint_buffer
-            )
-            if hasattr(self.redis_connection, 'heartbeat'):
-                self.redis_connection.heartbeat.cancel()
-
+        if is_final or self.is_stopped:
+            self.redis_connection.publish_results(self.endpoint_buffer)
         else:
             self.redis_connection.publish_intermediate_results(
                 self.endpoint_buffer
@@ -512,6 +507,8 @@ class Simulation:
             if time.time() - tick_start > SIMULATION_PAUSE_TIMEOUT:
                 self.is_timed_out = True
                 self.is_stopped = True
+                self.paused = False
+            if self.is_stopped:
                 self.paused = False
             sleep(0.5)
 
