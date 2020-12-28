@@ -4,9 +4,6 @@ on:
     branches:
       - master
       - staging
-  push:
-    branches:
-      - feature/D3ASIM-3140
 jobs:
   test-build:
     runs-on: ubuntu-latest
