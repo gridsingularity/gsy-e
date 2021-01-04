@@ -4,6 +4,7 @@ on:
     branches:
       - master
       - staging
+      - feature/D3ASIM-3140
 jobs:
   test-build:
     runs-on: ubuntu-latest
@@ -15,7 +16,7 @@ jobs:
         python-version: 3.8
     - name: Install dependencies
       env:
-        TOXENV: travis
+        TOXENV: ci
       run: |
-        bash .support/travis-install.sh
-        bash .support/travis-run.sh
+        pip install -U tox
+        tox -e $TOXENV --verbose

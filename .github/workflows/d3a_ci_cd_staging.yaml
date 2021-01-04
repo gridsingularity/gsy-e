@@ -14,10 +14,13 @@ jobs:
         python-version: 3.8
     - name: Install dependencies
       env:
-        TOXENV: travis
+        TOXENV: ci
+        SOLC_BINARY: $HOME/solc/usr/bin/solc
+        LD_LIBRARY_PATH: $HOME/solc/usr/lib
+        BRANCH: staging
       run: |
-        bash .support/travis-install.sh
-        bash .support/travis-run.sh
+        pip install -U tox
+        tox -e $TOXENV --verbose
     - name: Trigger deployment
       shell: bash
       run: |
