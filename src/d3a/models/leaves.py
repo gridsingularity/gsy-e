@@ -64,13 +64,13 @@ class Leaf(Area):
             try:
                 self.strategy_type = forecast_strategy_mapping[self.strategy_type]
             except KeyError:
-                log.error(f"ERROR: {self.strategy_type.str} could not be found in "
+                log.error(f"ERROR: {self.strategy_type} could not be found in "
                           f"forecast_strategy_mapping, using template strategy.")
         elif kwargs.get("allow_external_connection", False) is True:
             try:
                 self.strategy_type = external_strategies_mapping[self.strategy_type]
             except KeyError:
-                log.error(f"ERROR: {self.strategy_type.str} could not be found "
+                log.error(f"ERROR: {self.strategy_type} could not be found "
                           f"in external_strategies_mapping, using template strategy.")
         super(Leaf, self).__init__(
             name=name,
