@@ -404,7 +404,7 @@ class ExternalMixin:
     def _set_energy_forecast_impl(self, arguments, response_channel):
         try:
             assert arguments["energy_forecast"] >= 0.0
-            self.energy_forecast_buffer_W = arguments["energy_forecast"]
+            self.energy_forecast_buffer_Wh = arguments["energy_forecast"]
             self.redis.publish_json(
                 response_channel,
                 {"command": "set_energy_forecast", "status": "ready",
