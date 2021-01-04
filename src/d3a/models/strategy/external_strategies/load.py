@@ -25,7 +25,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
 from d3a.d3a_core.redis_connections.aggregator_connection import default_market_info
-from d3a.d3a_core.util import get_current_market_maker_rate, convert_W_to_Wh
+from d3a.d3a_core.util import get_current_market_maker_rate
 from d3a_interface.constants_limits import ConstSettings
 
 
@@ -369,11 +369,11 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
     """
         Strategy responsible for reading single forecast consumption data via hardware API
     """
-    parameters = ('power_forecast_W', 'fit_to_limit', 'energy_rate_increase_per_update',
+    parameters = ('energy_forecast_Wh', 'fit_to_limit', 'energy_rate_increase_per_update',
                   'update_interval', 'initial_buying_rate', 'final_buying_rate',
                   'balancing_energy_ratio', 'use_market_maker_rate')
 
-    def __init__(self, power_forecast_W: float = 0,
+    def __init__(self, energy_forecast_Wh: float = 0,
                  fit_to_limit=True, energy_rate_increase_per_update=None,
                  update_interval=None,
                  initial_buying_rate: Union[float, dict, str] =
@@ -386,7 +386,7 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
                  use_market_maker_rate: bool = False):
         """
         Constructor of LoadForecastStrategy
-        :param power_forecast_W: forecast for the next market slot
+        :param energy_forecast_Wh: forecast for the next market slot
         """
         if update_interval is None:
             update_interval = \
@@ -401,27 +401,27 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
                          balancing_energy_ratio=balancing_energy_ratio,
                          use_market_maker_rate=use_market_maker_rate)
 
-        self.power_forecast_buffer_W = power_forecast_W
+        self.energy_forecast_buffer_Wh = energy_forecast_Wh
 
     @property
     def channel_dict(self):
         return {**super().channel_dict,
-                f'{self.channel_prefix}/set_power_forecast': self._set_power_forecast}
+                f'{self.channel_prefix}/set_energy_forecast': self._set_energy_forecast}
 
     def event_tick(self):
         # Need to repeat he pending request parsing in order to handle power forecasts
         # from the MQTT subscriber (non-connected admin)
         for req in self.pending_requests:
-            if req.request_type == "set_power_forecast":
-                self._set_power_forecast_impl(req.arguments, req.response_channel)
+            if req.request_type == "set_energy_forecast":
+                self._set_energy_forecast_impl(req.arguments, req.response_channel)
 
         self.pending_requests = [req for req in self.pending_requests
-                                 if req.request_type not in "set_power_forecast"]
+                                 if req.request_type not in "set_energy_forecast"]
         super().event_tick()
 
     def _incoming_commands_callback_selection(self, req):
-        if req.request_type == "set_power_forecast":
-            self._set_power_forecast_impl(req.arguments, req.response_channel)
+        if req.request_type == "set_energy_forecast":
+            self._set_energy_forecast_impl(req.arguments, req.response_channel)
         else:
             super()._incoming_commands_callback_selection(req)
 
@@ -434,7 +434,6 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
 
     def update_energy_forecast(self):
         # sets energy forecast for next_market
-        energy_forecast_Wh = convert_W_to_Wh(self.power_forecast_buffer_W,
-                                             self.area.config.slot_length)
+        energy_forecast_Wh = self.energy_forecast_buffer_Wh
         slot_time = self.area.next_market.time_slot
         self.state.set_desired_energy(energy_forecast_Wh, slot_time, overwrite=True)

@@ -375,47 +375,47 @@ class ExternalMixin:
                                   f"Market cycle already finished."})
         self.pending_requests = []
 
-    def _set_power_forecast(self, payload):
+    def _set_energy_forecast(self, payload):
         transaction_id = self._get_transaction_id(payload)
-        power_forecast_response_channel = \
-            f'{self.channel_prefix}/response/set_power_forecast'
+        energy_forecast_response_channel = \
+            f'{self.channel_prefix}/response/set_energy_forecast'
         # Deactivating register/connected requirement for power forecasts.
         # if not check_for_connected_and_reply(self.redis, power_forecast_response_channel,
         #                                      self.connected):
         #     return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'power_forecast', 'transaction_id'}
+            assert set(arguments.keys()) == {'energy_forecast', 'transaction_id'}
         except Exception as e:
             logging.error(
-                f"Incorrect _set_power_forecast request. "
+                f"Incorrect _set_energy_forecast request. "
                 f"Payload {payload}. Exception {str(e)}.")
             self.redis.publish_json(
-                power_forecast_response_channel,
-                {"command": "set_power_forecast",
-                 "error": "Incorrect _set_power_forecast request. "
-                          "Available parameters: (power_forecast).",
+                energy_forecast_response_channel,
+                {"command": "set_energy_forecast",
+                 "error": "Incorrect _set_energy_forecast request. "
+                          "Available parameters: (energy_forecast).",
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
-                IncomingRequest("set_power_forecast", arguments,
-                                power_forecast_response_channel))
+                IncomingRequest("set_energy_forecast", arguments,
+                                energy_forecast_response_channel))
 
-    def _set_power_forecast_impl(self, arguments, response_channel):
+    def _set_energy_forecast_impl(self, arguments, response_channel):
         try:
-            assert arguments["power_forecast"] >= 0.0
-            self.power_forecast_buffer_W = arguments["power_forecast"]
+            assert arguments["energy_forecast"] >= 0.0
+            self.energy_forecast_buffer_W = arguments["energy_forecast"]
             self.redis.publish_json(
                 response_channel,
-                {"command": "set_power_forecast", "status": "ready",
+                {"command": "set_energy_forecast", "status": "ready",
                  "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
-            logging.error(f"Error when handling _set_power_forecast_impl "
+            logging.error(f"Error when handling _set_energy_forecast_impl "
                           f"on area {self.device.name}: "
                           f"Exception: {str(e)}, Arguments: {arguments}")
             self.redis.publish_json(
                 response_channel,
-                {"command": "set_power_forecast", "status": "error",
-                 "error_message": f"Error when handling _set_power_forecast_impl "
+                {"command": "set_energy_forecast", "status": "error",
+                 "error_message": f"Error when handling _set_energy_forecast_impl "
                                   f"on area {self.device.name} with arguments {arguments}.",
                  "transaction_id": arguments.get("transaction_id", None)})
