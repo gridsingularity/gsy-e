@@ -15,10 +15,10 @@ jobs:
     - name: Install dependencies
       env:
         TOXENV: ci
-        SOLC_BINARY: $HOME/solc/usr/bin/solc
-        LD_LIBRARY_PATH: $HOME/solc/usr/lib
         BRANCH: master
       run: |
+        export SOLC_BINARY=$HOME/solc/usr/bin/solc
+        export LD_LIBRARY_PATH=$HOME/solc/usr/lib:$LD_LIBRARY_PATH
         pip install -U tox
         tox -e $TOXENV --verbose
     - name: Trigger deployment

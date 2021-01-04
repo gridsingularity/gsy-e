@@ -17,7 +17,9 @@ jobs:
     - name: Install dependencies
       env:
         TOXENV: ci
-        TEST_ENV: $HOME/DIR
+        BRANCH: master
       run: |
-        export TEST_VAR=$HOME/DIR
-        echo $TEST_VAR
+        export SOLC_BINARY=$HOME/solc/usr/bin/solc
+        export LD_LIBRARY_PATH=$HOME/solc/usr/lib:$LD_LIBRARY_PATH
+        pip install -U tox
+        tox -e $TOXENV --verbose
