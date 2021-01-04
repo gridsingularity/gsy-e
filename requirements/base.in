@@ -1,3 +1,4 @@
+pip==20.3.1
 attrs
 awesome-slugify
 base58
