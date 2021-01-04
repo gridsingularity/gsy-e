@@ -84,9 +84,11 @@ class Simulation:
                  simulation_events: str = None, slowdown: int = 0, seed=None,
                  paused: bool = False, pause_after: duration = None, repl: bool = False,
                  no_export: bool = False, export_path: str = None,
-                 export_subdir: str = None, redis_job_id=None, enable_bc=False):
+                 export_subdir: str = None, redis_job_id=None, enable_bc=False,
+                 slot_length_realtime=None):
         self.initial_params = dict(
             slowdown=slowdown,
+            slot_length_realtime=slot_length_realtime,
             seed=seed,
             paused=paused,
             pause_after=pause_after
@@ -156,10 +158,11 @@ class Simulation:
             raise SimulationException(
                 "Invalid setup module '{}'".format(self.setup_module_name)) from ex
 
-    def _init(self, slowdown, seed, paused, pause_after, redis_job_id):
+    def _init(self, slowdown, slot_length_realtime, seed, paused, pause_after, redis_job_id):
         self.paused = paused
         self.pause_after = pause_after
         self.slowdown = slowdown
+        self.slot_length_realtime = slot_length_realtime
 
         if seed is not None:
             random.seed(int(seed))
@@ -327,6 +330,9 @@ class Simulation:
             sleep(seconds_until_next_tick)
 
         simulation_time_counter = time.time()
+        if self.slot_length_realtime:
+            tick_length_realtime_s = self.slot_length_realtime.seconds / \
+                                     self.simulation_config.ticks_per_slot
         for slot_no in range(slot_resume, slot_count):
             self._update_progress_info(slot_no, slot_count)
 
@@ -375,13 +381,15 @@ class Simulation:
                 self.simulation_config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()
 
-                realtime_tick_length = time.time() - simulation_time_counter
+                realtime_tick_length_s = time.time() - simulation_time_counter
                 if d3a.constants.RUN_IN_REALTIME:
-                    sleep(abs(tick_lengths_s - realtime_tick_length))
-                elif self.slowdown and realtime_tick_length < tick_lengths_s:
+                    sleep(abs(tick_lengths_s - realtime_tick_length_s))
+                elif self.slot_length_realtime:
+                    sleep(abs(tick_length_realtime_s - realtime_tick_length_s))
+                elif self.slowdown and realtime_tick_length_s < tick_lengths_s:
                     # Simulation runs faster than real time but a slowdown was
                     # requested
-                    tick_diff = tick_lengths_s - realtime_tick_length
+                    tick_diff = tick_lengths_s - realtime_tick_length_s
                     diff_slowdown = tick_diff * self.slowdown / SLOWDOWN_FACTOR
                     log.trace("Slowdown: %.4f", diff_slowdown)
                     if console is not None:
@@ -567,7 +575,8 @@ class Simulation:
             "run_start": format_datetime(self.run_start)
             if self.run_start is not None else "",
             "paused_time": self.paused_time,
-            "slot_number": self.progress_info.current_slot_number
+            "slot_number": self.progress_info.current_slot_number,
+            "slot_length_realtime": self.slot_length_realtime
         }
 
     @classmethod
@@ -593,7 +602,8 @@ class Simulation:
 
 
 def run_simulation(setup_module_name="", simulation_config=None, simulation_events=None,
-                   slowdown=None, redis_job_id=None, saved_sim_state=None, kwargs=None):
+                   slowdown=None, redis_job_id=None, saved_sim_state=None,
+                   slot_length_realtime=None, kwargs=None):
     try:
         if "pricing_scheme" in kwargs:
             ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = \
@@ -605,6 +615,7 @@ def run_simulation(setup_module_name="", simulation_config=None, simulation_even
                 simulation_config=simulation_config,
                 simulation_events=simulation_events,
                 slowdown=slowdown,
+                slot_length_realtime=slot_length_realtime,
                 redis_job_id=redis_job_id,
                 **kwargs
             )
@@ -613,6 +624,7 @@ def run_simulation(setup_module_name="", simulation_config=None, simulation_even
                 setup_module_name=setup_module_name,
                 simulation_config=simulation_config,
                 simulation_events=simulation_events,
+                slot_length_realtime=slot_length_realtime,
                 slowdown=saved_sim_state["general"]["slowdown"],
                 redis_job_id=saved_sim_state["general"]["simulation_id"],
                 **kwargs

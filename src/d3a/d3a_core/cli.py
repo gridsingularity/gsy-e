@@ -16,26 +16,23 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-from logging import getLogger
 import platform
-
+import multiprocessing
 import click
+
 from click.types import Choice
 from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
-
-import multiprocessing
+from logging import getLogger
 from multiprocessing import Process
 from pendulum import DateTime, today
 
 from d3a_interface.exceptions import D3AException
 from d3a.models.config import SimulationConfig
-
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import IntervalType, available_simulation_scenarios, \
     read_settings_from_file, update_advanced_settings, convert_str_to_pause_after_interval, \
     DateType
-
 from d3a.d3a_core.simulation import run_simulation
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, DATE_FORMAT, TIME_FORMAT
 from d3a_interface.settings_validators import validate_global_settings
@@ -72,6 +69,8 @@ _setup_modules = available_simulation_scenarios
               help="Length of a tick")
 @click.option('-s', '--slot-length', type=IntervalType('M:S'), default="15m", show_default=True,
               help="Length of a market slot")
+@click.option('--slot_length_realtime', type=IntervalType('M:S'), default="0m",
+              show_default=True, help="Duration of slot in realtime")
 @click.option('-c', '--cloud-coverage', type=int,
               default=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE, show_default=True,
               help="Cloud coverage, 0 for sunny, 1 for partial coverage, 2 for clouds.")
@@ -107,7 +106,7 @@ _setup_modules = available_simulation_scenarios
               help=f"Start date of the Simulation ({DATE_FORMAT})")
 def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_length,
         market_count, cloud_coverage, compare_alt_pricing, enable_external_connection, start_date,
-        pause_at, **kwargs):
+        pause_at, slot_length_realtime, **kwargs):
 
     # Force the multiprocessing start method to be 'fork' on macOS.
     if platform.system() == 'Darwin':
@@ -125,7 +124,9 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
                                "slot_length": slot_length,
                                "tick_length": tick_length,
                                "cloud_coverage": cloud_coverage,
-                               "market_count": market_count}
+                               "market_count": market_count,
+                               "slowdown": slowdown,
+                               "slot_length_realtime": slot_length_realtime}
             validate_global_settings(global_settings)
             simulation_config = \
                 SimulationConfig(duration, slot_length, tick_length, market_count,
@@ -152,7 +153,7 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
             if pause_at is not None:
                 kwargs["pause_after"] = convert_str_to_pause_after_interval(start_date, pause_at)
             run_simulation(setup_module_name, simulation_config, None, slowdown, None, None,
-                           kwargs)
+                           slot_length_realtime, kwargs)
 
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
