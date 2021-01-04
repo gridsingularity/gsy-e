@@ -1,0 +1,30 @@
+name: d3a-ci-cd-development
+on:
+  push:
+    branches:
+      - master
+jobs:
+  test-build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Install dependencies
+      env:
+        TOXENV: ci
+        BRANCH: master
+      run: |
+        export SOLC_BINARY=$HOME/solc/usr/bin/solc
+        export LD_LIBRARY_PATH=$HOME/solc/usr/lib:$LD_LIBRARY_PATH
+        pip install tox
+        tox -e $TOXENV --verbose
+    - name: Trigger deployment
+      shell: bash
+      run: |
+        curl -X POST --header "authorization: Bearer ${{ secrets.GSYDEV_TOKEN }}" \
+        -H 'Accept: application/json' \
+        https://api.github.com/repos/gridsingularity/d3a-web/actions/workflows/d3a-development.yaml/dispatches \
+        -d '{"ref":"refs/heads/master"}'
