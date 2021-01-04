@@ -20,6 +20,4 @@ jobs:
         TEST_ENV: $HOME/DIR
       run: |
         export TEST_VAR=$HOME/DIR
-#        pip install -U tox
-#        tox -e $TOXENV --verbose
         echo $TEST_VAR
