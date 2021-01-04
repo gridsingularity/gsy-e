@@ -19,7 +19,7 @@ jobs:
       run: |
         export SOLC_BINARY=$HOME/solc/usr/bin/solc
         export LD_LIBRARY_PATH=$HOME/solc/usr/lib:$LD_LIBRARY_PATH
-        pip install -U tox
+        pip install tox
         tox -e $TOXENV --verbose
     - name: Trigger deployment
       shell: bash
