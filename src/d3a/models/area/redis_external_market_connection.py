@@ -91,6 +91,7 @@ class RedisMarketExternalConnection:
         payload_data = payload["data"] \
             if isinstance(payload["data"], dict) else json.loads(payload["data"])
         ret_val = {"status": "ready",
+                   'name': self.area.name,
                    "area_uuid": self.area.uuid,
                    "command": "market_stats",
                    "market_stats":
@@ -149,6 +150,7 @@ class RedisMarketExternalConnection:
         payload_data = payload["data"] \
             if isinstance(payload["data"], dict) else json.loads(payload["data"])
         ret_val = {"status": "ready",
+                   'name': self.area.name,
                    "area_uuid": self.area.uuid,
                    "command": "dso_market_stats",
                    "market_stats": self.area.stats.get_last_market_stats(dso=True)}
