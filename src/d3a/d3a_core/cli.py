@@ -141,7 +141,8 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
             for pricing_scheme in range(0, 4):
                 kwargs["pricing_scheme"] = pricing_scheme
                 p = Process(target=run_simulation, args=(setup_module_name, simulation_config,
-                                                         None, slowdown, None, None, kwargs)
+                                                         None, slowdown, None, None,
+                                                         slot_length_realtime, kwargs)
                             )
                 p.start()
                 processes.append(p)

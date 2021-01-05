@@ -576,7 +576,7 @@ class Simulation:
             if self.run_start is not None else "",
             "paused_time": self.paused_time,
             "slot_number": self.progress_info.current_slot_number,
-            "slot_length_realtime": self.slot_length_realtime
+            "slot_length_realtime_s": self.slot_length_realtime.seconds
         }
 
     @classmethod
@@ -599,6 +599,7 @@ class Simulation:
             self.run_start = str_to_pendulum_datetime(saved_state["run_start"])
         self.paused_time = saved_state["paused_time"]
         self.progress_info.current_slot_number = saved_state["slot_number"]
+        self.slot_length_realtime = duration(seconds=saved_state["slot_length_realtime_s"])
 
 
 def run_simulation(setup_module_name="", simulation_config=None, simulation_events=None,
