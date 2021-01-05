@@ -623,7 +623,7 @@ def run_simulation(setup_module_name="", simulation_config=None, simulation_even
 
     if saved_sim_state is not None and \
         (saved_sim_state["areas"] != {} or
-         saved_sim_state["areas"]["sim_status"] != "initializing"):
+         saved_sim_state["general"]["sim_status"] != "initializing"):
         simulation.restore_global_state(saved_sim_state["general"])
         simulation.restore_area_state(saved_sim_state["areas"])
         simulation.run(initial_slot=saved_sim_state["general"]["slot_number"])
