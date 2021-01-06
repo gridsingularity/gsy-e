@@ -132,7 +132,7 @@ class AreaStats:
             self.current_market.time_slot, default_trade_stats_dict))
         out_dict[current_market_time_slot_str]["market_bill"] = \
             self._get_current_market_bills()
-        out_dict[current_market_time_slot_str]["market_fee"] = \
+        out_dict[current_market_time_slot_str]["market_fee_revenue"] = \
             self._area.current_market.market_fee
         if dso:
             out_dict[current_market_time_slot_str]["area_throughput"] = \
