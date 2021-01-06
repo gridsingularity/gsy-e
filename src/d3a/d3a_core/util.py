@@ -583,3 +583,11 @@ def return_ordered_dict(function):
 def get_simulation_queue_name():
     listen_to_cn = os.environ.get("LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE", "no") == "yes"
     return "canary_network" if listen_to_cn else "d3a"
+
+
+def get_max_jobs_for_launcher():
+    listen_to_cn = os.environ.get("LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE", "no") == "yes"
+    if listen_to_cn:
+        return int(os.environ.get('D3A_MAX_CN_JOBS_PER_POD', 50))
+    else:
+        return int(os.environ.get('D3A_MAX_JOBS_PER_POD', 2))
