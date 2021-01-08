@@ -26,7 +26,7 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
 from d3a.d3a_core.redis_connections.aggregator_connection import default_market_info
-from d3a.d3a_core.util import get_current_market_maker_rate, convert_W_to_kWh
+from d3a.d3a_core.util import get_current_market_maker_rate
 from d3a_interface.constants_limits import ConstSettings
 
 
@@ -383,12 +383,12 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
     """
         Strategy responsible for reading single production forecast data via hardware API
     """
-    parameters = ('power_forecast_W', 'panel_count', 'initial_selling_rate', 'final_selling_rate',
-                  'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
-                  'use_market_maker_rate')
+    parameters = ('energy_forecast_Wh', 'panel_count', 'initial_selling_rate',
+                  'final_selling_rate', 'fit_to_limit', 'update_interval',
+                  'energy_rate_decrease_per_update', 'use_market_maker_rate')
 
     def __init__(
-            self, power_forecast_W: float = 0, panel_count=1,
+            self, energy_forecast_Wh: float = 0, panel_count=1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
             final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
             fit_to_limit: bool = True,
@@ -398,7 +398,7 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
             use_market_maker_rate: bool = False):
         """
         Constructor of PVForecastStrategy
-        :param power_forecast_W: forecast for the next market slot
+        :param energy_forecast_Wh: forecast for the next market slot
         """
         super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
@@ -407,27 +407,27 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
                          use_market_maker_rate=use_market_maker_rate)
-        self.power_forecast_buffer_W = power_forecast_W
+        self.energy_forecast_buffer_Wh = energy_forecast_Wh
 
     @property
     def channel_dict(self):
         return {**super().channel_dict,
-                f'{self.channel_prefix}/set_power_forecast': self._set_power_forecast}
+                f'{self.channel_prefix}/set_energy_forecast': self._set_energy_forecast}
 
     def event_tick(self):
-        # Need to repeat he pending request parsing in order to handle power forecasts
+        # Need to repeat he pending request parsing in order to handle energy forecasts
         # from the MQTT subscriber (non-connected admin)
         for req in self.pending_requests:
-            if req.request_type == "set_power_forecast":
-                self._set_power_forecast_impl(req.arguments, req.response_channel)
+            if req.request_type == "set_energy_forecast":
+                self._set_energy_forecast_impl(req.arguments, req.response_channel)
 
         self.pending_requests = [req for req in self.pending_requests
-                                 if req.request_type not in "set_power_forecast"]
+                                 if req.request_type not in "set_energy_forecast"]
         super().event_tick()
 
     def _incoming_commands_callback_selection(self, req):
-        if req.request_type == "set_power_forecast":
-            self._set_power_forecast_impl(req.arguments, req.response_channel)
+        if req.request_type == "set_energy_forecast":
+            self._set_energy_forecast_impl(req.arguments, req.response_channel)
         else:
             super()._incoming_commands_callback_selection(req)
 
@@ -440,8 +440,7 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
 
     def produced_energy_forecast_kWh(self):
         # sets energy forecast for next_market
-        energy_forecast_kWh = convert_W_to_kWh(self.power_forecast_buffer_W,
-                                               self.area.config.slot_length)
+        energy_forecast_kWh = self.energy_forecast_buffer_Wh / 1000
 
         slot_time = self.area.next_market.time_slot
         self.state.set_available_energy(energy_forecast_kWh, slot_time, overwrite=True)
