@@ -391,7 +391,7 @@ class StorageStrategy(BidEnabledStrategy):
     # ESS Energy being utilized based on FIRST-IN FIRST-OUT mechanism
     def _track_energy_sell_type(self, trade):
         energy = trade.offer.energy
-        while limit_float_precision(energy) > 0:
+        while limit_float_precision(energy) > 0 and len(self.state.get_used_storage_share) > 0:
             first_in_energy_with_origin = self.state.get_used_storage_share[0]
             if energy >= first_in_energy_with_origin.value:
                 energy -= first_in_energy_with_origin.value
