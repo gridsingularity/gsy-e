@@ -60,8 +60,6 @@ if platform.python_implementation() != "PyPy" and \
 log = getLogger(__name__)
 
 
-SLOWDOWN_FACTOR = 100
-SLOWDOWN_STEP = 5
 RANDOM_SEED_MAX_VALUE = 1000000
 
 
@@ -81,13 +79,12 @@ class SimulationProgressInfo:
 
 class Simulation:
     def __init__(self, setup_module_name: str, simulation_config: SimulationConfig = None,
-                 simulation_events: str = None, slowdown: int = 0, seed=None,
+                 simulation_events: str = None, seed=None,
                  paused: bool = False, pause_after: duration = None, repl: bool = False,
                  no_export: bool = False, export_path: str = None,
                  export_subdir: str = None, redis_job_id=None, enable_bc=False,
                  slot_length_realtime=None):
         self.initial_params = dict(
-            slowdown=slowdown,
             slot_length_realtime=slot_length_realtime,
             seed=seed,
             paused=paused,
@@ -158,10 +155,9 @@ class Simulation:
             raise SimulationException(
                 "Invalid setup module '{}'".format(self.setup_module_name)) from ex
 
-    def _init(self, slowdown, slot_length_realtime, seed, paused, pause_after, redis_job_id):
+    def _init(self, slot_length_realtime, seed, paused, pause_after, redis_job_id):
         self.paused = paused
         self.pause_after = pause_after
-        self.slowdown = slowdown
         self.slot_length_realtime = slot_length_realtime
 
         if seed is not None:
@@ -386,16 +382,6 @@ class Simulation:
                     sleep(abs(tick_lengths_s - realtime_tick_length_s))
                 elif self.slot_length_realtime:
                     sleep(abs(tick_length_realtime_s - realtime_tick_length_s))
-                elif self.slowdown and realtime_tick_length_s < tick_lengths_s:
-                    # Simulation runs faster than real time but a slowdown was
-                    # requested
-                    tick_diff = tick_lengths_s - realtime_tick_length_s
-                    diff_slowdown = tick_diff * self.slowdown / SLOWDOWN_FACTOR
-                    log.trace("Slowdown: %.4f", diff_slowdown)
-                    if console is not None:
-                        self._handle_input(console, diff_slowdown)
-                    else:
-                        sleep(diff_slowdown)
 
                 simulation_time_counter = time.time()
 
@@ -461,9 +447,7 @@ class Simulation:
                                  "  [q] quit\n"
                                  "  [r] reset\n"
                                  "  [s] stop\n"
-                                 "  [R] start REPL\n"
-                                 "  [+] increase slowdown\n"
-                                 "  [-] decrease slowdown")
+                                 "  [R] start REPL\n")
                     continue
 
                 if self.finished and cmd in {'p', '+', '-'}:
@@ -483,14 +467,7 @@ class Simulation:
                     raise KeyboardInterrupt()
                 elif cmd == 's':
                     self.stop()
-                elif cmd == '+':
-                    if self.slowdown <= SLOWDOWN_FACTOR - SLOWDOWN_STEP:
-                        self.slowdown += SLOWDOWN_STEP
-                        log.critical("Simulation slowdown changed to %d", self.slowdown)
-                elif cmd == '-':
-                    if self.slowdown >= SLOWDOWN_STEP:
-                        self.slowdown -= SLOWDOWN_STEP
-                        log.critical("Simulation slowdown changed to %d", self.slowdown)
+
             if sleep == 0 or time.time() - start >= sleep:
                 break
 
@@ -567,7 +544,6 @@ class Simulation:
     def current_state(self):
         return {
             "paused": self.paused,
-            "slowdown": self.slowdown,
             "seed": self.initial_params["seed"],
             "sim_status": self.sim_status,
             "stopped": self.is_stopped,
@@ -576,7 +552,8 @@ class Simulation:
             if self.run_start is not None else "",
             "paused_time": self.paused_time,
             "slot_number": self.progress_info.current_slot_number,
-            "slot_length_realtime_s": self.slot_length_realtime.seconds
+            "slot_length_realtime_s": str(self.slot_length_realtime.seconds)
+            if self.slot_length_realtime else 0
         }
 
     @classmethod
@@ -590,7 +567,6 @@ class Simulation:
 
     def restore_global_state(self, saved_state):
         self.paused = saved_state["paused"]
-        self.slowdown = saved_state["slowdown"]
         self.initial_params["seed"] = saved_state["seed"]
         self.sim_status = saved_state["sim_status"]
         self.is_stopped = saved_state["stopped"]
@@ -603,7 +579,7 @@ class Simulation:
 
 
 def run_simulation(setup_module_name="", simulation_config=None, simulation_events=None,
-                   slowdown=None, redis_job_id=None, saved_sim_state=None,
+                   redis_job_id=None, saved_sim_state=None,
                    slot_length_realtime=None, kwargs=None):
     try:
         if "pricing_scheme" in kwargs:
@@ -615,7 +591,6 @@ def run_simulation(setup_module_name="", simulation_config=None, simulation_even
                 setup_module_name=setup_module_name,
                 simulation_config=simulation_config,
                 simulation_events=simulation_events,
-                slowdown=slowdown,
                 slot_length_realtime=slot_length_realtime,
                 redis_job_id=redis_job_id,
                 **kwargs
@@ -626,7 +601,6 @@ def run_simulation(setup_module_name="", simulation_config=None, simulation_even
                 simulation_config=simulation_config,
                 simulation_events=simulation_events,
                 slot_length_realtime=slot_length_realtime,
-                slowdown=saved_sim_state["general"]["slowdown"],
                 redis_job_id=saved_sim_state["general"]["simulation_id"],
                 **kwargs
             )

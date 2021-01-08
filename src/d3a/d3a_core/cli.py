@@ -81,10 +81,6 @@ _setup_modules = available_simulation_scenarios
                   ', '.join(_setup_modules)))
 @click.option('-g', '--settings-file', default=None,
               help="Settings file path")
-@click.option('--slowdown', type=float, default=0,
-              help="Slowdown factor [0 - 10,000]. "
-                   "Where 0 means: no slowdown, ticks are simulated as fast as possible;"
-                   "and 100: ticks are simulated in realtime")
 @click.option('--seed', help="Manually specify random seed")
 @click.option('--paused', is_flag=True, default=False, show_default=True,
               help="Start simulation in paused state")
@@ -104,7 +100,7 @@ _setup_modules = available_simulation_scenarios
 @click.option('--start-date', type=DateType(DATE_FORMAT),
               default=today(tz=TIME_ZONE).format(DATE_FORMAT), show_default=True,
               help=f"Start date of the Simulation ({DATE_FORMAT})")
-def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_length,
+def run(setup_module_name, settings_file, duration, slot_length, tick_length,
         market_count, cloud_coverage, compare_alt_pricing, enable_external_connection, start_date,
         pause_at, slot_length_realtime, **kwargs):
 
@@ -124,9 +120,8 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
                                "slot_length": slot_length,
                                "tick_length": tick_length,
                                "cloud_coverage": cloud_coverage,
-                               "market_count": market_count,
-                               "slowdown": slowdown,
-                               "slot_length_realtime": slot_length_realtime}
+                               "market_count": market_count}
+
             validate_global_settings(global_settings)
             simulation_config = \
                 SimulationConfig(duration, slot_length, tick_length, market_count,
@@ -141,8 +136,8 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
             for pricing_scheme in range(0, 4):
                 kwargs["pricing_scheme"] = pricing_scheme
                 p = Process(target=run_simulation, args=(setup_module_name, simulation_config,
-                                                         None, slowdown, None, None,
-                                                         slot_length_realtime, kwargs)
+                                                         None, None, None, slot_length_realtime,
+                                                         kwargs)
                             )
                 p.start()
                 processes.append(p)
@@ -153,7 +148,7 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
         else:
             if pause_at is not None:
                 kwargs["pause_after"] = convert_str_to_pause_after_interval(start_date, pause_at)
-            run_simulation(setup_module_name, simulation_config, None, slowdown, None, None,
+            run_simulation(setup_module_name, simulation_config, None, None, None,
                            slot_length_realtime, kwargs)
 
     except D3AException as ex:

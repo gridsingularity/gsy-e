@@ -108,22 +108,10 @@ def start(scenario, settings, events, aggregator_device_mapping, saved_state):
             config_settings['start_date'] = \
                 instance((datetime.combine(date.today(), datetime.min.time())))
 
-        slowdown_factor = environ.get('D3A_SLOWDOWN_FACTOR', None)
-
-        if slowdown_factor is None:
-            slowdown_factor = settings.get('slowdown', 0)
-        else:
-            slowdown_factor = float(slowdown_factor)
+        validate_global_settings(config_settings)
 
         slot_length_realtime = duration(seconds=settings['slot_length_realtime'].seconds) \
             if 'slot_length_realtime' in settings else GlobalConfig.slot_length_realtime
-        config_settings.update({"slowdown": slowdown_factor,
-                                "slot_length_realtime": slot_length_realtime})
-
-        validate_global_settings(config_settings)
-
-        config_settings.pop("slowdown", None)
-        config_settings.pop("slot_length_realtime", None)
 
         config = SimulationConfig(**config_settings)
 
@@ -146,7 +134,6 @@ def start(scenario, settings, events, aggregator_device_mapping, saved_state):
         run_simulation(setup_module_name=scenario_name,
                        simulation_config=config,
                        simulation_events=events,
-                       slowdown=slowdown_factor,
                        redis_job_id=job.id,
                        saved_sim_state=saved_state,
                        slot_length_realtime=slot_length_realtime,

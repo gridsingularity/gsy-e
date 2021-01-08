@@ -1,4 +1,4 @@
-Command line arguments include: 
+Command line arguments include:
 
 - `-d, --duration`: Duration of simulation [default: 24h]
 - `-t, --tick-length`: Length of a tick [default: 1s]
@@ -10,16 +10,16 @@ Command line arguments include:
 ```
 d3a -l ERROR run --duration=24h --tick-length=1s --slot-length=15m --cloud-coverage=0 --market-count=5 --setup default_2a
 ```
-### Getting help in the command line: 
+### Getting help in the command line:
 `d3a --help` returns:
 ```
 Usage: d3a [OPTIONS] COMMAND [ARGS]...
- 
+
 Options:
   -l, --log-level [CRITICAL|FATAL|ERROR|WARN|WARNING|INFO|DEBUG|NOTSET|TRACE]
                                   Log level  [default: INFO]
   --help                          Show this message and exit.
- 
+
 Commands:
   run*
   resume
@@ -28,7 +28,7 @@ Commands:
 
 ```
 Usage: d3a run [OPTIONS]
- 
+
 Options:
   -d, --duration INTERVAL       Duration of simulation  [default: 1d]
   -t, --tick-length INTERVAL    Length of a tick  [default: 1s]
@@ -79,8 +79,6 @@ Options:
                                 two_sided_market.with_balancing_market, two_sided_pay_as_clear.default_2a,
                                 two_sided_pay_as_clear.test_clearing_energy]
   -g, --settings-file TEXT      Settings file path
-  --slowdown INTEGER            Slowdown factor [0 - 10,000]. Where 0 means: no slowdown, ticks are simulated as fast
-                                as possible; and 100: ticks are simulated in realtime
   --seed TEXT                   Manually specify random seed
   --paused                      Start simulation in paused state  [default: False]
   --pause-at TEXT               Automatically pause at a certain time. Accepted Input formats: (YYYY-MM-DD, HH:mm)
