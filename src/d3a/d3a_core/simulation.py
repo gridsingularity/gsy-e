@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import time
 import click
 import platform
 import os
@@ -27,7 +26,7 @@ import datetime
 
 from pendulum import DateTime, duration
 from ptpython.repl import embed
-from time import sleep
+from time import sleep, time
 from numpy import random
 from importlib import import_module
 from logging import getLogger
@@ -299,7 +298,7 @@ class Simulation:
 
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
         config = self.simulation_config
-        tick_lengths_s = config.tick_length.seconds
+        tick_length_s = config.tick_length.seconds
         slot_count = int(config.sim_duration / config.slot_length)
 
         config.external_redis_communicator.sub_to_aggregator()
@@ -310,7 +309,7 @@ class Simulation:
             slot_count = sys.maxsize
 
             today = datetime.date.today()
-            seconds_since_midnight = time.time() - time.mktime(today.timetuple())
+            seconds_since_midnight = time() - time.mktime(today.timetuple())
             slot_resume = int(seconds_since_midnight // config.slot_length.seconds) + 1
             seconds_elapsed_in_slot = seconds_since_midnight % config.slot_length.seconds
             ticks_elapsed_in_slot = seconds_elapsed_in_slot // config.tick_length.seconds
@@ -325,11 +324,11 @@ class Simulation:
 
             sleep(seconds_until_next_tick)
 
-        simulation_time_counter = time.time()
         if self.slot_length_realtime:
             tick_length_realtime_s = self.slot_length_realtime.seconds / \
                                      self.simulation_config.ticks_per_slot
         for slot_no in range(slot_resume, slot_count):
+            slot_start_time = time()
             self._update_progress_info(slot_no, slot_count)
 
             log.warning(
@@ -353,10 +352,11 @@ class Simulation:
             mbs_used = process.memory_info().rss / 1000000.0
             log.debug(f"Used {mbs_used} MBs.")
 
-            simulation_time_counter = time.time()
+            tick_overhead_slot_startup_runtime_s = \
+                (time() - slot_start_time) / self.simulation_config.ticks_per_slot
             for tick_no in range(tick_resume, config.ticks_per_slot):
-                tick_start = time.time()
-                self._handle_paused(console, tick_start)
+                tick_time_counter = time()
+                self._handle_paused(console, tick_time_counter)
 
                 # reset tick_resume after possible resume
                 tick_resume = 0
@@ -377,13 +377,15 @@ class Simulation:
                 self.simulation_config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()
 
-                realtime_tick_length_s = time.time() - simulation_time_counter
+                tick_runtime_s = time() - tick_time_counter
                 if d3a.constants.RUN_IN_REALTIME:
-                    sleep(abs(tick_lengths_s - realtime_tick_length_s))
+                    sleep(abs(tick_length_s - tick_runtime_s))
                 elif self.slot_length_realtime:
-                    sleep(abs(tick_length_realtime_s - realtime_tick_length_s))
-
-                simulation_time_counter = time.time()
+                    sleep(max(
+                            tick_length_realtime_s
+                            - tick_runtime_s
+                            - tick_overhead_slot_startup_runtime_s,
+                            0))
 
             if self.export_on_finish and self.should_export_results:
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
@@ -436,7 +438,7 @@ class Simulation:
         start = 0
         if sleep > 0:
             timeout = sleep / 100
-            start = time.time()
+            start = time()
         while True:
             cmd = console.get_char(timeout)
             if cmd:
@@ -468,7 +470,7 @@ class Simulation:
                 elif cmd == 's':
                     self.stop()
 
-            if sleep == 0 or time.time() - start >= sleep:
+            if sleep == 0 or time() - start >= sleep:
                 break
 
     def _handle_paused(self, console, tick_start):
@@ -484,12 +486,12 @@ class Simulation:
                 log.critical("Simulation paused. Press 'p' to resume or resume from API.")
             else:
                 self._update_and_send_results()
-            start = time.time()
+            start = time()
         while self.paused:
             paused_flag = True
             if console:
                 self._handle_input(console, 0.1)
-            if time.time() - tick_start > SIMULATION_PAUSE_TIMEOUT:
+            if time() - tick_start > SIMULATION_PAUSE_TIMEOUT:
                 self.is_timed_out = True
                 self.is_stopped = True
                 self.paused = False
@@ -499,7 +501,7 @@ class Simulation:
 
         if console and paused_flag:
             log.critical("Simulation resumed")
-            self.paused_time += time.time() - start
+            self.paused_time += time() - start
 
     def _info(self):
         info = self.simulation_config.as_dict()
