@@ -24,6 +24,7 @@ from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
 from d3a_interface.utils import key_in_dict_and_not_none
 from d3a.d3a_core.util import find_object_of_same_weekday_and_time
+from d3a.d3a_core.exceptions import D3AException
 """
 Create a load that uses a profile as input for its power values
 """
@@ -104,6 +105,10 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         """
         for market in self.area.all_markets:
             slot_time = market.time_slot
+            if not self.load_profile:
+                raise D3AException(
+                    f"Load {self.owner.name} tries to set its energy forecasted requirement "
+                    f"without a profile.")
             load_energy_kWh = \
                 find_object_of_same_weekday_and_time(self.load_profile, slot_time)
             self.state.set_desired_energy(load_energy_kWh * 1000, slot_time, overwrite=False)
