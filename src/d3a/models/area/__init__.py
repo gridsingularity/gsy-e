@@ -61,7 +61,7 @@ DEFAULT_CONFIG = SimulationConfig(
 
 def check_area_name_exists_in_parent_area(parent_area, name):
     """
-    Check the children of parent of area , iterate through its children and
+    Check the children of parent area , iterate through its children and
         check if the name to be appended does not exist
     Note: this check is to be called before adding a new area of changing its name
     :param parent_area: Parent Area
