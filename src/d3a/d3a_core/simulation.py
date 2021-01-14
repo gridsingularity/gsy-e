@@ -24,7 +24,7 @@ import gc
 import sys
 import datetime
 
-from pendulum import DateTime, duration
+from pendulum import now, duration
 from ptpython.repl import embed
 from time import sleep, time
 from numpy import random
@@ -101,7 +101,7 @@ class Simulation:
 
         if export_subdir is None:
             self.export_subdir = \
-                DateTime.now(tz=TIME_ZONE).format(f"{DATE_TIME_FORMAT}:ss")
+                now(tz=TIME_ZONE).format(f"{DATE_TIME_FORMAT}:ss")
         else:
             self.export_subdir = export_subdir
 
@@ -225,7 +225,7 @@ class Simulation:
         self.is_stopped = False
         while True:
             if initial_slot == 0:
-                self.run_start = DateTime.now(tz=TIME_ZONE)
+                self.run_start = now(tz=TIME_ZONE)
                 self.paused_time = 0
 
             tick_resume = 0
@@ -273,7 +273,7 @@ class Simulation:
 
     def _update_progress_info(self, slot_no, slot_count):
         run_duration = (
-                DateTime.now(tz=TIME_ZONE) - self.run_start -
+                now(tz=TIME_ZONE) - self.run_start -
                 duration(seconds=self.paused_time)
         )
 
@@ -297,6 +297,7 @@ class Simulation:
             self.set_area_current_tick(child, current_tick)
 
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
+        current_expected_time = self.run_start
         config = self.simulation_config
         tick_length_s = config.tick_length.seconds
         slot_count = int(config.sim_duration / config.slot_length)
@@ -327,17 +328,19 @@ class Simulation:
         if self.slot_length_realtime:
             tick_length_realtime_s = self.slot_length_realtime.seconds / \
                                      self.simulation_config.ticks_per_slot
+            slow_down_applied = True
+
         for slot_no in range(slot_resume, slot_count):
-            slot_start_time = time()
             self._update_progress_info(slot_no, slot_count)
 
             log.warning(
-                "Slot %d of %d (%2.0f%%) - %s elapsed, ETA: %s",
+                "Slot %d of %d (%2.0f%%) - %s elapsed, ETA: %s (slowdown applied %s)",
                 slot_no + 1,
                 slot_count,
                 self.progress_info.percentage_completed,
                 self.progress_info.elapsed_time,
-                self.progress_info.eta
+                self.progress_info.eta,
+                slow_down_applied
             )
 
             self.live_events.handle_all_events(self.area)
@@ -352,10 +355,9 @@ class Simulation:
             mbs_used = process.memory_info().rss / 1000000.0
             log.debug(f"Used {mbs_used} MBs.")
 
-            tick_overhead_slot_startup_runtime_s = \
-                (time() - slot_start_time) / self.simulation_config.ticks_per_slot
+            tick_time_counter = time()
+
             for tick_no in range(tick_resume, config.ticks_per_slot):
-                tick_time_counter = time()
                 self._handle_paused(console, tick_time_counter)
 
                 # reset tick_resume after possible resume
@@ -377,15 +379,20 @@ class Simulation:
                 self.simulation_config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()
 
-                tick_runtime_s = time() - tick_time_counter
                 if d3a.constants.RUN_IN_REALTIME:
+                    tick_runtime_s = time() - tick_time_counter
                     sleep(abs(tick_length_s - tick_runtime_s))
                 elif self.slot_length_realtime:
-                    sleep(max(
-                            tick_length_realtime_s
-                            - tick_runtime_s
-                            - tick_overhead_slot_startup_runtime_s,
-                            0))
+                    current_expected_time = \
+                        current_expected_time.add(seconds=tick_length_realtime_s)
+                    sleep_time = current_expected_time.timestamp() - now().timestamp()
+                    if sleep_time > 0:
+                        slow_down_applied = True
+                        sleep(sleep_time)
+                    else:
+                        slow_down_applied = False
+
+                tick_time_counter = time()
 
             if self.export_on_finish and self.should_export_results:
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
@@ -618,3 +625,9 @@ def run_simulation(setup_module_name="", simulation_config=None, simulation_even
         simulation.run(initial_slot=saved_sim_state["general"]["slot_number"])
     else:
         simulation.run()
+#
+#
+# def run_sims_and_return_runtime():
+#     for tick_lenght in [1,15]:
+#         for slot_length in [15, 60]:
+#             run_simulation("default_2a")
