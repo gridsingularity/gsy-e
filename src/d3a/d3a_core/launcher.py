@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import sys
 import os
 import click
+
 from datetime import datetime, timedelta
 from redis import StrictRedis
 from rq import Queue
@@ -35,7 +36,7 @@ class Launcher:
     def __init__(self,
                  queue=None,
                  max_jobs=None,
-                 max_delay_seconds=2):
+                 max_delay_seconds=5):
         self.queue = queue or Queue(get_simulation_queue_name(), connection=StrictRedis.from_url(
             REDIS_URL, retry_on_timeout=True))
         self.max_jobs = max_jobs if max_jobs is not None else int(MAX_JOBS)
@@ -60,7 +61,7 @@ class Launcher:
         enqueued = self.queue.jobs
         if enqueued:
             earliest = min(job.enqueued_at for job in enqueued)
-            if datetime.now()-earliest >= self.max_delay:
+            if datetime.utcnow() - earliest >= self.max_delay:
                 return True
         return False
 
