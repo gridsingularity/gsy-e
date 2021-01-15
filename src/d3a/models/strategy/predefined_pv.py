@@ -23,6 +23,7 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import key_in_dict_and_not_none
+from d3a.d3a_core.exceptions import D3AException
 
 """
 Creates a PV that uses a profile as input for its power values, either predefined or provided
@@ -92,6 +93,10 @@ class PVPredefinedStrategy(PVStrategy):
             self._read_predefined_profile_for_pv()
         for market in self.area.all_markets:
             slot_time = market.time_slot
+            if not self.power_profile:
+                raise D3AException(
+                    f"PV {self.owner.name} tries to set its energy forecast without a "
+                    f"power profile.")
             available_energy_kWh = find_object_of_same_weekday_and_time(
                 self.power_profile, slot_time) * self.panel_count
             self.state.set_available_energy(available_energy_kWh, slot_time, reconfigure)
