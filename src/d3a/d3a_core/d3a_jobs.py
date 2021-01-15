@@ -160,7 +160,7 @@ def main():
         Worker(
             [get_simulation_queue_name()],
             name=f'simulation.{getpid()}.{now().timestamp()}', log_job_description=False
-        ).work()
+        ).work(max_jobs=1)
 
 
 if __name__ == "__main__":

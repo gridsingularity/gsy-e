@@ -51,12 +51,12 @@ class Launcher:
         self.job_array.append(self._start_worker())
         while True:
             sleep(1)
-            if len(self.job_array) < self.max_jobs and self.is_crowded():
+            if len(self.job_array) < self.max_jobs and self.is_queue_crowded():
                 self.job_array.append(self._start_worker())
 
             self.job_array = [j for j in self.job_array if j.poll() is None]
 
-    def is_crowded(self):
+    def is_queue_crowded(self):
         check_redis_health(redis_db=StrictRedis.from_url(REDIS_URL, retry_on_timeout=True))
         enqueued = self.queue.jobs
         if enqueued:
