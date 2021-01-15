@@ -621,9 +621,3 @@ def run_simulation(setup_module_name="", simulation_config=None, simulation_even
         simulation.run(initial_slot=saved_sim_state["general"]["slot_number"])
     else:
         simulation.run()
-#
-#
-# def run_sims_and_return_runtime():
-#     for tick_lenght in [1,15]:
-#         for slot_length in [15, 60]:
-#             run_simulation("default_2a")
