@@ -444,3 +444,9 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
 
         slot_time = self.area.next_market.time_slot
         self.state.set_available_energy(energy_forecast_kWh, slot_time, overwrite=True)
+
+    def set_produced_energy_forecast_kWh_future_markets(self):
+        """
+        Setting produced energy for the next slot is already done by produced_energy_forecast_kWh
+        """
+        pass
