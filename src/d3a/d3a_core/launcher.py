@@ -36,7 +36,7 @@ class Launcher:
     def __init__(self,
                  queue=None,
                  max_jobs=None,
-                 max_delay_seconds=5):
+                 max_delay_seconds=2):
         self.queue = queue or Queue(get_simulation_queue_name(), connection=StrictRedis.from_url(
             REDIS_URL, retry_on_timeout=True))
         self.max_jobs = max_jobs if max_jobs is not None else int(MAX_JOBS)
