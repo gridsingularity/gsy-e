@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import sys
 import os
 import click
+
 from datetime import datetime, timedelta
 from redis import StrictRedis
 from rq import Queue
@@ -50,17 +51,17 @@ class Launcher:
         self.job_array.append(self._start_worker())
         while True:
             sleep(1)
-            if len(self.job_array) < self.max_jobs and self.is_crowded():
+            if len(self.job_array) < self.max_jobs and self.is_queue_crowded():
                 self.job_array.append(self._start_worker())
 
             self.job_array = [j for j in self.job_array if j.poll() is None]
 
-    def is_crowded(self):
+    def is_queue_crowded(self):
         check_redis_health(redis_db=StrictRedis.from_url(REDIS_URL, retry_on_timeout=True))
         enqueued = self.queue.jobs
         if enqueued:
             earliest = min(job.enqueued_at for job in enqueued)
-            if datetime.now()-earliest >= self.max_delay:
+            if datetime.utcnow() - earliest >= self.max_delay:
                 return True
         return False
 
