@@ -328,20 +328,21 @@ class Simulation:
         if self.slot_length_realtime:
             tick_length_realtime_s = self.slot_length_realtime.seconds / \
                                      self.simulation_config.ticks_per_slot
+            # flag for reporting whether slowdown needed to be applied (True)
+            # or if the actual runtime is higher than the set slot_length_realtime (False):
             slow_down_applied = True
 
         for slot_no in range(slot_resume, slot_count):
             self._update_progress_info(slot_no, slot_count)
 
-            log.warning(
-                "Slot %d of %d (%2.0f%%) - %s elapsed, ETA: %s (slowdown applied %s)",
-                slot_no + 1,
-                slot_count,
-                self.progress_info.percentage_completed,
-                self.progress_info.elapsed_time,
-                self.progress_info.eta,
-                slow_down_applied
-            )
+            slot_log_str = f"Slot {slot_no + 1} of {slot_count} - " \
+                           f"({round(self.progress_info.percentage_completed, 1)}%) " \
+                           f"{self.progress_info.elapsed_time} elapsed, " \
+                           f"ETA: {self.progress_info.eta}"
+            if self.slot_length_realtime:
+                slot_log_str += f" (slowdown applied: {slow_down_applied})"
+
+            log.warning(slot_log_str)
 
             self.live_events.handle_all_events(self.area)
 
@@ -362,13 +363,8 @@ class Simulation:
 
                 # reset tick_resume after possible resume
                 tick_resume = 0
-                log.trace(
-                    "Tick %d of %d in slot %d (%2.0f%%)",
-                    tick_no + 1,
-                    config.ticks_per_slot,
-                    slot_no + 1,
-                    (tick_no + 1) / config.ticks_per_slot * 100,
-                )
+                log.trace(f"Tick {tick_no + 1} of {config.ticks_per_slot} in slot "
+                          f"{slot_no + 1} ({(tick_no + 1) / config.ticks_per_slot * 100})")
 
                 self.simulation_config.external_redis_communicator.\
                     approve_aggregator_commands()
