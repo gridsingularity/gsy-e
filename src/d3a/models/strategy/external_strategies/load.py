@@ -437,7 +437,9 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
         energy_forecast_Wh = self.energy_forecast_buffer_Wh
         slot_time = self.area.next_market.time_slot
         self.state.set_desired_energy(energy_forecast_Wh, slot_time, overwrite=True)
-        self.state.update_total_demanded_energy(slot_time)
+        # TODO: Check self-sufficiency / self-consumption of LoadForecastExternalStrategy and
+        #  and consider re-adding:
+        # self.state.update_total_demanded_energy(slot_time)
 
     def _update_energy_requirement_future_markets(self):
         """
