@@ -117,7 +117,7 @@ class Area:
         self.uuid = uuid if uuid is not None else str(uuid4())
         self.slug = slugify(name, to_lower=True)
         self.parent = None
-        self.__children = AreaChildrenList(self, children) if children is not None\
+        self.children = AreaChildrenList(self, children) if children is not None\
             else AreaChildrenList(self)
         for child in self.children:
             child.parent = self
@@ -142,18 +142,6 @@ class Area:
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available is True else None
         self.should_update_child_strategies = False
-
-    @property
-    def children(self):
-        return self.__children
-
-    @children.setter
-    def children(self, new_children: AreaChildrenList):
-        if type(new_children) == list:
-            self.__children = AreaChildrenList(self, new_children)
-        elif type(new_children) == AreaChildrenList:
-            new_children.parent_area = self
-            self.__children = new_children
 
     @property
     def name(self):
