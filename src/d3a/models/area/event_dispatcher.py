@@ -79,6 +79,7 @@ class AreaDispatcher:
         # Broadcast to children in random order to ensure fairness
         for child in sorted(self.area.children, key=lambda _: random()):
             child.dispatcher.event_listener(event_type, **kwargs)
+        kwargs.pop('current_tick', None)
         # Also broadcast to IAAs. Again in random order
         for time_slot, agents in self._inter_area_agents.items():
             if time_slot not in self.area._markets.markets:
@@ -108,13 +109,14 @@ class AreaDispatcher:
             return self.area.events.is_connected and self.area.events.is_enabled
 
     def event_listener(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
+        current_tick = kwargs.pop('current_tick', None)
         if event_type is AreaEvent.TICK and \
                 self._should_dispatch_to_strategies(event_type):
             self.area.tick_and_dispatch()
         if event_type is AreaEvent.MARKET_CYCLE:
             self.area.cycle_markets(_trigger_event=True)
         elif event_type is AreaEvent.ACTIVATE:
-            self.area.activate()
+            self.area.activate(current_tick=current_tick)
         if self._should_dispatch_to_strategies(event_type):
             if self.area.strategy:
                 self.area.strategy.event_listener(event_type, **kwargs)

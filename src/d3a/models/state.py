@@ -48,16 +48,16 @@ class PVState:
         self._energy_production_forecast_kWh = {}
 
     def get_energy_production_forecast_kWh(self, time_slot, default_value=None):
-        assert self._energy_production_forecast_kWh[time_slot] >= -FLOATING_POINT_TOLERANCE
+        assert self._energy_production_forecast_kWh.get(time_slot, 0.) >= -FLOATING_POINT_TOLERANCE
         if default_value is not None:
             return self._energy_production_forecast_kWh.get(time_slot, default_value)
-        return self._energy_production_forecast_kWh[time_slot]
+        return self._energy_production_forecast_kWh.get(time_slot, 0.)
 
     def get_available_energy_kWh(self, time_slot, default_value=None):
         if default_value is not None:
             available_energy = self._available_energy_kWh.get(time_slot, default_value)
         else:
-            available_energy = self._available_energy_kWh[time_slot]
+            available_energy = self._available_energy_kWh.get(time_slot)
 
         assert available_energy >= -FLOATING_POINT_TOLERANCE
         return available_energy
@@ -148,7 +148,7 @@ class LoadState:
         return self._desired_energy_Wh[time_slot]
 
     def update_total_demanded_energy(self, time_slot):
-        self._total_energy_demanded_Wh += self._desired_energy_Wh[time_slot]
+        self._total_energy_demanded_Wh += self._desired_energy_Wh.get(time_slot, 0.)
 
     def delete_past_state_values(self, current_time_slot):
         to_delete = []
