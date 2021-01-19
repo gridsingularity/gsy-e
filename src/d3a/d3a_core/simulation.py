@@ -297,9 +297,8 @@ class Simulation:
             self.set_area_current_tick(child, current_tick)
 
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
-        current_expected_time = self.run_start
+        self.current_expected_tick_time = self.run_start
         config = self.simulation_config
-        tick_length_s = config.tick_length.seconds
         slot_count = int(config.sim_duration / config.slot_length)
 
         config.external_redis_communicator.sub_to_aggregator()
@@ -326,23 +325,16 @@ class Simulation:
             sleep(seconds_until_next_tick)
 
         if self.slot_length_realtime:
-            tick_length_realtime_s = self.slot_length_realtime.seconds / \
-                                     self.simulation_config.ticks_per_slot
-            # flag for reporting whether slowdown needed to be applied (True)
-            # or if the actual runtime is higher than the set slot_length_realtime (False):
-            slow_down_applied = True
+            self.tick_length_realtime_s = self.slot_length_realtime.seconds / \
+                                          self.simulation_config.ticks_per_slot
 
         for slot_no in range(slot_resume, slot_count):
             self._update_progress_info(slot_no, slot_count)
 
-            slot_log_str = f"Slot {slot_no + 1} of {slot_count} - " \
-                           f"({round(self.progress_info.percentage_completed, 1)}%) " \
-                           f"{self.progress_info.elapsed_time} elapsed, " \
-                           f"ETA: {self.progress_info.eta}"
-            if self.slot_length_realtime:
-                slot_log_str += f" (slowdown applied: {slow_down_applied})"
-
-            log.warning(slot_log_str)
+            log.warning(f"Slot {slot_no + 1} of {slot_count} - "
+                        f"({self.progress_info.percentage_completed:.1f}%) "
+                        f"{self.progress_info.elapsed_time} elapsed, "
+                        f"ETA: {self.progress_info.eta}")
 
             self.live_events.handle_all_events(self.area)
 
@@ -356,15 +348,15 @@ class Simulation:
             mbs_used = process.memory_info().rss / 1000000.0
             log.debug(f"Used {mbs_used} MBs.")
 
-            tick_time_counter = time()
+            self.tick_time_counter = time()
 
             for tick_no in range(tick_resume, config.ticks_per_slot):
-                self._handle_paused(console, tick_time_counter)
+                self._handle_paused(console)
 
                 # reset tick_resume after possible resume
                 tick_resume = 0
                 log.trace(f"Tick {tick_no + 1} of {config.ticks_per_slot} in slot "
-                          f"{slot_no + 1} ({(tick_no + 1) / config.ticks_per_slot * 100})")
+                          f"{slot_no + 1} ({(tick_no + 1) / config.ticks_per_slot * 100:.1f}%)")
 
                 self.simulation_config.external_redis_communicator.\
                     approve_aggregator_commands()
@@ -375,20 +367,8 @@ class Simulation:
                 self.simulation_config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()
 
-                if d3a.constants.RUN_IN_REALTIME:
-                    tick_runtime_s = time() - tick_time_counter
-                    sleep(abs(tick_length_s - tick_runtime_s))
-                elif self.slot_length_realtime:
-                    current_expected_time = \
-                        current_expected_time.add(seconds=tick_length_realtime_s)
-                    sleep_time = current_expected_time.timestamp() - now().timestamp()
-                    if sleep_time > 0:
-                        slow_down_applied = True
-                        sleep(sleep_time)
-                    else:
-                        slow_down_applied = False
-
-                tick_time_counter = time()
+                self.handle_slowdown_and_realtime(tick_no)
+                self.tick_time_counter = time()
 
             if self.export_on_finish and self.should_export_results:
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
@@ -429,6 +409,19 @@ class Simulation:
     @property
     def should_export_results(self):
         return not self.redis_connection.is_enabled()
+
+    def handle_slowdown_and_realtime(self, tick_no):
+        if d3a.constants.RUN_IN_REALTIME:
+            tick_runtime_s = time() - self.tick_time_counter
+            sleep(abs(self.simulation_config.tick_length.seconds - tick_runtime_s))
+        elif self.slot_length_realtime:
+            self.current_expected_tick_time = \
+                self.current_expected_tick_time.add(seconds=self.tick_length_realtime_s)
+            sleep_time_s = self.current_expected_tick_time.timestamp() - now().timestamp()
+            if sleep_time_s > 0:
+                sleep(sleep_time_s)
+                log.debug(f"Tick {tick_no + 1}/{self.simulation_config.ticks_per_slot}: "
+                          f"Sleep time of {sleep_time_s}s was applied")
 
     def toggle_pause(self):
         if self.finished:
@@ -476,7 +469,7 @@ class Simulation:
             if sleep == 0 or time() - start >= sleep:
                 break
 
-    def _handle_paused(self, console, tick_start):
+    def _handle_paused(self, console):
         if console is not None:
             self._handle_input(console)
             if self.pause_after and self.time_since_start >= self.pause_after:
@@ -494,7 +487,7 @@ class Simulation:
             paused_flag = True
             if console:
                 self._handle_input(console, 0.1)
-            if time() - tick_start > SIMULATION_PAUSE_TIMEOUT:
+            if time() - self.tick_time_counter > SIMULATION_PAUSE_TIMEOUT:
                 self.is_timed_out = True
                 self.is_stopped = True
                 self.paused = False
