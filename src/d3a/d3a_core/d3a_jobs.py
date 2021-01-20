@@ -111,7 +111,7 @@ def start(scenario, settings, events, aggregator_device_mapping, saved_state):
         validate_global_settings(config_settings)
 
         slot_length_realtime = duration(seconds=settings['slot_length_realtime'].seconds) \
-            if 'slot_length_realtime' in settings else GlobalConfig.slot_length_realtime
+            if 'slot_length_realtime' in settings else None
 
         config = SimulationConfig(**config_settings)
 
@@ -156,7 +156,7 @@ def main():
         Worker(
             [get_simulation_queue_name()],
             name=f'simulation.{getpid()}.{now().timestamp()}', log_job_description=False
-        ).work(max_jobs=1)
+        ).work(max_jobs=1, burst=True)
 
 
 if __name__ == "__main__":
