@@ -26,7 +26,7 @@ import datetime
 
 from pendulum import now, duration
 from ptpython.repl import embed
-from time import sleep, time
+from time import sleep, time, mktime
 from numpy import random
 from importlib import import_module
 from logging import getLogger
@@ -309,7 +309,7 @@ class Simulation:
             slot_count = sys.maxsize
 
             today = datetime.date.today()
-            seconds_since_midnight = time() - time.mktime(today.timetuple())
+            seconds_since_midnight = time() - mktime(today.timetuple())
             slot_resume = int(seconds_since_midnight // config.slot_length.seconds) + 1
             seconds_elapsed_in_slot = seconds_since_midnight % config.slot_length.seconds
             ticks_elapsed_in_slot = seconds_elapsed_in_slot // config.tick_length.seconds
