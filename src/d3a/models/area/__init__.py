@@ -59,6 +59,39 @@ DEFAULT_CONFIG = SimulationConfig(
 )
 
 
+def check_area_name_exists_in_parent_area(parent_area, name):
+    """
+    Check the children of parent area , iterate through its children and
+        check if the name to be appended does not exist
+    Note: this check is to be called before adding a new area of changing its name
+    :param parent_area: Parent Area
+    :param name: New name of area
+    :return: boolean
+    """
+    for child in parent_area.children:
+        if child.name == name:
+            return True
+    return False
+
+
+class AreaChildrenList(list):
+    def __init__(self, parent_area, *args, **kwargs):
+        self.parent_area = parent_area
+        super(AreaChildrenList, self).__init__(*args, **kwargs)
+
+    def _validate_before_insertion(self, item):
+        if check_area_name_exists_in_parent_area(self.parent_area, item.name):
+            raise AreaException("Area name should be unique inside the same Parent Area")
+
+    def append(self, item: "Area") -> None:
+        self._validate_before_insertion(item)
+        super(AreaChildrenList, self).append(item)
+
+    def insert(self, index, item):
+        self._validate_before_insertion(item)
+        super(AreaChildrenList, self).insert(index, item)
+
+
 class Area:
 
     def __init__(self, name: str = None, children: List["Area"] = None,
@@ -79,12 +112,13 @@ class Area:
         self.active = False
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
-        self.name = name
+        self.__name = name
         self.throughput = throughput
         self.uuid = uuid if uuid is not None else str(uuid4())
         self.slug = slugify(name, to_lower=True)
         self.parent = None
-        self.children = children if children is not None else []
+        self.children = AreaChildrenList(self, children) if children is not None\
+            else AreaChildrenList(self)
         for child in self.children:
             child.parent = self
 
@@ -108,6 +142,17 @@ class Area:
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available is True else None
         self.should_update_child_strategies = False
+
+    @property
+    def name(self):
+        return self.__name
+
+    @name.setter
+    def name(self, new_name):
+        if not check_area_name_exists_in_parent_area(self.parent, new_name):
+            self.__name = new_name
+        else:
+            raise AreaException("Area name should be unique inside the same Parent Area")
 
     def get_state(self):
         state = {}
