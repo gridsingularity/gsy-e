@@ -86,7 +86,7 @@ class ExternalMixin:
     def __init__(self, *args, **kwargs):
         self._connected = False
         self.connected = False
-        self.use_template_strategy = False
+        self._use_template_strategy = False
         super().__init__(*args, **kwargs)
         self._last_dispatched_tick = 0
         self.pending_requests = []
@@ -113,7 +113,7 @@ class ExternalMixin:
 
     @property
     def should_use_default_strategy(self):
-        return self.use_template_strategy or \
+        return self._use_template_strategy or \
                (not self.connected and not self.is_aggregator_controlled)
 
     @property
@@ -133,7 +133,7 @@ class ExternalMixin:
 
     def area_reconfigure_event(self, *args, **kwargs):
         if key_in_dict_and_not_none(kwargs, 'allow_external_connection'):
-            self.use_template_strategy = not kwargs['allow_external_connection']
+            self._use_template_strategy = not kwargs['allow_external_connection']
         if self.should_use_default_strategy:
             super().area_reconfigure_event(*args, **kwargs)
 
