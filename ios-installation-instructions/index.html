@@ -1177,8 +1177,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#install-python-36-and-set-as-default" title="Install Python 3.6 and set as default:" class="md-nav__link">
-    Install Python 3.6 and set as default:
+  <a href="#install-python-38-and-set-as-default" title="Install Python 3.8 and set as default:" class="md-nav__link">
+    Install Python 3.8 and set as default:
   </a>
   
 </li>
@@ -1454,8 +1454,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#install-python-36-and-set-as-default" title="Install Python 3.6 and set as default:" class="md-nav__link">
-    Install Python 3.6 and set as default:
+  <a href="#install-python-38-and-set-as-default" title="Install Python 3.8 and set as default:" class="md-nav__link">
+    Install Python 3.8 and set as default:
   </a>
   
 </li>
@@ -1574,14 +1574,14 @@ echo -e &#39;if command -v pyenv 1&gt;/dev/null 2&gt;&amp;1; then\n eval &quot;$
 </code></pre></div>
 
 <h5 id="close-and-re-open-the-terminal">Close and re-open the terminal<a class="headerlink" href="#close-and-re-open-the-terminal" title="Permanent link">&para;</a></h5>
-<h5 id="install-python-36-and-set-as-default">Install Python 3.6 and set as default:<a class="headerlink" href="#install-python-36-and-set-as-default" title="Permanent link">&para;</a></h5>
-<div class="codehilite"><pre><span></span><code>pyenv install 3.6.3
-pyenv global 3.6.3
+<h5 id="install-python-38-and-set-as-default">Install Python 3.8 and set as default:<a class="headerlink" href="#install-python-38-and-set-as-default" title="Permanent link">&para;</a></h5>
+<div class="codehilite"><pre><span></span><code>pyenv install 3.8.6
+pyenv global 3.8.6
 </code></pre></div>
 
 <h5 id="install-virtualenvwrapper">Install virtualenvwrapper:<a class="headerlink" href="#install-virtualenvwrapper" title="Permanent link">&para;</a></h5>
 <div class="codehilite"><pre><span></span><code>pip install virtualenvwrapper
-echo -e &#39;export WORKON_HOME=~/Envs\nsource ~/.pyenv/versions/3.6.3/bin/virtualenvwrapper.sh&#39; &gt;&gt; ~/.bash_profile
+echo -e &#39;export WORKON_HOME=~/Envs\nsource ~/.pyenv/versions/3.8.6/bin/virtualenvwrapper.sh&#39; &gt;&gt; ~/.bash_profile
 </code></pre></div>
 
 <h5 id="setup-paths-for-compiling-python-libraries">Setup paths for compiling python libraries:<a class="headerlink" href="#setup-paths-for-compiling-python-libraries" title="Permanent link">&para;</a></h5>
@@ -1596,11 +1596,9 @@ cd d3a
 </code></pre></div>
 
 <h5 id="create-and-initialize-d3a-virtualenv">Create and initialize d3a virtualenv<a class="headerlink" href="#create-and-initialize-d3a-virtualenv" title="Permanent link">&para;</a></h5>
-<div class="codehilite"><pre><span></span><code>brew install npm 
-npm install --global ganache-cli
-mkvirtualenv d3a
+<div class="codehilite"><pre><span></span><code>mkvirtualenv d3a
 pip install pendulum pip-tools
-pip install -e . 
+pip install -e .
 </code></pre></div>
 
 <h5 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h5>
