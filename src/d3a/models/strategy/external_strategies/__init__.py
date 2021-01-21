@@ -114,7 +114,7 @@ class ExternalMixin:
     @property
     def should_use_default_strategy(self):
         return self._use_template_strategy or \
-               (not self.connected and not self.is_aggregator_controlled)
+               not (self.connected or self.is_aggregator_controlled)
 
     @property
     def _dispatch_tick_frequency(self):
