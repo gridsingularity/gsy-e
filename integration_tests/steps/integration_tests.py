@@ -246,7 +246,6 @@ def running_the_simulation(context):
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.ERROR)
 
-    slowdown = 0
     seed = 0
     paused = False
     pause_after = duration()
@@ -258,7 +257,6 @@ def running_the_simulation(context):
         'json_arg',
         context._settings,
         None,
-        slowdown,
         seed,
         paused,
         pause_after,
@@ -319,7 +317,6 @@ def run_sim_with_config_setting(context, cloud_coverage, scenario):
                                          cloud_coverage=int(cloud_coverage),
                                          external_connection_enabled=False)
 
-    slowdown = 0
     seed = 0
     paused = False
     pause_after = duration()
@@ -331,7 +328,6 @@ def run_sim_with_config_setting(context, cloud_coverage, scenario):
         scenario,
         simulation_config,
         None,
-        slowdown,
         seed,
         paused,
         pause_after,
@@ -499,7 +495,7 @@ def create_sim_object(context, scenario):
                                          external_connection_enabled=False)
 
     context.simulation = Simulation(
-        scenario, simulation_config, None, 0, 0, False, duration(), False, False, None, None,
+        scenario, simulation_config, None, 0, False, duration(), False, False, None, None,
         "1234", False
     )
 
@@ -603,7 +599,6 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
                                          start_date=start_date,
                                          external_connection_enabled=False)
 
-    slowdown = 0
     seed = 0
     paused = False
     pause_after = duration()
@@ -615,7 +610,6 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
         scenario,
         simulation_config,
         None,
-        slowdown,
         seed,
         paused,
         pause_after,
@@ -659,7 +653,6 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
                                          market_maker_rate=30,
                                          external_connection_enabled=False)
 
-    slowdown = 0
     seed = 0
     paused = False
     pause_after = duration()
@@ -672,7 +665,6 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
             scenario,
             simulation_config,
             None,
-            slowdown,
             seed,
             paused,
             pause_after,

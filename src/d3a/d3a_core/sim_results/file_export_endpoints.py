@@ -143,7 +143,7 @@ class ExportLeafData(ExportData):
         elif isinstance(self.area.strategy, LoadHoursStrategy):
             return ['desired energy [kWh]', 'deficit [kWh]']
         elif isinstance(self.area.strategy, PVStrategy):
-            return ['produced to trade [kWh]', 'not sold [kWh]', 'forecast / generation [kWh]']
+            return ['produced [kWh]', 'not sold [kWh]']
         return []
 
     def rows(self):
@@ -170,8 +170,7 @@ class ExportLeafData(ExportData):
             desired = self.area.strategy.state.get_desired_energy_Wh(slot) / 1000
             return [desired, self._traded(market) + desired]
         elif isinstance(self.area.strategy, PVStrategy):
-            produced = self.area.strategy.state.get_available_energy_kWh(slot, 0.0)
-            forecasted = self.area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
-            curtailed = round(produced - forecasted, 4)
-            return [produced, curtailed, forecasted]
+            not_sold = self.area.strategy.state.get_available_energy_kWh(slot, 0.0)
+            produced = self.area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
+            return [produced, not_sold]
         return []

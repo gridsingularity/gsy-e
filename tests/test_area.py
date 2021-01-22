@@ -21,7 +21,7 @@ from unittest.mock import MagicMock
 import unittest
 from parameterized import parameterized
 from d3a.events.event_structures import AreaEvent, MarketEvent
-from d3a.models.area import Area
+from d3a.models.area import Area, check_area_name_exists_in_parent_area
 from d3a.models.area.events import Events
 from d3a.models.area.markets import AreaMarkets
 
@@ -327,3 +327,24 @@ class TestEventDispatcher(unittest.TestCase):
         area.events.is_connected = True
         area.dispatcher.event_listener(AreaEvent.MARKET_CYCLE)
         assert area.strategy.event_on_disabled_area.call_count == 1
+
+    def test_duplicate_area_in_the_same_parent_append(self):
+        area = Area(name="Street", children=[Area(name="House")], )
+        with self.assertRaises(Exception) as exception:
+            area.children.append(Area(name="House", children=[Area(name="House")], ))
+            self.assertEqual(exception, "Area name should be unique inside the same Parent Area")
+
+    def test_duplicate_area_in_the_same_parent_change_name(self):
+        child = Area(name="Street", )
+        parent = Area(name="Community", children=[child, Area(name="Street 2")]) # noqa
+        with self.assertRaises(Exception) as exception:
+            child.name = "Street 2"
+            self.assertEqual(exception, "Area name should be unique inside the same Parent Area")
+
+
+class TestFunctions(unittest.TestCase):
+
+    def test_check_area_name_exists_in_parent_area(self):
+        area = Area(name="Street", children=[Area(name="House")], )
+        self.assertTrue(check_area_name_exists_in_parent_area(area, "House"))
+        self.assertFalse(check_area_name_exists_in_parent_area(area, "House 2"))

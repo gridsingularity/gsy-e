@@ -46,6 +46,5 @@ class MarketMakerStrategy(CommercialStrategy):
 
     def area_reconfigure_event(self, *args, **kwargs):
         super().area_reconfigure_event(*args, **kwargs)
-        if key_in_dict_and_not_none(kwargs, 'grid_connected') and \
-                type(kwargs['grid_connected']) == bool:
+        if key_in_dict_and_not_none(kwargs, 'grid_connected'):
             self._grid_connected = kwargs['grid_connected']

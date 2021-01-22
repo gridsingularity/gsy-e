@@ -55,19 +55,21 @@ class UpdateAreaEvent:
         if area_type is not None and area_type != "Area":
             if area.strategy is None:
                 return False
+            reactivate = False
             if area_type == "MarketMaker":
                 area.strategy = MarketMakerStrategy(**self.area_params)
+                reactivate = True
             elif area_type == "InfiniteBus":
                 # TODO: After hack to move this parameter casting at the web side
                 self.area_params['energy_sell_rate'] = self.area_params.pop('energy_rate', None)
                 area.strategy = InfiniteBusStrategy(**self.area_params)
-            else:
-                return False
-            area.activate()
-            area.strategy.event_activate()
-            area.strategy.event_market_cycle()
-        else:
-            area.area_reconfigure_event(**self.area_params)
+                reactivate = True
+            if reactivate:
+                area.activate()
+                area.strategy.event_activate()
+                area.strategy.event_market_cycle()
+
+        area.area_reconfigure_event(**self.area_params)
 
         return True
 

@@ -55,7 +55,6 @@ class RedisSimulationCommunication:
             self._simulation_id + "/stop": self._stop_callback,
             self._simulation_id + "/pause": self._pause_callback,
             self._simulation_id + "/resume": self._resume_callback,
-            self._simulation_id + "/slowdown": self._slowdown_callback,
             self._simulation_id + "/live-event": self._live_event_callback,
             self._simulation_id + "/bulk-live-event": self._bulk_live_event_callback}
         self.result_channel = RESULTS_CHANNEL
@@ -125,22 +124,6 @@ class RedisSimulationCommunication:
             response, self._simulation_id, not self._simulation.paused, "resume"
         )
         log.info(f"Simulation with job_id: {self._simulation_id} is resumed.")
-
-    def _slowdown_callback(self, message):
-        data = json.loads(message["data"])
-        slowdown = data.get('slowdown')
-        if not slowdown:
-            log.warning("'slowdown' parameter missing from incoming message.")
-            return
-        try:
-            slowdown = int(slowdown)
-        except ValueError:
-            log.warning("'slowdown' parameter must be numeric")
-            return
-        if not -1 < slowdown < 101:
-            log.warning("'slowdown' must be in range 0 - 100")
-            return
-        self._simulation.slowdown = slowdown
 
     def _live_event_callback(self, message):
         data = json.loads(message["data"])
