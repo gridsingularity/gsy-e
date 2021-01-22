@@ -36,7 +36,7 @@ Options:
 
 Commands:
   run*
-(d3a) hannesd:d3a $ d3a run --help
+
 Usage: d3a run [OPTIONS]
 
 Options:
@@ -44,7 +44,7 @@ Options:
   -t, --tick-length INTERVAL      Length of a tick  [default: 1s]
   -s, --slot-length INTERVAL      Length of a market slot  [default: 15m]
   --slot-length-realtime INTERVAL
-                                  Desired duration of slot in realtime  [default: 0m]
+                                  Desired duration of slot in realtime  [default: 0s]
   -c, --cloud-coverage INTEGER    Cloud coverage, 0 for sunny, 1 for partial coverage, 2 for clouds.  [default: 0]
   -m, --market-count INTEGER      Number of tradable market slots into the future  [default: 1]
   --setup TEXT                    Simulation setup module use. Available modules: [1000_houses,
