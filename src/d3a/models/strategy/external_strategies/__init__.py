@@ -86,10 +86,19 @@ class ExternalMixin:
     def __init__(self, *args, **kwargs):
         self._connected = False
         self.connected = False
+        self._use_template_strategy = False
         super().__init__(*args, **kwargs)
         self._last_dispatched_tick = 0
         self.pending_requests = []
         self.lock = Lock()
+
+    @property
+    def channel_dict(self):
+        return {
+            f'{self.channel_prefix}/register_participant': self._register,
+            f'{self.channel_prefix}/unregister_participant': self._unregister,
+            f'{self.channel_prefix}/device_info': self._device_info,
+        }
 
     @property
     def channel_prefix(self):
@@ -104,7 +113,8 @@ class ExternalMixin:
 
     @property
     def should_use_default_strategy(self):
-        return not self.connected and not self.is_aggregator_controlled
+        return self._use_template_strategy or \
+               not (self.connected or self.is_aggregator_controlled)
 
     @property
     def _dispatch_tick_frequency(self):
@@ -120,6 +130,12 @@ class ExternalMixin:
             return data["transaction_id"]
         else:
             raise ValueError("transaction_id not in payload or None")
+
+    def area_reconfigure_event(self, *args, **kwargs):
+        if key_in_dict_and_not_none(kwargs, 'allow_external_connection'):
+            self._use_template_strategy = not kwargs['allow_external_connection']
+        if self.should_use_default_strategy:
+            super().area_reconfigure_event(*args, **kwargs)
 
     def _register(self, payload):
         self._connected = register_area(self.redis, self.channel_prefix, self.connected,
@@ -234,22 +250,21 @@ class ExternalMixin:
             # the bid clearing and one for the offer clearing.
             return
 
-        event_response_dict = {
-            "device_info": self._device_info_dict,
-            "event": "trade",
-            "trade_id": trade.id,
-            "time": trade.time.isoformat(),
-            "price": trade.offer.price,
-            "energy": trade.offer.energy,
-            "fee_price": trade.fee_price,
-            "area_uuid": self.device.uuid
-        }
-        event_response_dict["seller"] = trade.seller \
-            if trade.seller == self.device.name else "anonymous"
-        event_response_dict["buyer"] = trade.buyer \
-            if trade.buyer == self.device.name else "anonymous"
-        event_response_dict["residual_id"] = trade.residual.id \
-            if trade.residual is not None else "None"
+        event_response_dict = {"device_info": self._device_info_dict,
+                               "event": "trade",
+                               "trade_id": trade.id,
+                               "time": trade.time.isoformat(),
+                               "price": trade.offer.price,
+                               "energy": trade.offer.energy,
+                               "fee_price": trade.fee_price,
+                               "area_uuid": self.device.uuid,
+                               "seller": trade.seller
+                               if trade.seller == self.device.name else "anonymous",
+                               "buyer": trade.buyer
+                               if trade.buyer == self.device.name else "anonymous",
+                               "residual_id": trade.residual.id
+                               if trade.residual is not None else "None"}
+
         bid_offer_key = 'bid_id' if is_bid_trade else 'offer_id'
         event_response_dict["event_type"] = "buy" \
             if trade.buyer == self.device.name else "sell"
