@@ -33,8 +33,8 @@ class StorageExternalMixin(ExternalMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def event_activate(self):
-        super().event_activate()
+    def event_activate(self, **kwargs):
+        super().event_activate(**kwargs)
         self.redis.sub_to_multiple_channels({
             **super().channel_dict,
             f'{self.channel_prefix}/offer': self._offer,

@@ -281,7 +281,7 @@ class Area:
             self.log.debug("No strategy. Using inter area agent.")
         self.log.debug('Activating area')
         self.active = True
-        self.dispatcher.broadcast_activate()
+        self.dispatcher.broadcast_activate(current_tick=self.current_tick)
         if self.redis_ext_conn is not None:
             self.redis_ext_conn.sub_to_external_channels()
 

@@ -45,8 +45,8 @@ class LoadExternalMixin(ExternalMixin):
                 f'{self.channel_prefix}/list_bids': self._list_bids,
                 }
 
-    def event_activate(self):
-        super().event_activate()
+    def event_activate(self, **kwargs):
+        super().event_activate(**kwargs)
         self.redis.sub_to_multiple_channels(self.channel_dict)
 
     def _list_bids(self, payload):

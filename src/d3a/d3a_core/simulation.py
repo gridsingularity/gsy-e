@@ -336,12 +336,11 @@ class Simulation:
                         f"{self.progress_info.elapsed_time} elapsed, "
                         f"ETA: {self.progress_info.eta}")
 
-            self.live_events.handle_all_events(self.area)
-
             self.global_objects.update(self.area)
 
             self.area.cycle_markets()
             self._update_and_send_results()
+            self.live_events.handle_all_events(self.area)
 
             gc.collect()
             process = psutil.Process(os.getpid())

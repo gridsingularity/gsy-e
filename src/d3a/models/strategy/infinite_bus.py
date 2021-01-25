@@ -43,7 +43,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         # amended.
         GlobalConfig.market_maker_rate = self.energy_rate
 
-    def event_activate(self):
+    def event_activate(self, **kwargs):
         if self.energy_rate_profile is not None:
             self.energy_rate = read_and_convert_identity_profile_to_float(self.energy_rate_profile)
             del self.energy_rate_profile

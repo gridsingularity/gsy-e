@@ -129,7 +129,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 final_buying_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
                 fit_to_limit=fit_to_limit)
 
-    def event_activate(self):
+    def event_activate(self, **kwargs):
         self._calculate_active_markets()
         self.event_activate_price()
         self.bid_update.update_and_populate_price_settings(self.area)
