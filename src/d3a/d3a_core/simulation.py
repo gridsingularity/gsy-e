@@ -303,7 +303,6 @@ class Simulation:
 
         config.external_redis_communicator.sub_to_aggregator()
         config.external_redis_communicator.start_communication()
-        self._update_and_send_results()
 
         if d3a.constants.RUN_IN_REALTIME:
             slot_count = sys.maxsize

@@ -166,9 +166,9 @@ class RedisSimulationCommunication:
                 self._simulation.stop()
 
         except NoSuchJobError:
-            log.error(f"Redis job {self._simulation_id} cannot be found in the Redis job queue. "
-                      f"get_current_job failed. Continue to operate as a daemon job, "
-                      f"without being monitored by RQ.")
+            raise(f"Redis job {self._simulation_id} cannot be found in the Redis job queue. "
+                  f"get_current_job failed. Continue to operate as a daemon job, "
+                  f"without being monitored by RQ.")
 
     def publish_results(self, endpoint_buffer):
         if not self.is_enabled():
@@ -186,8 +186,9 @@ class RedisSimulationCommunication:
 
         results = results.encode('utf-8')
         results = compress(results)
-        self.redis_db.publish(self.result_channel, results)
+
         self._handle_redis_job_metadata()
+        self.redis_db.publish(self.result_channel, results)
 
     def publish_intermediate_results(self, endpoint_buffer):
         # Should have a different format in the future, hence the code duplication
