@@ -498,14 +498,6 @@ def create_sim_object(context, scenario):
         scenario, simulation_config, None, 0, False, duration(), False, False, None, None,
         "1234", False
     )
-    """
-    setup_module_name: str, simulation_config: SimulationConfig = None,
-                 simulation_events: str = None, seed=None,
-                 paused: bool = False, pause_after: duration = None, repl: bool = False,
-                 no_export: bool = False, export_path: str = None,
-                 export_subdir: str = None, redis_job_id=None, enable_bc=False,
-                 slot_length_realtime=None
-    """
 
 
 @when('the method {method} is registered')
