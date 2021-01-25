@@ -30,7 +30,7 @@ class FinitePowerPlant(CommercialStrategy):
         super().__init__(energy_rate=energy_rate)
         self.max_available_power_kW = max_available_power_kW
 
-    def event_activate(self):
+    def event_activate(self, **kwargs):
         super().event_activate()
         self.max_available_power_kW = \
             read_arbitrary_profile(InputProfileTypes.IDENTITY, self.max_available_power_kW)

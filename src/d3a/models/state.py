@@ -51,7 +51,7 @@ class PVState:
         assert self._energy_production_forecast_kWh[time_slot] >= -FLOATING_POINT_TOLERANCE
         if default_value is not None:
             return self._energy_production_forecast_kWh.get(time_slot, default_value)
-        return self._energy_production_forecast_kWh.get(time_slot, 0.)
+        return self._energy_production_forecast_kWh[time_slot]
 
     def get_available_energy_kWh(self, time_slot, default_value=None):
         if default_value is not None:

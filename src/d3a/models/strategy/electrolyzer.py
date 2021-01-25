@@ -45,7 +45,7 @@ class ElectrolyzerStrategy(StorageStrategy):
         self.conversion_factor_kWh_kg = conversion_factor_kg_to_kWh
         self.load_profile_kWh = {}
 
-    def event_activate(self):
+    def event_activate(self, **kwargs):
         super().event_activate()
 
         load_profile_raw_kg = read_arbitrary_profile(

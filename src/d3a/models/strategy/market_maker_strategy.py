@@ -41,7 +41,7 @@ class MarketMakerStrategy(CommercialStrategy):
         if self._grid_connected is True:
             super().event_market_cycle()
 
-    def event_activate(self):
+    def event_activate(self, **kwargs):
         pass
 
     def area_reconfigure_event(self, *args, **kwargs):

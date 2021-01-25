@@ -245,7 +245,7 @@ class StorageStrategy(BidEnabledStrategy):
     def event_activate_energy(self):
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
 
-    def event_activate(self):
+    def event_activate(self, **kwargs):
         self._update_profiles_with_default_values()
         self.event_activate_energy()
         self.event_activate_price()

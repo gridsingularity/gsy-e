@@ -162,7 +162,7 @@ class PVStrategy(BaseStrategy):
                 energy_rate_decrease_per_update=rate_change,
                 fit_to_limit=fit_to_limit)
 
-    def event_activate(self):
+    def event_activate(self, **kwargs):
         self.event_activate_price()
         self.event_activate_energy()
         self.offer_update.update_and_populate_price_settings(self.area)

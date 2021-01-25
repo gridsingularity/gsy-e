@@ -66,7 +66,7 @@ class EventMixin:
     def event_balancing_market_cycle(self):
         pass
 
-    def event_activate(self):
+    def event_activate(self, **kwargs):
         pass
 
     def event_offer(self, *, market_id, offer):

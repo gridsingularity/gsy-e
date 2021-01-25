@@ -34,7 +34,7 @@ class CommercialStrategy(BaseStrategy):
         self.energy_rate = energy_rate
         self.energy_per_slot_kWh = INF_ENERGY
 
-    def event_activate(self):
+    def event_activate(self, **kwargs):
         self.energy_rate = self.area.config.market_maker_rate if self.energy_rate is None \
             else read_arbitrary_profile(InputProfileTypes.IDENTITY, self.energy_rate)
 

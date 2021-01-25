@@ -49,8 +49,8 @@ class PVExternalMixin(ExternalMixin):
             f'{self.channel_prefix}/device_info': self._device_info
         }
 
-    def event_activate(self):
-        super().event_activate()
+    def event_activate(self, **kwargs):
+        super().event_activate(**kwargs)
         self.redis.sub_to_multiple_channels(self.channel_dict)
 
     def _list_offers(self, payload):
