@@ -157,15 +157,18 @@ class RedisSimulationCommunication:
         )
 
     def _handle_redis_job_metadata(self):
-        should_exit = True
         try:
             job = get_current_job()
             job.refresh()
-            should_exit = "terminated" in job.meta and job.meta["terminated"]
+            if "terminated" in job.meta and job.meta["terminated"]:
+                log.error(f"Redis job {self._simulation_id} received a stop message via the "
+                          f"job.terminated metadata by d3a-web. Stopping the simulation.")
+                self._simulation.stop()
+
         except NoSuchJobError:
-            pass
-        if should_exit:
-            self._simulation.stop()
+            log.error(f"Redis job {self._simulation_id} cannot be found in the Redis job queue. "
+                      f"get_current_job failed. Continue to operate as a daemon job, "
+                      f"without being monitored by RQ.")
 
     def publish_results(self, endpoint_buffer):
         if not self.is_enabled():
