@@ -131,7 +131,7 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
                                  cloud_coverage, start_date=start_date,
                                  external_connection_enabled=enable_external_connection)
         if use_redis_client is not None:
-            os.environ["RUN_ON_D3A_WEB"] = "False" if use_redis_client else "True"
+            os.environ["RUN_ON_D3A_WEB"] = "False"
 
         if compare_alt_pricing is True:
             ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
