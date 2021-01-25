@@ -33,13 +33,9 @@ MAX_JOBS = os.environ.get('D3A_MAX_JOBS_PER_POD', 2)
 
 
 class Launcher:
-    def __init__(self,
-                 queue=None,
-                 max_jobs=None,
-                 max_delay_seconds=2):
-
+    def __init__(self, max_jobs=None, max_delay_seconds=2):
         self.redis_connection = StrictRedis.from_url(REDIS_URL, retry_on_timeout=True)
-        self.queue = queue or Queue(get_simulation_queue_name(), connection=self.redis_connection)
+        self.queue = Queue(get_simulation_queue_name(), connection=self.redis_connection)
         self.max_jobs = max_jobs if max_jobs is not None else int(MAX_JOBS)
         self.max_delay = timedelta(seconds=max_delay_seconds)
         python_executable = sys.executable \
