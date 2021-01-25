@@ -45,6 +45,13 @@ class LoadExternalMixin(ExternalMixin):
                 f'{self.channel_prefix}/list_bids': self._list_bids,
                 }
 
+    @property
+    def filtered_bids(self):
+        return [
+            {"id": v.id, "price": v.price, "energy": v.energy}
+            for _, v in self.next_market.get_bids().items()
+            if v.buyer == self.device.name]
+
     def event_activate(self, **kwargs):
         super().event_activate(**kwargs)
         self.redis.sub_to_multiple_channels(self.channel_dict)
@@ -61,12 +68,9 @@ class LoadExternalMixin(ExternalMixin):
 
     def _list_bids_impl(self, arguments, response_channel):
         try:
-            filtered_bids = [{"id": v.id, "price": v.price, "energy": v.energy}
-                             for _, v in self.next_market.get_bids().items()
-                             if v.buyer == self.device.name]
             self.redis.publish_json(
                 response_channel,
-                {"command": "list_bids", "status": "ready", "bid_list": filtered_bids,
+                {"command": "list_bids", "status": "ready", "bid_list": self.filtered_bids,
                  "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling list bids on area {self.device.name}: "
@@ -325,11 +329,8 @@ class LoadExternalMixin(ExternalMixin):
 
     def _list_bids_aggregator(self, arguments):
         try:
-            filtered_bids = [{"id": v.id, "price": v.price, "energy": v.energy}
-                             for _, v in self.next_market.get_bids().items()
-                             if v.buyer == self.device.name]
             return {
-                "command": "list_bids", "status": "ready", "bid_list": filtered_bids,
+                "command": "list_bids", "status": "ready", "bid_list": self.filtered_bids,
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id", None)}
         except Exception as e:

@@ -117,6 +117,13 @@ class RedisExternalStrategyConnection(TwoSidedMarketRedisEventSubscriber):
                 self._list_offers_channel: self._offer_lists,
             }
 
+    @property
+    def filtered_bids(self):
+        return [
+            {"id": v.id, "price": v.price, "energy": v.energy}
+            for _, v in self.market.get_bids().items()
+            if v.buyer == self.area.name]
+
     def sub_to_external_requests(self):
         self.redis_db.sub_to_multiple_channels(self.channel_callback_mapping)
 
@@ -226,11 +233,8 @@ class RedisExternalStrategyConnection(TwoSidedMarketRedisEventSubscriber):
 
     def _list_bids(self, payload):
         try:
-            filtered_bids = [{"id": v.id, "price": v.price, "energy": v.energy}
-                             for _, v in self.market.get_bids().items()
-                             if v.buyer == self.area.name]
             self.publish(self._list_bids_response_channel,
-                         {"status": "ready", "bid_list": filtered_bids})
+                         {"status": "ready", "bid_list": self.filtered_bids})
         except Exception as e:
             self.publish(self._list_bids_response_channel,
                          {"status": "error",  "exception": str(type(e)),
