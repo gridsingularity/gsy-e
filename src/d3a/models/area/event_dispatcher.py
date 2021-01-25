@@ -79,7 +79,6 @@ class AreaDispatcher:
         # Broadcast to children in random order to ensure fairness
         for child in sorted(self.area.children, key=lambda _: random()):
             child.dispatcher.event_listener(event_type, **kwargs)
-        # kwargs.pop('current_tick', None)
         # Also broadcast to IAAs. Again in random order
         for time_slot, agents in self._inter_area_agents.items():
             if time_slot not in self.area._markets.markets:
