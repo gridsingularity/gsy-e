@@ -36,15 +36,13 @@ class StorageExternalMixin(ExternalMixin):
     def event_activate(self, **kwargs):
         super().event_activate(**kwargs)
         self.redis.sub_to_multiple_channels({
-            f'{self.channel_prefix}/register_participant': self._register,
-            f'{self.channel_prefix}/unregister_participant': self._unregister,
+            **super().channel_dict,
             f'{self.channel_prefix}/offer': self._offer,
             f'{self.channel_prefix}/delete_offer': self._delete_offer,
             f'{self.channel_prefix}/list_offers': self._list_offers,
             f'{self.channel_prefix}/bid': self._bid,
             f'{self.channel_prefix}/delete_bid': self._delete_bid,
             f'{self.channel_prefix}/list_bids': self._list_bids,
-            f'{self.channel_prefix}/device_info': self._device_info,
         })
 
     def _list_offers(self, payload):
@@ -323,10 +321,9 @@ class StorageExternalMixin(ExternalMixin):
             market_info["last_market_maker_rate"] = \
                 get_current_market_maker_rate(self.area.current_market.time_slot) \
                 if self.area.current_market else None
-            if self.connected:
-                market_info['last_market_stats'] = \
-                    self.market_area.stats.get_price_stats_current_market()
-                self.redis.publish_json(market_event_channel, market_info)
+            market_info['last_market_stats'] = \
+                self.market_area.stats.get_price_stats_current_market()
+            self.redis.publish_json(market_event_channel, market_info)
             if self.is_aggregator_controlled:
                 self.redis.aggregator.add_batch_market_event(self.device.uuid,
                                                              market_info,
@@ -334,10 +331,6 @@ class StorageExternalMixin(ExternalMixin):
             self._delete_past_state()
         else:
             super().event_market_cycle()
-
-    def area_reconfigure_event(self, *args, **kwargs):
-        if not self.connected:
-            super().area_reconfigure_event(*args, **kwargs)
 
     def event_tick(self):
         if not self.connected and not self.is_aggregator_controlled:

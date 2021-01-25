@@ -40,14 +40,11 @@ class PVExternalMixin(ExternalMixin):
 
     @property
     def channel_dict(self):
-        return {
-            f'{self.channel_prefix}/register_participant': self._register,
-            f'{self.channel_prefix}/unregister_participant': self._unregister,
-            f'{self.channel_prefix}/offer': self._offer,
-            f'{self.channel_prefix}/delete_offer': self._delete_offer,
-            f'{self.channel_prefix}/list_offers': self._list_offers,
-            f'{self.channel_prefix}/device_info': self._device_info
-        }
+        return {**super().channel_dict,
+                f'{self.channel_prefix}/offer': self._offer,
+                f'{self.channel_prefix}/delete_offer': self._delete_offer,
+                f'{self.channel_prefix}/list_offers': self._list_offers,
+                }
 
     def event_activate(self, **kwargs):
         super().event_activate(**kwargs)
@@ -195,10 +192,9 @@ class PVExternalMixin(ExternalMixin):
             market_info["last_market_maker_rate"] = \
                 get_current_market_maker_rate(self.area.current_market.time_slot) \
                 if self.area.current_market else None
-            if self.connected:
-                market_info['last_market_stats'] = \
-                    self.market_area.stats.get_price_stats_current_market()
-                self.redis.publish_json(market_event_channel, market_info)
+            market_info['last_market_stats'] = \
+                self.market_area.stats.get_price_stats_current_market()
+            self.redis.publish_json(market_event_channel, market_info)
             if self.is_aggregator_controlled:
                 self.redis.aggregator.add_batch_market_event(self.device.uuid,
                                                              market_info,
@@ -207,19 +203,8 @@ class PVExternalMixin(ExternalMixin):
         else:
             super().event_market_cycle()
 
-    def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
-                           use_market_maker_rate, initial_buying_rate, final_buying_rate):
-        if not self.connected:
-            super()._init_price_update(
-                fit_to_limit, energy_rate_increase_per_update, update_interval,
-                use_market_maker_rate, initial_buying_rate, final_buying_rate)
-
-    def event_activate_price(self):
-        if not self.connected:
-            super().event_activate_price()
-
     def _area_reconfigure_prices(self, **kwargs):
-        if not self.connected:
+        if self.should_use_default_strategy:
             super()._area_reconfigure_prices(**kwargs)
 
     def _incoming_commands_callback_selection(self, req):
