@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
+import os
 import platform
 import multiprocessing
 import click
@@ -97,12 +98,14 @@ _setup_modules = available_simulation_scenarios
               help="Compare alternative pricing schemes")
 @click.option('--enable-external-connection', is_flag=True, default=False,
               help="External Agents interaction to simulation during runtime")
+@click.option('--use-redis-client', is_flag=True,
+              help="Specify if the client should use Rest (True) or Redis (False) API ")
 @click.option('--start-date', type=DateType(DATE_FORMAT),
               default=today(tz=TIME_ZONE).format(DATE_FORMAT), show_default=True,
               help=f"Start date of the Simulation ({DATE_FORMAT})")
 def run(setup_module_name, settings_file, duration, slot_length, tick_length,
-        market_count, cloud_coverage, compare_alt_pricing, enable_external_connection, start_date,
-        pause_at, slot_length_realtime, **kwargs):
+        market_count, cloud_coverage, compare_alt_pricing, enable_external_connection,
+        use_redis_client, start_date, pause_at, slot_length_realtime, **kwargs):
 
     # Force the multiprocessing start method to be 'fork' on macOS.
     if platform.system() == 'Darwin':
@@ -127,6 +130,8 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
                 SimulationConfig(duration, slot_length, tick_length, market_count,
                                  cloud_coverage, start_date=start_date,
                                  external_connection_enabled=enable_external_connection)
+        if use_redis_client is not None:
+            os.environ["RUN_ON_D3A_WEB"] = "False" if use_redis_client else "True"
 
         if compare_alt_pricing is True:
             ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True

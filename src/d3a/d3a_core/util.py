@@ -33,11 +33,10 @@ from pkgutil import walk_packages
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 
-import d3a.constants
 from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.exceptions import D3AException
-from d3a.constants import DATE_FORMAT, TIME_ZONE
+from d3a.constants import DATE_FORMAT, TIME_ZONE, RUN_ON_D3A_WEB
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit
 from d3a_interface.utils import generate_market_slot_list_from_config, str_to_pendulum_datetime,\
     format_datetime
@@ -583,3 +582,9 @@ def return_ordered_dict(function):
 def get_simulation_queue_name():
     listen_to_cn = os.environ.get("LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE", "no") == "yes"
     return "canary_network" if listen_to_cn else "d3a"
+
+
+def get_is_run_on_d3a_web():
+    run_on_d3a_web = os.environ["RUN_ON_D3A_WEB"] == "True" \
+        if "RUN_ON_D3A_WEB" in os.environ.keys() else RUN_ON_D3A_WEB
+    return run_on_d3a_web
