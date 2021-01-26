@@ -16,9 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
-import json
-import sys
-import base58
 
 from d3a_interface.exceptions import D3AException
 from d3a.d3a_core.util import retry_function
@@ -28,16 +25,20 @@ from d3a_interface.utils import wait_until_timeout_blocking
 log = getLogger(__name__)
 
 
-BC_NUM_FACTOR = 10 ** 10
-BOB_ADDRESS = "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
-ALICE_ADDRESS = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+BC_NUM_FACTOR = 10 ** 12
+BOB_STASH_ADDRESS = "5HpG9w8EBLe5XCrbczpwq5TSXvedjrBGCwqxK1iQ7qUsSWFc"
+ALICE_STASH_ADDRESS = "5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY"
 
-test_value = 1 * 10**16
-test_rate = 12
-endowment = 1 * 10**12
-gas_limit = 1 * 10**12
+default_call_module = 'Tradestorage'
+default_call_function = 'store_trade_map'
+default_amount = {
+    'free': 1 * BC_NUM_FACTOR,
+    'reserved': 0,
+    'miscFrozen': 0,
+    'feeFrozen': 0
+}
+default_rate = 12
 address_type = 42
-main_address = "ADDRESS_OF_YOUR_DEPLOYED_CONTRACT"
 mnemonic = "MNEMONIC_TO_RESTORE_YOUR_KEYPAIR"
 
 
@@ -47,52 +48,6 @@ class InvalidBlockchainOffer(D3AException):
 
 class InvalidBlockchainTrade(D3AException):
     pass
-
-
-def parse_metadata_messages(path_to_metadata):
-    with open(path_to_metadata) as json_file:
-        metadata = json.load(json_file)
-    messages = metadata["spec"]["messages"]
-    function_bytes = {}
-    for m in messages:
-        function_bytes[m["name"][0]] = m["selector"]
-    return function_bytes
-
-
-def parse_metadata_constructors(path_to_metadata):
-    with open(path_to_metadata) as json_file:
-        metadata = json.load(json_file)
-    constructors = metadata["spec"]["constructors"]
-    constructor_bytes = {}
-    for c in constructors:
-        constructor_bytes[c["name"][0]] = c["selector"]
-    return constructor_bytes
-
-
-def get_contract_code_hash(path_to_metadata):
-    with open(path_to_metadata) as json_file:
-        metadata = json.load(json_file)
-    code_hash = metadata["source"]["hash"]
-    return code_hash
-
-
-def address_to_hex(address):
-    try:
-        hex_address = base58.b58decode(address).hex()[2:-4]
-        return hex_address
-    except ValueError:
-        log.error("Unexpected error: could not convert address to hex", sys.exc_info()[0])
-        raise
-
-
-def swap_byte_order(hex_value):
-    s = hex_value.lstrip('0x')
-    return ''.join(list(map(''.join, zip(*[iter(s)]*2)))[::-1])
-
-
-def hex2(v):
-    s = hex(v)[2:]
-    return s if len(s) % 2 == 0 else '0' + s
 
 
 def create_market_contract(bc_interface, duration_s, listeners=[]):

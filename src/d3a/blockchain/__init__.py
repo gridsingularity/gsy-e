@@ -38,5 +38,5 @@ class BlockChainInterface:
         self.substrate = SubstrateInterface(
             url=DEFAULT_SUBSTRATE_URL,
             address_type=TEMPLATE_NODE_ADDRESS_TYPE,
-            type_registry_preset='substrate-node-template'
+            type_registry_preset='canvas'
         )

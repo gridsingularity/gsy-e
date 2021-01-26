@@ -11,3 +11,4 @@ pytest
 ptpython
 requests-mock
 deepdiff
+substrate-interface

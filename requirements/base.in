@@ -14,3 +14,4 @@ python-rex
 redis
 rq
 sortedcontainers
+substrate-interface

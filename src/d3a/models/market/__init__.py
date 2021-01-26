@@ -66,7 +66,7 @@ class Market:
                  transfer_fees: TransferFees = None, name=None):
         self.name = name
         if bc is not None:
-            self.bc_interface = SubstrateBlockchainInterface(bc)
+            self.bc_interface = SubstrateBlockchainInterface()
         else:
             self.bc_interface = NonBlockchainInterface()
         self.id = str(uuid.uuid4())
