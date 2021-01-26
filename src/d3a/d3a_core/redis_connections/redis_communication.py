@@ -19,15 +19,18 @@ import os
 import json
 import traceback
 import time
+from zlib import compress
 from logging import getLogger
 from redis import StrictRedis
 from redis.exceptions import ConnectionError
 from rq import get_current_job
 from rq.exceptions import NoSuchJobError
+
 from d3a_interface.results_validator import results_validator  # NOQA
 from d3a_interface.constants_limits import HeartBeat
 from d3a_interface.utils import RepeatingTimer
-from zlib import compress
+from d3a_interface.exceptions import D3AException
+
 
 log = getLogger(__name__)
 
@@ -166,9 +169,9 @@ class RedisSimulationCommunication:
                 self._simulation.stop()
 
         except NoSuchJobError:
-            log.error(f"Redis job {self._simulation_id} cannot be found in the Redis job queue. "
-                      f"get_current_job failed. Continue to operate as a daemon job, "
-                      f"without being monitored by RQ.")
+            raise D3AException(f"Redis job {self._simulation_id} "
+                               f"cannot be found in the Redis job queue. "
+                               f"get_current_job failed. Job will de killed.")
 
     def publish_results(self, endpoint_buffer):
         if not self.is_enabled():
@@ -186,8 +189,9 @@ class RedisSimulationCommunication:
 
         results = results.encode('utf-8')
         results = compress(results)
-        self.redis_db.publish(self.result_channel, results)
+
         self._handle_redis_job_metadata()
+        self.redis_db.publish(self.result_channel, results)
 
     def publish_intermediate_results(self, endpoint_buffer):
         # Should have a different format in the future, hence the code duplication
