@@ -250,14 +250,18 @@ class StorageExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'price', 'energy', 'transaction_id'}
+            assert set(arguments.keys()) == {
+                'price', 'energy', 'replace_existing', 'transaction_id'}
+
             arguments['buyer'] = self.device.name
             arguments['buyer_origin'] = self.device.name
         except Exception:
             self.redis.publish_json(
                 bid_response_channel,
                 {"command": "bid",
-                 "error": "Incorrect bid request. Available parameters: (price, energy).",
+                 "error": (
+                     "Incorrect bid request. Available parameters: " +
+                     "(price, energy, replace_existing)."),
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
@@ -270,6 +274,7 @@ class StorageExternalMixin(ExternalMixin):
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
+                replace_existing=arguments["replace_existing"],
                 buyer_origin=arguments["buyer_origin"]
             )
             self.state.offered_buy_kWh[self.next_market.time_slot] = \
