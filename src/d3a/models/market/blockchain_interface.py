@@ -31,7 +31,7 @@ if platform.python_implementation() != "PyPy" and \
     from d3a.models.market.blockchain_utils import create_market_contract, create_new_offer, \
         cancel_offer, trade_offer
     if ENABLE_SUBSTRATE:
-        from d3a.models.market.blockchain_utils import mnemonic, \
+        from d3a.blockchain.constants import mnemonic, \
             BOB_STASH_ADDRESS, ALICE_STASH_ADDRESS, \
             default_amount, default_call_module, default_call_function, \
             address_type, default_rate

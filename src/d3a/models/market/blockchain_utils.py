@@ -20,26 +20,10 @@ from logging import getLogger
 from d3a_interface.exceptions import D3AException
 from d3a.d3a_core.util import retry_function
 from d3a.blockchain.utils import unlock_account, wait_for_node_synchronization
+from d3a.blockchain.constants import BC_NUM_FACTOR
 from d3a_interface.utils import wait_until_timeout_blocking
 
 log = getLogger(__name__)
-
-
-BC_NUM_FACTOR = 10 ** 12
-BOB_STASH_ADDRESS = "5HpG9w8EBLe5XCrbczpwq5TSXvedjrBGCwqxK1iQ7qUsSWFc"
-ALICE_STASH_ADDRESS = "5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY"
-
-default_call_module = 'Tradestorage'
-default_call_function = 'store_trade_map'
-default_amount = {
-    'free': 1 * BC_NUM_FACTOR,
-    'reserved': 0,
-    'miscFrozen': 0,
-    'feeFrozen': 0
-}
-default_rate = 12
-address_type = 42
-mnemonic = "MNEMONIC_TO_RESTORE_YOUR_KEYPAIR"
 
 
 class InvalidBlockchainOffer(D3AException):
