@@ -458,15 +458,14 @@ class BidEnabledStrategy(BaseStrategy):
     def remove_existing_bids(self, market: Market) -> None:
         """Remove all existing bids in the market"""
 
-        with self.lock:
-            for bid in self.get_posted_bids(market):
-                assert bid.buyer == self.owner.name
-                if bid.id in market.bids.keys():
-                    bid = market.bids[bid.id]
+        for bid in self.get_posted_bids(market):
+            assert bid.buyer == self.owner.name
+            if bid.id in market.bids.keys():
+                bid = market.bids[bid.id]
 
-                self.remove_bid_from_pending(market.id, bid.id)
+            self.remove_bid_from_pending(market.id, bid.id)
 
-    def post_bid(self, market, price, energy, replace_existing=True, buyer_origin=None):
+    def post_bid(self, market, price, energy, replace_existing=False, buyer_origin=None):
         if replace_existing:
             self.remove_existing_bids(market)
 
