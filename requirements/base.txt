@@ -24,6 +24,7 @@ py-ed25519-bindings==0.1.2  # via substrate-interface
 py-sr25519-bindings==0.1.2  # via substrate-interface
 python-dateutil==2.8.1    # via pendulum
 python-rex==0.4           # via -r requirements/base.in
+pytz==2020.5              # via -r requirements/base.in
 pytzdata==2020.1          # via pendulum
 redis==3.5.3              # via -r requirements/base.in, rq
 regex==2020.11.13         # via awesome-slugify
