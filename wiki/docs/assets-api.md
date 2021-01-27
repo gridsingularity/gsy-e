@@ -41,7 +41,7 @@ python assets_api_template.py
 Backend simulations require modifications to the setup files to allow API connections. When you connect to the web application, the grid operator will make the necessary changes instead. This section is only relevant if you’re modifying your own setup files.
 
 #### Open Device for external connection
-In the setup file, a device must be designated as open to external connection via the API. This is controlled when setting up the simulation in the setup file by designating the ExternalStrategy for each relevant device:
+In the setup file, a device must be designated as open to external connection via the API. This is controlled when setting up the simulation in the setup file by designating the external strategy for each relevant device:
 ```python
 Area( 'house-1-s',
               [
