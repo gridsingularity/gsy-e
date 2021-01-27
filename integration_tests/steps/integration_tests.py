@@ -382,16 +382,6 @@ def past_markets_not_in_memory(context):
     constants.D3A_TEST_RUN = False
 
 
-@when('the reported cumulative grid trades are saved')
-def save_reported_cumulative_grid_trade_profile(context):
-    context.cumulative_grid_trades = deepcopy(
-        context.simulation.endpoint_buffer.cumulative_grid_trades.accumulated_trades)
-    context.cumulative_grid_trades_redis = \
-        deepcopy(context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades)
-    context.cumulative_grid_balancing_trades = deepcopy(
-        context.simulation.endpoint_buffer.cumulative_grid_trades.current_balancing_trades)
-
-
 @then('we test the export functionality of {scenario}')
 def test_export_data_csv(context, scenario):
     data_fn = "grid.csv"

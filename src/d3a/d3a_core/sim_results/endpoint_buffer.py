@@ -130,7 +130,7 @@ class SimulationEndpointBuffer:
             "unmatched_loads": self.market_unmatched_loads.unmatched_loads,
             "price_energy_day": self.price_energy_day.csv_output,
             "cumulative_grid_trades":
-                self.cumulative_grid_trades.current_trades,
+                self.cumulative_grid_trades.accumulated_trades,
             "bills": self.market_bills.bills_results,
             "cumulative_bills": self.cumulative_bills.cumulative_bills,
             "cumulative_market_fees": self.market_bills.cumulative_fee_charged_per_market,
