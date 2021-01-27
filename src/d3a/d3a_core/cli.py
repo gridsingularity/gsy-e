@@ -30,10 +30,9 @@ from pendulum import DateTime, today
 from d3a_interface.exceptions import D3AException
 from d3a.models.config import SimulationConfig
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.utils import iterate_over_all_modules
-from d3a import setup as d3a_setup
-from d3a.d3a_core.util import IntervalType, read_settings_from_file,\
-    update_advanced_settings, convert_str_to_pause_after_interval, DateType
+from d3a.d3a_core.util import IntervalType, read_settings_from_file, \
+    update_advanced_settings, convert_str_to_pause_after_interval,\
+    DateType, available_simulation_scenarios
 from d3a.d3a_core.simulation import run_simulation
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, DATE_FORMAT, TIME_FORMAT
 from d3a_interface.settings_validators import validate_global_settings
@@ -60,10 +59,7 @@ def main(log_level):
     root_logger.addHandler(handler)
 
 
-d3a_modules_path = d3a_setup.__path__ \
-        if ConstSettings.GeneralSettings.SETUP_FILE_PATH is None \
-        else [ConstSettings.GeneralSettings.SETUP_FILE_PATH]
-_setup_modules = iterate_over_all_modules(d3a_modules_path)
+_setup_modules = available_simulation_scenarios
 
 
 @main.command()

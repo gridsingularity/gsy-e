@@ -33,12 +33,13 @@ from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 
 import d3a.constants
+from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.exceptions import D3AException
 from d3a.constants import DATE_FORMAT, TIME_ZONE
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit
-from d3a_interface.utils import generate_market_slot_list_from_config, str_to_pendulum_datetime,\
-    format_datetime
+from d3a_interface.utils import generate_market_slot_list_from_config, iterate_over_all_modules,\
+    str_to_pendulum_datetime, format_datetime
 
 d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
@@ -254,6 +255,12 @@ def get_cached_joined_contract_source(contract_name):
     if contract_path not in _CONTRACT_CACHE:
         _CONTRACT_CACHE[contract_path] = ContractJoiner().join(contract_path)
     return _CONTRACT_CACHE[contract_path]
+
+
+d3a_modules_path = d3a_setup.__path__ \
+        if ConstSettings.GeneralSettings.SETUP_FILE_PATH is None \
+        else [ConstSettings.GeneralSettings.SETUP_FILE_PATH]
+available_simulation_scenarios = iterate_over_all_modules(d3a_modules_path)
 
 
 def parseboolstring(thestring):
