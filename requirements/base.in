@@ -13,4 +13,5 @@ plotly
 python-rex
 redis
 rq
+pytz
 sortedcontainers
