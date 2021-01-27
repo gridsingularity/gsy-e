@@ -29,12 +29,10 @@ from collections import OrderedDict
 from click.types import ParamType
 from pendulum import duration, from_format, datetime
 from rex import rex
-from pkgutil import walk_packages
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 
 import d3a.constants
-from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.exceptions import D3AException
 from d3a.constants import DATE_FORMAT, TIME_ZONE
@@ -256,22 +254,6 @@ def get_cached_joined_contract_source(contract_name):
     if contract_path not in _CONTRACT_CACHE:
         _CONTRACT_CACHE[contract_path] = ContractJoiner().join(contract_path)
     return _CONTRACT_CACHE[contract_path]
-
-
-def iterate_over_all_d3a_setup():
-    module_list = []
-    d3a_modules_path = d3a_setup.__path__ \
-        if ConstSettings.GeneralSettings.SETUP_FILE_PATH is None \
-        else [ConstSettings.GeneralSettings.SETUP_FILE_PATH]
-    for loader, module_name, is_pkg in walk_packages(d3a_modules_path):
-        if is_pkg:
-            loader.find_module(module_name).load_module(module_name)
-        else:
-            module_list.append(module_name)
-    return module_list
-
-
-available_simulation_scenarios = iterate_over_all_d3a_setup()
 
 
 def parseboolstring(thestring):
