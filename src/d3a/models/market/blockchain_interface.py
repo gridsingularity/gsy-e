@@ -99,7 +99,6 @@ class SubstrateBlockchainInterface(BlockChainInterface):
     def track_trade_event(self, trade):
 
         call_params = {
-            'id': 3,
             'buyer': ALICE_STASH_ADDRESS,
             'seller': BOB_STASH_ADDRESS,
             'amount': default_amount,
