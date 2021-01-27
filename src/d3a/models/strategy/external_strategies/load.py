@@ -158,21 +158,11 @@ class LoadExternalMixin(ExternalMixin):
                 self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0,
                 self.next_market)
 
-            if arguments['replace_existing']:
-                with self.lock:
-                    # Retrieve current bids so far (still waiting to be matched to offers)
-                    existing_bids = list(self.get_posted_bids(self.next_market))
-                    for bid in existing_bids:
-                        assert bid.buyer == self.owner.name
-                        if bid.id in self.next_market.bids.keys():
-                            bid = self.next_market.bids[bid.id]
-
-                        self.remove_bid_from_pending(self.next_market.id, bid.id)
-
             bid = self.post_bid(
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
+                replace_existing=arguments["replace_existing"],
                 buyer_origin=arguments["buyer_origin"]
             )
             self.redis.publish_json(

@@ -23,7 +23,9 @@ from uuid import uuid4
 
 from d3a.d3a_core.exceptions import SimulationException, D3AException
 from d3a.models.base import AreaBehaviorBase
-from d3a.models.market.market_structures import Offer, Bid
+from d3a.models.market import Market
+from d3a.models.market.market_structures import Offer, Bid, trade_from_JSON_string, \
+    offer_from_JSON_string
 from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 from d3a.d3a_core.device_registry import DeviceRegistry
@@ -31,7 +33,6 @@ from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, Market
 from d3a.events import EventMixin
 from d3a.d3a_core.exceptions import D3ARedisException
 from d3a.d3a_core.util import append_or_create_key
-from d3a.models.market.market_structures import trade_from_JSON_string, offer_from_JSON_string
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a import constants
@@ -454,7 +455,21 @@ class BidEnabledStrategy(BaseStrategy):
         self._bids = {}
         self._traded_bids = {}
 
-    def post_bid(self, market, price, energy, buyer_origin=None):
+    def remove_existing_bids(self, market: Market) -> None:
+        """Remove all existing bids in the market"""
+
+        with self.lock:
+            for bid in self.get_posted_bids(market):
+                assert bid.buyer == self.owner.name
+                if bid.id in market.bids.keys():
+                    bid = market.bids[bid.id]
+
+                self.remove_bid_from_pending(market.id, bid.id)
+
+    def post_bid(self, market, price, energy, replace_existing=True, buyer_origin=None):
+        if replace_existing:
+            self.remove_existing_bids(market)
+
         bid = market.bid(
             price,
             energy,
