@@ -349,8 +349,9 @@ class StorageExternalMixin(ExternalMixin):
             self.state.clamp_energy_to_sell_kWh([self.next_market.time_slot])
             self.state.clamp_energy_to_buy_kWh([self.next_market.time_slot])
 
-            while len(self.pending_requests) > 0:
-                req = self.pending_requests.pop()
+            while self.pending_requests:
+                # We want to process requests as First-In-First-Out, so we use popleft
+                req = self.pending_requests.popleft()
                 if req.request_type == "bid":
                     self._bid_impl(req.arguments, req.response_channel)
                 elif req.request_type == "delete_bid":

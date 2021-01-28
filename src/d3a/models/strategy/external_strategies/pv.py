@@ -18,6 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import logging
 import traceback
+from collections import deque
+
 from pendulum import duration
 
 from d3a.d3a_core.exceptions import MarketException
@@ -223,8 +225,9 @@ class PVExternalMixin(ExternalMixin):
         if not self.connected and not self.is_aggregator_controlled:
             super().event_tick()
         else:
-            while len(self.pending_requests) > 0:
-                req = self.pending_requests.pop()
+            while self.pending_requests:
+                # We want to process requests as First-In-First-Out, so we use popleft
+                req = self.pending_requests.popleft()
                 self._incoming_commands_callback_selection(req)
         self._dispatch_event_tick_to_external_agent()
 
@@ -406,8 +409,10 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
             if req.request_type == "set_energy_forecast":
                 self._set_energy_forecast_impl(req.arguments, req.response_channel)
 
-        self.pending_requests = [req for req in self.pending_requests
-                                 if req.request_type not in "set_energy_forecast"]
+        self.pending_requests = deque(
+            req for req in self.pending_requests
+            if req.request_type not in "set_energy_forecast")
+
         super().event_tick()
 
     def _incoming_commands_callback_selection(self, req):
