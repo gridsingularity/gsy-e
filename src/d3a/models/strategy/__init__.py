@@ -455,7 +455,7 @@ class BidEnabledStrategy(BaseStrategy):
         self._bids = {}
         self._traded_bids = {}
 
-    def remove_existing_bids(self, market: Market) -> None:
+    def _remove_existing_bids(self, market: Market) -> None:
         """Remove all existing bids in the market"""
 
         for bid in self.get_posted_bids(market):
@@ -467,7 +467,7 @@ class BidEnabledStrategy(BaseStrategy):
 
     def post_bid(self, market, price, energy, replace_existing=False, buyer_origin=None):
         if replace_existing:
-            self.remove_existing_bids(market)
+            self._remove_existing_bids(market)
 
         bid = market.bid(
             price,
