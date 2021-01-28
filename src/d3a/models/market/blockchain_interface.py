@@ -19,24 +19,21 @@ import uuid
 from d3a.events.event_structures import MarketEvent
 from d3a.d3a_core.exceptions import InvalidTrade
 from d3a.blockchain import ENABLE_SUBSTRATE, BlockChainInterface
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 import platform
 import logging
 
 logger = logging.getLogger()
 
 
-if platform.python_implementation() != "PyPy" and \
-        ConstSettings.BlockchainSettings.BC_INSTALLED is True:
-    from d3a.models.market.blockchain_utils import create_market_contract, create_new_offer, \
+if platform.python_implementation() != "PyPy" and ENABLE_SUBSTRATE:
+    from d3a.blockchain.constants import mnemonic, \
+        BOB_STASH_ADDRESS, ALICE_STASH_ADDRESS, \
+        default_amount, default_call_module, default_call_function, \
+        address_type, default_rate
+    from d3a.models.market.blockchain_utils import create_new_offer, \
         cancel_offer, trade_offer
-    if ENABLE_SUBSTRATE:
-        from d3a.blockchain.constants import mnemonic, \
-            BOB_STASH_ADDRESS, ALICE_STASH_ADDRESS, \
-            default_amount, default_call_module, default_call_function, \
-            address_type, default_rate
-        from substrateinterface import Keypair  # NOQA
-        from substrateinterface.exceptions import SubstrateRequestException
+    from substrateinterface import Keypair  # NOQA
+    from substrateinterface.exceptions import SubstrateRequestException
 
 BC_EVENT_MAP = {
     b"NewOffer": MarketEvent.OFFER,
@@ -134,15 +131,12 @@ class MarketBlockchainInterface:
         self._trades_by_id = {}
 
         self.bc_interface = bc
-        self.bc_contract = create_market_contract(bc,
-                                                  GlobalConfig.sim_duration.in_seconds(),
-                                                  [self.bc_listener])
 
     def create_new_offer(self, energy, price, seller):
-        return create_new_offer(self.bc_interface, self.bc_contract, energy, price, seller)
+        return create_new_offer(energy, price, seller)
 
     def cancel_offer(self, offer):
-        cancel_offer(self.bc_interface, self.bc_contract, offer)
+        cancel_offer(offer)
         # Hold on to deleted offer until bc event is processed
         self.offers_deleted[offer.id] = offer
 
@@ -151,7 +145,7 @@ class MarketBlockchainInterface:
 
     def handle_blockchain_trade_event(self, offer, buyer, original_offer, residual_offer):
         trade_id, new_offer_id = trade_offer(
-            self.bc_interface, self.bc_contract, offer.real_id, offer.energy, buyer
+            offer.real_id, offer.energy, buyer
         )
 
         if residual_offer is not None:
