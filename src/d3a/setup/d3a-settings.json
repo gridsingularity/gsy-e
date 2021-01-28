@@ -194,12 +194,6 @@
         "ALT_PRICING_MARKET_MAKER_NAME": "AGENT"
       }
     },
-    "BlockchainSettings": {
-      "BC_INSTALLED": true,
-      "URL": "http://127.0.0.1:8545",
-      "START_LOCAL_CHAIN": true,
-      "TIMEOUT": 30
-    },
     "BalancingSettings": {
       "ENABLE_BALANCING_MARKET": false,
       "SPOT_TRADE_RATIO": 0.2,
