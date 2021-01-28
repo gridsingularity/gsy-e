@@ -15,13 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
+from typing import cast
+from unittest.mock import call, MagicMock
+
 import pytest
-from unittest.mock import MagicMock
 import pendulum
 
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
+from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer, Trade, Bid
 from d3a_interface.constants_limits import ConstSettings
 
@@ -317,3 +321,40 @@ def test_can_bid_be_posted(base):
     assert base.can_bid_be_posted(9.999, 1, 70, market) is True
     assert base.can_bid_be_posted(10.0, 1, 70, market) is True
     assert base.can_bid_be_posted(10.001, 1, 70, market) is False
+
+
+def test_post_bid_with_replace_existing(base):
+    """Calling post_bid with replace_existing=True triggers the removal of the existing bids."""
+
+    market = FakeMarket(raises=True)
+    base.remove_existing_bids = MagicMock()
+    base.post_bid(market, 1, 23, replace_existing=True)
+
+    base.remove_existing_bids.assert_called_once_with(market)
+
+
+def test_post_bid_without_replace_existing(base):
+    """Calling post_bid with replace_existing=False does not trigger the removal of the existing
+    bids.
+    """
+    market = FakeMarket(raises=True)
+    base.remove_existing_bids = MagicMock()
+    base.post_bid(market, 1, 23, replace_existing=False)
+
+    base.remove_existing_bids.assert_not_called()
+
+
+def test_remove_existing_bids(base):
+    market = FakeMarket(raises=True)
+    # Pretend that the mock is a Market class. This is done to avoid type warnings
+    market = cast(Market, market)
+    base.remove_bid_from_pending = MagicMock()
+
+    bid_1 = base.post_bid(market, 10, 5)
+    bid_2 = base.post_bid(market, 12, 6)
+
+    base.remove_existing_bids(market)
+
+    base.remove_bid_from_pending.assert_has_calls([
+        call('11', bid_1.id),
+        call('11', bid_2.id)])
