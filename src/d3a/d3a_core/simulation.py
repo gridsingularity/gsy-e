@@ -552,11 +552,14 @@ class Simulation:
             if self.slot_length_realtime else 0
         }
 
-    @classmethod
-    def _restore_area_state(cls, area, saved_area_state):
-        area.restore_state(saved_area_state[area.uuid])
+    def _restore_area_state(self, area, saved_area_state):
+        if area.uuid not in saved_area_state:
+            log.warning(f"Area {area.uuid} is not part of the saved state. State not restored. "
+                        f"Simulation id: {self._simulation_id}")
+        else:
+            area.restore_state(saved_area_state[area.uuid])
         for child in area.children:
-            cls._restore_area_state(child, saved_area_state)
+            self._restore_area_state(child, saved_area_state)
 
     def restore_area_state(self, saved_area_state):
         self._restore_area_state(self.area, saved_area_state)
