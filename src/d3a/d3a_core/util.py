@@ -29,7 +29,6 @@ from collections import OrderedDict
 from click.types import ParamType
 from pendulum import duration, from_format, datetime
 from rex import rex
-from pkgutil import walk_packages
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 
@@ -39,8 +38,8 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.exceptions import D3AException
 from d3a.constants import DATE_FORMAT, TIME_ZONE
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit
-from d3a_interface.utils import generate_market_slot_list_from_config, str_to_pendulum_datetime,\
-    format_datetime
+from d3a_interface.utils import generate_market_slot_list_from_config, iterate_over_all_modules,\
+    str_to_pendulum_datetime, format_datetime
 
 d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
@@ -258,20 +257,10 @@ def get_cached_joined_contract_source(contract_name):
     return _CONTRACT_CACHE[contract_path]
 
 
-def iterate_over_all_d3a_setup():
-    module_list = []
-    d3a_modules_path = d3a_setup.__path__ \
+d3a_modules_path = d3a_setup.__path__ \
         if ConstSettings.GeneralSettings.SETUP_FILE_PATH is None \
         else [ConstSettings.GeneralSettings.SETUP_FILE_PATH]
-    for loader, module_name, is_pkg in walk_packages(d3a_modules_path):
-        if is_pkg:
-            loader.find_module(module_name).load_module(module_name)
-        else:
-            module_list.append(module_name)
-    return module_list
-
-
-available_simulation_scenarios = iterate_over_all_d3a_setup()
+available_simulation_scenarios = iterate_over_all_modules(d3a_modules_path)
 
 
 def parseboolstring(thestring):
