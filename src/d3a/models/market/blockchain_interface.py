@@ -18,11 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import uuid
 from d3a.events.event_structures import MarketEvent
 from d3a.d3a_core.exceptions import InvalidTrade
-from d3a.blockchain import ENABLE_SUBSTRATE
+from d3a.blockchain import ENABLE_SUBSTRATE, BlockChainInterface
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from pathlib import Path
 import platform
-import random
 import logging
 
 logger = logging.getLogger()
@@ -32,13 +30,13 @@ if platform.python_implementation() != "PyPy" and \
         ConstSettings.BlockchainSettings.BC_INSTALLED is True:
     from d3a.models.market.blockchain_utils import create_market_contract, create_new_offer, \
         cancel_offer, trade_offer
-    if ENABLE_SUBSTRATE is True:
-        from d3a.models.market.blockchain_utils import get_function_metadata, \
-            address_to_hex, swap_byte_order, BOB_ADDRESS, ALICE_ADDRESS, \
-            test_value, test_rate, main_address, mnemonic, hex2, endowment, \
-            parse_metadata_constructors, get_contract_code_hash, gas_limit, address_type
-        from substrateinterface import SubstrateRequestException, Keypair, ss58_decode  # NOQA
-
+    if ENABLE_SUBSTRATE:
+        from d3a.blockchain.constants import mnemonic, \
+            BOB_STASH_ADDRESS, ALICE_STASH_ADDRESS, \
+            default_amount, default_call_module, default_call_function, \
+            address_type, default_rate
+        from substrateinterface import Keypair  # NOQA
+        from substrateinterface.exceptions import SubstrateRequestException
 
 BC_EVENT_MAP = {
     b"NewOffer": MarketEvent.OFFER,
@@ -71,120 +69,20 @@ class NonBlockchainInterface:
         pass
 
 
-class SubstrateBlockchainInterface:
-    def __init__(self, bc):
-        self.contracts = {'main': main_address}
-        self.substrate = bc
+class SubstrateBlockchainInterface(BlockChainInterface):
+    def __init__(self):
+        super().__init__()
 
     def load_keypair(mnemonic):
         return Keypair.create_from_mnemonic(mnemonic, address_type=address_type)
 
-    def upload_contract(self, path_to_wasm, path_to_metadata, keypair):
-        with open(Path(path_to_wasm), 'rb') as wasm:
-            code_bytes = wasm.read()
-
-        code_hash = get_contract_code_hash(path_to_metadata)
-
+    def compose_call(self, call_module, call_function, call_params):
         call = self.substrate.compose_call(
-            call_module='Contracts',
-            call_function='put_code',
-            call_params={
-                'code': '0x{}'.format(code_bytes.hex())
-            }
-        )
-
-        extrinsic = self.substrate.create_signed_extrinsic(call=call, keypair=keypair)
-
-        try:
-            result = self.substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
-
-            extrinsic_hash = result['extrinsic_hash']
-            block_hash = result['block_hash']
-
-            events = self.substrate.get_runtime_events(block_hash)
-
-            for event in events['result']:
-                if event['event_id'] == 'CodeStored':
-                    event_code_hash = events['result'][1]['params'][0]['value']
-
-                    # verify that the uploaded contract hash matches the local hash
-                    assert event_code_hash == code_hash
-
-            logging.info('Contract uploaded, extrinsic hash: {} in block {}'.format(
-                extrinsic_hash, block_hash
-            ))
-
-            return extrinsic_hash, block_hash
-
-        except SubstrateRequestException as e:
-            logging.info("Failed to send: {}".format(e))
-
-    def deploy_contract(self, code_hash, path_to_metadata, constructor_name, keypair):
-        constructor_bytes = parse_metadata_constructors(path_to_metadata)
-        data = constructor_bytes[constructor_name]
-        salt = hex2(self.substrate.get_account_nonce(keypair.ss58_address))
-        call = self.substrate.compose_call(
-            call_module='Contracts',
-            call_function='instantiate',
-            call_params={
-                'endowment': endowment,
-                'gas_limit': gas_limit,
-                'code_hash': code_hash,
-                'data': data,
-                'salt': salt
-            }
-        )
-
-        extrinsic = self.substrate.create_signed_extrinsic(call=call, keypair=keypair)
-
-        try:
-            result = self.substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
-
-            logging.info('Extrinsic hash: {} in block {}'.format(
-                result['extrinsic_hash'], result['block_hash']
-            ))
-
-            # Get contract address
-            events = self.substrate.get_runtime_events(result['block_hash'])
-            logging.info('Events', events)
-
-            for event in events['result']:
-                if event['event_id'] == 'Instantiated':
-                    contract_address = event['params'][1]['value']
-                    logging.info("Contract address: {}".format(
-                        self.substrate.ss58_encode(contract_address)
-                        ))
-            return contract_address
-
-        except SubstrateRequestException as e:
-            logging.info("Failed to send: {}".format(e))
-
-    def compose_call(self, data, contract_address):
-        call = self.substrate.compose_call(
-            call_module='Contracts',
-            call_function='call',
-            call_params={
-                'dest': contract_address,
-                'value': test_value,
-                'gas_limit': gas_limit,
-                'data': data
-            }
+            call_module=call_module,
+            call_function=call_function,
+            call_params=call_params
         )
         return call
-
-    def simple_contract_call(self, contract_address, function, path):
-        data = get_function_metadata(function, path)
-        call = self.compose_call(data, contract_address)
-        return call
-
-    def storage_contract_call(self, contract_address, function, path):
-        trade_id = random.randint(10, 32)
-        logger.info('TRADE ID {}'.format(trade_id))
-        data = get_function_metadata(function, path) + hex2(trade_id) + \
-            address_to_hex(ALICE_ADDRESS) + address_to_hex(BOB_ADDRESS) + \
-            swap_byte_order(hex2(test_value)) + '000000000000000000' + hex2(test_rate)
-        call = self.compose_call(data, contract_address)
-        return trade_id, call
 
     def create_new_offer(self, energy, price, seller):
         return str(uuid.uuid4())
@@ -199,12 +97,21 @@ class SubstrateBlockchainInterface:
         return str(uuid.uuid4()), residual_offer
 
     def track_trade_event(self, trade):
-        path = Path.cwd().joinpath('src', 'd3a', 'models', 'market', 'metadata.json')
-        trade_id, call = self.storage_contract_call(
-            self.contracts['main'],
-            "trade",
-            str(path)
+
+        call_params = {
+            'trade_id': trade.id,
+            'buyer': ALICE_STASH_ADDRESS,
+            'seller': BOB_STASH_ADDRESS,
+            'amount': default_amount,
+            'rate': default_rate
+        }
+
+        call = self.substrate.compose_call(
+            default_call_module,
+            default_call_function,
+            call_params
         )
+
         keypair = Keypair.create_from_mnemonic(mnemonic)
         extrinsic = self.substrate.create_signed_extrinsic(call=call, keypair=keypair)
 
