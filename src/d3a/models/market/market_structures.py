@@ -110,15 +110,19 @@ def offer_from_JSON_string(offer_string, current_time):
     return offer
 
 
-class Bid(namedtuple('Bid', ('id', 'time', 'price', 'energy', 'buyer',
-                             'original_bid_price', 'buyer_origin', 'energy_rate'))):
+class Bid(namedtuple('Bid', (
+        'id', 'time', 'price', 'energy', 'buyer', 'original_bid_price', 'buyer_origin',
+        'energy_rate', 'replace_existing'))):
+
     def __new__(cls, id, time, price, energy, buyer, original_bid_price=None,
-                buyer_origin=None, energy_rate=None):
+                buyer_origin=None, energy_rate=None, replace_existing=False):
         if energy_rate is None:
             energy_rate = price / energy
         # overridden to give the residual field a default value
-        return super(Bid, cls).__new__(cls, str(id), time, price, energy, buyer,
-                                       original_bid_price, buyer_origin, energy_rate)
+
+        return super(Bid, cls).__new__(
+            cls, str(id), time, price, energy, buyer, original_bid_price, buyer_origin,
+            energy_rate, replace_existing)
 
     def __repr__(self):
         return (
