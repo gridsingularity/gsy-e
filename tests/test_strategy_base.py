@@ -309,9 +309,6 @@ def test_can_offer_be_posted(base):
 
 
 def test_can_bid_be_posted(base):
-    base = BidEnabledStrategy()
-    base.owner = FakeOwner()
-    base.area = FakeArea()
     market = FakeMarket(raises=True)
     base.area._market = market
     base.post_bid(market, 1, 23)
