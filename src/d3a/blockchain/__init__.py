@@ -18,9 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import platform
 from d3a_interface.constants_limits import ConstSettings
+from d3a.blockchain.constants import ENABLE_SUBSTRATE
 
-
-ENABLE_SUBSTRATE = False
 
 if platform.python_implementation() != "PyPy" and \
         ConstSettings.BlockchainSettings.BC_INSTALLED is True and \
