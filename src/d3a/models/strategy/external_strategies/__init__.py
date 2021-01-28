@@ -242,7 +242,7 @@ class ExternalMixin:
             return
 
         if ConstSettings.IAASettings.MARKET_TYPE != 1 and \
-                trade.buyer == self.device.name and \
+                trade.seller == self.device.name and \
                 isinstance(trade.offer, Offer):
             # Do not track a 2-sided market trade that is originating from an Offer to a
             # consumer (which should have posted a bid). This occurs when the clearing
