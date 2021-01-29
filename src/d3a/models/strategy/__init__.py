@@ -474,8 +474,7 @@ class BidEnabledStrategy(BaseStrategy):
             energy,
             self.owner.name,
             original_bid_price=price,
-            buyer_origin=buyer_origin,
-            replace_existing=replace_existing)
+            buyer_origin=buyer_origin)
 
         self.add_bid_to_posted(market.id, bid)
         return bid

@@ -112,17 +112,17 @@ def offer_from_JSON_string(offer_string, current_time):
 
 class Bid(namedtuple('Bid', (
         'id', 'time', 'price', 'energy', 'buyer', 'original_bid_price', 'buyer_origin',
-        'energy_rate', 'replace_existing'))):
+        'energy_rate'))):
 
     def __new__(cls, id, time, price, energy, buyer, original_bid_price=None,
-                buyer_origin=None, energy_rate=None, replace_existing=False):
+                buyer_origin=None, energy_rate=None):
         if energy_rate is None:
             energy_rate = price / energy
         # overridden to give the residual field a default value
 
         return super(Bid, cls).__new__(
             cls, str(id), time, price, energy, buyer, original_bid_price, buyer_origin,
-            energy_rate, replace_existing)
+            energy_rate)
 
     def __repr__(self):
         return (
@@ -144,9 +144,18 @@ class Bid(namedtuple('Bid', (
         rate = round(self.energy_rate, 4)
         return rate, self.energy, self.price, self.buyer
 
-    def to_JSON_string(self):
+    def to_JSON_string(self, **kwargs):
+        """Convert the Bid object to its JSON representation. Additional elements can be added.
+
+        Args:
+            **kwargs: additional key-value pairs to be added to the JSON representation.
+        """
         bid_dict = self._asdict()
+        if kwargs:
+            bid_dict = {**bid_dict, **kwargs}
+
         bid_dict["type"] = "Bid"
+
         return json.dumps(bid_dict, default=my_converter)
 
     def serializable_dict(self):

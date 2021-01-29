@@ -162,13 +162,14 @@ class LoadExternalMixin(ExternalMixin):
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
-                replace_existing=arguments["replace_existing"],
-                buyer_origin=arguments["buyer_origin"]
-            )
+                replace_existing=arguments['replace_existing'],
+                buyer_origin=arguments["buyer_origin"])
+
             self.redis.publish_json(
-                bid_response_channel,
-                {"command": "bid", "status": "ready", "bid": bid.to_JSON_string(),
-                 "transaction_id": arguments.get("transaction_id", None)})
+                bid_response_channel, {
+                    "command": "bid", "status": "ready",
+                    "bid": bid.to_JSON_string(replace_existing=arguments['replace_existing']),
+                    "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling bid create on area {self.device.name}: "
                           f"Exception: {str(e)}, Bid Arguments: {arguments}")

@@ -96,10 +96,9 @@ class FakeMarket:
             return Trade('trade', 0, offer, offer.seller, 'FakeOwner',
                          seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
 
-    def bid(self, price, energy, buyer, original_bid_price=None, buyer_origin=None,
-            replace_existing=False):
+    def bid(self, price, energy, buyer, original_bid_price=None, buyer_origin=None):
         return Bid(123, pendulum.now(), price, energy, buyer, original_bid_price,
-                   buyer_origin=buyer_origin, replace_existing=replace_existing)
+                   buyer_origin=buyer_origin)
 
 
 @pytest.fixture

@@ -274,16 +274,17 @@ class StorageExternalMixin(ExternalMixin):
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
-                replace_existing=arguments["replace_existing"],
+                replace_existing=arguments['replace_existing'],
                 buyer_origin=arguments["buyer_origin"]
             )
             self.state.offered_buy_kWh[self.next_market.time_slot] = \
                 self.posted_bid_energy(self.next_market.id)
             self.state.clamp_energy_to_buy_kWh([self.next_market.time_slot])
             self.redis.publish_json(
-                bid_response_channel,
-                {"command": "bid", "status": "ready", "bid": bid.to_JSON_string(),
-                 "transaction_id": arguments.get("transaction_id", None)})
+                bid_response_channel, {
+                    "command": "bid", "status": "ready",
+                    "bid": bid.to_JSON_string(replace_existing=arguments['replace_existing']),
+                    "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling bid create on area {self.device.name}: "
                           f"Exception: {str(e)}, Bid Arguments: {arguments}")

@@ -63,8 +63,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, buyer_origin,
-            bid_id: str = None, original_bid_price=None, replace_existing=False,
-            adapt_price_with_fees=True, add_to_history=True) -> Bid:
+            bid_id: str = None, original_bid_price=None, adapt_price_with_fees=True,
+            add_to_history=True) -> Bid:
 
         if energy <= 0:
             raise InvalidBid()
@@ -80,8 +80,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
         bid = Bid(
             str(uuid.uuid4()) if bid_id is None else bid_id,
-            self.now, price, energy, buyer, original_bid_price, buyer_origin,
-            replace_existing=replace_existing)
+            self.now, price, energy, buyer, original_bid_price, buyer_origin)
 
         self.bids[bid.id] = bid
         if add_to_history is True:
