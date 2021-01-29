@@ -15,8 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.d3a_core.util import available_simulation_scenarios, \
-    validate_const_settings_for_simulation
+from d3a.d3a_core.cli import available_simulation_scenarios
+from d3a.d3a_core.util import validate_const_settings_for_simulation
 from d3a_interface.constants_limits import ConstSettings
 from d3a import setup as d3a_setup
 import os
