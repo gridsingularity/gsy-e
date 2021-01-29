@@ -83,6 +83,11 @@ def unregister_area(redis, channel_prefix, is_connected, transaction_id):
 
 
 class ExternalMixin:
+    # Parameters exposed to external clients
+    ALLOWED_PUBLIC_PARAMETERS = set(['price', 'energy', 'replace_existing'])
+    # Complete set of parameters (including private ones)
+    ALLOWED_PARAMETERS = ALLOWED_PUBLIC_PARAMETERS.union({'transaction_id'})
+
     def __init__(self, *args, **kwargs):
         self._connected = False
         self.connected = False

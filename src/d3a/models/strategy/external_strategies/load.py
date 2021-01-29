@@ -134,18 +134,17 @@ class LoadExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {
-                'price', 'energy', 'replace_existing', 'transaction_id'}
+            assert all(arg in self.ALLOWED_PARAMETERS for arg in arguments.keys())
+
             arguments['buyer_origin'] = self.device.name
         except Exception:
             self.redis.publish_json(
                 bid_response_channel,
                 {"command": "bid",
                  "error": (
-                    "Incorrect bid request. Available parameters: " +
-                    "(price, energy, replace_existing)."),
-                 "transaction_id": transaction_id}
-            )
+                     "Incorrect offer request. "
+                     f"Available parameters: {self.ALLOWED_PUBLIC_PARAMETERS}."),
+                 "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
                 IncomingRequest("bid", arguments, bid_response_channel))
@@ -158,17 +157,18 @@ class LoadExternalMixin(ExternalMixin):
                 self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0,
                 self.next_market)
 
+            replace_existing = arguments.get('replace_existing', True)
             bid = self.post_bid(
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
-                replace_existing=arguments['replace_existing'],
+                replace_existing=replace_existing,
                 buyer_origin=arguments["buyer_origin"])
 
             self.redis.publish_json(
                 bid_response_channel, {
                     "command": "bid", "status": "ready",
-                    "bid": bid.to_JSON_string(replace_existing=arguments['replace_existing']),
+                    "bid": bid.to_JSON_string(replace_existing=replace_existing),
                     "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling bid create on area {self.device.name}: "
