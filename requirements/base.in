@@ -15,3 +15,4 @@ redis
 rq
 pytz
 sortedcontainers
+substrate-interface

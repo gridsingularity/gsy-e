@@ -49,11 +49,12 @@ from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
 from d3a.d3a_core.global_objects import GlobalObjects
+from d3a.blockchain.constants import ENABLE_SUBSTRATE
 import d3a.constants
 
 
 if platform.python_implementation() != "PyPy" and \
-        ConstSettings.BlockchainSettings.BC_INSTALLED is True:
+        ENABLE_SUBSTRATE:
     from d3a.blockchain import BlockChainInterface
 
 log = getLogger(__name__)
