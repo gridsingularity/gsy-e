@@ -5,12 +5,14 @@ from unittest.mock import MagicMock
 from parameterized import parameterized
 from pendulum import now, Duration
 from d3a.models.area import Area
+from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
 import d3a.models.strategy.external_strategies
-from d3a.models.market.market_structures import Trade, Offer
+from d3a.models.market.market_structures import Trade, Offer, Bid
 from d3a_interface.constants_limits import GlobalConfig
+from d3a_interface.constants_limits import ConstSettings
 
 d3a.models.strategy.external_strategies.ResettableCommunicator = MagicMock
 
@@ -29,6 +31,9 @@ class TestExternalMixin(unittest.TestCase):
         market.time_slot = GlobalConfig.start_date
         parent.get_future_market_from_id = lambda _: market
         self.area.get_future_market_from_id = lambda _: market
+
+    def tearDown(self) -> None:
+        ConstSettings.IAASettings.MARKET_TYPE = 1
 
     def test_dispatch_tick_frequency_gets_calculated_correctly(self):
         self.external_strategy = LoadHoursExternalStrategy(100)
@@ -120,6 +125,51 @@ class TestExternalMixin(unittest.TestCase):
         assert call_args['seller'] == trade.seller
         assert call_args['buyer'] == "anonymous"
         assert call_args['device_info'] == strategy._device_info_dict
+
+    @parameterized.expand([
+        [LoadHoursExternalStrategy(100)],
+        [PVExternalStrategy(2, max_panel_power_W=160)],
+        [StorageExternalStrategy()]
+    ])
+    def test_skip_dispatch_double_event_trade_to_external_agent_two_sided_market(self, strategy):
+        ConstSettings.IAASettings.MARKET_TYPE = 2
+        strategy._track_energy_sell_type = lambda _: None
+        self._create_and_activate_strategy_area(strategy)
+        market = self.area.get_future_market_from_id(1)
+        self.area._markets.markets = {1: market}
+        strategy.state._available_energy_kWh = {market.time_slot: 1000.0}
+        strategy.state.pledged_sell_kWh = {market.time_slot: 0.0}
+        strategy.state.offered_sell_kWh = {market.time_slot: 0.0}
+        current_time = now()
+        if isinstance(strategy, BidEnabledStrategy):
+            bid = Bid('offer_id', now(), 20, 1.0, 'test_area')
+            strategy.add_bid_to_posted(market.id, bid)
+            skipped_trade = \
+                Trade('id', current_time, bid, 'test_area', 'parent_area', fee_price=0.23)
+
+            strategy.event_trade(market_id=market.id, trade=skipped_trade)
+            call_args = strategy.redis.publish_json.call_args_list
+            assert call_args == []
+
+            published_trade = \
+                Trade('id', current_time, bid, 'parent_area', 'test_area', fee_price=0.23)
+            strategy.event_trade(market_id=market.id, trade=published_trade)
+            assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/events/trade"
+        else:
+            offer = Offer('offer_id', now(), 20, 1.0, 'test_area')
+            strategy.offers.post(offer, market.id)
+            skipped_trade = \
+                Trade('id', current_time, offer, 'parent_area', 'test_area', fee_price=0.23)
+            strategy.offers.sold_offer(offer, market.id)
+
+            strategy.event_trade(market_id=market.id, trade=skipped_trade)
+            call_args = strategy.redis.publish_json.call_args_list
+            assert call_args == []
+
+            published_trade =\
+                Trade('id', current_time, offer, 'test_area', 'parent_area', fee_price=0.23)
+            strategy.event_trade(market_id=market.id, trade=published_trade)
+            assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/events/trade"
 
     def test_device_info_dict_for_load_strategy_reports_required_energy(self):
         strategy = LoadHoursExternalStrategy(100)
