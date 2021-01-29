@@ -135,7 +135,8 @@ class StorageExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'price', 'energy', 'transaction_id'}
+            assert all(arg in self.ALLOWED_PARAMETERS for arg in arguments.keys())
+
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
         except Exception as e:
@@ -143,7 +144,9 @@ class StorageExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 offer_response_channel,
                 {"command": "offer",
-                 "error": "Incorrect offer request. Available parameters: (price, energy).",
+                 "error": (
+                     "Incorrect offer request. "
+                     f"Available parameters: {self.ALLOWED_PUBLIC_PARAMETERS}."),
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
