@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import uuid
 from d3a.events.event_structures import MarketEvent
 from d3a.d3a_core.exceptions import InvalidTrade
+from d3a.d3a_core.util import retry_function
 from d3a.blockchain import ENABLE_SUBSTRATE, BlockChainInterface
 import platform
 import logging
@@ -93,6 +94,7 @@ class SubstrateBlockchainInterface(BlockChainInterface):
     def handle_blockchain_trade_event(self, offer, buyer, original_offer, residual_offer):
         return str(uuid.uuid4()), residual_offer
 
+    @retry_function(max_retries=3)
     def track_trade_event(self, trade):
 
         call_params = {
