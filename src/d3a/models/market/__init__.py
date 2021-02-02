@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import uuid
-import sys
 from logging import getLogger
 from typing import Dict, List  # noqa
 from numpy.random import random
@@ -88,10 +87,10 @@ class Market:
         self.market_fee = 0
         # Store trades temporarily until bc event has fired
         self.traded_energy = {}
-        self.min_trade_price = sys.maxsize
+        self.min_trade_price = None
         self._avg_trade_price = None
         self.max_trade_price = 0
-        self.min_offer_price = sys.maxsize
+        self.min_offer_price = None
         self._avg_offer_price = None
         self.max_offer_price = 0
         self.accumulated_trade_price = 0
@@ -171,7 +170,8 @@ class Market:
 
     def _update_min_max_avg_trade_prices(self, price):
         self.max_trade_price = round(max(self.max_trade_price, price), 4)
-        self.min_trade_price = round(min(self.min_trade_price, price), 4)
+        self.min_trade_price = round(min(self.min_trade_price, price), 4) if self.min_trade_price \
+            else round(price, 4)
         self._avg_trade_price = None
         self._avg_offer_price = None
 
