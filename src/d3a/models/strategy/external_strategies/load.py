@@ -134,7 +134,7 @@ class LoadExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert all(arg in self.ALLOWED_PARAMETERS for arg in arguments.keys())
+            assert all(arg in {'price', 'energy', 'replace_existing'} for arg in arguments.keys())
 
             arguments['buyer_origin'] = self.device.name
         except Exception:
@@ -143,7 +143,7 @@ class LoadExternalMixin(ExternalMixin):
                 {"command": "bid",
                  "error": (
                      "Incorrect offer request. "
-                     f"Available parameters: {self.ALLOWED_PUBLIC_PARAMETERS}."),
+                     f"Available parameters: {'price', 'energy', 'replace_existing'}."),
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(

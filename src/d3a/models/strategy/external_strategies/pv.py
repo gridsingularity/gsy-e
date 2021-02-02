@@ -131,7 +131,7 @@ class PVExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert all(arg in self.ALLOWED_PARAMETERS for arg in arguments.keys())
+            assert all(arg in {'price', 'energy', 'replace_existing'} for arg in arguments.keys())
 
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
@@ -142,7 +142,7 @@ class PVExternalMixin(ExternalMixin):
                 {"command": "offer",
                  "error": (
                      "Incorrect offer request. "
-                     f"Available parameters: {self.ALLOWED_PUBLIC_PARAMETERS}."),
+                     f"Available parameters: {'price', 'energy', 'replace_existing'}."),
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
