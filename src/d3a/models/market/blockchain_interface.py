@@ -28,8 +28,8 @@ logger = logging.getLogger()
 if platform.python_implementation() != "PyPy" and ENABLE_SUBSTRATE:
     from d3a.blockchain.constants import mnemonic, \
         BOB_STASH_ADDRESS, ALICE_STASH_ADDRESS, \
-        default_amount, default_call_module, default_call_function, \
-        address_type, default_rate
+        default_call_module, default_call_function, \
+        address_type, BC_NUM_FACTOR
     from d3a.models.market.blockchain_utils import create_new_offer, \
         cancel_offer, trade_offer
     from substrateinterface import Keypair  # NOQA
@@ -99,8 +99,13 @@ class SubstrateBlockchainInterface(BlockChainInterface):
             'trade_id': trade.id,
             'buyer': ALICE_STASH_ADDRESS,
             'seller': BOB_STASH_ADDRESS,
-            'amount': default_amount,
-            'rate': default_rate
+            'amount': {
+                'free': trade.offer.energy * BC_NUM_FACTOR,
+                'reserved': 0,
+                'miscFrozen': 0,
+                'feeFrozen': 0
+            },
+            'rate': trade.offer.energy_rate
         }
 
         call = self.substrate.compose_call(
