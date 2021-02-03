@@ -135,7 +135,9 @@ class StorageExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert all(arg in {'price', 'energy', 'replace_existing'} for arg in arguments.keys())
+            assert all(
+                arg in {'price', 'energy', 'replace_existing', 'transaction_id'}
+                for arg in arguments.keys())
 
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
@@ -253,7 +255,9 @@ class StorageExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert all(arg in {'price', 'energy', 'replace_existing'} for arg in arguments.keys())
+            assert all(
+                arg in {'price', 'energy', 'replace_existing', 'transaction_id'}
+                for arg in arguments.keys())
 
             arguments['buyer'] = self.device.name
             arguments['buyer_origin'] = self.device.name

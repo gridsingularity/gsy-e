@@ -134,7 +134,9 @@ class LoadExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert all(arg in {'price', 'energy', 'replace_existing'} for arg in arguments.keys())
+            assert all(
+                arg in {'price', 'energy', 'replace_existing', 'transaction_id'}
+                for arg in arguments.keys())
 
             arguments['buyer_origin'] = self.device.name
         except Exception:
