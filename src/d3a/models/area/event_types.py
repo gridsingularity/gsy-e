@@ -44,19 +44,19 @@ class SimpleEvent:
         self.event_time = event_time
 
 
-class DisconnectAreaEvent(SimpleEvent):
+class DisconnectMarketEvent(SimpleEvent):
     pass
 
 
-class ConnectAreaEvent(SimpleEvent):
+class ConnectMarketEvent(SimpleEvent):
     pass
 
 
-class DisableAreaEvent(SimpleEvent):
+class DisableMarketEvent(SimpleEvent):
     pass
 
 
-class EnableAreaEvent(SimpleEvent):
+class EnableMarketEvent(SimpleEvent):
     pass
 
 

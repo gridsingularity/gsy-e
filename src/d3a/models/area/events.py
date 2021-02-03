@@ -16,9 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from d3a.models.area.event_types import EnableAreaEvent, DisableAreaEvent, ConnectAreaEvent, \
-    DisconnectAreaEvent, DisableIntervalAreaEvent, DisconnectIntervalAreaEvent, StrategyEvents, \
-    ConfigEvents
+from d3a.models.area.event_types import EnableMarketEvent, DisableMarketEvent, \
+    ConnectMarketEvent, DisconnectMarketEvent, DisableIntervalAreaEvent, \
+    DisconnectIntervalAreaEvent, StrategyEvents, ConfigEvents
 
 
 class IndividualEvents:
@@ -39,14 +39,14 @@ class IndividualEvents:
 
 class IndividualEnableDisableEvents(IndividualEvents):
     def __init__(self, event_list):
-        assert all(type(e) in [EnableAreaEvent, DisableAreaEvent] for e in event_list)
-        super().__init__(event_list, EnableAreaEvent)
+        assert all(type(e) in [EnableMarketEvent, DisableMarketEvent] for e in event_list)
+        super().__init__(event_list, EnableMarketEvent)
 
 
 class IndividualConnectDisconnectEvents(IndividualEvents):
     def __init__(self, event_list):
-        assert all(type(e) in [ConnectAreaEvent, DisconnectAreaEvent] for e in event_list)
-        super().__init__(event_list, ConnectAreaEvent)
+        assert all(type(e) in [ConnectMarketEvent, DisconnectMarketEvent] for e in event_list)
+        super().__init__(event_list, ConnectMarketEvent)
 
 
 class EnableDisableEvents:
@@ -85,12 +85,12 @@ class Events:
     def __init__(self, event_list, area):
         self.area = area
         self.enable_disable_events = EnableDisableEvents(
-            [e for e in event_list if type(e) in [DisableAreaEvent, EnableAreaEvent]],
+            [e for e in event_list if type(e) in [DisableMarketEvent, EnableMarketEvent]],
             [e for e in event_list if type(e) is DisableIntervalAreaEvent],
         )
 
         self.connect_disconnect_events = ConnectDisconnectEvents(
-            [e for e in event_list if type(e) in [ConnectAreaEvent, DisconnectAreaEvent]],
+            [e for e in event_list if type(e) in [ConnectMarketEvent, DisconnectMarketEvent]],
             [e for e in event_list if type(e) is DisconnectIntervalAreaEvent],
         )
 
