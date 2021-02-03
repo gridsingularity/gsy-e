@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import logging
+from typing import List, Dict
+
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.storage import StorageStrategy
@@ -34,11 +36,13 @@ class StorageExternalMixin(ExternalMixin):
         super().__init__(*args, **kwargs)
 
     @property
-    def filtered_bids(self):
+    def filtered_bids_next_market(self) -> List[Dict]:
+        """Get a representation of each of the device's bids from the next market."""
+
         return [
-            {"id": v.id, "price": v.price, "energy": v.energy}
-            for _, v in self.next_market.get_bids().items()
-            if v.buyer == self.device.name]
+            {'id': bid.id, 'price': bid.price, 'energy': bid.energy}
+            for _, bid in self.next_market.get_bids().items()
+            if bid.buyer == self.device.name]
 
     def event_activate(self, **kwargs):
         super().event_activate(**kwargs)
@@ -191,9 +195,10 @@ class StorageExternalMixin(ExternalMixin):
     def _list_bids_impl(self, arguments, response_channel):
         try:
             self.redis.publish_json(
-                response_channel,
-                {"command": "list_bids", "status": "ready", "bid_list": self.filtered_bids,
-                 "transaction_id": arguments.get("transaction_id", None)})
+                response_channel, {
+                    "command": "list_bids", "status": "ready",
+                    "bid_list": self.filtered_bids_next_market,
+                    "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling list bids on area {self.device.name}: "
                           f"Exception: {str(e)}")
@@ -588,7 +593,8 @@ class StorageExternalMixin(ExternalMixin):
     def _list_bids_aggregator(self, arguments):
         try:
             return {
-                "command": "list_bids", "status": "ready", "bid_list": self.filtered_bids,
+                "command": "list_bids", "status": "ready",
+                "bid_list": self.filtered_bids_next_market,
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id", None)}
         except Exception as e:
