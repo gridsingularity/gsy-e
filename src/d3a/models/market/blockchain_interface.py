@@ -101,12 +101,7 @@ class SubstrateBlockchainInterface(BlockChainInterface):
             'trade_id': trade.id,
             'buyer': ALICE_STASH_ADDRESS,
             'seller': BOB_STASH_ADDRESS,
-            'amount': {
-                'free': trade.offer.energy * BC_NUM_FACTOR,
-                'reserved': 0,
-                'miscFrozen': 0,
-                'feeFrozen': 0
-            },
+            'energy': trade.offer.energy * BC_NUM_FACTOR,
             'rate': trade.offer.energy_rate
         }
 
