@@ -142,8 +142,8 @@ class LoadExternalMixin(ExternalMixin):
                 bid_response_channel,
                 {"command": "bid",
                  "error": (
-                     "Incorrect offer request. "
-                     f"Available parameters: {'price', 'energy', 'replace_existing'}."),
+                     "Incorrect bid request. "
+                     "Available parameters: ('price', 'energy', 'replace_existing')."),
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(

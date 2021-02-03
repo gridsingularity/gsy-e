@@ -142,7 +142,7 @@ class PVExternalMixin(ExternalMixin):
                 {"command": "offer",
                  "error": (
                      "Incorrect offer request. "
-                     f"Available parameters: {'price', 'energy', 'replace_existing'}."),
+                     "Available parameters: ('price', 'energy', 'replace_existing')."),
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
