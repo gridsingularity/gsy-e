@@ -30,7 +30,7 @@ if platform.python_implementation() != "PyPy" and ENABLE_SUBSTRATE:
     from d3a.blockchain.constants import mnemonic, \
         BOB_STASH_ADDRESS, ALICE_STASH_ADDRESS, \
         default_call_module, default_call_function, \
-        address_type, BC_NUM_FACTOR
+        address_type
     from d3a.models.market.blockchain_utils import create_new_offer, \
         cancel_offer, trade_offer
     from substrateinterface import Keypair  # NOQA
@@ -101,7 +101,7 @@ class SubstrateBlockchainInterface(BlockChainInterface):
             'trade_id': trade.id,
             'buyer': ALICE_STASH_ADDRESS,
             'seller': BOB_STASH_ADDRESS,
-            'energy': trade.offer.energy * BC_NUM_FACTOR,
+            'energy': trade.offer.energy,
             'rate': trade.offer.energy_rate
         }
 
