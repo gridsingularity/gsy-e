@@ -19,7 +19,7 @@ nav:
         - 'Two-Sided Pay-as-Bid Market': 'two-sided-pay-as-bid.md'
         - 'Two-Sided Pay-as-Clear Market': 'two-sided-pay-as-clear.md'
     - 'Grid Fee Accounting':
-        - 'Grid Fee Objectives': 'clearing-purpose.md'
+        - 'Grid Fee Objectives': 'grid-fees.md'
         - 'Constant Grid Fee Calculation': 'constant-fees.md'
         - 'Percentage Grid Fee Calculation': 'percentage-fees.md'
     - 'Balancing Market': 'balancing-market.md'
