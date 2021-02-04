@@ -25,13 +25,13 @@ class TestEventDeserializer(unittest.TestCase):
         assert not area.events.config_events
         assert len(area.events.connect_disconnect_events.isolated_ev.event_list) == 2
         assert type(area.events.connect_disconnect_events.isolated_ev.event_list[0]) == \
-               DisconnectMarketEvent
+               DisconnectMarketEvent  # NOQA
         assert area.events.connect_disconnect_events.isolated_ev.event_list[0].event_time == \
             datetime.datetime.fromtimestamp(1562500000)
         assert type(area.events.connect_disconnect_events.isolated_ev.event_list[1]) == \
-               ConnectMarketEvent
+               ConnectMarketEvent  # NOQA
         assert area.events.connect_disconnect_events.isolated_ev.event_list[1].event_time == \
-            datetime.datetime.fromtimestamp(1562800000)
+               datetime.datetime.fromtimestamp(1562800000)  # NOQA
 
     def test_deserialization_raises_exception_if_two_events_same_uuid(self):
         events = {
@@ -74,25 +74,25 @@ class TestEventDeserializer(unittest.TestCase):
         deserialize_events_to_areas(events, area)
         assert len(area.events.connect_disconnect_events.isolated_ev.event_list) == 1
         assert type(area.events.connect_disconnect_events.isolated_ev.event_list[0]) == \
-               DisconnectMarketEvent
+               DisconnectMarketEvent  # NOQA
         assert area.events.connect_disconnect_events.isolated_ev.event_list[0].event_time == \
             datetime.datetime.fromtimestamp(1562500000)
 
         assert len(child1.events.connect_disconnect_events.isolated_ev.event_list) == 1
         assert type(child1.events.connect_disconnect_events.isolated_ev.event_list[0]) == \
-               ConnectMarketEvent
+               ConnectMarketEvent  # NOQA
         assert child1.events.connect_disconnect_events.isolated_ev.event_list[0].event_time == \
             datetime.datetime.fromtimestamp(1562800000)
 
         assert len(child2.events.enable_disable_events.isolated_ev.event_list) == 1
         assert type(child2.events.enable_disable_events.isolated_ev.event_list[0]) == \
-               DisableMarketEvent
+               DisableMarketEvent  # NOQA
         assert child2.events.enable_disable_events.isolated_ev.event_list[0].event_time == \
             datetime.datetime.fromtimestamp(1562840000)
 
         assert len(child3.events.enable_disable_events.isolated_ev.event_list) == 1
         assert type(child3.events.enable_disable_events.isolated_ev.event_list[0]) == \
-               EnableMarketEvent
+               EnableMarketEvent  # NOQA
         assert child3.events.enable_disable_events.isolated_ev.event_list[0].event_time == \
             datetime.datetime.fromtimestamp(1562856000)
 
