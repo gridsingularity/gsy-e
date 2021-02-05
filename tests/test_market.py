@@ -38,7 +38,7 @@ from d3a.models.market.market_structures import Bid, Offer, Trade, TradeBidOffer
 from d3a.models.market.balancing import BalancingMarket
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
-from d3a.models.market import TransferFees
+from d3a.models.market import GridFee
 
 from d3a.d3a_core.device_registry import DeviceRegistry
 device_registry_dict = {
@@ -47,7 +47,7 @@ device_registry_dict = {
     "seller": {"balancing rates": (33, 35)},
 }
 
-transfer_fees = TransferFees(grid_fee_percentage=0, transfer_fee_const=0)
+transfer_fees = GridFee(grid_fee_percentage=0, transfer_fee_const=0)
 
 
 class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
