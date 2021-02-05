@@ -39,7 +39,7 @@ The balancing agent follows the lead of the _spot_market_trade_ of its lower hie
 
 ###Constant Parameters
 
-The following are the constant parameters related to the balancing market and are declared [here](https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py#L176-L189).
+The following are the constant parameters related to the balancing market, with defaults available [here](https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py#L176-L189).
 
 ENABLE_BALANCING_MARKET →  (Default: False) (It enables the simulation with Balancing Market)
 

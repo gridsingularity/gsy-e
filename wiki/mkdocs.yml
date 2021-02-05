@@ -41,6 +41,7 @@ nav:
         - 'Virtual Machine Installation Instructions': 'vm-installation-instructions.md'
         - 'Version Updates': 'version-update.md'
     - 'Modelling':
+        - 'Setting up a simulation in the User Interface': 'ui-initialisation.md'
         - 'Market Settings': 'model-markets.md'
         - 'Energy Assets Configuration':
             - 'Market Maker and Infinite Bus': 'model-market-maker.md'

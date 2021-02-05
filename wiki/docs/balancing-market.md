@@ -37,7 +37,7 @@ In our **transactive energy low voltage grid structure** primary, secondary and 
 
 Area control structure of market consisting of all  three tiers of control (source: Martin Fornage, A generalized transactive energy based framework: Enphase Energy. Powerpoint presentation 2015)
 
-The balancing agent monitors the health of the system and is in control of all its allocated resources. It also had the ability to control the physical connect and disconnect from upstream and downstream resources according to the type of control required.</h3>
+The balancing agent monitors the health of the system and is in control of all its allocated resources. It also had the ability to control the physical connect and disconnect from upstream and downstream resources according to the type of control required.
 
 
 **Primary control** happens simultaneously as the spot market through a droop curve. Grid forming assets have different droop curves based on their behaviour (Loads, Storage, PV) which are used to keep the voltage and frequency towards nominal in case of a deviation. 
