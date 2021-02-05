@@ -7,11 +7,6 @@ ALICE_STASH_ADDRESS = "5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY"
 
 default_call_module = 'Tradestorage'
 default_call_function = 'store_trade_map'
-default_amount = {
-    'free': 1 * BC_NUM_FACTOR,
-    'reserved': 0,
-    'miscFrozen': 0,
-    'feeFrozen': 0
-}
+default_energy: 1 * BC_NUM_FACTOR
 default_rate = 12
 address_type = 42
