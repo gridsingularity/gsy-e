@@ -22,7 +22,9 @@ nav:
         - 'Grid Fee Objectives': 'grid-fees.md'
         - 'Constant Grid Fee Calculation': 'constant-fees.md'
         - 'Percentage Grid Fee Calculation': 'percentage-fees.md'
-    - 'Balancing Market': 'balancing-market.md'
+    - 'Balancing Market':
+        - 'Balancing Definition': 'balancing-market.md'
+        - 'Balancing Implementation': 'balancing-implementation.md'
 - 'Interface':
     - 'APIs':
         - 'Overview': 'api-overview.md'
