@@ -52,7 +52,7 @@ transfer_fees = TransferFees(grid_fee_percentage=0, transfer_fee_const=0)
 
 class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
     def __init__(self, bids=[], m_id=123, time_slot=now()):
-        super().__init__(transfer_fees=transfer_fees, time_slot=time_slot)
+        super().__init__(grid_fees=transfer_fees, time_slot=time_slot)
         self.id = m_id
         self._bids = bids
         self.offer_count = 0
