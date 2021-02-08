@@ -27,7 +27,58 @@ The differences between the primary, secondary and tertiary frequency control is
 
 ##Review of the three levels of regulation
 
-Main features of frequency control strategies [Frequency Control in a Power System](https://eepower.com/technical-articles/frequency-control-in-a-power-system/#)
+<table class="table">
+  <tr>
+   <th>
+   </th>
+   <th>Response Time
+   </th>
+   <th>Duration Time
+   </th>
+   <th>Operation
+   </th>
+   <th>Purpose
+   </th>
+  </tr>
+  <tr>
+   <td>Primary Control
+   </td>
+   <td>10-30 Seconds
+   </td>
+   <td>15 Minutes
+   </td>
+   <td>Automatic
+   </td>
+   <td>Act in case of frequency variation in order to stabilize frequency value
+   </td>
+  </tr>
+  <tr>
+   <td>Secondary Control
+   </td>
+   <td>200 Seconds
+   </td>
+   <td>120 minutes
+   </td>
+   <td>Automatic
+   </td>
+   <td>Act to bring back frequency value to the nominal value and restore the power reserve of the generators used for the primary frequency control
+   </td>
+  </tr>
+  <tr>
+   <td>Tertiary Control
+   </td>
+   <td>15 Minutes
+   </td>
+   <td>Indicated by TSO
+   </td>
+   <td>Upon Request
+   </td>
+   <td>Act to restore power reserves of the generators used for the secondary frequency control
+   </td>
+  </tr>
+</table>
+
+Table: [Main features of frequency control strategies](https://eepower.com/technical-articles/frequency-control-in-a-power-system/#)
 
 In our **transactive energy low voltage grid structure** primary, secondary and tertiary control are controlled by an area controller called the balancing agent.
 

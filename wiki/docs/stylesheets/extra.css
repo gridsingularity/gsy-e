@@ -38,6 +38,7 @@ div.md-footer-nav {
 
 div.md-footer-meta {
 	background-color: #0c3647;
+
 }
 
 .md-search__input::placeholder {
@@ -194,4 +195,28 @@ a:hover {
 p{
     text-align: justify;
     text-justify: inter-word;
+}
+.table {
+  font-family: NB Akademie Std;
+  border-collapse: collapse;
+  width: 100%;
+}
+.table td, .table th {
+  border: 1px solid #66ee66;
+  padding: 8px;
+  text-align: center;
+  vertical-align: middle;
+
+}
+.table td{
+
+  }
+.table tr:nth-child(even){background-color: #ffffff;}
+
+.table th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: center;
+  font-weight: bold;
+
 }
