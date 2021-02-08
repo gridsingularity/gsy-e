@@ -543,21 +543,32 @@ class StorageExternalMixin(ExternalMixin):
                     "transaction_id": arguments.get("transaction_id", None)}
 
     def _bid_aggregator(self, arguments):
+        required_args = {'price', 'energy', 'type', 'transaction_id'}
+        allowed_args = required_args.union({'replace_existing'})
+
         try:
-            assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
+            # Check that all required arguments have been provided
+            assert all(arg in arguments.keys() for arg in required_args)
+            # Check that every provided argument is allowed
+            assert all(arg in allowed_args for arg in arguments.keys())
+
             arguments['buyer_origin'] = self.device.name
             assert arguments["energy"] <= self.state.energy_to_buy_dict[self.next_market.time_slot]
+
+            replace_existing = arguments.get('replace_existing', True)
             bid = self.post_bid(
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
+                replace_existing=replace_existing,
                 buyer_origin=arguments["buyer_origin"]
             )
             self.state.offered_buy_kWh[self.next_market.time_slot] = \
                 self.posted_bid_energy(self.next_market.id)
             self.state.clamp_energy_to_buy_kWh([self.next_market.time_slot])
             return {
-                "command": "bid", "status": "ready", "bid": bid.to_JSON_string(),
+                "command": "bid", "status": "ready",
+                "bid": bid.to_JSON_string(replace_existing=replace_existing),
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id", None)}
         except Exception:

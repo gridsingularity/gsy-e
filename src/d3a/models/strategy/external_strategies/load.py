@@ -297,8 +297,15 @@ class LoadExternalMixin(ExternalMixin):
                     "transaction_id": arguments.get("transaction_id", None)}
 
     def _bid_aggregator(self, arguments):
+        required_args = {'price', 'energy', 'type', 'transaction_id'}
+        allowed_args = required_args.union({'replace_existing'})
+
         try:
-            assert set(arguments.keys()) == {'price', 'energy', 'type', 'transaction_id'}
+            # Check that all required arguments have been provided
+            assert all(arg in arguments.keys() for arg in required_args)
+            # Check that every provided argument is allowed
+            assert all(arg in allowed_args for arg in arguments.keys())
+
             arguments['buyer_origin'] = self.device.name
 
             assert self.can_bid_be_posted(
@@ -307,14 +314,17 @@ class LoadExternalMixin(ExternalMixin):
                 self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0,
                 self.next_market)
 
+            replace_existing = arguments.get('replace_existing', True)
             bid = self.post_bid(
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
+                replace_existing=replace_existing,
                 buyer_origin=arguments["buyer_origin"]
             )
             return {
-                "command": "bid", "status": "ready", "bid": bid.to_JSON_string(),
+                "command": "bid", "status": "ready",
+                "bid": bid.to_JSON_string(replace_existing=replace_existing),
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id", None)}
         except Exception as e:
