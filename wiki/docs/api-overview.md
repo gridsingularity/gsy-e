@@ -29,7 +29,7 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
 
 ##User Interface
 
-To connect the API to simulations, the user needs to register and be approved for a collaborative simulation by following these [steps](collaboration.md#Registration). Once the user successfully registers for the relevant assets or markets, the user needs to adapt their API scripts. 
+To connect the API to simulations, the user needs to register and be approved for a collaborative simulation by following these [steps](collaboration.md#how-to-connect). Once the user successfully registers for the relevant assets or markets, the user needs to adapt their API scripts. 
 
 ##Backend
 
@@ -43,7 +43,7 @@ redis-server /usr/local/etc/redis.conf
 
 ###Open external connection to API for Assets
 
-In the setup file (template available here), an asset must be designated as open to external connection via the API. This is controlled when setting up the simulation in the setup file by designating the ExternalStrategy for each relevant energy assets :
+In the setup file (template available [here](https://github.com/gridsingularity/d3a/blob/master/src/d3a/setup/odyssey_momentum/odyssey_training.py)), an asset must be designated as **open to external connection** via the API. This is controlled when setting up the simulation in the setup file by designating the ExternalStrategy for each relevant energy assets :
 
 
 ```python
@@ -71,7 +71,7 @@ By default, trading strategies do not allow API connections unless the `External
 
 ###Open Markets for external connection
 
-The API supports multiple markets managed with the Grid Operator API. Access is controlled when setting up the simulation, using the `Area` class’ boolean argument called external_connection_available:
+The API supports multiple markets managed with the [Grid Operator API](grid-operator-api.md). Access is controlled when setting up the simulation, using the `Area` class’ boolean argument called external_connection_available:
 
 ```python
 Area(

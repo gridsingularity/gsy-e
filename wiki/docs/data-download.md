@@ -2,8 +2,8 @@ After successfully running a simulation in Grid Singularity’s User Interface (
 
 *   **Aggregated_results** : 
     *   **area_throughput.json** : Imported/exported energy for each market slot :
-    *   **Bills.json** : Energy bills of all markets and energy assets (more details here)
-    *   **Cumulative_bills.json** : Total [energy bills](energy-bills.md) (spent & earned)
+    *   **Bills.json** : Energy bills of all markets and energy assets (more details [here](energy-bills.md))
+    *   **Cumulative_bills.json** : Total energy bills (spent & earned)
     *   **Cumulative_grid_trades.json** : Total energy traded for each market and energy asset and their penalty (for not trading their required energy)
     *   **asset_statistics.json** : asset profiles, energy traded, energy rates (min and max) for each asset each market slot
     *   **Energy_trade_profile.json** : Energy traded in each market

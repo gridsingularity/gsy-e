@@ -1,6 +1,6 @@
 ![alt_text](img/balancing-market-implementation-1.png)
 
-Structure of Balancing Market in Grid Singularity energy exchange (D3A)
+Figure: Structure of Balancing Market in Grid Singularity energy exchange (D3A)
 
 Grid Singularity energy exchange (D3A) bottom-up market design allows participants to engage in Local Energy Market (LEM) for energy trading, providing energy balance at a local level. D3A flexibility trading also facilitates the procurement of flexibility locally from participants to assist distribution grid operation in balancing the grid.
 
@@ -29,15 +29,15 @@ asset_registry_dict = {
 }
 ```
 
-###Balancing Market
+##Balancing Market
 
 The present setting is a [One-Sided Pay-as-Offer market](one-sided-pay-as-offer.md), which accepts _balancing_offers_ from energy assets and connected hierarchies of _balancing_market_. _balancing_offers_ could be positive or negative. It also facilitates the _balancing_trade_.
 
-###Balancing Agent
+##Balancing Agent
 
 The balancing agent follows the lead of the _spot_market_trade_ of its lower hierarchy. Whenever there is a trade in the lower hierarchy of _spot_market_, it will try to secure a share of spot market trades in the balancing market.
 
-###Constant Parameters
+##Constant Parameters
 
 The following are the constant parameters related to the balancing market, with defaults available [here](https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py#L176-L189).
 

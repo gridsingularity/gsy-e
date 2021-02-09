@@ -1,4 +1,4 @@
-The Grid Singularity Energy Exchange Engine (D3A) is developed by [Grid Singularity](https://gridsingularity.com/) as an interface ([d3a.io](https://www.d3a.io/)) and [open source codebase](gridsingularity/d3a: decentralised autonomous area agent) (see Licensing) to model, simulate, optimize and (coming soon) download and deploy interconnected, grid-aware energy marketplaces.
+The Grid Singularity Energy Exchange Engine (D3A) is developed by [Grid Singularity](https://gridsingularity.com/) as an interface ([d3a.io](https://www.d3a.io/)) and [open source codebase](https://github.com/gridsingularity/d3a) (see [Licensing](licensing.md)) to model, simulate, optimize and (coming soon) download and deploy interconnected, grid-aware energy marketplaces.
 
 Grid Singularity has been proclaimed [the World Tech Pioneer by the World Economic Forum](https://www.weforum.org/organizations/grid-singularity-gmbh-gsy-gmbh) and is also known as a co-founder of [the Energy Web Foundation](https://www.energyweb.org/) that gathers leading energy corporations globally co-developing a shared blockchain-based platform. Our team is guided by the following principles:
 

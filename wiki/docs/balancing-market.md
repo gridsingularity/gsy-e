@@ -3,9 +3,9 @@ Electrical power systems are characterized by voltage and frequency and the flow
 
 Each control strategy has specific purposes and features and can be categorized in three groups, as shown in the figure below.
 
-1. Primary Control (Frequency Containment Reserve - FCR)
-2. Secondary Control (Automatic Frequency Restoration Reserves - aFRR)
-3. Tertiary Control (Manual Frequency Restoration Reserves - mFRR)
+1. **Primary Control** (Frequency Containment Reserve - FCR)
+2. **Secondary Control** (Automatic Frequency Restoration Reserves - aFRR)
+3. **Tertiary Control** (Manual Frequency Restoration Reserves - mFRR)
 
 ![alt_text](img/balancing-market-structure-1.png)
 
@@ -91,9 +91,7 @@ Area control structure of market consisting of all  three tiers of control (sour
 The balancing agent monitors the health of the system and is in control of all its allocated resources. It also had the ability to control the physical connect and disconnect from upstream and downstream resources according to the type of control required.
 
 
-**Primary control** happens simultaneously as the spot market through a droop curve. Grid forming assets have different droop curves based on their behaviour (Loads, Storage, PV) which are used to keep the voltage and frequency towards nominal in case of a deviation. 
-
-Local balancing is therefore done through primary control.
+**Primary control** happens simultaneously as the spot market through a droop curve. Grid forming assets have different droop curves based on their behaviour (Loads, Storage, PV) which are used to keep the voltage and frequency towards nominal in case of a deviation. Local balancing is therefore done through primary control.
 
 **Secondary control (Inertia Control)** is done through a time schedule. The schedule is received from the upper tertiary control or from a ledger. Secondary balancing agents adjust the primary balancing agents resources within its market by disconnecting and connecting them in case of failure of upstream structure or failure to meet the schedule.
 

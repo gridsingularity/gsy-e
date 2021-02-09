@@ -1,9 +1,9 @@
 ##Market Type
 The main goal of an electricity market exchange is to balance the grid in terms of demand and supply. Since efficient storage of large quantities of energy is currently not economically feasible and electrical current varies within seconds, a market mechanism that efficiently accounts for the physical energy production and consumption is required. Generally, trading occurs in three types of markets with different time intervals:
 
-1. Spot market: short-term trades for immediate or near-term delivery. Energy transactions are divided into small time blocks (typically 15 minute slots) that can either be traded on the Day-ahead or in the Intraday market.
-2. Balancing market: imbalances that occur due to deviations between energy traded in the spot market and actual energy consumption and production are absorbed by balance responsible parties (BRP) that are reimbursed for their service with a fee based on the energy deviation.
-3. Futures market: Trades for the longer term future consumption and production of energy are agreed in advance. This market is currently outside the scope of Grid Singularity energy exchange implementation.
+1. **Spot market**: short-term trades for immediate or near-term delivery. Energy transactions are divided into small time blocks (typically 15 minute slots) that can either be traded on the Day-ahead or in the Intraday market.
+2. **Balancing market**: imbalances that occur due to deviations between energy traded in the spot market and actual energy consumption and production are absorbed by balance responsible parties (BRP) that are reimbursed for their service with a fee based on the energy deviation.
+3. **Futures market**: trades for the longer term future consumption and production of energy are agreed in advance. This market is currently outside the scope of Grid Singularity energy exchange implementation.
 
 ![alt_text](img/markets-1.png)
 

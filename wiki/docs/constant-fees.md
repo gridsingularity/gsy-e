@@ -1,8 +1,8 @@
-The constant grid fee is a market based fee, defined in** **€/kWh and added to each trade that is cleared, as shown in the figure below.
+The constant grid fee is a market based fee, defined in **€/kWh** and added to each trade that is cleared, as shown in the figure below.
 
 ![alt_text](img/grid-fee-constant-1.png)
 
-The rate of a bid or offer changes as that bid or offer is propagated into different markets. The offer rate increases to account for the added fees for the relevant market, ensuring that the seller receives a revenue equal or greater than the original offer. The bid rate decreases for the same reason. 
+The rate of a bid or offer changes as that bid or offer is propagated into different [markets](model-markets.md). The offer rate increases to account for the added fees for the relevant market, ensuring that the seller receives a revenue equal or greater than the original offer. The bid rate decreases for the same reason. 
 
 ##Example Calculation in One-Sided Pay-as-Offer Market
 
@@ -44,7 +44,7 @@ House 2 Market = (0.10 + 0)*1 = 0.10
 
 ![alt_text](img/grid-fee-constant-3.png)
 
-In the [Two-Sided Pay-as-Bid](two-sided-pay-as-bid.md) market, there are both bids and offers, and both are propagated through the markets in the hierarchy. If a bid or offer is not matched after two ticks, it is moved into the next market. In order to prevent the double accounting of a market's grid fee when a bid and an offer are matched in that market, market fees are added to offers when they enter a new market (target market), and they are subtracted from bids when they leave a market (source market) and enter another one. The formula for propagating the offers is the same as for the one-sided market :
+In the [Two-Sided Pay-as-Bid](two-sided-pay-as-bid.md) market, there are both bids and offers, and both are propagated through the markets in the hierarchy. If a bid or offer is not matched after two [ticks](markets.md#market-ticks), it is moved into the next market. In order to prevent the double accounting of a market's grid fee when a bid and an offer are matched in that market, market fees are added to offers when they enter a new market (target market), and they are subtracted from bids when they leave a market (source market) and enter another one. The formula for propagating the offers is the same as for the one-sided market :
 
 ```
 offer_rate_after_fees (€/kWh) = offer_rate (€/kWh) + grid_fee (€/kWh)
