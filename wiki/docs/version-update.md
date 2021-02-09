@@ -1,11 +1,7 @@
-## How to update the D3A and API Client
 
-The D3A is often updated with new features. These steps allow you to update to the most current version
+##Grid Singularity [energy exchange engine](https://github.com/gridsingularity/d3a) (D3A) Update
 
-### Update the D3A
-
-Open a terminal and activate the d3a virtual environment as described in the Installation Instructions for your OS. Then type:
-
+Please start by opening a terminal and activating the Grid Singularity D3A virtual environment as described in the Installation Instructions. Then type:
 ```
 git pull origin/master
 fab sync
@@ -17,20 +13,16 @@ If fab sync does not work on your machine, please try:
 pip install -e .
 ```
 
-The D3A should now be up to date.
+##Grid Singularity [API](https://github.com/gridsingularity/d3a-api-client) Client Update
 
-### Update the API Client
-
-Open a terminal and activate the API client virtual environment as described in the [API Installation Instructions](assets-api.md). Then type:
+Please start by opening a terminal and activating the API client virtual environment as described in the API Installation Instructions. Then type:
 
 ```
 pip uninstall d3a-api-client
 ```
 
-Press `y` when prompted. Once the uninstall is complete, type:
+Press y when prompted. Once the uninstall is complete, type:
 
 ```
 pip install git+https://github.com/gridsingularity/d3a-api-client.git
 ```
-
-Now, the API client should be up to date.

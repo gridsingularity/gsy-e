@@ -4,77 +4,65 @@ site_author: 'Grid Singularity'
 site_url: 'https://gridsingularity.github.io/d3a/d3a-documentation/'
 
 nav:
-- 'Overview': 'd3a-documentation.md'
-- 'User Interface (d3a.io)':
-    - 'UI Overview': 'user-interface-d3a.md'
-    - 'Releases': 'ui-releases.md'
-    - 'Projects (Home Page)': 'projects-home-page.md'
-    - 'Simulation Configuration':
-        - 'Simulation Configuration Overview': 'simulation-configuration.md'
-        - 'General Settings': 'general-settings.md'
-        - 'Grid Modelling':
-            - 'Initial Grid Setup': 'grid-setup.md'
-            - 'PV': 'pv.md'
-            - 'Storage': 'storage.md'
-            - 'Load': 'load.md'
-            - 'Market Maker': 'market-maker.md'
-            - 'Power Plant': 'power-plant.md'
-            - 'Areas': 'areas.md'
-        - 'Libraries': 'libraries.md'
-        - 'Upload File Formats': 'upload-file-formats.md'
-        - 'Events': 'events.md'
-    - 'Results': 'results.md'
-- 'Backend Codebase':
-    - 'Backend Codebase Overview': 'backend-codebase.md'
-    - 'Strategies':
-        - 'Load Strategy': 'load-strategy.md'
-        - 'Energy Storage System (ESS) Strategy': 'ess-strategy.md'
-        - 'PV Strategy': 'pv-strategy.md'
-        - 'Infinite Power Plant Strategy': 'infinite-power-plant-strategy.md'
-        - 'Custom Load Strategy': 'custom-load-strategy.md'
-        - 'Finite Power Plant Strategy': 'finite-power-plant-strategy.md'
-        - 'Custom PV Strategy': 'custom-pv-strategy.md'
-        - 'Infinite Bus Strategy': 'infinite-bus-strategy.md'
-        - 'How to Implement Custom Device Strategies': 'how-implement-custom-device-strategies.md'
-        - 'Market Maker Strategy': 'market-maker-strategy.md'
-        - 'How Strategies Adjust the Prices of Offers and Bids': 'how-strategies-adjust-prices.md'
-    - 'Markets':
-        - 'Markets Overview': 'markets.md'
-        - 'One Sided Pay-As-Offer': 'one-sided-pay-as-offer.md'
-        - 'Two Sided Pay-As-Bid': 'two-sided-pay-as-bid.md'
-        - 'Two Sided Pay-As-Clear': 'two-sided-pay-as-clear.md'
-        - 'Balancing Market': 'balancing-market.md'
-        - 'Inter-Area Agent': 'inter-area-agent.md'
-        - 'Market Slots and Ticks': 'market-slots-and-ticks.md'
-        - 'Grid Fees':
-          - 'Constant fees': 'constant-fees.md'
-          - 'Percentage fees': 'percentage-fees.md'
-    - 'D3A Blockchain Support':
-        - 'D3A Blockchain Overview': 'd3a-blockchain-support.md'
-        - 'ClearingToken Smart Contract': 'clearingtoken-smart-contract.md'
-        - 'Market Smart Contract': 'market-smart-contract.md'
-        - 'Steps to Run D3A on Tobalaba': 'run-d3a-on-tobalaba.md'
-    - 'Simulation Results':
-        - 'Simulation Results Overview': 'simulation-results.md'
-        - 'Bills': 'bills.md'
-        - 'Key Performance Indicators (KPIs)': 'kpis.md'
-    - 'Alternative Pricing Schemes': 'alternative-pricing-schemes.md'
-    - 'How to Configure Grid Transfer Fee': 'configure-transfer-fee.md'
-    - 'Simulation Events': 'simulation-events.md'
-    - 'How to Create a setup-file': 'create-setup-file.md'
-    - 'How to Change Global Simulation Settings': 'change-global-sim-settings.md'
-    - 'How to launch Simulation via Command Line Interface (CLI)': 'launch-sim-via-cli.md'
-    - 'Installation Instructions':
-        - 'Linux': 'installation-instructions.md'
-        - 'Mac': 'ios-installation-instructions.md'
-        - 'Virtual Machine': 'installation-instructions-vm.md'
+- 'General Overview':
+    - 'Energy Market Design Challenge': 'd3a-documentation.md'
+    - 'Grid Singularity Vision': 'vision.md'
+    - 'Grid Singularity Technical Approach': 'technical-approach.md'
+    - 'Licensing and Open Source Ethos': 'licensing.md'
+- 'Market Mechanism':
+    - 'Market Types: Spot, Balancing, and Futures': 'markets.md'
+    - 'Bids/Offers Process and Hierarchical Market Structure': 'inter-area-agent.md'
+    - 'Trading Strategies': 'default-trading-strategy.md'
+    - 'Clearing Mechanisms':
+        - 'Clearing Mechanism Types': 'clearing-purpose.md'
+        - 'One-Sided Pay-as-Offer Market': 'one-sided-pay-as-offer.md'
+        - 'Two-Sided Pay-as-Bid Market': 'two-sided-pay-as-bid.md'
+        - 'Two-Sided Pay-as-Clear Market': 'two-sided-pay-as-clear.md'
+    - 'Grid Fee Accounting':
+        - 'Grid Fee Objectives': 'grid-fees.md'
+        - 'Constant Grid Fee Calculation': 'constant-fees.md'
+        - 'Percentage Grid Fee Calculation': 'percentage-fees.md'
+    - 'Balancing Market':
+        - 'Balancing Market Structure': 'balancing-market.md'
+        - 'Balancing Market Implementation': 'balancing-implementation.md'
+- 'Interface':
+    - 'APIs':
+        - 'Overview': 'api-overview.md'
+        - 'Asset API': 'assets-api.md'
+        - 'Grid Operator API': 'grid-operator-api.md'
+    - 'Collaboration Tool': 'collaboration.md'
+    - 'Canary Test Network': 'canary-network.md'
+    - 'Blockchain Integration': 'blockchain.md'
+- 'Configuration general settings and installation':
+    - 'General Configuration Settings': 'general-settings.md'
+    - 'Backend Installation Instructions':
+        - 'Linux Installation Instructions': 'linux-installation-instructions.md'
+        - 'Mac Installation Instructions': 'ios-installation-instructions.md'
+        - 'Virtual Machine Installation Instructions': 'vm-installation-instructions.md'
         - 'Version Updates': 'version-update.md'
-- API:
-  - Overview: 'api-overview.md'
-  - Asset API: 'assets-api.md'
-  - Grid Operators API: 'grid-api.md'
-- FAQ: 'faq.md'
-- FAQ Odyssey hackathon: 'faq-odyssey.md'
+    - 'Modelling':
+        - 'Setting up a simulation in the User Interface': 'ui-initialisation.md'
+        - 'Market Settings': 'model-markets.md'
+        - 'Energy Assets Configuration':
+            - 'Market Maker and Infinite Bus': 'model-market-maker.md'
+            - 'Load': 'model-load.md'
+            - 'PV': 'model-pv.md'
+            - 'Storage': 'model-storage.md'
+            - 'Power Plant': 'model-power-plant.md'
+        - 'Map': 'map.md'
+        - 'File Upload Format': 'upload-file-formats.md'
+        - 'Asset and Data Library': 'library.md'
+    - 'Events (adding assets, communities, etc.)': 'events.md'
+    - 'Results and Analysis':
+        - 'Results Dashboard': 'results.md'
+        - 'Key Performance Indicators (KPIs)':
+            - 'Self-Sufficiency and Self-Consumption': 'self-sufficiency-consumption.md'
+            - 'Peak Percentage': 'peak-percentage.md'
+            - 'Energy Bill': 'energy-bills.md'
+        - 'Data Download': 'data-download.md'
+- 'References': 'references.md'
+- 'Releases Archive': 'releases.md'
+
 
 # Configuration for the Material theme
 theme:
