@@ -1,0 +1,1408 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="Wiki for the D3A by Grid Singularity">
+      
+      
+        <link rel="canonical" href="https://gridsingularity.github.io/d3a/d3a-documentation/blockchain/">
+      
+      
+        <meta name="author" content="Grid Singularity">
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../img/d3a-favicon.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.0.2">
+    
+    
+      
+        <title>Blockchain Integration - D3A Wiki</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/application.982221ab.css">
+      
+        <link rel="stylesheet" href="../assets/stylesheets/application-palette.224b79ff.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="">
+      
+    
+    
+      <script src="../assets/javascripts/modernizr.01ccdecf.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=PT+Sans:300,400,400i,700|Ubuntu+Mono">
+        <style>body,input{font-family:"PT Sans","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Ubuntu Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    
+      
+    
+    
+  </head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="white" data-md-color-accent="teal">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448"
+    viewBox="0 0 416 448" id="__github">
+  <path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19-18.125
+        8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19 18.125-8.5
+        18.125 8.5 10.75 19 3.125 20.5zM320 304q0 10-3.125 20.5t-10.75
+        19-18.125 8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19
+        18.125-8.5 18.125 8.5 10.75 19 3.125 20.5zM360
+        304q0-30-17.25-51t-46.75-21q-10.25 0-48.75 5.25-17.75 2.75-39.25
+        2.75t-39.25-2.75q-38-5.25-48.75-5.25-29.5 0-46.75 21t-17.25 51q0 22 8
+        38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0
+        37.25-1.75t35-7.375 30.5-15 20.25-25.75 8-38.375zM416 260q0 51.75-15.25
+        82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5-41.75
+        1.125q-19.5 0-35.5-0.75t-36.875-3.125-38.125-7.5-34.25-12.875-30.25-20.25-21.5-28.75q-15.5-30.75-15.5-82.75
+        0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25
+        30.875q36.75-8.75 77.25-8.75 37 0 70 8 26.25-20.5
+        46.75-30.25t47.25-9.75q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34
+        99.5z" />
+</svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#purpose" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="https://gridsingularity.github.io/d3a/d3a-documentation/" title="D3A Wiki" class="md-header-nav__button md-logo">
+          
+            <img src="../img/d3a-logo.png" width="32" height="32">
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              D3A Wiki
+            </span>
+            <span class="md-header-nav__topic">
+              Blockchain Integration
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="https://github.com/gridsingularity/d3a/wiki/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    D3A on github
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="https://gridsingularity.github.io/d3a/d3a-documentation/" title="D3A Wiki" class="md-nav__button md-logo">
+      
+        <img src="../img/d3a-logo.png" width="48" height="48">
+      
+    </a>
+    D3A Wiki
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="https://github.com/gridsingularity/d3a/wiki/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    D3A on github
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-1" type="checkbox" id="nav-1">
+    
+    <label class="md-nav__link" for="nav-1">
+      General Overview
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-1">
+        General Overview
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../d3a-documentation/" title="Energy Market Design Challenge" class="md-nav__link">
+      Energy Market Design Challenge
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../vision/" title="Grid Singularity Vision" class="md-nav__link">
+      Grid Singularity Vision
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../technical-approach/" title="Grid Singularity Technical Approach" class="md-nav__link">
+      Grid Singularity Technical Approach
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../licensing/" title="Licensing and Open Source Ethos" class="md-nav__link">
+      Licensing and Open Source Ethos
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+    
+    <label class="md-nav__link" for="nav-2">
+      Market Mechanism
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Market Mechanism
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../markets/" title="Market Types: Spot, Balancing, and Futures" class="md-nav__link">
+      Market Types: Spot, Balancing, and Futures
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../inter-area-agent/" title="Bids/Offers Process and Hierarchical Market Structure" class="md-nav__link">
+      Bids/Offers Process and Hierarchical Market Structure
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../default-trading-strategy/" title="Trading Strategies" class="md-nav__link">
+      Trading Strategies
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4">
+    
+    <label class="md-nav__link" for="nav-2-4">
+      Clearing Mechanisms
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-4">
+        Clearing Mechanisms
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../clearing-purpose/" title="Clearing Mechanism Types" class="md-nav__link">
+      Clearing Mechanism Types
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../one-sided-pay-as-offer/" title="One-Sided Pay-as-Offer Market" class="md-nav__link">
+      One-Sided Pay-as-Offer Market
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../two-sided-pay-as-bid/" title="Two-Sided Pay-as-Bid Market" class="md-nav__link">
+      Two-Sided Pay-as-Bid Market
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../two-sided-pay-as-clear/" title="Two-Sided Pay-as-Clear Market" class="md-nav__link">
+      Two-Sided Pay-as-Clear Market
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-5" type="checkbox" id="nav-2-5">
+    
+    <label class="md-nav__link" for="nav-2-5">
+      Grid Fee Accounting
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-5">
+        Grid Fee Accounting
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-fees/" title="Grid Fee Objectives" class="md-nav__link">
+      Grid Fee Objectives
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../constant-fees/" title="Constant Grid Fee Calculation" class="md-nav__link">
+      Constant Grid Fee Calculation
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../percentage-fees/" title="Percentage Grid Fee Calculation" class="md-nav__link">
+      Percentage Grid Fee Calculation
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-6" type="checkbox" id="nav-2-6">
+    
+    <label class="md-nav__link" for="nav-2-6">
+      Balancing Market
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-6">
+        Balancing Market
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../balancing-market/" title="Balancing Market Structure" class="md-nav__link">
+      Balancing Market Structure
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../balancing-implementation/" title="Balancing Market Implementation" class="md-nav__link">
+      Balancing Market Implementation
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
+    
+    <label class="md-nav__link" for="nav-3">
+      Interface
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        Interface
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-1" type="checkbox" id="nav-3-1">
+    
+    <label class="md-nav__link" for="nav-3-1">
+      APIs
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-1">
+        APIs
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../api-overview/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../assets-api/" title="Asset API" class="md-nav__link">
+      Asset API
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-operator-api/" title="Grid Operator API" class="md-nav__link">
+      Grid Operator API
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../collaboration/" title="Collaboration Tool" class="md-nav__link">
+      Collaboration Tool
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../canary-network/" title="Canary Test Network" class="md-nav__link">
+      Canary Test Network
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Blockchain Integration
+      </label>
+    
+    <a href="./" title="Blockchain Integration" class="md-nav__link md-nav__link--active">
+      Blockchain Integration
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" title="Purpose" class="md-nav__link">
+    Purpose
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#connecting-to-grid-singularity-node" title="Connecting to Grid Singularity node" class="md-nav__link">
+    Connecting to Grid Singularity node
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#simulating-grid-singularity-local-energy-markets-on-substrate" title="Simulating Grid Singularity local energy markets on Substrate" class="md-nav__link">
+    Simulating Grid Singularity local energy markets on Substrate
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wallet" title="Wallet" class="md-nav__link">
+    Wallet
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#balance" title="Balance" class="md-nav__link">
+    Balance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-pallet-calls" title="Test pallet calls" class="md-nav__link">
+    Test pallet calls
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#running-grid-singularity-d3a-with-substrate" title="Running Grid Singularity D3A with Substrate" class="md-nav__link">
+    Running Grid Singularity D3A with Substrate
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
+    
+    <label class="md-nav__link" for="nav-4">
+      Configuration general settings and installation
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-4">
+        Configuration general settings and installation
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../general-settings/" title="General Configuration Settings" class="md-nav__link">
+      General Configuration Settings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-2" type="checkbox" id="nav-4-2">
+    
+    <label class="md-nav__link" for="nav-4-2">
+      Backend Installation Instructions
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-2">
+        Backend Installation Instructions
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../linux-installation-instructions/" title="Linux Installation Instructions" class="md-nav__link">
+      Linux Installation Instructions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ios-installation-instructions/" title="Mac Installation Instructions" class="md-nav__link">
+      Mac Installation Instructions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../vm-installation-instructions/" title="Virtual Machine Installation Instructions" class="md-nav__link">
+      Virtual Machine Installation Instructions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../version-update/" title="Version Updates" class="md-nav__link">
+      Version Updates
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-3" type="checkbox" id="nav-4-3">
+    
+    <label class="md-nav__link" for="nav-4-3">
+      Modelling
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-3">
+        Modelling
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ui-initialisation/" title="Setting up a simulation in the User Interface" class="md-nav__link">
+      Setting up a simulation in the User Interface
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../model-markets/" title="Market Settings" class="md-nav__link">
+      Market Settings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-3-3" type="checkbox" id="nav-4-3-3">
+    
+    <label class="md-nav__link" for="nav-4-3-3">
+      Energy Assets Configuration
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-4-3-3">
+        Energy Assets Configuration
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../model-market-maker/" title="Market Maker and Infinite Bus" class="md-nav__link">
+      Market Maker and Infinite Bus
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../model-load/" title="Load" class="md-nav__link">
+      Load
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../model-pv/" title="PV" class="md-nav__link">
+      PV
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../model-storage/" title="Storage" class="md-nav__link">
+      Storage
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../model-power-plant/" title="Power Plant" class="md-nav__link">
+      Power Plant
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../map/" title="Map" class="md-nav__link">
+      Map
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../upload-file-formats/" title="File Upload Format" class="md-nav__link">
+      File Upload Format
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../library/" title="Asset and Data Library" class="md-nav__link">
+      Asset and Data Library
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../events/" title="Events (adding assets, communities, etc.)" class="md-nav__link">
+      Events (adding assets, communities, etc.)
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-5" type="checkbox" id="nav-4-5">
+    
+    <label class="md-nav__link" for="nav-4-5">
+      Results and Analysis
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-4-5">
+        Results and Analysis
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../results/" title="Results Dashboard" class="md-nav__link">
+      Results Dashboard
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-5-2" type="checkbox" id="nav-4-5-2">
+    
+    <label class="md-nav__link" for="nav-4-5-2">
+      Key Performance Indicators (KPIs)
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-4-5-2">
+        Key Performance Indicators (KPIs)
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../self-sufficiency-consumption/" title="Self-Sufficiency and Self-Consumption" class="md-nav__link">
+      Self-Sufficiency and Self-Consumption
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../peak-percentage/" title="Peak Percentage" class="md-nav__link">
+      Peak Percentage
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../energy-bills/" title="Energy Bill" class="md-nav__link">
+      Energy Bill
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../data-download/" title="Data Download" class="md-nav__link">
+      Data Download
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../references/" title="References" class="md-nav__link">
+      References
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../releases/" title="Releases Archive" class="md-nav__link">
+      Releases Archive
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" title="Purpose" class="md-nav__link">
+    Purpose
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#connecting-to-grid-singularity-node" title="Connecting to Grid Singularity node" class="md-nav__link">
+    Connecting to Grid Singularity node
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#simulating-grid-singularity-local-energy-markets-on-substrate" title="Simulating Grid Singularity local energy markets on Substrate" class="md-nav__link">
+    Simulating Grid Singularity local energy markets on Substrate
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wallet" title="Wallet" class="md-nav__link">
+    Wallet
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#balance" title="Balance" class="md-nav__link">
+    Balance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-pallet-calls" title="Test pallet calls" class="md-nav__link">
+    Test pallet calls
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#running-grid-singularity-d3a-with-substrate" title="Running Grid Singularity D3A with Substrate" class="md-nav__link">
+    Running Grid Singularity D3A with Substrate
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/gridsingularity/d3a/wiki/edit/master/docs/blockchain.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                  <h1>Blockchain Integration</h1>
+                
+                <h2 id="purpose">Purpose<a class="headerlink" href="#purpose" title="Permanent link">&para;</a></h2>
+<p>Grid Singularity energy exchange engine (D3A) has been designed so that it does not require blockchain technology, but that it can benefit from this technology to provide enhanced functionality. </p>
+<p>Grid Singularity aims to integrate blockchain for specific benefits: </p>
+<ol>
+<li><strong>Decentralisation</strong> and <strong>transparency</strong>: blockchain can be used to create decentralized registry and identity. By doing so, the privacy and security of users are enhanced.</li>
+<li><strong>Data ownership</strong> : End-users would have complete control over their data access and use</li>
+<li><strong>Payments</strong>: Trades cleared on the market will be recorded on the chain and the payments executed. While the privacy of users will be preserved, the system would be more transparent.</li>
+<li><strong>Degrees of Freedom:</strong> Bids and offers can be tagged with validated attributes to enable trading degrees of freedom such as preferred trading partner, energy source selection, or location restrictions on trades</li>
+<li><strong>Asset validation</strong>: energy assets, smart meters, and entities can be validated using tools like the <a href="https://switchboard-dev.energyweb.org/#/">Energy Web Switchboard. </a></li>
+</ol>
+<p>The <a href="https://www.energyweb.org/technology/energy-web-chain/">Energy Web Chain</a> is the blockchain of choice for Grid Singularity D3A future blockchain implementation. Grid Singularity, an energy technology startup, and the Rocky Mountain Institute, a nonprofit clean technology organisation, jointly founded the Energy Web Foundation (EWF) in January 2017. EWF is a nonprofit foundation gathering an ecosystem of over 100 energy corporations and startups with a shared, public blockchain platform, the Energy Web Chain. While Grid Singularity has significantly contributed to EWF development and the launch of the Energy Web Chain, its role today is supervisory and advisory, with two Grid Singularity representatives serving on <a href="https://www.energyweb.org/about/foundation-council/">the EWF’s Foundation Council</a>. </p>
+<p>At present, D3A blockchain integration is used just for simulated transactions and it is based on <a href="https://www.substrate.io/">Substrate</a>. We are also in the process of integrating with the <a href="https://switchboard-dev.energyweb.org/#/">Energy Web Switchboard</a>, which will be used as a <strong>decentralized asset registry</strong>. In the future we plan to move to full implementation on the Energy Web Chain, benefiting from <a href="https://polkadot.network/">Polkadot’s</a> scaling solution.</p>
+<p>The current basic blockchain integration uses Substrate, which allows modular business logic to be built directly in the blockchain and facilitates a high transaction throughput. Substrate has components called pallets, where each pallet can represent different functionality, such as <strong>smart contracts, storage, auctions, and more</strong>. Currently, our integration includes a storage pallet that provides immutable storage of executed transactions, and additional functionalities will continue to be actively developed. </p>
+<p>Blockchain can optionally be enabled on simulations running locally with the backend code base. There are three configuration parameters. The  command-line flag is  <code>--enable-bc</code>, used to enable blockchain operations. The two other parameters are the mnemonic to restore your key and interact with the blockchain, and the <code>ENABLE_SUBSTRATE</code> parameter described in the steps below.</p>
+<h2 id="connecting-to-grid-singularity-node">Connecting to Grid Singularity node<a class="headerlink" href="#connecting-to-grid-singularity-node" title="Permanent link">&para;</a></h2>
+<div class="codehilite"><pre><span></span><code>https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fcanvas-node.dev.gridsingularity.com
+</code></pre></div>
+
+<p>When you go to the endpoint, you will see the standard interface. That’s the easiest point of interaction with the node, where you can call extrinsics, upload contracts, deploy them, test their functions, send funds and more.</p>
+<h2 id="simulating-grid-singularity-local-energy-markets-on-substrate">Simulating Grid Singularity local energy markets on Substrate<a class="headerlink" href="#simulating-grid-singularity-local-energy-markets-on-substrate" title="Permanent link">&para;</a></h2>
+<h3 id="wallet">Wallet<a class="headerlink" href="#wallet" title="Permanent link">&para;</a></h3>
+<p>Ensure that you have the Polkadot Chrome extension (it is a browser extension that allows you to manage accounts for any Substrate-based blockchain). Create an account and save your seed phrase. You will need to save "your twelve words" mnemonic to be able to restore your key in general, and later to pass it the models/market/blockchain_utils.py in order to call the contracts on-chain from python code. Make sure never to push your mnemonic to GitHub.</p>
+<h3 id="balance">Balance<a class="headerlink" href="#balance" title="Permanent link">&para;</a></h3>
+<p>If you want to send a transaction manually or through Grid Singularity D3A in the development chain, you need to pay transaction fees (<code>gas</code>), which requires that you have funds in your wallet. In the Polkadot User Interface, go to Network → Accounts where you will see a list of pre-funded addresses called Alice, Bob, and so on. There you can send funds to your newly generated address to be able to pay for the gas. Sending 10 Units will suffice for running hundreds of simulations. These pre-funded accounts serve as a faucet as they do not represent real financial value and the transactions are simulated. </p>
+<h3 id="test-pallet-calls">Test pallet calls<a class="headerlink" href="#test-pallet-calls" title="Permanent link">&para;</a></h3>
+<p>It is possible to manually test the Developer → Extrinsics → tradestorage in the UI. You can choose the prefunded addresses as the buyer (Alice) and the seller (Bob). Set a small amount e.g. 1 and rate (e.g.12) (rate here is the price at which the trade is executed). Trade ID is a bytes vector (e.g. <code>0x1234</code>). If the extrinsic hash is successfully submitted, you will see a success message pop up in the top right corner of the UI. The Polkadot user interface does not allow you to directly go to that extrinsic hash, but you can go to Network and find the latest block. You may have to go to its parent or further to see the extrinsic hash.</p>
+<h3 id="running-grid-singularity-d3a-with-substrate">Running Grid Singularity D3A with Substrate<a class="headerlink" href="#running-grid-singularity-d3a-with-substrate" title="Permanent link">&para;</a></h3>
+<p>Go to <code>src/d3a/blockchain/constants.py</code> and set <code>ENABLE_SUBSTRATE = True</code> and add your mnemonic. That will allow all the blockchain dependencies to be installed with:</p>
+<div class="codehilite"><pre><span></span><code>fab sync
+</code></pre></div>
+
+<p>Each transaction in the simulation triggers a call to the pallet. Currently, the buyer and the seller are default addresses. In addition to the buyer and seller, the trade structure has a trade ID, energy quantity, and rate. Following D3A’s integration with the decentralized identity registry (Energy Web Switchboard), the addresses will be actual user accounts. In the terminal, you should see the extrinsic hash and the block hash.</p>
+<div class="codehilite"><pre><span></span><code>17:39:37.466 WARNING  ( 333) d3a.d3a_core.simulation       : Slot 1 of 96 - (1.0%) 0.00 second elapsed, ETA: 0.01 second
+17:39:41.974 INFO     ( 122) root                          : Extrinsic &#39;0xe1357be7db683e0f3f85e101ea017da10fcaa63310e4dc7040e505cad9ac1a0a&#39; sent and included in block &#39;0x2199d0870583183e6f2c591b66e9a1a9cb2399b7b3ed21b21c3804c3cfcf730f&#39;
+17:39:41.975 INFO     ( 271) d3a.models.market.one_sided   : [TRADE] [Grid] [2021-01-26T00:00] {7f15aa} [origin: H1 Storage2 -&gt; Cell Tower] [IAA House 1 -&gt; Cell Tower] 0.025 kWh @ 0.7500000000000001 30.0 db09b600-22a9-4feb-ae4d-620cb6247702 [fee: 0.0 cts.]
+</code></pre></div>
+
+<p>The block hash will allow you to find your extrinsic hash, as in this <a href="https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fcanvas-node.dev.gridsingularity.com#/explorer/query/0xf33563d5a2e3e5cef0629fa8c83b39a216fb2e61700855a67c232f800fe6b44e">example</a>.</p>
+<p>View events → tradestorage.TradeMapStored (this event is triggered every time we call the pallet’s store trade map function).</p>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../canary-network/" title="Canary Test Network" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Canary Test Network
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../general-settings/" title="General Configuration Settings" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                General Configuration Settings
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-logo">
+        <img src="../img/d3a-logo.png" height="50"/>
+      </div>
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+  <div class="md-footer-social">
+    <link rel="stylesheet" href="../assets/fonts/font-awesome.css">
+    
+      <a href="https://github.com/gridsingularity" class="md-footer-social__link fa fa-lg fa-github"></a>
+    
+      <a href="https://twitter.com/gridsingularity" class="md-footer-social__link fa fa-lg fa-twitter"></a>
+    
+      <a href="https://www.linkedin.com/company/grid-singularity" class="md-footer-social__link fa fa-lg fa-linkedin"></a>
+    
+      <a href="https://join.slack.com/t/gsycommunity/shared_invite/zt-dpfxe2gk-hKFccsrr68g982odCJlrIg" class="md-footer-social__link fa fa-lg fa-slack"></a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../assets/javascripts/application.05d1c8d6.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      
+        <script src="https://research.web3.foundation/en/latest/mathjax-config.js"></script>
+      
+        <script src="../search/main.js"></script>
+      
+    
+  </body>
+</html>
