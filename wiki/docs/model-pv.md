@@ -15,7 +15,7 @@ The following parameters can be configured:
 
 The PV configuration interface is shown in the figure below:
 
-![alt_text](images/image1.png "image_tooltip")
+![alt_text](img/model-pv-1.png){:style="height:750px;width:240px"}
 
 
 ##Backend Configuration

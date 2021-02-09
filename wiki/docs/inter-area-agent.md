@@ -2,7 +2,7 @@ The Inter-Area Agent (IAA) plays a crucial role in the communication architectur
 
 The following illustration shows a sample grid setup and the role of the IAA in the market hierarchy during one time slot:
 
-![alt_text](images/image1.png "image_tooltip")
+![alt_text](img/interareaagent-1.png)
 
 The IAA is responsible for modelling hierarchical market operations, as follows:
 

@@ -10,18 +10,18 @@ Possible events are :
 
 Once an event is set, the user can track it on the timeline displayed at the top of the simulation. If the user clicks on the event on the Modelling page, the grid setup at that specific time is viewed. If the user clicks on an event in the Results page, the results of the specific markets and energy assets are viewed.
 
-![alt_text](images/image1.png "image_tooltip")
+![alt_text](img/events-1.png)
 
-![alt_text](images/image2.png "image_tooltip")
+![alt_text](img/events-2.png){:style="height:50px;width:50px"}
  whenever a market or energy asset was added
 
-![alt_text](images/image3.png "image_tooltip")
+![alt_text](img/events-3.png){:style="height:50px;width:50px"}
  whenever a market or energy asset parameter was modified
 
-![alt_text](images/image4.png "image_tooltip")
+![alt_text](img/events-4.png){:style="height:50px;width:50px"}
  whenever a market or energy asset was removed
 
-![alt_text](images/image5.png "image_tooltip")
+![alt_text](img/events-5.png){:style="height:50px;width:50px"}
  whenever multiple events have been executed at the same time
 
 ##Events in Simulations run using the Backend

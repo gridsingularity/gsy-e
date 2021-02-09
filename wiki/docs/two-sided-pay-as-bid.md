@@ -6,5 +6,5 @@ The auction is **continuous**, meaning that once an offer or bid is posted, it c
 
 An Inter-Area Agent is created and operated by each [market (area)](model-markets.md). Its role is to forward offers and bids to the connected markets. The market constantly triggers the matching between bids and offers according to the matching algorithm as illustrated in the figure below.
 
-![alt_text](images/image1.png "image_tooltip")
+![alt_text](img/pay-as-bid-1.png)
 

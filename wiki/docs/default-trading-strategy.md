@@ -10,7 +10,7 @@ Grid Singularity’s exchange engine (D3A) has a built-in template trading agent
 
 The following plot shows the changing energy rate in a [spot market](markets.md) slot (slot_length = 15min) for four different trading settings.
 
-![alt_text](images/image1.png "image_tooltip")
+![alt_text](img/default-trading-2.png)
 
 If `fit_to_limit` is set to `True`, `energy_rate_decrease_per_update` is ignored and a rate decrease per time is calculated, starting at `initial_selling_rate` and ending at `final_selling_rate` while updating the rate at each `update_interval`.
 
@@ -24,7 +24,7 @@ If `fit_to_limit` is set to `True`, `energy_rate_decrease_per_update` is ignored
 
 The following plot shows the energy rate change in a spot market slot (slot_length = 15min) for different trading settings. If `fit_to_limit` is set to `True`, `energy_rate_increase_per_update` is ignored and a rate increase per time is calculated that starts at `initial_buying_rate` and ends at `final_buying_rate` while updating the rate at each `update_interval`.
 
-![alt_text](images/image2.png "image_tooltip")
+![alt_text](img/default-trading-1.png)
 
 
 Assets can also deploy more intelligent trading strategies, as demonstrated in the 2020 Energy Singularity Challenge, described in the following two articles:

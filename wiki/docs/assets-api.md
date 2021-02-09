@@ -1,6 +1,6 @@
 The Grid Singularity API client allows you to create agents that follow custom trading strategies to buy and sell energy in the energy market. The agent can request and receive information through the Asset API, feed that information into an algorithm, and post bids or offers on a live simulated exchange. 
 
-![alt_text](images/image1.jpg "image_tooltip")
+![alt_text](img/asset-api-1.png)
 
 
 ##API Commands

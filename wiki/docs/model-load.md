@@ -19,7 +19,7 @@ The following parameters can be configured:
 
 The Load configuration interface is shown below:
 
-![alt_text](images/image1.png "image_tooltip")
+![alt_text](img/model-load-1.png){:style="height:800px;width:220px"}
 
 ##Backend Configuration
 

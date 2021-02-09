@@ -5,7 +5,7 @@ The main goal of an electricity market exchange is to balance the grid in terms 
 2. Balancing market: imbalances that occur due to deviations between energy traded in the spot market and actual energy consumption and production are absorbed by balance responsible parties (BRP) that are reimbursed for their service with a fee based on the energy deviation.
 3. Futures market: Trades for the longer term future consumption and production of energy are agreed in advance. This market is currently outside the scope of Grid Singularity energy exchange implementation.
 
-![alt_text](images/image1.png "image_tooltip")
+![alt_text](img/markets-1.png)
 
 The current implementation of Grid Singularity software focuses on the spot and balancing markets. [Balancing markets](balancing-market.md) take place immediately after each spot market slot (if enabled). The duration of the markets can be configured. Currently, three spot market types are implemented:
 

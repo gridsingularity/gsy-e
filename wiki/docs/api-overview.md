@@ -1,7 +1,7 @@
 ##Definition
 To enable users to interact with a running collaboration or a canary test network, two different application interfaces (APIs) are available. The [Asset API](assets-api.md) allows the user to manage multiple energy assets by implementing custom trading strategies. The [Grid Operator API](grid-operator-api.md) allows the user to manage multiple markets by implementing custom grid fee strategies. Both interfaces allow strategies to incorporate market and asset statistics. Two examples of template API scripts are available in the Grid Singularity’s GitHub repository: [Asset API](https://github.com/gridsingularity/d3a/blob/master/src/d3a/setup/odyssey_momentum/assets_api_template.py) and [Grid Operator API](https://github.com/gridsingularity/d3a/blob/master/src/d3a/setup/odyssey_momentum/markets_api_template.py).  These two APIs interact with Grid Singularity simulations through the open source Grid Singularity’s [API client](https://github.com/gridsingularity/d3a-api-client). 
 
-![alt_text](images/image1.png "image_tooltip")
+![alt_text](img/api-overview-1.png)
 
 ##API Client Installation##
 
@@ -95,7 +95,7 @@ Then run:
 
 After a few seconds, trading should begin, resembling the figure below. 
 
-![alt_text](images/image2.png "image_tooltip")
+![alt_text](img/api-overview-2.png)
 
 ##Initialise and start the API :
 

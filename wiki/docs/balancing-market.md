@@ -7,7 +7,7 @@ Each control strategy has specific purposes and features and can be categorized 
 2. Secondary Control (Automatic Frequency Restoration Reserves - aFRR)
 3. Tertiary Control (Manual Frequency Restoration Reserves - mFRR)
 
-![alt_text](images/image1.png "image_tooltip")
+![alt_text](img/balancing-market-structure-1.png)
 
 [Figure: The three tiers of grid control and its activation structure ](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.126.3675)
 
@@ -15,7 +15,7 @@ Each control strategy has specific purposes and features and can be categorized 
 
 **Primary control** is an automatic function that is almost instantaneously activated to stabilise the frequency drops/spikes. It is the fastest type of frequency control with a response time of a few seconds and operates using a joint process involving all TSOs of the synchronous area. This is shown in the figure below. For example, if there is an increase in demand, the energy used to compensate for this demand comes from the kinetic energy stored in large rotating synchronous generators that start decreasing its velocity. This is referred to as [Inertial response](https://eepower.com/technical-articles/frequency-control-in-a-power-system/#). For the generators to recover the speed, the speed controller of each generator acts to increase the generator power to clear the imbalance. Within a period of 30 seconds, each generating unit is able to generate the required power and stabilise this production for at least 15 minutes or depending on the requirements of the TSO within the synchronous region. Primary control is done using generation plants that are connected to the high voltage power supply with the exception of renewable energy sources which are non-schedulable due to its intermittent nature.
 
-![alt_text](images/image2.png "image_tooltip")
+![alt_text](img/balancing-market-structure-2.png)
 
 [Figure: Recovery of the system from a contingency event and action by primary frequency control (PFR)](https://www.nrel.gov/news/program/2020/inertia-and-the-power-grid-a-guide-without-the-spin.html) ** **
 
@@ -83,7 +83,7 @@ Table: [Main features of frequency control strategies](https://eepower.com/techn
 In our **transactive energy low voltage grid structure** primary, secondary and tertiary control are controlled by an area controller called the balancing agent.
 
 
-![alt_text](images/image3.png "image_tooltip")
+![alt_text](img/balancing-market-structure-3.png)
 
 
 Area control structure of market consisting of all  three tiers of control (source: Martin Fornage, A generalized transactive energy based framework: Enphase Energy. Powerpoint presentation 2015)

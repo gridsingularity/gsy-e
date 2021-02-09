@@ -27,9 +27,8 @@ Note: For the time being, the storage component has a 100% electric-to-electric 
 
 The storage configuration interface is shown below:
 
-![alt_text](images/image1.png "image_tooltip")
-
-![alt_text](images/image2.png "image_tooltip")
+![alt_text](img/model-storage-1.png){:style="height:750px;width:250px"}
+![alt_text](img/model-storage-2.png){:style="height:250px;width:250px"}
 
 
 ##Backend Configuration

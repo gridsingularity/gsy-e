@@ -1,5 +1,5 @@
 
-![alt_text](images/image1.png "image_tooltip")
+![alt_text](img/peak-percentage-1.png)
 
 The energy peak imports/exports is the maximum value of the aggregate imports/exports of each asset inside a market. The user has the possibility to set a `baseline_peak_energy_import_kWh` and a `baseline_peak_energy_export_kWh` that they may have gotten from another simulation in order to calculate the energy peak percentage, a tool used to measure how much the peak imports or exports have changed between a defined baseline and the current simulation.
 

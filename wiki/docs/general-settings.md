@@ -25,13 +25,12 @@ When creating a new simulation, simulation collaboration or a simulation in the 
 
 The interface for selecting general settings is shown below:
 
-![alt_text](images/image1.png "image_tooltip")
-
-![alt_text](images/image2.png "image_tooltip")
+![alt_text](img/general-settings-1.png){:style="height:550px;width:275px"}
+![alt_text](img/general-settings-2.png){:style="height:450px;width:275px"}
 
 Once the general settings of the simulation are defined, the user can move to the modelling page and set up the grid architecture by adding Markets and Energy Assets. Each market or energy asset is considered as **1 node**. At the moment, up to 1000 nodes can be configured.
 
-![alt_text](images/image3.png "image_tooltip")
+![alt_text](img/general-settings-3.png)
 
 
 Markets contain a [spot market](markets.md) where all connected energy assets, submarkets and parent markets trade energy. Markets can potentially house multiple submarkets of different market types, and this feature will be available in the future version of our software.

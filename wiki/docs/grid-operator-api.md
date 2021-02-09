@@ -16,7 +16,7 @@ The Grid Operator API receives information concerning the markets that it manage
 
 As explained above the Grid Operator API function is triggered at the end of each market slot. Here is one example:
 
-![alt_text](images/image1.png "image_tooltip")
+![alt_text](img/grid-operator-1.png)
 
 1. At the end of the 12:45 market slot, the Grid Operator API function on_market_cycle is triggered.
 2. The Grid Operator agent receives a dictionary with information from the last market slot (12:45-13:00).

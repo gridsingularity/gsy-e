@@ -18,7 +18,7 @@ The following parameters can be set:
 
 The Market Maker configuration interface is shown below:
 
-![alt_text](images/image1.png "image_tooltip")
+![alt_text](img/model-market-maker-1.png){:style="height:500px;width:275px"}
 
 ##Backend Configuration
 

@@ -7,6 +7,8 @@ self_consumption(market) = self_consumed_energy / total_energy_produced
 ```
 The example provided in the figure below has the following grid architecture: 
 
+![alt_text](img/self-sufficiency-consumption-1.png)
+
 *   `total_house1_pv_production` = 10kWh
 *   `house1_pv` → `house1_load` = 1kWh
 *   `house1_pv` → `house1_storage` = 5kWh
@@ -29,5 +31,4 @@ In the **Grid**, the highest level of the hierarchy :
 *   **self_sufficiency** = 10 / 10 = 1 → 100%
 *   **self_consumption** = 10 / 10 = 1 → 100%
 
-![alt_text](images/image1.png "image_tooltip")
 

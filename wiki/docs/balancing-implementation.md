@@ -1,4 +1,4 @@
-![alt_text](images/image1.png "image_tooltip")
+![alt_text](img/balancing-market-implementation-1.png)
 
 Structure of Balancing Market in Grid Singularity energy exchange (D3A)
 
