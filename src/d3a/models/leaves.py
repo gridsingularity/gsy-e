@@ -57,19 +57,20 @@ class Leaf(Area):
     """
     strategy_type = None
 
-    def __init__(self, name, config=None, uuid=None, **kwargs):
-        if kwargs.get("forecast_stream_enabled", False) is True:
-            try:
-                self.strategy_type = forecast_strategy_mapping[self.strategy_type]
-            except KeyError:
-                logging.error(f"{self.strategy_type} could not be found in "
-                              f"forecast_strategy_mapping, using template strategy.")
-        elif kwargs.get("allow_external_connection", False) is True:
-            try:
-                self.strategy_type = external_strategies_mapping[self.strategy_type]
-            except KeyError:
-                logging.error(f"{self.strategy_type} could not be found "
-                              f"in external_strategies_mapping, using template strategy.")
+    def __init__(self, name, config, uuid=None, **kwargs):
+        if config.external_connection_enabled:
+            if kwargs.get("forecast_stream_enabled", False) is True:
+                try:
+                    self.strategy_type = forecast_strategy_mapping[self.strategy_type]
+                except KeyError:
+                    logging.error(f"{self.strategy_type} could not be found in "
+                                  f"forecast_strategy_mapping, using template strategy.")
+            elif kwargs.get("allow_external_connection", False) is True:
+                try:
+                    self.strategy_type = external_strategies_mapping[self.strategy_type]
+                except KeyError:
+                    logging.error(f"{self.strategy_type} could not be found "
+                                  f"in external_strategies_mapping, using template strategy.")
         super(Leaf, self).__init__(
             name=name,
             strategy=self.strategy_type(**{
