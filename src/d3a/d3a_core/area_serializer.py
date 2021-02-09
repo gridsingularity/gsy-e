@@ -153,7 +153,7 @@ def area_from_dict(description, config):
         raise ValueError("Input is not a valid area description (%s)" % str(error))
 
 
-def area_from_string(string, config=None):
+def area_from_string(string, config):
     """Recover area from its json string representation"""
     return area_from_dict(json.loads(string), config)
 
