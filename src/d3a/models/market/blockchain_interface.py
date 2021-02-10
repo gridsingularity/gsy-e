@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
+from datetime import datetime
 from d3a.events.event_structures import MarketEvent
 from d3a.d3a_core.exceptions import InvalidTrade
 from d3a.d3a_core.util import retry_function
@@ -60,7 +61,7 @@ class NonBlockchainInterface:
     def handle_blockchain_trade_event(self, offer, buyer, original_offer, residual_offer):
         return str(uuid.uuid4()), residual_offer
 
-    def track_trade_event(self, trade):
+    def track_trade_event(self, simulation_id, market_id, time_slot, trade):
         pass
 
     def bc_listener(self):
@@ -95,14 +96,18 @@ class SubstrateBlockchainInterface(BlockChainInterface):
         return str(uuid.uuid4()), residual_offer
 
     @retry_function(max_retries=3)
-    def track_trade_event(self, trade):
+    def track_trade_event(self, simulation_id, market_id, time_slot, trade):
+        print(f"track_trade_event: {trade}")
 
         call_params = {
+            'simulation_id': str(simulation_id),
+            'market_id': str(market_id),
+            'market_slot': datetime.timestamp(time_slot),
             'trade_id': trade.id,
             'buyer': ALICE_STASH_ADDRESS,
             'seller': BOB_STASH_ADDRESS,
-            'energy': trade.offer.energy,
-            'rate': trade.offer.energy_rate
+            'energy': int(trade.offer.energy),
+            'rate': int(trade.offer.energy_rate)
         }
 
         call = self.substrate.compose_call(

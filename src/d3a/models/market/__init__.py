@@ -60,10 +60,13 @@ def lock_market_action(function):
 
 class Market:
 
-    def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
+    def __init__(self, simulation_id=None, market_id=None, time_slot=None, bc=None,
+                 notification_listener=None, readonly=False,
                  grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
                  transfer_fees: TransferFees = None, name=None):
         self.name = name
+        self.simulation_id = str(uuid.uuid4()) if simulation_id is None else simulation_id
+        self.market_id = str(uuid.uuid4()) if market_id is None else market_id
         if bc is not None:
             self.bc_interface = SubstrateBlockchainInterface()
         else:

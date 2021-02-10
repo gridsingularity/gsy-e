@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from pendulum import DateTime # noqa
 from typing import Dict  # noqa
+import uuid
 
 from d3a.models.market import TransferFees
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
@@ -31,8 +32,9 @@ from d3a import constants
 
 
 class AreaMarkets:
-    def __init__(self, area_log):
+    def __init__(self, market_id, area_log):
         # Children trade in `markets`
+        self.market_id = market_id
         self.log = area_log
         self.markets = OrderedDict()  # type: Dict[DateTime, Market]
         self.balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]
@@ -117,6 +119,8 @@ class AreaMarkets:
             if timeframe not in markets:
                 # Create markets for missing slots
                 market = market_class(
+                    simulation_id=str(uuid.uuid4()),
+                    market_id=str(self.market_id),
                     time_slot=timeframe,
                     bc=area.bc,
                     notification_listener=area.dispatcher.broadcast_callback,

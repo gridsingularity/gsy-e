@@ -136,7 +136,7 @@ class Area:
         self.dispatcher = DispatcherFactory(self)()
         self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
-        self._markets = AreaMarkets(self.log)
+        self._markets = AreaMarkets(self.uuid, self.log)
         self.stats = AreaStats(self._markets, self)
         log.debug(f"External connection {external_connection_available} for area {self.name}")
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
