@@ -208,15 +208,10 @@ p{
   vertical-align: middle;
 
 }
-.table td{
-
-  }
 .table tr:nth-child(even){background-color: #ffffff;}
-
 .table th {
   padding-top: 12px;
   padding-bottom: 12px;
   text-align: center;
   font-weight: bold;
-
 }
