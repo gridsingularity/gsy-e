@@ -100,6 +100,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         }
 
     def restore_state(self, saved_state):
-        self.energy_buy_rate = convert_str_to_pendulum_in_dict(
-            saved_state["energy_buy_rate"])
-        self.energy_rate = convert_str_to_pendulum_in_dict(saved_state["energy_rate"])
+        self.energy_buy_rate.update(convert_str_to_pendulum_in_dict(
+            saved_state["energy_buy_rate"]))
+        self.energy_rate.update(convert_str_to_pendulum_in_dict(
+            saved_state["energy_rate"]))

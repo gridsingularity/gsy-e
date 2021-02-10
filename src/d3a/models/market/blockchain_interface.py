@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import uuid
 from d3a.events.event_structures import MarketEvent
 from d3a.d3a_core.exceptions import InvalidTrade
+from d3a.d3a_core.util import retry_function
 from d3a.blockchain import ENABLE_SUBSTRATE, BlockChainInterface
 import platform
 import logging
@@ -28,8 +29,8 @@ logger = logging.getLogger()
 if platform.python_implementation() != "PyPy" and ENABLE_SUBSTRATE:
     from d3a.blockchain.constants import mnemonic, \
         BOB_STASH_ADDRESS, ALICE_STASH_ADDRESS, \
-        default_amount, default_call_module, default_call_function, \
-        address_type, default_rate
+        default_call_module, default_call_function, \
+        address_type
     from d3a.models.market.blockchain_utils import create_new_offer, \
         cancel_offer, trade_offer
     from substrateinterface import Keypair  # NOQA
@@ -93,14 +94,15 @@ class SubstrateBlockchainInterface(BlockChainInterface):
     def handle_blockchain_trade_event(self, offer, buyer, original_offer, residual_offer):
         return str(uuid.uuid4()), residual_offer
 
+    @retry_function(max_retries=3)
     def track_trade_event(self, trade):
 
         call_params = {
             'trade_id': trade.id,
             'buyer': ALICE_STASH_ADDRESS,
             'seller': BOB_STASH_ADDRESS,
-            'amount': default_amount,
-            'rate': default_rate
+            'energy': trade.offer.energy,
+            'rate': trade.offer.energy_rate
         }
 
         call = self.substrate.compose_call(
