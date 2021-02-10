@@ -57,10 +57,19 @@ class Offer:
                "[{s.seller}]: {s.energy} kWh @ {s.price} @ {rate}"\
             .format(s=self, rate=self.energy_rate)
 
-    def to_JSON_string(self):
+    def to_JSON_string(self, **kwargs):
+        """Convert the Offer object into its JSON representation.
+
+        Args:
+            **kwargs: additional key-value pairs to be added to the JSON representation.
+        """
         offer_dict = deepcopy(self.__dict__)
+        if kwargs:
+            offer_dict = {**offer_dict, **kwargs}
+
         offer_dict["type"] = "Offer"
         offer_dict.pop('energy_rate', None)
+
         return json.dumps(offer_dict, default=my_converter)
 
     def serializable_dict(self):

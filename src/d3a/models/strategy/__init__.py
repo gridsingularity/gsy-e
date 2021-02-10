@@ -455,8 +455,25 @@ class BidEnabledStrategy(BaseStrategy):
         self._bids = {}
         self._traded_bids = {}
 
+    def post_offer(self, market, replace_existing=False, **offer_kwargs) -> Offer:
+        """Post the offer on the specified market.
+
+        Args:
+            market: The market in which the offer must be placed.
+            replace_existing (bool): if True, delete all previous offers.
+            offer_kwargs: the parameters that will be used to create the Offer object.
+        """
+        if replace_existing:
+            # Remove all existing offers that are still open in the market
+            self.offers.remove_offer_from_cache_and_market(market)
+
+        offer = market.offer(**offer_kwargs)
+        self.offers.post(offer, market.id)
+
+        return offer
+
     def _remove_existing_bids(self, market: Market) -> None:
-        """Remove all existing bids in the market"""
+        """Remove all existing bids in the market."""
 
         for bid in self.get_posted_bids(market):
             assert bid.buyer == self.owner.name

@@ -162,12 +162,16 @@ class PVExternalMixin(ExternalMixin):
                 arguments["price"],
                 self.state.get_available_energy_kWh(self.next_market.time_slot),
                 self.next_market)
-            offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
-            offer = self.next_market.offer(**offer_arguments)
-            self.offers.post(offer, self.next_market.id)
+
+            offer_arguments = {k: v for k, v in arguments.items() if not k == 'transaction_id'}
+            replace_existing = offer_arguments.pop('replace_existing', True)
+            offer = self.post_offer(
+                self.next_market, replace_existing=replace_existing, **offer_arguments)
+
             self.redis.publish_json(
                 response_channel,
-                {"command": "offer", "status": "ready", "offer": offer.to_JSON_string(),
+                {"command": "offer", "status": "ready",
+                 "offer": offer.to_JSON_string(replace_existing=replace_existing),
                  "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling offer create on area {self.device.name}: "
@@ -334,7 +338,14 @@ class PVExternalMixin(ExternalMixin):
                     continue
 
     def _offer_aggregator(self, arguments):
-        assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
+        required_args = {'price', 'energy', 'type', 'transaction_id'}
+        allowed_args = required_args.union({'replace_existing'})
+
+        # Check that all required arguments have been provided
+        assert all(arg in arguments.keys() for arg in required_args)
+        # Check that every provided argument is allowed
+        assert all(arg in allowed_args for arg in arguments.keys())
+
         arguments['seller'] = self.device.name
         arguments['seller_origin'] = self.device.name
         try:
@@ -346,12 +357,15 @@ class PVExternalMixin(ExternalMixin):
             offer_arguments = {k: v
                                for k, v in arguments.items()
                                if k not in ["transaction_id", "type"]}
-            offer = self.next_market.offer(**offer_arguments)
-            self.offers.post(offer, self.next_market.id)
+            replace_existing = offer_arguments.pop('replace_existing', True)
+
+            offer = self.post_offer(
+                self.next_market, replace_existing=replace_existing, **offer_arguments)
+
             return {
                 "command": "offer",
                 "status": "ready",
-                "offer": offer.to_JSON_string(),
+                "offer": offer.to_JSON_string(replace_existing=replace_existing),
                 "transaction_id": arguments.get("transaction_id", None),
                 "area_uuid": self.device.uuid
             }

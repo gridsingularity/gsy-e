@@ -133,15 +133,20 @@ class StorageExternalMixin(ExternalMixin):
 
     def _offer(self, payload):
         transaction_id = self._get_transaction_id(payload)
+        required_args = {'price', 'energy', 'transaction_id'}
+        allowed_args = required_args.union({'replace_existing'})
+
         offer_response_channel = f'{self.channel_prefix}/response/offer'
         if not check_for_connected_and_reply(self.redis, offer_response_channel,
                                              self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert all(
-                arg in {'price', 'energy', 'replace_existing', 'transaction_id'}
-                for arg in arguments.keys())
+
+            # Check that all required arguments have been provided
+            assert all(arg in arguments.keys() for arg in required_args)
+            # Check that every provided argument is allowed
+            assert all(arg in allowed_args for arg in arguments.keys())
 
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
@@ -152,7 +157,7 @@ class StorageExternalMixin(ExternalMixin):
                 {"command": "offer",
                  "error": (
                      "Incorrect offer request. "
-                     f"Available parameters: {'price', 'energy', 'replace_existing'}."),
+                     f"Available parameters: ('price', 'energy', 'replace_existing')."),
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
@@ -162,15 +167,21 @@ class StorageExternalMixin(ExternalMixin):
         try:
             assert arguments['energy'] <= \
                    self.state.energy_to_sell_dict[self.next_market.time_slot]
+
             offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
-            offer = self.next_market.offer(**offer_arguments)
-            self.offers.post(offer, self.next_market.id)
+            replace_existing = offer_arguments.pop('replace_existing', True)
+
+            offer = self.post_offer(
+                self.next_market, replace_existing=replace_existing, **offer_arguments)
+
             self.state.offered_sell_kWh[self.next_market.time_slot] = \
                 self.offers.open_offer_energy(self.next_market.id)
             self.state.clamp_energy_to_sell_kWh([self.next_market.time_slot])
+
             self.redis.publish_json(
                 response_channel,
-                {"command": "offer", "status": "ready", "offer": offer.to_JSON_string(),
+                {"command": "offer", "status": "ready",
+                 "offer": offer.to_JSON_string(replace_existing=replace_existing),
                  "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling offer create on area {self.device.name}: "
@@ -477,26 +488,37 @@ class StorageExternalMixin(ExternalMixin):
                     continue
 
     def _offer_aggregator(self, arguments):
-        assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
+        required_args = {'price', 'energy', 'type', 'transaction_id'}
+        allowed_args = required_args.union({'replace_existing'})
+
+        # Check that all required arguments have been provided
+        assert all(arg in arguments.keys() for arg in required_args)
+        # Check that every provided argument is allowed
+        assert all(arg in allowed_args for arg in arguments.keys())
+
         with self.lock:
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
             try:
                 assert arguments['energy'] <= \
                        self.state.energy_to_sell_dict[self.next_market.time_slot]
-                offer = self.next_market.offer(
-                    price=arguments['price'], energy=arguments['energy'],
-                    seller=arguments['seller'], seller_origin=arguments['seller_origin']
-                )
-                self.offers.post(offer, self.next_market.id)
+
+                offer_arguments = {
+                    k: v for k, v in arguments.items() if k not in ['transaction_id', 'type']}
+                replace_existing = offer_arguments.pop('replace_existing', True)
+
+                offer = self.post_offer(
+                    self.next_market, replace_existing=replace_existing, **offer_arguments)
+
                 self.state.offered_sell_kWh[self.next_market.time_slot] = \
                     self.offers.open_offer_energy(self.next_market.id)
                 self.state.clamp_energy_to_sell_kWh([self.next_market.time_slot])
+
                 return {
                     "command": "offer",
                     "area_uuid": self.device.uuid,
                     "status": "ready",
-                    "offer": offer.to_JSON_string(),
+                    "offer": offer.to_JSON_string(replace_existing=replace_existing),
                     "transaction_id": arguments.get("transaction_id", None),
                 }
             except Exception:
