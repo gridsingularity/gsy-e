@@ -35,10 +35,15 @@ def start(scenario, settings, events, aggregator_device_mapping, saved_state):
 def main():
     with Connection(StrictRedis.from_url(environ.get('REDIS_URL', 'redis://localhost'),
                                          retry_on_timeout=True)):
-        Worker(
+        worker = Worker(
             [get_simulation_queue_name()],
             name=f'simulation.{getpid()}.{now().timestamp()}', log_job_description=False
-        ).work(max_jobs=1, burst=True)
+        )
+        try:
+            worker.work(max_jobs=1, burst=True)
+        except Exception:
+            worker.kill_horse()
+            worker.wait_for_horse()
 
 
 if __name__ == "__main__":
