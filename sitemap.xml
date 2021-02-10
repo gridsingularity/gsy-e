@@ -1,227 +1,227 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/d3a-documentation/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/vision/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/vision/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/technical-approach/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/technical-approach/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/licensing/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/licensing/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/markets/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/markets/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/inter-area-agent/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/inter-area-agent/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/default-trading-strategy/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/default-trading-strategy/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/clearing-purpose/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/clearing-purpose/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/one-sided-pay-as-offer/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/one-sided-pay-as-offer/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/two-sided-pay-as-bid/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/two-sided-pay-as-bid/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/two-sided-pay-as-clear/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/two-sided-pay-as-clear/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/grid-fees/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/grid-fees/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/constant-fees/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/constant-fees/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/percentage-fees/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/percentage-fees/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/balancing-market/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/balancing-market/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/balancing-implementation/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/balancing-implementation/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/api-overview/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/api-overview/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/assets-api/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/assets-api/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/grid-operator-api/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/grid-operator-api/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/collaboration/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/collaboration/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/canary-network/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/canary-network/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/blockchain/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/blockchain/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/general-settings/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/general-settings/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/linux-installation-instructions/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/linux-installation-instructions/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/ios-installation-instructions/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/ios-installation-instructions/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/vm-installation-instructions/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/vm-installation-instructions/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/version-update/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/version-update/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/ui-initialisation/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/ui-initialisation/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/model-markets/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/model-markets/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/model-market-maker/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/model-market-maker/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/model-load/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/model-load/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/model-pv/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/model-pv/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/model-storage/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/model-storage/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/model-power-plant/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/model-power-plant/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/map/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/map/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/upload-file-formats/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/upload-file-formats/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/library/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/library/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/events/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/events/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/results/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/results/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/self-sufficiency-consumption/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/self-sufficiency-consumption/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/peak-percentage/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/peak-percentage/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/energy-bills/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/energy-bills/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/data-download/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/data-download/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/references/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/references/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://gridsingularity.github.io/d3a/releases/</loc>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/releases/</loc>
      <lastmod>2021-02-10</lastmod>
      <changefreq>daily</changefreq>
     </url>
