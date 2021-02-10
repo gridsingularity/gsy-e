@@ -120,4 +120,7 @@ markdown_extensions:
     - mdtooltips
     - attr_list
 
-
+plugins:
+    - redirects:
+        redirect_maps:
+            '': 'https://gridsingularity.github.io/d3a/d3a-documentation/'
