@@ -544,7 +544,7 @@ class PlotlyGraph:
 
         elif type(device_strategy) in [CommercialStrategy, MarketMakerStrategy]:
             y1axis_key = "trade_price_eur"
-            y2axis_key = trade_energy_var_name
+            y2axis_key = sold_trade_energy_var_name
             yaxis_caption_list = [DEVICE_YAXIS[y1axis_key], DEVICE_YAXIS[y2axis_key]]
 
             data += cls._plot_candlestick_time_series_price(device_dict, y1axis_key, "y1")
