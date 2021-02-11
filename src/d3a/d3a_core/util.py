@@ -530,7 +530,7 @@ def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
 
 
 def find_object_of_same_weekday_and_time(indict, time_slot, ignore_not_found=False):
-    if True:
+    if d3a.constants.IS_CANARY_NETWORK:
         start_time = list(indict.keys())[0]
         add_days = time_slot.weekday() - start_time.weekday()
         if add_days < 0:
