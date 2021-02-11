@@ -27,7 +27,7 @@ import os
 
 from collections import OrderedDict
 from click.types import ParamType
-from pendulum import duration, from_format, datetime
+from pendulum import duration, from_format, datetime, today
 from rex import rex
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
@@ -36,7 +36,7 @@ import d3a.constants
 from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.exceptions import D3AException
-from d3a.constants import DATE_FORMAT, TIME_ZONE
+from d3a.constants import DATE_FORMAT, TIME_ZONE, CN_PROFILE_EXPANSION_DAYS
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit
 from d3a_interface.utils import generate_market_slot_list_from_config, iterate_over_all_modules,\
     str_to_pendulum_datetime, format_datetime
@@ -323,11 +323,11 @@ def update_advanced_settings(advanced_settings):
         update_nested_settings(setting_class, settings_class_name, advanced_settings)
 
 
-def generate_market_slot_list(start_date=None, time_span=None):
-    if not start_date:
-        start_date = GlobalConfig.start_date
-    if not time_span:
-        time_span = GlobalConfig.sim_duration
+def generate_market_slot_list():
+    start_date = today(tz=TIME_ZONE) \
+        if d3a.constants.IS_CANARY_NETWORK else GlobalConfig.start_date
+    time_span = duration(days=CN_PROFILE_EXPANSION_DAYS) \
+        if d3a.constants.IS_CANARY_NETWORK else GlobalConfig.sim_duration
     sim_duration_plus_future_markets = time_span + GlobalConfig.slot_length * \
         (GlobalConfig.market_count - 1)
     market_slot_list = \
@@ -530,7 +530,7 @@ def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
 
 
 def find_object_of_same_weekday_and_time(indict, time_slot, ignore_not_found=False):
-    if d3a.constants.IS_CANARY_NETWORK:
+    if True:
         start_time = list(indict.keys())[0]
         add_days = time_slot.weekday() - start_time.weekday()
         if add_days < 0:
