@@ -1,77 +1,72 @@
-## How to Install D3A on macOS
+###Step 1: Installation prerequisites:
 
-### Preparations
-
-##### Make sure the command line compiler tools are installed:
-
+####make sure the command line compiler tools are installed:
 ```
 xcode-select --install
 ```
-(Select 'Install' in the window that opens)
 
+(Select `Install` in the window that opens)
 
-##### Install Homebrew
+###Step 2: Install homebrew
 
 ```
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 ```
 
-##### Install some libraries we need later:
+###Step 3: Install other required libraries:
 
 ```
 brew install automake libtool pkg-config libffi gmp openssl readline xz
 ```
 
-##### Install pyenv:
+###Step 4: Install pyenv:
 
 ```
 brew install pyenv
 echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n eval "$(pyenv init -)"\nfi' >> ~/.bash_profile
 ```
 
-#####  Close and re-open the terminal
+###Step 5: Close and re-open the terminal
 
-#####  Install Python 3.8 and set as default:
+###Step 6: Install python 3.6 and set as default:
 
 ```
-pyenv install 3.8.6
-pyenv global 3.8.6
+pyenv install 3.6.3
+pyenv global 3.6.3
 ```
 
-#####  Install virtualenvwrapper:
+###Step 7: Install virtualenvwrapper:
+
 ```
 pip install virtualenvwrapper
-echo -e 'export WORKON_HOME=~/Envs\nsource ~/.pyenv/versions/3.8.6/bin/virtualenvwrapper.sh' >> ~/.bash_profile
+echo -e 'export WORKON_HOME=~/Envs\nsource ~/.pyenv/versions/3.6.3/bin/virtualenvwrapper.sh' >> ~/.bash_profile
 ```
 
-
-#####  Setup paths for compiling python libraries:
+###Step 8: Setup paths for compiling python libraries:
 
 ```
 echo -e 'BREW_PREFIX="$(brew --prefix openssl)"\nexport CFLAGS="-I${BREW_PREFIX}/include"\nexport LDFLAGS="-L${BREW_PREFIX}/lib"' >> ~/.bash_profile
 ```
 
+###Step 9: Close and re-open the terminal
 
-### Installation
+###Step 10: Clone Grid Singularity D3A repository (do this inside the directory where you want the project to be):
 
-##### Close and re-open the terminal
-
-##### Clone d3a repository (do this inside the directory where you want the project to be):
 ```
 git clone "https://github.com/gridsingularity/d3a.git"
 cd d3a
 ```
 
-##### Create and initialize d3a virtualenv
+###Step 11: Create and initialize d3a virtualenv
+
 ```
+brew install npm 
+npm install --global ganache-cli
 mkvirtualenv d3a
 pip install pendulum pip-tools
-pip install -e .
+pip install -e . 
 ```
 
-#####  Install
+You now should have a working d3a setup.
 
-#####  Done, you now should have a working d3a setup.
-
-
-Now, if you run `d3a run -–help` , the help of d3a should be shown.
+For help in the terminal ani to test your installation, run `d3a run -–help`.

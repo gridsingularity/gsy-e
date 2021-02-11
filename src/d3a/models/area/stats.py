@@ -50,11 +50,12 @@ class AreaStats:
         }
 
     def restore_state(self, saved_state):
-        self.rate_stats_market = convert_str_to_pendulum_in_dict(saved_state["rate_stats_market"])
-        self.exported_traded_energy_kwh = \
-            convert_str_to_pendulum_in_dict(saved_state["exported_energy"])
-        self.imported_traded_energy_kwh = \
-            convert_str_to_pendulum_in_dict(saved_state["imported_energy"])
+        self.rate_stats_market.update(
+            convert_str_to_pendulum_in_dict(saved_state["rate_stats_market"]))
+        self.exported_traded_energy_kwh.update(
+            convert_str_to_pendulum_in_dict(saved_state["exported_energy"]))
+        self.imported_traded_energy_kwh.update(
+            convert_str_to_pendulum_in_dict(saved_state["imported_energy"]))
 
     def update_aggregated_stats(self, area_stats):
         self.aggregated_stats = area_stats

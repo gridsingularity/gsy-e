@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a_interface.sim_results.market_price_energy_day import MarketPriceEnergyDay
 from d3a_interface.sim_results.area_throughput_stats import AreaThroughputStats
 from d3a_interface.sim_results.bills import MarketEnergyBills, CumulativeBills
@@ -211,7 +211,7 @@ class SimulationEndpointBuffer:
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
 
-        elif type(area.strategy) in [InfiniteBusStrategy, MarketMakerStrategy]:
+        elif type(area.strategy) in [InfiniteBusStrategy, MarketMakerStrategy, CommercialStrategy]:
             if area.parent.current_market is not None:
                 core_stats_dict['energy_rate'] = \
                     area.strategy.energy_rate.get(area.parent.current_market.time_slot, None)
