@@ -20,7 +20,7 @@ from math import isclose
 from uuid import uuid4
 import pytest
 from pendulum import today, now
-from .helpers import compare_dicts, compare_lists_contain_same_elements
+from .helpers import assert_dicts_identical, assert_lists_contain_same_elements
 from d3a.models.market.market_structures import Trade
 from d3a_interface.sim_results.bills import MarketEnergyBills
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
@@ -205,9 +205,9 @@ def test_energy_bills_redis(grid):
     result = m_bills.bills_results
     result_redis = m_bills.bills_redis_results
     for house in grid.children:
-        assert compare_dicts(result[house.name], result_redis[house.uuid])
+        assert_dicts_identical(result[house.name], result_redis[house.uuid])
         for device in house.children:
-            assert compare_dicts(result[device.name], result_redis[device.uuid])
+            assert_dicts_identical(result[device.name], result_redis[device.uuid])
 
 
 def test_calculate_raw_energy_bills(grid):
@@ -252,7 +252,7 @@ def test_flatten_energy_bills(grid):
     assert all("children" not in v for _, v in flattened.items())
     name_list = ['house1', 'house2', 'pv', 'fridge', 'e-car', 'commercial']
     uuid_list = [grid.name_uuid_mapping[k] for k in name_list]
-    assert compare_lists_contain_same_elements(uuid_list, flattened.keys())
+    assert_lists_contain_same_elements(uuid_list, flattened.keys())
     house1_uuid = grid.name_uuid_mapping["house1"]
     _compare_bills(flattened[house1_uuid], bills[house1_uuid])
     house2_uuid = grid.name_uuid_mapping["house2"]
