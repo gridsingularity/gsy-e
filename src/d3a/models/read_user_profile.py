@@ -286,7 +286,7 @@ def _eval_time_period_consensus(input_profile: Dict):
 
 
 def time_str(hour, minute):
-    return f"{hour}:{minute}"
+    return f"{hour:02}:{minute:02}"
 
 
 def copy_profile_to_multiple_days(in_profile):
