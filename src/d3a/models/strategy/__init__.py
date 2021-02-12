@@ -311,6 +311,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             buyer = self.owner.name
         if not isinstance(offer, Offer):
             offer = market_or_id.offers[offer]
+        if energy is None:
+            energy = offer.energy
         trade = self._accept_offer(market_or_id, offer, buyer, energy, trade_rate, already_tracked,
                                    trade_bid_info, buyer_origin)
 
