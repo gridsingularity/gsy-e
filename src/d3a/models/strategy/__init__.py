@@ -482,7 +482,7 @@ class BidEnabledStrategy(BaseStrategy):
 
             self.remove_bid_from_pending(market.id, bid.id)
 
-    def post_bid(self, market, price, energy, replace_existing=False, buyer_origin=None):
+    def post_bid(self, market, price, energy, replace_existing=True, buyer_origin=None):
         if replace_existing:
             self._remove_existing_bids(market)
 
