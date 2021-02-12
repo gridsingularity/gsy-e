@@ -25,6 +25,7 @@ from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
 from d3a.models.market.market_structures import Offer, Trade, Bid
+from d3a.models.market.one_sided import OneSidedMarket
 from d3a_interface.constants_limits import ConstSettings
 
 
@@ -312,9 +313,9 @@ def test_can_offer_be_posted(base):
 def test_can_bid_be_posted(base):
     market = FakeMarket(raises=True)
     base.area._market = market
-    base.post_bid(market, 1, 23)
-    base.post_bid(market, 1, 27)
-    base.post_bid(market, 1, 10)
+    base.post_bid(market, price=1, energy=23, replace_existing=False)
+    base.post_bid(market, price=1, energy=27, replace_existing=False)
+    base.post_bid(market, price=1, energy=10, replace_existing=False)
     assert base.can_bid_be_posted(9.999, 1, 70, market) is True
     assert base.can_bid_be_posted(10.0, 1, 70, market) is True
     assert base.can_bid_be_posted(10.001, 1, 70, market) is False
@@ -347,3 +348,60 @@ def test_post_bid_without_replace_existing(base):
     bid_3 = base.post_bid(market, 8, 4, replace_existing=False)
 
     assert base.get_posted_bids(market) == [bid_1, bid_2, bid_3]
+
+
+def test_post_offer_creates_offer_with_correct_parameters():
+    """Calling post_bid with replace_existing=True triggers the removal of the existing bids."""
+
+    strategy = BaseStrategy()
+    strategy.owner = FakeOwner()
+    strategy.area = FakeArea()
+
+    market = OneSidedMarket(time_slot=pendulum.now())
+    strategy.area._market = market
+
+    offer_args = {
+        'price': 1, 'energy': 1, 'seller': 'seller-name', 'seller_origin': 'seller-origin-name'}
+
+    offer = strategy.post_offer(market, replace_existing=False, **offer_args)
+
+    # The offer is created with the expected parameters
+    assert offer.price == 1
+    assert offer.energy == 1
+    assert offer.seller == 'seller-name'
+    assert offer.seller_origin == 'seller-origin-name'
+
+
+def test_post_offer_with_replace_existing():
+    """Calling post_offer with replace_existing activates the removal of the existing offers."""
+
+    strategy = BaseStrategy()
+    strategy.owner = FakeOwner()
+    strategy.area = FakeArea()
+
+    market = OneSidedMarket(time_slot=pendulum.now())
+    strategy.area._market = market
+
+    # Post a first offer on the market
+    offer_1_args = {
+        'price': 1, 'energy': 1, 'seller': 'seller-name', 'seller_origin': 'seller-origin-name'}
+    offer = strategy.post_offer(market, replace_existing=False, **offer_1_args)
+    assert strategy.offers.open_in_market(market.id) == [offer]
+
+    # Post a new offer not replacing the previous ones
+    offer_2_args = {
+        'price': 1, 'energy': 1, 'seller': 'seller-name', 'seller_origin': 'seller-origin-name'}
+    offer_2 = strategy.post_offer(market, replace_existing=False, **offer_2_args)
+    assert strategy.offers.open_in_market(market.id) == [offer, offer_2]
+
+    # Post a new offer replacing the previous ones (default behavior)
+    offer_3_args = {
+        'price': 1, 'energy': 1, 'seller': 'seller-name', 'seller_origin': 'seller-origin-name'}
+    offer_3 = strategy.post_offer(market, **offer_3_args)
+    assert strategy.offers.open_in_market(market.id) == [offer_3]
+
+    # # Post a new offer replacing the previous ones
+    # offer_3_args = {
+    #     'price': 1, 'energy': 1, 'seller': 'seller-name', 'seller_origin': 'seller-origin-name'}
+    # offer_3 = strategy.post_offer(market, replace_existing=True, **offer_3_args)
+    # assert strategy.offers.open_in_market(market.id) == [offer_3]
