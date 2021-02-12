@@ -59,14 +59,14 @@ class SimulationEndpointBuffer:
             "percentage_completed": 0
         }
         self.should_export_plots = should_export_plots
-        self.market_bills = MarketEnergyBills()
+        self.market_bills = MarketEnergyBills(should_export_plots)
         self.kpi = KPI()
         if self.should_export_plots:
             self.market_unmatched_loads = MarketUnmatchedLoads()
             self.price_energy_day = MarketPriceEnergyDay(should_export_plots)
             self.cumulative_bills = CumulativeBills()
             if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
-                self.balancing_bills = MarketEnergyBills(is_spot_market=False)
+                self.balancing_bills = MarketEnergyBills(should_export_plots)
             self.cumulative_grid_trades = CumulativeGridTrades()
             self.device_statistics = DeviceStatistics(should_export_plots)
             self.trade_profile = EnergyTradeProfile(should_export_plots)
@@ -133,7 +133,7 @@ class SimulationEndpointBuffer:
                 self.cumulative_grid_trades.accumulated_trades,
             "bills": self.market_bills.bills_results,
             "cumulative_bills": self.cumulative_bills.cumulative_bills,
-            "cumulative_market_fees": self.market_bills.cumulative_fee_charged_per_market,
+            "cumulative_market_fees": self.market_bills.cumulative_fee_all_markets_whole_sim,
             "status": self.status,
             "progress_info": self.simulation_progress,
             "device_statistics": self.device_statistics.device_stats_dict,
