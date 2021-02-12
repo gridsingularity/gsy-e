@@ -20,9 +20,10 @@ from math import isclose
 from uuid import uuid4
 import pytest
 from pendulum import today, now
-from .helpers import assert_dicts_identical, assert_lists_contain_same_elements
-from d3a.models.market.market_structures import Trade
+from d3a_interface.unit_test_utils import assert_dicts_identical, \
+    assert_lists_contain_same_elements
 from d3a_interface.sim_results.bills import MarketEnergyBills
+from d3a.models.market.market_structures import Trade
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.util import make_iaa_name
 from d3a import constants
