@@ -23,7 +23,7 @@ from pendulum import duration, from_format, from_timestamp, today, DateTime
 from typing import Dict
 
 import d3a.constants
-from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, TIME_ZONE, CN_PROFILE_EXPANSION_DAYS
+from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, TIME_ZONE
 from d3a_interface.constants_limits import GlobalConfig, DATE_TIME_FORMAT_SECONDS
 from d3a.d3a_core.util import generate_market_slot_list, convert_kW_to_kWh, \
     find_object_of_same_weekday_and_time, return_ordered_dict
@@ -61,15 +61,7 @@ def default_profile_dict(val=None) -> Dict[DateTime, int]:
     """
     if val is None:
         val = 0
-    if d3a.constants.IS_CANARY_NETWORK:
-        market_slot_list = \
-            generate_market_slot_list(start_date=today(tz=TIME_ZONE),
-                                      time_span=duration(
-                                          days=CN_PROFILE_EXPANSION_DAYS))
-    else:
-        market_slot_list = generate_market_slot_list()
-
-    return {time_slot: val for time_slot in market_slot_list}
+    return {time_slot: val for time_slot in generate_market_slot_list()}
 
 
 def is_number(number):
@@ -294,18 +286,18 @@ def _eval_time_period_consensus(input_profile: Dict):
 
 
 def time_str(hour, minute):
-    return "{:02d}{:02d}".format(hour, minute)
+    return f"{hour:02}:{minute:02}"
 
 
-def copy_profile_to_multiple_days(profile):
-    daytime_dict = dict((time_str(time.hour, time.minute), time) for time in profile.keys())
+def copy_profile_to_multiple_days(in_profile):
+    daytime_dict = dict((time_str(time.hour, time.minute), time) for time in in_profile.keys())
+    out_profile = {}
     for slot_time in generate_market_slot_list():
-        if slot_time not in profile.keys():
+        if slot_time not in out_profile.keys():
             time_key = time_str(slot_time.hour, slot_time.minute)
             if time_key in daytime_dict:
-                profile[slot_time] = profile[daytime_dict[time_key]]
-
-    return profile
+                out_profile[slot_time] = in_profile[daytime_dict[time_key]]
+    return out_profile
 
 
 @return_ordered_dict
@@ -326,9 +318,9 @@ def read_arbitrary_profile(profile_type: InputProfileTypes,
     profile = _read_from_different_sources_todict(input_profile)
     profile_time_list = list(profile.keys())
     profile_duration = profile_time_list[-1] - profile_time_list[0]
-    if GlobalConfig.sim_duration > duration(days=1) and profile_duration <= duration(days=1):
-        copy_profile_to_multiple_days(profile)
-
+    if GlobalConfig.sim_duration > duration(days=1) >= profile_duration or \
+            d3a.constants.IS_CANARY_NETWORK:
+        profile = copy_profile_to_multiple_days(profile)
     if profile is not None:
         filled_profile = _fill_gaps_in_profile(profile)
         if not d3a.constants.IS_CANARY_NETWORK:
