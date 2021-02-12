@@ -292,6 +292,23 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         self.offer_buffer = None
         return offer
 
+    def post_offer(self, market, replace_existing=True, **offer_kwargs) -> Offer:
+        """Post the offer on the specified market.
+
+        Args:
+            market: The market in which the offer must be placed.
+            replace_existing (bool): if True, delete all previous offers.
+            offer_kwargs: the parameters that will be used to create the Offer object.
+        """
+        if replace_existing:
+            # Remove all existing offers that are still open in the market
+            self.offers.remove_offer_from_cache_and_market(market)
+
+        offer = market.offer(**offer_kwargs)
+        self.offers.post(offer, market.id)
+
+        return offer
+
     def _offer_response(self, payload):
         data = json.loads(payload["data"])
         # TODO: is this additional parsing needed?
@@ -454,23 +471,6 @@ class BidEnabledStrategy(BaseStrategy):
         super().__init__()
         self._bids = {}
         self._traded_bids = {}
-
-    def post_offer(self, market, replace_existing=False, **offer_kwargs) -> Offer:
-        """Post the offer on the specified market.
-
-        Args:
-            market: The market in which the offer must be placed.
-            replace_existing (bool): if True, delete all previous offers.
-            offer_kwargs: the parameters that will be used to create the Offer object.
-        """
-        if replace_existing:
-            # Remove all existing offers that are still open in the market
-            self.offers.remove_offer_from_cache_and_market(market)
-
-        offer = market.offer(**offer_kwargs)
-        self.offers.post(offer, market.id)
-
-        return offer
 
     def _remove_existing_bids(self, market: Market) -> None:
         """Remove all existing bids in the market."""
