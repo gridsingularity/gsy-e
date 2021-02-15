@@ -384,7 +384,7 @@ class ExternalMixin:
         for req in self.pending_requests:
             self.redis.publish_json(
                 req.response_channel,
-                {"command": "bid", "status": "error",
+                {"command": f"{req.request_type}", "status": "error",
                  "error_message": f"Error when handling {req.request_type} "
                                   f"on area {self.device.name} with arguments {req.arguments}."
                                   f"Market cycle already finished."})
