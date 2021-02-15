@@ -92,6 +92,20 @@ class ExternalMixin:
         self.pending_requests = []
         self.lock = Lock()
 
+    def get_state(self):
+        strategy_state = super().get_state()
+        strategy_state.update({
+            "connected": self.connected,
+            "use_template_strategy": self._use_template_strategy
+        })
+        return strategy_state
+
+    def restore_state(self, state_dict):
+        super().restore_state(state_dict)
+        self._connected = state_dict.get("connected", False)
+        self.connected = state_dict.get("connected", False)
+        self._use_template_strategy = state_dict.get("use_template_strategy", False)
+
     @property
     def channel_dict(self):
         return {
