@@ -25,8 +25,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
 from d3a.d3a_core.redis_connections.aggregator_connection import default_market_info
-from d3a.d3a_core.util import get_current_market_maker_rate, convert_W_to_Wh, \
-    find_object_of_same_weekday_and_time
+from d3a.d3a_core.util import get_current_market_maker_rate
 from d3a_interface.constants_limits import ConstSettings
 
 
@@ -40,17 +39,14 @@ class LoadExternalMixin(ExternalMixin):
 
     @property
     def channel_dict(self):
-        return {
-            f'{self.channel_prefix}/register_participant': self._register,
-            f'{self.channel_prefix}/unregister_participant': self._unregister,
-            f'{self.channel_prefix}/bid': self._bid,
-            f'{self.channel_prefix}/delete_bid': self._delete_bid,
-            f'{self.channel_prefix}/list_bids': self._list_bids,
-            f'{self.channel_prefix}/device_info': self._device_info,
-        }
+        return {**super().channel_dict,
+                f'{self.channel_prefix}/bid': self._bid,
+                f'{self.channel_prefix}/delete_bid': self._delete_bid,
+                f'{self.channel_prefix}/list_bids': self._list_bids,
+                }
 
-    def event_activate(self):
-        super().event_activate()
+    def event_activate(self, **kwargs):
+        super().event_activate(**kwargs)
         self.redis.sub_to_multiple_channels(self.channel_dict)
 
     def _list_bids(self, payload):
@@ -149,8 +145,7 @@ class LoadExternalMixin(ExternalMixin):
             assert self.can_bid_be_posted(
                 arguments["energy"],
                 arguments["price"],
-                find_object_of_same_weekday_and_time(
-                    self.energy_requirement_Wh, self.next_market.time_slot) / 1000.0,
+                self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0,
                 self.next_market)
 
             bid = self.post_bid(
@@ -177,7 +172,7 @@ class LoadExternalMixin(ExternalMixin):
     def _device_info_dict(self):
         return {
             'energy_requirement_kWh':
-                self.energy_requirement_Wh.get(self.next_market.time_slot, 0.0) / 1000.0
+                self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0
         }
 
     def event_market_cycle(self):
@@ -199,10 +194,9 @@ class LoadExternalMixin(ExternalMixin):
             market_info["last_market_maker_rate"] = \
                 get_current_market_maker_rate(self.area.current_market.time_slot) \
                 if self.area.current_market else None
-            if self.connected:
-                market_info['last_market_stats'] = \
-                    self.market_area.stats.get_price_stats_current_market()
-                self.redis.publish_json(market_event_channel, market_info)
+            market_info['last_market_stats'] = \
+                self.market_area.stats.get_price_stats_current_market()
+            self.redis.publish_json(market_event_channel, market_info)
             if self.is_aggregator_controlled:
                 self.redis.aggregator.add_batch_market_event(self.device.uuid,
                                                              market_info,
@@ -210,17 +204,6 @@ class LoadExternalMixin(ExternalMixin):
             self._delete_past_state()
         else:
             super().event_market_cycle()
-
-    def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
-                           use_market_maker_rate, initial_buying_rate, final_buying_rate):
-        if not self.connected:
-            super()._init_price_update(
-                fit_to_limit, energy_rate_increase_per_update, update_interval,
-                use_market_maker_rate, initial_buying_rate, final_buying_rate)
-
-    def event_activate_price(self):
-        if not self.connected:
-            super().event_activate_price()
 
     def _area_reconfigure_prices(self, **kwargs):
         if self.should_use_default_strategy:
@@ -239,7 +222,7 @@ class LoadExternalMixin(ExternalMixin):
             assert False, f"Incorrect incoming request name: {req}"
 
     def event_tick(self):
-        if not self.connected and not self.is_aggregator_controlled:
+        if self.should_use_default_strategy:
             super().event_tick()
         else:
             while len(self.pending_requests) > 0:
@@ -297,8 +280,7 @@ class LoadExternalMixin(ExternalMixin):
             assert self.can_bid_be_posted(
                 arguments["energy"],
                 arguments["price"],
-                find_object_of_same_weekday_and_time(
-                    self.energy_requirement_Wh, self.next_market.time_slot) / 1000.0,
+                self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0,
                 self.next_market)
 
             bid = self.post_bid(
@@ -372,11 +354,11 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
     """
         Strategy responsible for reading single forecast consumption data via hardware API
     """
-    parameters = ('power_forecast_W', 'fit_to_limit', 'energy_rate_increase_per_update',
+    parameters = ('energy_forecast_Wh', 'fit_to_limit', 'energy_rate_increase_per_update',
                   'update_interval', 'initial_buying_rate', 'final_buying_rate',
                   'balancing_energy_ratio', 'use_market_maker_rate')
 
-    def __init__(self, power_forecast_W: float = 0,
+    def __init__(self, energy_forecast_Wh: float = 0,
                  fit_to_limit=True, energy_rate_increase_per_update=None,
                  update_interval=None,
                  initial_buying_rate: Union[float, dict, str] =
@@ -389,7 +371,7 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
                  use_market_maker_rate: bool = False):
         """
         Constructor of LoadForecastStrategy
-        :param power_forecast_W: forecast for the next market slot
+        :param energy_forecast_Wh: forecast for the next market slot
         """
         if update_interval is None:
             update_interval = \
@@ -404,27 +386,27 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
                          balancing_energy_ratio=balancing_energy_ratio,
                          use_market_maker_rate=use_market_maker_rate)
 
-        self.power_forecast_buffer_W = power_forecast_W
+        self.energy_forecast_buffer_Wh = energy_forecast_Wh
 
     @property
     def channel_dict(self):
         return {**super().channel_dict,
-                f'{self.channel_prefix}/set_power_forecast': self._set_power_forecast}
+                f'{self.channel_prefix}/set_energy_forecast': self._set_energy_forecast}
 
     def event_tick(self):
         # Need to repeat he pending request parsing in order to handle power forecasts
         # from the MQTT subscriber (non-connected admin)
         for req in self.pending_requests:
-            if req.request_type == "set_power_forecast":
-                self._set_power_forecast_impl(req.arguments, req.response_channel)
+            if req.request_type == "set_energy_forecast":
+                self._set_energy_forecast_impl(req.arguments, req.response_channel)
 
         self.pending_requests = [req for req in self.pending_requests
-                                 if req.request_type not in "set_power_forecast"]
+                                 if req.request_type not in "set_energy_forecast"]
         super().event_tick()
 
     def _incoming_commands_callback_selection(self, req):
-        if req.request_type == "set_power_forecast":
-            self._set_power_forecast_impl(req.arguments, req.response_channel)
+        if req.request_type == "set_energy_forecast":
+            self._set_energy_forecast_impl(req.arguments, req.response_channel)
         else:
             super()._incoming_commands_callback_selection(req)
 
@@ -437,8 +419,15 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
 
     def update_energy_forecast(self):
         # sets energy forecast for next_market
-        energy_forecast_Wh = convert_W_to_Wh(self.power_forecast_buffer_W,
-                                             self.area.config.slot_length)
+        energy_forecast_Wh = self.energy_forecast_buffer_Wh
         slot_time = self.area.next_market.time_slot
-        self.energy_requirement_Wh[slot_time] = energy_forecast_Wh
-        self.state.desired_energy_Wh[slot_time] = energy_forecast_Wh
+        self.state.set_desired_energy(energy_forecast_Wh, slot_time, overwrite=True)
+        # TODO: Check self-sufficiency / self-consumption of LoadForecastExternalStrategy and
+        #  and consider re-adding:
+        # self.state.update_total_demanded_energy(slot_time)
+
+    def _update_energy_requirement_future_markets(self):
+        """
+        Setting demanded energy for the next slot is already done by update_energy_forecast
+        """
+        pass

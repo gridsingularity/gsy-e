@@ -1,13 +1,12 @@
-Files can be uploaded to support custom energy supply or load profiles. The following file formats are supported:
+Files can be uploaded to generate custom energy supply or load profiles. The following file formats are supported:
 
-## Comma Separated Values (.csv)
+##Comma Separated Values (.csv)
 
-The separation can be done by comma `,` or semicolon ` ; ` 
-Two time formats are supported, see below. Power set-points are given in Watts. D3A handles any conversions to energy (in kWh).
+The separation can be done by comma `,` or semicolon `;`. Two time formats are supported, see below. Power set-points are given in **Watts**. The software handles any conversions to energy (in kWh).
 
-`hh:mm`
+###hh:mm
 
-Example:
+**Example:**
 
 ```
 INTERVAL;POWER(W):
@@ -18,9 +17,9 @@ INTERVAL;POWER(W):
 01:00;10
 ```
 
-`YYYY-MM-DDThh:mm`
+###YYYY-MM-DDThh:mm
 
-Example:
+**Example:**
 
 ```
 INTERVAL,POWER(W)
@@ -31,5 +30,4 @@ INTERVAL,POWER(W)
 2019-01-01T01:00,10.0
 ```
 
-**Warning** : 
-If you upload csv files with date information (second example), you should also set the start-date of the simulation (the start-date of your csv files and the one of your simulation should be identical).
+Note: If you upload csv files with date information, the **start-date** of the simulation should be identical in the csv files and [simulation settings](general-settings.md).

@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a_interface.sim_results.market_price_energy_day import MarketPriceEnergyDay
 from d3a_interface.sim_results.area_throughput_stats import AreaThroughputStats
 from d3a_interface.sim_results.bills import MarketEnergyBills, CumulativeBills
@@ -33,6 +33,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
+import d3a.constants
 
 _NO_VALUE = {
     'min': None,
@@ -59,14 +60,14 @@ class SimulationEndpointBuffer:
             "percentage_completed": 0
         }
         self.should_export_plots = should_export_plots
-        self.market_bills = MarketEnergyBills()
+        self.market_bills = MarketEnergyBills(should_export_plots)
         self.kpi = KPI()
         if self.should_export_plots:
             self.market_unmatched_loads = MarketUnmatchedLoads()
             self.price_energy_day = MarketPriceEnergyDay(should_export_plots)
             self.cumulative_bills = CumulativeBills()
             if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
-                self.balancing_bills = MarketEnergyBills(is_spot_market=False)
+                self.balancing_bills = MarketEnergyBills(should_export_plots)
             self.cumulative_grid_trades = CumulativeGridTrades()
             self.device_statistics = DeviceStatistics(should_export_plots)
             self.trade_profile = EnergyTradeProfile(should_export_plots)
@@ -130,10 +131,10 @@ class SimulationEndpointBuffer:
             "unmatched_loads": self.market_unmatched_loads.unmatched_loads,
             "price_energy_day": self.price_energy_day.csv_output,
             "cumulative_grid_trades":
-                self.cumulative_grid_trades.current_trades,
+                self.cumulative_grid_trades.accumulated_trades,
             "bills": self.market_bills.bills_results,
             "cumulative_bills": self.cumulative_bills.cumulative_bills,
-            "cumulative_market_fees": self.market_bills.cumulative_fee_charged_per_market,
+            "cumulative_market_fees": self.market_bills.cumulative_fee_all_markets_whole_sim,
             "status": self.status,
             "progress_info": self.simulation_progress,
             "device_statistics": self.device_statistics.device_stats_dict,
@@ -163,10 +164,10 @@ class SimulationEndpointBuffer:
             core_stats_dict['market_fee'] = area.current_market.market_fee
         if area.strategy is None:
             core_stats_dict['area_throughput'] = {
-                'baseline_peak_energy_import_kWh': area.baseline_peak_energy_import_kWh,
-                'baseline_peak_energy_export_kWh': area.baseline_peak_energy_export_kWh,
-                'import_capacity_kWh': area.import_capacity_kWh,
-                'export_capacity_kWh': area.export_capacity_kWh,
+                'baseline_peak_energy_import_kWh': area.throughput.baseline_peak_energy_import_kWh,
+                'baseline_peak_energy_export_kWh': area.throughput.baseline_peak_energy_export_kWh,
+                'import_capacity_kWh': area.throughput.import_capacity_kWh,
+                'export_capacity_kWh': area.throughput.export_capacity_kWh,
                 'imported_energy_kWh': area.stats.imported_traded_energy_kwh.get(
                     area.current_market.time_slot, 0.) if area.current_market is not None else 0.,
                 'exported_energy_kWh': area.stats.exported_traded_energy_kwh.get(
@@ -177,10 +178,10 @@ class SimulationEndpointBuffer:
 
         if isinstance(area.strategy, PVStrategy):
             core_stats_dict['pv_production_kWh'] = \
-                area.strategy.energy_production_forecast_kWh.get(self.current_market_time_slot,
-                                                                 0)
+                area.strategy.state.get_energy_production_forecast_kWh(
+                    self.current_market_time_slot, 0.0)
             core_stats_dict['available_energy_kWh'] = \
-                area.strategy.state.available_energy_kWh.get(self.current_market_time_slot, 0)
+                area.strategy.state.get_available_energy_kWh(self.current_market_time_slot, 0.0)
             if area.parent.current_market is not None:
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
@@ -194,13 +195,12 @@ class SimulationEndpointBuffer:
 
         elif isinstance(area.strategy, LoadHoursStrategy):
             core_stats_dict['load_profile_kWh'] = \
-                area.strategy.state.desired_energy_Wh.get(
-                    self.current_market_time_slot, 0) / 1000.0
+                area.strategy.state.get_desired_energy_Wh(self.current_market_time_slot) / 1000.0
             core_stats_dict['total_energy_demanded_wh'] = \
-                area.strategy.state.total_energy_demanded_wh
+                area.strategy.state.total_energy_demanded_Wh
             core_stats_dict['energy_requirement_kWh'] = \
-                area.strategy.energy_requirement_Wh.get(
-                    self.current_market_time_slot, 0) / 1000.0
+                area.strategy.state.get_energy_requirement_Wh(
+                    self.current_market_time_slot) / 1000.0
 
             if area.parent.current_market is not None:
                 for t in area.strategy.trades[area.parent.current_market]:
@@ -212,7 +212,7 @@ class SimulationEndpointBuffer:
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
 
-        elif type(area.strategy) in [InfiniteBusStrategy, MarketMakerStrategy]:
+        elif type(area.strategy) in [InfiniteBusStrategy, MarketMakerStrategy, CommercialStrategy]:
             if area.parent.current_market is not None:
                 core_stats_dict['energy_rate'] = \
                     area.strategy.energy_rate.get(area.parent.current_market.time_slot, None)
@@ -229,7 +229,10 @@ class SimulationEndpointBuffer:
     def update_stats(self, area, simulation_status, progress_info, sim_state):
         self.area_result_dict = self._create_area_tree_dict(area)
         self.status = simulation_status
-        if area.current_market is not None:
+        is_initial_current_market_on_cn = d3a.constants.IS_CANARY_NETWORK and \
+            (area.next_market is None or (area.current_market and
+             area.next_market.time_slot - area.current_market.time_slot > area.config.slot_length))
+        if area.current_market is not None and not is_initial_current_market_on_cn:
             self.current_market_time_slot_str = area.current_market.time_slot_str
             self.current_market_ui_time_slot_str = \
                 area.current_market.time_slot.format(DATE_TIME_UI_FORMAT)

@@ -27,9 +27,8 @@ import os
 
 from collections import OrderedDict
 from click.types import ParamType
-from pendulum import duration, from_format, datetime
+from pendulum import duration, from_format, datetime, today
 from rex import rex
-from pkgutil import walk_packages
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 
@@ -37,10 +36,10 @@ import d3a.constants
 from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.exceptions import D3AException
-from d3a.constants import DATE_FORMAT, TIME_ZONE
+from d3a.constants import DATE_FORMAT, TIME_ZONE, CN_PROFILE_EXPANSION_DAYS
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit
-from d3a_interface.utils import generate_market_slot_list_from_config, str_to_pendulum_datetime,\
-    format_datetime
+from d3a_interface.utils import generate_market_slot_list_from_config, iterate_over_all_modules,\
+    str_to_pendulum_datetime, format_datetime
 
 d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
@@ -258,20 +257,10 @@ def get_cached_joined_contract_source(contract_name):
     return _CONTRACT_CACHE[contract_path]
 
 
-def iterate_over_all_d3a_setup():
-    module_list = []
-    d3a_modules_path = d3a_setup.__path__ \
+d3a_modules_path = d3a_setup.__path__ \
         if ConstSettings.GeneralSettings.SETUP_FILE_PATH is None \
         else [ConstSettings.GeneralSettings.SETUP_FILE_PATH]
-    for loader, module_name, is_pkg in walk_packages(d3a_modules_path):
-        if is_pkg:
-            loader.find_module(module_name).load_module(module_name)
-        else:
-            module_list.append(module_name)
-    return module_list
-
-
-available_simulation_scenarios = iterate_over_all_d3a_setup()
+available_simulation_scenarios = iterate_over_all_modules(d3a_modules_path)
 
 
 def parseboolstring(thestring):
@@ -334,11 +323,11 @@ def update_advanced_settings(advanced_settings):
         update_nested_settings(setting_class, settings_class_name, advanced_settings)
 
 
-def generate_market_slot_list(start_date=None, time_span=None):
-    if not start_date:
-        start_date = GlobalConfig.start_date
-    if not time_span:
-        time_span = GlobalConfig.sim_duration
+def generate_market_slot_list():
+    start_date = today(tz=TIME_ZONE) \
+        if d3a.constants.IS_CANARY_NETWORK else GlobalConfig.start_date
+    time_span = duration(days=CN_PROFILE_EXPANSION_DAYS) \
+        if d3a.constants.IS_CANARY_NETWORK else GlobalConfig.sim_duration
     sim_duration_plus_future_markets = time_span + GlobalConfig.slot_length * \
         (GlobalConfig.market_count - 1)
     market_slot_list = \

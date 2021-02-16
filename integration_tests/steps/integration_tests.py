@@ -246,7 +246,6 @@ def running_the_simulation(context):
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.ERROR)
 
-    slowdown = 0
     seed = 0
     paused = False
     pause_after = duration()
@@ -258,7 +257,6 @@ def running_the_simulation(context):
         'json_arg',
         context._settings,
         None,
-        slowdown,
         seed,
         paused,
         pause_after,
@@ -319,7 +317,6 @@ def run_sim_with_config_setting(context, cloud_coverage, scenario):
                                          cloud_coverage=int(cloud_coverage),
                                          external_connection_enabled=False)
 
-    slowdown = 0
     seed = 0
     paused = False
     pause_after = duration()
@@ -331,7 +328,6 @@ def run_sim_with_config_setting(context, cloud_coverage, scenario):
         scenario,
         simulation_config,
         None,
-        slowdown,
         seed,
         paused,
         pause_after,
@@ -384,16 +380,6 @@ def past_markets_not_in_memory(context):
     ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS = True
 
     constants.D3A_TEST_RUN = False
-
-
-@when('the reported cumulative grid trades are saved')
-def save_reported_cumulative_grid_trade_profile(context):
-    context.cumulative_grid_trades = deepcopy(
-        context.simulation.endpoint_buffer.cumulative_grid_trades.accumulated_trades)
-    context.cumulative_grid_trades_redis = \
-        deepcopy(context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades)
-    context.cumulative_grid_balancing_trades = deepcopy(
-        context.simulation.endpoint_buffer.cumulative_grid_trades.current_balancing_trades)
 
 
 @then('we test the export functionality of {scenario}')
@@ -499,7 +485,7 @@ def create_sim_object(context, scenario):
                                          external_connection_enabled=False)
 
     context.simulation = Simulation(
-        scenario, simulation_config, None, 0, 0, False, duration(), False, False, None, None,
+        scenario, simulation_config, None, 0, False, duration(), False, False, None, None,
         "1234", False
     )
 
@@ -559,7 +545,7 @@ def transmit_zipped_results(context):
 @then('intermediate results are transmitted on every slot')
 def interm_res_report(context):
     # Add an extra result for the start of the simulation
-    assert context.interm_results_count == 12 + 1
+    assert context.interm_results_count == 12
 
 
 @then('final results are transmitted once')
@@ -603,7 +589,6 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
                                          start_date=start_date,
                                          external_connection_enabled=False)
 
-    slowdown = 0
     seed = 0
     paused = False
     pause_after = duration()
@@ -615,7 +600,6 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
         scenario,
         simulation_config,
         None,
-        slowdown,
         seed,
         paused,
         pause_after,
@@ -659,7 +643,6 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
                                          market_maker_rate=30,
                                          external_connection_enabled=False)
 
-    slowdown = 0
     seed = 0
     paused = False
     pause_after = duration()
@@ -672,7 +655,6 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
             scenario,
             simulation_config,
             None,
-            slowdown,
             seed,
             paused,
             pause_after,
@@ -836,7 +818,7 @@ def check_load_profile(context):
 
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     load = list(filter(lambda x: x.name == "H1 Load", house1.children))[0]
-    for timepoint, energy in load.strategy.state.desired_energy_Wh.items():
+    for timepoint, energy in load.strategy.state._desired_energy_Wh.items():
         assert energy == convert_W_to_Wh(context._device_profile[timepoint],
                                          load.config.slot_length)
 
@@ -854,7 +836,7 @@ def check_pv_profile(context):
     profile_data = read_arbitrary_profile(
         InputProfileTypes.POWER,
         str(path))
-    for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
+    for timepoint, energy in pv.strategy.state._energy_production_forecast_kWh.items():
         if timepoint in profile_data.keys():
             assert energy == profile_data[timepoint]
         else:
@@ -867,7 +849,7 @@ def check_user_pv_dict_profile(context):
     pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
     from d3a.setup.strategy_tests.user_profile_pv_dict import user_profile
     profile_data = user_profile
-    for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
+    for timepoint, energy in pv.strategy.state._energy_production_forecast_kWh.items():
         if timepoint.hour in profile_data.keys():
             assert energy == convert_W_to_kWh(profile_data[timepoint.hour], pv.config.slot_length)
         else:
@@ -886,7 +868,7 @@ def check_pv_csv_profile(context):
     profile_data = read_arbitrary_profile(
         InputProfileTypes.POWER,
         user_profile_path)
-    for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
+    for timepoint, energy in pv.strategy.state._energy_production_forecast_kWh.items():
         if timepoint in profile_data.keys():
             assert energy == profile_data[timepoint]
         else:
@@ -901,7 +883,7 @@ def check_pv_profile_csv(context):
         InputProfileTypes.POWER,
         context._device_profile)
     produced_energy = {from_format(f'{TODAY_STR}T{k.hour:02}:{k.minute:02}', DATE_TIME_FORMAT): v
-                       for k, v in pv.strategy.energy_production_forecast_kWh.items()
+                       for k, v in pv.strategy.state._energy_production_forecast_kWh.items()
                        }
     for timepoint, energy in produced_energy.items():
         if timepoint in input_profile:

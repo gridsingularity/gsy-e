@@ -30,7 +30,7 @@ class FinitePowerPlant(CommercialStrategy):
         super().__init__(energy_rate=energy_rate)
         self.max_available_power_kW = max_available_power_kW
 
-    def event_activate(self):
+    def event_activate(self, **kwargs):
         super().event_activate()
         self.max_available_power_kW = \
             read_arbitrary_profile(InputProfileTypes.IDENTITY, self.max_available_power_kW)
@@ -58,6 +58,6 @@ class FinitePowerPlant(CommercialStrategy):
         }
 
     def restore_state(self, saved_state):
-        self.energy_rate = convert_str_to_pendulum_in_dict(saved_state["energy_rate"])
-        self.max_available_power_kW = convert_str_to_pendulum_in_dict(
-            saved_state["max_available_power_kW"])
+        self.energy_rate.update(convert_str_to_pendulum_in_dict(saved_state["energy_rate"]))
+        self.max_available_power_kW.update(convert_str_to_pendulum_in_dict(
+            saved_state["max_available_power_kW"]))

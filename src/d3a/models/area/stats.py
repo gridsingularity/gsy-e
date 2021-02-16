@@ -50,11 +50,12 @@ class AreaStats:
         }
 
     def restore_state(self, saved_state):
-        self.rate_stats_market = convert_str_to_pendulum_in_dict(saved_state["rate_stats_market"])
-        self.exported_traded_energy_kwh = \
-            convert_str_to_pendulum_in_dict(saved_state["exported_energy"])
-        self.imported_traded_energy_kwh = \
-            convert_str_to_pendulum_in_dict(saved_state["imported_energy"])
+        self.rate_stats_market.update(
+            convert_str_to_pendulum_in_dict(saved_state["rate_stats_market"]))
+        self.exported_traded_energy_kwh.update(
+            convert_str_to_pendulum_in_dict(saved_state["exported_energy"]))
+        self.imported_traded_energy_kwh.update(
+            convert_str_to_pendulum_in_dict(saved_state["imported_energy"]))
 
     def update_aggregated_stats(self, area_stats):
         self.aggregated_stats = area_stats
@@ -72,9 +73,9 @@ class AreaStats:
             self.market_bills[self.current_market.time_slot] = \
                 {key: self._extract_from_bills(key)
                  for key in ["Accumulated Trades"]}
-            self.rate_stats_market = {}
-            self.rate_stats_market[self.current_market.time_slot] = \
-                self.min_max_avg_median_rate_current_market()
+            self.rate_stats_market = {
+                self.current_market.time_slot: self.min_max_avg_median_rate_current_market()
+            }
             self._aggregate_exported_imported_energy()
 
     def get_last_market_stats_for_grid_tree(self):
@@ -89,21 +90,17 @@ class AreaStats:
         return cheapest_offers
 
     def _get_current_market_bills(self):
-        return self.market_bills[self.current_market.time_slot_str] \
-            if self.current_market.time_slot_str in self.market_bills.keys() else None
+        return self.market_bills.get(self.current_market.time_slot, None)
 
     def _get_current_market_area_throughput(self):
-        return {"import": self.imported_traded_energy_kwh[self.current_market.time_slot]
-                if self.current_market.time_slot in self.imported_traded_energy_kwh else None,
-                "export": self.exported_traded_energy_kwh[self.current_market.time_slot]
-                if self.current_market.time_slot in self.exported_traded_energy_kwh else None}
+        return {"import": self.imported_traded_energy_kwh.get(self.current_market.time_slot, None),
+                "export": self.exported_traded_energy_kwh.get(self.current_market.time_slot, None)}
 
     def get_price_stats_current_market(self):
         if self.current_market is None:
             return None
         else:
-            return self.rate_stats_market[self.current_market.time_slot] \
-                if self.current_market.time_slot in self.rate_stats_market else None
+            return self.rate_stats_market.get(self.current_market.time_slot, None)
 
     def min_max_avg_median_rate_current_market(self):
         out_dict = copy(default_trade_stats_dict)
@@ -132,6 +129,8 @@ class AreaStats:
             self.current_market.time_slot, default_trade_stats_dict))
         out_dict[current_market_time_slot_str]["market_bill"] = \
             self._get_current_market_bills()
+        out_dict[current_market_time_slot_str]["market_fee_revenue"] = \
+            self._area.current_market.market_fee
         if dso:
             out_dict[current_market_time_slot_str]["area_throughput"] = \
                 self._get_current_market_area_throughput()

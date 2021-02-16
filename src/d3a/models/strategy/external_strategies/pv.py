@@ -26,8 +26,7 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
 from d3a.d3a_core.redis_connections.aggregator_connection import default_market_info
-from d3a.d3a_core.util import get_current_market_maker_rate, convert_W_to_kWh, \
-    find_object_of_same_weekday_and_time
+from d3a.d3a_core.util import get_current_market_maker_rate
 from d3a_interface.constants_limits import ConstSettings
 
 
@@ -41,17 +40,14 @@ class PVExternalMixin(ExternalMixin):
 
     @property
     def channel_dict(self):
-        return {
-            f'{self.channel_prefix}/register_participant': self._register,
-            f'{self.channel_prefix}/unregister_participant': self._unregister,
-            f'{self.channel_prefix}/offer': self._offer,
-            f'{self.channel_prefix}/delete_offer': self._delete_offer,
-            f'{self.channel_prefix}/list_offers': self._list_offers,
-            f'{self.channel_prefix}/device_info': self._device_info
-        }
+        return {**super().channel_dict,
+                f'{self.channel_prefix}/offer': self._offer,
+                f'{self.channel_prefix}/delete_offer': self._delete_offer,
+                f'{self.channel_prefix}/list_offers': self._list_offers,
+                }
 
-    def event_activate(self):
-        super().event_activate()
+    def event_activate(self, **kwargs):
+        super().event_activate(**kwargs)
         self.redis.sub_to_multiple_channels(self.channel_dict)
 
     def _list_offers(self, payload):
@@ -152,8 +148,7 @@ class PVExternalMixin(ExternalMixin):
             assert self.can_offer_be_posted(
                 arguments["energy"],
                 arguments["price"],
-                find_object_of_same_weekday_and_time(
-                    self.state.available_energy_kWh, self.next_market.time_slot),
+                self.state.get_available_energy_kWh(self.next_market.time_slot),
                 self.next_market)
             offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
             offer = self.next_market.offer(**offer_arguments)
@@ -176,7 +171,7 @@ class PVExternalMixin(ExternalMixin):
     def _device_info_dict(self):
         return {
             'available_energy_kWh':
-                self.state.available_energy_kWh.get(self.next_market.time_slot, 0)
+                self.state.get_available_energy_kWh(self.next_market.time_slot)
         }
 
     def event_market_cycle(self):
@@ -197,10 +192,9 @@ class PVExternalMixin(ExternalMixin):
             market_info["last_market_maker_rate"] = \
                 get_current_market_maker_rate(self.area.current_market.time_slot) \
                 if self.area.current_market else None
-            if self.connected:
-                market_info['last_market_stats'] = \
-                    self.market_area.stats.get_price_stats_current_market()
-                self.redis.publish_json(market_event_channel, market_info)
+            market_info['last_market_stats'] = \
+                self.market_area.stats.get_price_stats_current_market()
+            self.redis.publish_json(market_event_channel, market_info)
             if self.is_aggregator_controlled:
                 self.redis.aggregator.add_batch_market_event(self.device.uuid,
                                                              market_info,
@@ -209,19 +203,8 @@ class PVExternalMixin(ExternalMixin):
         else:
             super().event_market_cycle()
 
-    def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
-                           use_market_maker_rate, initial_buying_rate, final_buying_rate):
-        if not self.connected:
-            super()._init_price_update(
-                fit_to_limit, energy_rate_increase_per_update, update_interval,
-                use_market_maker_rate, initial_buying_rate, final_buying_rate)
-
-    def event_activate_price(self):
-        if not self.connected:
-            super().event_activate_price()
-
     def _area_reconfigure_prices(self, **kwargs):
-        if not self.connected:
+        if self.should_use_default_strategy:
             super()._area_reconfigure_prices(**kwargs)
 
     def _incoming_commands_callback_selection(self, req):
@@ -345,8 +328,7 @@ class PVExternalMixin(ExternalMixin):
             assert self.can_offer_be_posted(
                 arguments["energy"],
                 arguments["price"],
-                find_object_of_same_weekday_and_time(
-                    self.state.available_energy_kWh, self.next_market.time_slot),
+                self.state.get_available_energy_kWh(self.next_market.time_slot),
                 self.next_market)
             offer_arguments = {k: v
                                for k, v in arguments.items()
@@ -386,12 +368,12 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
     """
         Strategy responsible for reading single production forecast data via hardware API
     """
-    parameters = ('power_forecast_W', 'panel_count', 'initial_selling_rate', 'final_selling_rate',
-                  'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
-                  'use_market_maker_rate')
+    parameters = ('energy_forecast_Wh', 'panel_count', 'initial_selling_rate',
+                  'final_selling_rate', 'fit_to_limit', 'update_interval',
+                  'energy_rate_decrease_per_update', 'use_market_maker_rate')
 
     def __init__(
-            self, power_forecast_W: float = 0, panel_count=1,
+            self, energy_forecast_Wh: float = 0, panel_count=1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
             final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
             fit_to_limit: bool = True,
@@ -401,7 +383,7 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
             use_market_maker_rate: bool = False):
         """
         Constructor of PVForecastStrategy
-        :param power_forecast_W: forecast for the next market slot
+        :param energy_forecast_Wh: forecast for the next market slot
         """
         super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
@@ -410,27 +392,27 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
                          use_market_maker_rate=use_market_maker_rate)
-        self.power_forecast_buffer_W = power_forecast_W
+        self.energy_forecast_buffer_Wh = energy_forecast_Wh
 
     @property
     def channel_dict(self):
         return {**super().channel_dict,
-                f'{self.channel_prefix}/set_power_forecast': self._set_power_forecast}
+                f'{self.channel_prefix}/set_energy_forecast': self._set_energy_forecast}
 
     def event_tick(self):
-        # Need to repeat he pending request parsing in order to handle power forecasts
+        # Need to repeat he pending request parsing in order to handle energy forecasts
         # from the MQTT subscriber (non-connected admin)
         for req in self.pending_requests:
-            if req.request_type == "set_power_forecast":
-                self._set_power_forecast_impl(req.arguments, req.response_channel)
+            if req.request_type == "set_energy_forecast":
+                self._set_energy_forecast_impl(req.arguments, req.response_channel)
 
         self.pending_requests = [req for req in self.pending_requests
-                                 if req.request_type not in "set_power_forecast"]
+                                 if req.request_type not in "set_energy_forecast"]
         super().event_tick()
 
     def _incoming_commands_callback_selection(self, req):
-        if req.request_type == "set_power_forecast":
-            self._set_power_forecast_impl(req.arguments, req.response_channel)
+        if req.request_type == "set_energy_forecast":
+            self._set_energy_forecast_impl(req.arguments, req.response_channel)
         else:
             super()._incoming_commands_callback_selection(req)
 
@@ -443,9 +425,13 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
 
     def produced_energy_forecast_kWh(self):
         # sets energy forecast for next_market
-        energy_forecast_kWh = convert_W_to_kWh(self.power_forecast_buffer_W,
-                                               self.area.config.slot_length)
+        energy_forecast_kWh = self.energy_forecast_buffer_Wh / 1000
 
         slot_time = self.area.next_market.time_slot
-        self.energy_production_forecast_kWh[slot_time] = energy_forecast_kWh
-        self.state.available_energy_kWh[slot_time] = energy_forecast_kWh
+        self.state.set_available_energy(energy_forecast_kWh, slot_time, overwrite=True)
+
+    def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=False):
+        """
+        Setting produced energy for the next slot is already done by produced_energy_forecast_kWh
+        """
+        pass

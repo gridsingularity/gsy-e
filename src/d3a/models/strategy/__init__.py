@@ -427,6 +427,10 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     def event_activate_price(self):
         pass
 
+    @property
+    def future_markets_time_slots(self):
+        return [m.time_slot for m in self.area.all_markets]
+
     def get_state(self):
         try:
             return self.state.get_state()

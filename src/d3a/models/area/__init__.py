@@ -27,7 +27,7 @@ from d3a.d3a_core.exceptions import AreaException
 from d3a.models.config import SimulationConfig
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.strategy import BaseStrategy
-from d3a.d3a_core.util import TaggedLogWrapper, convert_area_throughput_kVA_to_kWh
+from d3a.d3a_core.util import TaggedLogWrapper
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.global_objects import GlobalObjects
@@ -36,6 +36,7 @@ from d3a.models.area.stats import AreaStats
 from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.events import Events
+from d3a.models.area.throughput_parameters import ThroughputParameters
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.area_validator import validate_area
 from d3a.models.area.redis_external_market_connection import RedisMarketExternalConnection
@@ -58,6 +59,39 @@ DEFAULT_CONFIG = SimulationConfig(
 )
 
 
+def check_area_name_exists_in_parent_area(parent_area, name):
+    """
+    Check the children of parent area , iterate through its children and
+        check if the name to be appended does not exist
+    Note: this check is to be called before adding a new area of changing its name
+    :param parent_area: Parent Area
+    :param name: New name of area
+    :return: boolean
+    """
+    for child in parent_area.children:
+        if child.name == name:
+            return True
+    return False
+
+
+class AreaChildrenList(list):
+    def __init__(self, parent_area, *args, **kwargs):
+        self.parent_area = parent_area
+        super(AreaChildrenList, self).__init__(*args, **kwargs)
+
+    def _validate_before_insertion(self, item):
+        if check_area_name_exists_in_parent_area(self.parent_area, item.name):
+            raise AreaException("Area name should be unique inside the same Parent Area")
+
+    def append(self, item: "Area") -> None:
+        self._validate_before_insertion(item)
+        super(AreaChildrenList, self).append(item)
+
+    def insert(self, index, item):
+        self._validate_before_insertion(item)
+        super(AreaChildrenList, self).insert(index, item)
+
+
 class Area:
 
     def __init__(self, name: str = None, children: List["Area"] = None,
@@ -70,28 +104,21 @@ class Area:
                  grid_fee_percentage: float = None,
                  grid_fee_constant: float = None,
                  external_connection_available: bool = False,
-                 baseline_peak_energy_import_kWh: float = None,
-                 baseline_peak_energy_export_kWh: float = None,
-                 import_capacity_kVA: float = None,
-                 export_capacity_kVA: float = None
+                 throughput: ThroughputParameters = ThroughputParameters()
                  ):
         validate_area(grid_fee_constant=grid_fee_constant,
-                      grid_fee_percentage=grid_fee_percentage,
-                      baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
-                      baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
-                      import_capacity_kVA=import_capacity_kVA,
-                      export_capacity_kVA=export_capacity_kVA)
+                      grid_fee_percentage=grid_fee_percentage)
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
-        self.name = name
-        self.baseline_peak_energy_import_kWh = baseline_peak_energy_import_kWh
-        self.baseline_peak_energy_export_kWh = baseline_peak_energy_export_kWh
+        self.__name = name
+        self.throughput = throughput
         self.uuid = uuid if uuid is not None else str(uuid4())
         self.slug = slugify(name, to_lower=True)
         self.parent = None
-        self.children = children if children is not None else []
+        self.children = AreaChildrenList(self, children) if children is not None\
+            else AreaChildrenList(self)
         for child in self.children:
             child.parent = self
 
@@ -108,29 +135,41 @@ class Area:
         self._markets = None
         self.dispatcher = DispatcherFactory(self)()
         self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
-        self._convert_area_throughput_kva_to_kwh(import_capacity_kVA, export_capacity_kVA)
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets, self)
         log.debug(f"External connection {external_connection_available} for area {self.name}")
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
-            if external_connection_available is True else None
+            if external_connection_available and self.strategy is None else None
         self.should_update_child_strategies = False
 
+    @property
+    def name(self):
+        return self.__name
+
+    @name.setter
+    def name(self, new_name):
+        if not check_area_name_exists_in_parent_area(self.parent, new_name):
+            self.__name = new_name
+        else:
+            raise AreaException("Area name should be unique inside the same Parent Area")
+
     def get_state(self):
+        state = {}
         if self.strategy is not None:
-            return self.strategy.get_state()
-        return {
+            state = self.strategy.get_state()
+
+        state.update(**{
             "current_tick": self.current_tick,
             "area_stats": self.stats.get_state()
-        }
+        })
+        return state
 
     def restore_state(self, saved_state):
+        self.current_tick = saved_state["current_tick"]
+        self.stats.restore_state(saved_state["area_stats"])
         if self.strategy is not None:
             self.strategy.restore_state(saved_state)
-
-        self.current_tick = saved_state["current_tick"]
-        self.stats.restore_state(saved_state)
 
     def area_reconfigure_event(self, **kwargs):
         if self.strategy is not None:
@@ -146,45 +185,36 @@ class Area:
 
         baseline_peak_energy_import_kWh = kwargs["baseline_peak_energy_import_kWh"] \
             if key_in_dict_and_not_none(kwargs, 'baseline_peak_energy_import_kWh') \
-            else self.baseline_peak_energy_import_kWh
+            else self.throughput.baseline_peak_energy_import_kWh
 
         baseline_peak_energy_export_kWh = kwargs["baseline_peak_energy_export_kWh"] \
             if key_in_dict_and_not_none(kwargs, 'baseline_peak_energy_export_kWh') \
-            else self.baseline_peak_energy_export_kWh
+            else self.throughput.baseline_peak_energy_export_kWh
 
-        if key_in_dict_and_not_none(kwargs, 'import_capacity_kVA'):
-            import_capacity_kVA = kwargs["import_capacity_kVA"]
-            import_capacity_kWh = convert_area_throughput_kVA_to_kWh(import_capacity_kVA,
-                                                                     self.config.slot_length)
-        else:
-            import_capacity_kVA = None
-            import_capacity_kWh = self.import_capacity_kWh
+        import_capacity_kVA = kwargs["import_capacity_kVA"] \
+            if key_in_dict_and_not_none(kwargs, 'import_capacity_kVA') \
+            else self.throughput.import_capacity_kVA
 
-        if key_in_dict_and_not_none(kwargs, 'export_capacity_kVA'):
-            export_capacity_kVA = kwargs["export_capacity_kVA"]
-            export_capacity_kWh = convert_area_throughput_kVA_to_kWh(export_capacity_kVA,
-                                                                     self.config.slot_length)
-        else:
-            export_capacity_kVA = None
-            export_capacity_kWh = self.export_capacity_kWh
+        export_capacity_kVA = kwargs["export_capacity_kVA"] \
+            if key_in_dict_and_not_none(kwargs, 'export_capacity_kVA') \
+            else self.throughput.import_capacity_kVA
 
         try:
             validate_area(grid_fee_constant=grid_fee_constant,
-                          grid_fee_percentage=grid_fee_percentage,
-                          baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
-                          baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
-                          import_capacity_kVA=import_capacity_kVA,
-                          export_capacity_kVA=export_capacity_kVA)
+                          grid_fee_percentage=grid_fee_percentage)
+            throughput = ThroughputParameters(
+                            baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
+                            baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
+                            import_capacity_kVA=import_capacity_kVA,
+                            export_capacity_kVA=export_capacity_kVA
+                        )
 
         except Exception as e:
             log.error(str(e))
             return
 
         self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
-        self.baseline_peak_energy_import_kWh = baseline_peak_energy_import_kWh
-        self.baseline_peak_energy_export_kWh = baseline_peak_energy_export_kWh
-        self.export_capacity_kWh = export_capacity_kWh
-        self.import_capacity_kWh = import_capacity_kWh
+        self.throughput = throughput
         self._update_descendants_strategy_prices()
 
     def _update_descendants_strategy_prices(self):
@@ -222,14 +252,6 @@ class Area:
             else ConstSettings.IAASettings.GRID_FEE_TYPE
         return self.grid_fee_constant if grid_fee_type == 1 else self.grid_fee_percentage
 
-    def _convert_area_throughput_kva_to_kwh(self, import_capacity_kVA, export_capacity_kVA):
-        self.import_capacity_kWh = \
-            import_capacity_kVA * self.config.slot_length.total_minutes() / 60.0 \
-            if import_capacity_kVA is not None else 0.
-        self.export_capacity_kWh = \
-            export_capacity_kVA * self.config.slot_length.total_minutes() / 60.0 \
-            if export_capacity_kVA is not None else 0.
-
     def set_events(self, event_list):
         self.events = Events(event_list, self)
 
@@ -259,7 +281,7 @@ class Area:
             self.log.debug("No strategy. Using inter area agent.")
         self.log.debug('Activating area')
         self.active = True
-        self.dispatcher.broadcast_activate()
+        self.dispatcher.broadcast_activate(current_tick=self.current_tick)
         if self.redis_ext_conn is not None:
             self.redis_ext_conn.sub_to_external_channels()
 
@@ -303,7 +325,7 @@ class Area:
             self.budget_keeper.process_market_cycle()
 
         self.log.debug("Cycling markets")
-        self._markets.rotate_markets(now_value, self.stats, self.dispatcher)
+        self._markets.rotate_markets(now_value, self.dispatcher)
         self.dispatcher._delete_past_agents(self.dispatcher._inter_area_agents)
 
         # area_market_stats have to updated when cycling market of each area:

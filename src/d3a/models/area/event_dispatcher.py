@@ -101,7 +101,7 @@ class AreaDispatcher:
             for area_name in sorted(agents, key=lambda _: random()):
                 agents[area_name].event_listener(event_type, **kwargs)
 
-    def _should_dispatch_to_strategies(self, event_type):
+    def _should_dispatch_to_strategies(self, event_type, **kwargs):
         if event_type is AreaEvent.ACTIVATE:
             return True
         else:
@@ -114,8 +114,8 @@ class AreaDispatcher:
         if event_type is AreaEvent.MARKET_CYCLE:
             self.area.cycle_markets(_trigger_event=True)
         elif event_type is AreaEvent.ACTIVATE:
-            self.area.activate()
-        if self._should_dispatch_to_strategies(event_type):
+            self.area.activate(**kwargs)
+        if self._should_dispatch_to_strategies(event_type, **kwargs):
             if self.area.strategy:
                 self.area.strategy.event_listener(event_type, **kwargs)
         elif (not self.area.events.is_enabled or not self.area.events.is_connected) \

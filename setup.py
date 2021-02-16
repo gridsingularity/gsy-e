@@ -7,7 +7,6 @@ d3a_interface_branch = os.environ.get("BRANCH", "master")
 try:
     with open('requirements/dev.txt') as req:
         REQUIREMENTS = [r.partition('#')[0] for r in req if not r.startswith('-e')]
-        # TODO: Workaround for https://github.com/ethereum/py-solc/issues/64
         REQUIREMENTS.extend(
             ['d3a-interface @ '
              f'git+https://github.com/gridsingularity/d3a-interface.git@{d3a_interface_branch}'
@@ -32,7 +31,7 @@ setup(
     version=VERSION,
     packages=find_packages(where="src", exclude=["tests"]),
     package_dir={"": "src"},
-    package_data={'d3a': ['contracts/*.sol', 'resources/*.csv']},
+    package_data={'d3a': ['resources/*.csv']},
     install_requires=REQUIREMENTS,
     entry_points={
         'console_scripts': [
