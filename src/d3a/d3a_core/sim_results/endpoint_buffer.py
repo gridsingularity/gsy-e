@@ -230,8 +230,8 @@ class SimulationEndpointBuffer:
         self.area_result_dict = self._create_area_tree_dict(area)
         self.status = simulation_status
         is_initial_current_market_on_cn = d3a.constants.IS_CANARY_NETWORK and \
-            (area.next_market is None or
-             area.next_market.time_slot - area.current_market.time_slot > area.config.slot_length)
+            (area.next_market is None or (area.current_market and
+             area.next_market.time_slot - area.current_market.time_slot > area.config.slot_length))
         if area.current_market is not None and not is_initial_current_market_on_cn:
             self.current_market_time_slot_str = area.current_market.time_slot_str
             self.current_market_ui_time_slot_str = \
