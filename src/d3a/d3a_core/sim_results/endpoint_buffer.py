@@ -33,6 +33,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
+import d3a.constants
 
 _NO_VALUE = {
     'min': None,
@@ -228,7 +229,10 @@ class SimulationEndpointBuffer:
     def update_stats(self, area, simulation_status, progress_info, sim_state):
         self.area_result_dict = self._create_area_tree_dict(area)
         self.status = simulation_status
-        if area.current_market is not None:
+        is_initial_current_market_on_cn = d3a.constants.IS_CANARY_NETWORK and \
+            (area.next_market is None or
+             area.next_market.time_slot - area.current_market.time_slot > area.config.slot_length)
+        if area.current_market is not None and not is_initial_current_market_on_cn:
             self.current_market_time_slot_str = area.current_market.time_slot_str
             self.current_market_ui_time_slot_str = \
                 area.current_market.time_slot.format(DATE_TIME_UI_FORMAT)
