@@ -1,5 +1,6 @@
+repos:
 -   repo: git://github.com/pre-commit/pre-commit-hooks
-    sha: v0.7.1
+    rev: v3.4.0
     hooks:
     - id: check-added-large-files
     - id: check-ast
@@ -10,6 +11,9 @@
     - id: end-of-file-fixer
     - id: fix-encoding-pragma
       args: ['--remove']
+    - id: trailing-whitespace
+-   repo: https://gitlab.com/pycqa/flake8
+    rev: 3.8.4
+    hooks:
     - id: flake8
       additional_dependencies: ["flake8-tuple"]
-    - id: trailing-whitespace
