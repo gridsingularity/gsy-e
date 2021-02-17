@@ -15,26 +15,21 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
-    ConstSettings.BlockchainSettings.START_LOCAL_CHAIN = False
     area = Area(
         'Grid',
         [
             Area('Cell Tower', strategy=LoadHoursStrategy(avg_power_W=50,
-                                                          hrs_per_day=24),
-                 appliance=SwitchableAppliance()),
+                                                          hrs_per_day=24)
+                 ),
             Area('Commercial Energy Producer',
                  strategy=FinitePowerPlant(energy_rate=30,
-                                           max_available_power_kW=100),
-                 appliance=SimpleAppliance()
+                                           max_available_power_kW=100)
                  ),
 
         ],

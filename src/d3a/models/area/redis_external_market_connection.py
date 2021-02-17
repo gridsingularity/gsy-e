@@ -91,10 +91,11 @@ class RedisMarketExternalConnection:
         payload_data = payload["data"] \
             if isinstance(payload["data"], dict) else json.loads(payload["data"])
         ret_val = {"status": "ready",
+                   'name': self.area.name,
                    "area_uuid": self.area.uuid,
                    "command": "market_stats",
                    "market_stats":
-                       self.area.stats.get_market_stats(payload_data["market_slots"])}
+                       self.area.stats.get_last_market_stats()}
         if self.is_aggregator_controlled:
             return ret_val
         else:
@@ -149,10 +150,10 @@ class RedisMarketExternalConnection:
         payload_data = payload["data"] \
             if isinstance(payload["data"], dict) else json.loads(payload["data"])
         ret_val = {"status": "ready",
+                   'name': self.area.name,
                    "area_uuid": self.area.uuid,
                    "command": "dso_market_stats",
-                   "market_stats":
-                       self.area.stats.get_market_stats(payload_data["market_slots"], dso=True)}
+                   "market_stats": self.area.stats.get_last_market_stats(dso=True)}
         if self.is_aggregator_controlled:
             return ret_val
         else:
@@ -186,7 +187,10 @@ class RedisMarketExternalConnection:
         deactivate_msg = {
             "event": "finish"
         }
-        self.redis_com.publish_json(deactivate_event_channel, deactivate_msg)
+        if self.is_aggregator_controlled:
+            self.aggregator.add_batch_finished_event(self.area.uuid, deactivate_msg)
+        else:
+            self.redis_com.publish_json(deactivate_event_channel, deactivate_msg)
 
     def trigger_aggregator_commands(self, command):
         if "type" not in command:

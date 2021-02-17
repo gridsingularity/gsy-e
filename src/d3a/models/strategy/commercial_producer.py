@@ -34,7 +34,7 @@ class CommercialStrategy(BaseStrategy):
         self.energy_rate = energy_rate
         self.energy_per_slot_kWh = INF_ENERGY
 
-    def event_activate(self):
+    def event_activate(self, **kwargs):
         self.energy_rate = self.area.config.market_maker_rate if self.energy_rate is None \
             else read_arbitrary_profile(InputProfileTypes.IDENTITY, self.energy_rate)
 
@@ -97,4 +97,4 @@ class CommercialStrategy(BaseStrategy):
         return {"energy_rate": convert_pendulum_to_str_in_dict(self.energy_rate)}
 
     def restore_state(self, saved_state):
-        self.energy_rate = convert_str_to_pendulum_in_dict(saved_state["energy_rate"])
+        self.energy_rate.update(convert_str_to_pendulum_in_dict(saved_state["energy_rate"]))

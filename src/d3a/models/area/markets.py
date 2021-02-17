@@ -53,7 +53,7 @@ class AreaMarkets:
     def all_future_spot_markets(self):
         return list(self.markets.values())
 
-    def rotate_markets(self, current_time, stats, dispatcher):
+    def rotate_markets(self, current_time, dispatcher):
         # Move old and current markets & balancing_markets to
         # `past_markets` & past_balancing_markets. We use `list()` here to get a copy since we
         # modify the market list in-place
@@ -92,7 +92,6 @@ class AreaMarkets:
                 del past_markets[pm].bids
                 del past_markets[pm].bid_history
                 del past_markets[pm].traded_energy
-                del past_markets[pm].accumulated_actual_energy_agg
                 del past_markets[pm]
 
     @staticmethod

@@ -189,7 +189,7 @@ class Offers:
 
     def on_trade(self, market_id, trade):
         try:
-            if trade.offer.seller == self.strategy.owner.name:
+            if trade.seller == self.strategy.owner.name:
                 if trade.offer.id in self.split and trade.offer in self.posted:
                     # remove from posted as it is traded already
                     self.remove(self.split[trade.offer.id])
@@ -427,6 +427,10 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     def event_activate_price(self):
         pass
 
+    @property
+    def future_markets_time_slots(self):
+        return [m.time_slot for m in self.area.all_markets]
+
     def get_state(self):
         try:
             return self.state.get_state()
@@ -455,7 +459,6 @@ class BidEnabledStrategy(BaseStrategy):
             price,
             energy,
             self.owner.name,
-            self.area.name,
             original_bid_price=price,
             buyer_origin=buyer_origin
         )

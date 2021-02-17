@@ -28,7 +28,6 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.device_validator import validate_pv_device_energy, validate_pv_device_price
 from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.models.state import PVState
-from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.constants_limits import GlobalConfig
@@ -68,7 +67,6 @@ class PVStrategy(BaseStrategy):
 
         self.panel_count = panel_count
         self.max_panel_power_W = max_panel_power_W
-        self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.state = PVState()
 
         self._init_price_update(update_interval, initial_selling_rate, final_selling_rate,
@@ -164,7 +162,7 @@ class PVStrategy(BaseStrategy):
                 energy_rate_decrease_per_update=rate_change,
                 fit_to_limit=fit_to_limit)
 
-    def event_activate(self):
+    def event_activate(self, **kwargs):
         self.event_activate_price()
         self.event_activate_energy()
         self.offer_update.update_and_populate_price_settings(self.area)
@@ -201,15 +199,11 @@ class PVStrategy(BaseStrategy):
         # A fit of a gaussian function to those data results in a formula Energy(time)
         for market in self.area.all_markets:
             slot_time = market.time_slot
-            if slot_time not in self.energy_production_forecast_kWh or reconfigure:
-                difference_to_midnight_in_minutes = \
-                    slot_time.diff(self.area.now.start_of("day")).in_minutes() % (60 * 24)
-                self.energy_production_forecast_kWh[slot_time] = \
-                    self.gaussian_energy_forecast_kWh(
-                        difference_to_midnight_in_minutes) * self.panel_count
-                self.state.available_energy_kWh[slot_time] = \
-                    self.energy_production_forecast_kWh[slot_time]
-                assert self.energy_production_forecast_kWh[slot_time] >= 0.0
+            difference_to_midnight_in_minutes = \
+                slot_time.diff(self.area.now.start_of("day")).in_minutes() % (60 * 24)
+            available_energy_kWh = self.gaussian_energy_forecast_kWh(
+                difference_to_midnight_in_minutes) * self.panel_count
+            self.state.set_available_energy(available_energy_kWh, slot_time, reconfigure)
 
     def gaussian_energy_forecast_kWh(self, time_in_minutes=0):
         # The sun rises at approx 6:30 and sets at 18hr
@@ -243,17 +237,8 @@ class PVStrategy(BaseStrategy):
                 self.area.current_market is None:
             return
 
-        to_delete = []
-        for market_slot in self.state.available_energy_kWh.keys():
-            if market_slot < self.area.current_market.time_slot:
-                to_delete.append(market_slot)
-        for market_slot in to_delete:
-            self.state.available_energy_kWh.pop(market_slot, None)
-            self.energy_production_forecast_kWh.pop(market_slot, None)
-            self.offer_update.initial_rate.pop(market_slot, None)
-            self.offer_update.final_rate.pop(market_slot, None)
-            self.offer_update.energy_rate_change_per_update.pop(market_slot, None)
-            self.offer_update.update_counter.pop(market_slot, None)
+        self.state.delete_past_state(self.area.current_market.time_slot)
+        self.offer_update.delete_past_state_values(self.area.current_market.time_slot)
 
     def event_market_cycle_price(self):
         self.offer_update.update_and_populate_price_settings(self.area)
@@ -261,15 +246,17 @@ class PVStrategy(BaseStrategy):
 
         # Iterate over all markets open in the future
         for market in self.area.all_markets:
-            assert self.state.available_energy_kWh[market.time_slot] >= -FLOATING_POINT_TOLERANCE
-            if self.state.available_energy_kWh[market.time_slot] > 0:
+            offer_energy_kWh = self.state.get_available_energy_kWh(market.time_slot)
+            # We need to subtract the energy from the offers that are already posted in this
+            # market in order to validate that more offers need to be posted.
+            offer_energy_kWh -= self.offers.open_offer_energy(market.id)
+            if offer_energy_kWh > 0:
                 offer_price = \
-                    self.offer_update.initial_rate[market.time_slot] * \
-                    self.state.available_energy_kWh[market.time_slot]
+                    self.offer_update.initial_rate[market.time_slot] * offer_energy_kWh
                 try:
                     offer = market.offer(
                         offer_price,
-                        self.state.available_energy_kWh[market.time_slot],
+                        offer_energy_kWh,
                         self.owner.name,
                         original_offer_price=offer_price,
                         seller_origin=self.owner.name
@@ -287,7 +274,8 @@ class PVStrategy(BaseStrategy):
         self.assert_if_trade_offer_price_is_too_low(market_id, trade)
 
         if trade.seller == self.owner.name:
-            self.state.available_energy_kWh[market.time_slot] -= trade.offer.energy
+            self.state.decrement_available_energy(
+                trade.offer.energy, market.time_slot, self.owner.name)
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:

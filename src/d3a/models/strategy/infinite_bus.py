@@ -43,7 +43,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         # amended.
         GlobalConfig.market_maker_rate = self.energy_rate
 
-    def event_activate(self):
+    def event_activate(self, **kwargs):
         if self.energy_rate_profile is not None:
             self.energy_rate = read_and_convert_identity_profile_to_float(self.energy_rate_profile)
             del self.energy_rate_profile
@@ -100,6 +100,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         }
 
     def restore_state(self, saved_state):
-        self.energy_buy_rate = convert_str_to_pendulum_in_dict(
-            saved_state["energy_buy_rate"])
-        self.energy_rate = convert_str_to_pendulum_in_dict(saved_state["energy_rate"])
+        self.energy_buy_rate.update(convert_str_to_pendulum_in_dict(
+            saved_state["energy_buy_rate"]))
+        self.energy_rate.update(convert_str_to_pendulum_in_dict(
+            saved_state["energy_rate"]))

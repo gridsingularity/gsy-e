@@ -15,10 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
 
 
@@ -35,14 +33,14 @@ def get_setup(config):
                                                                  battery_capacity_kWh=15.0,
                                                                  initial_buying_rate=0,
                                                                  final_buying_rate=23.99,
-                                                                 final_selling_rate=28.01),
-                         appliance=SwitchableAppliance()),
+                                                                 final_selling_rate=28.01)
+                         ),
                     Area('H1 Storage2', strategy=StorageStrategy(initial_soc=10,
                                                                  battery_capacity_kWh=15.0,
                                                                  initial_buying_rate=0,
                                                                  final_buying_rate=22.99,
-                                                                 final_selling_rate=28.01),
-                         appliance=SwitchableAppliance()),
+                                                                 final_selling_rate=28.01)
+                         ),
                 ],
                 grid_fee_percentage=0,
             ),
@@ -50,8 +48,8 @@ def get_setup(config):
                 'House 2',
                 [
 
-                    Area('H2 PV', strategy=PVStrategy(1, final_selling_rate=23.0),
-                         appliance=PVAppliance()),
+                    Area('H2 PV', strategy=PVStrategy(1, final_selling_rate=23.0)
+                         ),
 
                 ],
                 grid_fee_percentage=0,

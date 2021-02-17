@@ -1,24 +1,24 @@
-## Introduction
-
-Collaboration is a type of simulation that allows multiple D3A's users to participate inside the same grid. These user can act in a collaborative or competitive way, to optimize specific metrics. Users can connect through the [API client](assets-api.md) to actively engage in the collaboration. As part of collaborations, users have different role that influence their capabilities and their objectives : 
+Collaboration is a type of simulation in the [Grid Singularity UI](https://www.d3a.io/) that allows multiple users to participate in the same environment. These users can act in a **collaborative** or **competitive** way, aiming to optimize specific metrics. Users can connect through the [API client](api-overview.md) to actively engage in the collaboration.
 
 ##User roles
 
 ###Exchange Operator
-The exchange operator (EO) is responsible to build the digital twin of the electrical grid, including energy resources, in a collaboration. Once the [setup](grid-setup.md) is set the EO can open an external connection to devices and markets. By doing so, it allows other users to register to those nodes. Once the EO has approved the registration of external users for those devices and markets, they gain control on those.
 
-The exchange operator is also in charge of expanding the grid (with [events](events.md)) to new user desiring to connect to the exchange.
+The exchange operator (EO) is responsible for **building the digital twin of the electrical grid**, including energy assets and markets in the modelling page. Once the setup is complete, the EO facilitates the approval of other users to register to manage a set of markets and energy assets, and subsequently launches the collaboration.The EO is also in charge of expanding the grid (with [events](events.md)) or registering new users desiring to connect to the exchange over the course of a simulation.
 
 ###Grid Operator
-The grid operator roles is designed towards Distribution System Operators (DSOs) and Transmission System Operators (TSOs). Those users have the possibility to register to different markets, on different grid level in the collaboration. Once registered and approved by the EO, they can control their owned markets with the API client. Through this latter grid operators can change [grid fees](constant-fees.md) in order to influence trades to optimize specific metrics (e.g. [peak percentage](kpis.md#peak-percentage)).
+
+The grid operator role is designed specifically for Distribution System Operators (DSOs) and Transmission System Operators (TSOs). Those users have the possibility to register to different markets, on different grid levels in the collaboration. Once registered and approved by the EO, they can **manage the relevant markets** by using the Grid Operator API to change [grid fees](grid-fees.md) in order to influence trades to optimize specific metrics (e.g. [peak percentage](peak-percentage.md)).
 
 ###Researcher
-The researcher is designed towards meters, PV and batteries vendors, communities leaders, energy management companies and data scientists. Researchers can register to devices ([Load](load.md), [PV](pv-strategy.md) and [Storage](storage.md)) and once approved by the EO are responsible of buying and selling energy on markets. While the collaboration is running they are sending bids and offers, for their respective owned devices through the API to the exchange.
+
+The researcher role is designed to represent smart meters, PV and battery vendors, community leaders, energy management companies, data scientists and aggregators in collaborations. Researchers can claim assets ([Load](model-load.md), [PV](model-pv.md) and [Storage](model-storage.md)) and, once approved by the Exchange Operator, are responsible for **buying and selling energy for the assets** they manage on markets through the Asset API.
 
 ##How to connect
-If you desire to connect to a collaboration (in the framework of an event such as the Chaos Experiments hack) please follow these following steps : 
 
-* Go to the collaboration page from your account. On this page are listed all collaborations made in the D3A. For every simulation you are allowed to see the settings and the grid setup.
-* If the collaboration you wish to participate in is public, you can click on *Registry and Scoreboard*. On this page is listed every markets and devices of the collaboration. For the ones that have their API connection opened, you can apply to them. The EO on his side will see that you have applied and is able to either approve or deny your request.
-* Once you're approved you can start your API script 
+If you wish to connect to a collaboration in the framework of an event (e.g. [Energy Singularity Chaos Experiment](https://gridsingularity.medium.com/en-route-to-energy-singularity-odyssey-momentum-learnings-from-the-2020-chaos-experiment-8dc38ff26869)) or to a [Canary Test Network](canary-network.md) in the framework of a live running exchange please follow these steps:
 
+* Login on the [User-Interface](https://www.d3a.io/)
+* Go to the Collaborations (or Canary Test Network page), where you will see a list of all active collaborations. For each, any user may view the settings and the grid setup.
+* If the collaboration the user wishes to join is public, they can click on **Registry** and **Scoreboard**. On this page, each market and asset of the collaboration is listed. The user can apply to manage the trading strategies of assets or the grid fee strategy of markets on the Registry. The EO is able to either approve or deny the request.
+* Once approved, the user can start the API script and wait until the EO starts the collaboration / canary network, when trading will begin.

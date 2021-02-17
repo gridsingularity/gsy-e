@@ -15,12 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a_interface.constants_limits import ConstSettings
+from d3a.models.area.throughput_parameters import ThroughputParameters
 
 
 def get_setup(config):
@@ -29,25 +29,26 @@ def get_setup(config):
         Area('Community', children=[
             Area('House 1', children=[
                 Area('H1 Seller', strategy=FinitePowerPlant(energy_rate=5,
-                                                            max_available_power_kW=0.5),
-                     appliance=SwitchableAppliance()),
+                                                            max_available_power_kW=0.5)
+                     ),
                 Area('H1 Buyer', strategy=LoadHoursStrategy(avg_power_W=1000,
                                                             hrs_of_day=list(range(24)),
                                                             hrs_per_day=24,
                                                             fit_to_limit=False,
                                                             initial_buying_rate=4,
-                                                            energy_rate_increase_per_update=0),
-                     appliance=SwitchableAppliance())],
-                 import_capacity_kVA=1, export_capacity_kVA=1,
-                 baseline_peak_energy_import_kWh=1, baseline_peak_energy_export_kWh=1),
+                                                            energy_rate_increase_per_update=0)
+                     )],
+                 throughput=ThroughputParameters(import_capacity_kVA=1, export_capacity_kVA=1,
+                 baseline_peak_energy_import_kWh=1, baseline_peak_energy_export_kWh=1)
+                 ),
             Area('Community Load', strategy=LoadHoursStrategy(avg_power_W=500,
                                                               hrs_per_day=24,
                                                               hrs_of_day=list(range(24)),
                                                               fit_to_limit=False,
                                                               initial_buying_rate=6,
-                                                              energy_rate_increase_per_update=0),
-                 appliance=SwitchableAppliance())]),
+                                                              energy_rate_increase_per_update=0)
+                 )]),
         Area('Market Maker', strategy=MarketMakerStrategy(energy_rate=3),
-             appliance=SwitchableAppliance())],
+             )],
                 config=config)
     return area

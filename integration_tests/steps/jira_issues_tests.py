@@ -22,8 +22,9 @@ import os
 from d3a.d3a_core.util import d3a_path
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.export import EXPORT_DEVICE_VARIABLES
-from d3a.d3a_core.sim_results.market_price_energy_day import MarketPriceEnergyDay
-from d3a.d3a_core.sim_results.bills import CumulativeBills
+from d3a_interface.sim_results.market_price_energy_day import MarketPriceEnergyDay
+from d3a_interface.sim_results.bills import CumulativeBills
+from d3a_interface.sim_results.cumulative_grid_trades import CumulativeGridTrades
 
 
 def get_areas_from_2_house_grid(context):
@@ -299,10 +300,14 @@ def storage_decreases_bid_rate(context):
 
 @then('cumulative grid trades correctly reports the external trade')
 def area_external_trade(context):
-    cumulative_trade = context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades
+    cumulative_trade = context.simulation.endpoint_buffer.cumulative_grid_trades.accumulated_trades
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
-    ext_trade = list(filter(lambda x: x['areaName'] == "External Trades",
-                            cumulative_trade[house1.uuid]))[0]['bars'][0]['energy']
+    cal_cum_trades = CumulativeGridTrades.generate_cumulative_grid_trades_target_area(
+            house1.uuid, {'cumulative_grid_trades': cumulative_trade.get(house1.uuid, None)}
+    )
+    ext_trade = sum(info['bars'][0]['energy']
+                    for info in cal_cum_trades[house1.uuid]
+                    if info['areaName'] == "External Trades")
     assert isclose(ext_trade, -1 * 0.666, rel_tol=1e-05)
 
 
@@ -327,3 +332,8 @@ def check_area_trade_and_bill(context):
     assert isclose(cb.cumulative_bills_results[context.name_uuid_map['Market Maker']]['earned'],
                    0.72)
     assert isclose(cb.cumulative_bills_results[context.name_uuid_map['Load']]['spent_total'], 0.84)
+
+
+@given("raising exceptions when running the simulation is disabled")
+def do_not_raise_exceptions(context):
+    context.raise_exception_when_running_sim = False

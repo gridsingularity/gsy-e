@@ -21,6 +21,8 @@ import os
 import importlib
 import logging
 import glob
+import traceback
+
 from math import isclose
 from pendulum import duration, today, from_format
 from behave import given, when, then
@@ -36,6 +38,7 @@ from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
 from d3a_interface.constants_limits import ConstSettings
 from d3a import constants
 from d3a.d3a_core.util import convert_W_to_Wh, convert_W_to_kWh, convert_kW_to_kWh
+
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
 ACCUMULATED_KEYS_LIST = ["Accumulated Trades", "External Trades", "Totals", "Market Fees"]
@@ -241,9 +244,8 @@ def set_min_offer_age(context, min_offer_age):
 def running_the_simulation(context):
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.CRITICAL)
+    root_logger.setLevel(logging.ERROR)
 
-    slowdown = 0
     seed = 0
     paused = False
     pause_after = duration()
@@ -255,7 +257,6 @@ def running_the_simulation(context):
         'json_arg',
         context._settings,
         None,
-        slowdown,
         seed,
         paused,
         pause_after,
@@ -307,7 +308,7 @@ def run_simulation_via_console(context, scenario, hours, slot_length,
 def run_sim_with_config_setting(context, cloud_coverage, scenario):
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.CRITICAL)
+    root_logger.setLevel(logging.ERROR)
 
     simulation_config = SimulationConfig(duration(hours=int(24)),
                                          duration(minutes=int(60)),
@@ -316,7 +317,6 @@ def run_sim_with_config_setting(context, cloud_coverage, scenario):
                                          cloud_coverage=int(cloud_coverage),
                                          external_connection_enabled=False)
 
-    slowdown = 0
     seed = 0
     paused = False
     pause_after = duration()
@@ -328,7 +328,6 @@ def run_sim_with_config_setting(context, cloud_coverage, scenario):
         scenario,
         simulation_config,
         None,
-        slowdown,
         seed,
         paused,
         pause_after,
@@ -381,16 +380,6 @@ def past_markets_not_in_memory(context):
     ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS = True
 
     constants.D3A_TEST_RUN = False
-
-
-@when('the reported cumulative grid trades are saved')
-def save_reported_cumulative_grid_trade_profile(context):
-    context.cumulative_grid_trades = deepcopy(
-        context.simulation.endpoint_buffer.cumulative_grid_trades.accumulated_trades)
-    context.cumulative_grid_trades_redis = \
-        deepcopy(context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades)
-    context.cumulative_grid_balancing_trades = deepcopy(
-        context.simulation.endpoint_buffer.cumulative_grid_trades.current_balancing_trades)
 
 
 @then('we test the export functionality of {scenario}')
@@ -496,7 +485,7 @@ def create_sim_object(context, scenario):
                                          external_connection_enabled=False)
 
     context.simulation = Simulation(
-        scenario, simulation_config, None, 0, 0, False, duration(), False, False, None, None,
+        scenario, simulation_config, None, 0, False, duration(), False, False, None, None,
         "1234", False
     )
 
@@ -513,7 +502,7 @@ def monkeypatch_ctrl_callback(context, method):
 @when('the configured simulation is running')
 def configd_sim_run(context):
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.CRITICAL)
+    root_logger.setLevel(logging.ERROR)
     context.simulation.run()
 
 
@@ -548,16 +537,15 @@ def final_results(context):
     context.simulation.redis_connection.publish_results = final_res_count
 
 
-@when('the simulation is able to transmit zipped results')
+@when('the redis_connection is enabled')
 def transmit_zipped_results(context):
     context.simulation.redis_connection.is_enabled = lambda: True
-    context.simulation.redis_connection.write_zip_results = lambda _: None
 
 
 @then('intermediate results are transmitted on every slot')
 def interm_res_report(context):
     # Add an extra result for the start of the simulation
-    assert context.interm_results_count == 12 + 1
+    assert context.interm_results_count == 12
 
 
 @then('final results are transmitted once')
@@ -586,7 +574,7 @@ def min_bid_age_nr_ticks(context, min_bid_age):
 def run_sim_multiday(context, scenario, start_date, total_duration, slot_length, tick_length):
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.CRITICAL)
+    root_logger.setLevel(logging.ERROR)
     if start_date == "None":
         start_date = today(tz=TIME_ZONE)
     else:
@@ -601,7 +589,6 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
                                          start_date=start_date,
                                          external_connection_enabled=False)
 
-    slowdown = 0
     seed = 0
     paused = False
     pause_after = duration()
@@ -613,7 +600,6 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
         scenario,
         simulation_config,
         None,
-        slowdown,
         seed,
         paused,
         pause_after,
@@ -647,7 +633,7 @@ def export_logic(context, flag):
 def run_sim(context, scenario, total_duration, slot_length, tick_length, market_count):
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.CRITICAL)
+    root_logger.setLevel(logging.ERROR)
 
     simulation_config = SimulationConfig(duration(hours=int(total_duration)),
                                          duration(minutes=int(slot_length)),
@@ -657,7 +643,6 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
                                          market_maker_rate=30,
                                          external_connection_enabled=False)
 
-    slowdown = 0
     seed = 0
     paused = False
     pause_after = duration()
@@ -670,7 +655,6 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
             scenario,
             simulation_config,
             None,
-            slowdown,
             seed,
             paused,
             pause_after,
@@ -681,8 +665,12 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
         )
         context.simulation.run()
     except Exception as er:
-        root_logger.critical(f"Error reported when running the simulation: {er}")
-        context.sim_error = er
+        if context.raise_exception_when_running_sim:
+            root_logger.critical(f"Error reported when running the simulation: {er}")
+            root_logger.critical(f"Traceback: {traceback.format_exc()}")
+            raise Exception(er)
+        else:
+            context.sim_error = er
 
 
 @then('we test the output of the simulation of '
@@ -823,12 +811,14 @@ def generate_area_uuid_map(sim_area, results):
 
 @then('the predefined load follows the load profile')
 def check_load_profile(context):
+    if constants.IS_CANARY_NETWORK:
+        return
     if isinstance(context._device_profile, str):
         context._device_profile = context._device_profile_dict
 
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     load = list(filter(lambda x: x.name == "H1 Load", house1.children))[0]
-    for timepoint, energy in load.strategy.state.desired_energy_Wh.items():
+    for timepoint, energy in load.strategy.state._desired_energy_Wh.items():
         assert energy == convert_W_to_Wh(context._device_profile[timepoint],
                                          load.config.slot_length)
 
@@ -846,7 +836,7 @@ def check_pv_profile(context):
     profile_data = read_arbitrary_profile(
         InputProfileTypes.POWER,
         str(path))
-    for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
+    for timepoint, energy in pv.strategy.state._energy_production_forecast_kWh.items():
         if timepoint in profile_data.keys():
             assert energy == profile_data[timepoint]
         else:
@@ -859,7 +849,7 @@ def check_user_pv_dict_profile(context):
     pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
     from d3a.setup.strategy_tests.user_profile_pv_dict import user_profile
     profile_data = user_profile
-    for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
+    for timepoint, energy in pv.strategy.state._energy_production_forecast_kWh.items():
         if timepoint.hour in profile_data.keys():
             assert energy == convert_W_to_kWh(profile_data[timepoint.hour], pv.config.slot_length)
         else:
@@ -878,7 +868,7 @@ def check_pv_csv_profile(context):
     profile_data = read_arbitrary_profile(
         InputProfileTypes.POWER,
         user_profile_path)
-    for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
+    for timepoint, energy in pv.strategy.state._energy_production_forecast_kWh.items():
         if timepoint in profile_data.keys():
             assert energy == profile_data[timepoint]
         else:
@@ -893,7 +883,7 @@ def check_pv_profile_csv(context):
         InputProfileTypes.POWER,
         context._device_profile)
     produced_energy = {from_format(f'{TODAY_STR}T{k.hour:02}:{k.minute:02}', DATE_TIME_FORMAT): v
-                       for k, v in pv.strategy.energy_production_forecast_kWh.items()
+                       for k, v in pv.strategy.state._energy_production_forecast_kWh.items()
                        }
     for timepoint, energy in produced_energy.items():
         if timepoint in input_profile:
@@ -959,6 +949,8 @@ def test_finite_plant_max_power(context, plant_name):
 
 @then("the results are the same for each simulation run")
 def test_sim_market_count(context):
+    if constants.IS_CANARY_NETWORK:
+        return
     grid_1 = context.simulation_1.area
     grid_4 = context.simulation_4.area
     for market_1 in grid_1.past_markets:

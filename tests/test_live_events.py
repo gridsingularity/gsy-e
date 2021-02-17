@@ -7,8 +7,6 @@ from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.area import Area
 from d3a.models.config import SimulationConfig
-from d3a.models.appliance.switchable import SwitchableAppliance
-from d3a.models.appliance.pv import PVAppliance
 from d3a.d3a_core.live_events import LiveEvents
 
 
@@ -41,11 +39,11 @@ class TestLiveEvents(unittest.TestCase):
             fit_to_limit=False, energy_rate_increase_per_update=5,
             energy_rate_decrease_per_update=8, update_interval=9
         )
-        self.area1 = Area("load", None, None, self.strategy_load, SwitchableAppliance(),
+        self.area1 = Area("load", None, None, self.strategy_load,
                           self.config, None, grid_fee_percentage=0)
-        self.area2 = Area("pv", None, None, self.strategy_pv, PVAppliance(),
+        self.area2 = Area("pv", None, None, self.strategy_pv,
                           self.config, None, grid_fee_percentage=0)
-        self.area3 = Area("storage", None, None, self.strategy_battery, SwitchableAppliance(),
+        self.area3 = Area("storage", None, None, self.strategy_battery,
                           self.config, None, grid_fee_percentage=0)
         self.area_house1 = Area("House 1", children=[self.area1, self.area2], config=self.config)
         self.area_house2 = Area("House 2", children=[self.area3], config=self.config)
@@ -165,16 +163,16 @@ class TestLiveEvents(unittest.TestCase):
         self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
         assert self.area_house1.grid_fee_constant == 12
-        assert self.area_house1.baseline_peak_energy_import_kWh == 123
-        assert self.area_house1.baseline_peak_energy_export_kWh == 456
-        assert self.area_house1.import_capacity_kWh == \
+        assert self.area_house1.throughput.baseline_peak_energy_import_kWh == 123
+        assert self.area_house1.throughput.baseline_peak_energy_export_kWh == 456
+        assert self.area_house1.throughput.import_capacity_kWh == \
             987 * self.config.slot_length.total_minutes() / 60.0
-        assert self.area_house1.export_capacity_kWh == \
+        assert self.area_house1.throughput.export_capacity_kWh == \
             765 * self.config.slot_length.total_minutes() / 60.0
 
     def test_update_area_event_can_switch_strategy_from_market_maker_to_infinite_bus(self):
         self.strategy_mmr = MarketMakerStrategy(energy_rate=30)
-        self.area_mmr = Area("mmr", None, None, self.strategy_mmr, SwitchableAppliance(),
+        self.area_mmr = Area("mmr", None, None, self.strategy_mmr,
                              self.config, None, grid_fee_percentage=0)
         self.area_mmr.parent = self.area_grid
         self.area_grid.children.append(self.area_mmr)
@@ -193,7 +191,7 @@ class TestLiveEvents(unittest.TestCase):
 
     def test_update_area_event_can_switch_strategy_from_infinite_bus_to_market_maker(self):
         self.strategy_mmr = InfiniteBusStrategy(energy_sell_rate=30, energy_buy_rate=25)
-        self.area_mmr = Area("mmr", None, None, self.strategy_mmr, SwitchableAppliance(),
+        self.area_mmr = Area("mmr", None, None, self.strategy_mmr,
                              self.config, None, grid_fee_percentage=0)
         self.area_mmr.parent = self.area_grid
         self.area_grid.children.append(self.area_mmr)
@@ -211,7 +209,7 @@ class TestLiveEvents(unittest.TestCase):
         assert type(self.area_mmr.strategy) == MarketMakerStrategy
 
     def test_update_area_event_cannot_switch_non_strategy_area_to_any_strategy(self):
-        self.area_mmr = Area("mmr", None, None, None, SwitchableAppliance(),
+        self.area_mmr = Area("mmr", None, None, None,
                              self.config, None, grid_fee_percentage=0)
         self.area_mmr.parent = self.area_grid
         self.area_grid.children.append(self.area_mmr)

@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import time
 import click
 import platform
 import os
@@ -25,9 +24,9 @@ import gc
 import sys
 import datetime
 
-from pendulum import DateTime, duration
+from pendulum import now, duration
 from ptpython.repl import embed
-from time import sleep
+from time import sleep, time, mktime
 from numpy import random
 from importlib import import_module
 from logging import getLogger
@@ -50,18 +49,17 @@ from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
 from d3a.d3a_core.global_objects import GlobalObjects
+from d3a.blockchain.constants import ENABLE_SUBSTRATE
 import d3a.constants
 
 
 if platform.python_implementation() != "PyPy" and \
-        ConstSettings.BlockchainSettings.BC_INSTALLED is True:
+        ENABLE_SUBSTRATE:
     from d3a.blockchain import BlockChainInterface
 
 log = getLogger(__name__)
 
 
-SLOWDOWN_FACTOR = 100
-SLOWDOWN_STEP = 5
 RANDOM_SEED_MAX_VALUE = 1000000
 
 
@@ -81,12 +79,13 @@ class SimulationProgressInfo:
 
 class Simulation:
     def __init__(self, setup_module_name: str, simulation_config: SimulationConfig = None,
-                 simulation_events: str = None, slowdown: int = 0, seed=None,
+                 simulation_events: str = None, seed=None,
                  paused: bool = False, pause_after: duration = None, repl: bool = False,
                  no_export: bool = False, export_path: str = None,
-                 export_subdir: str = None, redis_job_id=None, enable_bc=False):
+                 export_subdir: str = None, redis_job_id=None, enable_bc=False,
+                 slot_length_realtime=None):
         self.initial_params = dict(
-            slowdown=slowdown,
+            slot_length_realtime=slot_length_realtime,
             seed=seed,
             paused=paused,
             pause_after=pause_after
@@ -103,7 +102,7 @@ class Simulation:
 
         if export_subdir is None:
             self.export_subdir = \
-                DateTime.now(tz=TIME_ZONE).format(f"{DATE_TIME_FORMAT}:ss")
+                now(tz=TIME_ZONE).format(f"{DATE_TIME_FORMAT}:ss")
         else:
             self.export_subdir = export_subdir
 
@@ -156,10 +155,10 @@ class Simulation:
             raise SimulationException(
                 "Invalid setup module '{}'".format(self.setup_module_name)) from ex
 
-    def _init(self, slowdown, seed, paused, pause_after, redis_job_id):
+    def _init(self, slot_length_realtime, seed, paused, pause_after, redis_job_id):
         self.paused = paused
         self.pause_after = pause_after
-        self.slowdown = slowdown
+        self.slot_length_realtime = slot_length_realtime
 
         if seed is not None:
             random.seed(int(seed))
@@ -227,7 +226,7 @@ class Simulation:
         self.is_stopped = False
         while True:
             if initial_slot == 0:
-                self.run_start = DateTime.now(tz=TIME_ZONE)
+                self.run_start = now(tz=TIME_ZONE)
                 self.paused_time = 0
 
             tick_resume = 0
@@ -266,13 +265,8 @@ class Simulation:
         if self.should_export_results:
             self.file_stats_endpoint(self.area)
             return
-        if is_final:
-            self.redis_connection.publish_results(
-                self.endpoint_buffer
-            )
-            if hasattr(self.redis_connection, 'heartbeat'):
-                self.redis_connection.heartbeat.cancel()
-
+        if is_final or self.is_stopped:
+            self.redis_connection.publish_results(self.endpoint_buffer)
         else:
             self.redis_connection.publish_intermediate_results(
                 self.endpoint_buffer
@@ -280,7 +274,7 @@ class Simulation:
 
     def _update_progress_info(self, slot_no, slot_count):
         run_duration = (
-                DateTime.now(tz=TIME_ZONE) - self.run_start -
+                now(tz=TIME_ZONE) - self.run_start -
                 duration(seconds=self.paused_time)
         )
 
@@ -304,19 +298,18 @@ class Simulation:
             self.set_area_current_tick(child, current_tick)
 
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
+        self.current_expected_tick_time = self.run_start
         config = self.simulation_config
-        tick_lengths_s = config.tick_length.seconds
         slot_count = int(config.sim_duration / config.slot_length)
 
-        self.simulation_config.external_redis_communicator.sub_to_aggregator()
-        self.simulation_config.external_redis_communicator.start_communication()
-        self._update_and_send_results()
+        config.external_redis_communicator.sub_to_aggregator()
+        config.external_redis_communicator.start_communication()
 
         if d3a.constants.RUN_IN_REALTIME:
             slot_count = sys.maxsize
 
             today = datetime.date.today()
-            seconds_since_midnight = time.time() - time.mktime(today.timetuple())
+            seconds_since_midnight = time() - mktime(today.timetuple())
             slot_resume = int(seconds_since_midnight // config.slot_length.seconds) + 1
             seconds_elapsed_in_slot = seconds_since_midnight % config.slot_length.seconds
             ticks_elapsed_in_slot = seconds_elapsed_in_slot // config.tick_length.seconds
@@ -331,50 +324,38 @@ class Simulation:
 
             sleep(seconds_until_next_tick)
 
-        simulation_time_counter = time.time()
+        if self.slot_length_realtime:
+            self.tick_length_realtime_s = self.slot_length_realtime.seconds / \
+                                          self.simulation_config.ticks_per_slot
+
         for slot_no in range(slot_resume, slot_count):
             self._update_progress_info(slot_no, slot_count)
 
-            log.warning(
-                "Slot %d of %d (%2.0f%%) - %s elapsed, ETA: %s",
-                slot_no + 1,
-                slot_count,
-                self.progress_info.percentage_completed,
-                self.progress_info.elapsed_time,
-                self.progress_info.eta
-            )
-
-            if self.is_stopped:
-                log.info("Received stop command.")
-                sleep(5)
-                break
-
-            self.live_events.handle_all_events(self.area)
+            log.warning(f"Slot {slot_no + 1} of {slot_count} - "
+                        f"({self.progress_info.percentage_completed:.1f}%) "
+                        f"{self.progress_info.elapsed_time} elapsed, "
+                        f"ETA: {self.progress_info.eta}")
 
             self.global_objects.update(self.area)
 
             self.area.cycle_markets()
             self._update_and_send_results()
+            self.live_events.handle_all_events(self.area)
 
             gc.collect()
             process = psutil.Process(os.getpid())
             mbs_used = process.memory_info().rss / 1000000.0
             log.debug(f"Used {mbs_used} MBs.")
 
-            simulation_time_counter = time.time()
+            self.tick_time_counter = time()
+
             for tick_no in range(tick_resume, config.ticks_per_slot):
-                tick_start = time.time()
-                self._handle_paused(console, tick_start)
+                self._handle_paused(console)
 
                 # reset tick_resume after possible resume
                 tick_resume = 0
-                log.trace(
-                    "Tick %d of %d in slot %d (%2.0f%%)",
-                    tick_no + 1,
-                    config.ticks_per_slot,
-                    slot_no + 1,
-                    (tick_no + 1) / config.ticks_per_slot * 100,
-                )
+                log.trace(f"Tick {tick_no + 1} of {config.ticks_per_slot} in slot "
+                          f"{slot_no + 1} ({(tick_no + 1) / config.ticks_per_slot * 100:.1f}%)")
 
                 self.simulation_config.external_redis_communicator.\
                     approve_aggregator_commands()
@@ -385,24 +366,16 @@ class Simulation:
                 self.simulation_config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()
 
-                realtime_tick_length = time.time() - simulation_time_counter
-                if d3a.constants.RUN_IN_REALTIME:
-                    sleep(abs(tick_lengths_s - realtime_tick_length))
-                elif self.slowdown and realtime_tick_length < tick_lengths_s:
-                    # Simulation runs faster than real time but a slowdown was
-                    # requested
-                    tick_diff = tick_lengths_s - realtime_tick_length
-                    diff_slowdown = tick_diff * self.slowdown / SLOWDOWN_FACTOR
-                    log.trace("Slowdown: %.4f", diff_slowdown)
-                    if console is not None:
-                        self._handle_input(console, diff_slowdown)
-                    else:
-                        sleep(diff_slowdown)
-
-                simulation_time_counter = time.time()
+                self.handle_slowdown_and_realtime(tick_no)
+                self.tick_time_counter = time()
 
             if self.export_on_finish and self.should_export_results:
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
+
+            if self.is_stopped:
+                log.info("Received stop command.")
+                sleep(5)
+                break
 
         self.sim_status = "finished"
         self.deactivate_areas(self.area)
@@ -436,6 +409,19 @@ class Simulation:
     def should_export_results(self):
         return not self.redis_connection.is_enabled()
 
+    def handle_slowdown_and_realtime(self, tick_no):
+        if d3a.constants.RUN_IN_REALTIME:
+            tick_runtime_s = time() - self.tick_time_counter
+            sleep(abs(self.simulation_config.tick_length.seconds - tick_runtime_s))
+        elif self.slot_length_realtime:
+            self.current_expected_tick_time = \
+                self.current_expected_tick_time.add(seconds=self.tick_length_realtime_s)
+            sleep_time_s = self.current_expected_tick_time.timestamp() - now().timestamp()
+            if sleep_time_s > 0:
+                sleep(sleep_time_s)
+                log.debug(f"Tick {tick_no + 1}/{self.simulation_config.ticks_per_slot}: "
+                          f"Sleep time of {sleep_time_s}s was applied")
+
     def toggle_pause(self):
         if self.finished:
             return False
@@ -447,7 +433,7 @@ class Simulation:
         start = 0
         if sleep > 0:
             timeout = sleep / 100
-            start = time.time()
+            start = time()
         while True:
             cmd = console.get_char(timeout)
             if cmd:
@@ -458,9 +444,7 @@ class Simulation:
                                  "  [q] quit\n"
                                  "  [r] reset\n"
                                  "  [s] stop\n"
-                                 "  [R] start REPL\n"
-                                 "  [+] increase slowdown\n"
-                                 "  [-] decrease slowdown")
+                                 "  [R] start REPL\n")
                     continue
 
                 if self.finished and cmd in {'p', '+', '-'}:
@@ -480,18 +464,11 @@ class Simulation:
                     raise KeyboardInterrupt()
                 elif cmd == 's':
                     self.stop()
-                elif cmd == '+':
-                    if self.slowdown <= SLOWDOWN_FACTOR - SLOWDOWN_STEP:
-                        self.slowdown += SLOWDOWN_STEP
-                        log.critical("Simulation slowdown changed to %d", self.slowdown)
-                elif cmd == '-':
-                    if self.slowdown >= SLOWDOWN_STEP:
-                        self.slowdown -= SLOWDOWN_STEP
-                        log.critical("Simulation slowdown changed to %d", self.slowdown)
-            if sleep == 0 or time.time() - start >= sleep:
+
+            if sleep == 0 or time() - start >= sleep:
                 break
 
-    def _handle_paused(self, console, tick_start):
+    def _handle_paused(self, console):
         if console is not None:
             self._handle_input(console)
             if self.pause_after and self.time_since_start >= self.pause_after:
@@ -504,20 +481,22 @@ class Simulation:
                 log.critical("Simulation paused. Press 'p' to resume or resume from API.")
             else:
                 self._update_and_send_results()
-            start = time.time()
+            start = time()
         while self.paused:
             paused_flag = True
             if console:
                 self._handle_input(console, 0.1)
-            if time.time() - tick_start > SIMULATION_PAUSE_TIMEOUT:
+            if time() - self.tick_time_counter > SIMULATION_PAUSE_TIMEOUT:
                 self.is_timed_out = True
                 self.is_stopped = True
+                self.paused = False
+            if self.is_stopped:
                 self.paused = False
             sleep(0.5)
 
         if console and paused_flag:
             log.critical("Simulation resumed")
-            self.paused_time += time.time() - start
+            self.paused_time += time() - start
 
     def _info(self):
         info = self.simulation_config.as_dict()
@@ -562,7 +541,6 @@ class Simulation:
     def current_state(self):
         return {
             "paused": self.paused,
-            "slowdown": self.slowdown,
             "seed": self.initial_params["seed"],
             "sim_status": self.sim_status,
             "stopped": self.is_stopped,
@@ -570,21 +548,25 @@ class Simulation:
             "run_start": format_datetime(self.run_start)
             if self.run_start is not None else "",
             "paused_time": self.paused_time,
-            "slot_number": self.progress_info.current_slot_number
+            "slot_number": self.progress_info.current_slot_number,
+            "slot_length_realtime_s": str(self.slot_length_realtime.seconds)
+            if self.slot_length_realtime else 0
         }
 
-    @classmethod
-    def _restore_area_state(cls, area, saved_area_state):
-        area.restore_state(saved_area_state[area.uuid])
+    def _restore_area_state(self, area, saved_area_state):
+        if area.uuid not in saved_area_state:
+            log.warning(f"Area {area.uuid} is not part of the saved state. State not restored. "
+                        f"Simulation id: {self._simulation_id}")
+        else:
+            area.restore_state(saved_area_state[area.uuid])
         for child in area.children:
-            cls._restore_area_state(child, saved_area_state)
+            self._restore_area_state(child, saved_area_state)
 
     def restore_area_state(self, saved_area_state):
         self._restore_area_state(self.area, saved_area_state)
 
     def restore_global_state(self, saved_state):
         self.paused = saved_state["paused"]
-        self.slowdown = saved_state["slowdown"]
         self.initial_params["seed"] = saved_state["seed"]
         self.sim_status = saved_state["sim_status"]
         self.is_stopped = saved_state["stopped"]
@@ -593,29 +575,44 @@ class Simulation:
             self.run_start = str_to_pendulum_datetime(saved_state["run_start"])
         self.paused_time = saved_state["paused_time"]
         self.progress_info.current_slot_number = saved_state["slot_number"]
+        self.slot_length_realtime = duration(seconds=saved_state["slot_length_realtime_s"])
 
 
 def run_simulation(setup_module_name="", simulation_config=None, simulation_events=None,
-                   slowdown=None, redis_job_id=None, saved_sim_state=None, kwargs=None):
+                   redis_job_id=None, saved_sim_state=None,
+                   slot_length_realtime=None, kwargs=None):
     try:
         if "pricing_scheme" in kwargs:
             ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = \
                 kwargs.pop("pricing_scheme")
-        simulation = Simulation(
-            setup_module_name=setup_module_name,
-            simulation_config=simulation_config,
-            simulation_events=simulation_events,
-            slowdown=slowdown,
-            redis_job_id=redis_job_id,
-            **kwargs
-        )
+
+        if saved_sim_state is None:
+            simulation = Simulation(
+                setup_module_name=setup_module_name,
+                simulation_config=simulation_config,
+                simulation_events=simulation_events,
+                slot_length_realtime=slot_length_realtime,
+                redis_job_id=redis_job_id,
+                **kwargs
+            )
+        else:
+            simulation = Simulation(
+                setup_module_name=setup_module_name,
+                simulation_config=simulation_config,
+                simulation_events=simulation_events,
+                slot_length_realtime=slot_length_realtime,
+                redis_job_id=saved_sim_state["general"]["simulation_id"],
+                **kwargs
+            )
 
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
 
-    if saved_sim_state is not None:
+    if saved_sim_state is not None and \
+            saved_sim_state["areas"] != {} and \
+            saved_sim_state["general"]["sim_status"] in ["running", "paused"]:
         simulation.restore_global_state(saved_sim_state["general"])
         simulation.restore_area_state(saved_sim_state["areas"])
-        simulation.run(initial_slot=saved_sim_state["slot_number"])
+        simulation.run(initial_slot=saved_sim_state["general"]["slot_number"])
     else:
         simulation.run()

@@ -15,8 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.appliance.switchable import SwitchableAppliance
+
+
 from d3a.models.area import Area
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.load_hours import LoadHoursStrategy
@@ -41,29 +41,29 @@ def get_setup(config):
                         avg_power_W=100, hrs_per_day=24, hrs_of_day=list(range(24)),
                         initial_buying_rate=28.8, fit_to_limit=False,
                         energy_rate_increase_per_update=0),
-                         appliance=SwitchableAppliance()),
+                         ),
                     Area('H1 General Load2', strategy=LoadHoursStrategy(
                         avg_power_W=100, hrs_per_day=24, hrs_of_day=list(range(24)),
                         initial_buying_rate=18.8, fit_to_limit=False,
                         energy_rate_increase_per_update=0),
-                         appliance=SwitchableAppliance()),
+                         ),
                     Area('H1 General Load3', strategy=LoadHoursStrategy(
                         avg_power_W=100, hrs_per_day=24, hrs_of_day=list(range(24)),
                         initial_buying_rate=8.8, fit_to_limit=False,
                         energy_rate_increase_per_update=0),
-                         appliance=SwitchableAppliance()),
+                         ),
                     Area('H1 CEP1',
                          strategy=FinitePowerPlant(energy_rate=5.1, max_available_power_kW=0.1),
-                         appliance=SimpleAppliance()),
+                         ),
                     Area('H1 CEP2',
                          strategy=FinitePowerPlant(energy_rate=15.5, max_available_power_kW=0.1),
-                         appliance=SimpleAppliance()),
+                         ),
                     Area('H1 CEP3',
                          strategy=FinitePowerPlant(energy_rate=25.001, max_available_power_kW=0.1),
-                         appliance=SimpleAppliance()),
+                         ),
                     Area('H1 CEP4',
                          strategy=FinitePowerPlant(energy_rate=28.001, max_available_power_kW=0.1),
-                         appliance=SimpleAppliance()),
+                         ),
                 ]
             ),
         ],

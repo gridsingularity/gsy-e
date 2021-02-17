@@ -18,26 +18,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import uuid
 from d3a.events.event_structures import MarketEvent
 from d3a.d3a_core.exceptions import InvalidTrade
-from d3a.blockchain import ENABLE_SUBSTRATE
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from pathlib import Path
+from d3a.d3a_core.util import retry_function
+from d3a.blockchain import ENABLE_SUBSTRATE, BlockChainInterface
 import platform
-import random
 import logging
 
 logger = logging.getLogger()
 
 
-if platform.python_implementation() != "PyPy" and \
-        ConstSettings.BlockchainSettings.BC_INSTALLED is True:
-    from d3a.models.market.blockchain_utils import create_market_contract, create_new_offer, \
+if platform.python_implementation() != "PyPy" and ENABLE_SUBSTRATE:
+    from d3a.blockchain.constants import mnemonic, \
+        BOB_STASH_ADDRESS, ALICE_STASH_ADDRESS, \
+        default_call_module, default_call_function, \
+        address_type
+    from d3a.models.market.blockchain_utils import create_new_offer, \
         cancel_offer, trade_offer
-    if ENABLE_SUBSTRATE is True:
-        from d3a.models.market.blockchain_utils import get_function_metadata, \
-            address_to_hex, swap_byte_order, BOB_ADDRESS, ALICE_ADDRESS, \
-            test_value, test_rate, main_address, mnemonic, hex2
-        from substrateinterface import SubstrateRequestException, Keypair  # NOQA
-
+    from substrateinterface import Keypair  # NOQA
+    from substrateinterface.exceptions import SubstrateRequestException
 
 BC_EVENT_MAP = {
     b"NewOffer": MarketEvent.OFFER,
@@ -70,37 +67,20 @@ class NonBlockchainInterface:
         pass
 
 
-class SubstrateBlockchainInterface:
-    def __init__(self, bc):
-        self.contracts = {'main': main_address}
-        self.substrate = bc
+class SubstrateBlockchainInterface(BlockChainInterface):
+    def __init__(self):
+        super().__init__()
 
-    def compose_call(self, data, contract_address):
+    def load_keypair(mnemonic):
+        return Keypair.create_from_mnemonic(mnemonic, address_type=address_type)
+
+    def compose_call(self, call_module, call_function, call_params):
         call = self.substrate.compose_call(
-            call_module='Contracts',
-            call_function='call',
-            call_params={
-                'dest': contract_address,
-                'value': 1 * 10**18,
-                'gas_limit': 1000000000000,
-                'data': data
-            }
+            call_module=call_module,
+            call_function=call_function,
+            call_params=call_params
         )
         return call
-
-    def simple_contract_call(self, contract_address, function, path):
-        data = get_function_metadata(function, path)
-        call = self.compose_call(data, contract_address)
-        return call
-
-    def storage_contract_call(self, contract_address, function, path):
-        trade_id = random.randint(10, 32)
-        logger.info('TRADE ID {}'.format(trade_id))
-        data = get_function_metadata(function, path) + hex2(trade_id) + \
-            address_to_hex(ALICE_ADDRESS) + address_to_hex(BOB_ADDRESS) + \
-            swap_byte_order(hex2(test_value)) + '000000000000000000' + hex2(test_rate)
-        call = self.compose_call(data, contract_address)
-        return trade_id, call
 
     def create_new_offer(self, energy, price, seller):
         return str(uuid.uuid4())
@@ -114,13 +94,23 @@ class SubstrateBlockchainInterface:
     def handle_blockchain_trade_event(self, offer, buyer, original_offer, residual_offer):
         return str(uuid.uuid4()), residual_offer
 
+    @retry_function(max_retries=3)
     def track_trade_event(self, trade):
-        path = Path.cwd().joinpath('src', 'd3a', 'models', 'market', 'metadata.json')
-        trade_id, call = self.storage_contract_call(
-            self.contracts['main'],
-            "trade",
-            str(path)
+
+        call_params = {
+            'trade_id': trade.id,
+            'buyer': ALICE_STASH_ADDRESS,
+            'seller': BOB_STASH_ADDRESS,
+            'energy': trade.offer.energy,
+            'rate': trade.offer.energy_rate
+        }
+
+        call = self.substrate.compose_call(
+            default_call_module,
+            default_call_function,
+            call_params
         )
+
         keypair = Keypair.create_from_mnemonic(mnemonic)
         extrinsic = self.substrate.create_signed_extrinsic(call=call, keypair=keypair)
 
@@ -143,15 +133,12 @@ class MarketBlockchainInterface:
         self._trades_by_id = {}
 
         self.bc_interface = bc
-        self.bc_contract = create_market_contract(bc,
-                                                  GlobalConfig.sim_duration.in_seconds(),
-                                                  [self.bc_listener])
 
     def create_new_offer(self, energy, price, seller):
-        return create_new_offer(self.bc_interface, self.bc_contract, energy, price, seller)
+        return create_new_offer(energy, price, seller)
 
     def cancel_offer(self, offer):
-        cancel_offer(self.bc_interface, self.bc_contract, offer)
+        cancel_offer(offer)
         # Hold on to deleted offer until bc event is processed
         self.offers_deleted[offer.id] = offer
 
@@ -160,7 +147,7 @@ class MarketBlockchainInterface:
 
     def handle_blockchain_trade_event(self, offer, buyer, original_offer, residual_offer):
         trade_id, new_offer_id = trade_offer(
-            self.bc_interface, self.bc_contract, offer.real_id, offer.energy, buyer
+            offer.real_id, offer.energy, buyer
         )
 
         if residual_offer is not None:

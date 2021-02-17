@@ -17,18 +17,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import platform
-from d3a_interface.constants_limits import ConstSettings
+from d3a.blockchain.constants import ENABLE_SUBSTRATE
 
-
-ENABLE_SUBSTRATE = False
 
 if platform.python_implementation() != "PyPy" and \
-        ConstSettings.BlockchainSettings.BC_INSTALLED is True and \
         ENABLE_SUBSTRATE is True:
     from substrateinterface import SubstrateInterface
 
 
-DEFAULT_SUBSTRATE_URL = "ws://127.0.0.1:9944"
+DEFAULT_SUBSTRATE_URL = "wss://canvas-node.dev.gridsingularity.com/"
 TEMPLATE_NODE_ADDRESS_TYPE = 42
 
 
@@ -38,5 +35,5 @@ class BlockChainInterface:
         self.substrate = SubstrateInterface(
             url=DEFAULT_SUBSTRATE_URL,
             address_type=TEMPLATE_NODE_ADDRESS_TYPE,
-            type_registry_preset='default'
+            type_registry_preset='canvas'
         )

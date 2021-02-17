@@ -20,7 +20,7 @@ from math import isclose
 
 from d3a.setup.strategy_tests import user_profile_load_csv  # NOQA
 from d3a.setup.strategy_tests import user_profile_load_csv_multiday  # NOQA
-from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads,\
+from d3a_interface.sim_results.export_unmatched_loads import MarketUnmatchedLoads, \
     get_number_of_unmatched_loads
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import convert_W_to_Wh
@@ -37,7 +37,7 @@ def check_load_profile_csv(context, single_or_multi):
     else:
         path = user_profile_load_csv_multiday.profile_path
     input_profile = read_arbitrary_profile(InputProfileTypes.POWER, path)
-    for timepoint, energy in load.strategy.state.desired_energy_Wh.items():
+    for timepoint, energy in load.strategy.state._desired_energy_Wh.items():
         assert energy == find_object_of_same_weekday_and_time(input_profile, timepoint) * 1000
 
 
@@ -62,15 +62,15 @@ def check_user_pv_dict_profile(context):
     for market in house.past_markets:
         slot = market.time_slot
         if slot.hour in user_profile.keys():
-            assert load.strategy.state.desired_energy_Wh[slot] == \
+            assert load.strategy.state._desired_energy_Wh[slot] == \
                    convert_W_to_Wh(user_profile[slot.hour], house.config.slot_length)
         else:
             if int(slot.hour) > int(list(user_profile.keys())[-1]):
-                assert load.strategy.state.desired_energy_Wh[slot] == \
+                assert load.strategy.state._desired_energy_Wh[slot] == \
                        convert_W_to_Wh(user_profile[list(user_profile.keys())[-1]],
                                        house.config.slot_length)
             else:
-                assert load.strategy.state.desired_energy_Wh[slot] == 0
+                assert load.strategy.state._desired_energy_Wh[slot] == 0
 
 
 @then('LoadHoursStrategy does not buy energy with rates that are higher than the provided profile')
@@ -79,9 +79,12 @@ def check_user_rate_profile_dict(context):
     from integration_tests.steps.integration_tests import get_simulation_raw_results
     get_simulation_raw_results(context)
     count = 0
-    unmatched = ExportUnmatchedLoads(context.area_tree_summary_data)
+    unmatched = MarketUnmatchedLoads()
     for time_slot, core_stats in context.raw_sim_data.items():
-        unmatched_data, _ = unmatched.get_current_market_results(
+        unmatched.update_unmatched_loads(
+            context.area_tree_summary_data, core_stats, time_slot
+        )
+        unmatched_data, _ = unmatched.export_unmatched_loads.get_current_market_results(
             context.area_tree_summary_data, core_stats, time_slot
         )
         count += get_number_of_unmatched_loads(unmatched_data)

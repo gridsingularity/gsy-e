@@ -19,15 +19,18 @@ import os
 import json
 import traceback
 import time
+from zlib import compress
 from logging import getLogger
 from redis import StrictRedis
 from redis.exceptions import ConnectionError
 from rq import get_current_job
 from rq.exceptions import NoSuchJobError
-from d3a_interface.results_validator import results_validator
+
+from d3a_interface.results_validator import results_validator  # NOQA
 from d3a_interface.constants_limits import HeartBeat
 from d3a_interface.utils import RepeatingTimer
-from zlib import compress
+from d3a_interface.exceptions import D3AException
+
 
 log = getLogger(__name__)
 
@@ -55,7 +58,6 @@ class RedisSimulationCommunication:
             self._simulation_id + "/stop": self._stop_callback,
             self._simulation_id + "/pause": self._pause_callback,
             self._simulation_id + "/resume": self._resume_callback,
-            self._simulation_id + "/slowdown": self._slowdown_callback,
             self._simulation_id + "/live-event": self._live_event_callback,
             self._simulation_id + "/bulk-live-event": self._bulk_live_event_callback}
         self.result_channel = RESULTS_CHANNEL
@@ -69,6 +71,7 @@ class RedisSimulationCommunication:
             del self.pubsub
             return
         self.heartbeat = RepeatingTimer(HeartBeat.RATE, self.heartbeat_tick)
+        self.heartbeat.setDaemon(True)
         self.heartbeat.start()
 
     def _subscribe_to_channels(self):
@@ -125,22 +128,6 @@ class RedisSimulationCommunication:
         )
         log.info(f"Simulation with job_id: {self._simulation_id} is resumed.")
 
-    def _slowdown_callback(self, message):
-        data = json.loads(message["data"])
-        slowdown = data.get('slowdown')
-        if not slowdown:
-            log.warning("'slowdown' parameter missing from incoming message.")
-            return
-        try:
-            slowdown = int(slowdown)
-        except ValueError:
-            log.warning("'slowdown' parameter must be numeric")
-            return
-        if not -1 < slowdown < 101:
-            log.warning("'slowdown' must be in range 0 - 100")
-            return
-        self._simulation.slowdown = slowdown
-
     def _live_event_callback(self, message):
         data = json.loads(message["data"])
         try:
@@ -173,15 +160,18 @@ class RedisSimulationCommunication:
         )
 
     def _handle_redis_job_metadata(self):
-        should_exit = True
         try:
             job = get_current_job()
             job.refresh()
-            should_exit = "terminated" in job.meta and job.meta["terminated"]
+            if "terminated" in job.meta and job.meta["terminated"]:
+                log.error(f"Redis job {self._simulation_id} received a stop message via the "
+                          f"job.terminated metadata by d3a-web. Stopping the simulation.")
+                self._simulation.stop()
+
         except NoSuchJobError:
-            pass
-        if should_exit:
-            self._simulation.stop()
+            raise D3AException(f"Redis job {self._simulation_id} "
+                               f"cannot be found in the Redis job queue. "
+                               f"get_current_job failed. Job will de killed.")
 
     def publish_results(self, endpoint_buffer):
         if not self.is_enabled():
@@ -200,31 +190,8 @@ class RedisSimulationCommunication:
         results = results.encode('utf-8')
         results = compress(results)
 
-        self.redis_db.publish(self.result_channel, results)
         self._handle_redis_job_metadata()
-
-    def write_zip_results(self, zip_results):
-        if not self.is_enabled():
-            return
-
-        message_size_kb = os.stat(zip_results).st_size / 1000.0
-        if message_size_kb > 30000:
-            log.error(f"Do not publish simulation results bigger than 30 MB, current message "
-                      f"size {message_size_kb / 1000.0} MB.")
-            return
-
-        fp = open(zip_results, 'rb')
-        zip_data = fp.read()
-        fp.close()
-
-        zip_results_key = ZIP_RESULTS_KEY + str(self._simulation_id)
-
-        # Write results to a separate Redis key
-        self.redis_db.set(zip_results_key, zip_data)
-        # Inform d3a-web that a new zip file is available on this key
-        self.redis_db.publish(ZIP_RESULTS_CHANNEL, json.dumps(
-            {"job_id": self._simulation_id, "zip_redis_key": zip_results_key}
-        ))
+        self.redis_db.publish(self.result_channel, results)
 
     def publish_intermediate_results(self, endpoint_buffer):
         # Should have a different format in the future, hence the code duplication

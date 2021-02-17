@@ -20,7 +20,7 @@ import json
 from threading import Lock
 from collections import namedtuple
 from d3a.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
-from d3a.models.market.market_structures import Offer
+from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import key_in_dict_and_not_none
 import d3a.constants
@@ -86,10 +86,33 @@ class ExternalMixin:
     def __init__(self, *args, **kwargs):
         self._connected = False
         self.connected = False
+        self._use_template_strategy = False
         super().__init__(*args, **kwargs)
         self._last_dispatched_tick = 0
         self.pending_requests = []
         self.lock = Lock()
+
+    def get_state(self):
+        strategy_state = super().get_state()
+        strategy_state.update({
+            "connected": self.connected,
+            "use_template_strategy": self._use_template_strategy
+        })
+        return strategy_state
+
+    def restore_state(self, state_dict):
+        super().restore_state(state_dict)
+        self._connected = state_dict.get("connected", False)
+        self.connected = state_dict.get("connected", False)
+        self._use_template_strategy = state_dict.get("use_template_strategy", False)
+
+    @property
+    def channel_dict(self):
+        return {
+            f'{self.channel_prefix}/register_participant': self._register,
+            f'{self.channel_prefix}/unregister_participant': self._unregister,
+            f'{self.channel_prefix}/device_info': self._device_info,
+        }
 
     @property
     def channel_prefix(self):
@@ -104,7 +127,8 @@ class ExternalMixin:
 
     @property
     def should_use_default_strategy(self):
-        return not self.connected and not self.is_aggregator_controlled
+        return self._use_template_strategy or \
+               not (self.connected or self.is_aggregator_controlled)
 
     @property
     def _dispatch_tick_frequency(self):
@@ -120,6 +144,12 @@ class ExternalMixin:
             return data["transaction_id"]
         else:
             raise ValueError("transaction_id not in payload or None")
+
+    def area_reconfigure_event(self, *args, **kwargs):
+        if key_in_dict_and_not_none(kwargs, 'allow_external_connection'):
+            self._use_template_strategy = not kwargs['allow_external_connection']
+        if self.should_use_default_strategy:
+            super().area_reconfigure_event(*args, **kwargs)
 
     def _register(self, payload):
         self._connected = register_area(self.redis, self.channel_prefix, self.connected,
@@ -226,30 +256,29 @@ class ExternalMixin:
             return
 
         if ConstSettings.IAASettings.MARKET_TYPE != 1 and \
-                trade.buyer == self.device.name and \
-                isinstance(trade.offer, Offer):
+                ((trade.buyer == self.device.name and isinstance(trade.offer, Offer)) or
+                 (trade.seller == self.device.name and isinstance(trade.offer, Bid))):
             # Do not track a 2-sided market trade that is originating from an Offer to a
             # consumer (which should have posted a bid). This occurs when the clearing
             # took place on the area market of the device, thus causing 2 trades, one for
             # the bid clearing and one for the offer clearing.
             return
 
-        event_response_dict = {
-            "device_info": self._device_info_dict,
-            "event": "trade",
-            "trade_id": trade.id,
-            "time": trade.time.isoformat(),
-            "price": trade.offer.price,
-            "energy": trade.offer.energy,
-            "fee_price": trade.fee_price,
-            "area_uuid": self.device.uuid
-        }
-        event_response_dict["seller"] = trade.seller \
-            if trade.seller == self.device.name else "anonymous"
-        event_response_dict["buyer"] = trade.buyer \
-            if trade.buyer == self.device.name else "anonymous"
-        event_response_dict["residual_id"] = trade.residual.id \
-            if trade.residual is not None else "None"
+        event_response_dict = {"device_info": self._device_info_dict,
+                               "event": "trade",
+                               "trade_id": trade.id,
+                               "time": trade.time.isoformat(),
+                               "price": trade.offer.price,
+                               "energy": trade.offer.energy,
+                               "fee_price": trade.fee_price,
+                               "area_uuid": self.device.uuid,
+                               "seller": trade.seller
+                               if trade.seller == self.device.name else "anonymous",
+                               "buyer": trade.buyer
+                               if trade.buyer == self.device.name else "anonymous",
+                               "residual_id": trade.residual.id
+                               if trade.residual is not None else "None"}
+
         bid_offer_key = 'bid_id' if is_bid_trade else 'offer_id'
         event_response_dict["event_type"] = "buy" \
             if trade.buyer == self.device.name else "sell"
@@ -343,8 +372,8 @@ class ExternalMixin:
                 return self._list_offers_aggregator(command)
             elif command["type"] == "device_info":
                 return self._device_info_aggregator(command)
-            elif command["type"] == "list_market_stats":
-                return self._list_market_stats(command)
+            elif command["type"] == "last_market_stats":
+                return self._last_market_stats(command)
             else:
                 return {
                     "command": command["type"], "status": "error",
@@ -356,12 +385,10 @@ class ExternalMixin:
                 "area_uuid": self.device.uuid,
                 "message": str(e)}
 
-    def _list_market_stats(self, command):
-        market_data = self.device.parent.stats.get_market_stats(
-            command['data']['market_slots']
-        )
+    def _last_market_stats(self, command):
+        market_data = self.device.parent.stats.get_last_market_stats()
         return {
-            "command": "list_market_stats", "status": "ready",
+            "command": "last_market_stats", "status": "ready",
             "market_data": market_data,
             "transaction_id": command.get("transaction_id", None),
             "area_uuid": self.device.uuid
@@ -371,53 +398,53 @@ class ExternalMixin:
         for req in self.pending_requests:
             self.redis.publish_json(
                 req.response_channel,
-                {"command": "bid", "status": "error",
+                {"command": f"{req.request_type}", "status": "error",
                  "error_message": f"Error when handling {req.request_type} "
                                   f"on area {self.device.name} with arguments {req.arguments}."
                                   f"Market cycle already finished."})
         self.pending_requests = []
 
-    def _set_power_forecast(self, payload):
+    def _set_energy_forecast(self, payload):
         transaction_id = self._get_transaction_id(payload)
-        power_forecast_response_channel = \
-            f'{self.channel_prefix}/response/set_power_forecast'
+        energy_forecast_response_channel = \
+            f'{self.channel_prefix}/response/set_energy_forecast'
         # Deactivating register/connected requirement for power forecasts.
         # if not check_for_connected_and_reply(self.redis, power_forecast_response_channel,
         #                                      self.connected):
         #     return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'power_forecast', 'transaction_id'}
+            assert set(arguments.keys()) == {'energy_forecast', 'transaction_id'}
         except Exception as e:
             logging.error(
-                f"Incorrect _set_power_forecast request. "
+                f"Incorrect _set_energy_forecast request. "
                 f"Payload {payload}. Exception {str(e)}.")
             self.redis.publish_json(
-                power_forecast_response_channel,
-                {"command": "set_power_forecast",
-                 "error": "Incorrect _set_power_forecast request. "
-                          "Available parameters: (power_forecast).",
+                energy_forecast_response_channel,
+                {"command": "set_energy_forecast",
+                 "error": "Incorrect _set_energy_forecast request. "
+                          "Available parameters: (energy_forecast).",
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
-                IncomingRequest("set_power_forecast", arguments,
-                                power_forecast_response_channel))
+                IncomingRequest("set_energy_forecast", arguments,
+                                energy_forecast_response_channel))
 
-    def _set_power_forecast_impl(self, arguments, response_channel):
+    def _set_energy_forecast_impl(self, arguments, response_channel):
         try:
-            assert arguments["power_forecast"] >= 0.0
-            self.power_forecast_buffer_W = arguments["power_forecast"]
+            assert arguments["energy_forecast"] >= 0.0
+            self.energy_forecast_buffer_Wh = arguments["energy_forecast"]
             self.redis.publish_json(
                 response_channel,
-                {"command": "set_power_forecast", "status": "ready",
+                {"command": "set_energy_forecast", "status": "ready",
                  "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
-            logging.error(f"Error when handling _set_power_forecast_impl "
+            logging.error(f"Error when handling _set_energy_forecast_impl "
                           f"on area {self.device.name}: "
                           f"Exception: {str(e)}, Arguments: {arguments}")
             self.redis.publish_json(
                 response_channel,
-                {"command": "set_power_forecast", "status": "error",
-                 "error_message": f"Error when handling _set_power_forecast_impl "
+                {"command": "set_energy_forecast", "status": "error",
+                 "error_message": f"Error when handling _set_energy_forecast_impl "
                                   f"on area {self.device.name} with arguments {arguments}.",
                  "transaction_id": arguments.get("transaction_id", None)})

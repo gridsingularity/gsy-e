@@ -17,17 +17,47 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import pytest
+from datetime import datetime
+from pendulum import duration, instance
 
 from d3a.d3a_core.area_serializer import area_to_string, area_from_string, are_all_areas_unique
-from d3a.models.appliance.pv import PVAppliance
 from d3a.models.area import Area
 from d3a.models.leaves import PV, LoadHours, Storage
-from d3a_interface.constants_limits import ConstSettings
-from d3a.models.budget_keeper import BudgetKeeper
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
+from d3a.models.config import SimulationConfig
+
+
+def create_config(settings={}):
+    config_settings = {
+        "start_date":
+            instance(datetime.combine(settings.get('start_date'), datetime.min.time()))
+            if 'start_date' in settings else GlobalConfig.start_date,
+        "sim_duration":
+            duration(days=settings['duration'].days)
+            if 'duration' in settings else GlobalConfig.sim_duration,
+        "slot_length":
+            duration(seconds=settings['slot_length'].seconds)
+            if 'slot_length' in settings else GlobalConfig.slot_length,
+        "tick_length":
+            duration(seconds=settings['tick_length'].seconds)
+            if 'tick_length' in settings else GlobalConfig.tick_length,
+        "market_maker_rate":
+            settings.get('market_maker_rate',
+                         str(ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE)),
+        "market_count": settings.get('market_count', GlobalConfig.market_count),
+        "cloud_coverage": settings.get('cloud_coverage', GlobalConfig.cloud_coverage),
+        "pv_user_profile": settings.get('pv_user_profile', None),
+        "max_panel_power_W": settings.get('max_panel_power_W',
+                                          ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W),
+        "grid_fee_type": settings.get('grid_fee_type', GlobalConfig.grid_fee_type),
+        "external_connection_enabled": settings.get('external_connection_enabled', False),
+        "aggregator_device_mapping": None
+    }
+    return SimulationConfig(**config_settings)
 
 
 def test_area_with_children_roundtrip():
@@ -35,63 +65,30 @@ def test_area_with_children_roundtrip():
     child2 = Area("child2")
     parent = Area("parent", [child1, child2])
     string = area_to_string(parent)
-    recovered = area_from_string(string)
+    recovered = area_from_string(string, create_config())
     assert recovered.name == "parent"
     assert recovered.children[0].name == "child1"
     assert recovered.children[1].name == "child2"
 
 
-def test_encode_strategy_appliance():
-    area = Area("child", [], None, PVStrategy(), PVAppliance())
-    area_dict = json.loads(area_to_string(area))
-    assert 'children' not in area_dict
-    assert area_dict['strategy']['type'] == 'PVStrategy'
-    assert area_dict['appliance']['type'] == 'PVAppliance'
-
-
-def test_strategy_appliance_roundtrip():
-    area = Area("child", [], None, PVStrategy(), PVAppliance())
-    recovered = area_from_string(area_to_string(area))
-    assert type(recovered.strategy) is PVStrategy
-    assert type(recovered.appliance) is PVAppliance
-
-
 def test_raises_unknown_class():
     with pytest.raises(ValueError):
-        area_from_string("{'name':'broken','strategy':'NonexistentStrategy'}")
+        area_from_string("{'name':'broken','strategy':'NonexistentStrategy'}", create_config())
 
 
 def test_strategy_roundtrip_with_params():
     area = Area('area', [], None, PVStrategy(panel_count=42))
     area_str = area_to_string(area)
-    recovered = area_from_string(area_str)
+    recovered = area_from_string(area_str, create_config())
     assert recovered.strategy.panel_count == 42
 
 
 def test_non_attr_param():
     area1 = Area('area1', [], None, PVStrategy())
-    recovered1 = area_from_string(area_to_string(area1))
+    recovered1 = area_from_string(area_to_string(area1), create_config())
     assert recovered1.strategy.max_panel_power_W is None
     assert recovered1.strategy.offer_update.final_rate_profile_buffer[area1.config.start_date] == \
         ConstSettings.PVSettings.SELLING_RATE_RANGE.final
-
-
-@pytest.fixture
-def appliance_fixture():
-    child1 = Area('child1', appliance=PVAppliance(initially_on=False))
-    child2 = Area('child2', appliance=PVAppliance())
-    return area_to_string(Area('parent', [child1, child2]))
-
-
-def test_appliance(appliance_fixture):
-    area_dict = json.loads(appliance_fixture)
-    assert area_dict['children'][0]['appliance']['type'] == 'PVAppliance'
-
-
-def test_appliance_roundtrip(appliance_fixture):
-    recovered = area_from_string(appliance_fixture)
-    assert recovered.children[1].appliance.initially_on
-    assert not recovered.children[0].appliance.is_on
 
 
 def test_leaf_deserialization():
@@ -103,7 +100,8 @@ def test_leaf_deserialization():
                  {"name": "pv2", "type": "PV", "panel_count": 1, "display_type": "PV"}
              ]
            }
-        '''
+        ''',
+        config=create_config()
     )
     pv1, pv2 = recovered.children
     assert isinstance(pv1, PV)
@@ -127,7 +125,8 @@ def test_leaf_external_connection_deserialization():
                  "allow_external_connection": true}
              ]
            }
-        '''
+        ''',
+        create_config({"external_connection_enabled": True})
     )
 
     pv1, load1, storage1 = recovered.children
@@ -146,7 +145,8 @@ def test_leaf_external_connection_deserialization():
 
 @pytest.fixture
 def fixture_with_leaves():
-    area = Area("house", [PV("pv1", panel_count=1), PV("pv2", panel_count=4)])
+    area = Area("house", [PV("pv1", panel_count=1, config=create_config()),
+                          PV("pv2", panel_count=4, config=create_config())])
     return area_to_string(area)
 
 
@@ -159,28 +159,9 @@ def test_leaf_serialization(fixture_with_leaves):
 
 
 def test_roundtrip_with_leaf(fixture_with_leaves):
-    recovered = area_from_string(fixture_with_leaves)
+    recovered = area_from_string(fixture_with_leaves, create_config())
     assert isinstance(recovered.children[0].strategy, PVStrategy)
     assert isinstance(recovered.children[1].strategy, PVStrategy)
-
-
-@pytest.fixture
-def budget_keeper_fixture():
-    child = Area('child', appliance=PVAppliance())
-    budget_keeper = BudgetKeeper(budget=100.0, days_per_period=30)
-    return area_to_string(Area('parent', [child], budget_keeper=budget_keeper))
-
-
-def test_budget_keeper(budget_keeper_fixture):
-    area_dict = json.loads(budget_keeper_fixture)
-    assert area_dict['budget_keeper']['kwargs']['budget'] == 100.0
-    assert area_dict['budget_keeper']['kwargs']['days_per_period'] == 30
-
-
-def test_budget_keeper_roundtrip(budget_keeper_fixture):
-    recovered = area_from_string(budget_keeper_fixture)
-    assert recovered.budget_keeper.budget == 100.0
-    assert recovered.budget_keeper.days_per_period == 30
 
 
 def test_area_does_not_allow_duplicate_subarea_names():

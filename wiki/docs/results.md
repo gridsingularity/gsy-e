@@ -1,107 +1,113 @@
-## Navigating your configuration grid
+##User Interface Results
 
-![img](img/results-1.png)
+Grid Singularity’s UI (d3a.io) offers visual representations of simulation results. These are updated while the simulation is running and stored indefinitely until the user decides to delete or to rerun the simulation. The user is able to view Results for each area or asset in the grid configuration.
 
-The D3A allows energy resources to trade inside energy markets. During trading, the user can view what is happening at the energy resource level and at the market level. 
+###Navigating the grid configuration in the UI
 
-Since a D3A grid is build up into a hierarchy of multiple markets, we use a folder structure to navigate through the grid simulation results. 
+![alt_text](img/results-1.png)
 
-The user can select a **market**, which brings the user to the result page of this specific market;
+As shown in the image above, the user can select a **market** or an **energy asset** from a drop down to view specific results for that market or an asset while on the Results page. In the figure above, the Community market is selected.
 
-or, you can select an **energy resource** (located inside a market) to bring the user to the results page of this specific energy resource.
+![alt_text](img/results-2.png){:style="height:550px;width:250px"}
 
-In the above figure, the community market is selected.
+The Results page then displays relevant plots and tables for the selected market or asset. There is also the possibility to select which charts / tables you want to view / hide, as shown in the image above. This section discusses the information available in each chart / table.
 
-------
+###Energy availability
 
-## Simulation Results
+![alt_text](img/results-3.png)
 
-When selecting a market, the results page will show you various relevant plots and tables. You also have the possibility to select which one you want to view/hide (by default all of them are visible). This section will discuss each of these results.
+This plot shows whether each consuming energy asset (i.e. load) inside the selected market had access to the energy it needed for each market slot. On the x-axis, the time is given. If the participating asset agent was able to purchase the energy it required for that time slot, the block will be colored **green**. If not, it will be colored **purple**.
 
-![img](img/results-15.png){:style="height:450px;width:230px"}
+The granularity of the plot is **one hour**, so if there was a trade interval within the hour in which the agent was not able to buy the demanded energy, the entire block will be colored purple. The user can hover the cursor over a purple block to view a list of the energy assets that were not able to buy energy in that time slot.
 
-### Energy Availability
+###Self-sufficiency and self-consumption
 
-![img](img/results-2.png)
+![alt_text](img/results-4.png)
 
-This plot shows whether or not each energy resource inside the selected market had access to the energy it needed. On the x-axis, the time is given. If the participating agent was able to get the energy it wants, at a certain time, the block at that time will appear green. If not, it will appear purple.
+These two pie charts display Self-Sufficiency and Self-Consumption level of the selected area. Please see [this page](self-sufficiency-consumption.md) for more information. When the user hovers the cursor over these plots, the following quantitative energy metrics are shown:
 
-The granularity of the plot is 1 hour, so if there has been a trade interval (possibly <1 hour length) within the hour in which the agent was not able to buy the demanded energy, the whole block will turn purple. The user can hover over a purple block to see a list of the energy resources not able to buy for that time slot.
+*   Self-consumed energy [kWh]
+*   Total demanded energy [kWh]
+*   Total produced energy [kWh]
 
-### Self sufficiency and consumption
+###Cumulative trading
 
-![img](img/results-10.png)
+![alt_text](img/results-5.png)
 
-These 2 pie charts shows the Self Sufficiency and Self Consumption of the selected area. Please see [Key Performance Indicators](kpis.md#self-sufficiency-self-consumption) for more information.
+This plot shows the total cumulative trade volumes traded among market participants (agents representing assets or markets) in the selected market in the course of the simulation. 
 
-### Cumulative trading
+Each market participant is displayed as a uniquely colored bar that represents the energy sold (shown as negative) or bought (shown as positive). In the example below, the energy sold by House 1 is colored purple, and the House 1 bar is positive, meaning that it bought some of the energy it produced for its own use (self-consumption). The rest of the energy it sold is shown as a thin purple layer appearing in the bars of the other market participants that acted as buyers. This color coding allows the user to visually track the energy trade flows in the selected market.
 
-![img](img/results-3.png)
+External Trades represent the import/export from/to a higher level market by the Inter-area agent of the selected market, and hence the difference between energy traded amongst the selected market participants and the total accumulated trades.
 
-This plot shows the total trade volumes that have been traded between market participants in the selected market over the simulation's duration. Market participants are the agents (representing an energy resource or an area) immediately inside the selected market.
+The `external trades` bar represents energy produced in this market, but sold to an outside market, as well as the energy bought from an external source and sold to a participant in this market. The energy bought externally is teal in this example and the bar is negative for external trades. The energy that was sold to other market participants is indicated by a positive teal colored bar. A negative external trades bar means that the participants within the select market purchased energy externally and a positive external trades bar means that participants sold energy to an external market.
 
-Each bar has its own color to represent its sold energy. Energy sold is negative and energy bought is positive. In this example, the energy sold by House 1 is purple. House 1 also has a positive purple bar, meaning that it bought some of its own energy production. The rest of its energy production was sold as the thin purple layer shown in the bar of the other market participants. By using this color coding, the user can visually track how energy has flowed in a specific market.
+###Energy bills and net energy
 
-The external trades represent energy produced in this market, but sold to an outside market (the positive bar layers containing the colors of each participant) and the energy bought from an external source and sold to a participant in this market. The energy bought externally is teal in this example and is the negative bar for External Trades. This energy was sold to the other participants where a positive teal colored bar can be seen (all participants).
+In the Community market shown in the figure below, the participating agents are the inter-area agents of the houses that lie within that market.
 
-### Energy bills and net energy
+![alt_text](img/results-6.png)
 
-![img](img/results-11.png)
+The energy bill table provides information on the cumulative trade volumes of all market participants and the costs associated with trades. For each market and energy asset, the energy bought and sold during the simulation is listed, along with a total net energy consumption. The `Totals` column can be considered as the **net energy consumption** and **final bill** for the listed agent, which may represent an energy asset or a market (e.g. a house).
 
-The energy bills provide information on the cumulative trade volumes of all market participants and the costs associated with these trades. For each agent, including the external trades, the energy bought and sold during the simulation is listed, along with a total net consumption.
+The `Totals` row represents the total of trades that are made by all participants inside the selected market.
 
-The *Totals* column can be considered as the net energy consumption and final bill to the listed agent, which may represent an energy resource or an area of ownership.
+###Energy trade profile
 
-*External Trades* represents the import/export from/to a higher level market by the inter-area agent of the selected market, and hence represents the difference between energy traded inside the community and the total accumulated trades.
+![alt_text](img/results-7.png)
 
-The *Totals* row represents the total of trades that are made by the agents inside the selected area. 
+The energy profile shows the **supply** and **demand** of trades made inside the selected market for each market slot of the simulation. The negative side of the y-axis represents the energy sold, and the positive y-axis shows the energy bought. The different colors represent the different market participants (energy assets and markets).
 
-In this example, we have the *Community* market selected. In the *Community* market, the participating agents are the inter-area agents of the houses that lie inside of the community area. 
+As all buyers and sellers of each trade are accounted for in a select market, the supply and demand sides are exact mirrors of each other in terms of volume.
 
-### Energy trade profile
+If `peak analysis` is switched on, the internal trades are hidden and only the trades including external participants are displayed. This shows how much energy required the use of transmission lines outside of the selected market.
 
-![img](img/results-12.png)
+![alt_text](img/results-8.png)
 
-The energy profile shows both the demand-side as supply-side of the trades made inside the selected market for every market interval of the simulation. The negative side of the y-axis represents the energy sold, and the positive y-axis shows the energy bought. The different colors represent the different agents. 
+On the `peak analysis` plot, two lines are shown: the `current peak imports` and the `current peak exports`, representing the **maximum** energy imported and exported for the selected market.
 
-As all buyers and sellers of each trade are accounted for in a select market, the supply and demand sides should be exact mirrors of each other in terms of volume. 
+Another feature of this graph is viewing the **Net energy**, shown below.
 
-If *peak analysis* is switched on the external trades are hidden and only the demand and supply of the current area's agents remain. 
+![alt_text](img/results-9.png)
 
-![img](img/results-13.png)
 
-On this plot 2 lines are shown : the *current peak imports* and the *current peak exports* which represent the maximum energy imported and exported for the selected area (here the *Community*).
+When `peak analysis` is activated, only net external trades of each participant are displayed. The net displays the difference between the total import and export for each market slot, useful in understanding the impact to **transmission capacity**.
 
-### Detailed energy trade profile
+###Detailed energy trade profile
 
-This graph is a high resolution energy trade profile. With this graph the user can select a specific [market slot](market-slots-and-ticks.md) in order to see precisely when each trade was cleared during that slot, with a resolution of 1 minute. The graph's length is the market slot length (15 minutes by default). Every market slot of the simulation can be selected with the drop down (for the date) and the slider (for the time).
+![alt_text](img/results-10.png)
 
-![img](img/results-17.png)
+This graph is a market slot level breakdown of the energy trade profile. With this graph, the user can select a specific [market slot](markets.md) to see when each trade was cleared during that slot, with a resolution of 30 simulated seconds. The graph's length is the market slot length (15 minutes by default). The market slot can be selected with the drop down (days) and the slider (hours and minutes).
 
-### Energy pricing
+###Energy pricing
 
-![img](img/results-16.png)
+![alt_text](img/results-11.png)
 
-In this plot, energy pricing is shown. In case of multiple clearing moments within a market interval (depending on market design and grid configuration), there could be different prices for different trades in the market interval. In this case, an average of the trade price is shown.  
+In this plot, energy pricing is shown. Depending on market design and grid configuration, there could be different price settlements in the same market slot. In this case, a `minimum`, `maximum`, and `average` of the trade price is shown.
 
-In addition, the minimum and maximum price on that time of the day for all days of simulation is provided.
+If no trade occurred during a certain market interval, no lines are plotted. If [grid fees](grid-fees.md) are set in that market as a constant value, a fourth line is plotted to reflect its price.
 
-If there was no trade happening during a certain market interval, the price is set to zero at that time. 
+###Bids, Offers, and Trades per Market Slot
 
-### Bids, Offers, and Trades per Market Slot
+![alt_text](img/results-12.png)
 
-In this plot every [bids, offers](how-strategies-adjust-prices.md) and trades posted in the selected market is shown according to their posting time. With this graph the user can understand why specific offers/bids were matched or not and thus adapt their trading strategy. The range of this graph is the [market slot](market-slots-and-ticks.md) length (15 minutes by default). Every market slot of the simulation can be selected with the drop down (days) and the slider (hours & minutes). 
+In this plot, each bid, offer and trade posted/cleared in the selected market is shown according to its posting/clearing times, allowing the user to analyse how specific offers/bids were or were not matched and validate or further investigate their trading strategy. The x-axis of this graph is the market slot length (15 minutes by default), and the y-axis shows the bid and offer price. Each market slot of the simulation can be selected and viewed with the drop down (days) and the slider (hours & minutes).
 
-![img](img/results-14.png)
+###Compare results
 
-## Compare results
+The user has the possibility to compare the results of two separate simulations. The user can also **duplicate** the simulation setup, **download** results or **delete** the configuration by using the appropriate buttons shown below:
 
-The user has the possibility to compare the results to another simulation (in order to compare results, the simulation should already have been run). The user can also download the results using the interface shown below:
+![alt_text](img/results-13.png)
 
-![img](img/results-7.png)
+##Backend Results
 
-## Settings
+After running a simulation in the backend, the user can export simulation results. This functionality is enabled by default. If you want to disable the export of simulation results, use the `--no-export` flag for the simulation run. Another useful parameter is: `--export-path`, used to change the output path of the simulation results. The default path is `$HOME/d3a-simulation/`.
 
-The user have the possibility to **duplicate** the setup, **download** the results of their simulation or **delete** the configuration:
+The simulation results include analytical information about the bids, offers and trades that took place in the course of the simulation. Information about energy characteristics of each asset and [market](model-markets.md) are also included (eg. battery state of charge, energy traded/requested/deficit). A detailed description of these files is available on the data download page.
 
-![img](img/results-8.png){:style="height:50px;width:50px"}
+In addition to text files, some graphs that display aggregated market information during the course of the simulation are also exposed. These can be found under the `plot` directory and are very similar to the ones available in the UI :
+
+*   **unmatched_loads_*.html**: Plots the volume of energy that loads have not been able to purchase (power outage)
+*   **energy_profile_*.html**: Similar plot to energy trade profile
+*   **average_trade_price_*.html**: Similar plot to energy pricing
+*   **asset_profile_*.html**: each energy asset within the simulation has its own plot showing its profile (consumption, generation, State of Charge), the actual energy traded and energy rates.

@@ -15,13 +15,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-# from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 # from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
-from d3a.models.appliance.pv import PVAppliance
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 
 
@@ -36,12 +33,12 @@ def get_setup(config):
                                                                        hrs_per_day=6,
                                                                        hrs_of_day=list(
                                                                            range(12, 22)),
-                                                                       final_buying_rate=35),
-                         appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50),
-                         appliance=SwitchableAppliance()),
-                    Area('H1 Storage2', strategy=StorageStrategy(initial_soc=50),
-                         appliance=SwitchableAppliance()),
+                                                                       final_buying_rate=35)
+                         ),
+                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50)
+                         ),
+                    Area('H1 Storage2', strategy=StorageStrategy(initial_soc=50)
+                         ),
                 ]
             ),
             Area(
@@ -51,21 +48,20 @@ def get_setup(config):
                                                                        hrs_per_day=4,
                                                                        hrs_of_day=list(
                                                                            range(12, 16)),
-                                                                       final_buying_rate=35),
-                         appliance=SwitchableAppliance()),
+                                                                       final_buying_rate=35)
+                         ),
                     Area('H2 PV', strategy=PVStrategy(4, 80),
-                         appliance=PVAppliance()),
+                         ),
 
                 ]
             ),
-            Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
-                                                                   hrs_per_day=24,
-                                                                   hrs_of_day=list(range(0, 24)),
-                                                                   final_buying_rate=35),
-                 appliance=SwitchableAppliance())
+            Area('Cell Tower', strategy=LoadHoursStrategy(avg_power_W=100,
+                                                          hrs_per_day=24,
+                                                          hrs_of_day=list(range(0, 24)),
+                                                          final_buying_rate=35)
+                 )
             # Area('Commercial Energy Producer',
-            #      strategy=CommercialStrategy(energy_range_wh=(40, 120), energy_price=30),
-            #      appliance=SimpleAppliance()
+            #      strategy=CommercialStrategy(energy_range_wh=(40, 120), energy_price=30)
             #      ),
 
         ],

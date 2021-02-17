@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import uuid
-import sys
 from logging import getLogger
 from typing import Dict, List  # noqa
 from numpy.random import random
@@ -66,7 +65,7 @@ class Market:
                  transfer_fees: TransferFees = None, name=None):
         self.name = name
         if bc is not None:
-            self.bc_interface = SubstrateBlockchainInterface(bc)
+            self.bc_interface = SubstrateBlockchainInterface()
         else:
             self.bc_interface = NonBlockchainInterface()
         self.id = str(uuid.uuid4())
@@ -88,13 +87,12 @@ class Market:
         self.market_fee = 0
         # Store trades temporarily until bc event has fired
         self.traded_energy = {}
-        self.accumulated_actual_energy_agg = {}
-        self.min_trade_price = sys.maxsize
+        self.min_trade_price = None
         self._avg_trade_price = None
-        self.max_trade_price = 0
-        self.min_offer_price = sys.maxsize
+        self.max_trade_price = None
+        self.min_offer_price = None
         self._avg_offer_price = None
-        self.max_offer_price = 0
+        self.max_offer_price = None
         self.accumulated_trade_price = 0
         self.accumulated_trade_energy = 0
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
@@ -143,17 +141,19 @@ class Market:
             for listener in sorted(self.notification_listeners, key=lambda l: random()):
                 listener(event, market_id=self.id, **kwargs)
 
-    def _update_stats_after_trade(self, trade, offer, buyer, already_tracked=False):
+    def _update_stats_after_trade(self, trade, offer_or_bid, already_tracked=False):
         # FIXME: The following updates need to be done in response to the BC event
         # TODO: For now event driven blockchain updates have been disabled in favor of a
-        # sequential approach, but once event handling is enabled this needs to be handled
+        #  sequential approach, but once event handling is enabled this needs to be handled
         if not already_tracked:
             self.trades.append(trade)
             self.market_fee += trade.fee_price
         self._update_accumulated_trade_price_energy(trade)
-        self.traded_energy = add_or_create_key(self.traded_energy, offer.seller, offer.energy)
-        self.traded_energy = subtract_or_create_key(self.traded_energy, buyer, offer.energy)
-        self._update_min_max_avg_trade_prices(offer.energy_rate)
+        self.traded_energy = \
+            add_or_create_key(self.traded_energy, trade.seller, offer_or_bid.energy)
+        self.traded_energy = \
+            subtract_or_create_key(self.traded_energy, trade.buyer, offer_or_bid.energy)
+        self._update_min_max_avg_trade_prices(offer_or_bid.energy_rate)
         # Recalculate offer min/max price since offer was removed
         self._update_min_max_avg_offer_prices()
 
@@ -169,8 +169,10 @@ class Market:
             self.max_offer_price = round(max(offer_prices), 4)
 
     def _update_min_max_avg_trade_prices(self, price):
-        self.max_trade_price = round(max(self.max_trade_price, price), 4)
-        self.min_trade_price = round(min(self.min_trade_price, price), 4)
+        self.max_trade_price = round(max(self.max_trade_price, price), 4) if self.max_trade_price \
+            else round(price, 4)
+        self.min_trade_price = round(min(self.min_trade_price, price), 4) if self.min_trade_price \
+            else round(price, 4)
         self._avg_trade_price = None
         self._avg_offer_price = None
 
@@ -234,21 +236,11 @@ class Market:
         return self.time_slot.add(
             seconds=GlobalConfig.tick_length.seconds * self.current_tick_in_slot)
 
-    def set_actual_energy(self, time, reporter, value):
-        if reporter in self.accumulated_actual_energy_agg:
-            self.accumulated_actual_energy_agg[reporter] += value
-        else:
-            self.accumulated_actual_energy_agg[reporter] = value
-
-    @property
-    def actual_energy_agg(self):
-        return self.accumulated_actual_energy_agg
-
     def bought_energy(self, buyer):
         return sum(trade.offer.energy for trade in self.trades if trade.buyer == buyer)
 
     def sold_energy(self, seller):
-        return sum(trade.offer.energy for trade in self.trades if trade.offer.seller == seller)
+        return sum(trade.offer.energy for trade in self.trades if trade.seller == seller)
 
     def total_spent(self, buyer):
         return sum(trade.offer.price for trade in self.trades if trade.buyer == buyer)

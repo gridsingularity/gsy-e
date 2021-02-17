@@ -23,10 +23,10 @@ from d3a.models.read_user_profile import InputProfileTypes
 class ElectrolyzerStrategy(StorageStrategy):
 
     def __init__(self, discharge_profile,
-                 conversion_factor_kg_to_kWh: float=50.0,
-                 reservoir_capacity_kg: float=56.0,
-                 reservoir_initial_capacity_kg: float= 5.6,
-                 production_rate_kg_h: float=1.0):
+                 conversion_factor_kg_to_kWh: float = 50.0,
+                 reservoir_capacity_kg: float = 56.0,
+                 reservoir_initial_capacity_kg: float = 5.6,
+                 production_rate_kg_h: float = 1.0):
 
         initial_capacity_kWh = reservoir_initial_capacity_kg * conversion_factor_kg_to_kWh
         capacity_kWh = reservoir_capacity_kg * conversion_factor_kg_to_kWh
@@ -45,7 +45,7 @@ class ElectrolyzerStrategy(StorageStrategy):
         self.conversion_factor_kWh_kg = conversion_factor_kg_to_kWh
         self.load_profile_kWh = {}
 
-    def event_activate(self):
+    def event_activate(self, **kwargs):
         super().event_activate()
 
         load_profile_raw_kg = read_arbitrary_profile(
@@ -58,11 +58,6 @@ class ElectrolyzerStrategy(StorageStrategy):
     def event_market_cycle(self):
         super().event_market_cycle()
         current_market = self.area.next_market
-        if self.area.past_markets:
-            past_market = self.area.last_past_market
-        else:
-            past_market = current_market
-        self.state.market_cycle(past_market.time_slot, current_market.time_slot)
 
         if (self.state.used_storage - self.load_profile_kWh[current_market.time_slot]) >= 0:
             self.state._used_storage -= self.load_profile_kWh[current_market.time_slot]

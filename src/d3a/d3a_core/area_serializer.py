@@ -18,19 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 
 from d3a.models.area import Area # NOQA
-from d3a.models.budget_keeper import BudgetKeeper
 from d3a.models.strategy import BaseStrategy
-from d3a.models.appliance.simple import SimpleAppliance # NOQA
-
-from d3a.models.appliance.inter_area import InterAreaAppliance  # NOQA
-from d3a.models.appliance.pv import PVAppliance  # NOQA
-from d3a.models.appliance.switchable import SwitchableAppliance # NOQA
+from d3a.models.area.throughput_parameters import ThroughputParameters
 
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy  # NOQA
 from d3a.models.strategy.commercial_producer import CommercialStrategy  # NOQA
 from d3a.models.strategy.pv import PVStrategy  # NOQA
 from d3a.models.strategy.storage import StorageStrategy  # NOQA
-from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy # NOQA
+from d3a.models.strategy.load_hours import LoadHoursStrategy # NOQA
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy # NOQA
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy  # NOQA
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
@@ -46,7 +41,7 @@ class AreaEncoder(json.JSONEncoder):
             return self._encode_area(obj)
         elif isinstance(obj, Leaf):
             return self._encode_leaf(obj)
-        elif isinstance(obj, (BaseStrategy, SimpleAppliance, BudgetKeeper)):
+        elif isinstance(obj, BaseStrategy):
             return self._encode_subobject(obj)
 
     def _encode_area(self, area):
@@ -57,8 +52,6 @@ class AreaEncoder(json.JSONEncoder):
             result['uuid'] = area.uuid
         if area.strategy:
             result['strategy'] = area.strategy
-        if area.appliance:
-            result['appliance'] = area.appliance
         if area.budget_keeper:
             result['budget_keeper'] = area.budget_keeper
         if area.display_type:
@@ -112,23 +105,23 @@ def _instance_from_dict(description):
             raise exception
 
 
-def _leaf_from_dict(description):
+def _leaf_from_dict(description, config):
     leaf_type = globals().get(description.pop('type'), type(None))
     if not issubclass(leaf_type, Leaf):
         raise ValueError("Unknown leaf type '%s'" % leaf_type)
     display_type = description.pop("display_type", None)
-    leaf_object = leaf_type(**description)
+    leaf_object = leaf_type(**description, config=config)
     if display_type is not None:
         leaf_object.display_type = display_type
     return leaf_object
 
 
-def area_from_dict(description, config=None):
+def area_from_dict(description, config):
     def optional(attr):
         return _instance_from_dict(description[attr]) if attr in description else None
     try:
         if 'type' in description:
-            return _leaf_from_dict(description)  # Area is a Leaf
+            return _leaf_from_dict(description, config)  # Area is a Leaf
         name = description['name']
         uuid = description.get('uuid', None)
         external_connection_available = description.get('allow_external_connection', False)
@@ -137,19 +130,22 @@ def area_from_dict(description, config=None):
         import_capacity_kVA = description.get('import_capacity_kVA', None)
         export_capacity_kVA = description.get('export_capacity_kVA', None)
         if key_in_dict_and_not_none(description, 'children'):
-            children = [area_from_dict(child) for child in description['children']]
+            children = [area_from_dict(child, config) for child in description['children']]
         else:
             children = None
         grid_fee_percentage = description.get('grid_fee_percentage', None)
         grid_fee_constant = description.get('grid_fee_constant', None)
-        area = Area(name, children, uuid, optional('strategy'), optional('appliance'), config,
+        area = Area(name, children, uuid, optional('strategy'), config,
                     optional('budget_keeper'), grid_fee_percentage=grid_fee_percentage,
                     grid_fee_constant=grid_fee_constant,
-                    external_connection_available=external_connection_available,
-                    baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
-                    baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
-                    import_capacity_kVA=import_capacity_kVA,
-                    export_capacity_kVA=export_capacity_kVA)
+                    external_connection_available=external_connection_available and
+                    config.external_connection_enabled,
+                    throughput=ThroughputParameters(
+                        baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
+                        baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
+                        import_capacity_kVA=import_capacity_kVA,
+                        export_capacity_kVA=export_capacity_kVA)
+                    )
         if "display_type" in description:
             area.display_type = description["display_type"]
         return area
@@ -157,7 +153,7 @@ def area_from_dict(description, config=None):
         raise ValueError("Input is not a valid area description (%s)" % str(error))
 
 
-def area_from_string(string, config=None):
+def area_from_string(string, config):
     """Recover area from its json string representation"""
     return area_from_dict(json.loads(string), config)
 

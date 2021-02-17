@@ -21,10 +21,10 @@ from unittest.mock import MagicMock
 import unittest
 from parameterized import parameterized
 from d3a.events.event_structures import AreaEvent, MarketEvent
-from d3a.models.area import Area
+from d3a.models.area import Area, check_area_name_exists_in_parent_area
 from d3a.models.area.events import Events
 from d3a.models.area.markets import AreaMarkets
-from d3a.models.appliance.simple import SimpleAppliance
+
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.config import SimulationConfig
 from d3a.models.market import Market
@@ -48,7 +48,6 @@ class TestAreaClass(unittest.TestCase):
             "H1 Storage2": (23, 25),
         }
 
-        self.appliance = MagicMock(spec=SimpleAppliance)
         self.strategy = MagicMock(spec=StorageStrategy)
         self.config = MagicMock(spec=SimulationConfig)
         self.config.slot_length = duration(minutes=15)
@@ -60,9 +59,9 @@ class TestAreaClass(unittest.TestCase):
         self.config.grid_fee_type = 1
         self.config.end_date = self.config.start_date + self.config.sim_duration
         self.area = Area("test_area", None, None, self.strategy,
-                         self.appliance, self.config, None, grid_fee_percentage=1)
+                         self.config, None, grid_fee_percentage=1)
         self.area_child = Area("test_area_c", None, None, self.strategy,
-                               self.appliance, self.config, None, grid_fee_percentage=1)
+                               self.config, None, grid_fee_percentage=1)
         self.area_child.parent = self.area
         self.area.children = [self.area_child]
         self.area.grid_fee_percentage = 1
@@ -103,12 +102,12 @@ class TestAreaClass(unittest.TestCase):
         assert len(self.area.past_markets) == 0
 
         current_time = today(tz=TIME_ZONE).add(hours=1)
-        self.area._markets.rotate_markets(current_time, self.stats, self.dispatcher)
+        self.area._markets.rotate_markets(current_time, self.dispatcher)
         assert len(self.area.past_markets) == 1
 
         self.area._markets.create_future_markets(current_time, True, self.area)
         current_time = today(tz=TIME_ZONE).add(hours=2)
-        self.area._markets.rotate_markets(current_time, self.stats, self.dispatcher)
+        self.area._markets.rotate_markets(current_time, self.dispatcher)
         assert len(self.area.past_markets) == 1
         assert list(self.area.past_markets)[-1].time_slot == today(tz=TIME_ZONE).add(hours=1)
 
@@ -124,12 +123,12 @@ class TestAreaClass(unittest.TestCase):
         assert len(self.area.past_markets) == 0
 
         current_time = today(tz=TIME_ZONE).add(hours=1)
-        self.area._markets.rotate_markets(current_time, self.stats, self.dispatcher)
+        self.area._markets.rotate_markets(current_time, self.dispatcher)
         assert len(self.area.past_markets) == 1
 
         self.area._markets.create_future_markets(current_time, True, self.area)
         current_time = today(tz=TIME_ZONE).add(hours=2)
-        self.area._markets.rotate_markets(current_time, self.stats, self.dispatcher)
+        self.area._markets.rotate_markets(current_time, self.dispatcher)
         assert len(self.area.past_markets) == 2
 
     def test_market_with_most_expensive_offer(self):
@@ -229,35 +228,35 @@ class TestEventDispatcher(unittest.TestCase):
         self.area.events = MagicMock(spec=Events)
         self.area.events.is_enabled = False
         self.area.events.is_connected = False
-        assert self.area.dispatcher._should_dispatch_to_strategies_appliances(AreaEvent.ACTIVATE)
+        assert self.area.dispatcher._should_dispatch_to_strategies(AreaEvent.ACTIVATE)
         self.area.events.is_enabled = True
         self.area.events.is_connected = True
-        assert self.area.dispatcher._should_dispatch_to_strategies_appliances(AreaEvent.ACTIVATE)
+        assert self.area.dispatcher._should_dispatch_to_strategies(AreaEvent.ACTIVATE)
         self.area.events.is_enabled = True
         self.area.events.is_connected = False
-        assert self.area.dispatcher._should_dispatch_to_strategies_appliances(AreaEvent.ACTIVATE)
+        assert self.area.dispatcher._should_dispatch_to_strategies(AreaEvent.ACTIVATE)
         self.area.events.is_enabled = False
         self.area.events.is_connected = True
-        assert self.area.dispatcher._should_dispatch_to_strategies_appliances(AreaEvent.ACTIVATE)
+        assert self.area.dispatcher._should_dispatch_to_strategies(AreaEvent.ACTIVATE)
 
     def test_are_dispatches_other_events_only_if_connected_and_enabled(self):
         self.area = Area(name="test_area")
         self.area.events = MagicMock(spec=Events)
         self.area.events.is_enabled = False
         self.area.events.is_connected = False
-        assert not self.area.dispatcher._should_dispatch_to_strategies_appliances(
+        assert not self.area.dispatcher._should_dispatch_to_strategies(
             AreaEvent.MARKET_CYCLE)
         self.area.events.is_enabled = True
         self.area.events.is_connected = False
-        assert not self.area.dispatcher._should_dispatch_to_strategies_appliances(
+        assert not self.area.dispatcher._should_dispatch_to_strategies(
             AreaEvent.MARKET_CYCLE)
         self.area.events.is_enabled = False
         self.area.events.is_connected = True
-        assert not self.area.dispatcher._should_dispatch_to_strategies_appliances(
+        assert not self.area.dispatcher._should_dispatch_to_strategies(
             AreaEvent.MARKET_CYCLE)
         self.area.events.is_enabled = True
         self.area.events.is_connected = True
-        assert self.area.dispatcher._should_dispatch_to_strategies_appliances(
+        assert self.area.dispatcher._should_dispatch_to_strategies(
             AreaEvent.MARKET_CYCLE)
 
     @parameterized.expand([(AreaEvent.MARKET_CYCLE, "cycle_markets"),
@@ -270,14 +269,11 @@ class TestEventDispatcher(unittest.TestCase):
         area.dispatcher.event_listener(event_type)
         assert function_mock.call_count == 1
 
-    def strategy_appliance_mock(self):
+    def strategy_mock(self):
         strategy_mock = MagicMock()
         strategy_mock.event_listener = MagicMock()
-        appliance_mock = MagicMock()
-        appliance_mock.event_listener = MagicMock()
         area = Area(name="test_area")
         area.strategy = strategy_mock
-        area.appliance = appliance_mock
         area.events = MagicMock(spec=Events)
         return area
 
@@ -287,15 +283,14 @@ class TestEventDispatcher(unittest.TestCase):
                            (MarketEvent.BID_TRADED, ),
                            (MarketEvent.BID_DELETED, ),
                            (MarketEvent.OFFER_DELETED, )])
-    def test_event_listener_dispatches_to_strategy_appliance_if_enabled_connected(
+    def test_event_listener_dispatches_to_strategy_if_enabled_connected(
             self, event_type
     ):
-        area = self.strategy_appliance_mock()
+        area = self.strategy_mock()
         area.events.is_enabled = True
         area.events.is_connected = True
         area.dispatcher.event_listener(event_type)
         assert area.strategy.event_listener.call_count == 1
-        assert area.appliance.event_listener.call_count == 1
 
     @parameterized.expand([(MarketEvent.OFFER, ),
                            (MarketEvent.TRADE, ),
@@ -303,13 +298,12 @@ class TestEventDispatcher(unittest.TestCase):
                            (MarketEvent.BID_TRADED, ),
                            (MarketEvent.BID_DELETED, ),
                            (MarketEvent.OFFER_DELETED, )])
-    def test_event_listener_doesnt_dispatch_to_strategy_appliance_if_not_enabled(self, event_type):
-        area = self.strategy_appliance_mock()
+    def test_event_listener_doesnt_dispatch_to_strategy_if_not_enabled(self, event_type):
+        area = self.strategy_mock()
         area.events.is_enabled = False
         area.events.is_connected = True
         area.dispatcher.event_listener(event_type)
         assert area.strategy.event_listener.call_count == 0
-        assert area.appliance.event_listener.call_count == 0
 
     @parameterized.expand([(MarketEvent.OFFER, ),
                            (MarketEvent.TRADE, ),
@@ -317,20 +311,40 @@ class TestEventDispatcher(unittest.TestCase):
                            (MarketEvent.BID_TRADED, ),
                            (MarketEvent.BID_DELETED, ),
                            (MarketEvent.OFFER_DELETED, )])
-    def test_event_listener_doesnt_dispatch_to_strategy_appliance_if_not_connected(
+    def test_event_listener_doesnt_dispatch_to_strategy_if_not_connected(
             self, event_type
     ):
-        area = self.strategy_appliance_mock()
+        area = self.strategy_mock()
         area.events.is_enabled = True
         area.events.is_connected = False
         area.dispatcher.event_listener(event_type)
         assert area.strategy.event_listener.call_count == 0
-        assert area.appliance.event_listener.call_count == 0
 
     def test_event_on_disabled_area_triggered_for_market_cycle_on_disabled_area(self):
-        area = self.strategy_appliance_mock()
+        area = self.strategy_mock()
         area.strategy.event_on_disabled_area = MagicMock()
         area.events.is_enabled = False
         area.events.is_connected = True
         area.dispatcher.event_listener(AreaEvent.MARKET_CYCLE)
         assert area.strategy.event_on_disabled_area.call_count == 1
+
+    def test_duplicate_area_in_the_same_parent_append(self):
+        area = Area(name="Street", children=[Area(name="House")], )
+        with self.assertRaises(Exception) as exception:
+            area.children.append(Area(name="House", children=[Area(name="House")], ))
+            self.assertEqual(exception, "Area name should be unique inside the same Parent Area")
+
+    def test_duplicate_area_in_the_same_parent_change_name(self):
+        child = Area(name="Street", )
+        parent = Area(name="Community", children=[child, Area(name="Street 2")]) # noqa
+        with self.assertRaises(Exception) as exception:
+            child.name = "Street 2"
+            self.assertEqual(exception, "Area name should be unique inside the same Parent Area")
+
+
+class TestFunctions(unittest.TestCase):
+
+    def test_check_area_name_exists_in_parent_area(self):
+        area = Area(name="Street", children=[Area(name="House")], )
+        self.assertTrue(check_area_name_exists_in_parent_area(area, "House"))
+        self.assertFalse(check_area_name_exists_in_parent_area(area, "House 2"))

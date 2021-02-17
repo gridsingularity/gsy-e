@@ -1,9 +1,10 @@
-In the two-sided market, buyers are able to place bids in the market, alongside the offers placed by sellers (as seen in the one-sided market).
+In the Two-Sided Pay-as-Bid market, buyers are able to place bids in the market, alongside the offers placed by sellers.
 
-The market collects offers and bids and serves the functionality of accepting and deleting offers and bids as well as dispatching these offer and bids to other markets via the [Inter-Area Agent](inter-area-agent.md). 
+Each market collects and matches bids and offers issued by trading agents, and dispatches bids and offers to other markets via the [Inter-Area Agent](inter-area-agent.md) (IAA). Bids and offers can also be annulled by the trading agent.
 
-The auction is continuous, meaning that once an offer or bid is posted, it can be matched right away, even before the end of the slot market.
+The auction is **continuous**, meaning that once an offer or bid is posted, it can be matched right away, even before the end of the market slot.
 
-An [Inter-Area Agent (IAA)](inter-area-agent.md) is created and operated by each area to deal with forwarding offers and bids to the connected markets. The area constantly triggers the matching between bids and offers according to the matching algorithm.
+An Inter-Area Agent is created and operated by each [market (area)](model-markets.md). Its role is to forward offers and bids to the connected markets. The market constantly triggers the matching between bids and offers according to the matching algorithm as illustrated in the figure below.
 
-![img](img/two-sided-pay-as-bid-1.png){:style="display: block;margin-left: auto;margin-right: auto;"}
+![alt_text](img/pay-as-bid-1.png)
+

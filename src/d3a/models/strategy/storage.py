@@ -207,8 +207,7 @@ class StorageStrategy(BidEnabledStrategy):
 
     def area_reconfigure_event(self, **kwargs):
         self._area_reconfigure_prices(**kwargs)
-        self.offer_update.update_and_populate_price_settings(self.area)
-        self.bid_update.update_and_populate_price_settings(self.area)
+        self._update_profiles_with_default_values()
 
     @staticmethod
     def _validate_rates(initial_selling_rate, final_selling_rate,
@@ -246,41 +245,39 @@ class StorageStrategy(BidEnabledStrategy):
     def event_activate_energy(self):
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
 
-    def event_activate(self):
-        self.state.add_default_values_to_state_profiles(self.area)
+    def event_activate(self, **kwargs):
+        self._update_profiles_with_default_values()
         self.event_activate_energy()
         self.event_activate_price()
-        self.offer_update.update_and_populate_price_settings(self.area)
-        self.bid_update.update_and_populate_price_settings(self.area)
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             for market in self.area.all_markets:
                 time_slot = market.time_slot
-            if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
-                self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
-                                                         final_rate=0)
-                self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=0,
-                                                           final_rate=0)
-            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
-                rate = \
-                    self.area.config.market_maker_rate[time_slot] * \
-                    ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / \
-                    100
-                self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
-                                                         final_rate=rate)
-                self.offer_update.reassign_mixin_arguments(time_slot,
-                                                           initial_rate=rate,
-                                                           final_rate=rate)
-            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
-                rate = self.area.config.market_maker_rate[time_slot]
-                self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
-                                                         final_rate=rate)
-                self.offer_update.reassign_mixin_arguments(time_slot,
-                                                           initial_rate=rate,
-                                                           final_rate=rate)
-            else:
-                raise MarketException
+                if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
+                    self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
+                                                             final_rate=0)
+                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=0,
+                                                               final_rate=0)
+                elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
+                    rate = \
+                        self.area.config.market_maker_rate[time_slot] * \
+                        ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / \
+                        100
+                    self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
+                                                             final_rate=rate)
+                    self.offer_update.reassign_mixin_arguments(time_slot,
+                                                               initial_rate=rate,
+                                                               final_rate=rate)
+                elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
+                    rate = self.area.config.market_maker_rate[time_slot]
+                    self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
+                                                             final_rate=rate)
+                    self.offer_update.reassign_mixin_arguments(time_slot,
+                                                               initial_rate=rate,
+                                                               final_rate=rate)
+                else:
+                    raise MarketException
 
     @staticmethod
     def _validate_constructor_arguments(initial_soc=None, min_allowed_soc=None,
@@ -342,12 +339,12 @@ class StorageStrategy(BidEnabledStrategy):
             raise ValueError("energy_rate_change_per_update should be a non-negative value.")
 
     def event_tick(self):
-        self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
+        self.state.clamp_energy_to_buy_kWh(self.future_markets_time_slots)
 
         for market in self.area.all_markets:
             if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                     ConstSettings.IAASettings.MARKET_TYPE == 3:
-                self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
+                self.state.clamp_energy_to_buy_kWh(self.future_markets_time_slots)
                 if self.are_bids_posted(market.id):
                     self.bid_update.update_posted_bids_over_ticks(market, self)
                 else:
@@ -380,7 +377,7 @@ class StorageStrategy(BidEnabledStrategy):
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 # in order to omit double counting this is only applied for one sided market
                 self._track_energy_bought_type(trade)
-        if trade.offer.seller == self.owner.name:
+        if trade.seller == self.owner.name:
             self._track_energy_sell_type(trade)
             self.state.pledged_sell_kWh[market.time_slot] += trade.offer.energy
             self.state.offered_sell_kWh[market.time_slot] -= trade.offer.energy
@@ -389,11 +386,12 @@ class StorageStrategy(BidEnabledStrategy):
         for child in self.area.children:
             if child.name == trade.seller:
                 return True
+        return False
 
     # ESS Energy being utilized based on FIRST-IN FIRST-OUT mechanism
     def _track_energy_sell_type(self, trade):
         energy = trade.offer.energy
-        while limit_float_precision(energy) > 0:
+        while limit_float_precision(energy) > 0 and len(self.state.get_used_storage_share) > 0:
             first_in_energy_with_origin = self.state.get_used_storage_share[0]
             if energy >= first_in_energy_with_origin.value:
                 energy -= first_in_energy_with_origin.value
@@ -416,7 +414,7 @@ class StorageStrategy(BidEnabledStrategy):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
         market = self.area.get_future_market_from_id(market_id)
 
-        if bid_trade.offer.buyer == self.owner.name:
+        if bid_trade.buyer == self.owner.name:
             self._track_energy_bought_type(bid_trade)
             self.state.pledged_buy_kWh[market.time_slot] += bid_trade.offer.energy
             self.state.offered_buy_kWh[market.time_slot] -= bid_trade.offer.energy
@@ -424,18 +422,17 @@ class StorageStrategy(BidEnabledStrategy):
     def event_market_cycle(self):
         super().event_market_cycle()
         self._set_alternative_pricing_scheme()
-        self.offer_update.update_and_populate_price_settings(self.area)
-        self.bid_update.update_and_populate_price_settings(self.area)
+        self._update_profiles_with_default_values()
         self.offer_update.update_market_cycle_offers(self)
         for market in self.area.all_markets[:-1]:
             self.bid_update.update_counter[market.time_slot] = 0
         current_market = self.area.next_market
         past_market = self.area.last_past_market
 
-        self.state.add_default_values_to_state_profiles(self.area)
         self.state.market_cycle(
-            past_market.time_slot if past_market else current_market.time_slot,
-            current_market.time_slot
+            past_market.time_slot if past_market else None,
+            current_market.time_slot,
+            self.future_markets_time_slots
         )
 
         if self.state.used_storage > 0:
@@ -583,16 +580,18 @@ class StorageStrategy(BidEnabledStrategy):
         else:
             return max_selling_rate - (max_selling_rate - min_selling_rate) * soc
 
+    def _update_profiles_with_default_values(self):
+        self.offer_update.update_and_populate_price_settings(self.area)
+        self.bid_update.update_and_populate_price_settings(self.area)
+        self.state.add_default_values_to_state_profiles(self.future_markets_time_slots)
+
     def event_offer(self, *, market_id, offer):
         super().event_offer(market_id=market_id, offer=offer)
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
             market = self.area.get_future_market_from_id(market_id)
             # sometimes the offer event arrives earlier than the market_cycle event,
             # so the default values have to be written here too:
-            self.offer_update.update_and_populate_price_settings(self.area)
-            self.bid_update.update_and_populate_price_settings(self.area)
-            self.state.add_default_values_to_state_profiles(self.area)
-
+            self._update_profiles_with_default_values()
             if offer.id in market.offers and \
                     offer.seller != self.owner.name and \
                     offer.seller != self.area.name:
@@ -602,26 +601,7 @@ class StorageStrategy(BidEnabledStrategy):
         if constants.D3A_TEST_RUN is True or \
                 self.area.current_market is None:
             return
-        to_delete = []
-        for market_slot in self.state.pledged_sell_kWh.keys():
-            if market_slot < self.area.current_market.time_slot:
-                to_delete.append(market_slot)
-        for market_slot in to_delete:
-            self.state.pledged_sell_kWh.pop(market_slot, None)
-            self.state.offered_sell_kWh.pop(market_slot, None)
-            self.state.pledged_buy_kWh.pop(market_slot, None)
-            self.state.offered_buy_kWh.pop(market_slot, None)
-            self.state.charge_history.pop(market_slot, None)
-            self.state.charge_history_kWh.pop(market_slot, None)
-            self.state.offered_history.pop(market_slot, None)
-            self.state.used_history.pop(market_slot, None)
-            self.state.energy_to_buy_dict.pop(market_slot, None)
-            self.state.energy_to_sell_dict.pop(market_slot, None)
-            self.bid_update.initial_rate.pop(market_slot, None)
-            self.bid_update.final_rate.pop(market_slot, None)
-            self.bid_update.energy_rate_change_per_update.pop(market_slot, None)
-            self.bid_update.update_counter.pop(market_slot, None)
-            self.offer_update.initial_rate.pop(market_slot, None)
-            self.offer_update.final_rate.pop(market_slot, None)
-            self.offer_update.energy_rate_change_per_update.pop(market_slot, None)
-            self.offer_update.update_counter.pop(market_slot, None)
+
+        self.offer_update.delete_past_state_values(self.area.current_market.time_slot)
+        self.bid_update.delete_past_state_values(self.area.current_market.time_slot)
+        self.state.delete_past_state_values(self.area.current_market.time_slot)
