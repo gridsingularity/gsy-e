@@ -217,3 +217,38 @@ class TestExternalMixin(unittest.TestCase):
             self.device.strategy._register(payload)
         with self.assertRaises(ValueError):
             self.device.strategy._unregister(payload)
+
+    @parameterized.expand([
+        [LoadHoursExternalStrategy(100)],
+        [PVExternalStrategy(2, max_panel_power_W=160)],
+        [StorageExternalStrategy()]
+    ])
+    def test_get_state(self, strategy):
+        strategy.state.get_state = MagicMock(return_value={"available_energy": 500})
+        strategy.connected = True
+        strategy._use_template_strategy = True
+        current_state = strategy.get_state()
+        assert current_state['connected'] is True
+        assert current_state['use_template_strategy'] is True
+        assert current_state['available_energy'] == 500
+
+    @parameterized.expand([
+        [LoadHoursExternalStrategy(100)],
+        [PVExternalStrategy(2, max_panel_power_W=160)],
+        [StorageExternalStrategy()]
+    ])
+    def test_restore_state(self, strategy):
+        strategy.state.restore_state = MagicMock()
+        strategy.connected = True
+        strategy._connected = True
+        strategy._use_template_strategy = True
+        state_dict = {
+            "connected": False,
+            "use_template_strategy": False,
+            "available_energy": 123
+        }
+        strategy.restore_state(state_dict)
+        assert strategy.connected is False
+        assert strategy._connected is False
+        assert strategy._use_template_strategy is False
+        strategy.state.restore_state.assert_called_once_with(state_dict)

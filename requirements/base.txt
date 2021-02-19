@@ -6,11 +6,11 @@
 #
 attrs==20.3.0             # via -r requirements/base.in
 awesome-slugify==1.6.5    # via -r requirements/base.in
-base58==2.0.1             # via -r requirements/base.in
+base58==2.1.0             # via -r requirements/base.in
 cached-property==1.5.2    # via -r requirements/base.in
 click-default-group==1.2.2  # via -r requirements/base.in
 click==7.1.2              # via -r requirements/base.in, click-default-group, pip-tools, rq
-colorlog==4.6.2           # via -r requirements/base.in
+colorlog==4.7.2           # via -r requirements/base.in
 numpy==1.19.4             # via -r requirements/base.in
 pendulum==2.1.2           # via -r requirements/base.in
 pip-tools==5.4.0          # via -r requirements/base.in
@@ -26,6 +26,7 @@ rq==1.7.0                 # via -r requirements/base.in
 six==1.15.0               # via pip-tools, plotly, python-dateutil, python-rex, retrying
 sortedcontainers==2.3.0   # via -r requirements/base.in
 unidecode==0.4.21         # via awesome-slugify
+urllib3==1.26.3           # via -r requirements/base.in
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
