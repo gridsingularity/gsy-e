@@ -255,7 +255,7 @@ class SimulationEndpointBuffer:
                                                           self.flattened_area_core_stats_dict,
                                                           self.current_market_time_slot_str)
 
-            self.market_unmatched_loads.update_unmatched_loads(
+            self.market_unmatched_loads.update(
                 self.area_result_dict, self.flattened_area_core_stats_dict,
                 self.current_market_time_slot_str
             )
