@@ -81,7 +81,7 @@ def check_user_rate_profile_dict(context):
     count = 0
     unmatched = MarketUnmatchedLoads()
     for time_slot, core_stats in context.raw_sim_data.items():
-        unmatched.update_unmatched_loads(
+        unmatched.update(
             context.area_tree_summary_data, core_stats, time_slot
         )
         unmatched_data, _ = unmatched.export_unmatched_loads.get_current_market_results(
