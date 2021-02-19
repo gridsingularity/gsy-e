@@ -52,6 +52,7 @@ class AggregatorHandler:
     def _add_grid_stats_to_market_event(self, device_uuid, global_objects):
         market_info = deepcopy(default_market_info)
         market_info["grid_stats_tree"] = global_objects.area_tree_dict
+        market_info["event"] = "grid_stats"
         self._add_batch_event(device_uuid, market_info, self.batch_market_cycle_events)
         self.already_sent_grid_stats = True
 
