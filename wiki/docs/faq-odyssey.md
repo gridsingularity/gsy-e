@@ -78,14 +78,14 @@ For more information on the market and its component, please visit these wiki pa
 1. [Overview](markets.md)
 2. [Pay-as-Bid](two-sided-pay-as-bid.md)
 3. [Inter-Area Agent](inter-area-agent.md)
-4. [Market slot and ticks](market-slots-and-ticks.md)
+4. [Market slot and ticks](markets.md#market-slots)
 
 
 ### What is a trading strategy and how do I optimise it ?
 
 Each energy asset is represented by a digital twin agent. The agent makes decisions to buy or sell energy at specific prices based on the energy requirements of the device. For example, a solar panel that produces 0.15 kWh of energy may request to SELL 0.15 kWh at 26 cents / kWh. Loads must buy a certain amount of energy. PVs must sell the amount of energy they produce. Batteries may buy or sell energy within a min and max state of charge.
 
-Each team will manage multiple energy assets. The goal is to optimize the trading strategy for a specific metric (that can either be the energy bills or the [self-sufficiency](kpis.md) of an area) by defining the price [€/kWh] and the volume [kWh] of your bids/offers. If you are controlling storage there is also the factor of time that comes into consideration (when to buy or sell) when optimizing, as illustrated in the figure below.
+Each team will manage multiple energy assets. The goal is to optimize the trading strategy for a specific metric (that can either be the energy bills or the [self-sufficiency](self-sufficiency-consumption.md) of an area) by defining the price [€/kWh] and the volume [kWh] of your bids/offers. If you are controlling storage there is also the factor of time that comes into consideration (when to buy or sell) when optimizing, as illustrated in the figure below.
 
 ![img](img/faq-odyssey-3.png)
 
@@ -135,7 +135,7 @@ It is likely that each simulation will represent 7 real time days.
 
 Each market slot represents 15 simulation time minutes which is 5-10 real time seconds. The exact simulation slowdown factor will be shared when decided upon.
 
-### How many [ticks](market-slots-and-ticks.md) are in a market slot ?
+### How many [ticks](markets.md#market-slots) are in a market slot ?
 
 In each market slot there will be 60-90 ticks. The `on_tick(self, tick_info)` function will be triggered every incremental 10% of the market slot, e.g. on tick 6, 12, 18, etc. if there are 60 ticks. This means you’ll easily be able to make bid and offer decisions / updates 9 times per slot.
 

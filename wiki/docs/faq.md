@@ -32,11 +32,11 @@ The backend code offers the full functionality of the active version of the D3A.
 
 1. To start using the D3A you need to register your account. You will then receive an email with a link to confirm your account. Once done you will be able to connect to [d3a.io](https://d3a.io) with your account.
 2. You can design your own project by clicking on “new project” and then create a new simulation in it.
-3. The first step in setting up a simulation is to define the simulation settings. You can set the simulation duration, the solar profile type, the market type, and other relevant parameters. In the D3A you can choose one of the 3 market types available : single-sided pay as offer, two-sided pay as bid and two-sided pay as clear (for more information on the simulation settings please follow this [link](change-global-sim-settings.md)). 
+3. The first step in setting up a simulation is to define the simulation settings. You can set the simulation duration, the solar profile type, the market type, and other relevant parameters. In the D3A you can choose one of the 3 market types available : single-sided pay as offer, two-sided pay as bid and two-sided pay as clear (for more information on the simulation settings please follow this [link](general-settings.md)). 
 4. The next step is to design your grid. Once you arrive in the grid setup, the first thing that you will have to do is to define the market maker. Its goal is to represent a static or fluctuating base market price which will serve as a reference point for the selected device strategies. After creating this market maker, you can start building the digital twin of your grid. The D3A works by creating area markets. In each of these areas you can put devices or other grid areas. The devices can be loads, PV, storage, etc. The setup is intended to represent the physical architecture of the real energy market (country, region, neighbourhood, house, etc.). Importantly, each area contains a spot market where trades can occur. Each device places a bid/offer in their home market. When bids/offers are not matched in their own area, they are forwarded to the upper market in the upper area and so on. 
 5. After your grid setup is complete, you can run your simulation. When it is finished you can view multiple scrollable plots and tables on the results page (for more on how to use these visuals, please see this [link](results.md)) and you can also download the results file on your computer. 
 
-For a step-by-step explanation on how to setup your simulation, please watch our [tutorial](https://youtu.be/ktqYAySU_5k). You can also see a video explaining the new release features implemented on the frontend [here](https://youtu.be/hHXWzs1PJGI). If you have any other problems, please visit our documentation wiki page for the [frontend](user-interface-d3a.md) and the [backend](backend-codebase.md) D3A versions.
+For a step-by-step explanation on how to setup your simulation, please watch our [tutorial](https://youtu.be/ktqYAySU_5k). You can also see a video explaining the new release features implemented on the frontend [here](https://youtu.be/hHXWzs1PJGI). If you have any other problems, please visit our documentation wiki page for the [frontend](general-settings.md#user-interface-simulation-configuration) and the [backend](general-settings.md#backend-simulation-configuration) D3A versions.
 
 ### Are there any limitations concerning the size of the simulation ?
 
@@ -51,10 +51,10 @@ For smoother simulations and smaller queue, we have set some boundaries. First, 
 There is no need to login to set up a simulation in the backend. You just need to follow the steps bellow : 
 
 1. Download the code from our [GitHub Repository](https://github.com/gridsingularity/d3a).
-2. Please follow the technical instructions [here](installation-instructions.md) to correctly install the D3A on your computer.
-3. To design a grid setup, please create a python file and follow our tips on how to [setup file](create-setup-file.md) and [global settings](change-global-sim-settings.md). You can also review our setup examples located at `d3a/src/d3a/setup/`. 
+2. Please follow the technical instructions [here](linux-installation-instructions.md) to correctly install the D3A on your computer.
+3. To design a grid setup, please create a python file and follow our tips on how to [setup file](general-settings.md) and global settings. You can also review our setup examples located at `d3a/src/d3a/setup/`. 
 4. To run a setup file you need to place it in the directory `d3a/src/d3a/setup/`, or change the path yourself in the `ConstSettings.py` file.
-5. To launch the simulation in the command line interface, follow our [technical instructions](launch-sim-via-cli.md).
+5. To launch the simulation in the command line interface, follow our [technical instructions](general-settings.md#backend-simulation-configuration).
 
 ### Why do my results keep changing when I rerun the same setup ?
 
@@ -94,7 +94,7 @@ For now, voltage level is irrelevant, meaning that the D3A only simulate the amo
 
 ### How are the grid fees applied ? How do I set them up ?
 
-The grid fees represent the cost of the grid, taxes and other fees that are paid to another entity in exchange for using the grid. You can look at [this page](configure-transfer-fee.md) to see how you can set this up. When you define grid fees, it is applied inside of the specific area. These fees will be applied on the offers and bids, by raising or lowering their prices. Consequently, when an offer is published, its selling price will be the one defined by the seller plus the relevant grid fees. For trades to occur, the bid price minus the expected grid fees should be higher than the selling price plus the expected grid fees (for the two sided markets).
+The grid fees represent the cost of the grid, taxes and other fees that are paid to another entity in exchange for using the grid. You can look at [this page](model-markets.md) to see how you can set this up. When you define grid fees, it is applied inside of the specific area. These fees will be applied on the offers and bids, by raising or lowering their prices. Consequently, when an offer is published, its selling price will be the one defined by the seller plus the relevant grid fees. For trades to occur, the bid price minus the expected grid fees should be higher than the selling price plus the expected grid fees (for the two sided markets).
 
  
 
