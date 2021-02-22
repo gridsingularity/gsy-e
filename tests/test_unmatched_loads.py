@@ -326,10 +326,10 @@ class TestUnmatchedLoad(unittest.TestCase):
         self.area1._markets.past_markets[timeslot] = deepcopy(mock_market)
         self.area3._markets.past_markets[timeslot] = deepcopy(mock_market)
         epb._populate_core_stats_and_sim_state(self.grid)
-        epb.market_unmatched_loads.update(
+        epb.results_handler.update(
             epb.area_result_dict, epb.flattened_area_core_stats_dict,
             current_market_slot=self.config.start_date)
-        unmatched_loads = epb.market_unmatched_loads.unmatched_loads
+        unmatched_loads = epb.results_handler.results_mapping["unmatched_loads"]
         assert unmatched_loads["House1"] is None
         assert unmatched_loads["Grid"] is None
 
@@ -347,9 +347,9 @@ class TestUnmatchedLoad(unittest.TestCase):
         epb.current_market_time_slot_str = mock_market.time_slot_str
         self.grid._markets.past_markets[timeslot] = deepcopy(mock_market)
         epb._populate_core_stats_and_sim_state(self.grid)
-        epb.market_unmatched_loads.update(
+        epb.results_handler.update(
             epb.area_result_dict, epb.flattened_area_core_stats_dict,
-            current_market_slot=epb.current_market_time_slot_str)
-        unmatched_loads = epb.market_unmatched_loads.unmatched_loads
+            current_market_slot=self.config.start_date)
+        unmatched_loads = epb.results_handler.results_mapping["unmatched_loads"]
         assert unmatched_loads["House1"] is not None
         assert unmatched_loads["Grid"] is not None
