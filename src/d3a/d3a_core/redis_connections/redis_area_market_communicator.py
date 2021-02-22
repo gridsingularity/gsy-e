@@ -79,8 +79,8 @@ class ResettableCommunicator(RedisCommunicator):
             f"There has to be only one thread per ResettableCommunicator object, " \
             f" thread {self.thread} already exists."
         self.pubsub.subscribe(**channel_callback_dict)
-        thread = self.pubsub.run_in_thread(daemon=True)
-        log.trace(f"Started thread for multiple channels: {thread}")
+        thread = self.pubsub.run_in_thread(sleep_time=0.1, daemon=True)
+        log.debug(f"Started ResettableCommunicator thread for multiple channels: {thread}")
         self.thread = thread
 
     def sub_to_response(self, channel, callback):
@@ -117,8 +117,9 @@ class ExternalConnectionCommunicator(ResettableCommunicator):
             return
         if not self.pubsub.channels:
             return
-        thread = self.pubsub.run_in_thread(daemon=True)
-        log.trace(f"Started thread for multiple channels: {thread}")
+        thread = self.pubsub.run_in_thread(sleep_time=0.1, daemon=True)
+        log.debug(f"Started ExternalConnectionCommunicator thread for "
+                  f"multiple channels: {thread}")
         self.thread = thread
 
     def sub_to_aggregator(self):
@@ -127,7 +128,7 @@ class ExternalConnectionCommunicator(ResettableCommunicator):
         channel_callback_dict = {
             f'external/{d3a.constants.COLLABORATION_ID}/aggregator/*/batch_commands':
                 self.aggregator.receive_batch_commands_callback,
-            f'aggregator': self.aggregator.aggregator_callback
+            'aggregator': self.aggregator.aggregator_callback
         }
         self.pubsub.psubscribe(**channel_callback_dict)
 
