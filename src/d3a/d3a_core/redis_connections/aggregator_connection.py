@@ -183,7 +183,7 @@ class AggregatorHandler:
             response = [strategy_method({**command, 'transaction_id': transaction_id})
                         for command in area_commands]
             if transaction_id not in self.responses_batch_commands:
-                self.responses_batch_commands[transaction_id] = {aggregator_uuid: {area_uuid: []}}
+                self.responses_batch_commands[transaction_id] = {aggregator_uuid: {}}
             if area_uuid not in self.responses_batch_commands[transaction_id][aggregator_uuid]:
                 self.responses_batch_commands[transaction_id][aggregator_uuid] \
                     .update({area_uuid: []})
