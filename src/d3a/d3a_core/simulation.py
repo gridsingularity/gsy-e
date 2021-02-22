@@ -248,9 +248,10 @@ class Simulation:
     def update_area_stats(self, area, endpoint_buffer):
         for child in area.children:
             self.update_area_stats(child, endpoint_buffer)
-        bills = endpoint_buffer.market_bills.bills_redis_results.get(area.uuid, {})
+        bills = endpoint_buffer.results_handler.all_ui_results["bills"].get(area.uuid, {})
         area.stats.update_aggregated_stats({"bills": bills})
-        area.stats.kpi.update(endpoint_buffer.kpi.performance_indices_redis.get(area.uuid, {}))
+        area.stats.kpi.update(
+            endpoint_buffer.results_handler.all_ui_results["kpi"].get(area.uuid, {}))
 
     def _update_and_send_results(self, is_final=False):
         self.endpoint_buffer.update_stats(

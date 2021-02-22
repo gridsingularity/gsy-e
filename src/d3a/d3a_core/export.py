@@ -325,9 +325,7 @@ class ExportAndPlot:
         """
 
         energy_profile = \
-            self.endpoint_buffer.trade_profile.convert_timestamp_strings_to_datetimes(
-                self.endpoint_buffer.trade_profile.traded_energy_profile
-            )
+            self.endpoint_buffer.results_handler.trade_profile_plot_results
 
         self.endpoint_buffer.trade_profile.add_sold_bought_lists(energy_profile)
 

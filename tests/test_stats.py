@@ -386,7 +386,8 @@ def test_energy_bills_report_correctly_market_fees(grid_fees):
                                                  fee_price=4.0),), 'street', fees=4.0)]
     epb.current_market_time_slot_str = grid_fees.current_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid_fees)
-    m_bills.update(epb.area_result_dict, epb.flattened_area_core_stats_dict)
+    m_bills.update(epb.area_result_dict, epb.flattened_area_core_stats_dict,
+                   epb.current_market_time_slot_str)
     result = m_bills.bills_results
     assert result["street"]["house1"]["market_fee"] == 0.04
     assert result["street"]["house2"]["market_fee"] == 0.01

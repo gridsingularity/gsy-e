@@ -694,7 +694,8 @@ def test_output(context, scenario, sim_duration, slot_length, tick_length):
 
 @then('the energy bills report the correct accumulated traded energy price')
 def test_accumulated_energy_price(context):
-    bills = context.simulation.endpoint_buffer.market_bills.bills_results
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    bills = raw_results["bills"]
     for bills_key in [c for c in bills.keys() if "Accumulated Trades" in c]:
         extern_trades = bills[bills_key]["External Trades"]
         assert extern_trades["total_energy"] == extern_trades["bought"] - extern_trades["sold"]
@@ -723,7 +724,8 @@ def test_accumulated_energy_price(context):
 
 @then('the traded energy report the correct accumulated traded energy')
 def test_accumulated_energy(context):
-    bills = context.simulation.endpoint_buffer.market_bills.bills_results
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    bills = raw_results["bills"]
     if "Cell Tower" not in bills:
         return
     cell_tower_net = bills["Cell Tower"]["sold"] - bills["Cell Tower"]["bought"]
@@ -748,8 +750,10 @@ def test_external_trade_energy_price(context):
     # TODO: Deactivating this test for now, because it will fail due to D3ASIM-1887.
     # Please activate the test when implementing the aforementioned bug.
     return
-    bills = context.simulation.endpoint_buffer.market_bills.bills_results
-    current_trades = context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades
+
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    current_trades = raw_results["cumulative_grid_trades"]
+    bills = raw_results["bills"]
     houses = [child for child in context.simulation.area.children
               if child.name in ["House 1", "House 2"]]
     for house in houses:
@@ -774,8 +778,9 @@ def test_external_trade_energy_price(context):
 
 @then('the cumulative energy bills for each area are the sum of its children')
 def cumulative_bills_sum(context):
-    cumulative_bills = context.simulation.endpoint_buffer.cumulative_bills.cumulative_bills_results
-    bills = context.simulation.endpoint_buffer.market_bills.bills_redis_results
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    cumulative_bills = raw_results["cumulative_bills"]
+    bills = raw_results["bills"]
 
     def assert_area_cumulative_bills(area):
         area_bills = cumulative_bills[area.uuid]
