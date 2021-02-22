@@ -80,7 +80,7 @@ class ResettableCommunicator(RedisCommunicator):
             f" thread {self.thread} already exists."
         self.pubsub.subscribe(**channel_callback_dict)
         thread = self.pubsub.run_in_thread(sleep_time=0.1, daemon=True)
-        log.error(f"Started ResettableCommunicator thread for multiple channels: {thread}")
+        log.debug(f"Started ResettableCommunicator thread for multiple channels: {thread}")
         self.thread = thread
 
     def sub_to_response(self, channel, callback):
@@ -118,7 +118,7 @@ class ExternalConnectionCommunicator(ResettableCommunicator):
         if not self.pubsub.channels:
             return
         thread = self.pubsub.run_in_thread(sleep_time=0.1, daemon=True)
-        log.error(f"Started ExternalConnectionCommunicator thread for "
+        log.debug(f"Started ExternalConnectionCommunicator thread for "
                   f"multiple channels: {thread}")
         self.thread = thread
 
