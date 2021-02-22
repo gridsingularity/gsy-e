@@ -173,13 +173,15 @@ class RedisMarketExternalConnection:
         market_info["self_sufficiency"] = \
             self.area.stats.kpi.get("self_sufficiency", None)
         market_info["area_uuid"] = self.area.uuid
-        data = {"status": "ready",
-                "event": "market",
-                "market_info": market_info}
         if self.is_aggregator_controlled:
+            market_info["event"] = "market"
+            market_info["status"] = "ready"
             self.aggregator.add_batch_market_event(self.area.uuid, market_info,
                                                    self.area.global_objects)
         else:
+            data = {"status": "ready",
+                    "event": "market",
+                    "market_info": market_info}
             self.redis_com.publish_json(market_event_channel, data)
 
     def deactivate(self):
