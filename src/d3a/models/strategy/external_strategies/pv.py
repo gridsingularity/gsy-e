@@ -157,14 +157,16 @@ class PVExternalMixin(ExternalMixin):
 
     def _offer_impl(self, arguments, response_channel):
         try:
+            replace_existing = arguments.pop('replace_existing', True)
+
             assert self.can_offer_be_posted(
                 arguments["energy"],
                 arguments["price"],
                 self.state.get_available_energy_kWh(self.next_market.time_slot),
-                self.next_market)
+                self.next_market,
+                replace_existing=replace_existing)
 
             offer_arguments = {k: v for k, v in arguments.items() if not k == 'transaction_id'}
-            replace_existing = offer_arguments.pop('replace_existing', True)
             offer = self.post_offer(
                 self.next_market, replace_existing=replace_existing, **offer_arguments)
 
@@ -348,16 +350,20 @@ class PVExternalMixin(ExternalMixin):
 
         arguments['seller'] = self.device.name
         arguments['seller_origin'] = self.device.name
+
         try:
+            replace_existing = arguments.pop('replace_existing', True)
+
             assert self.can_offer_be_posted(
                 arguments["energy"],
                 arguments["price"],
                 self.state.get_available_energy_kWh(self.next_market.time_slot),
-                self.next_market)
+                self.next_market,
+                replace_existing=replace_existing)
+
             offer_arguments = {k: v
                                for k, v in arguments.items()
                                if k not in ["transaction_id", "type"]}
-            replace_existing = offer_arguments.pop('replace_existing', True)
 
             offer = self.post_offer(
                 self.next_market, replace_existing=replace_existing, **offer_arguments)

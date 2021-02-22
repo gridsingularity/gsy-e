@@ -136,10 +136,19 @@ class Offers:
     def sold_offer_energy(self, market_id):
         return sum(o.energy for o in self.sold_in_market(market_id))
 
-    def can_offer_be_posted(self, offer_energy, offer_price, available_energy, market):
+    def can_offer_be_posted(
+            self, offer_energy, offer_price, available_energy, market, replace_existing=False):
+
+        if replace_existing:
+            # Do not consider previous offers, since they would be replaced by the current one
+            posted_offer_energy = 0.0
+        else:
+            posted_offer_energy = self.posted_offer_energy(market.id)
+
         posted_energy = (offer_energy
-                         + self.posted_offer_energy(market.id)
+                         + posted_offer_energy
                          - self.sold_offer_energy(market.id))
+
         return posted_energy <= available_energy and offer_price >= 0.0
 
     def sold_in_market(self, market_id):
@@ -436,8 +445,11 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             assert trade.offer.energy_rate >= \
                 offer.energy_rate - FLOATING_POINT_TOLERANCE
 
-    def can_offer_be_posted(self, offer_energy, offer_price, available_energy, market):
-        return self.offers.can_offer_be_posted(offer_energy, offer_price, available_energy, market)
+    def can_offer_be_posted(
+            self, offer_energy, offer_price, available_energy, market, replace_existing=False):
+
+        return self.offers.can_offer_be_posted(
+            offer_energy, offer_price, available_energy, market, replace_existing=replace_existing)
 
     def deactivate(self):
         pass
@@ -496,9 +508,17 @@ class BidEnabledStrategy(BaseStrategy):
         self.add_bid_to_posted(market.id, bid)
         return bid
 
-    def can_bid_be_posted(self, bid_energy, bid_price, required_energy_kWh, market):
-        posted_energy = (bid_energy + self.posted_bid_energy(market.id))
-        return posted_energy <= required_energy_kWh and bid_price >= 0.0
+    def can_bid_be_posted(
+            self, bid_energy, bid_price, required_energy_kWh, market, replace_existing=False):
+
+        if replace_existing:
+            posted_bid_energy = 0.0
+        else:
+            posted_bid_energy = self.posted_bid_energy(market.id)
+
+        total_posted_energy = (bid_energy + posted_bid_energy)
+
+        return total_posted_energy <= required_energy_kWh and bid_price >= 0.0
 
     def is_bid_posted(self, market, bid_id):
         return bid_id in [bid.id for bid in self.get_posted_bids(market)]

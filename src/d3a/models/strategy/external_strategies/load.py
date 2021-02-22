@@ -161,13 +161,14 @@ class LoadExternalMixin(ExternalMixin):
 
     def _bid_impl(self, arguments, bid_response_channel):
         try:
+            replace_existing = arguments.get('replace_existing', True)
             assert self.can_bid_be_posted(
                 arguments["energy"],
                 arguments["price"],
                 self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0,
-                self.next_market)
+                self.next_market,
+                replace_existing=replace_existing)
 
-            replace_existing = arguments.get('replace_existing', True)
             bid = self.post_bid(
                 self.next_market,
                 arguments["price"],
@@ -308,13 +309,14 @@ class LoadExternalMixin(ExternalMixin):
 
             arguments['buyer_origin'] = self.device.name
 
+            replace_existing = arguments.get('replace_existing', True)
             assert self.can_bid_be_posted(
                 arguments["energy"],
                 arguments["price"],
                 self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0,
-                self.next_market)
+                self.next_market,
+                replace_existing=replace_existing)
 
-            replace_existing = arguments.get('replace_existing', True)
             bid = self.post_bid(
                 self.next_market,
                 arguments["price"],
