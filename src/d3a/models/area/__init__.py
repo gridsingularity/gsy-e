@@ -228,15 +228,15 @@ class Area:
                       f"Traceback: {traceback.format_exc()}")
             return
 
-    def _set_grid_fees(self, transfer_fee_const, grid_fee_percentage):
+    def _set_grid_fees(self, grid_fee_const, grid_fee_percentage):
         grid_fee_type = self.config.grid_fee_type \
             if self.config is not None \
             else ConstSettings.IAASettings.GRID_FEE_TYPE
         if grid_fee_type == 1:
             grid_fee_percentage = None
         elif grid_fee_type == 2:
-            transfer_fee_const = None
-        self.grid_fee_constant = transfer_fee_const
+            grid_fee_const = None
+        self.grid_fee_constant = grid_fee_const
         self.grid_fee_percentage = grid_fee_percentage
 
     def get_path_to_root_fees(self):

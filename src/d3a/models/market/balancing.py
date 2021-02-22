@@ -38,7 +38,7 @@ log = getLogger(__name__)
 class BalancingMarket(OneSidedMarket):
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
                  grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
-                 transfer_fees=None, name=None, in_sim_duration=True):
+                 grid_fees=None, name=None, in_sim_duration=True):
         self.unmatched_energy_upward = 0
         self.unmatched_energy_downward = 0
         self.accumulated_supply_balancing_trade_price = 0
@@ -47,7 +47,7 @@ class BalancingMarket(OneSidedMarket):
         self.accumulated_demand_balancing_trade_energy = 0
 
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
-                         transfer_fees, name, in_sim_duration=in_sim_duration)
+                         grid_fees, name, in_sim_duration=in_sim_duration)
 
     def offer(self, price: float, energy: float, seller: str, offer_id=None,
               original_offer_price=None, dispatch_event=True, seller_origin=None,
