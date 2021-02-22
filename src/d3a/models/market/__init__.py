@@ -39,7 +39,7 @@ from d3a.models.market.blockchain_interface import SubstrateBlockchainInterface,
 
 log = getLogger(__name__)
 
-GridFee = namedtuple("GridFee", ('grid_fee_percentage', 'transfer_fee_const'))
+GridFee = namedtuple("GridFee", ('grid_fee_percentage', 'grid_fee_const'))
 
 
 RLOCK_MEMBER_NAME = "rlock"
@@ -109,13 +109,13 @@ class Market:
 
     def _create_fee_handler(self, grid_fee_type, grid_fees):
         if not grid_fees:
-            grid_fees = GridFee(grid_fee_percentage=0.0, transfer_fee_const=0.0)
+            grid_fees = GridFee(grid_fee_percentage=0.0, grid_fee_const=0.0)
         if grid_fee_type == 1:
-            if grid_fees.transfer_fee_const is None or \
-                    grid_fees.transfer_fee_const <= 0.0:
+            if grid_fees.grid_fee_const is None or \
+                    grid_fees.grid_fee_const <= 0.0:
                 self.fee_class = ConstantGridFees(0.0)
             else:
-                self.fee_class = ConstantGridFees(grid_fees.transfer_fee_const)
+                self.fee_class = ConstantGridFees(grid_fees.grid_fee_const)
             self.const_fee_rate = self.fee_class.grid_fee_rate
         else:
             if grid_fees.grid_fee_percentage is None or \

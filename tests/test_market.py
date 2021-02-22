@@ -47,7 +47,7 @@ device_registry_dict = {
     "seller": {"balancing rates": (33, 35)},
 }
 
-transfer_fees = GridFee(grid_fee_percentage=0, transfer_fee_const=0)
+transfer_fees = GridFee(grid_fee_percentage=0, grid_fee_const=0)
 
 
 class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
@@ -67,7 +67,7 @@ class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
         self.mcp_update_point = 20
         self.current_tick = 19
         # self.transfer_fee_ratio = transfer_fees.grid_fee_percentage / 100
-        # self.transfer_fee_const = transfer_fees.transfer_fee_const
+        # self.grid_fee_const = transfer_fees.grid_fee_const
 
     def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
                      trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
