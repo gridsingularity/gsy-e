@@ -62,7 +62,6 @@ def register_area(redis, channel_prefix, is_connected, transaction_id, area_uuid
 
 
 def unregister_area(redis, channel_prefix, is_connected, transaction_id):
-    print("unregister_area", channel_prefix)
     unregister_response_channel = f'{channel_prefix}/response/unregister_participant'
     if not check_for_connected_and_reply(redis, unregister_response_channel,
                                          is_connected):
