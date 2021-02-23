@@ -21,13 +21,14 @@ from unittest.mock import MagicMock
 import unittest
 from d3a.models.area import Area
 
+from d3a_interface.sim_results.export_unmatched_loads import get_number_of_unmatched_loads
+from d3a_interface.utils import format_datetime
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.state import LoadState
 from d3a.models.config import SimulationConfig
 from d3a.models.market import Market
 from d3a.constants import DATE_TIME_FORMAT, TIME_ZONE
-from d3a_interface.sim_results.export_unmatched_loads import get_number_of_unmatched_loads
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.models.market.market_structures import Trade, Bid
 
@@ -94,7 +95,7 @@ class TestUnmatchedLoad(unittest.TestCase):
 
             epb.results_handler.update(
                 epb.area_result_dict, epb.flattened_area_core_stats_dict,
-                current_market_slot=mock_market.time_slot)
+                current_market_slot=format_datetime(mock_market.time_slot))
             unmatched_loads = epb.results_handler.results_mapping["unmatched_loads"].raw_results
 
             assert list(unmatched_loads['Grid'].keys()) == ['House1']
@@ -105,7 +106,6 @@ class TestUnmatchedLoad(unittest.TestCase):
         self.grid = Area("Grid", [house1])
         self.grid._markets.past_markets = {}
         epb = SimulationEndpointBuffer("1", {"seed": 0}, self.grid, True)
-        cumulative_unmatched_load = 0
 
         for i in range(1, 11):
             timeslot = today(tz=TIME_ZONE).add(hours=12+i)
@@ -132,7 +132,7 @@ class TestUnmatchedLoad(unittest.TestCase):
 
             epb.results_handler.update(
                 epb.area_result_dict, epb.flattened_area_core_stats_dict,
-                current_market_slot=mock_market.time_slot_str)
+                current_market_slot=format_datetime(mock_market.time_slot_str))
 
         unmatched_loads = epb.results_handler.results_mapping["unmatched_loads"].raw_results
         cumulative_unmatched_load = get_number_of_unmatched_loads(unmatched_loads)
@@ -143,7 +143,6 @@ class TestUnmatchedLoad(unittest.TestCase):
         self.grid = Area("Grid", [house1])
         self.grid._markets.past_markets = {}
         epb = SimulationEndpointBuffer("1", {"seed": 0}, self.grid, True)
-        cumulative_unmatched_load = 0
 
         for i in range(1, 11):
             timeslot = today(tz=TIME_ZONE).add(hours=12+i)
@@ -183,7 +182,6 @@ class TestUnmatchedLoad(unittest.TestCase):
         cell_tower = Area("Cell Tower", strategy=ct_strategy)
         self.grid = Area("Grid", [house1, cell_tower])
         epb = SimulationEndpointBuffer("1", {"seed": 0}, self.grid, True)
-        cumulative_unmatched_load = 0
 
         for i in range(1, 11):
             timeslot = today(tz=TIME_ZONE).add(hours=12+i)
@@ -232,7 +230,6 @@ class TestUnmatchedLoad(unittest.TestCase):
         self.grid = Area("Grid", [house1])
         self.grid._markets.past_markets = {}
         epb = SimulationEndpointBuffer("1", {"seed": 0}, self.grid, True)
-        cumulative_unmatched_load = 0
         for i in range(1, 11):
             timeslot = today(tz=TIME_ZONE).add(hours=12+i)
             mock_market = MagicMock(spec=Market)
@@ -316,7 +313,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         epb._populate_core_stats_and_sim_state(self.grid)
         epb.results_handler.update(
             epb.area_result_dict, epb.flattened_area_core_stats_dict,
-            current_market_slot=self.config.start_date)
+            current_market_slot=format_datetime(self.config.start_date))
         unmatched_loads = epb.results_handler.results_mapping["unmatched_loads"].raw_results
         assert unmatched_loads["House1"] is None
         assert unmatched_loads["Grid"] is None
@@ -337,7 +334,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         epb._populate_core_stats_and_sim_state(self.grid)
         epb.results_handler.update(
             epb.area_result_dict, epb.flattened_area_core_stats_dict,
-            current_market_slot=self.config.start_date)
+            current_market_slot=format_datetime(self.config.start_date))
         unmatched_loads = epb.results_handler.results_mapping["unmatched_loads"].raw_results
         assert unmatched_loads["House1"] is not None
         assert unmatched_loads["Grid"] is not None
