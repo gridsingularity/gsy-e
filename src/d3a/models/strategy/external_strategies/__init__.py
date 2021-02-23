@@ -62,6 +62,7 @@ def register_area(redis, channel_prefix, is_connected, transaction_id, area_uuid
 
 
 def unregister_area(redis, channel_prefix, is_connected, transaction_id):
+    print("unregister_area", channel_prefix)
     unregister_response_channel = f'{channel_prefix}/response/unregister_participant'
     if not check_for_connected_and_reply(redis, unregister_response_channel,
                                          is_connected):
@@ -86,6 +87,7 @@ class ExternalMixin:
     def __init__(self, *args, **kwargs):
         self._connected = False
         self.connected = False
+        self._remove_from_aggregator = False
         self._use_template_strategy = False
         super().__init__(*args, **kwargs)
         self._last_dispatched_tick = 0
@@ -96,7 +98,8 @@ class ExternalMixin:
         strategy_state = super().get_state()
         strategy_state.update({
             "connected": self.connected,
-            "use_template_strategy": self._use_template_strategy
+            "use_template_strategy": self._use_template_strategy,
+            "remove_from_aggregator": self._remove_from_aggregator
         })
         return strategy_state
 
@@ -104,6 +107,7 @@ class ExternalMixin:
         super().restore_state(state_dict)
         self._connected = state_dict.get("connected", False)
         self.connected = state_dict.get("connected", False)
+        self._remove_from_aggregator = state_dict.get("remove_from_aggregator", False)
         self._use_template_strategy = state_dict.get("use_template_strategy", False)
 
     @property
@@ -124,6 +128,9 @@ class ExternalMixin:
     @property
     def is_aggregator_controlled(self):
         return self.redis.aggregator.is_controlling_device(self.device.uuid)
+
+    def _remove_area_uuid_from_aggregator_mapping(self):
+        self.redis.aggregator.device_aggregator_mapping.pop(self.device.uuid, None)
 
     @property
     def should_use_default_strategy(self):
@@ -159,8 +166,13 @@ class ExternalMixin:
     def _unregister(self, payload):
         self._connected = unregister_area(self.redis, self.channel_prefix, self.connected,
                                           self._get_transaction_id(payload))
+        if self.is_aggregator_controlled:
+            self._remove_from_aggregator = True
 
     def register_on_market_cycle(self):
+        if self._remove_from_aggregator:
+            self._remove_area_uuid_from_aggregator_mapping()
+            self._remove_from_aggregator = False
         self.connected = self._connected
 
     def _device_info(self, payload):
