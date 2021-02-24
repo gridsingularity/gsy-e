@@ -34,9 +34,9 @@ class OneSidedMarket(Market):
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None,
                  readonly=False, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
-                 transfer_fees=None, name=None, in_sim_duration=True):
+                 grid_fees=None, name=None, in_sim_duration=True):
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
-                         transfer_fees, name)
+                         grid_fees, name)
         self.in_sim_duration = in_sim_duration
 
     def __repr__(self):  # pragma: no cover

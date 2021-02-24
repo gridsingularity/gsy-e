@@ -38,7 +38,7 @@ from d3a.models.market.market_structures import Bid, Offer, Trade, TradeBidOffer
 from d3a.models.market.balancing import BalancingMarket
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
-from d3a.models.market import TransferFees
+from d3a.models.market import GridFee
 
 from d3a.d3a_core.device_registry import DeviceRegistry
 device_registry_dict = {
@@ -47,12 +47,12 @@ device_registry_dict = {
     "seller": {"balancing rates": (33, 35)},
 }
 
-transfer_fees = TransferFees(grid_fee_percentage=0, transfer_fee_const=0)
+transfer_fees = GridFee(grid_fee_percentage=0, grid_fee_const=0)
 
 
 class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
     def __init__(self, bids=[], m_id=123, time_slot=now()):
-        super().__init__(transfer_fees=transfer_fees, time_slot=time_slot)
+        super().__init__(grid_fees=transfer_fees, time_slot=time_slot)
         self.id = m_id
         self._bids = bids
         self.offer_count = 0
@@ -67,7 +67,7 @@ class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
         self.mcp_update_point = 20
         self.current_tick = 19
         # self.transfer_fee_ratio = transfer_fees.grid_fee_percentage / 100
-        # self.transfer_fee_const = transfer_fees.transfer_fee_const
+        # self.grid_fee_const = transfer_fees.grid_fee_const
 
     def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
                      trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
