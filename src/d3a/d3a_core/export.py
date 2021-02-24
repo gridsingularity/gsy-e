@@ -33,7 +33,6 @@ from sortedcontainers import SortedDict
 
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
 from d3a_interface.utils import mkdir_from_str
-from d3a_interface.sim_results.energy_trade_profile import EnergyTradeProfile
 from d3a.d3a_core.util import constsettings_to_dict, generate_market_slot_list, round_floats_for_ui
 from d3a.models.market.market_structures import MarketClearingState
 from d3a.models.strategy.storage import StorageStrategy
@@ -330,7 +329,6 @@ class ExportAndPlot:
 
         energy_profile = \
             self.endpoint_buffer.results_handler.trade_profile_plot_results
-        EnergyTradeProfile.add_sold_bought_lists(energy_profile)
 
         new_subdir = os.path.join(subdir, area.slug)
         self._plot_energy_profile(new_subdir, area.name, energy_profile)
