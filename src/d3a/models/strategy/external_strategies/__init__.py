@@ -96,7 +96,7 @@ class ExternalMixin:
         strategy_state = super().get_state()
         strategy_state.update({
             "connected": self.connected,
-            "use_template_strategy": self._use_template_strategy,
+            "use_template_strategy": self._use_template_strategy
         })
         return strategy_state
 
