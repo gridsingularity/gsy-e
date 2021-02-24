@@ -1,8 +1,8 @@
 from setuptools import find_packages, setup
-# import os
+import os
 
 
-d3a_interface_branch = "feature/D3ASIM-3307-results-abc"
+d3a_interface_branch = os.environ.get("BRANCH", "master")
 
 try:
     with open('requirements/dev.txt') as req:
