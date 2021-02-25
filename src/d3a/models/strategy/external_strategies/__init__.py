@@ -125,6 +125,9 @@ class ExternalMixin:
     def is_aggregator_controlled(self):
         return self.redis.aggregator.is_controlling_device(self.device.uuid)
 
+    def _remove_area_uuid_from_aggregator_mapping(self):
+        self.redis.aggregator.device_aggregator_mapping.pop(self.device.uuid, None)
+
     @property
     def should_use_default_strategy(self):
         return self._use_template_strategy or \
@@ -161,6 +164,8 @@ class ExternalMixin:
                                           self._get_transaction_id(payload))
 
     def register_on_market_cycle(self):
+        if self.connected is True and self._connected is False:
+            self._remove_area_uuid_from_aggregator_mapping()
         self.connected = self._connected
 
     def _device_info(self, payload):

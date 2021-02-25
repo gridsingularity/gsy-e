@@ -31,8 +31,8 @@ def test_export_of_power_flow_result(context):
 
 @then('BaselinePeakEnergyStats are correctly calculated')
 def test_baseline_peak_energy_stats(context):
-    area_throughput_stats = \
-        context.simulation.endpoint_buffer.area_throughput_stats.results
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    area_throughput_stats = raw_results["area_throughput"]
     stats_area_name = []
     for area_name, market_value in area_throughput_stats.items():
         stats_area_name.append(area_name)
