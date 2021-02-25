@@ -13,7 +13,7 @@
         <meta name="description" content="Wiki for the D3A by Grid Singularity">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/d3a/d3a-documentation/collaboration/">
+        <link rel="canonical" href="https://gridsingularity.github.io/d3a/d3a-documentation/cloud-service-guide/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -42,7 +42,7 @@
     
     
       
-        <title>Collaboration Tool - Grid Singularity D3A Wiki</title>
+        <title>API agent on cloud - Grid Singularity D3A Wiki</title>
       
     
     
@@ -110,7 +110,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#user-roles" tabindex="1" class="md-skip">
+      <a href="#guide-to-setup-and-run-an-api-agent-from-a-cloud-based-service" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -135,7 +135,7 @@
               Grid Singularity D3A Wiki
             </span>
             <span class="md-header-nav__topic">
-              Collaboration Tool
+              API agent on cloud
             </span>
           
         </div>
@@ -551,10 +551,12 @@
           
           
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-1" type="checkbox" id="nav-3-1">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-1" type="checkbox" id="nav-3-1" checked>
     
     <label class="md-nav__link" for="nav-3-1">
       APIs
@@ -606,23 +608,6 @@
           
           
 
-
-  <li class="md-nav__item">
-    <a href="../cloud-service-guide/" title="API agent on cloud" class="md-nav__link">
-      API agent on cloud
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
   
 
 
@@ -630,61 +615,72 @@
     
     <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
     
+      
+    
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
-        Collaboration Tool
+        API agent on cloud
       </label>
     
-    <a href="./" title="Collaboration Tool" class="md-nav__link md-nav__link--active">
-      Collaboration Tool
+    <a href="./" title="API agent on cloud" class="md-nav__link md-nav__link--active">
+      API agent on cloud
     </a>
     
       
 <nav class="md-nav md-nav--secondary">
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#user-roles" title="User roles" class="md-nav__link">
-    User roles
+  <a href="#amazon-web-service-aws" title="Amazon Web Service (AWS)" class="md-nav__link">
+    Amazon Web Service (AWS)
   </a>
   
     <nav class="md-nav">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#exchange-operator" title="Exchange Operator" class="md-nav__link">
-    Exchange Operator
+  <a href="#step-1-set-up-an-instance" title="Step 1: Set up an instance" class="md-nav__link">
+    Step 1: Set up an instance
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#grid-operator" title="Grid Operator" class="md-nav__link">
-    Grid Operator
+  <a href="#step-2-upload-relevant-files-onto-the-instance" title="Step 2: Upload relevant files onto the instance" class="md-nav__link">
+    Step 2: Upload relevant files onto the instance
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#researcher" title="Researcher" class="md-nav__link">
-    Researcher
+  <a href="#step-3-connect-to-the-instance" title="Step 3: Connect to the instance" class="md-nav__link">
+    Step 3: Connect to the instance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-initialize-the-instances-environment-and-install-grid-singularity-client" title="Step 4: Initialize the instance's environment and install Grid Singularity Client" class="md-nav__link">
+    Step 4: Initialize the instance's environment and install Grid Singularity Client
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-install-screen-and-run-the-api-agent" title="Step 5: Install screen and run the API agent" class="md-nav__link">
+    Step 5: Install screen and run the API agent
   </a>
   
 </li>
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-connect" title="How to connect" class="md-nav__link">
-    How to connect
-  </a>
   
 </li>
       
@@ -696,6 +692,23 @@
   
 </nav>
     
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../collaboration/" title="Collaboration Tool" class="md-nav__link">
+      Collaboration Tool
+    </a>
   </li>
 
         
@@ -1162,48 +1175,57 @@
 <nav class="md-nav md-nav--secondary">
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#user-roles" title="User roles" class="md-nav__link">
-    User roles
+  <a href="#amazon-web-service-aws" title="Amazon Web Service (AWS)" class="md-nav__link">
+    Amazon Web Service (AWS)
   </a>
   
     <nav class="md-nav">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#exchange-operator" title="Exchange Operator" class="md-nav__link">
-    Exchange Operator
+  <a href="#step-1-set-up-an-instance" title="Step 1: Set up an instance" class="md-nav__link">
+    Step 1: Set up an instance
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#grid-operator" title="Grid Operator" class="md-nav__link">
-    Grid Operator
+  <a href="#step-2-upload-relevant-files-onto-the-instance" title="Step 2: Upload relevant files onto the instance" class="md-nav__link">
+    Step 2: Upload relevant files onto the instance
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#researcher" title="Researcher" class="md-nav__link">
-    Researcher
+  <a href="#step-3-connect-to-the-instance" title="Step 3: Connect to the instance" class="md-nav__link">
+    Step 3: Connect to the instance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-initialize-the-instances-environment-and-install-grid-singularity-client" title="Step 4: Initialize the instance's environment and install Grid Singularity Client" class="md-nav__link">
+    Step 4: Initialize the instance's environment and install Grid Singularity Client
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-install-screen-and-run-the-api-agent" title="Step 5: Install screen and run the API agent" class="md-nav__link">
+    Step 5: Install screen and run the API agent
   </a>
   
 </li>
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-connect" title="How to connect" class="md-nav__link">
-    How to connect
-  </a>
   
 </li>
       
@@ -1223,27 +1245,115 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/gridsingularity/d3a/wiki/edit/master/docs/collaboration.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/gridsingularity/d3a/wiki/edit/master/docs/cloud-service-guide.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                  <h1>Collaboration Tool</h1>
-                
-                <p>Collaboration is a type of simulation in the <a href="https://www.d3a.io/">Grid Singularity UI</a> that allows multiple users to participate in the same environment. These users can act in a <strong>collaborative</strong> or <strong>competitive</strong> way, aiming to optimize specific metrics. Users can connect through the <a href="../api-overview/">API client</a> to actively engage in the collaboration.</p>
-<h2 id="user-roles">User roles<a class="headerlink" href="#user-roles" title="Permanent link">&para;</a></h2>
-<h3 id="exchange-operator">Exchange Operator<a class="headerlink" href="#exchange-operator" title="Permanent link">&para;</a></h3>
-<p>The exchange operator (EO) is responsible for <strong>building the digital twin of the electrical grid</strong>, including energy assets and markets in the modelling page. Once the setup is complete, the EO facilitates the approval of other users to register to manage a set of markets and energy assets, and subsequently launches the collaboration.The EO is also in charge of expanding the grid (with <a href="../events/">events</a>) or registering new users desiring to connect to the exchange over the course of a simulation.</p>
-<h3 id="grid-operator">Grid Operator<a class="headerlink" href="#grid-operator" title="Permanent link">&para;</a></h3>
-<p>The grid operator role is designed specifically for Distribution System Operators (DSOs) and Transmission System Operators (TSOs). Those users have the possibility to register to different markets, on different grid levels in the collaboration. Once registered and approved by the EO, they can <strong>manage the relevant markets</strong> by using the Grid Operator API to change <a href="../grid-fees/">grid fees</a> in order to influence trades to optimize specific metrics (e.g. <a href="../peak-percentage/">peak percentage</a>).</p>
-<h3 id="researcher">Researcher<a class="headerlink" href="#researcher" title="Permanent link">&para;</a></h3>
-<p>The researcher role is designed to represent smart meters, PV and battery vendors, community leaders, energy management companies, data scientists and aggregators in collaborations. Researchers can claim assets (<a href="../model-load/">Load</a>, <a href="../model-pv/">PV</a> and <a href="../model-storage/">Storage</a>) and, once approved by the Exchange Operator, are responsible for <strong>buying and selling energy for the assets</strong> they manage on markets through the Asset API.</p>
-<h2 id="how-to-connect">How to connect<a class="headerlink" href="#how-to-connect" title="Permanent link">&para;</a></h2>
-<p>If you wish to connect to a collaboration in the framework of an event (e.g. <a href="https://gridsingularity.medium.com/en-route-to-energy-singularity-odyssey-momentum-learnings-from-the-2020-chaos-experiment-8dc38ff26869">Energy Singularity Chaos Experiment</a>) or to a <a href="../canary-network/">Canary Test Network</a> in the framework of a live running exchange please follow these steps:</p>
-<ul>
-<li>Login on the <a href="https://www.d3a.io/">User-Interface</a></li>
-<li>Go to the Collaborations (or Canary Test Network page), where you will see a list of all active collaborations. For each, any user may view the settings and the grid setup.</li>
-<li>If the collaboration the user wishes to join is public, they can click on <strong>Registry</strong> and <strong>Scoreboard</strong>. On this page, each market and asset of the collaboration is listed. The user can apply to manage the trading strategies of assets or the grid fee strategy of markets on the Registry. The EO is able to either approve or deny the request.</li>
-<li>Once approved, the user can start the API script and wait until the EO starts the collaboration / canary network, when trading will begin.</li>
-</ul>
+                <h1 id="guide-to-setup-and-run-an-api-agent-from-a-cloud-based-service">Guide to setup and run an API agent from a cloud based service<a class="headerlink" href="#guide-to-setup-and-run-an-api-agent-from-a-cloud-based-service" title="Permanent link">&para;</a></h1>
+<h2 id="amazon-web-service-aws">Amazon Web Service (AWS)<a class="headerlink" href="#amazon-web-service-aws" title="Permanent link">&para;</a></h2>
+<h3 id="step-1-set-up-an-instance">Step 1: Set up an instance<a class="headerlink" href="#step-1-set-up-an-instance" title="Permanent link">&para;</a></h3>
+<p>Login to your AWS account. If you don’t have one, you can create one, the free plan is sufficient.</p>
+<p>Create a virtual machine. </p>
+<p><img alt="alt_text" src="../img/cloud-setup-1.png" /></p>
+<p>Select an <strong>AMI</strong>. We strongly recommend using <strong>Ubuntu Server 20.04 LTS (HVM), SSD Volume Type</strong></p>
+<p><img alt="alt_text" src="../img/cloud-setup-2.png" /></p>
+<p>Choose instance type <strong>t2.micro 1vcpus and 1GiB</strong> and click on review and launch</p>
+<p>Create a new ssh key and download it on your local machine. The key file’s format is <code>.pem</code></p>
+<p><img alt="alt_text" src="../img/cloud-setup-3.png" /></p>
+<p>Now you need to copy your scripts/files from your local computer onto your AWS instance. To do that you need to connect to your instance by using the ssh key and your public DNS. You can find the DNS of your instance by selecting your instance and looking at the summary </p>
+<p><img alt="alt_text" src="../img/cloud-setup-4.png" /></p>
+<p>First you need to make sure your key is not publicly available on your machine. Run the following command</p>
+<div class="codehilite"><pre><span></span><code>chmod 400 path_to/mykey.pem
+</code></pre></div>
+
+<h3 id="step-2-upload-relevant-files-onto-the-instance">Step 2: Upload relevant files onto the instance<a class="headerlink" href="#step-2-upload-relevant-files-onto-the-instance" title="Permanent link">&para;</a></h3>
+<p>To copy a file into your AWS instance please run the equivalent command (with your own information)</p>
+<div class="codehilite"><pre><span></span><code>scp -i path_to_ssh_key.pem path_to_file   username@public_DNS:/path_to_copy
+</code></pre></div>
+
+<p>The username can be found after clicking on connect. The default username will depend on the instance platform you are using. If you are using Linux, “ubuntu” will be the default username.</p>
+<p>Additionally we recommend copying your files into the home directory of your instance <code>/home/ubuntu</code>.</p>
+<p>Here is an example of command  </p>
+<div class="codehilite"><pre><span></span><code>scp -i Desktop/mykey.pem myscript.py   ubuntu@ec2-18-188-221-121.us-east-2.compute.amazonaws.com:/home/ubuntu/
+</code></pre></div>
+
+<h3 id="step-3-connect-to-the-instance">Step 3: Connect to the instance<a class="headerlink" href="#step-3-connect-to-the-instance" title="Permanent link">&para;</a></h3>
+<p>Once you have copied all necessary files onto you AWS instance you can connect to your instance with 2 ways </p>
+<ol>
+<li>Directly with the AWS terminal cli that you can access by clicking on connect on your <code>EC2 instance connect</code></li>
+<li>With your local terminal cli (recommended)</li>
+</ol>
+<p>To connect to your instance from your local terminal you just need to run the following command with your equivalent information </p>
+<div class="codehilite"><pre><span></span><code>ssh -i path_to/mykey.pem username@public_DNS
+</code></pre></div>
+
+<p>Example </p>
+<div class="codehilite"><pre><span></span><code>ssh -i Desktop/mykey.pem ubuntu@ec2-18-188-221-121.us-east-2.compute.amazonaws.com
+</code></pre></div>
+
+<p>Once connected, go into the directory you have previously sent your files. If you have copied them in <code>/home/ubuntu</code>, just run the following command </p>
+<div class="codehilite"><pre><span></span><code>cd /home/ubuntu
+</code></pre></div>
+
+<p>You can list all the files in the directory, to confirm that your files are correctly copied onto the instance by running </p>
+<div class="codehilite"><pre><span></span><code>ls
+</code></pre></div>
+
+<h3 id="step-4-initialize-the-instances-environment-and-install-grid-singularity-client">Step 4: Initialize the instance's environment and install Grid Singularity Client<a class="headerlink" href="#step-4-initialize-the-instances-environment-and-install-grid-singularity-client" title="Permanent link">&para;</a></h3>
+<p>Update and install all required package on your AWS instance</p>
+<p>Update your sudo</p>
+<div class="codehilite"><pre><span></span><code>sudo apt update
+</code></pre></div>
+
+<p>Install python3 pip</p>
+<div class="codehilite"><pre><span></span><code>sudo apt install python3-pip
+</code></pre></div>
+
+<p>Add <code>deadnakes</code> to your system source </p>
+<div class="codehilite"><pre><span></span><code>sudo add-apt-repository ppa:deadsnakes/ppa
+</code></pre></div>
+
+<p>Install python 3.6</p>
+<div class="codehilite"><pre><span></span><code>sudo apt-get install python3.6
+</code></pre></div>
+
+<p>Install virtual environment</p>
+<div class="codehilite"><pre><span></span><code>sudo apt install python3-virtualenv
+</code></pre></div>
+
+<p>Create a virtual environment with python 3.6</p>
+<div class="codehilite"><pre><span></span><code>virtualenv /tmp/d3a --python=/usr/bin/python3.6
+</code></pre></div>
+
+<p>Activate your virtual environment</p>
+<div class="codehilite"><pre><span></span><code>source /tmp/d3a/bin/activate
+</code></pre></div>
+
+<p>Install d3a api client </p>
+<div class="codehilite"><pre><span></span><code>pip3 install git+https://github.com/gridsingularity/d3a-api-client.git
+</code></pre></div>
+
+<h3 id="step-5-install-screen-and-run-the-api-agent">Step 5: Install screen and run the API agent<a class="headerlink" href="#step-5-install-screen-and-run-the-api-agent" title="Permanent link">&para;</a></h3>
+<p>To be able to run the script indefinitely on your AWS instance you need to install Linux <a href="https://kapeli.com/cheat_sheets/screen.docset/Contents/Resources/Documents/index">Screen</a> (that allows to have multiple screen within your terminal) with the following command </p>
+<div class="codehilite"><pre><span></span><code>sudo apt-get install screen
+</code></pre></div>
+
+<p>Create a new screen </p>
+<div class="codehilite"><pre><span></span><code>screen -S screen_name
+</code></pre></div>
+
+<p>Run your python script</p>
+<div class="codehilite"><pre><span></span><code>python3 assets.py
+</code></pre></div>
+
+<p>To detach from the current screen session </p>
+<div class="codehilite"><pre><span></span><code>Ctr+a+d
+</code></pre></div>
+
+<p>If you want to log back in the relevant screen run </p>
+<div class="codehilite"><pre><span></span><code>screen -r screen_name
+</code></pre></div>
+
+<p>Once you are detached for the running screen you are able to close your terminal and your script will continue to run indefinitely on your AWS instance</p>
                 
                   
                 
@@ -1264,7 +1374,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../cloud-service-guide/" title="API agent on cloud" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../grid-operator-api/" title="Grid Operator API" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -1273,19 +1383,19 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                API agent on cloud
+                Grid Operator API
               </span>
             </div>
           </a>
         
         
-          <a href="../canary-network/" title="Canary Test Network" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../collaboration/" title="Collaboration Tool" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Canary Test Network
+                Collaboration Tool
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
