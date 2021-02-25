@@ -30,6 +30,7 @@ nav:
         - 'Overview': 'api-overview.md'
         - 'Asset API': 'assets-api.md'
         - 'Grid Operator API': 'grid-operator-api.md'
+        - 'API agent on cloud': 'cloud-service-guide.md'
     - 'Collaboration Tool': 'collaboration.md'
     - 'Canary Test Network': 'canary-network.md'
     - 'Blockchain Integration': 'blockchain.md'
