@@ -1,6 +1,6 @@
 #Guide to setup and run an API agent from a cloud based service
 
-##Amazon Web Service (AWS)
+##Amazon Web Services (AWS)
 
 ###Step 1: Set up an instance 
 Login to your AWS account. If you don’t have one, you can create one, the free plan is sufficient.
