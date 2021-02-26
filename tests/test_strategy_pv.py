@@ -76,6 +76,10 @@ class FakeArea:
                 self.test_market,
                 self.test_market]
 
+    @property
+    def next_market(self):
+        return self.test_market
+
 
 class FakeAreaTimeSlot(FakeArea):
     def __init__(self):

@@ -19,11 +19,11 @@ import logging
 import json
 from threading import Lock
 from collections import namedtuple
-from d3a.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import key_in_dict_and_not_none
 import d3a.constants
+from d3a.d3a_core.util import ExternalTickTimer
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
 
@@ -92,6 +92,10 @@ class ExternalMixin:
         self.pending_requests = []
         self.lock = Lock()
 
+    def event_activate(self, **kwargs):
+        self.external_tick_timer = ExternalTickTimer(self.device.config.ticks_per_slot)
+        super().event_activate(**kwargs)
+
     def get_state(self):
         strategy_state = super().get_state()
         strategy_state.update({
@@ -132,13 +136,6 @@ class ExternalMixin:
     def should_use_default_strategy(self):
         return self._use_template_strategy or \
                not (self.connected or self.is_aggregator_controlled)
-
-    @property
-    def _dispatch_tick_frequency(self):
-        return int(
-            self.device.config.ticks_per_slot *
-            (DISPATCH_EVENT_TICK_FREQUENCY_PERCENT / 100)
-        )
 
     @staticmethod
     def _get_transaction_id(payload):
@@ -229,29 +226,28 @@ class ExternalMixin:
     def _device_info_dict(self):
         return {}
 
-    def _reset_event_tick_counter(self):
-        self._last_dispatched_tick = 0
+    @property
+    def _progress_info(self):
+        slot_completion_percent = int((self.device.current_tick_in_slot /
+                                       self.device.config.ticks_per_slot) * 100)
+        return {'slot_completion': f'{slot_completion_percent}%',
+                'market_slot': self.area.next_market.time_slot_str}
 
     def _dispatch_event_tick_to_external_agent(self):
-        if not self.connected and not self.is_aggregator_controlled:
-            return
+        if self.is_aggregator_controlled and \
+                self.external_tick_timer.is_it_time_for_external_tick(self.device.current_tick):
+            self.redis.aggregator.add_batch_tick_event(self.device.uuid,
+                                                       self.area.global_objects,
+                                                       self._progress_info)
 
-        current_tick = self.device.current_tick % self.device.config.ticks_per_slot
-        if current_tick - self._last_dispatched_tick >= self._dispatch_tick_frequency:
-            tick_event_channel = f"{self.channel_prefix}/events/tick"
-            current_tick_info = {
-                "event": "tick",
-                "slot_completion":
-                    f"{int((current_tick / self.device.config.ticks_per_slot) * 100)}%",
-                "area_uuid": self.device.uuid,
-                "device_info": self._device_info_dict
-            }
-            self._last_dispatched_tick = current_tick
-            if self.connected:
-                self.redis.publish_json(tick_event_channel, current_tick_info)
-
+    def event_market_cycle(self):
+        if not self.should_use_default_strategy:
             if self.is_aggregator_controlled:
-                self.redis.aggregator.add_batch_tick_event(self.device.uuid, current_tick_info)
+                self.redis.aggregator.add_batch_market_event(self.device.uuid,
+                                                             self.area.global_objects,
+                                                             self._progress_info)
+        else:
+            super().event_market_cycle()
 
     def _publish_trade_event(self, trade, is_bid_trade):
 
@@ -288,9 +284,6 @@ class ExternalMixin:
         event_response_dict["event_type"] = "buy" \
             if trade.buyer == self.device.name else "sell"
         event_response_dict[bid_offer_key] = trade.offer.id
-        trade_event_channel = f"{self.channel_prefix}/events/trade"
-        if self.connected:
-            self.redis.publish_json(trade_event_channel, event_response_dict)
 
         if self.is_aggregator_controlled:
             self.redis.aggregator.add_batch_trade_event(self.device.uuid, event_response_dict)
@@ -307,17 +300,10 @@ class ExternalMixin:
 
     def deactivate(self):
         super().deactivate()
-        if self.connected or self.redis.aggregator.is_controlling_device(self.device.uuid):
-            deactivate_event_channel = f"{self.channel_prefix}/events/finish"
-            deactivate_msg = {
-                "event": "finish",
-                "area_uuid": self.device.uuid
-            }
-            if self.connected:
-                self.redis.publish_json(deactivate_event_channel, deactivate_msg)
 
-            if self.is_aggregator_controlled:
-                self.redis.aggregator.add_batch_finished_event(self.owner.uuid, "finish")
+        if self.is_aggregator_controlled:
+            deactivate_msg = {'event': 'finish'}
+            self.redis.aggregator.add_batch_finished_event(self.owner.uuid, deactivate_msg)
 
     def _bid_aggregator(self, command):
         raise CommandTypeNotSupported(
@@ -453,3 +439,20 @@ class ExternalMixin:
                  "error_message": f"Error when handling _set_energy_forecast_impl "
                                   f"on area {self.device.name} with arguments {arguments}.",
                  "transaction_id": arguments.get("transaction_id", None)})
+
+    @property
+    def market_info_dict(self):
+        return {'asset_info': self._device_info_dict,
+                'last_slot_asset_info': self.last_slot_asset_info,
+                'device_bill': self.device.stats.aggregated_stats["bills"]
+                if "bills" in self.device.stats.aggregated_stats else None
+                }
+
+    @property
+    def last_slot_asset_info(self):
+        return {
+                'energy_traded': self.energy_traded(self.area.current_market.id)
+                if self.area.current_market else None,
+                'total_cost': self.energy_traded_costs(self.area.current_market.id)
+                if self.area.current_market else None,
+                }

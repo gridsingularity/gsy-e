@@ -36,7 +36,8 @@ import d3a.constants
 from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.exceptions import D3AException
-from d3a.constants import DATE_FORMAT, TIME_ZONE, CN_PROFILE_EXPANSION_DAYS
+from d3a.constants import DATE_FORMAT, TIME_ZONE, CN_PROFILE_EXPANSION_DAYS, \
+    DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit
 from d3a_interface.utils import generate_market_slot_list_from_config, iterate_over_all_modules,\
     str_to_pendulum_datetime, format_datetime
@@ -572,3 +573,41 @@ def return_ordered_dict(function):
 def get_simulation_queue_name():
     listen_to_cn = os.environ.get("LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE", "no") == "yes"
     return "canary_network" if listen_to_cn else "d3a"
+
+
+class ExternalTickTimer:
+
+    def __init__(self, ticks_per_slot):
+        self._last_dispatched_tick = 0
+        self.ticks_per_slot = ticks_per_slot
+
+    @property
+    def _dispatch_tick_frequency(self) -> int:
+        return int(
+            self.ticks_per_slot *
+            (DISPATCH_EVENT_TICK_FREQUENCY_PERCENT / 100)
+        )
+
+    def reset_event_tick_counter(self):
+        self._last_dispatched_tick = 0
+
+    def _update_current_tick(self, current_tick):
+        self._last_dispatched_tick = current_tick
+
+    def is_it_time_for_external_tick(self, current_tick_in_slot) -> bool:
+        if current_tick_in_slot - self._last_dispatched_tick >= self._dispatch_tick_frequency:
+            self._update_current_tick(current_tick_in_slot)
+            return True
+        else:
+            return False
+
+
+def get_market_maker_rate_from_global_setting(next_market):
+    if isinstance(GlobalConfig.market_maker_rate, dict):
+        if next_market is None:
+            return GlobalConfig.market_maker_rate[next(iter(GlobalConfig.market_maker_rate))]
+        else:
+            return find_object_of_same_weekday_and_time(GlobalConfig.market_maker_rate,
+                                                        next_market.time_slot)
+    else:
+        return GlobalConfig.market_maker_rate

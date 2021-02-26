@@ -22,7 +22,8 @@ from pendulum import duration, DateTime  # NOQA
 from typing import Union, Dict  # NOQA
 from collections import namedtuple
 
-from d3a.d3a_core.util import find_object_of_same_weekday_and_time, convert_W_to_Wh
+from d3a.d3a_core.util import find_object_of_same_weekday_and_time, convert_W_to_Wh, \
+    get_market_maker_rate_from_global_setting
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import LoadState
 from d3a.models.strategy import BidEnabledStrategy
@@ -33,7 +34,6 @@ from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
 from d3a.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
-from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.utils import key_in_dict_and_not_none
 from d3a import constants
 
@@ -226,13 +226,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def event_activate_price(self):
         # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
         if self.use_market_maker_rate:
-            if isinstance(GlobalConfig.market_maker_rate, dict):
-                self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate.get(
-                    self.owner.parent.next_market.time_slot, 0) +
-                        self.owner.get_path_to_root_fees())
-            else:
-                self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate +
-                                            self.owner.get_path_to_root_fees())
+            self._area_reconfigure_prices(
+                final_buying_rate=get_market_maker_rate_from_global_setting(
+                    self.area.next_market) + self.owner.get_path_to_root_fees(), validate=False)
+
         self._validate_rates(self.bid_update.initial_rate_profile_buffer,
                              self.bid_update.final_rate_profile_buffer,
                              self.bid_update.energy_rate_change_per_update_profile_buffer,

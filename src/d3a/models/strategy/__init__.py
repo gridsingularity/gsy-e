@@ -135,6 +135,9 @@ class Offers:
     def sold_offer_energy(self, market_id):
         return sum(o.energy for o in self.sold_in_market(market_id))
 
+    def sold_offer_price(self, market_id):
+        return sum(o.price for o in self.sold_in_market(market_id))
+
     def can_offer_be_posted(self, offer_energy, offer_price, available_energy, market):
         posted_energy = (offer_energy
                          + self.posted_offer_energy(market.id)
@@ -223,6 +226,12 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             self.event_response_uuids = []
 
     parameters = None
+
+    def energy_traded(self, market_id):
+        return self.offers.sold_offer_energy(market_id)
+
+    def energy_traded_costs(self, market_id):
+        return self.offers.sold_offer_price(market_id)
 
     def _send_events_to_market(self, event_type_str, market_id, data, callback):
         if not isinstance(market_id, str):
@@ -454,6 +463,14 @@ class BidEnabledStrategy(BaseStrategy):
         self._bids = {}
         self._traded_bids = {}
 
+    def energy_traded(self, market_id):
+        offer_energy = super().energy_traded(market_id)
+        return offer_energy + self._traded_bid_energy(market_id)
+
+    def energy_traded_costs(self, market_id):
+        offer_costs = super().energy_traded(market_id)
+        return offer_costs + self._traded_bid_costs(market_id)
+
     def post_bid(self, market, price, energy, buyer_origin=None):
         bid = market.bid(
             price,
@@ -476,6 +493,16 @@ class BidEnabledStrategy(BaseStrategy):
         if market_id not in self._bids:
             return 0.0
         return sum(b.energy for b in self._bids[market_id])
+
+    def _traded_bid_energy(self, market_id):
+        if market_id not in self._traded_bids:
+            return 0.0
+        return sum(b.energy for b in self._traded_bids[market_id])
+
+    def _traded_bid_costs(self, market_id):
+        if market_id not in self._traded_bids:
+            return 0.0
+        return sum(b.price for b in self._traded_bids[market_id])
 
     def remove_bid_from_pending(self, market_id, bid_id=None):
         market = self.area.get_future_market_from_id(market_id)
