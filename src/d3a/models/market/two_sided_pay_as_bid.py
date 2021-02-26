@@ -64,7 +64,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, buyer_origin,
             bid_id: str = None, original_bid_price=None, adapt_price_with_fees=True,
-            add_to_history=True) -> Bid:
+            add_to_history=True, buyer_origin_id=None) -> Bid:
         if energy <= 0:
             raise InvalidBid()
 
@@ -78,7 +78,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
             raise MarketException("Negative price after taxes, bid cannot be posted.")
 
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
-                  self.now, price, energy, buyer, original_bid_price, buyer_origin)
+                  self.now, price, energy, buyer, original_bid_price, buyer_origin,
+                  buyer_origin_id=buyer_origin_id)
         self.bids[bid.id] = bid
         if add_to_history is True:
             self.bid_history.append(bid)
@@ -106,6 +107,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
                                 buyer=original_bid.buyer,
                                 original_bid_price=original_accepted_price,
                                 buyer_origin=original_bid.buyer_origin,
+                                buyer_origin_id=original_bid.buyer_origin_id,
                                 adapt_price_with_fees=False,
                                 add_to_history=False)
 
@@ -120,6 +122,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
                                 buyer=original_bid.buyer,
                                 original_bid_price=original_residual_price,
                                 buyer_origin=original_bid.buyer_origin,
+                                buyer_origin_id=original_bid.buyer_origin_id,
                                 adapt_price_with_fees=False,
                                 add_to_history=True)
 

@@ -454,13 +454,14 @@ class BidEnabledStrategy(BaseStrategy):
         self._bids = {}
         self._traded_bids = {}
 
-    def post_bid(self, market, price, energy, buyer_origin=None):
+    def post_bid(self, market, price, energy, buyer_origin=None, buyer_origin_id=None):
         bid = market.bid(
             price,
             energy,
             self.owner.name,
             original_bid_price=price,
-            buyer_origin=buyer_origin
+            buyer_origin=buyer_origin,
+            buyer_origin_id=buyer_origin_id
         )
         self.add_bid_to_posted(market.id, bid)
         return bid

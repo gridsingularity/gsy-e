@@ -24,6 +24,7 @@ from d3a.d3a_core.exceptions import MarketException
 from d3a.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
 from d3a.models.market.market_structures import Offer, Trade, Bid
 from d3a_interface.constants_limits import ConstSettings
+from uuid import uuid4
 
 
 def teardown_function():
@@ -39,6 +40,10 @@ class FakeLog:
 
 
 class FakeOwner:
+
+    def __init__(self):
+        self.uuid = str(uuid4())
+
     @property
     def name(self):
         return 'FakeOwner'
@@ -47,6 +52,7 @@ class FakeOwner:
 class FakeArea:
     def __init__(self, market=None):
         self._market = market
+        self.uuid = str(uuid4())
 
     def get_future_market_from_id(self, market_id):
         return self._market
@@ -95,9 +101,9 @@ class FakeMarket:
                          seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
 
     def bid(self, price, energy, buyer, original_bid_price=None,
-            buyer_origin=None):
+            buyer_origin=None, buyer_origin_id=None):
         return Bid(123, pendulum.now(), price, energy, buyer, original_bid_price,
-                   buyer_origin=buyer_origin)
+                   buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id)
 
 
 @pytest.fixture

@@ -19,6 +19,7 @@ import pytest
 from copy import deepcopy
 import pendulum
 from math import isclose
+from uuid import uuid4
 
 from d3a.constants import TIME_FORMAT
 from d3a.constants import TIME_ZONE
@@ -44,6 +45,7 @@ transfer_fees = GridFee(grid_fee_percentage=0, grid_fee_const=0)
 class FakeArea:
     def __init__(self, name):
         self.name = name
+        self.uuid = str(uuid4())
         self.current_tick = 10
         self.future_market = None
         self.now = pendulum.DateTime.now()
@@ -167,7 +169,7 @@ class FakeMarket:
 
     def bid(self, price: float, energy: float, buyer: str,
             bid_id: str = None, original_bid_price=None, buyer_origin=None,
-            adapt_price_with_fees=True):
+            adapt_price_with_fees=True, buyer_origin_id=None):
         self.bid_call_count += 1
 
         if original_bid_price is None:
@@ -181,7 +183,7 @@ class FakeMarket:
 
         bid = Bid(bid_id, pendulum.now(), price, energy, buyer,
                   original_bid_price=original_bid_price,
-                  buyer_origin=buyer_origin)
+                  buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id)
         self._bids.append(bid)
         self.forwarded_bid = bid
 
