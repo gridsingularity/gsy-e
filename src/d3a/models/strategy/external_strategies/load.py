@@ -18,13 +18,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import logging
 import traceback
+
+import d3a
+from d3a.models.strategy.external_strategies.dataclasses import MarketInfo
 from pendulum import duration
 from typing import Union
 from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
-from d3a.d3a_core.redis_connections.aggregator_connection import default_market_info
 from d3a.d3a_core.util import get_current_market_maker_rate
 from d3a_interface.constants_limits import ConstSettings
 
@@ -183,11 +185,16 @@ class LoadExternalMixin(ExternalMixin):
             self._update_energy_requirement_future_markets()
             self._reset_event_tick_counter()
             market_event_channel = f"{self.channel_prefix}/events/market"
-            market_info = self.next_market.info
-            if self.is_aggregator_controlled:
-                market_info.update(default_market_info)
+            current_tick = self.device.current_tick % self.device.config.ticks_per_slot
+            market_info = MarketInfo(
+                event="market",
+                simulation_id=d3a.constants.COLLABORATION_ID if
+                d3a.constants.EXTERNAL_CONNECTION_WEB else None,
+                num_ticks=self.device.config.total_ticks,
+                market_slot=self.area.current_slot.time_slot_str,
+                slot_completion=f"{int((current_tick / self.device.config.ticks_per_slot) * 100)}%"
+            ).__dict__
             market_info['device_info'] = self._device_info_dict
-            market_info["event"] = "market"
             market_info["area_uuid"] = self.device.uuid
             market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
                 if "bills" in self.device.stats.aggregated_stats else None
