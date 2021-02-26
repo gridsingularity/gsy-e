@@ -33,7 +33,7 @@ def my_converter(o):
 
 class Offer:
     def __init__(self, id, time, price, energy, seller,
-                 original_offer_price=None, seller_origin=None):
+                 original_offer_price=None, seller_origin=None, seller_origin_id=None):
         self.id = str(id)
         self.real_id = id
         self.price = price
@@ -41,6 +41,7 @@ class Offer:
         self.energy = energy
         self.seller = seller
         self.seller_origin = seller_origin
+        self.seller_origin_id = seller_origin_id
         self.energy_rate = price / energy
         self.time = time
 
@@ -71,6 +72,7 @@ class Offer:
             "energy_rate": self.energy_rate,
             "seller": self.seller,
             "seller_origin": self.seller_origin,
+            "seller_origin_id": self.seller_origin_id,
             "time": datetime_to_string_incl_seconds(self.time)
         }
 
@@ -95,7 +97,7 @@ class Offer:
 
 def copy_offer(offer):
     return Offer(offer.id, offer.time, offer.price, offer.energy, offer.seller,
-                 offer.original_offer_price, offer.seller_origin)
+                 offer.original_offer_price, offer.seller_origin, offer.seller_origin_id)
 
 
 def offer_from_JSON_string(offer_string, current_time):

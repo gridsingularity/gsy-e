@@ -146,7 +146,7 @@ class FakeMarket:
 
     def offer(self, price: float, energy: float, seller: str, offer_id=None,
               original_offer_price=None, dispatch_event=True, seller_origin=None,
-              adapt_price_with_fees=True) -> Offer:
+              adapt_price_with_fees=True, seller_origin_id=None) -> Offer:
         self.offer_call_count += 1
 
         if original_offer_price is None:
@@ -156,7 +156,7 @@ class FakeMarket:
         if adapt_price_with_fees:
             price = self._update_new_offer_price_with_fee(price, original_offer_price, energy)
         offer = Offer(offer_id, pendulum.now(), price, energy, seller, original_offer_price,
-                      seller_origin=seller_origin)
+                      seller_origin=seller_origin, seller_origin_id=seller_origin_id)
         self.offers[offer.id] = deepcopy(offer)
         self.forwarded_offer = deepcopy(offer)
 

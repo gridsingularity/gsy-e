@@ -22,6 +22,7 @@ import pathlib
 import os
 from pendulum import DateTime, duration, today, datetime
 from typing import Dict  # NOQA
+from uuid import uuid4
 
 from d3a.d3a_core.util import d3a_path, change_global_config
 from d3a.constants import TIME_ZONE, TIME_FORMAT, CN_PROFILE_EXPANSION_DAYS, IS_CANARY_NETWORK
@@ -47,6 +48,7 @@ class FakeArea:
         self.current_tick = 2
         self.appliance = None
         self.name = 'FakeArea'
+        self.uuid = str(uuid4())
         self.count = count
         self.test_market = FakeMarket(0)
         self._next_market = FakeMarket(0)
@@ -101,9 +103,11 @@ class FakeMarket:
         self.offers = {'id': Offer(id='id', time=pendulum.now(), price=10, energy=0.5, seller='A')}
         self._time_slot = TIME
 
-    def offer(self, price, energy, seller, original_offer_price=None, seller_origin=None):
+    def offer(self, price, energy, seller, original_offer_price=None, seller_origin=None,
+              seller_origin_id=None):
         offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy, seller,
-                      original_offer_price, seller_origin=seller_origin)
+                      original_offer_price, seller_origin=seller_origin,
+                      seller_origin_id=seller_origin_id)
         self.created_offers.append(offer)
         self.offers[offer.id] = offer
         return offer

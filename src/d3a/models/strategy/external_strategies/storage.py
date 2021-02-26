@@ -452,12 +452,14 @@ class StorageExternalMixin(ExternalMixin):
         with self.lock:
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
+            arguments['seller_origin_id'] = self.device.uuid
             try:
                 assert arguments['energy'] <= \
                        self.state.energy_to_sell_dict[self.next_market.time_slot]
                 offer = self.next_market.offer(
                     price=arguments['price'], energy=arguments['energy'],
-                    seller=arguments['seller'], seller_origin=arguments['seller_origin']
+                    seller=arguments['seller'], seller_origin=arguments['seller_origin'],
+                    seller_origin_id=arguments['seller_origin_id']
                 )
                 self.offers.post(offer, self.next_market.id)
                 self.state.offered_sell_kWh[self.next_market.time_slot] = \

@@ -21,6 +21,7 @@ from pendulum import Duration, DateTime, now
 from logging import getLogger
 from math import isclose
 from copy import deepcopy
+from uuid import uuid4
 
 from d3a.d3a_core.util import change_global_config
 from d3a.constants import TIME_ZONE
@@ -47,6 +48,7 @@ class FakeArea:
     def __init__(self, count):
         self.appliance = None
         self.name = 'FakeArea'
+        self.uuid = str(uuid4())
         self.count = count
         self.current_tick = 0
         self.past_market = FakeMarket(4)
@@ -151,9 +153,10 @@ class FakeMarket:
     def delete_offer(self, offer_id):
         return
 
-    def offer(self, price, energy, seller, original_offer_price=None, seller_origin=None):
+    def offer(self, price, energy, seller, original_offer_price=None, seller_origin=None,
+              seller_origin_id=None):
         offer = Offer('id', now(), price, energy, seller, original_offer_price,
-                      seller_origin=seller_origin)
+                      seller_origin=seller_origin, seller_origin_id=seller_origin_id)
         self.created_offers.append(offer)
         return offer
 

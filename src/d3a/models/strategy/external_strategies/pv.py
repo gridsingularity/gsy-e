@@ -287,6 +287,7 @@ class PVExternalMixin(ExternalMixin):
         with self.lock:
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
+            arguments['seller_origin_id'] = self.device.uuid
             offer_arguments = {k: v
                                for k, v in arguments.items()
                                if k not in ["transaction_id", "type"]}
@@ -324,6 +325,7 @@ class PVExternalMixin(ExternalMixin):
         assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
         arguments['seller'] = self.device.name
         arguments['seller_origin'] = self.device.name
+        arguments['seller_origin_id'] = self.device.uuid
         try:
             assert self.can_offer_be_posted(
                 arguments["energy"],

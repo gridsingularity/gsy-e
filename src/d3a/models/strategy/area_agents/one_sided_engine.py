@@ -58,7 +58,8 @@ class IAAEngine:
             "seller": self.owner.name,
             "original_offer_price": offer.original_offer_price,
             "dispatch_event": False,
-            "seller_origin": offer.seller_origin
+            "seller_origin": offer.seller_origin,
+            "seller_origin_id": offer.seller_origin_id
         }
 
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:

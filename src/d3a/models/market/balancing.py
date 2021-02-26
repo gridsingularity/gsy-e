@@ -51,7 +51,7 @@ class BalancingMarket(OneSidedMarket):
 
     def offer(self, price: float, energy: float, seller: str, offer_id=None,
               original_offer_price=None, dispatch_event=True, seller_origin=None,
-              adapt_price_with_fees=True):
+              adapt_price_with_fees=True, seller_origin_id=None):
         assert False
 
     def balancing_offer(self, price: float, energy: float, seller: str,

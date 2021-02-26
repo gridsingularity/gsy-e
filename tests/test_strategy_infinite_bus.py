@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 import sys
 import pendulum
+from uuid import uuid4
 
 from d3a.models.market.market_structures import Offer, Trade, BalancingOffer, Bid
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
@@ -34,6 +35,7 @@ class FakeArea:
         self.current_tick = 2
         self.appliance = None
         self.name = 'FakeArea'
+        self.uuid = str(uuid4())
         self.test_market = FakeMarket(0)
         self.test_balancing_market = FakeMarket(1)
         self.test_balancing_market_2 = FakeMarket(2)
@@ -79,8 +81,9 @@ class FakeMarket:
         return TIME
 
     def offer(self, price, energy, seller, original_offer_price=None,
-              seller_origin=None):
-        offer = Offer('id', pendulum.now(), price, energy, seller)
+              seller_origin=None, seller_origin_id=None):
+        offer = Offer('id', pendulum.now(), price, energy, seller, seller_origin=seller_origin,
+                      seller_origin_id=seller_origin_id)
         self.created_offers.append(offer)
         offer.id = 'id'
         return offer
