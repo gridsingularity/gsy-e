@@ -24,8 +24,6 @@ from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
-from d3a.d3a_core.redis_connections.aggregator_connection import default_market_info
-from d3a.d3a_core.util import get_current_market_maker_rate
 from d3a_interface.constants_limits import ConstSettings
 
 
@@ -172,7 +170,10 @@ class LoadExternalMixin(ExternalMixin):
     def _device_info_dict(self):
         return {
             'energy_requirement_kWh':
-                self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0
+                self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0,
+            'energy_active_in_bids': self.posted_bid_energy(self.next_market.id),
+            'energy_traded': self.energy_traded(self.next_market.id),
+            'total_cost': self.energy_traded_costs(self.next_market.id),
         }
 
     def event_market_cycle(self):
@@ -181,26 +182,8 @@ class LoadExternalMixin(ExternalMixin):
         if not self.should_use_default_strategy:
             self._calculate_active_markets()
             self._update_energy_requirement_future_markets()
-            self._reset_event_tick_counter()
-            market_event_channel = f"{self.channel_prefix}/events/market"
-            market_info = self.next_market.info
-            if self.is_aggregator_controlled:
-                market_info.update(default_market_info)
-            market_info['device_info'] = self._device_info_dict
-            market_info["event"] = "market"
-            market_info["area_uuid"] = self.device.uuid
-            market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
-                if "bills" in self.device.stats.aggregated_stats else None
-            market_info["last_market_maker_rate"] = \
-                get_current_market_maker_rate(self.area.current_market.time_slot) \
-                if self.area.current_market else None
-            market_info['last_market_stats'] = \
-                self.market_area.stats.get_price_stats_current_market()
-            self.redis.publish_json(market_event_channel, market_info)
-            if self.is_aggregator_controlled:
-                self.redis.aggregator.add_batch_market_event(self.device.uuid,
-                                                             market_info,
-                                                             self.area.global_objects)
+            self.area.external_tick_timer.reset_event_tick_counter()
+            super().event_market_cycle()
             self._delete_past_state()
         else:
             super().event_market_cycle()
@@ -233,10 +216,6 @@ class LoadExternalMixin(ExternalMixin):
     def event_offer(self, *, market_id, offer):
         if self.should_use_default_strategy:
             super().event_offer(market_id=market_id, offer=offer)
-
-    def event_market_cycle_prices(self):
-        if self.should_use_default_strategy:
-            super().event_market_cycle_prices()
 
     def _update_bid_aggregator(self, arguments):
         assert set(arguments.keys()) == {'price', 'energy', 'type', 'transaction_id'}

@@ -1,15 +1,7 @@
 import json
 import logging
 from threading import Lock
-from copy import deepcopy
 import d3a.constants
-
-
-default_market_info = {"device_info": None,
-                       "device_bill": None,
-                       "event": None,
-                       "grid_stats_tree": None,
-                       "area_uuid": None}
 
 
 class AggregatorHandler:
@@ -49,20 +41,34 @@ class AggregatorHandler:
 
         batch_event_dict[aggregator_uuid].append(event)
 
-    def _add_grid_stats_to_market_event(self, device_uuid, global_objects):
-        market_info = deepcopy(default_market_info)
-        market_info["grid_stats_tree"] = global_objects.area_tree_dict
-        market_info["event"] = "grid_stats"
+    def _delete_not_owned_devices_from_dict(self, area_stats_tree_dict):
+        out_dict = {}
+        self._delete_not_owned_devices(area_stats_tree_dict, out_dict)
+        return out_dict
+
+    def _delete_not_owned_devices(self, indict, outdict):
+        for area_name, area_dict in indict.items():
+            if area_name == 'children':
+                outdict['children'] = {}
+                self._delete_not_owned_devices(indict['children'], outdict['children'])
+            else:
+                if area_dict['area_uuid'] in self.device_aggregator_mapping:
+                    # TODO: maybe strip away the area_uuid, too.
+                    outdict[area_name] = area_dict
+
+    def add_batch_market_event(self, device_uuid, global_objects):
+        market_info = {
+            'market_info':
+                self._delete_not_owned_devices_from_dict(global_objects.area_stats_tree_dict),
+            'event': 'market'}
         self._add_batch_event(device_uuid, market_info, self.batch_market_cycle_events)
-        self.already_sent_grid_stats = True
 
-    def add_batch_market_event(self, device_uuid, event, global_objects):
-        if not self.already_sent_grid_stats and global_objects.area_tree_dict:
-            self._add_grid_stats_to_market_event(device_uuid, global_objects)
-        self._add_batch_event(device_uuid, event, self.batch_market_cycle_events)
-
-    def add_batch_tick_event(self, device_uuid, event):
-        self._add_batch_event(device_uuid, event, self.batch_tick_events)
+    def add_batch_tick_event(self, device_uuid, global_objects):
+        market_info = {
+            'market_info':
+                self._delete_not_owned_devices_from_dict(global_objects.area_stats_tree_dict),
+            'event': 'tick'}
+        self._add_batch_event(device_uuid, market_info, self.batch_market_cycle_events)
 
     def add_batch_trade_event(self, device_uuid, event):
         self._add_batch_event(device_uuid, event, self.batch_trade_events)
@@ -199,6 +205,7 @@ class AggregatorHandler:
     def publish_all_events(self, redis):
         self._publish_all_events_from_one_type(redis, self.batch_market_cycle_events, "market")
         self._publish_all_events_from_one_type(redis, self.batch_tick_events, "tick")
+
         self._publish_all_events_from_one_type(redis, self.batch_trade_events, "trade")
         self._publish_all_events_from_one_type(redis, self.batch_finished_events, "finish")
         self.already_sent_grid_stats = False

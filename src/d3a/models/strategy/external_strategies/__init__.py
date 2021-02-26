@@ -19,7 +19,6 @@ import logging
 import json
 from threading import Lock
 from collections import namedtuple
-from d3a.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import key_in_dict_and_not_none
@@ -133,13 +132,6 @@ class ExternalMixin:
         return self._use_template_strategy or \
                not (self.connected or self.is_aggregator_controlled)
 
-    @property
-    def _dispatch_tick_frequency(self):
-        return int(
-            self.device.config.ticks_per_slot *
-            (DISPATCH_EVENT_TICK_FREQUENCY_PERCENT / 100)
-        )
-
     @staticmethod
     def _get_transaction_id(payload):
         data = json.loads(payload["data"])
@@ -229,29 +221,32 @@ class ExternalMixin:
     def _device_info_dict(self):
         return {}
 
-    def _reset_event_tick_counter(self):
-        self._last_dispatched_tick = 0
-
     def _dispatch_event_tick_to_external_agent(self):
         if not self.connected and not self.is_aggregator_controlled:
             return
 
-        current_tick = self.device.current_tick % self.device.config.ticks_per_slot
-        if current_tick - self._last_dispatched_tick >= self._dispatch_tick_frequency:
+        if self.connected:
             tick_event_channel = f"{self.channel_prefix}/events/tick"
+            slot_completion_percent = int((self.device.current_tick_in_slot /
+                                           self.device.config.ticks_per_slot) * 100)
             current_tick_info = {
                 "event": "tick",
-                "slot_completion":
-                    f"{int((current_tick / self.device.config.ticks_per_slot) * 100)}%",
+                "slot_completion": f"{slot_completion_percent}%",
                 "area_uuid": self.device.uuid,
-                "device_info": self._device_info_dict
+                "device_info": self.market_info_dict
             }
-            self._last_dispatched_tick = current_tick
-            if self.connected:
-                self.redis.publish_json(tick_event_channel, current_tick_info)
+            self.redis.publish_json(tick_event_channel, current_tick_info)
 
+    def event_market_cycle(self):
+        if not self.should_use_default_strategy:
+            market_event_channel = f"{self.channel_prefix}/events/market"
+            self.redis.publish_json(market_event_channel, self.market_info_dict)
             if self.is_aggregator_controlled:
-                self.redis.aggregator.add_batch_tick_event(self.device.uuid, current_tick_info)
+                self.redis.aggregator.add_batch_market_event(self.device.uuid,
+                                                             self.market_info_dict,
+                                                             self.area.global_objects)
+        else:
+            super().event_market_cycle()
 
     def _publish_trade_event(self, trade, is_bid_trade):
 
@@ -453,3 +448,20 @@ class ExternalMixin:
                  "error_message": f"Error when handling _set_energy_forecast_impl "
                                   f"on area {self.device.name} with arguments {arguments}.",
                  "transaction_id": arguments.get("transaction_id", None)})
+
+    @property
+    def market_info_dict(self):
+        return {'asset_info': self._device_info_dict,
+                'last_slot_asset_info': self.last_slot_asset_info,
+                'device_bill': self.device.stats.aggregated_stats["bills"]
+                if "bills" in self.device.stats.aggregated_stats else None
+                }
+
+    @property
+    def last_slot_asset_info(self):
+        return {
+                'energy_traded': self.energy_traded(self.area.current_market.id)
+                if self.area.current_market else None,
+                'total_cost': self.energy_traded_costs(self.area.current_market.id)
+                if self.area.current_market else None,
+                }
