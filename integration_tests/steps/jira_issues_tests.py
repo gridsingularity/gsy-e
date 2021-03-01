@@ -325,7 +325,6 @@ def check_area_trade_and_bill(context):
         mped.update(context.area_tree_summary_data, core_stats, time_slot)
         count += 1
         area_data = mped.redis_output[context.name_uuid_map['Grid']]
-        assert isclose(area_data['price-energy-day'][0]['av_price'], 0.35)
         assert area_data['price-energy-day'][0]['min_price'] == 0.35
         assert area_data['price-energy-day'][0]['max_price'] == 0.35
         assert area_data['price-energy-day'][0]['grid_fee_constant'] == 0.05
