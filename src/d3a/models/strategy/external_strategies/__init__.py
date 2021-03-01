@@ -23,6 +23,7 @@ from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import key_in_dict_and_not_none
 import d3a.constants
+from d3a.d3a_core.util import ExternalTickTimer
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
 
@@ -90,6 +91,10 @@ class ExternalMixin:
         self._last_dispatched_tick = 0
         self.pending_requests = []
         self.lock = Lock()
+
+    def event_activate(self, **kwargs):
+        self.external_tick_timer = ExternalTickTimer(self.device.config.ticks_per_slot)
+        super().event_activate(**kwargs)
 
     def get_state(self):
         strategy_state = super().get_state()
@@ -222,29 +227,25 @@ class ExternalMixin:
         return {}
 
     def _dispatch_event_tick_to_external_agent(self):
-        if not self.connected and not self.is_aggregator_controlled:
-            return
-
-        if self.connected:
-            tick_event_channel = f"{self.channel_prefix}/events/tick"
+        if self.is_aggregator_controlled and \
+                self.external_tick_timer.is_it_time_for_external_tick(self.device.current_tick):
             slot_completion_percent = int((self.device.current_tick_in_slot /
                                            self.device.config.ticks_per_slot) * 100)
-            current_tick_info = {
-                "event": "tick",
-                "slot_completion": f"{slot_completion_percent}%",
-                "area_uuid": self.device.uuid,
-                "device_info": self.market_info_dict
-            }
-            self.redis.publish_json(tick_event_channel, current_tick_info)
+            tick_info = {'slot_completion': f'{slot_completion_percent}%',
+                         'last_market_slot': self.area.current_market.time_slot_str
+                         if self.area.current_market else None}
+            self.redis.aggregator.add_batch_tick_event(self.device.uuid,
+                                                       self.area.global_objects,
+                                                       tick_info)
 
     def event_market_cycle(self):
         if not self.should_use_default_strategy:
-            market_event_channel = f"{self.channel_prefix}/events/market"
-            self.redis.publish_json(market_event_channel, self.market_info_dict)
             if self.is_aggregator_controlled:
+                market_info = {'last_market_slot': self.area.current_market.time_slot_str
+                               if self.area.current_market else None}
                 self.redis.aggregator.add_batch_market_event(self.device.uuid,
-                                                             self.market_info_dict,
-                                                             self.area.global_objects)
+                                                             self.area.global_objects,
+                                                             market_info)
         else:
             super().event_market_cycle()
 

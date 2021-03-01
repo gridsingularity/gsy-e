@@ -15,8 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a_interface.constants_limits import GlobalConfig
 from d3a.models.strategy.external_strategies import ExternalMixin
+from d3a.d3a_core.util import get_market_maker_rate_from_global_setting
 
 
 class GlobalObjects:
@@ -32,8 +32,8 @@ class GlobalObjects:
         outdict[area.name] = {}
         if area.children:
             if area.current_market:
-                area_dict = {'market_maker_rate': GlobalConfig.market_maker_rate,
-                             'last_market_slot': area.current_market.time_slot_str,
+                area_dict = {'market_maker_rate': get_market_maker_rate_from_global_setting(
+                                                  area.current_market.time_slot),
                              'last_market_bill': area.stats.get_last_market_stats_for_grid_tree(),
                              'last_market_stats': area.stats.get_price_stats_current_market(),
                              'last_market_fee': area.current_market.fee_class.grid_fee_rate,
@@ -46,4 +46,6 @@ class GlobalObjects:
             for child in area.children:
                 self._create_grid_tree_dict(child, outdict[area.name]['children'])
         else:
-            outdict[area.name] = area.market_info_dict if isinstance(area, ExternalMixin) else {}
+            outdict[area.name] = area.strategy.market_info_dict \
+                if isinstance(area.strategy, ExternalMixin) else {}
+            outdict[area.name].update({'area_uuid': area.uuid})

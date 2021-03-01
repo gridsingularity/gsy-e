@@ -182,7 +182,7 @@ class LoadExternalMixin(ExternalMixin):
         if not self.should_use_default_strategy:
             self._calculate_active_markets()
             self._update_energy_requirement_future_markets()
-            self.area.external_tick_timer.reset_event_tick_counter()
+            self.external_tick_timer.reset_event_tick_counter()
             super().event_market_cycle()
             self._delete_past_state()
         else:
@@ -211,7 +211,7 @@ class LoadExternalMixin(ExternalMixin):
             while len(self.pending_requests) > 0:
                 req = self.pending_requests.pop()
                 self._incoming_commands_callback_selection(req)
-        self._dispatch_event_tick_to_external_agent()
+            self._dispatch_event_tick_to_external_agent()
 
     def event_offer(self, *, market_id, offer):
         if self.should_use_default_strategy:

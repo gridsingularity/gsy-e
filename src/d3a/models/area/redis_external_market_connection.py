@@ -21,7 +21,6 @@ from logging import getLogger
 
 from d3a_interface.area_validator import validate_area
 from d3a_interface.utils import key_in_dict_and_not_none
-from d3a_interface.constants_limits import GlobalConfig
 from d3a.models.strategy.external_strategies import CommandTypeNotSupported, register_area, \
     unregister_area
 
@@ -166,24 +165,11 @@ class RedisMarketExternalConnection:
             return
 
         if self.is_aggregator_controlled:
-            self.aggregator.add_batch_market_event(self.area.uuid, self.area.global_objects)
-
-        else:
-            market_event_channel = f'{self.channel_prefix}/market-events/market'
-            market_info = {'market_maker_rate': GlobalConfig.market_maker_rate,
-                           'last_market_slot': self.area.current_market.time_slot_str,
-                           'last_market_bill':
-                               self.area.stats.get_last_market_stats_for_grid_tree(),
-                           'last_market_stats': self.area.stats.get_price_stats_current_market(),
-                           'last_market_fee': self.area.current_market.fee_class.grid_fee_rate,
-                           'current_market_fee': self.area.current_market.fee_class.grid_fee_rate,
-                           'next_market_fee': self.area.get_grid_fee(),
-                           'self_sufficiency': self.area.stats.kpi.get('self_sufficiency', None)
-                           }
-            data = {"status": "ready",
-                    "event": "market",
-                    "market_info": market_info}
-            self.redis_com.publish_json(market_event_channel, data)
+            market_info = {'last_market_slot': self.area.current_market.time_slot_str
+                           if self.area.current_market else None}
+            self.aggregator.add_batch_market_event(self.area.uuid,
+                                                   self.area.global_objects,
+                                                   market_info)
 
     def deactivate(self):
         deactivate_event_channel = f"{self.channel_prefix}/events/finish"

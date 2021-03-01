@@ -495,12 +495,12 @@ class BidEnabledStrategy(BaseStrategy):
         return sum(b.energy for b in self._bids[market_id])
 
     def _traded_bid_energy(self, market_id):
-        if market_id not in self._bids:
+        if market_id not in self._traded_bids:
             return 0.0
         return sum(b.energy for b in self._traded_bids[market_id])
 
     def _traded_bid_costs(self, market_id):
-        if market_id not in self._bids:
+        if market_id not in self._traded_bids:
             return 0.0
         return sum(b.price for b in self._traded_bids[market_id])
 
