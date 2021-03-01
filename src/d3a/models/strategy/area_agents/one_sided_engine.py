@@ -59,7 +59,8 @@ class IAAEngine:
             "original_offer_price": offer.original_offer_price,
             "dispatch_event": False,
             "seller_origin": offer.seller_origin,
-            "seller_origin_id": offer.seller_origin_id
+            "seller_origin_id": offer.seller_origin_id,
+            "seller_id": self.owner.uuid
         }
 
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
@@ -168,7 +169,8 @@ class IAAEngine:
                     trade_rate=trade_offer_rate,
                     trade_bid_info=updated_trade_bid_info,
                     buyer_origin=trade.buyer_origin,
-                    buyer_origin_id=trade.buyer_origin_id
+                    buyer_origin_id=trade.buyer_origin_id,
+                    buyer_id=self.owner.uuid
                 )
 
             except OfferNotFoundException:

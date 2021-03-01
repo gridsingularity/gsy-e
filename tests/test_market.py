@@ -72,7 +72,7 @@ class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
 
     def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
                      trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
-                     buyer_origin_id=None):
+                     buyer_origin_id=None, buyer_id=None):
 
         if isinstance(offer_or_id, Offer):
             offer_or_id = offer_or_id.id
@@ -94,7 +94,7 @@ class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
     def accept_bid(self, bid: Bid, energy: float = None,
                    seller: str = None, buyer: str = None, already_tracked: bool = False,
                    trade_rate: float = None, trade_offer_info=None, time=None,
-                   seller_origin=None, seller_origin_id=None):
+                   seller_origin=None, seller_origin_id=None, seller_id=None):
         self.calls_energy_bids.append(energy)
         self.calls_bids.append(bid)
         self.calls_bids_price.append(bid.price)

@@ -266,7 +266,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
                     acceptable_offer.energy * 1000.0, time_slot)
                 self.accept_offer(market, acceptable_offer, energy=energy_Wh / 1000.0,
                                   buyer_origin=self.owner.name,
-                                  buyer_origin_id=self.owner.uuid)
+                                  buyer_origin_id=self.owner.uuid,
+                                  buyer_id=self.owner.uuid)
                 self.state.decrement_energy_requirement(energy_Wh, time_slot, self.owner.name)
                 self.hrs_per_day[current_day] -= self._operating_hours(energy_Wh / 1000.0)
 

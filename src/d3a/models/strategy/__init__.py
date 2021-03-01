@@ -307,19 +307,19 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     def accept_offer(self, market_or_id, offer, *, buyer=None, energy=None,
                      already_tracked=False, trade_rate: float = None,
                      trade_bid_info: float = None, buyer_origin=None,
-                     buyer_origin_id=None):
+                     buyer_origin_id=None, buyer_id=None):
         if buyer is None:
             buyer = self.owner.name
         if not isinstance(offer, Offer):
             offer = market_or_id.offers[offer]
         trade = self._accept_offer(market_or_id, offer, buyer, energy, trade_rate, already_tracked,
-                                   trade_bid_info, buyer_origin, buyer_origin_id)
+                                   trade_bid_info, buyer_origin, buyer_origin_id, buyer_id)
 
         self.offers.bought_offer(trade.offer, market_or_id)
         return trade
 
     def _accept_offer(self, market_or_id, offer, buyer, energy, trade_rate, already_tracked,
-                      trade_bid_info, buyer_origin, buyer_origin_id):
+                      trade_bid_info, buyer_origin, buyer_origin_id, buyer_id):
 
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             if not isinstance(market_or_id, str):
@@ -331,7 +331,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                     "already_tracked": already_tracked,
                     "trade_bid_info": trade_bid_info if trade_bid_info is not None else None,
                     "buyer_origin": buyer_origin,
-                    "buyer_origin_id": buyer_origin_id}
+                    "buyer_origin_id": buyer_origin_id,
+                    "buyer_id": buyer_id}
 
             self._send_events_to_market("ACCEPT_OFFER", market_or_id, data,
                                         self._accept_offer_response)
@@ -345,7 +346,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                                              already_tracked=already_tracked,
                                              trade_bid_info=trade_bid_info,
                                              buyer_origin=buyer_origin,
-                                             buyer_origin_id=buyer_origin_id)
+                                             buyer_origin_id=buyer_origin_id,
+                                             buyer_id=buyer_id)
 
     def _accept_offer_response(self, payload):
         data = json.loads(payload["data"])
@@ -464,7 +466,8 @@ class BidEnabledStrategy(BaseStrategy):
             self.owner.name,
             original_bid_price=price,
             buyer_origin=buyer_origin,
-            buyer_origin_id=buyer_origin_id
+            buyer_origin_id=buyer_origin_id,
+            buyer_id=self.owner.uuid
         )
         self.add_bid_to_posted(market.id, bid)
         return bid

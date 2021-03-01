@@ -139,7 +139,7 @@ class BalancingMarket(OneSidedMarket):
                      energy: int = None, time: DateTime = None,
                      already_tracked: bool = False, trade_rate: float = None,
                      trade_bid_info: float = None,
-                     buyer_origin=None, buyer_origin_id=None) -> BalancingTrade:
+                     buyer_origin=None, buyer_origin_id=None, buyer_id=None) -> BalancingTrade:
         if self.readonly:
             raise MarketReadOnlyException()
 
@@ -206,7 +206,9 @@ class BalancingMarket(OneSidedMarket):
                                residual_offer, seller_origin=offer.seller_origin,
                                buyer_origin=buyer_origin, fee_price=fees,
                                seller_origin_id=offer.seller_origin_id,
-                               buyer_origin_id=buyer_origin_id)
+                               seller_id=offer.seller_id,
+                               buyer_origin_id=buyer_origin_id,
+                               buyer_id=buyer_id)
         self.bc_interface.track_trade_event(trade)
 
         if already_tracked is False:

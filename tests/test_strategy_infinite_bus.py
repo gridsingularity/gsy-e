@@ -81,9 +81,9 @@ class FakeMarket:
         return TIME
 
     def offer(self, price, energy, seller, original_offer_price=None,
-              seller_origin=None, seller_origin_id=None):
+              seller_origin=None, seller_origin_id=None, seller_id=None):
         offer = Offer('id', pendulum.now(), price, energy, seller, seller_origin=seller_origin,
-                      seller_origin_id=seller_origin_id)
+                      seller_origin_id=seller_origin_id, seller_id=seller_id)
         self.created_offers.append(offer)
         offer.id = 'id'
         return offer
@@ -96,18 +96,18 @@ class FakeMarket:
 
     def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
                      trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
-                     buyer_origin_id=None):
+                     buyer_origin_id=None, buyer_id=None):
         offer = offer_or_id
         trade = Trade('trade_id', time, offer, offer.seller, buyer,
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
-                      buyer_origin_id=buyer_origin_id)
+                      buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
         self.traded_offers.append(trade)
         return trade
 
     def bid(self, price, energy, buyer, original_bid_price=None,
-            buyer_origin=None, buyer_origin_id=None):
+            buyer_origin=None, buyer_origin_id=None, buyer_id=None):
         bid = Bid("bid_id", pendulum.now(), price, energy, buyer, buyer_origin=buyer_origin,
-                  buyer_origin_id=buyer_origin_id)
+                  buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
         return bid
 
 

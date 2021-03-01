@@ -260,7 +260,8 @@ class PVStrategy(BaseStrategy):
                         self.owner.name,
                         original_offer_price=offer_price,
                         seller_origin=self.owner.name,
-                        seller_origin_id=self.owner.uuid
+                        seller_origin_id=self.owner.uuid,
+                        seller_id=self.owner.uuid
                     )
                     self.offers.post(offer, market.id)
                 except MarketException:

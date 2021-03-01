@@ -173,7 +173,8 @@ class UpdateFrequencyMixin:
                     strategy.owner.name,
                     original_offer_price=updated_price,
                     seller_origin=offer.seller_origin,
-                    seller_origin_id=offer.seller_origin_id
+                    seller_origin_id=offer.seller_origin_id,
+                    seller_id=strategy.owner.uuid
                 )
                 strategy.offers.replace(offer, new_offer, iterated_market.id)
             except MarketException:
