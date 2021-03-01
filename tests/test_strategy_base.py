@@ -89,7 +89,8 @@ class FakeMarket:
         self.id = id
 
     def accept_offer(self, offer_or_id, *, buyer="", energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
+                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
+                     buyer_origin_id=None):
         offer = offer_or_id
         if self.raises:
             raise MarketException
@@ -98,7 +99,8 @@ class FakeMarket:
                 energy = offer.energy
             offer.energy = energy
             return Trade('trade', 0, offer, offer.seller, 'FakeOwner',
-                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
+                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
+                         buyer_origin_id=buyer_origin_id)
 
     def bid(self, price, energy, buyer, original_bid_price=None,
             buyer_origin=None, buyer_origin_id=None):

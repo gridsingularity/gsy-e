@@ -205,7 +205,8 @@ class UpdateFrequencyMixin:
 
             strategy.remove_bid_from_pending(market.id, bid.id)
             strategy.post_bid(market, bid.energy * self.get_updated_rate(market.time_slot),
-                              bid.energy, buyer_origin=bid.buyer_origin)
+                              bid.energy, buyer_origin=bid.buyer_origin,
+                              buyer_origin_id=bid.buyer_origin_id)
 
     def update_posted_bids_over_ticks(self, market, strategy):
         if self.time_for_price_update(strategy, market.time_slot):

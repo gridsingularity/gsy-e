@@ -20,6 +20,7 @@ from math import isclose
 from copy import deepcopy
 import pytest
 from pendulum import DateTime, now
+from uuid import uuid4
 
 from d3a.constants import TIME_ZONE
 from d3a.events.event_structures import MarketEvent
@@ -70,7 +71,8 @@ class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
         # self.grid_fee_const = transfer_fees.grid_fee_const
 
     def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
+                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
+                     buyer_origin_id=None):
 
         if isinstance(offer_or_id, Offer):
             offer_or_id = offer_or_id.id
@@ -92,7 +94,7 @@ class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
     def accept_bid(self, bid: Bid, energy: float = None,
                    seller: str = None, buyer: str = None, already_tracked: bool = False,
                    trade_rate: float = None, trade_offer_info=None, time=None,
-                   seller_origin=None):
+                   seller_origin=None, seller_origin_id=None):
         self.calls_energy_bids.append(energy)
         self.calls_bids.append(bid)
         self.calls_bids_price.append(bid.price)
@@ -719,15 +721,22 @@ def pab_market():
 
 
 def test_double_sided_pay_as_bid_market_match_offer_bids(pab_market):
+    test_seller_origin_id = str(uuid4())
+    test_buyer_origin_id = str(uuid4())
+
     pab_market.calls_offers = []
     pab_market.calls_bids = []
-    offer = Offer('offer1', now(), 2, 2, 'other', 2)
+    offer = Offer('offer1', now(), 2, 2, 'other', 2, seller_origin_id=test_seller_origin_id)
     pab_market.offers = {"offer1": offer}
 
-    source_bid = Bid('bid_id3', now(), 12, 10, 'B', original_bid_price=12)
-    pab_market.bids = {"bid_id": Bid('bid_id', now(), 10, 10, 'B'),
-                       "bid_id1": Bid('bid_id1', now(), 11, 10, 'B'),
-                       "bid_id2": Bid('bid_id2', now(), 9, 10, 'B'),
+    source_bid = Bid('bid_id3', now(), 12, 10, 'B', original_bid_price=12,
+                     buyer_origin_id=test_buyer_origin_id)
+    pab_market.bids = {"bid_id": Bid('bid_id', now(), 10, 10, 'B',
+                                     buyer_origin_id=test_buyer_origin_id),
+                       "bid_id1": Bid('bid_id1', now(), 11, 10, 'B',
+                                      buyer_origin_id=test_buyer_origin_id),
+                       "bid_id2": Bid('bid_id2', now(), 9, 10, 'B',
+                                      buyer_origin_id=test_buyer_origin_id),
                        "bid_id3": source_bid}
 
     pab_market.match_offers_bids()

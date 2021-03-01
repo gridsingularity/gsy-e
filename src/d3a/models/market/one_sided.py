@@ -200,7 +200,7 @@ class OneSidedMarket(Market):
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
                      time: DateTime = None,
                      already_tracked: bool = False, trade_rate: float = None,
-                     trade_bid_info=None, buyer_origin=None) -> Trade:
+                     trade_bid_info=None, buyer_origin=None, buyer_origin_id=None) -> Trade:
         if self.readonly:
             raise MarketReadOnlyException()
 
@@ -264,7 +264,8 @@ class OneSidedMarket(Market):
         trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer,
                       offer_bid_trade_info=offer_bid_trade_info,
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
-                      fee_price=fee_price
+                      fee_price=fee_price, buyer_origin_id=buyer_origin_id,
+                      seller_origin_id=offer.seller_origin_id
                       )
         self.bc_interface.track_trade_event(trade)
 

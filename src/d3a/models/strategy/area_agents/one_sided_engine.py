@@ -167,7 +167,8 @@ class IAAEngine:
                     buyer=self.owner.name,
                     trade_rate=trade_offer_rate,
                     trade_bid_info=updated_trade_bid_info,
-                    buyer_origin=trade.buyer_origin
+                    buyer_origin=trade.buyer_origin,
+                    buyer_origin_id=trade.buyer_origin_id
                 )
 
             except OfferNotFoundException:

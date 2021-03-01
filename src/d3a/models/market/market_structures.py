@@ -202,14 +202,17 @@ def trade_bid_info_from_JSON_string(info_string):
 
 class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'residual',
                                  'already_tracked', 'offer_bid_trade_info', 'seller_origin',
-                                 'buyer_origin', 'fee_price'))):
+                                 'buyer_origin', 'fee_price', 'seller_origin_id',
+                                 'buyer_origin_id'))):
     def __new__(cls, id, time, offer, seller, buyer, residual=None,
                 already_tracked=False, offer_bid_trade_info=None,
-                seller_origin=None, buyer_origin=None, fee_price=None):
+                seller_origin=None, buyer_origin=None, fee_price=None,
+                seller_origin_id=None, buyer_origin_id=None):
         # overridden to give the residual field a default value
         return super(Trade, cls).__new__(cls, id, time, offer, seller, buyer, residual,
                                          already_tracked, offer_bid_trade_info, seller_origin,
-                                         buyer_origin, fee_price)
+                                         buyer_origin, fee_price,
+                                         seller_origin_id, buyer_origin_id)
 
     def __str__(self):
         return (
@@ -249,6 +252,8 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'resi
             "buyer": self.buyer,
             "buyer_origin": self.buyer_origin,
             "seller_origin": self.seller_origin,
+            "seller_origin_id": self.seller_origin_id,
+            "buyer_origin_id": self.buyer_origin_id,
             "seller": self.seller,
             "fee_price": self.fee_price,
             "time": datetime_to_string_incl_seconds(self.time)
@@ -289,13 +294,16 @@ class BalancingOffer(Offer):
 
 class BalancingTrade(namedtuple('BalancingTrade', ('id', 'time', 'offer', 'seller',
                                                    'buyer', 'residual', 'offer_bid_trade_info',
-                                                   'seller_origin', 'buyer_origin', 'fee_price'))):
+                                                   'seller_origin', 'buyer_origin', 'fee_price',
+                                                   'seller_origin_id', 'buyer_origin_id'))):
     def __new__(cls, id, time, offer, seller, buyer, residual=None, offer_bid_trade_info=None,
-                seller_origin=None, buyer_origin=None, fee_price=None):
+                seller_origin=None, buyer_origin=None, fee_price=None,
+                seller_origin_id=None, buyer_origin_id=None):
         # overridden to give the residual field a default value
         return super(BalancingTrade, cls).__new__(cls, id, time, offer, seller,
                                                   buyer, residual, offer_bid_trade_info,
-                                                  seller_origin, buyer_origin, fee_price)
+                                                  seller_origin, buyer_origin, fee_price,
+                                                  seller_origin_id, buyer_origin_id)
 
     def __str__(self):
         return (

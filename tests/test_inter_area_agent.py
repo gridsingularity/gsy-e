@@ -92,7 +92,8 @@ class FakeMarket:
         self.time_slot = timeslot
 
     def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
+                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
+                     buyer_origin_id=None):
         offer = offer_or_id
         self.calls_energy.append(energy)
         self.calls_offers.append(offer)
@@ -103,13 +104,16 @@ class FakeMarket:
             traded = Offer(offer.id, offer.time, offer.price, energy,
                            offer.seller, seller_origin='res')
             return Trade('trade_id', time, traded, traded.seller, buyer, residual,
-                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
+                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
+                         buyer_origin_id=buyer_origin_id)
         else:
             return Trade('trade_id', time, offer, offer.seller, buyer,
-                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
+                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
+                         buyer_origin_id=buyer_origin_id)
 
     def accept_bid(self, bid, energy, seller, buyer=None, *, time=None, trade_rate: float = None,
-                   trade_offer_info=None, already_tracked=False, seller_origin=None):
+                   trade_offer_info=None, already_tracked=False, seller_origin=None,
+                   seller_origin_id=None):
         self.calls_energy_bids.append(energy)
         self.calls_bids.append(bid)
         self.calls_bids_price.append(bid.price)

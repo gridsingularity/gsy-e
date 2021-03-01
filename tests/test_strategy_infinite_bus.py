@@ -95,10 +95,12 @@ class FakeMarket:
         return offer
 
     def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
+                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
+                     buyer_origin_id=None):
         offer = offer_or_id
         trade = Trade('trade_id', time, offer, offer.seller, buyer,
-                      seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
+                      seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
+                      buyer_origin_id=buyer_origin_id)
         self.traded_offers.append(trade)
         return trade
 

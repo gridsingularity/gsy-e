@@ -266,7 +266,8 @@ class StorageExternalMixin(ExternalMixin):
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
-                buyer_origin=arguments["buyer_origin"]
+                buyer_origin=arguments["buyer_origin"],
+                buyer_origin_id=arguments["buyer_origin_id"]
             )
             self.state.offered_buy_kWh[self.next_market.time_slot] = \
                 self.posted_bid_energy(self.next_market.id)
@@ -502,7 +503,8 @@ class StorageExternalMixin(ExternalMixin):
                 self.remove_bid_from_pending(self.next_market.id, bid.id)
             if len(existing_bids) > 0:
                 updated_bid = self.post_bid(self.next_market, bid_rate * existing_bid_energy,
-                                            existing_bid_energy, buyer_origin=self.device.name)
+                                            existing_bid_energy, buyer_origin=self.device.name,
+                                            buyer_origin_id=self.device.uuid)
                 return {
                     "command": "update_bid", "status": "ready",
                     "bid": updated_bid.to_JSON_string(),
@@ -524,7 +526,8 @@ class StorageExternalMixin(ExternalMixin):
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
-                buyer_origin=arguments["buyer_origin"]
+                buyer_origin=arguments["buyer_origin"],
+                buyer_origin_id=arguments["buyer_origin_id"]
             )
             self.state.offered_buy_kWh[self.next_market.time_slot] = \
                 self.posted_bid_energy(self.next_market.id)

@@ -496,7 +496,8 @@ class StorageStrategy(BidEnabledStrategy):
             if not self.state.has_battery_reached_max_power(-max_energy, market.time_slot):
                 self.state.pledged_buy_kWh[market.time_slot] += max_energy
                 self.accept_offer(market, offer, energy=max_energy,
-                                  buyer_origin=self.owner.name)
+                                  buyer_origin=self.owner.name,
+                                  buyer_origin_id=self.owner.uuid)
             return
         except MarketException:
             # Offer already gone etc., try next one.
