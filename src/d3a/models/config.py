@@ -89,7 +89,7 @@ class SimulationConfig:
             if k in fields
         }
 
-    def update_config_parameters(self, cloud_coverage=None, pv_user_profile=None,
+    def update_config_parameters(self, *, cloud_coverage=None, pv_user_profile=None,
                                  market_maker_rate=None, max_panel_power_W=None):
         if cloud_coverage is not None:
             self.cloud_coverage = cloud_coverage
