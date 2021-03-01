@@ -90,8 +90,7 @@ class SimulationConfig:
         }
 
     def update_config_parameters(self, *, cloud_coverage=None, pv_user_profile=None,
-                                 market_maker_rate=None, max_panel_power_W=None,
-                                 aggregator_device_mapping=None):
+                                 market_maker_rate=None, max_panel_power_W=None):
         if cloud_coverage is not None:
             self.cloud_coverage = cloud_coverage
         if pv_user_profile is not None:
@@ -100,10 +99,6 @@ class SimulationConfig:
             self.read_market_maker_rate(market_maker_rate)
         if max_panel_power_W is not None:
             self.max_panel_power_W = max_panel_power_W
-        if aggregator_device_mapping is not None:
-            self.external_redis_communicator.aggregator.set_aggregator_device_mapping(
-                aggregator_device_mapping
-            )
 
     def read_pv_user_profile(self, pv_user_profile=None):
         self.pv_user_profile = None \
