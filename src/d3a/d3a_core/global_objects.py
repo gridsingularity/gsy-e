@@ -33,7 +33,7 @@ class GlobalObjects:
         if area.children:
             if area.current_market:
                 area_dict = {'market_maker_rate': get_market_maker_rate_from_global_setting(
-                                                  area.current_market.time_slot),
+                                                  area.current_market),
                              'last_market_bill': area.stats.get_last_market_stats_for_grid_tree(),
                              'last_market_stats': area.stats.get_price_stats_current_market(),
                              'last_market_fee': area.current_market.fee_class.grid_fee_rate,

@@ -602,8 +602,12 @@ class ExternalTickTimer:
             return False
 
 
-def get_market_maker_rate_from_global_setting(time_slot):
+def get_market_maker_rate_from_global_setting(next_market):
     if isinstance(GlobalConfig.market_maker_rate, dict):
-        return find_object_of_same_weekday_and_time(GlobalConfig.market_maker_rate, time_slot)
+        if next_market is None:
+            return GlobalConfig.market_maker_rate[next(iter(GlobalConfig.market_maker_rate))]
+        else:
+            return find_object_of_same_weekday_and_time(GlobalConfig.market_maker_rate,
+                                                        next_market.time_slot)
     else:
         return GlobalConfig.market_maker_rate
