@@ -390,6 +390,17 @@ def test_export_data_csv(context, scenario):
                                                                     file=data_fn))
 
 
+@then('we get the area tree summary')
+def area_tree(context):
+    get_simulation_raw_results(context)
+    # tree_path = glob.glob(os.path.join(context.export_path, os.listdir(context.export_path)[0],
+    #                                    'area_tree_summary.json'))
+    # with open(tree_path[0]) as tree_summary:
+    #     context.tree_data = json.loads(tree_summary.read())
+    # assert context.tree_data
+    # context.area_name_uuid_map = get_area_name_uuid_mapping(context.tree_data)
+
+
 @then('the export functionality of supply/demand curve is tested')
 def test_export_supply_demand_curve(context):
     sim_data_csv = glob.glob(os.path.join(context.export_path, "*", "plot", "mcp"))

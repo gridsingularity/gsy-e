@@ -30,28 +30,36 @@ def test_export_of_kpi_result(context, kpi, expected_kpis):
     with open(sim_data_csv[0], "r") as sf:
         kpi_data = json.load(sf)
     expected_kpis = ast.literal_eval(expected_kpis)
+    print(f"kpi_data: {kpi_data}")
+    print(f"expected_kpis: {expected_kpis}")
     for area, value in expected_kpis.items():
+        area_uuid = context.name_uuid_map[area]
+        print(f"area: {area}  -- value: {value}  -- area_uuid: {area_uuid}")
         if kpi == "self_sufficiency":
-            assert isclose(kpi_data[area]['self_sufficiency'], float(value), abs_tol=1e-03)
+            assert isclose(kpi_data[area_uuid]['self_sufficiency'], float(value), abs_tol=1e-03)
 
-            assert isclose(kpi_data[area]['self_sufficiency'],
-                           min(kpi_data[area]['total_self_consumption_wh'] /
-                               kpi_data[area]['total_energy_demanded_wh'], 1.0), abs_tol=1e-03)
+            assert isclose(
+                kpi_data[area_uuid]['self_sufficiency'],
+                min(kpi_data[area_uuid]['total_self_consumption_wh'] /
+                    kpi_data[area_uuid]['total_energy_demanded_wh'], 1.0), abs_tol=1e-03)
 
         elif kpi == "self_consumption":
             if value is None:
-                assert kpi_data[area]['self_consumption'] is None
+                assert kpi_data[area_uuid]['self_consumption'] is None
             else:
-                assert isclose(kpi_data[area]['self_consumption'],
+                assert isclose(kpi_data[area_uuid]['self_consumption'],
                                float(value), rel_tol=1e-02)
 
-                assert isclose(kpi_data[area]['self_consumption'],
-                               min(kpi_data[area]['total_self_consumption_wh'] /
-                                   kpi_data[area]['total_energy_produced_wh'], 1.0), abs_tol=1e-03)
+                assert isclose(
+                    kpi_data[area_uuid]['self_consumption'],
+                    min(kpi_data[area_uuid]['total_self_consumption_wh'] /
+                        kpi_data[area_uuid]['total_energy_produced_wh'], 1.0), abs_tol=1e-03)
         elif kpi == "total_energy_demanded_wh":
-            assert isclose(kpi_data[area]['total_energy_demanded_wh'], float(value), abs_tol=1e-03)
+            assert isclose(kpi_data[area_uuid]['total_energy_demanded_wh'],
+                           float(value), abs_tol=1e-03)
         elif kpi == "total_energy_produced_wh":
-            assert isclose(kpi_data[area]['total_energy_produced_wh'], float(value), abs_tol=1e-03)
+            assert isclose(kpi_data[area_uuid]['total_energy_produced_wh'],
+                           float(value), abs_tol=1e-03)
         elif kpi == "total_self_consumption_wh":
-            assert isclose(kpi_data[area]['total_self_consumption_wh'],
+            assert isclose(kpi_data[area_uuid]['total_self_consumption_wh'],
                            float(value), abs_tol=1e-03)

@@ -167,7 +167,7 @@ class OneSidedMarket(Market):
                                     dispatch_event=False,
                                     seller_origin=original_offer.seller_origin,
                                     seller_origin_id=original_offer.seller_origin_id,
-                                    seller_id=original_offer.seller,
+                                    seller_id=original_offer.seller_id,
                                     adapt_price_with_fees=False,
                                     add_to_history=True)
 

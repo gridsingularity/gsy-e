@@ -9,7 +9,7 @@ try:
         REQUIREMENTS = [r.partition('#')[0] for r in req if not r.startswith('-e')]
         REQUIREMENTS.extend(
             ['d3a-interface @ '
-             f'git+https://github.com/gridsingularity/d3a-interface.git@{d3a_interface_branch}'
+             'git+https://github.com/gridsingularity/d3a-interface.git@bug/D3ASIM-3321'
              ])
 except OSError:
     # Shouldn't happen
