@@ -170,8 +170,7 @@ class PVStrategy(BaseStrategy):
     def event_activate_price(self):
         # If use_market_maker_rate is true, overwrite initial_selling_rate to market maker rate
         if self.use_market_maker_rate:
-            mmr = get_market_maker_rate_from_global_setting(
-                self.owner.parent.next_market.time_slot)
+            mmr = get_market_maker_rate_from_global_setting(self.owner.next_market.time_slot)
             self._area_reconfigure_prices(
                 initial_selling_rate=mmr - self.owner.get_path_to_root_fees(), validate=False)
 
