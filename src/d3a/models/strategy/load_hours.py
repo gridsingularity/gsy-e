@@ -132,14 +132,12 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def event_activate(self, **kwargs):
         self._calculate_active_markets()
         self.event_activate_price()
-        # print("event_activate: update_and_populate_price_settings")
         self.bid_update.update_and_populate_price_settings(self.area)
         self.event_activate_energy()
 
     def event_market_cycle(self):
         super().event_market_cycle()
         self.add_entry_in_hrs_per_day()
-        # print("event_market_cycle: update_and_populate_price_settings")
         self.bid_update.update_and_populate_price_settings(self.area)
         self._calculate_active_markets()
         self._update_energy_requirement_future_markets()
@@ -223,7 +221,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self.avg_power_W = kwargs['avg_power_W']
             self._update_energy_requirement_future_markets()
         self._area_reconfigure_prices(**kwargs)
-        # print("area_reconfigure_event: update_and_populate_price_settings")
         self.bid_update.update_and_populate_price_settings(self.area)
 
     def event_activate_price(self):
