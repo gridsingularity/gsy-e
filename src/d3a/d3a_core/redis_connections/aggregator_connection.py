@@ -3,6 +3,7 @@ import logging
 from copy import deepcopy
 from threading import Lock
 import d3a.constants
+from d3a_interface.utils import create_subdict_or_update
 
 
 class AggregatorHandler:
@@ -14,7 +15,6 @@ class AggregatorHandler:
         self.processing_batch_commands = {}
         self.responses_batch_commands = {}
         self.batch_market_cycle_events = {}
-        self.already_sent_grid_stats = False
         self.batch_tick_events = {}
         self.batch_trade_events = {}
         self.batch_finished_events = {}
@@ -22,6 +22,13 @@ class AggregatorHandler:
         self.device_aggregator_mapping = {}
         self.lock = Lock()
         self.grid_buffer = {}
+
+    @property
+    def _aggregator_info(self):
+        """
+        to be implemented
+        """
+        return {}
 
     def set_aggregator_device_mapping(self, aggregator_device):
         self.aggregator_device_mapping = aggregator_device
@@ -36,11 +43,7 @@ class AggregatorHandler:
 
     def _add_batch_event(self, device_uuid, event, batch_event_dict):
         aggregator_uuid = self.device_aggregator_mapping[device_uuid]
-
-        if aggregator_uuid not in batch_event_dict:
-            batch_event_dict[aggregator_uuid] = []
-
-        batch_event_dict[aggregator_uuid].append(event)
+        create_subdict_or_update(batch_event_dict, aggregator_uuid, event)
 
     def _delete_not_owned_devices_from_dict(self, area_stats_tree_dict):
         out_dict = deepcopy(area_stats_tree_dict)
@@ -57,26 +60,30 @@ class AggregatorHandler:
                     outdict[area_name] = {}
 
     def add_batch_market_event(self, device_uuid, global_objects, market_info):
-        market_info.update({'market_info': self._delete_not_owned_devices_from_dict(
-            global_objects.area_stats_tree_dict)})
         if self.batch_market_cycle_events == {}:
             # only send market_event once per aggregator
-            self._add_batch_event(device_uuid, market_info,
-                                  self.batch_market_cycle_events)
+            market_info.update({'grid_tree': self._delete_not_owned_devices_from_dict(
+                global_objects.area_stats_tree_dict)})
+            self._add_batch_event(device_uuid, market_info, self.batch_market_cycle_events)
 
     def add_batch_tick_event(self, device_uuid, global_objects, tick_info):
-        # TODO: Probably need to strip away all the market stats, too.
-        tick_info.update({'market_info': self._delete_not_owned_devices_from_dict(
-            global_objects.area_stats_tree_dict)})
         if self.batch_tick_events == {}:
             # only send tick once per aggregator
+            tick_info.update({'grid_tree': self._delete_not_owned_devices_from_dict(
+                global_objects.area_stats_tree_dict)})
             self._add_batch_event(device_uuid, tick_info, self.batch_tick_events)
 
-    def add_batch_trade_event(self, device_uuid, event):
-        self._add_batch_event(device_uuid, event, self.batch_trade_events)
+    def add_batch_finished_event(self, device_uuid, finish_info):
+        if self.batch_tick_events == {}:
+            self._add_batch_event(device_uuid, finish_info, self.batch_finished_events)
 
-    def add_batch_finished_event(self, device_uuid, event):
-        self._add_batch_event(device_uuid, event, self.batch_finished_events)
+    def add_batch_trade_event(self, device_uuid, event):
+        aggregator_uuid = self.device_aggregator_mapping[device_uuid]
+
+        if aggregator_uuid not in self.batch_trade_events:
+            self.batch_trade_events[aggregator_uuid] = []
+
+        self.batch_trade_events[aggregator_uuid].append(event)
 
     def aggregator_callback(self, payload):
         message = json.loads(payload["data"])
@@ -194,23 +201,37 @@ class AggregatorHandler:
                 self.responses_batch_commands[transaction_id] = {aggregator_uuid: []}
             self.responses_batch_commands[transaction_id][aggregator_uuid].append(response)
 
-    def _publish_all_events_from_one_type(self, redis, event_dict, event_type):
-        for aggregator_uuid, event_list in event_dict.items():
+    def _publish_progress_events(self, redis, event_dict, event_type):
+        for aggregator_uuid, event in event_dict.items():
+            event_channel = f"external-aggregator/{d3a.constants.COLLABORATION_ID}/" \
+                            f"{aggregator_uuid}/events/all"
+
+            publish_event_dict = {**event,
+                                  'event': event_type,
+                                  'aggregator_info': self._aggregator_info,
+                                  'simulation_id': d3a.constants.COLLABORATION_ID if
+                                  d3a.constants.EXTERNAL_CONNECTION_WEB else None
+                                  }
+            redis.publish_json(event_channel, publish_event_dict)
+
+        event_dict.clear()
+
+    def _publish_trade_events(self, redis):
+        for aggregator_uuid, trade_list in self.batch_trade_events.items():
             event_channel = f"external-aggregator/{d3a.constants.COLLABORATION_ID}/" \
                             f"{aggregator_uuid}/events/all"
             redis.publish_json(
                 event_channel,
-                {"event": event_type, "content": event_list[0]}
+                {"event": "trade", "content": trade_list}
             )
-        event_dict.clear()
+        self.batch_trade_events.clear()
 
     def publish_all_events(self, redis):
-        self._publish_all_events_from_one_type(redis, self.batch_market_cycle_events, "market")
-        self._publish_all_events_from_one_type(redis, self.batch_tick_events, "tick")
+        self._publish_progress_events(redis, self.batch_market_cycle_events, "market")
+        self._publish_progress_events(redis, self.batch_tick_events, "tick")
+        self._publish_progress_events(redis, self.batch_finished_events, "finish")
 
-        self._publish_all_events_from_one_type(redis, self.batch_trade_events, "trade")
-        self._publish_all_events_from_one_type(redis, self.batch_finished_events, "finish")
-        self.already_sent_grid_stats = False
+        self._publish_trade_events(redis)
 
     def publish_all_commands_responses(self, redis):
         for transaction_id, batch_commands in self.responses_batch_commands.items():

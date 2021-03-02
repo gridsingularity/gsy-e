@@ -226,26 +226,26 @@ class ExternalMixin:
     def _device_info_dict(self):
         return {}
 
+    @property
+    def _progress_info(self):
+        slot_completion_percent = int((self.device.current_tick_in_slot /
+                                       self.device.config.ticks_per_slot) * 100)
+        return {'slot_completion': f'{slot_completion_percent}%',
+                'market_slot': self.area.next_market.time_slot_str}
+
     def _dispatch_event_tick_to_external_agent(self):
         if self.is_aggregator_controlled and \
                 self.external_tick_timer.is_it_time_for_external_tick(self.device.current_tick):
-            slot_completion_percent = int((self.device.current_tick_in_slot /
-                                           self.device.config.ticks_per_slot) * 100)
-            tick_info = {'slot_completion': f'{slot_completion_percent}%',
-                         'last_market_slot': self.area.current_market.time_slot_str
-                         if self.area.current_market else None}
             self.redis.aggregator.add_batch_tick_event(self.device.uuid,
                                                        self.area.global_objects,
-                                                       tick_info)
+                                                       self._progress_info)
 
     def event_market_cycle(self):
         if not self.should_use_default_strategy:
             if self.is_aggregator_controlled:
-                market_info = {'last_market_slot': self.area.current_market.time_slot_str
-                               if self.area.current_market else None}
                 self.redis.aggregator.add_batch_market_event(self.device.uuid,
                                                              self.area.global_objects,
-                                                             market_info)
+                                                             self._progress_info)
         else:
             super().event_market_cycle()
 
@@ -284,9 +284,6 @@ class ExternalMixin:
         event_response_dict["event_type"] = "buy" \
             if trade.buyer == self.device.name else "sell"
         event_response_dict[bid_offer_key] = trade.offer.id
-        trade_event_channel = f"{self.channel_prefix}/events/trade"
-        if self.connected:
-            self.redis.publish_json(trade_event_channel, event_response_dict)
 
         if self.is_aggregator_controlled:
             self.redis.aggregator.add_batch_trade_event(self.device.uuid, event_response_dict)
@@ -303,17 +300,10 @@ class ExternalMixin:
 
     def deactivate(self):
         super().deactivate()
-        if self.connected or self.redis.aggregator.is_controlling_device(self.device.uuid):
-            deactivate_event_channel = f"{self.channel_prefix}/events/finish"
-            deactivate_msg = {
-                "event": "finish",
-                "area_uuid": self.device.uuid
-            }
-            if self.connected:
-                self.redis.publish_json(deactivate_event_channel, deactivate_msg)
 
-            if self.is_aggregator_controlled:
-                self.redis.aggregator.add_batch_finished_event(self.owner.uuid, "finish")
+        if self.is_aggregator_controlled:
+            deactivate_msg = {'event': 'finish'}
+            self.redis.aggregator.add_batch_finished_event(self.owner.uuid, deactivate_msg)
 
     def _bid_aggregator(self, command):
         raise CommandTypeNotSupported(

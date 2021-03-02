@@ -160,26 +160,26 @@ class RedisMarketExternalConnection:
             ret_val["transaction_id"] = payload_data.get("transaction_id", None)
             self.redis_com.publish_json(dso_market_stats_response_channel, ret_val)
 
+    @property
+    def _progress_info(self):
+        slot_completion_percent = int((self.area.current_tick_in_slot /
+                                       self.area.config.ticks_per_slot) * 100)
+        return {'slot_completion': f'{slot_completion_percent}%',
+                'market_slot': self.area.next_market.time_slot_str}
+
     def event_market_cycle(self):
         if self.area.current_market is None:
             return
 
         if self.is_aggregator_controlled:
-            market_info = {'last_market_slot': self.area.current_market.time_slot_str
-                           if self.area.current_market else None}
             self.aggregator.add_batch_market_event(self.area.uuid,
                                                    self.area.global_objects,
-                                                   market_info)
+                                                   self._progress_info)
 
     def deactivate(self):
-        deactivate_event_channel = f"{self.channel_prefix}/events/finish"
-        deactivate_msg = {
-            "event": "finish"
-        }
         if self.is_aggregator_controlled:
+            deactivate_msg = {'event': 'finish'}
             self.aggregator.add_batch_finished_event(self.area.uuid, deactivate_msg)
-        else:
-            self.redis_com.publish_json(deactivate_event_channel, deactivate_msg)
 
     def trigger_aggregator_commands(self, command):
         if "type" not in command:
