@@ -30,8 +30,8 @@ class AggregatorHandler:
         self.lock = Lock()
         self.grid_buffer = {}
 
-    def set_aggregator_device_mapping(self, aggregator_device):
-        self.aggregator_device_mapping = aggregator_device
+    def set_aggregator_device_mapping(self, aggregator_device_mapping):
+        self.aggregator_device_mapping = aggregator_device_mapping
         self.device_aggregator_mapping = {
             dev: aggr
             for aggr, devices in self.aggregator_device_mapping.items()
