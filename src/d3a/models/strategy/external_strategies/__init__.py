@@ -23,7 +23,7 @@ from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import key_in_dict_and_not_none
 import d3a.constants
-from d3a.d3a_core.util import ExternalTickTimer
+from d3a.d3a_core.util import ExternalTickCounter
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
 
@@ -93,7 +93,7 @@ class ExternalMixin:
         self.lock = Lock()
 
     def event_activate(self, **kwargs):
-        self.external_tick_timer = ExternalTickTimer(self.device.config.ticks_per_slot)
+        self.external_tick_counter = ExternalTickCounter(self.device.config.ticks_per_slot)
         super().event_activate(**kwargs)
 
     def get_state(self):
@@ -235,17 +235,17 @@ class ExternalMixin:
 
     def _dispatch_event_tick_to_external_agent(self):
         if self.is_aggregator_controlled and \
-                self.external_tick_timer.is_it_time_for_external_tick(self.device.current_tick):
+                self.external_tick_counter.is_it_time_for_external_tick(self.device.current_tick):
             self.redis.aggregator.add_batch_tick_event(self.device.uuid,
                                                        self.area.global_objects,
                                                        self._progress_info)
 
     def event_market_cycle(self):
-        if not self.should_use_default_strategy:
-            if self.is_aggregator_controlled:
-                self.redis.aggregator.add_batch_market_event(self.device.uuid,
-                                                             self.area.global_objects,
-                                                             self._progress_info)
+        if not self.should_use_default_strategy and self.is_aggregator_controlled:
+            self.redis.aggregator.add_batch_market_event(self.device.uuid,
+                                                         self.area.global_objects,
+                                                         self._progress_info)
+            self.external_tick_counter.reset()
         else:
             super().event_market_cycle()
 

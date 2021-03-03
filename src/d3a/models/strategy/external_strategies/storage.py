@@ -300,7 +300,6 @@ class StorageExternalMixin(ExternalMixin):
         self._reject_all_pending_requests()
         self.register_on_market_cycle()
         if not self.should_use_default_strategy:
-            self.external_tick_timer.reset_event_tick_counter()
             self.state.market_cycle(
                 self.market_area.current_market.time_slot
                 if self.market_area.current_market else None,

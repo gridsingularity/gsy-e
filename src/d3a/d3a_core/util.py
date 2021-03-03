@@ -575,7 +575,7 @@ def get_simulation_queue_name():
     return "canary_network" if listen_to_cn else "d3a"
 
 
-class ExternalTickTimer:
+class ExternalTickCounter:
 
     def __init__(self, ticks_per_slot):
         self._last_dispatched_tick = 0
@@ -588,7 +588,7 @@ class ExternalTickTimer:
             (DISPATCH_EVENT_TICK_FREQUENCY_PERCENT / 100)
         )
 
-    def reset_event_tick_counter(self):
+    def reset(self):
         self._last_dispatched_tick = 0
 
     def _update_current_tick(self, current_tick):

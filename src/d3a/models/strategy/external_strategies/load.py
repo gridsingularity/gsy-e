@@ -182,7 +182,6 @@ class LoadExternalMixin(ExternalMixin):
         if not self.should_use_default_strategy:
             self._calculate_active_markets()
             self._update_energy_requirement_future_markets()
-            self.external_tick_timer.reset_event_tick_counter()
             super().event_market_cycle()
             self._delete_past_state()
         else:

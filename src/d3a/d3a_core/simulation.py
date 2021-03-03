@@ -39,7 +39,7 @@ from d3a.models.power_flow.pandapower import PandaPowerFlow
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
 from d3a.d3a_core.util import NonBlockingConsole, validate_const_settings_for_simulation, \
-    get_market_slot_time_str, ExternalTickTimer
+    get_market_slot_time_str, ExternalTickCounter
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCommunication
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
@@ -93,7 +93,7 @@ class Simulation:
         self.progress_info = SimulationProgressInfo()
         self.simulation_config = simulation_config
         self.global_objects = GlobalObjects()
-        self.external_tick_timer = ExternalTickTimer(self.simulation_config.ticks_per_slot) \
+        self.external_tick_counter = ExternalTickCounter(self.simulation_config.ticks_per_slot) \
             if self.simulation_config.external_connection_enabled else None
         self.use_repl = repl
         self.export_on_finish = not no_export
@@ -364,7 +364,7 @@ class Simulation:
                 self.area.tick_and_dispatch()
                 self.area.update_area_current_tick()
                 if self.simulation_config.external_connection_enabled and \
-                        self.external_tick_timer.is_it_time_for_external_tick(tick_no):
+                        self.external_tick_counter.is_it_time_for_external_tick(tick_no):
                     self.global_objects.update(self.area)
 
                 self.simulation_config.external_redis_communicator.\
@@ -374,7 +374,7 @@ class Simulation:
                 self.tick_time_counter = time()
 
             if self.simulation_config.external_connection_enabled:
-                self.external_tick_timer.reset_event_tick_counter()
+                self.external_tick_counter.reset()
 
             if self.export_on_finish and self.should_export_results:
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)

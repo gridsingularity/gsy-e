@@ -180,7 +180,6 @@ class PVExternalMixin(ExternalMixin):
         self.register_on_market_cycle()
         if not self.should_use_default_strategy:
             self.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
-            self.external_tick_timer.reset_event_tick_counter()
             super().event_market_cycle()
             self._delete_past_state()
         else:

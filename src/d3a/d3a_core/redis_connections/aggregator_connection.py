@@ -23,13 +23,6 @@ class AggregatorHandler:
         self.lock = Lock()
         self.grid_buffer = {}
 
-    @property
-    def _aggregator_info(self):
-        """
-        to be implemented
-        """
-        return {}
-
     def set_aggregator_device_mapping(self, aggregator_device):
         self.aggregator_device_mapping = aggregator_device
         self.device_aggregator_mapping = {
@@ -208,7 +201,6 @@ class AggregatorHandler:
 
             publish_event_dict = {**event,
                                   'event': event_type,
-                                  'aggregator_info': self._aggregator_info,
                                   'simulation_id': d3a.constants.COLLABORATION_ID if
                                   d3a.constants.EXTERNAL_CONNECTION_WEB else None
                                   }
