@@ -468,7 +468,7 @@ class BidEnabledStrategy(BaseStrategy):
         return offer_energy + self._traded_bid_energy(market_id)
 
     def energy_traded_costs(self, market_id):
-        offer_costs = super().energy_traded(market_id)
+        offer_costs = super().energy_traded_costs(market_id)
         return offer_costs + self._traded_bid_costs(market_id)
 
     def post_bid(self, market, price, energy, buyer_origin=None):
