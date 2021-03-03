@@ -157,20 +157,33 @@ class StorageExternalMixin(ExternalMixin):
                 {"command": "offer",
                  "error": (
                      "Incorrect offer request. "
-                     f"Available parameters: ('price', 'energy', 'replace_existing')."),
+                     "Available parameters: ('price', 'energy', 'replace_existing')."),
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
                 IncomingRequest("offer", arguments, offer_response_channel))
 
+    def can_offer_be_posted(self, time_slot, **offer_arguments):
+        """Check that the energy being offered is <= than the energy available to be sold."""
+
+        replace_existing = offer_arguments.get('replace_existing', True)
+        if replace_existing:
+            # Do not consider previously offered energy, since those offers would be deleted
+            return (
+                offer_arguments['energy'] <=
+                self.state.energy_to_sell_dict[time_slot] +
+                self.state.offered_sell_kWh[time_slot])
+        else:
+            return (
+                offer_arguments['energy'] <=
+                self.state.energy_to_sell_dict[time_slot])
+
     def _offer_impl(self, arguments, response_channel):
         try:
-            assert arguments['energy'] <= \
-                   self.state.energy_to_sell_dict[self.next_market.time_slot]
-
             offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
-            replace_existing = offer_arguments.pop('replace_existing', True)
+            assert self.can_offer_be_posted(self.next_market.time_slot, **offer_arguments)
 
+            replace_existing = offer_arguments.pop('replace_existing', True)
             offer = self.post_offer(
                 self.next_market, replace_existing=replace_existing, **offer_arguments)
 
@@ -294,9 +307,22 @@ class StorageExternalMixin(ExternalMixin):
             self.pending_requests.append(
                 IncomingRequest("bid", arguments, bid_response_channel))
 
+    def can_bid_be_posted(self, time_slot, **bid_arguments):
+        """Check that the energy being bid is <= than the energy available to be bought."""
+
+        replace_existing = bid_arguments.get('replace_existing', True)
+        if replace_existing:
+            # Do not consider previously bid energy, since those bids would be deleted
+            return (
+                bid_arguments['energy'] <=
+                self.state.energy_to_buy_dict[time_slot] +
+                self.state.offered_buy_kWh[time_slot])
+        else:
+            return bid_arguments['energy'] <= self.state.energy_to_buy_dict[time_slot]
+
     def _bid_impl(self, arguments, bid_response_channel):
         try:
-            assert arguments["energy"] <= self.state.energy_to_buy_dict[self.next_market.time_slot]
+            assert self.can_bid_be_posted(self.next_market.time_slot, **arguments)
 
             replace_existing = arguments.get('replace_existing', True)
             bid = self.post_bid(
@@ -500,11 +526,10 @@ class StorageExternalMixin(ExternalMixin):
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
             try:
-                assert arguments['energy'] <= \
-                       self.state.energy_to_sell_dict[self.next_market.time_slot]
-
                 offer_arguments = {
                     k: v for k, v in arguments.items() if k not in ['transaction_id', 'type']}
+                assert self.can_offer_be_posted(self.next_market.time_slot, **offer_arguments)
+
                 replace_existing = offer_arguments.pop('replace_existing', True)
 
                 offer = self.post_offer(
@@ -575,7 +600,7 @@ class StorageExternalMixin(ExternalMixin):
             assert all(arg in allowed_args for arg in arguments.keys())
 
             arguments['buyer_origin'] = self.device.name
-            assert arguments["energy"] <= self.state.energy_to_buy_dict[self.next_market.time_slot]
+            assert self.can_bid_be_posted(self.next_market.time_slot, **arguments)
 
             replace_existing = arguments.get('replace_existing', True)
             bid = self.post_bid(
