@@ -325,7 +325,7 @@ class Area:
             self.budget_keeper.process_market_cycle()
 
         self.log.debug("Cycling markets")
-        self._markets.rotate_markets(now_value, self.dispatcher)
+        self._markets.rotate_markets(now_value)
         self.dispatcher._delete_past_agents(self.dispatcher._inter_area_agents)
 
         # area_market_stats have to updated when cycling market of each area:
