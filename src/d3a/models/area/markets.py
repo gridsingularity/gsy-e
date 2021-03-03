@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from pendulum import DateTime # noqa
 from typing import Dict  # noqa
 
-from d3a.models.market import TransferFees
+from d3a.models.market import GridFee
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
 from d3a.models.market.one_sided import OneSidedMarket
@@ -121,8 +121,8 @@ class AreaMarkets:
                     bc=area.bc,
                     notification_listener=area.dispatcher.broadcast_callback,
                     grid_fee_type=area.config.grid_fee_type,
-                    transfer_fees=TransferFees(grid_fee_percentage=area.grid_fee_percentage,
-                                               transfer_fee_const=area.grid_fee_constant),
+                    grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
+                                      grid_fee_const=area.grid_fee_constant),
                     name=area.name,
                     in_sim_duration=is_timeslot_in_simulation_duration(area.config, timeframe)
                 )

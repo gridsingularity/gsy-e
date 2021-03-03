@@ -236,7 +236,8 @@ def commercial_never_trades(context):
 
 @then('the device statistics are correct')
 def device_statistics(context):
-    output_dict = context.simulation.endpoint_buffer.device_statistics.device_stats_dict
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    output_dict = raw_results["device_statistics"]
     assert list(output_dict.keys()) == \
         ['House 1', 'House 2', 'Finite Commercial Producer', 'Commercial Energy Producer']
     assert list(output_dict['House 1'].keys()) == ['H1 DefinedLoad', 'H1 Storage1']
@@ -276,7 +277,9 @@ def json_setup_file(context, setup_json):
 
 @then('the DSO doesnt pay the grid fee of the Grid, but {child_market}')
 def dso_pays_certain_price(context, child_market):
-    bills = context.simulation.endpoint_buffer.market_bills.bills_results
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    bills = raw_results["bills"]
+
     child_market_spent = bills["Grid"][child_market]["spent"]
     dso_earned_on_grid = bills["Grid"]["DSO"]["earned"]
     grid_fees = bills["Grid"]["Accumulated Trades"]["market_fee"]
@@ -300,7 +303,8 @@ def storage_decreases_bid_rate(context):
 
 @then('cumulative grid trades correctly reports the external trade')
 def area_external_trade(context):
-    cumulative_trade = context.simulation.endpoint_buffer.cumulative_grid_trades.accumulated_trades
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    cumulative_trade = raw_results["cumulative_grid_trades"]
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     cal_cum_trades = CumulativeGridTrades.generate_cumulative_grid_trades_target_area(
             house1.uuid, {'cumulative_grid_trades': cumulative_trade.get(house1.uuid, None)}
@@ -321,14 +325,13 @@ def check_area_trade_and_bill(context):
         mped.update(context.area_tree_summary_data, core_stats, time_slot)
         count += 1
         area_data = mped.redis_output[context.name_uuid_map['Grid']]
-        assert isclose(area_data['price-energy-day'][0]['av_price'], 0.35)
         assert area_data['price-energy-day'][0]['min_price'] == 0.35
         assert area_data['price-energy-day'][0]['max_price'] == 0.35
         assert area_data['price-energy-day'][0]['grid_fee_constant'] == 0.05
     assert count == 24
     cb = CumulativeBills()
     for time_slot, core_stats in context.raw_sim_data.items():
-        cb.update_cumulative_bills(context.area_tree_summary_data, core_stats, time_slot)
+        cb.update(context.area_tree_summary_data, core_stats, time_slot)
     assert isclose(cb.cumulative_bills_results[context.name_uuid_map['Market Maker']]['earned'],
                    0.72)
     assert isclose(cb.cumulative_bills_results[context.name_uuid_map['Load']]['spent_total'], 0.84)
