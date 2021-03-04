@@ -489,9 +489,6 @@ class BidEnabledStrategy(BaseStrategy):
 
         for bid in self.get_posted_bids(market):
             assert bid.buyer == self.owner.name
-            if bid.id in market.bids.keys():
-                bid = market.bids[bid.id]
-
             self.remove_bid_from_pending(market.id, bid.id)
 
     def post_bid(self, market, price, energy, replace_existing=True, buyer_origin=None):
