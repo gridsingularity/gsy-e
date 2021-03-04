@@ -29,7 +29,7 @@ class GlobalObjects:
             self._create_grid_tree_dict(area, self.area_stats_tree_dict)
 
     def _create_grid_tree_dict(self, area, outdict):
-        outdict[area.name] = {}
+        outdict[area.uuid] = {}
         if area.children:
             if area.current_market:
                 area_dict = {'market_maker_rate': get_market_maker_rate_from_global_setting(
@@ -38,14 +38,15 @@ class GlobalObjects:
                              'last_market_stats': area.stats.get_price_stats_current_market(),
                              'last_market_fee': area.current_market.fee_class.grid_fee_rate,
                              'current_market_fee': area.get_grid_fee(),
-                             'area_uuid': area.uuid,
+                             'area_name': area.name,
                              'children': {}}
             else:
-                area_dict = {'children': {}}
-            outdict[area.name].update(area_dict)
+                area_dict = {'children': {},
+                             'area_name': area.name}
+            outdict[area.uuid].update(area_dict)
             for child in area.children:
-                self._create_grid_tree_dict(child, outdict[area.name]['children'])
+                self._create_grid_tree_dict(child, outdict[area.uuid]['children'])
         else:
-            outdict[area.name] = area.strategy.market_info_dict \
+            outdict[area.uuid] = area.strategy.market_info_dict \
                 if isinstance(area.strategy, ExternalMixin) else {}
-            outdict[area.name].update({'area_uuid': area.uuid})
+            outdict[area.uuid].update({'area_name': area.name})

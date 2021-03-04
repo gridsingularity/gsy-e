@@ -241,13 +241,15 @@ class ExternalMixin:
                                                        self._progress_info)
 
     def event_market_cycle(self):
+        if self.should_use_default_strategy:
+            super().event_market_cycle()
+
+    def publish_market_cycle(self):
         if not self.should_use_default_strategy and self.is_aggregator_controlled:
             self.redis.aggregator.add_batch_market_event(self.device.uuid,
                                                          self.area.global_objects,
                                                          self._progress_info)
             self.external_tick_counter.reset()
-        else:
-            super().event_market_cycle()
 
     def _publish_trade_event(self, trade, is_bid_trade):
 

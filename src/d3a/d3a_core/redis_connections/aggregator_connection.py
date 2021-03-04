@@ -44,13 +44,13 @@ class AggregatorHandler:
         return out_dict
 
     def _delete_not_owned_devices(self, indict, outdict):
-        for area_name, area_dict in indict.items():
+        for area_uuid, area_dict in indict.items():
             if 'children' in area_dict:
-                self._delete_not_owned_devices(indict[area_name]['children'],
-                                               outdict[area_name]['children'])
+                self._delete_not_owned_devices(indict[area_uuid]['children'],
+                                               outdict[area_uuid]['children'])
             else:
-                if area_dict['area_uuid'] not in self.device_aggregator_mapping:
-                    outdict[area_name] = {}
+                if area_uuid not in self.device_aggregator_mapping:
+                    outdict[area_uuid] = {}
 
     def add_batch_market_event(self, device_uuid, global_objects, market_info):
         if self.batch_market_cycle_events == {}:

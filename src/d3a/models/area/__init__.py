@@ -142,6 +142,7 @@ class Area:
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available and self.strategy is None else None
         self.should_update_child_strategies = False
+        self.external_connection_available = external_connection_available
 
     @property
     def name(self):
@@ -359,8 +360,14 @@ class Area:
                 and _trigger_event and ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.dispatcher.broadcast_balancing_market_cycle()
 
-        if not self.strategy and self.redis_ext_conn is not None:
-            self.redis_ext_conn.event_market_cycle()
+    def publish_market_cycle_to_external_clients(self):
+        if self.external_connection_available:
+            if self.strategy:
+                self.strategy.publish_market_cycle()
+            else:
+                self.redis_ext_conn.publish_market_cycle()
+        for child in self.children:
+            child.publish_market_cycle_to_external_clients()
 
     def _consume_commands_from_aggregator(self):
         if self.redis_ext_conn is not None and self.redis_ext_conn.is_aggregator_controlled:

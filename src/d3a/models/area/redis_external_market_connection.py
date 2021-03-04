@@ -167,7 +167,7 @@ class RedisMarketExternalConnection:
         return {'slot_completion': f'{slot_completion_percent}%',
                 'market_slot': self.area.next_market.time_slot_str}
 
-    def event_market_cycle(self):
+    def publish_market_cycle(self):
         if self.area.current_market is None:
             return
 

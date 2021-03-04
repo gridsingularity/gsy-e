@@ -340,6 +340,11 @@ class Simulation:
                         f"ETA: {self.progress_info.eta}")
 
             self.area.cycle_markets()
+
+            if self.simulation_config.external_connection_enabled:
+                self.global_objects.update(self.area)
+                self.area.publish_market_cycle_to_external_clients()
+
             self._update_and_send_results()
             self.live_events.handle_all_events(self.area)
 
