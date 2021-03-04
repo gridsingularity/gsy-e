@@ -80,6 +80,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   self.now, price, energy, buyer, original_bid_price, buyer_origin,
                   buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
+
         self.bids[bid.id] = bid
         if add_to_history is True:
             self.bid_history.append(bid)

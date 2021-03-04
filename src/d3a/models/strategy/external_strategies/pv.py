@@ -18,6 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import logging
 import traceback
+from collections import deque
+
 from pendulum import duration
 
 from d3a.d3a_core.exceptions import MarketException
@@ -123,13 +125,21 @@ class PVExternalMixin(ExternalMixin):
 
     def _offer(self, payload):
         transaction_id = self._get_transaction_id(payload)
+        required_args = {'price', 'energy', 'transaction_id'}
+        allowed_args = required_args.union({'replace_existing'})
+
         offer_response_channel = f'{self.channel_prefix}/response/offer'
         if not check_for_connected_and_reply(self.redis, offer_response_channel,
                                              self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'price', 'energy', 'transaction_id'}
+
+            # Check that all required arguments have been provided
+            assert all(arg in arguments.keys() for arg in required_args)
+            # Check that every provided argument is allowed
+            assert all(arg in allowed_args for arg in arguments.keys())
+
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
         except Exception as e:
@@ -137,7 +147,9 @@ class PVExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 offer_response_channel,
                 {"command": "offer",
-                 "error": "Incorrect offer request. Available parameters: (price, energy).",
+                 "error": (
+                     "Incorrect offer request. "
+                     "Available parameters: ('price', 'energy', 'replace_existing')."),
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
@@ -145,17 +157,23 @@ class PVExternalMixin(ExternalMixin):
 
     def _offer_impl(self, arguments, response_channel):
         try:
+            replace_existing = arguments.pop('replace_existing', True)
+
             assert self.can_offer_be_posted(
                 arguments["energy"],
                 arguments["price"],
                 self.state.get_available_energy_kWh(self.next_market.time_slot),
-                self.next_market)
-            offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
-            offer = self.next_market.offer(**offer_arguments)
-            self.offers.post(offer, self.next_market.id)
+                self.next_market,
+                replace_existing=replace_existing)
+
+            offer_arguments = {k: v for k, v in arguments.items() if not k == 'transaction_id'}
+            offer = self.post_offer(
+                self.next_market, replace_existing=replace_existing, **offer_arguments)
+
             self.redis.publish_json(
                 response_channel,
-                {"command": "offer", "status": "ready", "offer": offer.to_JSON_string(),
+                {"command": "offer", "status": "ready",
+                 "offer": offer.to_JSON_string(replace_existing=replace_existing),
                  "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling offer create on area {self.device.name}: "
@@ -223,8 +241,9 @@ class PVExternalMixin(ExternalMixin):
         if not self.connected and not self.is_aggregator_controlled:
             super().event_tick()
         else:
-            while len(self.pending_requests) > 0:
-                req = self.pending_requests.pop()
+            while self.pending_requests:
+                # We want to process requests as First-In-First-Out, so we use popleft
+                req = self.pending_requests.popleft()
                 self._incoming_commands_callback_selection(req)
         self._dispatch_event_tick_to_external_agent()
 
@@ -323,26 +342,39 @@ class PVExternalMixin(ExternalMixin):
                     continue
 
     def _offer_aggregator(self, arguments):
-        assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
+        required_args = {'price', 'energy', 'type', 'transaction_id'}
+        allowed_args = required_args.union({'replace_existing'})
+
+        # Check that all required arguments have been provided
+        assert all(arg in arguments.keys() for arg in required_args)
+        # Check that every provided argument is allowed
+        assert all(arg in allowed_args for arg in arguments.keys())
+
         arguments['seller'] = self.device.name
         arguments['seller_origin'] = self.device.name
         arguments['seller_origin_id'] = self.device.uuid
         arguments['seller_id'] = self.device.uuid
         try:
+            replace_existing = arguments.pop('replace_existing', True)
+
             assert self.can_offer_be_posted(
                 arguments["energy"],
                 arguments["price"],
                 self.state.get_available_energy_kWh(self.next_market.time_slot),
-                self.next_market)
+                self.next_market,
+                replace_existing=replace_existing)
+
             offer_arguments = {k: v
                                for k, v in arguments.items()
                                if k not in ["transaction_id", "type"]}
-            offer = self.next_market.offer(**offer_arguments)
-            self.offers.post(offer, self.next_market.id)
+
+            offer = self.post_offer(
+                self.next_market, replace_existing=replace_existing, **offer_arguments)
+
             return {
                 "command": "offer",
                 "status": "ready",
-                "offer": offer.to_JSON_string(),
+                "offer": offer.to_JSON_string(replace_existing=replace_existing),
                 "transaction_id": arguments.get("transaction_id", None),
                 "area_uuid": self.device.uuid
             }
@@ -410,8 +442,10 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
             if req.request_type == "set_energy_forecast":
                 self._set_energy_forecast_impl(req.arguments, req.response_channel)
 
-        self.pending_requests = [req for req in self.pending_requests
-                                 if req.request_type not in "set_energy_forecast"]
+        self.pending_requests = deque(
+            req for req in self.pending_requests
+            if req.request_type not in "set_energy_forecast")
+
         super().event_tick()
 
     def _incoming_commands_callback_selection(self, req):

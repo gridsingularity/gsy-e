@@ -23,7 +23,7 @@ def decompress_and_decode_queued_strings(queued_string):
 
 def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_mapping,
                                   saved_state, job_id):
-    logging.getLogger().setLevel(logging.INFO)
+    logging.getLogger().setLevel(logging.ERROR)
     scenario = decompress_and_decode_queued_strings(scenario)
     if "collaboration_uuid" in scenario:
         d3a.constants.COLLABORATION_ID = scenario.pop("collaboration_uuid")

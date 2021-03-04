@@ -15,14 +15,19 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import pytest
+
 from unittest.mock import MagicMock
+
+import pytest
 import pendulum
 
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
 from d3a.models.market.market_structures import Offer, Trade, Bid
+from d3a.models.market.one_sided import OneSidedMarket
+from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
+from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
 from d3a_interface.constants_limits import ConstSettings
 from uuid import uuid4
 
@@ -303,29 +308,115 @@ def test_bid_traded_moves_bid_from_posted_to_traded(base):
     assert base.get_traded_bids_from_market(market) == [test_bid]
 
 
-def test_can_offer_be_posted(base):
+@pytest.mark.parametrize('market_class', [OneSidedMarket, TwoSidedPayAsBid, TwoSidedPayAsClear])
+def test_can_offer_be_posted(market_class):
     base = BaseStrategy()
     base.owner = FakeOwner()
     base.area = FakeArea()
-    market = FakeMarket(raises=True)
-    base.area._market = market
+
+    market = market_class(time_slot=pendulum.now())
+
     base.offers.post(Offer('id', pendulum.now(), price=1, energy=12, seller='A'), market.id)
     base.offers.post(Offer('id2', pendulum.now(), price=1, energy=13, seller='A'), market.id)
     base.offers.post(Offer('id3', pendulum.now(), price=1, energy=20, seller='A'), market.id)
+
     assert base.can_offer_be_posted(4.999, 1, 50, market) is True
     assert base.can_offer_be_posted(5.0, 1, 50, market) is True
     assert base.can_offer_be_posted(5.001, 1, 50, market) is False
 
 
-def test_can_bid_be_posted(base):
-    base = BidEnabledStrategy()
-    base.owner = FakeOwner()
-    base.area = FakeArea()
-    market = FakeMarket(raises=True)
-    base.area._market = market
-    base.post_bid(market, 1, 23)
-    base.post_bid(market, 1, 27)
-    base.post_bid(market, 1, 10)
+@pytest.mark.parametrize('market_class', [TwoSidedPayAsBid, TwoSidedPayAsClear])
+def test_can_bid_be_posted(market_class, base):
+    market = market_class(time_slot=pendulum.now())
+
+    base.post_bid(market, price=1, energy=23, replace_existing=False)
+    base.post_bid(market, price=1, energy=27, replace_existing=False)
+    base.post_bid(market, price=1, energy=10, replace_existing=False)
+
     assert base.can_bid_be_posted(9.999, 1, 70, market) is True
     assert base.can_bid_be_posted(10.0, 1, 70, market) is True
     assert base.can_bid_be_posted(10.001, 1, 70, market) is False
+
+
+@pytest.mark.parametrize('market_class', [TwoSidedPayAsBid, TwoSidedPayAsClear])
+def test_post_bid_with_replace_existing(market_class, base):
+    """Calling post_bid with replace_existing=True triggers the removal of the existing bids."""
+
+    market = market_class(time_slot=pendulum.now())
+    base.area._market = market
+
+    _ = base.post_bid(market, 10, 5, replace_existing=False)
+    _ = base.post_bid(market, 12, 6, replace_existing=False)
+    bid_3 = base.post_bid(market, 8, 4, replace_existing=True)
+    bid_4 = base.post_bid(market, 4, 2, replace_existing=False)
+
+    assert base.get_posted_bids(market) == [bid_3, bid_4]
+
+
+@pytest.mark.parametrize('market_class', [TwoSidedPayAsBid, TwoSidedPayAsClear])
+def test_post_bid_without_replace_existing(market_class, base):
+    """Calling post_bid with replace_existing=False does not trigger the removal of the existing
+    bids.
+    """
+    market = market_class(time_slot=pendulum.now())
+    base.area._market = market
+
+    bid_1 = base.post_bid(market, 10, 5, replace_existing=False)
+    bid_2 = base.post_bid(market, 12, 6, replace_existing=False)
+    bid_3 = base.post_bid(market, 8, 4, replace_existing=False)
+
+    assert base.get_posted_bids(market) == [bid_1, bid_2, bid_3]
+
+
+@pytest.mark.parametrize('market_class', [OneSidedMarket, TwoSidedPayAsBid, TwoSidedPayAsClear])
+def test_post_offer_creates_offer_with_correct_parameters(market_class):
+    """Calling post_offer with replace_existing=False does not trigger the removal of the existing
+    offers.
+    """
+    strategy = BaseStrategy()
+    strategy.owner = FakeOwner()
+    strategy.area = FakeArea()
+
+    market = market_class(time_slot=pendulum.now())
+    strategy.area._market = market
+
+    offer_args = {
+        'price': 1, 'energy': 1, 'seller': 'seller-name', 'seller_origin': 'seller-origin-name'}
+
+    offer = strategy.post_offer(market, replace_existing=False, **offer_args)
+
+    # The offer is created with the expected parameters
+    assert offer.price == 1
+    assert offer.energy == 1
+    assert offer.seller == 'seller-name'
+    assert offer.seller_origin == 'seller-origin-name'
+
+
+@pytest.mark.parametrize('market_class', [OneSidedMarket, TwoSidedPayAsBid, TwoSidedPayAsClear])
+def test_post_offer_with_replace_existing(market_class):
+    """Calling post_offer with replace_existing triggers the removal of the existing offers."""
+
+    strategy = BaseStrategy()
+    strategy.owner = FakeOwner()
+    strategy.area = FakeArea()
+
+    market = market_class(time_slot=pendulum.now())
+    strategy.area._market = market
+
+    # Post a first offer on the market
+    offer_1_args = {
+        'price': 1, 'energy': 1, 'seller': 'seller-name', 'seller_origin': 'seller-origin-name'}
+    offer = strategy.post_offer(market, replace_existing=False, **offer_1_args)
+    assert strategy.offers.open_in_market(market.id) == [offer]
+
+    # Post a new offer not replacing the previous ones
+    offer_2_args = {
+        'price': 1, 'energy': 1, 'seller': 'seller-name', 'seller_origin': 'seller-origin-name'}
+    offer_2 = strategy.post_offer(market, replace_existing=False, **offer_2_args)
+    assert strategy.offers.open_in_market(market.id) == [offer, offer_2]
+
+    # Post a new offer replacing the previous ones (default behavior)
+    offer_3_args = {
+        'price': 1, 'energy': 1, 'seller': 'seller-name', 'seller_origin': 'seller-origin-name'}
+    offer_3 = strategy.post_offer(market, **offer_3_args)
+    assert strategy.offers.open_in_market(market.id) == [offer_3]
