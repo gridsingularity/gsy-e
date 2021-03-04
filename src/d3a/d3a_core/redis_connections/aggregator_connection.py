@@ -130,12 +130,12 @@ class AggregatorHandler:
                 self.redis_db.publish(
                     "aggregator_response", json.dumps(response_message)
                 )
-            except Exception:
+            except Exception as e:
                 response_message = {
                     "status": "error", "aggregator_uuid": message['aggregator_uuid'],
                     "device_uuid": message['device_uuid'],
                     "transaction_id": message['transaction_id'],
-                    "msg": "Error unselecting aggregator"
+                    "msg": f"Error unselecting aggregator : {e}"
                 }
             self.redis_db.publish(
                 "aggregator_response", json.dumps(response_message)
