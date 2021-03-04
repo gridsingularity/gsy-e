@@ -4,7 +4,6 @@ Feature: KPI integration tests
      Given we have a scenario named kpi.house_not_self_sufficient
      And d3a is installed
      When we run the d3a simulation on console with kpi.house_not_self_sufficient for 24 hrs
-     Then we get the area tree summary
      Then self_sufficiency of {'Grid': 1.0, 'House 1': 0.0} are correctly reported
      And self_consumption of {'Grid': 1.0, 'House 1': None} are correctly reported
 
@@ -12,7 +11,6 @@ Feature: KPI integration tests
      Given we have a scenario named kpi.house_fully_self_sufficient
      And d3a is installed
      When we run the d3a simulation on console with kpi.house_fully_self_sufficient for 24 hrs
-     Then we get the area tree summary
      Then self_sufficiency of {'Grid': 1.0, 'House 1': 1.0} are correctly reported
      And self_consumption of {'Grid': 1.0, 'House 1': 1.0} are correctly reported
 
@@ -20,7 +18,6 @@ Feature: KPI integration tests
      Given we have a scenario named kpi.house_partially_self_sufficient
      And d3a is installed
      When we run the d3a simulation on console with kpi.house_partially_self_sufficient for 24 hrs
-     Then we get the area tree summary
      Then self_sufficiency of {'Grid': 1.0, 'House 1': 0.3644} are correctly reported
      And self_consumption of {'Grid': 1.0, 'House 1': 1.0} are correctly reported
 
@@ -28,7 +25,6 @@ Feature: KPI integration tests
      Given we have a scenario named kpi.house_self_sufficient_with_ess
      And d3a is installed
      When we run the d3a simulation on console with kpi.house_self_sufficient_with_ess for 24 hrs
-     Then we get the area tree summary
      Then self_sufficiency of {'Grid': 1.0, 'House 1': 1.0} are correctly reported
      And self_consumption of {'Grid': 0.7407, 'House 1': 0.7407} are correctly reported
 
@@ -36,7 +32,6 @@ Feature: KPI integration tests
      Given we have a scenario named kpi.root_area_self_sufficient_with_infinitebus
      And d3a is installed
      When we run the d3a simulation on console with kpi.root_area_self_sufficient_with_infinitebus for 24 hrs
-     Then we get the area tree summary
      Then self_sufficiency of {'Grid': 1.0} are correctly reported
      And self_consumption of {'Grid': 1.0} are correctly reported
 
@@ -44,7 +39,6 @@ Feature: KPI integration tests
      Given we have a scenario named kpi.d3asim_2103
      And d3a is installed
      When we run the d3a simulation on console with kpi.d3asim_2103 for 24 hrs (30, 30)
-     Then we get the area tree summary
      Then self_sufficiency of {'Grid': 1.0, 'Community': 0.8333, 'House 1': 1.0, 'House 2': 0.5, 'House 3': 1.0} are correctly reported
      And self_consumption of {'Grid': 1.0, 'Community': 0.71428, 'House 1': 1.0, 'House 2': 1.0, 'House 3': 0.5} are correctly reported
 
@@ -52,7 +46,6 @@ Feature: KPI integration tests
      Given we have a scenario named kpi.d3asim_2103_2_sided_pab
      And d3a is installed
      When we run the d3a simulation on console with kpi.d3asim_2103_2_sided_pab for 24 hrs (30, 30)
-     Then we get the area tree summary
      Then self_sufficiency of {'Grid': 1.0, 'Community': 1.0, 'House 1': 1.0, 'House 2': 0.5, 'House 3': 1.0} are correctly reported
      And self_consumption of {'Grid': 1.0, 'Community': 0.8571, 'House 1': 1.0, 'House 2': 1.0, 'House 3': 0.5} are correctly reported
 
@@ -60,7 +53,6 @@ Feature: KPI integration tests
      Given we have a scenario named kpi.d3asim_2103_nopv1
      And d3a is installed
      When we run the d3a simulation on console with kpi.d3asim_2103_nopv1 for 24 hrs (30, 30)
-     Then we get the area tree summary
      Then self_sufficiency of {'Grid': 1.0, 'Community': 0.666, 'House 1': 0.0, 'House 2': 0.5, 'House 3': 1.0} are correctly reported
      And self_consumption of {'Grid': 1.0, 'Community': 0.8, 'House 1': None, 'House 2': 1.0, 'House 3': 0.5} are correctly reported
 
@@ -68,7 +60,6 @@ Feature: KPI integration tests
      Given we have a scenario named kpi.d3asim_2103_nopv1_2_sided_pab
      And d3a is installed
      When we run the d3a simulation on console with kpi.d3asim_2103_nopv1_2_sided_pab for 24 hrs (30, 30)
-     Then we get the area tree summary
      Then self_sufficiency of {'Grid': 1.0, 'Community': 0.833, 'House 1': 0.0, 'House 2': 0.5, 'House 3': 1.0} are correctly reported
      And self_consumption of {'Grid': 1.0, 'Community': 1.0, 'House 1': None, 'House 2': 1.0, 'House 3': 0.5} are correctly reported
 
@@ -76,7 +67,6 @@ Feature: KPI integration tests
      Given we have a scenario named kpi/d3asim_2262
      And d3a is installed
      When we run the d3a simulation on console with kpi.d3asim_2262 for 24 hrs (30, 30)
-     Then we get the area tree summary
      Then self_sufficiency of {'Grid': 1.0, 'Community': 1.0, 'House 1': 0.66666, 'House 2': 0.5, 'House 3': 1.0} are correctly reported
      And self_consumption of {'Grid': 1.0, 'Community': 1.0, 'House 1': 1.0, 'House 2': 1.0, 'House 3': 0.5} are correctly reported
 
@@ -84,7 +74,6 @@ Feature: KPI integration tests
      Given we have a scenario named kpi.market_maker_and_load
      And d3a is installed
      When we run the d3a simulation on console with kpi.market_maker_and_load for 24 hrs (60, 30)
-     Then we get the area tree summary
      Then self_sufficiency of {'Grid': 1.0} are correctly reported
      And self_consumption of {'Grid': 1.0} are correctly reported
      And total_energy_demanded_wh of {'Grid': 900} are correctly reported
@@ -95,7 +84,6 @@ Feature: KPI integration tests
      Given we have a scenario named kpi.infinitebus_pv_load
      And d3a is installed
      When we run the d3a simulation on console with kpi.infinitebus_pv_load for 24 hrs (15, 15)
-     Then we get the area tree summary
      Then self_sufficiency of {'Grid': 1.0, 'House': 0.909375} are correctly reported
      And self_consumption of {'Grid': 1.0, 'House': 0.616525} are correctly reported
      And total_energy_demanded_wh of {'Grid': 1565.625, 'House': 1000} are correctly reported

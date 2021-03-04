@@ -390,11 +390,6 @@ def test_export_data_csv(context, scenario):
                                                                     file=data_fn))
 
 
-@then('we get the area tree summary')
-def area_tree(context):
-    get_simulation_raw_results(context)
-
-
 @then('the export functionality of supply/demand curve is tested')
 def test_export_supply_demand_curve(context):
     sim_data_csv = glob.glob(os.path.join(context.export_path, "*", "plot", "mcp"))

@@ -22,16 +22,23 @@ import ast
 from behave import then
 from math import isclose
 
+from d3a_interface.utils import get_area_name_uuid_mapping
+
 
 @then('{kpi} of {expected_kpis} are correctly reported')
 def test_export_of_kpi_result(context, kpi, expected_kpis):
+    area_tree_summary = glob.glob(os.path.join(context.export_path, "*", "area_tree_summary.json"))
+    with open(area_tree_summary[0], "r") as sf:
+        context.area_tree_summary_data = json.load(sf)
+    name_uuid_map = get_area_name_uuid_mapping(context.area_tree_summary_data)
+
     sim_data_csv = glob.glob(os.path.join(context.export_path, "*",
                                           "aggregated_results", "kpi.json"))
     with open(sim_data_csv[0], "r") as sf:
         kpi_data = json.load(sf)
     expected_kpis = ast.literal_eval(expected_kpis)
     for area, value in expected_kpis.items():
-        area_uuid = context.name_uuid_map[area]
+        area_uuid = name_uuid_map[area]
         if kpi == "self_sufficiency":
             assert isclose(kpi_data[area_uuid]['self_sufficiency'], float(value), abs_tol=1e-03)
 
