@@ -114,8 +114,7 @@ class FakeMarket:
     def bid(self, price: float, energy: float, buyer: str, original_bid_price=None,
             buyer_origin=None) -> Bid:
         bid = Bid(id='bid_id', time=now(), price=price, energy=energy, buyer=buyer,
-                  original_bid_price=original_bid_price,
-                  buyer_origin=buyer_origin)
+                  original_bid_price=original_bid_price, buyer_origin=buyer_origin)
         self.bids[bid.id] = bid
         return bid
 
