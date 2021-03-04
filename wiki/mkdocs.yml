@@ -30,6 +30,7 @@ nav:
         - 'Overview': 'api-overview.md'
         - 'Asset API': 'assets-api.md'
         - 'Grid Operator API': 'grid-operator-api.md'
+        - 'API agent on cloud': 'cloud-service-guide.md'
     - 'Collaboration Tool': 'collaboration.md'
     - 'Canary Test Network': 'canary-network.md'
     - 'Blockchain Integration': 'blockchain.md'
@@ -80,6 +81,7 @@ theme:
   feature:
     tabs: false
 
+
 # Extra css for further customization
 extra_css:
   - 'stylesheets/extra.css'
@@ -121,6 +123,10 @@ markdown_extensions:
     - attr_list
 
 plugins:
+    - search:
+        lang: en
+
     - redirects:
         redirect_maps:
             '': 'https://gridsingularity.github.io/d3a/d3a-documentation/'
+
