@@ -330,7 +330,8 @@ class StorageExternalMixin(ExternalMixin):
                 arguments["price"],
                 arguments["energy"],
                 replace_existing=replace_existing,
-                buyer_origin=arguments["buyer_origin"]
+                buyer_origin=arguments["buyer_origin"],
+                buyer_origin_id=arguments["buyer_origin_id"]
             )
             self.state.offered_buy_kWh[self.next_market.time_slot] = \
                 self.posted_bid_energy(self.next_market.id)
@@ -525,6 +526,8 @@ class StorageExternalMixin(ExternalMixin):
         with self.lock:
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
+            arguments['seller_origin_id'] = self.device.uuid
+            arguments['seller_id'] = self.device.uuid
             try:
                 offer_arguments = {
                     k: v for k, v in arguments.items() if k not in ['transaction_id', 'type']}
@@ -576,7 +579,8 @@ class StorageExternalMixin(ExternalMixin):
                 self.remove_bid_from_pending(self.next_market.id, bid.id)
             if len(existing_bids) > 0:
                 updated_bid = self.post_bid(self.next_market, bid_rate * existing_bid_energy,
-                                            existing_bid_energy, buyer_origin=self.device.name)
+                                            existing_bid_energy, buyer_origin=self.device.name,
+                                            buyer_origin_id=self.device.uuid)
                 return {
                     "command": "update_bid", "status": "ready",
                     "bid": updated_bid.to_JSON_string(),
@@ -608,7 +612,8 @@ class StorageExternalMixin(ExternalMixin):
                 arguments["price"],
                 arguments["energy"],
                 replace_existing=replace_existing,
-                buyer_origin=arguments["buyer_origin"]
+                buyer_origin=arguments["buyer_origin"],
+                buyer_origin_id=arguments["buyer_origin_id"]
             )
             self.state.offered_buy_kWh[self.next_market.time_slot] = \
                 self.posted_bid_energy(self.next_market.id)
