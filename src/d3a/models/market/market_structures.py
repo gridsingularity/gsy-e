@@ -57,10 +57,19 @@ class Offer:
                "[{s.seller}]: {s.energy} kWh @ {s.price} @ {rate}"\
             .format(s=self, rate=self.energy_rate)
 
-    def to_JSON_string(self):
+    def to_JSON_string(self, **kwargs):
+        """Convert the Offer object into its JSON representation.
+
+        Args:
+            **kwargs: additional key-value pairs to be added to the JSON representation.
+        """
         offer_dict = deepcopy(self.__dict__)
+        if kwargs:
+            offer_dict = {**offer_dict, **kwargs}
+
         offer_dict["type"] = "Offer"
         offer_dict.pop('energy_rate', None)
+
         return json.dumps(offer_dict, default=my_converter)
 
     def serializable_dict(self):
@@ -110,15 +119,19 @@ def offer_from_JSON_string(offer_string, current_time):
     return offer
 
 
-class Bid(namedtuple('Bid', ('id', 'time', 'price', 'energy', 'buyer',
-                             'original_bid_price', 'buyer_origin', 'energy_rate'))):
+class Bid(namedtuple('Bid', (
+        'id', 'time', 'price', 'energy', 'buyer', 'original_bid_price', 'buyer_origin',
+        'energy_rate'))):
+
     def __new__(cls, id, time, price, energy, buyer, original_bid_price=None,
                 buyer_origin=None, energy_rate=None):
         if energy_rate is None:
             energy_rate = price / energy
         # overridden to give the residual field a default value
-        return super(Bid, cls).__new__(cls, str(id), time, price, energy, buyer,
-                                       original_bid_price, buyer_origin, energy_rate)
+
+        return super(Bid, cls).__new__(
+            cls, str(id), time, price, energy, buyer, original_bid_price, buyer_origin,
+            energy_rate)
 
     def __repr__(self):
         return (
@@ -140,9 +153,18 @@ class Bid(namedtuple('Bid', ('id', 'time', 'price', 'energy', 'buyer',
         rate = round(self.energy_rate, 4)
         return rate, self.energy, self.price, self.buyer
 
-    def to_JSON_string(self):
+    def to_JSON_string(self, **kwargs):
+        """Convert the Bid object to its JSON representation. Additional elements can be added.
+
+        Args:
+            **kwargs: additional key-value pairs to be added to the JSON representation.
+        """
         bid_dict = self._asdict()
+        if kwargs:
+            bid_dict = {**bid_dict, **kwargs}
+
         bid_dict["type"] = "Bid"
+
         return json.dumps(bid_dict, default=my_converter)
 
     def serializable_dict(self):
