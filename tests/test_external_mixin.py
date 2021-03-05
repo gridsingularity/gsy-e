@@ -13,6 +13,7 @@ import d3a.models.strategy.external_strategies
 from d3a.models.market.market_structures import Trade, Offer, Bid
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.constants_limits import ConstSettings
+from d3a.d3a_core.global_objects import GlobalStatistics
 from d3a.constants import DATE_TIME_FORMAT
 
 d3a.models.strategy.external_strategies.ResettableCommunicator = MagicMock
@@ -27,6 +28,7 @@ class TestExternalMixin(unittest.TestCase):
         self.area = Area(name="test_area", config=self.config, strategy=strategy)
         parent = Area(name="parent_area", children=[self.area])
         parent.activate()
+        parent._global_objects = GlobalStatistics(parent)
         strategy.connected = True
         market = MagicMock()
         market.time_slot = GlobalConfig.start_date
@@ -127,7 +129,8 @@ class TestExternalMixin(unittest.TestCase):
         strategy.event_trade(market_id="test_market", trade=trade)
         assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
                self.area.uuid
-        call_args = strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][1]
+
+        call_args = strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][2]
         assert call_args['trade_id'] == trade.id
         assert call_args['event'] == "trade"
         assert call_args['price'] == 20

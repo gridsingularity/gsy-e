@@ -55,12 +55,12 @@ class TestGlobalObjects(unittest.TestCase):
         self.grid_area.activate()
 
     def test_global_objects_area_stats_tree_dict_general_structure(self):
-        go = GlobalStatistics()
+        go = GlobalStatistics(self.grid_area)
         self.grid_area.current_tick += 15
         self.house_area.current_tick += 15
         self.grid_area.cycle_markets(_trigger_event=True)
 
-        go.update(self.grid_area)
+        go.update()
 
         expected_area_stats_tree_dict = {
             self.grid_area.uuid:
