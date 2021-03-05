@@ -174,8 +174,9 @@ class LoadExternalMixin(ExternalMixin):
                 arguments["price"],
                 arguments["energy"],
                 replace_existing=replace_existing,
-                buyer_origin=arguments["buyer_origin"])
-
+                buyer_origin=arguments["buyer_origin"],
+                buyer_origin_id=arguments["buyer_origin_id"]
+            )
             self.redis.publish_json(
                 bid_response_channel, {
                     "command": "bid", "status": "ready",
@@ -284,7 +285,8 @@ class LoadExternalMixin(ExternalMixin):
                 self.remove_bid_from_pending(self.next_market.id, bid.id)
             if len(existing_bids) > 0:
                 updated_bid = self.post_bid(self.next_market, bid_rate * existing_bid_energy,
-                                            existing_bid_energy, buyer_origin=self.device.name)
+                                            existing_bid_energy, buyer_origin=self.device.name,
+                                            buyer_origin_id=self.device.uuid)
                 return {
                     "command": "update_bid", "status": "ready",
                     "bid": updated_bid.to_JSON_string(),
@@ -308,6 +310,7 @@ class LoadExternalMixin(ExternalMixin):
             assert all(arg in allowed_args for arg in arguments.keys())
 
             arguments['buyer_origin'] = self.device.name
+            arguments["buyer_origin_id"] = self.device.uuid
 
             replace_existing = arguments.get('replace_existing', True)
             assert self.can_bid_be_posted(
@@ -322,7 +325,8 @@ class LoadExternalMixin(ExternalMixin):
                 arguments["price"],
                 arguments["energy"],
                 replace_existing=replace_existing,
-                buyer_origin=arguments["buyer_origin"]
+                buyer_origin=arguments["buyer_origin"],
+                buyer_origin_id=arguments["buyer_origin_id"]
             )
             return {
                 "command": "bid", "status": "ready",

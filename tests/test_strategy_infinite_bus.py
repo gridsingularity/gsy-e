@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 import sys
 import pendulum
+from uuid import uuid4
 
 from d3a.models.market.market_structures import Offer, Trade, BalancingOffer, Bid
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
@@ -34,6 +35,7 @@ class FakeArea:
         self.current_tick = 2
         self.appliance = None
         self.name = 'FakeArea'
+        self.uuid = str(uuid4())
         self.test_market = FakeMarket(0)
         self.test_balancing_market = FakeMarket(1)
         self.test_balancing_market_2 = FakeMarket(2)
@@ -79,8 +81,9 @@ class FakeMarket:
         return TIME
 
     def offer(self, price, energy, seller, original_offer_price=None,
-              seller_origin=None):
-        offer = Offer('id', pendulum.now(), price, energy, seller)
+              seller_origin=None, seller_origin_id=None, seller_id=None):
+        offer = Offer('id', pendulum.now(), price, energy, seller, seller_origin=seller_origin,
+                      seller_origin_id=seller_origin_id, seller_id=seller_id)
         self.created_offers.append(offer)
         offer.id = 'id'
         return offer
@@ -92,15 +95,19 @@ class FakeMarket:
         return offer
 
     def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
+                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
+                     buyer_origin_id=None, buyer_id=None):
         offer = offer_or_id
         trade = Trade('trade_id', time, offer, offer.seller, buyer,
-                      seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
+                      seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
+                      buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
         self.traded_offers.append(trade)
         return trade
 
-    def bid(self, price, energy, buyer, original_bid_price=None, buyer_origin=None):
-        bid = Bid("bid_id", pendulum.now(), price, energy, buyer, buyer_origin=buyer_origin)
+    def bid(self, price, energy, buyer, original_bid_price=None,
+            buyer_origin=None, buyer_origin_id=None, buyer_id=None):
+        bid = Bid("bid_id", pendulum.now(), price, energy, buyer, buyer_origin=buyer_origin,
+                  buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
         return bid
 
 

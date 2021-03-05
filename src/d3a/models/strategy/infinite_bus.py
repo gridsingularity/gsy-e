@@ -68,7 +68,9 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             if offer.energy_rate <= find_object_of_same_weekday_and_time(self.energy_buy_rate,
                                                                          market.time_slot):
                 try:
-                    self.accept_offer(market, offer, buyer_origin=self.owner.name)
+                    self.accept_offer(market, offer, buyer_origin=self.owner.name,
+                                      buyer_origin_id=self.owner.uuid,
+                                      buyer_id=self.owner.uuid)
                 except MarketException:
                     # Offer already gone etc., try next one.
                     continue
@@ -89,7 +91,8 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
                     self.post_bid(market,
                                   buy_rate * INF_ENERGY,
                                   INF_ENERGY,
-                                  buyer_origin=self.owner.name)
+                                  buyer_origin=self.owner.name,
+                                  buyer_origin_id=self.owner.uuid)
                 except MarketException:
                     pass
 
