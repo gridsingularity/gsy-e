@@ -517,12 +517,14 @@ def if_not_in_list_append(target_list, obj):
         target_list.append(obj)
 
 
-def get_current_market_maker_rate(market_slot):
-    mmr_rate = GlobalConfig.market_maker_rate
-    if isinstance(mmr_rate, dict):
-        return mmr_rate[market_slot] if market_slot in mmr_rate else None
+def get_market_maker_rate_from_config(next_market, default_value=None):
+    if next_market is None:
+        return default_value
+    if isinstance(GlobalConfig.market_maker_rate, dict):
+        return find_object_of_same_weekday_and_time(GlobalConfig.market_maker_rate,
+                                                    next_market.time_slot)
     else:
-        return mmr_rate
+        return GlobalConfig.market_maker_rate
 
 
 def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
@@ -600,14 +602,3 @@ class ExternalTickCounter:
             return True
         else:
             return False
-
-
-def get_market_maker_rate_from_global_setting(next_market):
-    if isinstance(GlobalConfig.market_maker_rate, dict):
-        if next_market is None:
-            return GlobalConfig.market_maker_rate[next(iter(GlobalConfig.market_maker_rate))]
-        else:
-            return find_object_of_same_weekday_and_time(GlobalConfig.market_maker_rate,
-                                                        next_market.time_slot)
-    else:
-        return GlobalConfig.market_maker_rate

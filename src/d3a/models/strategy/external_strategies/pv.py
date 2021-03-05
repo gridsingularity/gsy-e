@@ -23,10 +23,11 @@ from collections import deque
 from pendulum import duration
 
 from d3a.d3a_core.exceptions import MarketException
-from d3a.models.strategy.external_strategies import IncomingRequest
+from d3a.models.strategy.external_strategies import IncomingRequest, default_market_info
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
+from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a_interface.constants_limits import ConstSettings
 
 
@@ -198,7 +199,21 @@ class PVExternalMixin(ExternalMixin):
         self.register_on_market_cycle()
         if not self.should_use_default_strategy:
             self.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
-            super().event_market_cycle()
+            if not self.is_aggregator_controlled:
+                market_event_channel = f"{self.channel_prefix}/events/market"
+                market_info = self.next_market.info
+                if self.is_aggregator_controlled:
+                    market_info.update(default_market_info)
+                market_info['device_info'] = self._device_info_dict
+                market_info["event"] = "market"
+                market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
+                    if "bills" in self.device.stats.aggregated_stats else None
+                market_info["area_uuid"] = self.device.uuid
+                market_info["last_market_maker_rate"] = \
+                    get_market_maker_rate_from_config(self.area.current_market)
+                market_info['last_market_stats'] = \
+                    self.market_area.stats.get_price_stats_current_market()
+                self.redis.publish_json(market_event_channel, market_info)
             self._delete_past_state()
         else:
             super().event_market_cycle()

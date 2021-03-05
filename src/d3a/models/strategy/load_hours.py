@@ -23,7 +23,7 @@ from typing import Union, Dict  # NOQA
 from collections import namedtuple
 
 from d3a.d3a_core.util import find_object_of_same_weekday_and_time, convert_W_to_Wh, \
-    get_market_maker_rate_from_global_setting
+    get_market_maker_rate_from_config
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import LoadState
 from d3a.models.strategy import BidEnabledStrategy
@@ -227,8 +227,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
         if self.use_market_maker_rate:
             self._area_reconfigure_prices(
-                final_buying_rate=get_market_maker_rate_from_global_setting(
-                    self.area.next_market) + self.owner.get_path_to_root_fees(), validate=False)
+                final_buying_rate=get_market_maker_rate_from_config(
+                    self.area.next_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
 
         self._validate_rates(self.bid_update.initial_rate_profile_buffer,
                              self.bid_update.final_rate_profile_buffer,

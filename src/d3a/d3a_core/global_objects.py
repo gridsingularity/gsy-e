@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.strategy.external_strategies import ExternalMixin
-from d3a.d3a_core.util import get_market_maker_rate_from_global_setting
+from d3a.d3a_core.util import get_market_maker_rate_from_config
 
 
 class GlobalStatistics:
@@ -33,7 +33,7 @@ class GlobalStatistics:
         outdict[area.uuid] = {}
         if area.children:
             if area.current_market:
-                area_dict = {'market_maker_rate': get_market_maker_rate_from_global_setting(
+                area_dict = {'market_maker_rate': get_market_maker_rate_from_config(
                                                   area.current_market),
                              'last_market_bill': area.stats.get_last_market_stats_for_grid_tree(),
                              'last_market_stats': area.stats.get_price_stats_current_market(),

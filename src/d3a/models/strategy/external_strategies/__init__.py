@@ -27,6 +27,12 @@ from d3a.d3a_core.util import ExternalTickCounter
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
 
+default_market_info = {"device_info": None,
+                       "device_bill": None,
+                       "event": None,
+                       "grid_stats_tree": None,
+                       "area_uuid": None}
+
 
 class CommandTypeNotSupported(Exception):
     pass
@@ -235,11 +241,22 @@ class ExternalMixin:
                 'market_slot': self.area.next_market.time_slot_str}
 
     def _dispatch_event_tick_to_external_agent(self):
-        if self.is_aggregator_controlled and \
-                self.external_tick_counter.is_it_time_for_external_tick(self.device.current_tick):
-            self.redis.aggregator.add_batch_tick_event(self.device.uuid,
-                                                       self.area.global_objects,
-                                                       self._progress_info)
+        if self.external_tick_counter.is_it_time_for_external_tick(self.device.current_tick):
+            if self.is_aggregator_controlled:
+                self.redis.aggregator.add_batch_tick_event(self.device.uuid,
+                                                           self.area.global_objects,
+                                                           self._progress_info)
+            else:
+                if self.connected:
+                    tick_event_channel = f"{self.channel_prefix}/events/tick"
+                    current_tick_info = {
+                        **self._progress_info,
+                        "event": "tick",
+                        "area_uuid": self.device.uuid,
+                        "device_info": self._device_info_dict
+                    }
+
+                    self.redis.publish_json(tick_event_channel, current_tick_info)
 
     def event_market_cycle(self):
         if self.should_use_default_strategy:
@@ -293,6 +310,9 @@ class ExternalMixin:
             self.redis.aggregator.add_batch_trade_event(self.device.uuid,
                                                         self.area.global_objects,
                                                         event_response_dict)
+        elif self.connected:
+            trade_event_channel = f"{self.channel_prefix}/events/trade"
+            self.redis.publish_json(trade_event_channel, event_response_dict)
 
     def event_bid_traded(self, market_id, bid_trade):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)

@@ -23,7 +23,7 @@ from pendulum import duration
 from logging import getLogger
 
 from d3a.d3a_core.util import find_object_of_same_weekday_and_time, convert_W_to_kWh, \
-    get_market_maker_rate_from_global_setting
+    get_market_maker_rate_from_config
 from d3a.models.strategy import BaseStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.device_validator import validate_pv_device_energy, validate_pv_device_price
@@ -171,8 +171,8 @@ class PVStrategy(BaseStrategy):
         # If use_market_maker_rate is true, overwrite initial_selling_rate to market maker rate
         if self.use_market_maker_rate:
             self._area_reconfigure_prices(
-                initial_selling_rate=get_market_maker_rate_from_global_setting(
-                    self.area.next_market) - self.owner.get_path_to_root_fees(), validate=False)
+                initial_selling_rate=get_market_maker_rate_from_config(
+                    self.area.next_market, 0) - self.owner.get_path_to_root_fees(), validate=False)
 
         self._validate_rates(self.offer_update.initial_rate_profile_buffer,
                              self.offer_update.final_rate_profile_buffer,
