@@ -64,7 +64,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, buyer_origin,
             bid_id: str = None, original_bid_price=None, adapt_price_with_fees=True,
-            add_to_history=True) -> Bid:
+            add_to_history=True, buyer_origin_id=None, buyer_id=None) -> Bid:
         if energy <= 0:
             raise InvalidBid()
 
@@ -78,7 +78,9 @@ class TwoSidedPayAsBid(OneSidedMarket):
             raise MarketException("Negative price after taxes, bid cannot be posted.")
 
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
-                  self.now, price, energy, buyer, original_bid_price, buyer_origin)
+                  self.now, price, energy, buyer, original_bid_price, buyer_origin,
+                  buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
+
         self.bids[bid.id] = bid
         if add_to_history is True:
             self.bid_history.append(bid)
@@ -106,6 +108,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
                                 buyer=original_bid.buyer,
                                 original_bid_price=original_accepted_price,
                                 buyer_origin=original_bid.buyer_origin,
+                                buyer_origin_id=original_bid.buyer_origin_id,
+                                buyer_id=original_bid.buyer_id,
                                 adapt_price_with_fees=False,
                                 add_to_history=False)
 
@@ -120,6 +124,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
                                 buyer=original_bid.buyer,
                                 original_bid_price=original_residual_price,
                                 buyer_origin=original_bid.buyer_origin,
+                                buyer_origin_id=original_bid.buyer_origin_id,
+                                buyer_id=original_bid.buyer_id,
                                 adapt_price_with_fees=False,
                                 add_to_history=True)
 
@@ -143,7 +149,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
     @lock_market_action
     def accept_bid(self, bid: Bid, energy: float = None,
                    seller: str = None, buyer: str = None, already_tracked: bool = False,
-                   trade_rate: float = None, trade_offer_info=None, seller_origin=None):
+                   trade_rate: float = None, trade_offer_info=None, seller_origin=None,
+                   seller_origin_id=None, seller_id=None):
         market_bid = self.bids.pop(bid.id, None)
         if market_bid is None:
             raise BidNotFound("During accept bid: " + str(bid))
@@ -185,7 +192,9 @@ class TwoSidedPayAsBid(OneSidedMarket):
                       buyer, residual_bid, already_tracked=already_tracked,
                       offer_bid_trade_info=updated_bid_trade_info,
                       buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
-                      fee_price=fee_price
+                      fee_price=fee_price, seller_origin_id=seller_origin_id,
+                      buyer_origin_id=bid.buyer_origin_id, seller_id=seller_id,
+                      buyer_id=bid.buyer_id
                       )
 
         if already_tracked is False:
@@ -228,7 +237,9 @@ class TwoSidedPayAsBid(OneSidedMarket):
                                   trade_rate=clearing_rate,
                                   already_tracked=already_tracked,
                                   trade_bid_info=trade_bid_info,
-                                  buyer_origin=bid.buyer_origin)
+                                  buyer_origin=bid.buyer_origin,
+                                  buyer_origin_id=bid.buyer_origin_id,
+                                  buyer_id=bid.buyer_id)
 
         bid_trade = self.accept_bid(bid=bid,
                                     energy=selected_energy,
@@ -237,7 +248,9 @@ class TwoSidedPayAsBid(OneSidedMarket):
                                     already_tracked=True,
                                     trade_rate=clearing_rate,
                                     trade_offer_info=trade_bid_info,
-                                    seller_origin=offer.seller_origin)
+                                    seller_origin=offer.seller_origin,
+                                    seller_origin_id=offer.seller_origin_id,
+                                    seller_id=offer.seller_id)
         return bid_trade, trade
 
     def match_offers_bids(self):

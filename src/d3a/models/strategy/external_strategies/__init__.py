@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import json
 from threading import Lock
-from collections import namedtuple
+from collections import deque, namedtuple
 from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import key_in_dict_and_not_none
@@ -83,13 +83,14 @@ def unregister_area(redis, channel_prefix, is_connected, transaction_id):
 
 
 class ExternalMixin:
+
     def __init__(self, *args, **kwargs):
         self._connected = False
         self.connected = False
         self._use_template_strategy = False
         super().__init__(*args, **kwargs)
         self._last_dispatched_tick = 0
-        self.pending_requests = []
+        self.pending_requests = deque()
         self.lock = Lock()
 
     def event_activate(self, **kwargs):
@@ -398,7 +399,7 @@ class ExternalMixin:
                  "error_message": f"Error when handling {req.request_type} "
                                   f"on area {self.device.name} with arguments {req.arguments}."
                                   f"Market cycle already finished."})
-        self.pending_requests = []
+        self.pending_requests = deque()
 
     def _set_energy_forecast(self, payload):
         transaction_id = self._get_transaction_id(payload)

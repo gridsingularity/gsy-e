@@ -33,7 +33,8 @@ def my_converter(o):
 
 class Offer:
     def __init__(self, id, time, price, energy, seller,
-                 original_offer_price=None, seller_origin=None):
+                 original_offer_price=None, seller_origin=None, seller_origin_id=None,
+                 seller_id=None):
         self.id = str(id)
         self.real_id = id
         self.price = price
@@ -41,6 +42,8 @@ class Offer:
         self.energy = energy
         self.seller = seller
         self.seller_origin = seller_origin
+        self.seller_origin_id = seller_origin_id
+        self.seller_id = seller_id
         self.energy_rate = price / energy
         self.time = time
 
@@ -57,10 +60,19 @@ class Offer:
                "[{s.seller}]: {s.energy} kWh @ {s.price} @ {rate}"\
             .format(s=self, rate=self.energy_rate)
 
-    def to_JSON_string(self):
+    def to_JSON_string(self, **kwargs):
+        """Convert the Offer object into its JSON representation.
+
+        Args:
+            **kwargs: additional key-value pairs to be added to the JSON representation.
+        """
         offer_dict = deepcopy(self.__dict__)
+        if kwargs:
+            offer_dict = {**offer_dict, **kwargs}
+
         offer_dict["type"] = "Offer"
         offer_dict.pop('energy_rate', None)
+
         return json.dumps(offer_dict, default=my_converter)
 
     def serializable_dict(self):
@@ -71,6 +83,8 @@ class Offer:
             "energy_rate": self.energy_rate,
             "seller": self.seller,
             "seller_origin": self.seller_origin,
+            "seller_origin_id": self.seller_origin_id,
+            "seller_id": self.seller_id,
             "time": datetime_to_string_incl_seconds(self.time)
         }
 
@@ -95,7 +109,8 @@ class Offer:
 
 def copy_offer(offer):
     return Offer(offer.id, offer.time, offer.price, offer.energy, offer.seller,
-                 offer.original_offer_price, offer.seller_origin)
+                 offer.original_offer_price, offer.seller_origin, offer.seller_origin_id,
+                 offer.seller_id)
 
 
 def offer_from_JSON_string(offer_string, current_time):
@@ -111,14 +126,16 @@ def offer_from_JSON_string(offer_string, current_time):
 
 
 class Bid(namedtuple('Bid', ('id', 'time', 'price', 'energy', 'buyer',
-                             'original_bid_price', 'buyer_origin', 'energy_rate'))):
+                             'original_bid_price', 'buyer_origin', 'energy_rate',
+                             'buyer_origin_id', 'buyer_id'))):
     def __new__(cls, id, time, price, energy, buyer, original_bid_price=None,
-                buyer_origin=None, energy_rate=None):
+                buyer_origin=None, energy_rate=None, buyer_origin_id=None, buyer_id=None):
         if energy_rate is None:
             energy_rate = price / energy
         # overridden to give the residual field a default value
         return super(Bid, cls).__new__(cls, str(id), time, price, energy, buyer,
-                                       original_bid_price, buyer_origin, energy_rate)
+                                       original_bid_price, buyer_origin, energy_rate,
+                                       buyer_origin_id, buyer_id)
 
     def __repr__(self):
         return (
@@ -140,9 +157,18 @@ class Bid(namedtuple('Bid', ('id', 'time', 'price', 'energy', 'buyer',
         rate = round(self.energy_rate, 4)
         return rate, self.energy, self.price, self.buyer
 
-    def to_JSON_string(self):
+    def to_JSON_string(self, **kwargs):
+        """Convert the Bid object to its JSON representation. Additional elements can be added.
+
+        Args:
+            **kwargs: additional key-value pairs to be added to the JSON representation.
+        """
         bid_dict = self._asdict()
+        if kwargs:
+            bid_dict = {**bid_dict, **kwargs}
+
         bid_dict["type"] = "Bid"
+
         return json.dumps(bid_dict, default=my_converter)
 
     def serializable_dict(self):
@@ -152,6 +178,8 @@ class Bid(namedtuple('Bid', ('id', 'time', 'price', 'energy', 'buyer',
             "energy": self.energy,
             "energy_rate": self.energy_rate,
             "buyer_origin": self.buyer_origin,
+            "buyer_origin_id": self.buyer_origin_id,
+            "buyer_id": self.buyer_id,
             "buyer": self.buyer,
             "time": datetime_to_string_incl_seconds(self.time)
         }
@@ -197,14 +225,18 @@ def trade_bid_info_from_JSON_string(info_string):
 
 class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'residual',
                                  'already_tracked', 'offer_bid_trade_info', 'seller_origin',
-                                 'buyer_origin', 'fee_price'))):
+                                 'buyer_origin', 'fee_price', 'seller_origin_id',
+                                 'buyer_origin_id', 'seller_id', 'buyer_id'))):
     def __new__(cls, id, time, offer, seller, buyer, residual=None,
                 already_tracked=False, offer_bid_trade_info=None,
-                seller_origin=None, buyer_origin=None, fee_price=None):
+                seller_origin=None, buyer_origin=None, fee_price=None,
+                seller_origin_id=None, buyer_origin_id=None, seller_id=None, buyer_id=None):
         # overridden to give the residual field a default value
         return super(Trade, cls).__new__(cls, id, time, offer, seller, buyer, residual,
                                          already_tracked, offer_bid_trade_info, seller_origin,
-                                         buyer_origin, fee_price)
+                                         buyer_origin, fee_price,
+                                         seller_origin_id, buyer_origin_id,
+                                         seller_id, buyer_id)
 
     def __str__(self):
         return (
@@ -244,6 +276,10 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'resi
             "buyer": self.buyer,
             "buyer_origin": self.buyer_origin,
             "seller_origin": self.seller_origin,
+            "seller_origin_id": self.seller_origin_id,
+            "buyer_origin_id": self.buyer_origin_id,
+            "seller_id": self.seller_id,
+            "buyer_id": self.buyer_id,
             "seller": self.seller,
             "fee_price": self.fee_price,
             "time": datetime_to_string_incl_seconds(self.time)
@@ -284,13 +320,18 @@ class BalancingOffer(Offer):
 
 class BalancingTrade(namedtuple('BalancingTrade', ('id', 'time', 'offer', 'seller',
                                                    'buyer', 'residual', 'offer_bid_trade_info',
-                                                   'seller_origin', 'buyer_origin', 'fee_price'))):
+                                                   'seller_origin', 'buyer_origin', 'fee_price',
+                                                   'seller_origin_id', 'buyer_origin_id',
+                                                   'seller_id', 'buyer_id'))):
     def __new__(cls, id, time, offer, seller, buyer, residual=None, offer_bid_trade_info=None,
-                seller_origin=None, buyer_origin=None, fee_price=None):
+                seller_origin=None, buyer_origin=None, fee_price=None,
+                seller_origin_id=None, buyer_origin_id=None, seller_id=None, buyer_id=None):
         # overridden to give the residual field a default value
         return super(BalancingTrade, cls).__new__(cls, id, time, offer, seller,
                                                   buyer, residual, offer_bid_trade_info,
-                                                  seller_origin, buyer_origin, fee_price)
+                                                  seller_origin, buyer_origin, fee_price,
+                                                  seller_origin_id, buyer_origin_id,
+                                                  seller_id, buyer_id)
 
     def __str__(self):
         return (

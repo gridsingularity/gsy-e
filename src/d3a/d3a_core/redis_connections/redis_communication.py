@@ -28,7 +28,7 @@ from rq.exceptions import NoSuchJobError
 
 from d3a_interface.results_validator import results_validator  # NOQA
 from d3a_interface.constants_limits import HeartBeat
-from d3a_interface.utils import RepeatingTimer
+from d3a_interface.utils import RepeatingTimer, get_json_dict_memory_allocation_size
 from d3a_interface.exceptions import D3AException
 
 
@@ -41,10 +41,6 @@ ERROR_CHANNEL = "d3a-errors"
 RESULTS_CHANNEL = "d3a-results"
 ZIP_RESULTS_CHANNEL = "d3a-zip-results"
 ZIP_RESULTS_KEY = "d3a-zip-results-key/"
-
-
-def utf8len(s):
-    return len(s.encode('utf-8')) / 1000.0
 
 
 class RedisSimulationCommunication:
@@ -180,7 +176,7 @@ class RedisSimulationCommunication:
         results_validator(result_report)
 
         results = json.dumps(result_report)
-        message_size = utf8len(results)
+        message_size = get_json_dict_memory_allocation_size(result_report)
         if message_size > 64000:
             log.error(f"Do not publish message bigger than 64 MB, current message size "
                       f"{message_size / 1000.0} MB.")
