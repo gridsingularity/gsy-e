@@ -30,7 +30,7 @@ from d3a.models.strategy import BaseStrategy
 from d3a.d3a_core.util import TaggedLogWrapper
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.d3a_core.global_objects import GlobalObjects
+from d3a.d3a_core.global_objects import GlobalStatistics
 from d3a.constants import TIME_FORMAT
 from d3a.models.area.stats import AreaStats
 from d3a.models.area.event_dispatcher import DispatcherFactory
@@ -439,7 +439,7 @@ class Area:
         if self.parent:
             return self.parent.global_objects
         else:
-            return GlobalObjects()
+            return GlobalStatistics()
 
     @property
     def bc(self):

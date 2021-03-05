@@ -19,14 +19,15 @@ from d3a.models.strategy.external_strategies import ExternalMixin
 from d3a.d3a_core.util import get_market_maker_rate_from_global_setting
 
 
-class GlobalObjects:
+class GlobalStatistics:
 
-    def __init__(self):
+    def __init__(self, root_area):
         self.area_stats_tree_dict = {}
+        self.root_area = root_area
 
-    def update(self, area):
-        if area.current_market:
-            self._create_grid_tree_dict(area, self.area_stats_tree_dict)
+    def update(self):
+        if self.root_area.current_market:
+            self._create_grid_tree_dict(self.root_area, self.area_stats_tree_dict)
 
     def _create_grid_tree_dict(self, area, outdict):
         outdict[area.uuid] = {}

@@ -22,7 +22,7 @@ from d3a.models.area import Area
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
-from d3a.d3a_core.global_objects import GlobalObjects
+from d3a.d3a_core.global_objects import GlobalStatistics
 from d3a.models.config import SimulationConfig
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import \
@@ -55,7 +55,7 @@ class TestGlobalObjects(unittest.TestCase):
         self.grid_area.activate()
 
     def test_global_objects_area_stats_tree_dict_general_structure(self):
-        go = GlobalObjects()
+        go = GlobalStatistics()
         self.grid_area.current_tick += 15
         self.house_area.current_tick += 15
         self.grid_area.cycle_markets(_trigger_event=True)

@@ -48,7 +48,7 @@ from d3a_interface.utils import format_datetime, str_to_pendulum_datetime
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
-from d3a.d3a_core.global_objects import GlobalObjects
+from d3a.d3a_core.global_objects import GlobalStatistics
 from d3a.blockchain.constants import ENABLE_SUBSTRATE
 import d3a.constants
 
@@ -92,7 +92,6 @@ class Simulation:
         )
         self.progress_info = SimulationProgressInfo()
         self.simulation_config = simulation_config
-        self.global_objects = GlobalObjects()
         self.external_tick_counter = ExternalTickCounter(self.simulation_config.ticks_per_slot) \
             if self.simulation_config.external_connection_enabled else None
         self.use_repl = repl
@@ -171,7 +170,11 @@ class Simulation:
             log.info("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
+        # TODO: discuss whether the following circular reference is a good idea (probably not)
+        #  it is needed for being able to update the whole grid_tree from the devices
+        self.global_objects = GlobalStatistics(self.area)
         self.area._global_objects = self.global_objects
+
         self.endpoint_buffer = SimulationEndpointBuffer(
             redis_job_id, self.initial_params,
             self.area, self.should_export_results)
@@ -342,7 +345,7 @@ class Simulation:
             self.area.cycle_markets()
 
             if self.simulation_config.external_connection_enabled:
-                self.global_objects.update(self.area)
+                self.global_objects.update()
                 self.area.publish_market_cycle_to_external_clients()
 
             self._update_and_send_results()
@@ -370,7 +373,7 @@ class Simulation:
                 self.area.update_area_current_tick()
                 if self.simulation_config.external_connection_enabled and \
                         self.external_tick_counter.is_it_time_for_external_tick(tick_no):
-                    self.global_objects.update(self.area)
+                    self.global_objects.update()
 
                 self.simulation_config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()

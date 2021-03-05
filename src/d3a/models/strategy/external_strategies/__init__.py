@@ -288,7 +288,10 @@ class ExternalMixin:
         event_response_dict[bid_offer_key] = trade.offer.id
 
         if self.is_aggregator_controlled:
-            self.redis.aggregator.add_batch_trade_event(self.device.uuid, event_response_dict)
+            self.area.global_objects.update()
+            self.redis.aggregator.add_batch_trade_event(self.device.uuid,
+                                                        self.area.global_objects,
+                                                        event_response_dict)
 
     def event_bid_traded(self, market_id, bid_trade):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
