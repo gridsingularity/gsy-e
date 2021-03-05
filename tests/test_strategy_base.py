@@ -29,6 +29,7 @@ from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
 from d3a_interface.constants_limits import ConstSettings
+from uuid import uuid4
 
 
 def teardown_function():
@@ -44,6 +45,10 @@ class FakeLog:
 
 
 class FakeOwner:
+
+    def __init__(self):
+        self.uuid = str(uuid4())
+
     @property
     def name(self):
         return 'FakeOwner'
@@ -52,6 +57,7 @@ class FakeOwner:
 class FakeArea:
     def __init__(self, market=None):
         self._market = market
+        self.uuid = str(uuid4())
 
     def get_future_market_from_id(self, market_id):
         return self._market
@@ -88,7 +94,8 @@ class FakeMarket:
         self.id = id
 
     def accept_offer(self, offer_or_id, *, buyer="", energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
+                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
+                     buyer_origin_id=None, buyer_id=None):
         offer = offer_or_id
         if self.raises:
             raise MarketException
@@ -97,11 +104,14 @@ class FakeMarket:
                 energy = offer.energy
             offer.energy = energy
             return Trade('trade', 0, offer, offer.seller, 'FakeOwner',
-                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
+                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
+                         buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
 
-    def bid(self, price, energy, buyer, original_bid_price=None, buyer_origin=None):
+    def bid(self, price, energy, buyer, original_bid_price=None,
+            buyer_origin=None, buyer_origin_id=None, buyer_id=None):
         return Bid(123, pendulum.now(), price, energy, buyer, original_bid_price,
-                   buyer_origin=buyer_origin)
+                   buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id,
+                   buyer_id=buyer_id)
 
 
 @pytest.fixture

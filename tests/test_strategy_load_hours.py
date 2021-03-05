@@ -33,6 +33,7 @@ from d3a_interface.exceptions import D3ADeviceException
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import d3a_path
+from uuid import uuid4
 
 ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
 
@@ -50,6 +51,7 @@ class FakeArea:
         self.config = DEFAULT_CONFIG
         self.appliance = None
         self.name = 'FakeArea'
+        self.uuid = str(uuid4())
 
         self._next_market = FakeMarket(0)
         self.current_market = FakeMarket(0)
@@ -112,9 +114,11 @@ class FakeMarket:
         return deepcopy(self.bids)
 
     def bid(self, price: float, energy: float, buyer: str, original_bid_price=None,
-            buyer_origin=None) -> Bid:
+            buyer_origin=None, buyer_origin_id=None, buyer_id=None) -> Bid:
         bid = Bid(id='bid_id', time=now(), price=price, energy=energy, buyer=buyer,
-                  original_bid_price=original_bid_price, buyer_origin=buyer_origin)
+                  original_bid_price=original_bid_price,
+                  buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id,
+                  buyer_id=buyer_id)
         self.bids[bid.id] = bid
         return bid
 

@@ -19,6 +19,7 @@ import pytest
 from copy import deepcopy
 import pendulum
 from math import isclose
+from uuid import uuid4
 
 from d3a.constants import TIME_FORMAT
 from d3a.constants import TIME_ZONE
@@ -44,6 +45,7 @@ transfer_fees = GridFee(grid_fee_percentage=0, grid_fee_const=0)
 class FakeArea:
     def __init__(self, name):
         self.name = name
+        self.uuid = str(uuid4())
         self.current_tick = 10
         self.future_market = None
         self.now = pendulum.DateTime.now()
@@ -90,7 +92,8 @@ class FakeMarket:
         self.time_slot = timeslot
 
     def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
+                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
+                     buyer_origin_id=None, buyer_id=None):
         offer = offer_or_id
         self.calls_energy.append(energy)
         self.calls_offers.append(offer)
@@ -101,13 +104,16 @@ class FakeMarket:
             traded = Offer(offer.id, offer.time, offer.price, energy,
                            offer.seller, seller_origin='res')
             return Trade('trade_id', time, traded, traded.seller, buyer, residual,
-                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
+                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
+                         buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
         else:
             return Trade('trade_id', time, offer, offer.seller, buyer,
-                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
+                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
+                         buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
 
     def accept_bid(self, bid, energy, seller, buyer=None, *, time=None, trade_rate: float = None,
-                   trade_offer_info=None, already_tracked=False, seller_origin=None):
+                   trade_offer_info=None, already_tracked=False, seller_origin=None,
+                   seller_origin_id=None, seller_id=None):
         self.calls_energy_bids.append(energy)
         self.calls_bids.append(bid)
         self.calls_bids_price.append(bid.price)
@@ -124,12 +130,14 @@ class FakeMarket:
             traded = Bid(bid.id, bid.time, (trade_rate * energy), energy, bid.buyer,
                          buyer_origin='res')
             return Trade('trade_id', time, traded, seller, bid.buyer, residual,
-                         buyer_origin=bid.buyer_origin, seller_origin=seller_origin)
+                         buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
+                         seller_id=seller_id)
         else:
             traded = Bid(bid.id, bid.time, (trade_rate * energy), energy, bid.buyer,
                          buyer_origin=bid.id)
             return Trade('trade_id', time, traded, seller, bid.buyer,
-                         buyer_origin=bid.buyer_origin, seller_origin=seller_origin)
+                         buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
+                         seller_id=seller_id)
 
     def delete_offer(self, *args):
         pass
@@ -146,7 +154,8 @@ class FakeMarket:
 
     def offer(self, price: float, energy: float, seller: str, offer_id=None,
               original_offer_price=None, dispatch_event=True, seller_origin=None,
-              adapt_price_with_fees=True) -> Offer:
+              adapt_price_with_fees=True, seller_origin_id=None,
+              seller_id=None) -> Offer:
         self.offer_call_count += 1
 
         if original_offer_price is None:
@@ -156,7 +165,8 @@ class FakeMarket:
         if adapt_price_with_fees:
             price = self._update_new_offer_price_with_fee(price, original_offer_price, energy)
         offer = Offer(offer_id, pendulum.now(), price, energy, seller, original_offer_price,
-                      seller_origin=seller_origin)
+                      seller_origin=seller_origin, seller_origin_id=seller_origin_id,
+                      seller_id=seller_id)
         self.offers[offer.id] = deepcopy(offer)
         self.forwarded_offer = deepcopy(offer)
 
@@ -167,7 +177,7 @@ class FakeMarket:
 
     def bid(self, price: float, energy: float, buyer: str,
             bid_id: str = None, original_bid_price=None, buyer_origin=None,
-            adapt_price_with_fees=True):
+            adapt_price_with_fees=True, buyer_origin_id=None, buyer_id=None):
         self.bid_call_count += 1
 
         if original_bid_price is None:
@@ -181,7 +191,8 @@ class FakeMarket:
 
         bid = Bid(bid_id, pendulum.now(), price, energy, buyer,
                   original_bid_price=original_bid_price,
-                  buyer_origin=buyer_origin)
+                  buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id,
+                  buyer_id=buyer_id)
         self._bids.append(bid)
         self.forwarded_bid = bid
 

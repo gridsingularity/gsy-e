@@ -306,6 +306,8 @@ class PVExternalMixin(ExternalMixin):
         with self.lock:
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
+            arguments['seller_origin_id'] = self.device.uuid
+            arguments['seller_id'] = self.device.uuid
             offer_arguments = {k: v
                                for k, v in arguments.items()
                                if k not in ["transaction_id", "type"]}
@@ -350,7 +352,8 @@ class PVExternalMixin(ExternalMixin):
 
         arguments['seller'] = self.device.name
         arguments['seller_origin'] = self.device.name
-
+        arguments['seller_origin_id'] = self.device.uuid
+        arguments['seller_id'] = self.device.uuid
         try:
             replace_existing = arguments.pop('replace_existing', True)
 
