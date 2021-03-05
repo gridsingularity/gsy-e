@@ -51,7 +51,7 @@ class BalancingMarket(OneSidedMarket):
 
     def offer(self, price: float, energy: float, seller: str, offer_id=None,
               original_offer_price=None, dispatch_event=True, seller_origin=None,
-              adapt_price_with_fees=True):
+              adapt_price_with_fees=True, seller_origin_id=None):
         assert False
 
     def balancing_offer(self, price: float, energy: float, seller: str,
@@ -139,7 +139,7 @@ class BalancingMarket(OneSidedMarket):
                      energy: int = None, time: DateTime = None,
                      already_tracked: bool = False, trade_rate: float = None,
                      trade_bid_info: float = None,
-                     buyer_origin=None) -> BalancingTrade:
+                     buyer_origin=None, buyer_origin_id=None, buyer_id=None) -> BalancingTrade:
         if self.readonly:
             raise MarketReadOnlyException()
 
@@ -204,7 +204,11 @@ class BalancingMarket(OneSidedMarket):
             )
         trade = BalancingTrade(trade_id, time, offer, offer.seller, buyer,
                                residual_offer, seller_origin=offer.seller_origin,
-                               buyer_origin=buyer_origin, fee_price=fees)
+                               buyer_origin=buyer_origin, fee_price=fees,
+                               seller_origin_id=offer.seller_origin_id,
+                               seller_id=offer.seller_id,
+                               buyer_origin_id=buyer_origin_id,
+                               buyer_id=buyer_id)
         self.bc_interface.track_trade_event(trade)
 
         if already_tracked is False:

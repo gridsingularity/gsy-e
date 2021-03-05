@@ -36,6 +36,7 @@ class OneSidedAgent(InterAreaAgent):
                 IAAEngine('Low -> High', lower_market, higher_market, min_offer_age, self),
             ]
         self.name = make_iaa_name(owner)
+        self.uuid = owner.uuid
 
     def usable_offer(self, offer):
         """Prevent IAAEngines from trading their counterpart's offers"""
