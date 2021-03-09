@@ -17,46 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from math import isclose
-from d3a_interface.sim_results.export_unmatched_loads import MarketUnmatchedLoads, \
-    get_number_of_unmatched_loads
 from d3a.models.market.market_structures import Offer, Bid
-
-
-@then('there should be no unmatched loads')
-@then('the load has no unmatched loads')
-def no_unmatched_loads(context):
-    from integration_tests.steps.integration_tests import get_simulation_raw_results
-    get_simulation_raw_results(context)
-    count = 0
-    unmatched = MarketUnmatchedLoads()
-    for time_slot, core_stats in context.raw_sim_data.items():
-        unmatched.update(
-            context.area_tree_summary_data, core_stats, time_slot
-        )
-        unmatched_data, _ = unmatched.export_unmatched_loads.get_current_market_results(
-            context.area_tree_summary_data, core_stats, time_slot
-        )
-        count += 1
-        assert get_number_of_unmatched_loads(unmatched_data) == 0
-    assert count > 0
-
-
-@then('the load has unmatched loads')
-def has_unmatched_loads(context):
-    from integration_tests.steps.integration_tests import get_simulation_raw_results
-    get_simulation_raw_results(context)
-    count = 0
-    unmatched = MarketUnmatchedLoads()
-    for time_slot, core_stats in context.raw_sim_data.items():
-        unmatched.update(
-            context.area_tree_summary_data, core_stats, time_slot
-        )
-        unmatched_data, _ = unmatched.export_unmatched_loads.get_current_market_results(
-            context.area_tree_summary_data, core_stats, time_slot
-        )
-        if get_number_of_unmatched_loads(unmatched_data) > 0:
-            count += 1
-    assert count > 0
 
 
 @then('the {device} bid is partially fulfilled by the PV offers')
@@ -86,8 +47,8 @@ def device_partially_fulfill_bid(context, device):
 
 @then('the PV always provides constant power according to load demand')
 def pv_constant_power(context):
-    from d3a_interface.utils import get_area_name_uuid_mapping
-    context.name_uuid_map = get_area_name_uuid_mapping(context.area_tree_summary_data)
+    from integration_tests.steps.integration_tests import get_simulation_raw_results
+    get_simulation_raw_results(context)
     load_energies_set = set()
     pv_energies_set = set()
 

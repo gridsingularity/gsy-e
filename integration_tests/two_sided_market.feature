@@ -15,8 +15,7 @@ Feature: Two sided market tests
      And d3a is installed
      And export is_needed
      When we run the simulation with setup file two_sided_market.one_pv_one_load and parameters [24, 60, 60, 4]
-     Then the load has no unmatched loads
-     And the PV always provides constant power according to load demand
+     Then the PV always provides constant power according to load demand
      And Energy producer is H2 PV & consumer is H1 General Load
 
   Scenario: One storage, one pv
@@ -34,8 +33,7 @@ Feature: Two sided market tests
      And d3a is installed
      And export is_needed
      When we run the simulation with setup file two_sided_market.one_load_5_pv_partial and parameters [24, 60, 60, 4]
-     Then the load has unmatched loads
-     And the H1 General Load bid is partially fulfilled by the PV offers
+     Then the H1 General Load bid is partially fulfilled by the PV offers
 
   Scenario: 5 pv, one storage
      Given we have a scenario named two_sided_market/one_storage_5_pv_partial

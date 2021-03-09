@@ -20,8 +20,7 @@ Feature: Jira Issues Tests
      And d3a is installed
      And export is_needed
      When we run the simulation with setup file strategy_tests.home_cp_ess_load and parameters [24, 60, 60, 1]
-     Then there should be no unmatched loads
-     And on every market slot there should be matching trades on grid and house markets
+     Then on every market slot there should be matching trades on grid and house markets
 
   @slow
   Scenario: D3ASIM-706, multi-day simulation for load and pv
@@ -45,13 +44,6 @@ Feature: Jira Issues Tests
      When we run the simulation with setup file jira.d3asim_778 and parameters [24, 60, 60, 1]
      Then there should be trades on all markets using the max load rate
 
-  Scenario: D3ASIM-871, unmatched loads are not reported if hours per day are covered
-     Given we have a scenario named jira/d3asim_871
-     And d3a is installed
-     And export is_needed
-     When we run the simulation with setup file jira.d3asim_871 and parameters [24, 60, 60, 1]
-     Then there should be no unmatched loads
-
   @disabled
   Scenario: D3ASIM-874, alternative pricing can buy energy from IAA if there is not enough self-consumption
      Given we have a scenario named jira/d3asim_869
@@ -71,13 +63,6 @@ Feature: Jira Issues Tests
     And d3a is installed
     When we run a multi-day d3a simulation with jira.d3asim_962 [2019-01-01, 48, 60, 60]
     Then the device statistics are correct
-
-  @slow
-  Scenario: D3ASIM-1139, no unmatched loads on setup with many loads and only one CEP
-    Given we have a scenario named jira/d3asim_1139
-    And d3a is installed
-    When we run the simulation with setup file jira.d3asim_1139 and parameters [24, 60, 60, 1]
-    Then there should be no unmatched loads
 
   Scenario: D3ASIM-1475, default_2off finishes successfully for two-sided pay as clear market
     Given we have a scenario named jira/default_2off_d3asim_1475
@@ -117,13 +102,6 @@ Feature: Jira Issues Tests
     And d3a uses an two-sided-pay-as-bid market
     And the file jira/d3asim_1637.json is used for the area setup
     When we run the simulation with setup file json_file and parameters [24, 30, 30, 1]
-    Then there should be no unmatched loads
-
-  Scenario: D3ASIM-1690: No unmatched load
-    Given we have a scenario named two_sided_pay_as_clear/jira_d3asim_1690
-    And d3a is installed
-    And export is_needed
-    When we run the simulation with setup file two_sided_pay_as_clear.jira_d3asim_1690 and parameters [24, 60, 60, 1]
     Then there should be no unmatched loads
 
   Scenario: D3ASIM-1862: DSO doesnt pay the grid fee of the Grid
