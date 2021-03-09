@@ -214,13 +214,15 @@ class AggregatorHandler:
                 self.responses_batch_commands[transaction_id] = {aggregator_uuid: []}
             self.responses_batch_commands[transaction_id][aggregator_uuid].append(response)
 
-    def _publish_progress_events(self, redis, event_dict, event_type):
+    def _publish_all_events_from_one_type(self, redis, event_dict, event_type):
         for aggregator_uuid, event in event_dict.items():
             event_channel = f"external-aggregator/{d3a.constants.COLLABORATION_ID}/" \
                             f"{aggregator_uuid}/events/all"
 
             publish_event_dict = {**event,
                                   'event': event_type,
+                                  'num_ticks': 100 /
+                                  d3a.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT,
                                   'simulation_id': d3a.constants.COLLABORATION_ID if
                                   d3a.constants.EXTERNAL_CONNECTION_WEB else None
                                   }
@@ -229,10 +231,10 @@ class AggregatorHandler:
         event_dict.clear()
 
     def publish_all_events(self, redis):
-        self._publish_progress_events(redis, self.batch_market_cycle_events, "market")
-        self._publish_progress_events(redis, self.batch_tick_events, "tick")
-        self._publish_progress_events(redis, self.batch_finished_events, "finish")
-        self._publish_progress_events(redis, self.batch_trade_events, "trade")
+        self._publish_all_events_from_one_type(redis, self.batch_market_cycle_events, "market")
+        self._publish_all_events_from_one_type(redis, self.batch_tick_events, "tick")
+        self._publish_all_events_from_one_type(redis, self.batch_finished_events, "finish")
+        self._publish_all_events_from_one_type(redis, self.batch_trade_events, "trade")
 
     def publish_all_commands_responses(self, redis):
         for transaction_id, batch_commands in self.responses_batch_commands.items():
