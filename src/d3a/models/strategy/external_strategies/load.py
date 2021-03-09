@@ -147,6 +147,7 @@ class LoadExternalMixin(ExternalMixin):
             assert all(arg in allowed_args for arg in arguments.keys())
 
             arguments['buyer_origin'] = self.device.name
+            arguments['buyer_origin_id'] = self.device.uuid
         except Exception:
             self.redis.publish_json(
                 bid_response_channel,
