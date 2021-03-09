@@ -294,7 +294,8 @@ class ExternalMixin:
                                    'traded_energy': trade.offer.energy,
                                    'total_fee': trade.fee_price,
                                    'local_market_fee':
-                                       self.area.current_market.grid_fees.grid_fee_const,
+                                       self.area.current_market.fee_class.grid_fee_rate
+                                       if self.area.current_market is not None else "None",
                                    'attributes': {},
                                    'seller': trade.seller
                                    if trade.seller_id == self.device.uuid else 'anonymous',
@@ -322,8 +323,8 @@ class ExternalMixin:
                                    'event': 'trade',
                                    'trade_id': trade.id,
                                    'time': trade.time.isoformat(),
-                                   'price': trade.offer.price,
-                                   'energy': trade.offer.energy,
+                                   'trade_price': trade.offer.price,
+                                   'traded_energy': trade.offer.energy,
                                    'fee_price': trade.fee_price,
                                    'area_uuid': self.device.uuid,
                                    'seller': trade.seller

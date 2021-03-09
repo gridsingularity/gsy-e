@@ -26,13 +26,13 @@ class TestExternalMixin(unittest.TestCase):
         self.config.max_panel_power_W = 160
         GlobalConfig.end_date = GlobalConfig.start_date + Duration(days=1)
         self.area = Area(name="test_area", config=self.config, strategy=strategy)
-        parent = Area(name="parent_area", children=[self.area])
-        parent.activate()
-        parent._global_objects = GlobalStatistics(parent)
+        self.parent = Area(name="parent_area", children=[self.area])
+        self.parent.activate()
+        self.parent._global_objects = GlobalStatistics(self.parent)
         strategy.connected = True
         market = MagicMock()
         market.time_slot = GlobalConfig.start_date
-        parent.get_future_market_from_id = lambda _: market
+        self.parent.get_future_market_from_id = lambda _: market
         self.area.get_future_market_from_id = lambda _: market
 
     def tearDown(self) -> None:
@@ -156,11 +156,16 @@ class TestExternalMixin(unittest.TestCase):
              'device_info': strategy._device_info_dict}
 
     @parameterized.expand([
-        [LoadHoursExternalStrategy(100)],
-        [PVExternalStrategy(2, max_panel_power_W=160)],
-        [StorageExternalStrategy()]
+        [LoadHoursExternalStrategy(100),
+         Bid('bid_id', now(), 20, 1.0, 'test_area')],
+        [PVExternalStrategy(2, max_panel_power_W=160),
+         Offer('offer_id', now(), 20, 1.0, 'test_area')],
+        [StorageExternalStrategy(),
+         Bid('bid_id', now(), 20, 1.0, 'test_area')],
+        [StorageExternalStrategy(),
+         Offer('offer_id', now(), 20, 1.0, 'test_area')]
     ])
-    def test_dispatch_event_trade_to_external_aggregator(self, strategy):
+    def test_dispatch_event_trade_to_external_aggregator(self, strategy, offer_bid):
         strategy._track_energy_sell_type = lambda _: None
         self._create_and_activate_strategy_area(strategy)
         strategy.redis.aggregator.is_controlling_device = lambda _: True
@@ -170,24 +175,46 @@ class TestExternalMixin(unittest.TestCase):
         strategy.state.pledged_sell_kWh = {market.time_slot: 0.0}
         strategy.state.offered_sell_kWh = {market.time_slot: 0.0}
         current_time = now()
-        trade = Trade('id', current_time, Offer('offer_id', now(), 20, 1.0, 'test_area'),
-                      'test_area', 'parent_area', fee_price=0.23)
+        if isinstance(offer_bid, Bid):
+            self.area.strategy.add_bid_to_posted(market.id, offer_bid)
+            trade = Trade('id', current_time, offer_bid,
+                          'parent_area', 'test_area', fee_price=0.23, seller_id=self.area.uuid,
+                          buyer_id=self.parent.uuid)
+        else:
+            self.area.strategy.offers.post(offer_bid, market.id)
+            trade = Trade('id', current_time, offer_bid,
+                          'test_area', 'parent_area', fee_price=0.23, buyer_id=self.area.uuid,
+                          seller_id=self.parent.uuid)
+
         strategy.event_trade(market_id="test_market", trade=trade)
         assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
             self.area.uuid
 
         call_args = strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][2]
+        assert set(call_args.keys()) == {'attributes', 'residual_bid_id', 'asset_id', 'buyer',
+                                         'local_market_fee', 'residual_offer_id', 'total_fee',
+                                         'traded_energy', 'bid_id', 'time', 'seller',
+                                         'trade_price', 'trade_id', 'offer_id', 'event'}
+
         assert call_args['trade_id'] == trade.id
-        assert call_args['event'] == "trade"
-        assert call_args['price'] == 20
-        assert call_args['energy'] == 1.0
-        assert call_args['fee_price'] == 0.23
-        assert call_args['offer_id'] == trade.offer.id
-        assert call_args['residual_id'] == "None"
+        assert call_args['asset_id'] == self.area.uuid
+        assert call_args['event'] == 'trade'
+        assert call_args['trade_price'] == 20
+        assert call_args['traded_energy'] == 1.0
+        assert call_args['total_fee'] == 0.23
         assert call_args['time'] == current_time.isoformat()
-        assert call_args['seller'] == trade.seller
-        assert call_args['buyer'] == "anonymous"
-        assert call_args['device_info'] == strategy._device_info_dict
+        assert call_args['residual_bid_id'] == 'None'
+        assert call_args['residual_offer_id'] == 'None'
+        if isinstance(offer_bid, Bid):
+            assert call_args['bid_id'] == trade.offer.id
+            assert call_args['offer_id'] == 'None'
+            assert call_args['seller'] == trade.seller
+            assert call_args['buyer'] == 'anonymous'
+        else:
+            assert call_args['bid_id'] == 'None'
+            assert call_args['offer_id'] == trade.offer.id
+            assert call_args['seller'] == 'anonymous'
+            assert call_args['buyer'] == trade.buyer
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
@@ -211,8 +238,8 @@ class TestExternalMixin(unittest.TestCase):
         call_args = strategy.redis.publish_json.call_args_list[0][0][1]
         assert call_args['trade_id'] == trade.id
         assert call_args['event'] == "trade"
-        assert call_args['price'] == 20
-        assert call_args['energy'] == 1.0
+        assert call_args['trade_price'] == 20
+        assert call_args['traded_energy'] == 1.0
         assert call_args['fee_price'] == 0.23
         assert call_args['offer_id'] == trade.offer.id
         assert call_args['residual_id'] == "None"
