@@ -142,6 +142,7 @@ class PVExternalMixin(ExternalMixin):
 
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
+            arguments['seller_origin_id'] = self.device.uuid
         except Exception as e:
             logging.error(f"Incorrect offer request. Payload {payload}. Exception {str(e)}.")
             self.redis.publish_json(

@@ -151,8 +151,6 @@ class StorageExternalMixin(ExternalMixin):
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
             arguments['seller_origin_id'] = self.device.uuid
-            assert self.can_offer_be_posted(self.next_market.time_slot, **arguments)
-
         except Exception as e:
             logging.error(f"Incorrect offer request. Payload {payload}. Exception {str(e)}.")
             self.redis.publish_json(
@@ -186,6 +184,7 @@ class StorageExternalMixin(ExternalMixin):
             offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
 
             replace_existing = offer_arguments.pop('replace_existing', True)
+            assert self.can_offer_be_posted(self.next_market.time_slot, **arguments)
             offer = self.post_offer(
                 self.next_market, replace_existing=replace_existing, **offer_arguments)
 
@@ -298,7 +297,6 @@ class StorageExternalMixin(ExternalMixin):
             arguments['buyer'] = self.device.name
             arguments['buyer_origin'] = self.device.name
             arguments['buyer_origin_id'] = self.device.uuid
-            assert self.can_bid_be_posted(self.next_market.time_slot, **arguments)
         except Exception:
             self.redis.publish_json(
                 bid_response_channel,
@@ -327,6 +325,7 @@ class StorageExternalMixin(ExternalMixin):
     def _bid_impl(self, arguments, bid_response_channel):
         try:
             replace_existing = arguments.get('replace_existing', True)
+            assert self.can_bid_be_posted(self.next_market.time_slot, **arguments)
             bid = self.post_bid(
                 self.next_market,
                 arguments["price"],
