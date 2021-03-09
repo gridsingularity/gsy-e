@@ -135,8 +135,9 @@ class TestExternalMixin(unittest.TestCase):
         result = strategy.redis.publish_json.call_args_list[0][0][1]
         result.pop('area_uuid')
         assert result == \
-            {'slot_completion': '20%', 'market_slot': '2021-03-05T00:00',
-             'event': 'tick', 'device_info': strategy._device_info_dict}
+            {'slot_completion': '20%',
+             'market_slot': GlobalConfig.start_date.format(DATE_TIME_FORMAT), 'event': 'tick',
+             'device_info': strategy._device_info_dict}
 
         strategy.redis.reset_mock()
         strategy.redis.publish_json.reset_mock()
@@ -150,7 +151,8 @@ class TestExternalMixin(unittest.TestCase):
         result = strategy.redis.publish_json.call_args_list[0][0][1]
         result.pop('area_uuid')
         assert result == \
-            {'slot_completion': '40%', 'market_slot': '2021-03-05T00:00', 'event': 'tick',
+            {'slot_completion': '40%',
+             'market_slot': GlobalConfig.start_date.format(DATE_TIME_FORMAT), 'event': 'tick',
              'device_info': strategy._device_info_dict}
 
     @parameterized.expand([
