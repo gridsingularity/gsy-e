@@ -248,12 +248,12 @@ class ExternalMixin:
                                                            self._progress_info)
             else:
                 if self.connected:
-                    tick_event_channel = f"{self.channel_prefix}/events/tick"
+                    tick_event_channel = f'{self.channel_prefix}/events/tick'
                     current_tick_info = {
                         **self._progress_info,
-                        "event": "tick",
-                        "area_uuid": self.device.uuid,
-                        "device_info": self._device_info_dict
+                        'event': 'tick',
+                        'area_uuid': self.device.uuid,
+                        'device_info': self._device_info_dict,
                     }
 
                     self.redis.publish_json(tick_event_channel, current_tick_info)

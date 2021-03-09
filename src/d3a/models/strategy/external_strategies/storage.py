@@ -294,6 +294,7 @@ class StorageExternalMixin(ExternalMixin):
 
             arguments['buyer'] = self.device.name
             arguments['buyer_origin'] = self.device.name
+            arguments['buyer_origin_id'] = self.device.uuid
         except Exception:
             self.redis.publish_json(
                 bid_response_channel,
@@ -353,12 +354,12 @@ class StorageExternalMixin(ExternalMixin):
     @property
     def _device_info_dict(self):
         return {
-            "energy_to_sell": self.state.energy_to_sell_dict[self.next_market.time_slot],
-            "energy_active_in_bids": self.state.offered_sell_kWh[self.next_market.time_slot],
-            "energy_to_buy": self.state.energy_to_buy_dict[self.next_market.time_slot],
-            "energy_active_in_offers": self.state.offered_buy_kWh[self.next_market.time_slot],
-            "free_storage": self.state.free_storage(self.next_market.time_slot),
-            "used_storage": self.state.used_storage,
+            'energy_to_sell': self.state.energy_to_sell_dict[self.next_market.time_slot],
+            'energy_active_in_bids': self.state.offered_sell_kWh[self.next_market.time_slot],
+            'energy_to_buy': self.state.energy_to_buy_dict[self.next_market.time_slot],
+            'energy_active_in_offers': self.state.offered_buy_kWh[self.next_market.time_slot],
+            'free_storage': self.state.free_storage(self.next_market.time_slot),
+            'used_storage': self.state.used_storage,
             'energy_traded': self.energy_traded(self.next_market.id),
             'total_cost': self.energy_traded_costs(self.next_market.id),
         }
@@ -600,6 +601,7 @@ class StorageExternalMixin(ExternalMixin):
             assert all(arg in allowed_args for arg in arguments.keys())
 
             arguments['buyer_origin'] = self.device.name
+            arguments['buyer_origin_id'] = self.device.uuid
             assert self.can_bid_be_posted(self.next_market.time_slot, **arguments)
 
             replace_existing = arguments.get('replace_existing', True)

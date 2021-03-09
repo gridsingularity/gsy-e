@@ -90,11 +90,11 @@ class TestExternalMixin(unittest.TestCase):
         strategy._dispatch_event_tick_to_external_agent()
         strategy.redis.aggregator.add_batch_tick_event.assert_called_once()
         assert strategy.redis.aggregator.add_batch_tick_event.call_args_list[0][0][0] == \
-               self.area.uuid
+            self.area.uuid
         result = strategy.redis.aggregator.add_batch_tick_event.call_args_list[0][0][2]
         assert result == \
-               {'market_slot': GlobalConfig.start_date.format(DATE_TIME_FORMAT),
-                'slot_completion': '20%'}
+            {'market_slot': GlobalConfig.start_date.format(DATE_TIME_FORMAT),
+             'slot_completion': '20%'}
         strategy.redis.reset_mock()
         strategy.redis.aggregator.add_batch_tick_event.reset_mock()
         self.area.current_tick = 35
@@ -104,11 +104,11 @@ class TestExternalMixin(unittest.TestCase):
         strategy._dispatch_event_tick_to_external_agent()
         strategy.redis.aggregator.add_batch_tick_event.assert_called_once()
         assert strategy.redis.aggregator.add_batch_tick_event.call_args_list[0][0][0] == \
-               self.area.uuid
+            self.area.uuid
         result = strategy.redis.aggregator.add_batch_tick_event.call_args_list[0][0][2]
         assert result == \
-               {'market_slot': GlobalConfig.start_date.format(DATE_TIME_FORMAT),
-                'slot_completion': '40%'}
+            {'market_slot': GlobalConfig.start_date.format(DATE_TIME_FORMAT),
+             'slot_completion': '40%'}
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
@@ -174,7 +174,7 @@ class TestExternalMixin(unittest.TestCase):
                       'test_area', 'parent_area', fee_price=0.23)
         strategy.event_trade(market_id="test_market", trade=trade)
         assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
-               self.area.uuid
+            self.area.uuid
 
         call_args = strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][2]
         assert call_args['trade_id'] == trade.id
@@ -250,7 +250,7 @@ class TestExternalMixin(unittest.TestCase):
                 Trade('id', current_time, bid, 'parent_area', 'test_area', fee_price=0.23)
             strategy.event_trade(market_id=market.id, trade=published_trade)
             assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
-                   self.area.uuid
+                self.area.uuid
         else:
             offer = Offer('offer_id', now(), 20, 1.0, 'test_area')
             strategy.offers.post(offer, market.id)
@@ -266,7 +266,7 @@ class TestExternalMixin(unittest.TestCase):
                 Trade('id', current_time, offer, 'test_area', 'parent_area', fee_price=0.23)
             strategy.event_trade(market_id=market.id, trade=published_trade)
             assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
-                   self.area.uuid
+                self.area.uuid
 
     def test_device_info_dict_for_load_strategy_reports_required_energy(self):
         strategy = LoadHoursExternalStrategy(100)
