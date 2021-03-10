@@ -388,8 +388,8 @@ def test_post_offer_creates_offer_with_correct_parameters(market_class):
     # The offer is created with the expected parameters
     assert offer.price == 1
     assert offer.energy == 1
-    assert offer.seller == 'seller-name'
-    assert offer.seller_origin == 'seller-origin-name'
+    assert offer.seller == strategy.owner.name
+    assert offer.seller_origin == strategy.owner.name
 
 
 @pytest.mark.parametrize('market_class', [OneSidedMarket, TwoSidedPayAsBid, TwoSidedPayAsClear])

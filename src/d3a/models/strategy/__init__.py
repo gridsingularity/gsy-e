@@ -313,6 +313,11 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             # Remove all existing offers that are still open in the market
             self.offers.remove_offer_from_cache_and_market(market)
 
+        offer_kwargs['seller'] = self.owner.name
+        offer_kwargs['seller_origin'] = self.owner.name
+        offer_kwargs['seller_origin_id'] = self.owner.uuid
+        offer_kwargs['seller_id'] = self.owner.uuid
+
         offer = market.offer(**offer_kwargs)
         self.offers.post(offer, market.id)
 
@@ -496,8 +501,7 @@ class BidEnabledStrategy(BaseStrategy):
             assert bid.buyer == self.owner.name
             self.remove_bid_from_pending(market.id, bid.id)
 
-    def post_bid(self, market, price, energy, replace_existing=True, buyer_origin=None,
-                 buyer_origin_id=None):
+    def post_bid(self, market, price, energy, replace_existing=True):
         if replace_existing:
             self._remove_existing_bids(market)
 
@@ -506,8 +510,8 @@ class BidEnabledStrategy(BaseStrategy):
             energy,
             self.owner.name,
             original_bid_price=price,
-            buyer_origin=buyer_origin,
-            buyer_origin_id=buyer_origin_id,
+            buyer_origin=self.owner.name,
+            buyer_origin_id=self.owner.uuid,
             buyer_id=self.owner.uuid)
         self.add_bid_to_posted(market.id, bid)
         return bid
@@ -584,8 +588,6 @@ class BidEnabledStrategy(BaseStrategy):
             market,
             energy_Wh * self.bid_update.initial_rate[market.time_slot] / 1000.0,
             energy_Wh / 1000.0,
-            buyer_origin=self.owner.name,
-            buyer_origin_id=self.owner.uuid
         )
 
     def get_posted_bids(self, market):
