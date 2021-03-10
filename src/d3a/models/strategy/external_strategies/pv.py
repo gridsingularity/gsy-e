@@ -140,9 +140,6 @@ class PVExternalMixin(ExternalMixin):
             # Check that every provided argument is allowed
             assert all(arg in allowed_args for arg in arguments.keys())
 
-            arguments['seller'] = self.device.name
-            arguments['seller_origin'] = self.device.name
-            arguments['seller_origin_id'] = self.device.uuid
         except Exception as e:
             logging.error(f"Incorrect offer request. Payload {payload}. Exception {str(e)}.")
             self.redis.publish_json(
@@ -305,10 +302,6 @@ class PVExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id", None)}
 
         with self.lock:
-            arguments['seller'] = self.device.name
-            arguments['seller_origin'] = self.device.name
-            arguments['seller_origin_id'] = self.device.uuid
-            arguments['seller_id'] = self.device.uuid
             offer_arguments = {k: v
                                for k, v in arguments.items()
                                if k not in ["transaction_id", "type"]}
@@ -351,10 +344,6 @@ class PVExternalMixin(ExternalMixin):
         # Check that every provided argument is allowed
         assert all(arg in allowed_args for arg in arguments.keys())
 
-        arguments['seller'] = self.device.name
-        arguments['seller_origin'] = self.device.name
-        arguments['seller_origin_id'] = self.device.uuid
-        arguments['seller_id'] = self.device.uuid
         try:
             replace_existing = arguments.pop('replace_existing', True)
 

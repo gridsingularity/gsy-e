@@ -313,6 +313,11 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             # Remove all existing offers that are still open in the market
             self.offers.remove_offer_from_cache_and_market(market)
 
+        offer_kwargs['seller'] = self.owner.name
+        offer_kwargs['seller_origin'] = self.owner.name
+        offer_kwargs['seller_origin_id'] = self.owner.uuid
+        offer_kwargs['seller_id'] = self.owner.uuid
+
         offer = market.offer(**offer_kwargs)
         self.offers.post(offer, market.id)
 
@@ -506,8 +511,8 @@ class BidEnabledStrategy(BaseStrategy):
             energy,
             self.owner.name,
             original_bid_price=price,
-            buyer_origin=buyer_origin,
-            buyer_origin_id=buyer_origin_id,
+            buyer_origin=self.owner.name,
+            buyer_origin_id=self.owner.uuid,
             buyer_id=self.owner.uuid)
         self.add_bid_to_posted(market.id, bid)
         return bid

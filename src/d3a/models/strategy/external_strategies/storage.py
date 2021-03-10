@@ -148,9 +148,6 @@ class StorageExternalMixin(ExternalMixin):
             # Check that every provided argument is allowed
             assert all(arg in allowed_args for arg in arguments.keys())
 
-            arguments['seller'] = self.device.name
-            arguments['seller_origin'] = self.device.name
-            arguments['seller_origin_id'] = self.device.uuid
         except Exception as e:
             logging.error(f"Incorrect offer request. Payload {payload}. Exception {str(e)}.")
             self.redis.publish_json(
@@ -294,9 +291,6 @@ class StorageExternalMixin(ExternalMixin):
             # Check that every provided argument is allowed
             assert all(arg in allowed_args for arg in arguments.keys())
 
-            arguments['buyer'] = self.device.name
-            arguments['buyer_origin'] = self.device.name
-            arguments['buyer_origin_id'] = self.device.uuid
         except Exception:
             self.redis.publish_json(
                 bid_response_channel,
@@ -330,10 +324,7 @@ class StorageExternalMixin(ExternalMixin):
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
-                replace_existing=replace_existing,
-                buyer_origin=arguments["buyer_origin"],
-                buyer_origin_id=arguments["buyer_origin_id"]
-            )
+                replace_existing=replace_existing)
             self.state.offered_buy_kWh[self.next_market.time_slot] = \
                 self.posted_bid_energy(self.next_market.id)
             self.state.clamp_energy_to_buy_kWh([self.next_market.time_slot])
@@ -480,8 +471,6 @@ class StorageExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id", None)}
 
         with self.lock:
-            arguments['seller'] = self.device.name
-            arguments['seller_origin'] = self.device.name
             offer_arguments = {k: v
                                for k, v in arguments.items()
                                if k not in ["transaction_id", "type"]}
@@ -525,10 +514,6 @@ class StorageExternalMixin(ExternalMixin):
         assert all(arg in allowed_args for arg in arguments.keys())
 
         with self.lock:
-            arguments['seller'] = self.device.name
-            arguments['seller_origin'] = self.device.name
-            arguments['seller_origin_id'] = self.device.uuid
-            arguments['seller_id'] = self.device.uuid
             try:
                 offer_arguments = {
                     k: v for k, v in arguments.items() if k not in ['transaction_id', 'type']}
@@ -580,8 +565,7 @@ class StorageExternalMixin(ExternalMixin):
                 self.remove_bid_from_pending(self.next_market.id, bid.id)
             if len(existing_bids) > 0:
                 updated_bid = self.post_bid(self.next_market, bid_rate * existing_bid_energy,
-                                            existing_bid_energy, buyer_origin=self.device.name,
-                                            buyer_origin_id=self.device.uuid)
+                                            existing_bid_energy)
                 return {
                     "command": "update_bid", "status": "ready",
                     "bid": updated_bid.to_JSON_string(),
@@ -604,8 +588,6 @@ class StorageExternalMixin(ExternalMixin):
             # Check that every provided argument is allowed
             assert all(arg in allowed_args for arg in arguments.keys())
 
-            arguments['buyer_origin'] = self.device.name
-            arguments['buyer_origin_id'] = self.device.uuid
             assert self.can_bid_be_posted(self.next_market.time_slot, **arguments)
 
             replace_existing = arguments.get('replace_existing', True)
@@ -613,10 +595,7 @@ class StorageExternalMixin(ExternalMixin):
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
-                replace_existing=replace_existing,
-                buyer_origin=arguments["buyer_origin"],
-                buyer_origin_id=arguments["buyer_origin_id"]
-            )
+                replace_existing=replace_existing)
             self.state.offered_buy_kWh[self.next_market.time_slot] = \
                 self.posted_bid_energy(self.next_market.id)
             self.state.clamp_energy_to_buy_kWh([self.next_market.time_slot])

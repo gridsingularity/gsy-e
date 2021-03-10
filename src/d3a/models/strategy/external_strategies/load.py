@@ -145,9 +145,6 @@ class LoadExternalMixin(ExternalMixin):
             assert all(arg in arguments.keys() for arg in required_args)
             # Check that every provided argument is allowed
             assert all(arg in allowed_args for arg in arguments.keys())
-
-            arguments['buyer_origin'] = self.device.name
-            arguments['buyer_origin_id'] = self.device.uuid
         except Exception:
             self.redis.publish_json(
                 bid_response_channel,
@@ -174,10 +171,7 @@ class LoadExternalMixin(ExternalMixin):
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
-                replace_existing=replace_existing,
-                buyer_origin=arguments["buyer_origin"],
-                buyer_origin_id=arguments["buyer_origin_id"]
-            )
+                replace_existing=replace_existing)
             self.redis.publish_json(
                 bid_response_channel, {
                     "command": "bid", "status": "ready",
@@ -286,8 +280,7 @@ class LoadExternalMixin(ExternalMixin):
                 self.remove_bid_from_pending(self.next_market.id, bid.id)
             if len(existing_bids) > 0:
                 updated_bid = self.post_bid(self.next_market, bid_rate * existing_bid_energy,
-                                            existing_bid_energy, buyer_origin=self.device.name,
-                                            buyer_origin_id=self.device.uuid)
+                                            existing_bid_energy)
                 return {
                     "command": "update_bid", "status": "ready",
                     "bid": updated_bid.to_JSON_string(),
@@ -310,9 +303,6 @@ class LoadExternalMixin(ExternalMixin):
             # Check that every provided argument is allowed
             assert all(arg in allowed_args for arg in arguments.keys())
 
-            arguments['buyer_origin'] = self.device.name
-            arguments["buyer_origin_id"] = self.device.uuid
-
             replace_existing = arguments.get('replace_existing', True)
             assert self.can_bid_be_posted(
                 arguments["energy"],
@@ -325,10 +315,7 @@ class LoadExternalMixin(ExternalMixin):
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
-                replace_existing=replace_existing,
-                buyer_origin=arguments["buyer_origin"],
-                buyer_origin_id=arguments["buyer_origin_id"]
-            )
+                replace_existing=replace_existing)
             return {
                 "command": "bid", "status": "ready",
                 "bid": bid.to_JSON_string(replace_existing=replace_existing),
