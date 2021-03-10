@@ -77,16 +77,22 @@ def check_user_pv_dict_profile(context):
 def check_user_rate_profile_dict(context):
     house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     load1 = next(filter(lambda x: x.name == "H1 General Load 1", house.children))
-    # load2 = next(filter(lambda x: x.name == "H1 General Load 2", house.children))
-    # print(load2.strategy.final_buying_rate)
+    load2 = next(filter(lambda x: x.name == "H1 General Load 2", house.children))
     from integration_tests.steps.integration_tests import get_simulation_raw_results
     get_simulation_raw_results(context)
     for time_slot, core_stats in context.raw_sim_data.items():
         slot = _str_to_datetime(time_slot, DATE_TIME_FORMAT)
-        rate = load1.strategy.bid_update.final_rate_profile_buffer[slot]
-        for key, data in core_stats.items():
-            trades = list(filter(lambda x: x['energy_rate'] > rate, data['trades']))
-            assert len(trades) == 0
+        load1_final_rate = load1.strategy.bid_update.final_rate_profile_buffer[slot]
+        load2_final_rate = load2.strategy.bid_update.final_rate_profile_buffer[slot]
+        load1_trades = \
+            list(filter(lambda x:
+                        x["energy_rate"] > load1_final_rate,
+                        core_stats[context.name_uuid_map["H1 General Load 1"]]["trades"]))
+        load2_trades = \
+            list(filter(lambda x: x["energy_rate"] > load2_final_rate,
+                        core_stats[context.name_uuid_map["H1 General Load 2"]]["trades"]))
+
+        assert len(load1_trades) == 0 and len(load2_trades) == 0
 
 
 @then('LoadHoursStrategy buys energy with rates equal to the initial buying rate profile')

@@ -20,7 +20,8 @@ Feature: Jira Issues Tests
      And d3a is installed
      And export is_needed
      When we run the simulation with setup file strategy_tests.home_cp_ess_load and parameters [24, 60, 60, 1]
-     Then on every market slot there should be matching trades on grid and house markets
+     Then all load demands in setup was fulfilled on every market slot
+     And on every market slot there should be matching trades on grid and house markets
 
   @slow
   Scenario: D3ASIM-706, multi-day simulation for load and pv
@@ -43,6 +44,13 @@ Feature: Jira Issues Tests
      And d3a is installed
      When we run the simulation with setup file jira.d3asim_778 and parameters [24, 60, 60, 1]
      Then there should be trades on all markets using the max load rate
+
+  Scenario: D3ASIM-871, unmatched loads are not reported if hours per day are covered
+     Given we have a scenario named jira/d3asim_871
+     And d3a is installed
+     And export is_needed
+     When we run the simulation with setup file jira.d3asim_871 and parameters [24, 60, 60, 1]
+     Then all load demands in setup was fulfilled on every market slot
 
   @disabled
   Scenario: D3ASIM-874, alternative pricing can buy energy from IAA if there is not enough self-consumption
@@ -102,7 +110,7 @@ Feature: Jira Issues Tests
     And d3a uses an two-sided-pay-as-bid market
     And the file jira/d3asim_1637.json is used for the area setup
     When we run the simulation with setup file json_file and parameters [24, 30, 30, 1]
-    Then there should be no unmatched loads
+    Then all load demands in setup was fulfilled on every market slot
 
   Scenario: D3ASIM-1862: DSO doesnt pay the grid fee of the Grid
     Given we have a scenario named jira/d3asim_1862

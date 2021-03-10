@@ -18,6 +18,35 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from behave import then
 from math import isclose
 from d3a.models.market.market_structures import Offer, Bid
+from d3a.models.read_user_profile import _str_to_datetime
+from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a_interface.constants_limits import DATE_TIME_FORMAT
+
+
+def scenario_representation_traversal(sc_repr, parent=None):
+    """
+        TODO: to be removed in favor of D3ASIM-3376
+    """
+    children = []
+    if type(sc_repr) == dict and "children" in sc_repr:
+        children = sc_repr["children"]
+    elif hasattr(sc_repr, "children"):
+        children = getattr(sc_repr, "children")
+    for child in children:
+        yield from scenario_representation_traversal(child, sc_repr)
+
+    yield sc_repr, parent
+
+
+@then('all load demands in setup was fulfilled on every market slot')
+def load_demands_fulfilled(context):
+    from integration_tests.steps.integration_tests import get_simulation_raw_results
+    get_simulation_raw_results(context)
+    for time_slot, core_stats in context.raw_sim_data.items():
+        slot = _str_to_datetime(time_slot, DATE_TIME_FORMAT)
+        for child, parent in scenario_representation_traversal(context.simulation.area):
+            if type(child.strategy) == LoadHoursStrategy:
+                assert child.strategy.state.get_energy_requirement_Wh(slot) == 0
 
 
 @then('the {device} bid is partially fulfilled by the PV offers')
