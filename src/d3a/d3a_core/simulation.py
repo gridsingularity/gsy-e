@@ -345,7 +345,8 @@ class Simulation:
             self.area.cycle_markets()
 
             if self.simulation_config.external_connection_enabled:
-                self.global_objects.update()
+                self.global_objects.update(current_market_slot=self.area.current_market.time_slot
+                                           if self.area.current_market is not None else None)
                 self.area.publish_market_cycle_to_external_clients()
 
             self._update_and_send_results()

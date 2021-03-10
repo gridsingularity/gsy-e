@@ -16,7 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.strategy.external_strategies import ExternalMixin
-from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a.d3a_core.util import get_market_maker_rate_from_config, \
+    find_object_of_same_weekday_and_time
+from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 
 
 class GlobalStatistics:
@@ -24,10 +26,25 @@ class GlobalStatistics:
     def __init__(self, root_area):
         self.area_stats_tree_dict = {}
         self.root_area = root_area
+        self.feed_in_tariff = None
 
-    def update(self):
+    def update(self, current_market_slot=None):
         if self.root_area.current_market:
             self._create_grid_tree_dict(self.root_area, self.area_stats_tree_dict)
+        if current_market_slot is not None:
+            self._buffer_feed_in_tariff(self.root_area, current_market_slot)
+
+    def _buffer_feed_in_tariff(self, area, current_market_slot):
+        """
+        This simplified recursion is sufficient as the infinite bus is expected to be in the
+        uppermost level of the tree
+        """
+        for child in area.children:
+            if isinstance(child.strategy, InfiniteBusStrategy):
+                self.feed_in_tariff = \
+                    find_object_of_same_weekday_and_time(child.strategy.energy_buy_rate,
+                                                         current_market_slot)
+                return
 
     def _create_grid_tree_dict(self, area, outdict):
         outdict[area.uuid] = {}
