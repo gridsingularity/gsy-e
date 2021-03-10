@@ -34,7 +34,8 @@ Feature: Two sided market tests
      And d3a is installed
      And export is_needed
      When we run the simulation with setup file two_sided_market.one_load_5_pv_partial and parameters [24, 60, 60, 4]
-     Then the H1 General Load bid is partially fulfilled by the PV offers
+     Then all load demands in setup was fulfilled on every market slot
+     And the H1 General Load bid is partially fulfilled by the PV offers
 
   Scenario: 5 pv, one storage
      Given we have a scenario named two_sided_market/one_storage_5_pv_partial

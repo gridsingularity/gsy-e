@@ -72,6 +72,15 @@ Feature: Jira Issues Tests
     When we run a multi-day d3a simulation with jira.d3asim_962 [2019-01-01, 48, 60, 60]
     Then the device statistics are correct
 
+  @slow
+  # TODO: this is to be fixed as it is always failing
+  Scenario: D3ASIM-1139, no unmatched loads on setup with many loads and only one CEP
+    Given we have a scenario named jira/d3asim_1139
+    And d3a is installed
+    And export is_needed
+    When we run the simulation with setup file jira.d3asim_1139 and parameters [24, 60, 60, 1]
+    Then all load demands in setup was fulfilled on every market slot
+
   Scenario: D3ASIM-1475, default_2off finishes successfully for two-sided pay as clear market
     Given we have a scenario named jira/default_2off_d3asim_1475
     And d3a is installed
@@ -110,6 +119,13 @@ Feature: Jira Issues Tests
     And d3a uses an two-sided-pay-as-bid market
     And the file jira/d3asim_1637.json is used for the area setup
     When we run the simulation with setup file json_file and parameters [24, 30, 30, 1]
+    Then all load demands in setup was fulfilled on every market slot
+
+  Scenario: D3ASIM-1690: No unmatched load
+    Given we have a scenario named two_sided_pay_as_clear/jira_d3asim_1690
+    And d3a is installed
+    And export is_needed
+    When we run the simulation with setup file two_sided_pay_as_clear.jira_d3asim_1690 and parameters [24, 60, 60, 1]
     Then all load demands in setup was fulfilled on every market slot
 
   Scenario: D3ASIM-1862: DSO doesnt pay the grid fee of the Grid

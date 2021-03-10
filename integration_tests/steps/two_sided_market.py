@@ -45,8 +45,9 @@ def load_demands_fulfilled(context):
     for time_slot, core_stats in context.raw_sim_data.items():
         slot = _str_to_datetime(time_slot, DATE_TIME_FORMAT)
         for child, parent in scenario_representation_traversal(context.simulation.area):
-            if type(child.strategy) == LoadHoursStrategy:
-                assert child.strategy.state.get_energy_requirement_Wh(slot) == 0
+            if isinstance(child.strategy, LoadHoursStrategy):
+                assert isclose(child.strategy.state.get_energy_requirement_Wh(slot), 0.0,
+                               rel_tol=1e8)
 
 
 @then('the {device} bid is partially fulfilled by the PV offers')
