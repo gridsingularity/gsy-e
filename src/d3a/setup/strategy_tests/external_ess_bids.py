@@ -30,6 +30,9 @@ def get_setup(config):
             Area(
                 'House 1',
                 [
+                    # initial_selling_rate is adjusted from 30 to 40, in order to avoid getting
+                    # instantly matched with incoming bids from external ess agent.
+                    # To be re-checked in context to D3ASIM-3220(replace_existing)
                     Area('PV', strategy=PVStrategy(
                         max_panel_power_W=2000, initial_selling_rate=40, final_selling_rate=30.0)
                          ),

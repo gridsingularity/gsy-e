@@ -501,8 +501,7 @@ class BidEnabledStrategy(BaseStrategy):
             assert bid.buyer == self.owner.name
             self.remove_bid_from_pending(market.id, bid.id)
 
-    def post_bid(self, market, price, energy, replace_existing=True, buyer_origin=None,
-                 buyer_origin_id=None):
+    def post_bid(self, market, price, energy, replace_existing=True):
         if replace_existing:
             self._remove_existing_bids(market)
 
@@ -589,8 +588,6 @@ class BidEnabledStrategy(BaseStrategy):
             market,
             energy_Wh * self.bid_update.initial_rate[market.time_slot] / 1000.0,
             energy_Wh / 1000.0,
-            buyer_origin=self.owner.name,
-            buyer_origin_id=self.owner.uuid
         )
 
     def get_posted_bids(self, market):
