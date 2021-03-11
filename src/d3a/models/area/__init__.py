@@ -125,7 +125,6 @@ class Area:
             raise AreaException("A leaf area can not have children.")
         self.strategy = strategy
         self._config = config
-        self._global_objects = None
         self.events = Events(event_list, self)
         self.budget_keeper = budget_keeper
         if budget_keeper:
@@ -430,13 +429,6 @@ class Area:
         if self.parent:
             return self.parent.config
         return GlobalConfig
-
-    @property
-    def global_objects(self):
-        if self._global_objects:
-            return self._global_objects
-        if self.parent:
-            return self.parent.global_objects
 
     @property
     def bc(self):

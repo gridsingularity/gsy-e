@@ -90,9 +90,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
                                                                     market.time_slot)
                     self.post_bid(market,
                                   buy_rate * INF_ENERGY,
-                                  INF_ENERGY,
-                                  buyer_origin=self.owner.name,
-                                  buyer_origin_id=self.owner.uuid)
+                                  INF_ENERGY)
                 except MarketException:
                     pass
 

@@ -22,7 +22,7 @@ from d3a.models.area import Area
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
-from d3a.d3a_core.global_objects import GlobalStatistics
+from d3a.d3a_core.global_objects import ExternalConnectionGlobalStatistics
 from d3a.models.config import SimulationConfig
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import \
@@ -45,17 +45,20 @@ class TestGlobalObjects(unittest.TestCase):
         self.config.max_panel_power_W = 1000
         self.config.external_redis_communicator = \
             MagicMock(spec=ExternalConnectionCommunicator(True))
-        self.storage = Area("Storage", strategy=StorageExternalStrategy(), config=self.config)
+        self.storage = Area("Storage", strategy=StorageExternalStrategy(), config=self.config,
+                            external_connection_available=True)
         self.load = Area("Load", strategy=LoadHoursExternalStrategy(avg_power_W=100),
-                         config=self.config)
-        self.pv = Area("PV", strategy=PVExternalStrategy(), config=self.config)
+                         config=self.config, external_connection_available=True)
+        self.pv = Area("PV", strategy=PVExternalStrategy(), config=self.config,
+                       external_connection_available=True)
         self.house_area = Area("House", children=[self.storage, self.load, self.pv],
                                config=self.config)
         self.grid_area = Area("Grid", children=[self.house_area], config=self.config)
         self.grid_area.activate()
 
     def test_global_objects_area_stats_tree_dict_general_structure(self):
-        go = GlobalStatistics(self.grid_area)
+        go = ExternalConnectionGlobalStatistics()
+        go(self.grid_area, self.config.ticks_per_slot)
         self.grid_area.current_tick += 15
         self.house_area.current_tick += 15
         self.grid_area.cycle_markets(_trigger_event=True)

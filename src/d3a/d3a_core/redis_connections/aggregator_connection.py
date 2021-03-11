@@ -4,6 +4,7 @@ from copy import deepcopy
 from threading import Lock
 import d3a.constants
 from d3a_interface.utils import create_subdict_or_update
+from d3a.d3a_core.singletons import external_global_statistics
 
 
 class AggregatorHandler:
@@ -52,30 +53,29 @@ class AggregatorHandler:
                 if area_uuid not in self.device_aggregator_mapping:
                     outdict[area_uuid] = {}
 
-    def _create_grid_tree_event_dict(self, global_objects):
+    def _create_grid_tree_event_dict(self):
         return {'grid_tree': self._delete_not_owned_devices_from_dict(
-            global_objects.area_stats_tree_dict),
-                'feed_in_tariff_rate': global_objects.current_feed_in_tariff}
+            external_global_statistics.area_stats_tree_dict),
+                'feed_in_tariff_rate': external_global_statistics.current_feed_in_tariff}
 
-    def add_batch_market_event(self, device_uuid, global_objects, market_info):
-        market_info.update(self._create_grid_tree_event_dict(global_objects))
+    def add_batch_market_event(self, device_uuid, market_info):
+        market_info.update(self._create_grid_tree_event_dict())
         self._add_batch_event(device_uuid, market_info, self.batch_market_cycle_events)
 
-    def add_batch_tick_event(self, device_uuid, global_objects, tick_info):
-        tick_info.update(self._create_grid_tree_event_dict(global_objects))
+    def add_batch_tick_event(self, device_uuid, tick_info):
+        tick_info.update(self._create_grid_tree_event_dict())
         self._add_batch_event(device_uuid, tick_info, self.batch_tick_events)
 
     def add_batch_finished_event(self, device_uuid, finish_info):
         self._add_batch_event(device_uuid, finish_info, self.batch_finished_events)
 
-    def add_batch_trade_event(self, device_uuid, global_objects, trade_info):
+    def add_batch_trade_event(self, device_uuid, trade_info):
         aggregator_uuid = self.device_aggregator_mapping[device_uuid]
         if aggregator_uuid not in self.batch_trade_events:
             self.batch_trade_events[aggregator_uuid] = \
                 {'trade_list': []}
 
-        self.batch_trade_events[aggregator_uuid].update(
-            self._create_grid_tree_event_dict(global_objects))
+        self.batch_trade_events[aggregator_uuid].update(self._create_grid_tree_event_dict())
         self.batch_trade_events[aggregator_uuid]["trade_list"].append(trade_info)
 
     def aggregator_callback(self, payload):
