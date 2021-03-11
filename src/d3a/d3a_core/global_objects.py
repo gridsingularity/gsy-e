@@ -15,19 +15,29 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.strategy.external_strategies import ExternalMixin
-from d3a.d3a_core.util import get_market_maker_rate_from_config
+# from d3a.models.strategy.external_strategies import ExternalMixin
+from d3a.d3a_core.util import get_market_maker_rate_from_config, ExternalTickCounter
 
 
-class GlobalStatistics:
+class ExternalConnectionGlobalStatistics:
 
-    def __init__(self, root_area):
+    def __init__(self):
         self.area_stats_tree_dict = {}
-        self.root_area = root_area
+        self.root_area = None
+        self.external_tick_counter = None
 
-    def update(self):
+    def __call__(self, root_area, ticks_per_slot):
+        self.root_area = root_area
+        self.external_tick_counter = ExternalTickCounter(ticks_per_slot)
+
+    def update(self, market_cycle=False):
         if self.root_area.current_market:
             self._create_grid_tree_dict(self.root_area, self.area_stats_tree_dict)
+        if market_cycle:
+            self.external_tick_counter.reset()
+
+    def is_it_time_for_external_tick(self, current_tick_in_slot):
+        return self.external_tick_counter.is_it_time_for_external_tick(current_tick_in_slot)
 
     def _create_grid_tree_dict(self, area, outdict):
         outdict[area.uuid] = {}
@@ -49,5 +59,5 @@ class GlobalStatistics:
                 self._create_grid_tree_dict(child, outdict[area.uuid]['children'])
         else:
             outdict[area.uuid] = area.strategy.market_info_dict \
-                if isinstance(area.strategy, ExternalMixin) else {}
+                if area.strategy is not None and area.external_connection_available else {}
             outdict[area.uuid].update({'area_name': area.name})
