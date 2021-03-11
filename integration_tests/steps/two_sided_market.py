@@ -23,6 +23,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a_interface.constants_limits import DATE_TIME_FORMAT
 from d3a_interface.utils import scenario_representation_traversal
 
+
 @then('all load demands in setup was fulfilled on every market slot')
 def load_demands_fulfilled(context):
     from integration_tests.steps.integration_tests import get_simulation_raw_results
