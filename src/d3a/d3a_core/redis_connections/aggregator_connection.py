@@ -55,7 +55,7 @@ class AggregatorHandler:
     def _create_grid_tree_event_dict(self, global_objects):
         return {'grid_tree': self._delete_not_owned_devices_from_dict(
             global_objects.area_stats_tree_dict),
-                'feed_in_tariff_rate': global_objects.feed_in_tariff}
+                'feed_in_tariff_rate': global_objects.current_feed_in_tariff}
 
     def add_batch_market_event(self, device_uuid, global_objects, market_info):
         market_info.update(self._create_grid_tree_event_dict(global_objects))

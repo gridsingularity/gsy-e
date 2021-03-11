@@ -26,7 +26,7 @@ class GlobalStatistics:
     def __init__(self, root_area):
         self.area_stats_tree_dict = {}
         self.root_area = root_area
-        self.feed_in_tariff = None
+        self.current_feed_in_tariff = None
 
     def update(self, current_market_slot=None):
         if self.root_area.current_market:
@@ -41,7 +41,7 @@ class GlobalStatistics:
         """
         for child in area.children:
             if isinstance(child.strategy, InfiniteBusStrategy):
-                self.feed_in_tariff = \
+                self.current_feed_in_tariff = \
                     find_object_of_same_weekday_and_time(child.strategy.energy_buy_rate,
                                                          current_market_slot)
                 return
