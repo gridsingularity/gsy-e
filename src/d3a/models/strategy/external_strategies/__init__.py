@@ -23,7 +23,8 @@ from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import key_in_dict_and_not_none
 import d3a.constants
-from d3a.d3a_core.util import ExternalTickCounter
+from d3a.d3a_core.singletons import external_global_statistics
+
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
 
@@ -98,10 +99,6 @@ class ExternalMixin:
         self._last_dispatched_tick = 0
         self.pending_requests = deque()
         self.lock = Lock()
-
-    def event_activate(self, **kwargs):
-        self.external_tick_counter = ExternalTickCounter(self.device.config.ticks_per_slot)
-        super().event_activate(**kwargs)
 
     def get_state(self):
         strategy_state = super().get_state()
@@ -241,11 +238,9 @@ class ExternalMixin:
                 'market_slot': self.area.next_market.time_slot_str}
 
     def _dispatch_event_tick_to_external_agent(self):
-        if self.external_tick_counter.is_it_time_for_external_tick(self.device.current_tick):
+        if external_global_statistics.is_it_time_for_external_tick(self.device.current_tick):
             if self.is_aggregator_controlled:
-                self.redis.aggregator.add_batch_tick_event(self.device.uuid,
-                                                           self.area.global_objects,
-                                                           self._progress_info)
+                self.redis.aggregator.add_batch_tick_event(self.device.uuid, self._progress_info)
             elif self.connected:
                 tick_event_channel = f'{self.channel_prefix}/events/tick'
                 current_tick_info = {
@@ -254,7 +249,6 @@ class ExternalMixin:
                     'area_uuid': self.device.uuid,
                     'device_info': self._device_info_dict
                 }
-
                 self.redis.publish_json(tick_event_channel, current_tick_info)
 
     def event_market_cycle(self):
@@ -263,10 +257,7 @@ class ExternalMixin:
 
     def publish_market_cycle(self):
         if not self.should_use_default_strategy and self.is_aggregator_controlled:
-            self.redis.aggregator.add_batch_market_event(self.device.uuid,
-                                                         self.area.global_objects,
-                                                         self._progress_info)
-            self.external_tick_counter.reset()
+            self.redis.aggregator.add_batch_market_event(self.device.uuid, self._progress_info)
 
     def _publish_trade_event(self, trade, is_bid_trade):
 
@@ -305,10 +296,8 @@ class ExternalMixin:
         event_response_dict[bid_offer_key] = trade.offer.id
 
         if self.is_aggregator_controlled:
-            self.area.global_objects.update()
-            self.redis.aggregator.add_batch_trade_event(self.device.uuid,
-                                                        self.area.global_objects,
-                                                        event_response_dict)
+            external_global_statistics.update()
+            self.redis.aggregator.add_batch_trade_event(self.device.uuid, event_response_dict)
         elif self.connected:
             trade_event_channel = f"{self.channel_prefix}/events/trade"
             self.redis.publish_json(trade_event_channel, event_response_dict)

@@ -172,9 +172,7 @@ class RedisMarketExternalConnection:
             return
 
         if self.is_aggregator_controlled:
-            self.aggregator.add_batch_market_event(self.area.uuid,
-                                                   self.area.global_objects,
-                                                   self._progress_info)
+            self.aggregator.add_batch_market_event(self.area.uuid, self._progress_info)
 
     def deactivate(self):
         if self.is_aggregator_controlled:

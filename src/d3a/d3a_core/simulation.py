@@ -39,7 +39,7 @@ from d3a.models.power_flow.pandapower import PandaPowerFlow
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
 from d3a.d3a_core.util import NonBlockingConsole, validate_const_settings_for_simulation, \
-    get_market_slot_time_str, ExternalTickCounter
+    get_market_slot_time_str
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCommunication
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
@@ -48,7 +48,7 @@ from d3a_interface.utils import format_datetime, str_to_pendulum_datetime
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
-from d3a.d3a_core.global_objects import GlobalStatistics
+from d3a.d3a_core.singletons import external_global_statistics
 from d3a.blockchain.constants import ENABLE_SUBSTRATE
 import d3a.constants
 
@@ -92,8 +92,6 @@ class Simulation:
         )
         self.progress_info = SimulationProgressInfo()
         self.simulation_config = simulation_config
-        self.external_tick_counter = ExternalTickCounter(self.simulation_config.ticks_per_slot) \
-            if self.simulation_config.external_connection_enabled else None
         self.use_repl = repl
         self.export_on_finish = not no_export
         self.export_path = export_path
@@ -170,10 +168,7 @@ class Simulation:
             log.info("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
-        # TODO: discuss whether the following circular reference is a good idea (probably not)
-        #  it is needed for being able to update the whole grid_tree from the devices
-        self.global_objects = GlobalStatistics(self.area)
-        self.area._global_objects = self.global_objects
+        external_global_statistics(self.area, self.simulation_config.ticks_per_slot)
 
         self.endpoint_buffer = SimulationEndpointBuffer(
             redis_job_id, self.initial_params,
@@ -345,7 +340,7 @@ class Simulation:
             self.area.cycle_markets()
 
             if self.simulation_config.external_connection_enabled:
-                self.global_objects.update()
+                external_global_statistics.update(market_cycle=True)
                 self.area.publish_market_cycle_to_external_clients()
 
             self._update_and_send_results()
@@ -372,17 +367,14 @@ class Simulation:
                 self.area.tick_and_dispatch()
                 self.area.update_area_current_tick()
                 if self.simulation_config.external_connection_enabled and \
-                        self.external_tick_counter.is_it_time_for_external_tick(tick_no):
-                    self.global_objects.update()
+                        external_global_statistics.is_it_time_for_external_tick(tick_no):
+                    external_global_statistics.update()
 
                 self.simulation_config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()
 
                 self.handle_slowdown_and_realtime(tick_no)
                 self.tick_time_counter = time()
-
-            if self.simulation_config.external_connection_enabled:
-                self.external_tick_counter.reset()
 
             if self.export_on_finish and self.should_export_results:
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
