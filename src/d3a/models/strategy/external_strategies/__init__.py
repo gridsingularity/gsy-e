@@ -246,17 +246,16 @@ class ExternalMixin:
                 self.redis.aggregator.add_batch_tick_event(self.device.uuid,
                                                            self.area.global_objects,
                                                            self._progress_info)
-            else:
-                if self.connected:
-                    tick_event_channel = f'{self.channel_prefix}/events/tick'
-                    current_tick_info = {
-                        **self._progress_info,
-                        'event': 'tick',
-                        'area_uuid': self.device.uuid,
-                        'device_info': self._device_info_dict
-                    }
+            elif self.connected:
+                tick_event_channel = f'{self.channel_prefix}/events/tick'
+                current_tick_info = {
+                    **self._progress_info,
+                    'event': 'tick',
+                    'area_uuid': self.device.uuid,
+                    'device_info': self._device_info_dict
+                }
 
-                    self.redis.publish_json(tick_event_channel, current_tick_info)
+                self.redis.publish_json(tick_event_channel, current_tick_info)
 
     def event_market_cycle(self):
         if self.should_use_default_strategy:
@@ -330,6 +329,13 @@ class ExternalMixin:
         if self.is_aggregator_controlled:
             deactivate_msg = {'event': 'finish'}
             self.redis.aggregator.add_batch_finished_event(self.owner.uuid, deactivate_msg)
+        elif self.connected:
+            deactivate_event_channel = f"{self.channel_prefix}/events/finish"
+            deactivate_msg = {
+                "event": "finish",
+                "area_uuid": self.device.uuid
+            }
+            self.redis.publish_json(deactivate_event_channel, deactivate_msg)
 
     def _bid_aggregator(self, command):
         raise CommandTypeNotSupported(
