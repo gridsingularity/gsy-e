@@ -73,7 +73,6 @@ Feature: Jira Issues Tests
     Then the device statistics are correct
 
   @slow
-  # TODO: this is to be fixed as it is always failing
   Scenario: D3ASIM-1139, no unmatched loads on setup with many loads and only one CEP
     Given we have a scenario named jira/d3asim_1139
     And d3a is installed
