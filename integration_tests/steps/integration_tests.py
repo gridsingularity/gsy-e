@@ -349,12 +349,6 @@ def run_d3a_with_settings_file(context):
                                                                      "d3a-settings.json")))
 
 
-@when('the reported unmatched loads are saved')
-def save_reported_unmatched_loads(context):
-    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
-    context.unmatched_loads = deepcopy(raw_results["unmatched_loads"])
-
-
 @when('the reported price energy day results are saved')
 def step_impl(context):
     raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
@@ -445,8 +439,7 @@ def test_aggregated_result_files(context):
                  os.path.join(base_path, 'kpi.json'),
                  os.path.join(base_path, 'price_energy_day.json'),
                  os.path.join(base_path, 'random_seed.json'),
-                 os.path.join(base_path, 'status.json'),
-                 os.path.join(base_path, 'unmatched_loads.json')]
+                 os.path.join(base_path, 'status.json')]
 
     assert all(len(glob.glob(f)) == 1 for f in file_list)
     assert all(len(open(glob.glob(f)[0]).readlines()) > 0 for f in file_list)
@@ -677,10 +670,6 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
 def test_output(context, scenario, sim_duration, slot_length, tick_length):
     from integration_tests.steps.integration_tests import get_simulation_raw_results
     get_simulation_raw_results(context)
-
-    if scenario in ["default_2a", "default_2b", "default_3"]:
-        from integration_tests.steps.two_sided_market import no_unmatched_loads
-        no_unmatched_loads(context)
 
     # (check if simulation successfully finished):
     assert len(context.raw_sim_data.keys()) == 24

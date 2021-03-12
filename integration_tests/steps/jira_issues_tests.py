@@ -113,6 +113,8 @@ def step_impl(context):
 
 @then('on every market slot there should be matching trades on grid and house markets')
 def check_matching_trades(context):
+    from integration_tests.steps.integration_tests import get_simulation_raw_results
+    get_simulation_raw_results(context)
     for time_slot, core_stats in context.raw_sim_data.items():
         grid_trades = core_stats[context.name_uuid_map['Grid']]['trades']
         house_trades = core_stats[context.name_uuid_map['House 1']]['trades']
