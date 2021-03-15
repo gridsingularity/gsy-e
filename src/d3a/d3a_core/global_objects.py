@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-# from d3a.models.strategy.external_strategies import ExternalMixin
+from d3a.d3a_core.util import find_object_of_same_weekday_and_time
 from d3a.d3a_core.util import get_market_maker_rate_from_config, ExternalTickCounter
 
 
@@ -25,16 +25,34 @@ class ExternalConnectionGlobalStatistics:
         self.area_stats_tree_dict = {}
         self.root_area = None
         self.external_tick_counter = None
+        self.current_feed_in_tariff = None
 
     def __call__(self, root_area, ticks_per_slot):
         self.root_area = root_area
         self.external_tick_counter = ExternalTickCounter(ticks_per_slot)
+
+    def _buffer_feed_in_tariff(self, area, current_market_slot):
+        """
+        This simplified recursion is sufficient as the infinite bus is expected to be in the
+        uppermost level of the tree
+        """
+        # the lazy is needed in order to avoid circular imports
+        from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
+        for child in area.children:
+            if isinstance(child.strategy, InfiniteBusStrategy):
+                self.current_feed_in_tariff = \
+                    find_object_of_same_weekday_and_time(child.strategy.energy_buy_rate,
+                                                         current_market_slot)
+                return
 
     def update(self, market_cycle=False):
         if self.root_area.current_market:
             self._create_grid_tree_dict(self.root_area, self.area_stats_tree_dict)
         if market_cycle:
             self.external_tick_counter.reset()
+            if self.root_area.current_market is not None:
+                self._buffer_feed_in_tariff(self.root_area,
+                                            self.root_area.current_market.time_slot)
 
     def is_it_time_for_external_tick(self, current_tick_in_slot):
         return self.external_tick_counter.is_it_time_for_external_tick(current_tick_in_slot)

@@ -53,14 +53,17 @@ class AggregatorHandler:
                 if area_uuid not in self.device_aggregator_mapping:
                     outdict[area_uuid] = {}
 
+    def _create_grid_tree_event_dict(self):
+        return {'grid_tree': self._delete_not_owned_devices_from_dict(
+            external_global_statistics.area_stats_tree_dict),
+                'feed_in_tariff_rate': external_global_statistics.current_feed_in_tariff}
+
     def add_batch_market_event(self, device_uuid, market_info):
-        market_info.update({'grid_tree': self._delete_not_owned_devices_from_dict(
-            external_global_statistics.area_stats_tree_dict)})
+        market_info.update(self._create_grid_tree_event_dict())
         self._add_batch_event(device_uuid, market_info, self.batch_market_cycle_events)
 
     def add_batch_tick_event(self, device_uuid, tick_info):
-        tick_info.update({'grid_tree': self._delete_not_owned_devices_from_dict(
-            external_global_statistics.area_stats_tree_dict)})
+        tick_info.update(self._create_grid_tree_event_dict())
         self._add_batch_event(device_uuid, tick_info, self.batch_tick_events)
 
     def add_batch_finished_event(self, device_uuid, finish_info):
@@ -70,12 +73,9 @@ class AggregatorHandler:
         aggregator_uuid = self.device_aggregator_mapping[device_uuid]
         if aggregator_uuid not in self.batch_trade_events:
             self.batch_trade_events[aggregator_uuid] = \
-                {'grid_tree': {},
-                 'trade_list': []}
+                {'trade_list': []}
 
-        self.batch_trade_events[aggregator_uuid]["grid_tree"] = \
-            self._delete_not_owned_devices_from_dict(
-                external_global_statistics.area_stats_tree_dict)
+        self.batch_trade_events[aggregator_uuid].update(self._create_grid_tree_event_dict())
         self.batch_trade_events[aggregator_uuid]["trade_list"].append(trade_info)
 
     def aggregator_callback(self, payload):
