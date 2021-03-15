@@ -275,30 +275,58 @@ class ExternalMixin:
             # the bid clearing and one for the offer clearing.
             return
 
-        event_response_dict = {"device_info": self._device_info_dict,
-                               "event": "trade",
-                               "trade_id": trade.id,
-                               "time": trade.time.isoformat(),
-                               "price": trade.offer.price,
-                               "energy": trade.offer.energy,
-                               "fee_price": trade.fee_price,
-                               "area_uuid": self.device.uuid,
-                               "seller": trade.seller
-                               if trade.seller == self.device.name else "anonymous",
-                               "buyer": trade.buyer
-                               if trade.buyer == self.device.name else "anonymous",
-                               "residual_id": trade.residual.id
-                               if trade.residual is not None else "None"}
-
-        bid_offer_key = 'bid_id' if is_bid_trade else 'offer_id'
-        event_response_dict["event_type"] = "buy" \
-            if trade.buyer == self.device.name else "sell"
-        event_response_dict[bid_offer_key] = trade.offer.id
-
         if self.is_aggregator_controlled:
+            event_response_dict = {'event': 'trade',
+                                   'asset_id': self.device.uuid,
+                                   'trade_id': trade.id,
+                                   'time': trade.time.isoformat(),
+                                   'trade_price': trade.offer.price,
+                                   'traded_energy': trade.offer.energy,
+                                   'total_fee': trade.fee_price,
+                                   'local_market_fee':
+                                       self.area.current_market.fee_class.grid_fee_rate
+                                       if self.area.current_market is not None else "None",
+                                   'attributes': {},
+                                   'seller': trade.seller
+                                   if trade.seller_id == self.device.uuid else 'anonymous',
+                                   'buyer': trade.buyer
+                                   if trade.buyer_id == self.device.uuid else 'anonymous',
+                                   'bid_id': trade.offer.id
+                                   if isinstance(trade.offer, Bid) else 'None',
+                                   'offer_id': trade.offer.id
+                                   if isinstance(trade.offer, Offer) else 'None',
+                                   'residual_bid_id': trade.residual.id
+                                   if trade.residual is not None and isinstance(trade.residual,
+                                                                                Bid)
+                                   else 'None',
+                                   'residual_offer_id': trade.residual.id
+                                   if trade.residual is not None and isinstance(trade.residual,
+                                                                                Offer)
+                                   else 'None'}
+
             external_global_statistics.update()
             self.redis.aggregator.add_batch_trade_event(self.device.uuid, event_response_dict)
         elif self.connected:
+            event_response_dict = {'device_info': self._device_info_dict,
+                                   'event': 'trade',
+                                   'trade_id': trade.id,
+                                   'time': trade.time.isoformat(),
+                                   'trade_price': trade.offer.price,
+                                   'traded_energy': trade.offer.energy,
+                                   'fee_price': trade.fee_price,
+                                   'area_uuid': self.device.uuid,
+                                   'seller': trade.seller
+                                   if trade.seller == self.device.name else 'anonymous',
+                                   'buyer': trade.buyer
+                                   if trade.buyer == self.device.name else 'anonymous',
+                                   'residual_id': trade.residual.id
+                                   if trade.residual is not None else 'None'}
+
+            bid_offer_key = 'bid_id' if is_bid_trade else 'offer_id'
+            event_response_dict['event_type'] = 'buy' \
+                if trade.buyer == self.device.name else 'sell'
+            event_response_dict[bid_offer_key] = trade.offer.id
+
             trade_event_channel = f"{self.channel_prefix}/events/trade"
             self.redis.publish_json(trade_event_channel, event_response_dict)
 
