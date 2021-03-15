@@ -36,7 +36,7 @@ class ExternalConnectionGlobalStatistics:
         This simplified recursion is sufficient as the infinite bus is expected to be in the
         uppermost level of the tree
         """
-        # the lazy is needed in order to avoid circular imports
+        # the lazy import is needed in order to avoid circular imports
         from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
         for child in area.children:
             if isinstance(child.strategy, InfiniteBusStrategy):
@@ -58,6 +58,8 @@ class ExternalConnectionGlobalStatistics:
         return self.external_tick_counter.is_it_time_for_external_tick(current_tick_in_slot)
 
     def _create_grid_tree_dict(self, area, outdict):
+        # the lazy import is needed in order to avoid circular imports
+        from d3a.models.strategy.external_strategies import ExternalMixin
         outdict[area.uuid] = {}
         if area.children:
             if area.current_market:
@@ -77,5 +79,5 @@ class ExternalConnectionGlobalStatistics:
                 self._create_grid_tree_dict(child, outdict[area.uuid]['children'])
         else:
             outdict[area.uuid] = area.strategy.market_info_dict \
-                if area.strategy is not None and area.external_connection_available else {}
+                if isinstance(area.strategy, ExternalMixin) else {}
             outdict[area.uuid].update({'area_name': area.name})
