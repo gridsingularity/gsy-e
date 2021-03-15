@@ -29,8 +29,8 @@ def set_market_type(context, market_type):
 
 @then('Infinite Bus buys energy that is not needed from the PV and sells to the load')
 def check_buy_behaviour_ib(context):
-    from integration_tests.steps.two_sided_market import no_unmatched_loads
-    no_unmatched_loads(context)
+    from integration_tests.steps.integration_tests import get_simulation_raw_results
+    get_simulation_raw_results(context)
     name_uuid_map = get_area_name_uuid_mapping(context.area_tree_summary_data)
     grid = context.simulation.area
     bus = list(filter(lambda x: x.name == "Infinite Bus", grid.children))[0]

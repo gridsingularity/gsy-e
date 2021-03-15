@@ -104,22 +104,6 @@ Feature: Run integration tests
      When we run the d3a simulation on console with default_2a for 2 hrs
      Then aggregated result files are exported
 
-  Scenario Outline: Unmatched loads are the same with and without keeping the past markets
-     Given we have a scenario named <scenario>
-     And d3a is installed
-     And the past markets are kept in memory
-     When we run the simulation with setup file <scenario> and parameters [24, 60, 60, 1]
-     And the reported unmatched loads are saved
-     And the past markets are not kept in memory
-     And we run the simulation with setup file <scenario> and parameters [24, 60, 60, 1]
-     Then the unmatched loads are identical no matter if the past markets are kept
-
-  Examples: Settings
-     | scenario     |
-     |  default_2a  |
-     |  default_3a  |
-     |  default_3b  |
-
   Scenario Outline: Price energy day results are the same with and without keeping the past markets
      Given we have a scenario named <scenario>
      And d3a is installed
