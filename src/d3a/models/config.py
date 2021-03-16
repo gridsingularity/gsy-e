@@ -19,15 +19,15 @@ import ast
 import json
 from pendulum import duration, Duration, DateTime, today
 
-from d3a.constants import TIME_ZONE
-from d3a_interface.exceptions import D3AException
-from d3a.d3a_core.util import format_interval
 from d3a_interface.constants_limits import ConstSettings
-from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
     read_and_convert_identity_profile_to_float
+from d3a_interface.exceptions import D3AException
 from d3a.d3a_core.util import change_global_config
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import \
     ExternalConnectionCommunicator
+from d3a.constants import TIME_ZONE
+from d3a.d3a_core.util import format_interval
 
 
 class SimulationConfig:

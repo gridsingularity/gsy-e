@@ -28,8 +28,8 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
     if "collaboration_uuid" in scenario:
         d3a.constants.COLLABORATION_ID = scenario.pop("collaboration_uuid")
         d3a.constants.EXTERNAL_CONNECTION_WEB = True
-        d3a.constants.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
-        d3a.constants.RUN_IN_REALTIME = d3a.constants.IS_CANARY_NETWORK
+        GlobalConfig.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
+        d3a.constants.RUN_IN_REALTIME = GlobalConfig.IS_CANARY_NETWORK
     saved_state = decompress_and_decode_queued_strings(saved_state)
     log.error(f"Scenario: {scenario}\n"
               f"Settings: {settings}\n"
@@ -77,7 +77,7 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
             "aggregator_device_mapping": aggregator_device_mapping
         }
 
-        if d3a.constants.IS_CANARY_NETWORK:
+        if GlobalConfig.IS_CANARY_NETWORK:
             config_settings['start_date'] = \
                 instance((datetime.combine(date.today(), datetime.min.time())))
 
