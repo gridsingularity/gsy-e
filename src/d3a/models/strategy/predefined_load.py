@@ -18,12 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from typing import Union
 from pendulum import duration
 
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
 from d3a_interface.constants_limits import ConstSettings
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.read_user_profile import read_arbitrary_profile
-from d3a.models.read_user_profile import InputProfileTypes
-from d3a_interface.utils import key_in_dict_and_not_none
-from d3a.d3a_core.util import find_object_of_same_weekday_and_time
 from d3a.d3a_core.exceptions import D3AException
 """
 Create a load that uses a profile as input for its power values

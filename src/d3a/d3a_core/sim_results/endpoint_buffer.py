@@ -15,9 +15,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a_interface.constants_limits import ConstSettings, DATE_TIME_UI_FORMAT
+from d3a_interface.constants_limits import ConstSettings, DATE_TIME_UI_FORMAT, GlobalConfig
 from d3a_interface.sim_results.all_results import ResultsHandler
+
+from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.d3a_core.sim_results.area_market_stock_stats import OfferBidTradeGraphStats
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
@@ -25,7 +26,6 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
-import d3a.constants
 
 _NO_VALUE = {
     'min': None,
@@ -197,7 +197,7 @@ class SimulationEndpointBuffer:
     def update_stats(self, area, simulation_status, progress_info, sim_state):
         self.area_result_dict = self._create_area_tree_dict(area)
         self.status = simulation_status
-        is_initial_current_market_on_cn = d3a.constants.IS_CANARY_NETWORK and \
+        is_initial_current_market_on_cn = GlobalConfig.IS_CANARY_NETWORK and \
             (area.next_market is None or (area.current_market and
              area.next_market.time_slot - area.current_market.time_slot > area.config.slot_length))
         if area.current_market is not None and not is_initial_current_market_on_cn:

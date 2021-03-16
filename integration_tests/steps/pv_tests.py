@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from behave import then
 from math import isclose
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.utils import convert_W_to_kWh
 from d3a.constants import DEFAULT_PRECISION
 
 
@@ -74,7 +75,6 @@ def pv_price_decrease(context):
 
 @then('the load buys at most the energy equivalent of {power_W} W')
 def load_buys_200_W(context, power_W):
-    from d3a.d3a_core.util import convert_W_to_kWh
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     load = list(filter(lambda x: "Load" in x.name, house1.children))[0]
     max_desired_energy = convert_W_to_kWh(float(power_W), house1.config.slot_length)
