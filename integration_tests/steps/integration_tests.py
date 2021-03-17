@@ -22,22 +22,22 @@ import importlib
 import logging
 import glob
 import traceback
-
 from math import isclose
+from copy import deepcopy
 from pendulum import duration, today, from_format
 from behave import given, when, then
 from deepdiff import DeepDiff
-from copy import deepcopy
 
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
+    default_profile_dict
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.utils import convert_W_to_Wh, convert_W_to_kWh, convert_kW_to_kWh, \
+    get_area_name_uuid_mapping
 from d3a.models.config import SimulationConfig
-from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.simulation import Simulation
 from d3a.d3a_core.util import d3a_path
-from d3a_interface.utils import get_area_name_uuid_mapping
 from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
-from d3a_interface.constants_limits import ConstSettings
 from d3a import constants
-from d3a.d3a_core.util import convert_W_to_Wh, convert_W_to_kWh, convert_kW_to_kWh
 
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
@@ -98,7 +98,7 @@ def json_string_profile(context, device):
 @given('we have a profile of market_maker_rate for {scenario}')
 def hour_profile_of_market_maker_rate(context, scenario):
     import importlib
-    from d3a.models.read_user_profile import InputProfileTypes
+    from d3a_interface.read_user_profile import InputProfileTypes
     setup_file_module = importlib.import_module("d3a.setup.{}".format(scenario))
     context._market_maker_rate = \
         read_arbitrary_profile(InputProfileTypes.IDENTITY, setup_file_module.market_maker_rate)
@@ -447,9 +447,8 @@ def test_aggregated_result_files(context):
 
 @then('we test that cloud coverage [{cloud_coverage}] and market_maker_rate are parsed correctly')
 def test_simulation_config_parameters(context, cloud_coverage):
-    from d3a.models.read_user_profile import default_profile_dict
     assert context.simulation.simulation_config.cloud_coverage == int(cloud_coverage)
-    day_factor = 24 * 7 if constants.IS_CANARY_NETWORK else 24
+    day_factor = 24 * 7 if GlobalConfig.IS_CANARY_NETWORK else 24
     assert len(context.simulation.simulation_config.market_maker_rate) == \
         day_factor / context.simulation.simulation_config.slot_length.hours + \
         context.simulation.simulation_config.market_count
@@ -808,7 +807,7 @@ def generate_area_uuid_map(sim_area, results):
 
 @then('the predefined load follows the load profile')
 def check_load_profile(context):
-    if constants.IS_CANARY_NETWORK:
+    if GlobalConfig.IS_CANARY_NETWORK:
         return
     if isinstance(context._device_profile, str):
         context._device_profile = context._device_profile_dict
@@ -946,7 +945,7 @@ def test_finite_plant_max_power(context, plant_name):
 
 @then("the results are the same for each simulation run")
 def test_sim_market_count(context):
-    if constants.IS_CANARY_NETWORK:
+    if GlobalConfig.IS_CANARY_NETWORK:
         return
     grid_1 = context.simulation_1.area
     grid_4 = context.simulation_4.area

@@ -16,23 +16,24 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
-import pendulum
 import uuid
 import pathlib
 import os
-from pendulum import DateTime, duration, today, datetime
 from typing import Dict  # NOQA
 from uuid import uuid4
 
+import pendulum
+from pendulum import DateTime, duration, today, datetime
+
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig, CN_PROFILE_EXPANSION_DAYS
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.exceptions import D3ADeviceException
+from d3a_interface.utils import generate_market_slot_list
 from d3a.d3a_core.util import d3a_path, change_global_config
-from d3a.constants import TIME_ZONE, TIME_FORMAT, CN_PROFILE_EXPANSION_DAYS, IS_CANARY_NETWORK
+from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.exceptions import D3ADeviceException
-from d3a.d3a_core.util import generate_market_slot_list
 
 
 def setup_function():
@@ -371,7 +372,7 @@ def test_correct_interpolation_power_profile():
 
 def test_correct_time_expansion_read_arbitrary_profile():
     market_maker_rate = 30
-    if IS_CANARY_NETWORK:
+    if GlobalConfig.IS_CANARY_NETWORK:
         GlobalConfig.sim_duration = duration(hours=3)
         expected_last_time_slot = today(tz=TIME_ZONE).add(days=CN_PROFILE_EXPANSION_DAYS-1,
                                                           hours=23, minutes=45)
@@ -433,7 +434,7 @@ def test_profile_with_date_and_seconds_can_be_parsed():
     profile = read_arbitrary_profile(InputProfileTypes.POWER, str(profile_path))
     # After the 6th element the rest of the entries are populated with the last value
     expected_energy_values = [1.5, 1.25, 1.0, 0.75, 0.5, 0.25]
-    if IS_CANARY_NETWORK:
+    if GlobalConfig.IS_CANARY_NETWORK:
         energy_values_profile = []
         energy_values_after_profile = []
         end_time = profile_date.add(minutes=GlobalConfig.slot_length.minutes * 6)

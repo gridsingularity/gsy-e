@@ -18,10 +18,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from pendulum import duration
 
-from d3a.d3a_core.exceptions import MarketException
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a.d3a_core.util import write_default_to_dict, find_object_of_same_weekday_and_time
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.utils import find_object_of_same_weekday_and_time
+from d3a.d3a_core.exceptions import MarketException
+from d3a.d3a_core.util import write_default_to_dict
 
 
 class UpdateFrequencyMixin:
