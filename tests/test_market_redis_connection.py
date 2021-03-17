@@ -5,6 +5,7 @@ import json
 from time import sleep
 from pendulum import now
 from deepdiff import DeepDiff
+from uuid import uuid4
 from d3a.events import MarketEvent
 from d3a_interface.constants_limits import ConstSettings
 from d3a.models.market.market_structures import Offer, Trade, Bid
@@ -69,7 +70,8 @@ class TestMarketRedisEventPublisher(unittest.TestCase):
 class TestMarketRedisEventSubscriber(unittest.TestCase):
 
     def setUp(self):
-        self.market = OneSidedMarket(name="test_market", time_slot=now())
+        self.market = OneSidedMarket(simulation_id=uuid4(), market_id=uuid4(),
+                                     name="test_market", time_slot=now())
         self.market.id = "id"
         self.subscriber = MarketRedisEventSubscriber(self.market)
 
@@ -194,7 +196,8 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
 
     def setUp(self):
         ConstSettings.IAASettings.MARKET_TYPE = 2
-        self.market = OneSidedMarket(name="test_market", time_slot=now())
+        self.market = OneSidedMarket(simulation_id=uuid4(), market_id=uuid4(),
+                                     name="test_market", time_slot=now())
         self.market.id = "id"
         self.subscriber = TwoSidedMarketRedisEventSubscriber(self.market)
 

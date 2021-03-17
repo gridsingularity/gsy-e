@@ -18,10 +18,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from pendulum import duration
 
-from d3a.d3a_core.exceptions import MarketException
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a.d3a_core.util import write_default_to_dict, find_object_of_same_weekday_and_time
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.utils import find_object_of_same_weekday_and_time
+from d3a.d3a_core.exceptions import MarketException
+from d3a.d3a_core.util import write_default_to_dict
 
 
 class UpdateFrequencyMixin:
@@ -172,7 +173,9 @@ class UpdateFrequencyMixin:
                     offer.energy,
                     strategy.owner.name,
                     original_offer_price=updated_price,
-                    seller_origin=offer.seller_origin
+                    seller_origin=offer.seller_origin,
+                    seller_origin_id=offer.seller_origin_id,
+                    seller_id=strategy.owner.uuid
                 )
                 strategy.offers.replace(offer, new_offer, iterated_market.id)
             except MarketException:
@@ -204,7 +207,7 @@ class UpdateFrequencyMixin:
 
             strategy.remove_bid_from_pending(market.id, bid.id)
             strategy.post_bid(market, bid.energy * self.get_updated_rate(market.time_slot),
-                              bid.energy, buyer_origin=bid.buyer_origin)
+                              bid.energy)
 
     def update_posted_bids_over_ticks(self, market, strategy):
         if self.time_for_price_update(strategy, market.time_slot):

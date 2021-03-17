@@ -23,7 +23,9 @@ from uuid import uuid4
 
 from d3a.d3a_core.exceptions import SimulationException, D3AException
 from d3a.models.base import AreaBehaviorBase
-from d3a.models.market.market_structures import Offer, Bid
+from d3a.models.market import Market
+from d3a.models.market.market_structures import Offer, Bid, trade_from_JSON_string, \
+    offer_from_JSON_string
 from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 from d3a.d3a_core.device_registry import DeviceRegistry
@@ -31,7 +33,6 @@ from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, Market
 from d3a.events import EventMixin
 from d3a.d3a_core.exceptions import D3ARedisException
 from d3a.d3a_core.util import append_or_create_key
-from d3a.models.market.market_structures import trade_from_JSON_string, offer_from_JSON_string
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a import constants
@@ -135,10 +136,19 @@ class Offers:
     def sold_offer_energy(self, market_id):
         return sum(o.energy for o in self.sold_in_market(market_id))
 
-    def can_offer_be_posted(self, offer_energy, offer_price, available_energy, market):
+    def can_offer_be_posted(
+            self, offer_energy, offer_price, available_energy, market, replace_existing=False):
+
+        if replace_existing:
+            # Do not consider previous offers, since they would be replaced by the current one
+            posted_offer_energy = 0.0
+        else:
+            posted_offer_energy = self.posted_offer_energy(market.id)
+
         posted_energy = (offer_energy
-                         + self.posted_offer_energy(market.id)
+                         + posted_offer_energy
                          - self.sold_offer_energy(market.id))
+
         return posted_energy <= available_energy and offer_price >= 0.0
 
     def sold_in_market(self, market_id):
@@ -291,6 +301,28 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         self.offer_buffer = None
         return offer
 
+    def post_offer(self, market, replace_existing=True, **offer_kwargs) -> Offer:
+        """Post the offer on the specified market.
+
+        Args:
+            market: The market in which the offer must be placed.
+            replace_existing (bool): if True, delete all previous offers.
+            offer_kwargs: the parameters that will be used to create the Offer object.
+        """
+        if replace_existing:
+            # Remove all existing offers that are still open in the market
+            self.offers.remove_offer_from_cache_and_market(market)
+
+        offer_kwargs['seller'] = self.owner.name
+        offer_kwargs['seller_origin'] = self.owner.name
+        offer_kwargs['seller_origin_id'] = self.owner.uuid
+        offer_kwargs['seller_id'] = self.owner.uuid
+
+        offer = market.offer(**offer_kwargs)
+        self.offers.post(offer, market.id)
+
+        return offer
+
     def _offer_response(self, payload):
         data = json.loads(payload["data"])
         # TODO: is this additional parsing needed?
@@ -306,19 +338,20 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     def accept_offer(self, market_or_id, offer, *, buyer=None, energy=None,
                      already_tracked=False, trade_rate: float = None,
-                     trade_bid_info: float = None, buyer_origin=None):
+                     trade_bid_info: float = None, buyer_origin=None,
+                     buyer_origin_id=None, buyer_id=None):
         if buyer is None:
             buyer = self.owner.name
         if not isinstance(offer, Offer):
             offer = market_or_id.offers[offer]
         trade = self._accept_offer(market_or_id, offer, buyer, energy, trade_rate, already_tracked,
-                                   trade_bid_info, buyer_origin)
+                                   trade_bid_info, buyer_origin, buyer_origin_id, buyer_id)
 
         self.offers.bought_offer(trade.offer, market_or_id)
         return trade
 
     def _accept_offer(self, market_or_id, offer, buyer, energy, trade_rate, already_tracked,
-                      trade_bid_info, buyer_origin):
+                      trade_bid_info, buyer_origin, buyer_origin_id, buyer_id):
 
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             if not isinstance(market_or_id, str):
@@ -329,7 +362,9 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                     "trade_rate": trade_rate,
                     "already_tracked": already_tracked,
                     "trade_bid_info": trade_bid_info if trade_bid_info is not None else None,
-                    "buyer_origin": buyer_origin}
+                    "buyer_origin": buyer_origin,
+                    "buyer_origin_id": buyer_origin_id,
+                    "buyer_id": buyer_id}
 
             self._send_events_to_market("ACCEPT_OFFER", market_or_id, data,
                                         self._accept_offer_response)
@@ -342,7 +377,9 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                                              trade_rate=trade_rate,
                                              already_tracked=already_tracked,
                                              trade_bid_info=trade_bid_info,
-                                             buyer_origin=buyer_origin)
+                                             buyer_origin=buyer_origin,
+                                             buyer_origin_id=buyer_origin_id,
+                                             buyer_id=buyer_id)
 
     def _accept_offer_response(self, payload):
         data = json.loads(payload["data"])
@@ -418,8 +455,11 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             assert trade.offer.energy_rate >= \
                 offer.energy_rate - FLOATING_POINT_TOLERANCE
 
-    def can_offer_be_posted(self, offer_energy, offer_price, available_energy, market):
-        return self.offers.can_offer_be_posted(offer_energy, offer_price, available_energy, market)
+    def can_offer_be_posted(
+            self, offer_energy, offer_price, available_energy, market, replace_existing=False):
+
+        return self.offers.can_offer_be_posted(
+            offer_energy, offer_price, available_energy, market, replace_existing=replace_existing)
 
     def deactivate(self):
         pass
@@ -454,20 +494,39 @@ class BidEnabledStrategy(BaseStrategy):
         self._bids = {}
         self._traded_bids = {}
 
-    def post_bid(self, market, price, energy, buyer_origin=None):
+    def _remove_existing_bids(self, market: Market) -> None:
+        """Remove all existing bids in the market."""
+
+        for bid in self.get_posted_bids(market):
+            assert bid.buyer == self.owner.name
+            self.remove_bid_from_pending(market.id, bid.id)
+
+    def post_bid(self, market, price, energy, replace_existing=True):
+        if replace_existing:
+            self._remove_existing_bids(market)
+
         bid = market.bid(
             price,
             energy,
             self.owner.name,
             original_bid_price=price,
-            buyer_origin=buyer_origin
-        )
+            buyer_origin=self.owner.name,
+            buyer_origin_id=self.owner.uuid,
+            buyer_id=self.owner.uuid)
         self.add_bid_to_posted(market.id, bid)
         return bid
 
-    def can_bid_be_posted(self, bid_energy, bid_price, required_energy_kWh, market):
-        posted_energy = (bid_energy + self.posted_bid_energy(market.id))
-        return posted_energy <= required_energy_kWh and bid_price >= 0.0
+    def can_bid_be_posted(
+            self, bid_energy, bid_price, required_energy_kWh, market, replace_existing=False):
+
+        if replace_existing:
+            posted_bid_energy = 0.0
+        else:
+            posted_bid_energy = self.posted_bid_energy(market.id)
+
+        total_posted_energy = (bid_energy + posted_bid_energy)
+
+        return total_posted_energy <= required_energy_kWh and bid_price >= 0.0
 
     def is_bid_posted(self, market, bid_id):
         return bid_id in [bid.id for bid in self.get_posted_bids(market)]
@@ -529,7 +588,6 @@ class BidEnabledStrategy(BaseStrategy):
             market,
             energy_Wh * self.bid_update.initial_rate[market.time_slot] / 1000.0,
             energy_Wh / 1000.0,
-            buyer_origin=self.owner.name
         )
 
     def get_posted_bids(self, market):

@@ -16,25 +16,23 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import traceback
-from numpy import random
 from logging import getLogger
-from pendulum import duration, DateTime  # NOQA
 from typing import Union, Dict  # NOQA
 from collections import namedtuple
+from numpy import random
+from pendulum import duration, DateTime  # NOQA
 
-from d3a.d3a_core.util import find_object_of_same_weekday_and_time, convert_W_to_Wh
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.utils import key_in_dict_and_not_none
+from d3a_interface.device_validator import validate_load_device_price, validate_load_device_energy
+from d3a_interface.utils import find_object_of_same_weekday_and_time, convert_W_to_Wh
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import LoadState
 from d3a.models.strategy import BidEnabledStrategy
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.device_validator import validate_load_device_price, validate_load_device_energy
 from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.models.read_user_profile import read_arbitrary_profile
-from d3a.models.read_user_profile import InputProfileTypes
 from d3a.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
-from d3a_interface.constants_limits import GlobalConfig
-from d3a_interface.utils import key_in_dict_and_not_none
 from d3a import constants
 
 log = getLogger(__name__)
@@ -265,7 +263,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 energy_Wh = self.state.calculate_energy_to_accept(
                     acceptable_offer.energy * 1000.0, time_slot)
                 self.accept_offer(market, acceptable_offer, energy=energy_Wh / 1000.0,
-                                  buyer_origin=self.owner.name)
+                                  buyer_origin=self.owner.name,
+                                  buyer_origin_id=self.owner.uuid,
+                                  buyer_id=self.owner.uuid)
                 self.state.decrement_energy_requirement(energy_Wh, time_slot, self.owner.name)
                 self.hrs_per_day[current_day] -= self._operating_hours(energy_Wh / 1000.0)
 

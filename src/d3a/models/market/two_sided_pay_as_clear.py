@@ -34,9 +34,9 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
     def __init__(self, simulation_id, market_id, time_slot=None, bc=None,
                  notification_listener=None, readonly=False,
                  grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
-                 transfer_fees=None, name=None, in_sim_duration=True):
+                 grid_fees=None, name=None, in_sim_duration=True):
         super().__init__(simulation_id, market_id, time_slot, bc, notification_listener, readonly,
-                         grid_fee_type, transfer_fees, name,
+                         grid_fee_type, grid_fees, name,
                          in_sim_duration=in_sim_duration)
         self.state = MarketClearingState()
         self.sorted_bids = []

@@ -30,8 +30,8 @@ class AggregatorHandler:
         self.lock = Lock()
         self.grid_buffer = {}
 
-    def set_aggregator_device_mapping(self, aggregator_device):
-        self.aggregator_device_mapping = aggregator_device
+    def set_aggregator_device_mapping(self, aggregator_device_mapping):
+        self.aggregator_device_mapping = aggregator_device_mapping
         self.device_aggregator_mapping = {
             dev: aggr
             for aggr, devices in self.aggregator_device_mapping.items()
@@ -52,6 +52,7 @@ class AggregatorHandler:
     def _add_grid_stats_to_market_event(self, device_uuid, global_objects):
         market_info = deepcopy(default_market_info)
         market_info["grid_stats_tree"] = global_objects.area_tree_dict
+        market_info["event"] = "grid_stats"
         self._add_batch_event(device_uuid, market_info, self.batch_market_cycle_events)
         self.already_sent_grid_stats = True
 
@@ -80,6 +81,8 @@ class AggregatorHandler:
             self._delete_aggregator(message)
         elif message["type"] == "SELECT":
             self._select_aggregator(message)
+        elif message["type"] == "UNSELECT":
+            self._unselect_aggregator(message)
 
     def _select_aggregator(self, message):
         if message['aggregator_uuid'] not in self.aggregator_device_mapping:
@@ -87,35 +90,55 @@ class AggregatorHandler:
             self.aggregator_device_mapping[message['aggregator_uuid']].\
                 append(message['device_uuid'])
             self.device_aggregator_mapping[message['device_uuid']] = message['aggregator_uuid']
-            success_response_message = {
+            response_message = {
                 "status": "SELECTED", "aggregator_uuid": message['aggregator_uuid'],
                 "device_uuid": message['device_uuid'],
                 "transaction_id": message['transaction_id']}
-            self.redis_db.publish(
-                "aggregator_response", json.dumps(success_response_message)
-            )
         elif message['device_uuid'] in self.device_aggregator_mapping:
             msg = f"Device already have selected " \
                   f"{self.device_aggregator_mapping[message['device_uuid']]}"
-            error_response_message = {
+            response_message = {
                 "status": "error", "aggregator_uuid": message['aggregator_uuid'],
                 "device_uuid": message['device_uuid'],
                 "transaction_id": message['transaction_id'],
                 "msg": msg
             }
-            self.redis_db.publish(
-                "aggregator_response", json.dumps(error_response_message)
-            )
         else:
             self.aggregator_device_mapping[message['aggregator_uuid']].\
                 append(message['device_uuid'])
             self.device_aggregator_mapping[message['device_uuid']] = message['aggregator_uuid']
-            success_response_message = {
+            response_message = {
                 "status": "SELECTED", "aggregator_uuid": message['aggregator_uuid'],
                 "device_uuid": message['device_uuid'],
                 "transaction_id": message['transaction_id']}
+        self.redis_db.publish(
+            "aggregator_response", json.dumps(response_message)
+        )
+
+    def _unselect_aggregator(self, message):
+        if message['device_uuid'] in self.device_aggregator_mapping and \
+                message['aggregator_uuid'] in self.aggregator_device_mapping:
+            try:
+                with self.lock:
+                    del self.device_aggregator_mapping[message['device_uuid']]
+                    self.aggregator_device_mapping[message['aggregator_uuid']]\
+                        .remove(message['device_uuid'])
+                response_message = {
+                    "status": "UNSELECTED", "aggregator_uuid": message['aggregator_uuid'],
+                    "device_uuid": message['device_uuid'],
+                    "transaction_id": message['transaction_id']}
+                self.redis_db.publish(
+                    "aggregator_response", json.dumps(response_message)
+                )
+            except Exception as e:
+                response_message = {
+                    "status": "error", "aggregator_uuid": message['aggregator_uuid'],
+                    "device_uuid": message['device_uuid'],
+                    "transaction_id": message['transaction_id'],
+                    "msg": f"Error unselecting aggregator : {e}"
+                }
             self.redis_db.publish(
-                "aggregator_response", json.dumps(success_response_message)
+                "aggregator_response", json.dumps(response_message)
             )
 
     def _create_aggregator(self, message):

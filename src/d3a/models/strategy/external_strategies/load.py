@@ -18,8 +18,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import logging
 import traceback
+from collections import deque
+from typing import List, Dict, Union
+
 from pendulum import duration
-from typing import Union
+
 from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
@@ -45,6 +48,15 @@ class LoadExternalMixin(ExternalMixin):
                 f'{self.channel_prefix}/list_bids': self._list_bids,
                 }
 
+    @property
+    def filtered_bids_next_market(self) -> List[Dict]:
+        """Get a representation of each of the device's bids from the next market."""
+
+        return [
+            {'id': bid.id, 'price': bid.price, 'energy': bid.energy}
+            for _, bid in self.next_market.get_bids().items()
+            if bid.buyer == self.device.name]
+
     def event_activate(self, **kwargs):
         super().event_activate(**kwargs)
         self.redis.sub_to_multiple_channels(self.channel_dict)
@@ -61,13 +73,11 @@ class LoadExternalMixin(ExternalMixin):
 
     def _list_bids_impl(self, arguments, response_channel):
         try:
-            filtered_bids = [{"id": v.id, "price": v.price, "energy": v.energy}
-                             for _, v in self.next_market.get_bids().items()
-                             if v.buyer == self.device.name]
             self.redis.publish_json(
-                response_channel,
-                {"command": "list_bids", "status": "ready", "bid_list": filtered_bids,
-                 "transaction_id": arguments.get("transaction_id", None)})
+                response_channel, {
+                    "command": "list_bids", "status": "ready",
+                    "bid_list": self.filtered_bids_next_market,
+                    "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling list bids on area {self.device.name}: "
                           f"Exception: {str(e)}")
@@ -122,42 +132,51 @@ class LoadExternalMixin(ExternalMixin):
 
     def _bid(self, payload):
         transaction_id = self._get_transaction_id(payload)
+        required_args = {'price', 'energy', 'transaction_id'}
+        allowed_args = required_args.union({'replace_existing'})
+
         bid_response_channel = f'{self.channel_prefix}/response/bid'
         if not check_for_connected_and_reply(self.redis, bid_response_channel, self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'price', 'energy', 'transaction_id'}
-            arguments['buyer_origin'] = self.device.name
+
+            # Check that all required arguments have been provided
+            assert all(arg in arguments.keys() for arg in required_args)
+            # Check that every provided argument is allowed
+            assert all(arg in allowed_args for arg in arguments.keys())
         except Exception:
             self.redis.publish_json(
                 bid_response_channel,
                 {"command": "bid",
-                 "error": "Incorrect bid request. Available parameters: (price, energy).",
-                 "transaction_id": transaction_id}
-            )
+                 "error": (
+                     "Incorrect bid request. "
+                     "Available parameters: ('price', 'energy', 'replace_existing')."),
+                 "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
                 IncomingRequest("bid", arguments, bid_response_channel))
 
     def _bid_impl(self, arguments, bid_response_channel):
         try:
+            replace_existing = arguments.get('replace_existing', True)
             assert self.can_bid_be_posted(
                 arguments["energy"],
                 arguments["price"],
                 self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0,
-                self.next_market)
+                self.next_market,
+                replace_existing=replace_existing)
 
             bid = self.post_bid(
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
-                buyer_origin=arguments["buyer_origin"]
-            )
+                replace_existing=replace_existing)
             self.redis.publish_json(
-                bid_response_channel,
-                {"command": "bid", "status": "ready", "bid": bid.to_JSON_string(),
-                 "transaction_id": arguments.get("transaction_id", None)})
+                bid_response_channel, {
+                    "command": "bid", "status": "ready",
+                    "bid": bid.to_JSON_string(replace_existing=replace_existing),
+                    "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling bid create on area {self.device.name}: "
                           f"Exception: {str(e)}, Bid Arguments: {arguments}")
@@ -179,6 +198,7 @@ class LoadExternalMixin(ExternalMixin):
         self._reject_all_pending_requests()
         self.register_on_market_cycle()
         if not self.should_use_default_strategy:
+            self.add_entry_in_hrs_per_day()
             self._calculate_active_markets()
             self._update_energy_requirement_future_markets()
             self._reset_event_tick_counter()
@@ -225,9 +245,11 @@ class LoadExternalMixin(ExternalMixin):
         if self.should_use_default_strategy:
             super().event_tick()
         else:
-            while len(self.pending_requests) > 0:
-                req = self.pending_requests.pop()
+            while self.pending_requests:
+                # We want to process requests as First-In-First-Out, so we use popleft
+                req = self.pending_requests.popleft()
                 self._incoming_commands_callback_selection(req)
+
         self._dispatch_event_tick_to_external_agent()
 
     def event_offer(self, *, market_id, offer):
@@ -259,7 +281,7 @@ class LoadExternalMixin(ExternalMixin):
                 self.remove_bid_from_pending(self.next_market.id, bid.id)
             if len(existing_bids) > 0:
                 updated_bid = self.post_bid(self.next_market, bid_rate * existing_bid_energy,
-                                            existing_bid_energy, buyer_origin=self.device.name)
+                                            existing_bid_energy)
                 return {
                     "command": "update_bid", "status": "ready",
                     "bid": updated_bid.to_JSON_string(),
@@ -273,24 +295,31 @@ class LoadExternalMixin(ExternalMixin):
                     "transaction_id": arguments.get("transaction_id", None)}
 
     def _bid_aggregator(self, arguments):
-        try:
-            assert set(arguments.keys()) == {'price', 'energy', 'type', 'transaction_id'}
-            arguments['buyer_origin'] = self.device.name
+        required_args = {'price', 'energy', 'type', 'transaction_id'}
+        allowed_args = required_args.union({'replace_existing'})
 
+        try:
+            # Check that all required arguments have been provided
+            assert all(arg in arguments.keys() for arg in required_args)
+            # Check that every provided argument is allowed
+            assert all(arg in allowed_args for arg in arguments.keys())
+
+            replace_existing = arguments.get('replace_existing', True)
             assert self.can_bid_be_posted(
                 arguments["energy"],
                 arguments["price"],
                 self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0,
-                self.next_market)
+                self.next_market,
+                replace_existing=replace_existing)
 
             bid = self.post_bid(
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
-                buyer_origin=arguments["buyer_origin"]
-            )
+                replace_existing=replace_existing)
             return {
-                "command": "bid", "status": "ready", "bid": bid.to_JSON_string(),
+                "command": "bid", "status": "ready",
+                "bid": bid.to_JSON_string(replace_existing=replace_existing),
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id", None)}
         except Exception as e:
@@ -325,11 +354,9 @@ class LoadExternalMixin(ExternalMixin):
 
     def _list_bids_aggregator(self, arguments):
         try:
-            filtered_bids = [{"id": v.id, "price": v.price, "energy": v.energy}
-                             for _, v in self.next_market.get_bids().items()
-                             if v.buyer == self.device.name]
             return {
-                "command": "list_bids", "status": "ready", "bid_list": filtered_bids,
+                "command": "list_bids", "status": "ready",
+                "bid_list": self.filtered_bids_next_market,
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id", None)}
         except Exception as e:
@@ -400,8 +427,10 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
             if req.request_type == "set_energy_forecast":
                 self._set_energy_forecast_impl(req.arguments, req.response_channel)
 
-        self.pending_requests = [req for req in self.pending_requests
-                                 if req.request_type not in "set_energy_forecast"]
+        self.pending_requests = deque(
+            req for req in self.pending_requests
+            if req.request_type not in "set_energy_forecast")
+
         super().event_tick()
 
     def _incoming_commands_callback_selection(self, req):

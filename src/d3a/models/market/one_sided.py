@@ -35,9 +35,9 @@ class OneSidedMarket(Market):
     def __init__(self, simulation_id, market_id, time_slot=None, bc=None,
                  notification_listener=None, readonly=False,
                  grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
-                 transfer_fees=None, name=None, in_sim_duration=True):
+                 grid_fees=None, name=None, in_sim_duration=True):
         super().__init__(simulation_id, market_id, time_slot, bc, notification_listener,
-                         readonly, grid_fee_type, transfer_fees, name)
+                         readonly, grid_fee_type, grid_fees, name)
         self.in_sim_duration = in_sim_duration
 
     def __repr__(self):  # pragma: no cover
@@ -74,7 +74,8 @@ class OneSidedMarket(Market):
     @lock_market_action
     def offer(self, price: float, energy: float, seller: str, seller_origin,
               offer_id=None, original_offer_price=None, dispatch_event=True,
-              adapt_price_with_fees=True, add_to_history=True) -> Offer:
+              adapt_price_with_fees=True, add_to_history=True, seller_origin_id=None,
+              seller_id=None) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
@@ -91,7 +92,8 @@ class OneSidedMarket(Market):
         if offer_id is None:
             offer_id = self.bc_interface.create_new_offer(energy, price, seller)
         offer = Offer(offer_id, self.now, price, energy, seller, original_offer_price,
-                      seller_origin=seller_origin)
+                      seller_origin=seller_origin, seller_origin_id=seller_origin_id,
+                      seller_id=seller_id)
 
         self.offers[offer.id] = offer
         if add_to_history is True:
@@ -148,6 +150,8 @@ class OneSidedMarket(Market):
                                     original_offer_price=original_accepted_price,
                                     dispatch_event=False,
                                     seller_origin=original_offer.seller_origin,
+                                    seller_origin_id=original_offer.seller_origin_id,
+                                    seller_id=original_offer.seller_id,
                                     adapt_price_with_fees=False,
                                     add_to_history=False)
 
@@ -163,6 +167,8 @@ class OneSidedMarket(Market):
                                     original_offer_price=original_residual_price,
                                     dispatch_event=False,
                                     seller_origin=original_offer.seller_origin,
+                                    seller_origin_id=original_offer.seller_origin_id,
+                                    seller_id=original_offer.seller_id,
                                     adapt_price_with_fees=False,
                                     add_to_history=True)
 
@@ -199,7 +205,8 @@ class OneSidedMarket(Market):
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
                      time: DateTime = None,
                      already_tracked: bool = False, trade_rate: float = None,
-                     trade_bid_info=None, buyer_origin=None) -> Trade:
+                     trade_bid_info=None, buyer_origin=None, buyer_origin_id=None,
+                     buyer_id=None) -> Trade:
         if self.readonly:
             raise MarketReadOnlyException()
 
@@ -263,7 +270,9 @@ class OneSidedMarket(Market):
         trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer,
                       offer_bid_trade_info=offer_bid_trade_info,
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
-                      fee_price=fee_price
+                      fee_price=fee_price, buyer_origin_id=buyer_origin_id,
+                      seller_origin_id=offer.seller_origin_id,
+                      seller_id=offer.seller_id, buyer_id=buyer_id
                       )
         self.bc_interface.track_trade_event(self.simulation_id, self.market_id,
                                             self.time_slot, trade)

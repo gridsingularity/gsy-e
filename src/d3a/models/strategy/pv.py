@@ -18,20 +18,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import traceback
 import math
 from typing import Dict  # noqa
+from logging import getLogger
 from pendulum import Time  # noqa
 from pendulum import duration
-from logging import getLogger
-
-from d3a.d3a_core.util import find_object_of_same_weekday_and_time, convert_W_to_kWh
-from d3a.models.strategy import BaseStrategy
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.constants_limits import GlobalConfig, ConstSettings
+from d3a_interface.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time, \
+    convert_W_to_kWh
 from d3a_interface.device_validator import validate_pv_device_energy, validate_pv_device_price
+from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.models.state import PVState
 from d3a.d3a_core.exceptions import MarketException
-from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.constants_limits import GlobalConfig
-from d3a_interface.utils import key_in_dict_and_not_none
 from d3a import constants
 
 log = getLogger(__name__)
@@ -259,7 +257,9 @@ class PVStrategy(BaseStrategy):
                         offer_energy_kWh,
                         self.owner.name,
                         original_offer_price=offer_price,
-                        seller_origin=self.owner.name
+                        seller_origin=self.owner.name,
+                        seller_origin_id=self.owner.uuid,
+                        seller_id=self.owner.uuid
                     )
                     self.offers.post(offer, market.id)
                 except MarketException:

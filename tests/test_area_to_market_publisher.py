@@ -8,6 +8,7 @@ from d3a.models.area import Area
 import d3a.models.area.redis_dispatcher.area_to_market_publisher
 from d3a.models.area.redis_dispatcher.area_to_market_publisher import \
     AreaToMarketEventPublisher
+from uuid import uuid4
 
 d3a.models.area.redis_dispatcher.area_to_market_publisher.BlockingCommunicator = MagicMock
 
@@ -15,9 +16,9 @@ d3a.models.area.redis_dispatcher.area_to_market_publisher.BlockingCommunicator =
 class TestAreaToMarketPublisher(unittest.TestCase):
     def setUp(self):
         ConstSettings.IAASettings.MARKET_TYPE = 2
-        self.market1 = OneSidedMarket(name="test_market")
+        self.market1 = OneSidedMarket(simulation_id=uuid4(), market_id=uuid4(), name="test_market")
         self.market1.id = "id1"
-        self.market2 = OneSidedMarket(name="test_market")
+        self.market2 = OneSidedMarket(simulation_id=uuid4(), market_id=uuid4(), name="test_market")
         self.market2.id = "id2"
         self.area = Area(name="test_area")
         self.area._markets.markets = {1: self.market1, 2: self.market2}

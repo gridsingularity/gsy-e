@@ -16,23 +16,25 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
-import pendulum
 import uuid
-from pendulum import DateTime
-from parameterized import parameterized
 import os
 from typing import Dict  # NOQA
+from uuid import uuid4
 
+import pendulum
+from pendulum import DateTime
+from parameterized import parameterized
+
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.exceptions import D3ADeviceException
+from d3a_interface.utils import generate_market_slot_list
 from d3a.constants import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.exceptions import D3ADeviceException
 from d3a.constants import TIME_FORMAT
 from d3a.d3a_core.util import d3a_path
-from d3a.d3a_core.util import generate_market_slot_list
 
 
 ENERGY_FORECAST = {}  # type: Dict[DateTime, float]
@@ -44,6 +46,7 @@ class FakeArea:
         self.config = DEFAULT_CONFIG
         self.current_tick = 2
         self.name = 'FakeArea'
+        self.uuid = str(uuid4())
         self.test_market = FakeMarket(0)
         self._next_market = FakeMarket(0)
 
@@ -101,9 +104,11 @@ class FakeMarket:
         self.created_offers = []
         self.offers = {'id': Offer(id='id', time=pendulum.now(), price=10, energy=0.5, seller='A')}
 
-    def offer(self, price, energy, seller, original_offer_price=None, seller_origin=None):
+    def offer(self, price, energy, seller, original_offer_price=None, seller_origin=None,
+              seller_origin_id=None, seller_id=None):
         offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy, seller,
-                      original_offer_price, seller_origin=seller_origin)
+                      original_offer_price, seller_origin=seller_origin,
+                      seller_origin_id=seller_origin_id, seller_id=seller_id)
         self.created_offers.append(offer)
         self.offers[offer.id] = offer
         return offer

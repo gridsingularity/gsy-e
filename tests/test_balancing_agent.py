@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
+from uuid import uuid4
 
 import pendulum
 from d3a.constants import TIME_ZONE
@@ -29,6 +30,7 @@ from tests.test_inter_area_agent import FakeMarket
 class FakeArea:
     def __init__(self, name):
         self.name = name
+        self.uuid = str(uuid4())
         self.current_tick = 10
         self.transfer_fee_ratio = 0
         self.balancing_spot_trade_ratio = ConstSettings.BalancingSettings.SPOT_TRADE_RATIO

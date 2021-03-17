@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import json
 from threading import Lock
-from collections import namedtuple
+from collections import deque, namedtuple
 from d3a.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
@@ -83,14 +83,29 @@ def unregister_area(redis, channel_prefix, is_connected, transaction_id):
 
 
 class ExternalMixin:
+
     def __init__(self, *args, **kwargs):
         self._connected = False
         self.connected = False
         self._use_template_strategy = False
         super().__init__(*args, **kwargs)
         self._last_dispatched_tick = 0
-        self.pending_requests = []
+        self.pending_requests = deque()
         self.lock = Lock()
+
+    def get_state(self):
+        strategy_state = super().get_state()
+        strategy_state.update({
+            "connected": self.connected,
+            "use_template_strategy": self._use_template_strategy
+        })
+        return strategy_state
+
+    def restore_state(self, state_dict):
+        super().restore_state(state_dict)
+        self._connected = state_dict.get("connected", False)
+        self.connected = state_dict.get("connected", False)
+        self._use_template_strategy = state_dict.get("use_template_strategy", False)
 
     @property
     def channel_dict(self):
@@ -110,6 +125,9 @@ class ExternalMixin:
     @property
     def is_aggregator_controlled(self):
         return self.redis.aggregator.is_controlling_device(self.device.uuid)
+
+    def _remove_area_uuid_from_aggregator_mapping(self):
+        self.redis.aggregator.device_aggregator_mapping.pop(self.device.uuid, None)
 
     @property
     def should_use_default_strategy(self):
@@ -147,6 +165,8 @@ class ExternalMixin:
                                           self._get_transaction_id(payload))
 
     def register_on_market_cycle(self):
+        if self.connected is True and self._connected is False:
+            self._remove_area_uuid_from_aggregator_mapping()
         self.connected = self._connected
 
     def _device_info(self, payload):
@@ -384,11 +404,11 @@ class ExternalMixin:
         for req in self.pending_requests:
             self.redis.publish_json(
                 req.response_channel,
-                {"command": "bid", "status": "error",
+                {"command": f"{req.request_type}", "status": "error",
                  "error_message": f"Error when handling {req.request_type} "
                                   f"on area {self.device.name} with arguments {req.arguments}."
                                   f"Market cycle already finished."})
-        self.pending_requests = []
+        self.pending_requests = deque()
 
     def _set_energy_forecast(self, payload):
         transaction_id = self._get_transaction_id(payload)

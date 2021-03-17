@@ -39,7 +39,7 @@ class BalancingMarket(OneSidedMarket):
     def __init__(self, simulation_id, market_id, time_slot=None, bc=None,
                  notification_listener=None, readonly=False,
                  grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
-                 transfer_fees=None, name=None, in_sim_duration=True):
+                 grid_fees=None, name=None, in_sim_duration=True):
         self.unmatched_energy_upward = 0
         self.unmatched_energy_downward = 0
         self.accumulated_supply_balancing_trade_price = 0
@@ -48,12 +48,12 @@ class BalancingMarket(OneSidedMarket):
         self.accumulated_demand_balancing_trade_energy = 0
 
         super().__init__(simulation_id, market_id, time_slot, bc, notification_listener,
-                         readonly, grid_fee_type, transfer_fees, name,
-                         in_sim_duration=in_sim_duration)
+                         readonly, grid_fee_type,
+                         grid_fees, name, in_sim_duration=in_sim_duration)
 
     def offer(self, price: float, energy: float, seller: str, offer_id=None,
               original_offer_price=None, dispatch_event=True, seller_origin=None,
-              adapt_price_with_fees=True):
+              adapt_price_with_fees=True, seller_origin_id=None):
         assert False
 
     def balancing_offer(self, price: float, energy: float, seller: str,
@@ -141,7 +141,7 @@ class BalancingMarket(OneSidedMarket):
                      energy: int = None, time: DateTime = None,
                      already_tracked: bool = False, trade_rate: float = None,
                      trade_bid_info: float = None,
-                     buyer_origin=None) -> BalancingTrade:
+                     buyer_origin=None, buyer_origin_id=None, buyer_id=None) -> BalancingTrade:
         if self.readonly:
             raise MarketReadOnlyException()
 
@@ -206,7 +206,11 @@ class BalancingMarket(OneSidedMarket):
             )
         trade = BalancingTrade(trade_id, time, offer, offer.seller, buyer,
                                residual_offer, seller_origin=offer.seller_origin,
-                               buyer_origin=buyer_origin, fee_price=fees)
+                               buyer_origin=buyer_origin, fee_price=fees,
+                               seller_origin_id=offer.seller_origin_id,
+                               seller_id=offer.seller_id,
+                               buyer_origin_id=buyer_origin_id,
+                               buyer_id=buyer_id)
         self.bc_interface.track_trade_event(self.simulation_id, self.market_id,
                                             self.time_slot, trade)
 

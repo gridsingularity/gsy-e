@@ -31,11 +31,11 @@ class IntervalAreaEvent:
         self._active = not self.disconnect_start <= current_time.hour < self.disconnect_end
 
 
-class DisableIntervalAreaEvent(IntervalAreaEvent):
+class DisableIntervalMarketEvent(IntervalAreaEvent):
     pass
 
 
-class DisconnectIntervalAreaEvent(IntervalAreaEvent):
+class DisconnectIntervalMarketEvent(IntervalAreaEvent):
     pass
 
 
@@ -44,19 +44,19 @@ class SimpleEvent:
         self.event_time = event_time
 
 
-class DisconnectAreaEvent(SimpleEvent):
+class DisconnectMarketEvent(SimpleEvent):
     pass
 
 
-class ConnectAreaEvent(SimpleEvent):
+class ConnectMarketEvent(SimpleEvent):
     pass
 
 
-class DisableAreaEvent(SimpleEvent):
+class DisableMarketEvent(SimpleEvent):
     pass
 
 
-class EnableAreaEvent(SimpleEvent):
+class EnableMarketEvent(SimpleEvent):
     pass
 
 

@@ -16,17 +16,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import ast
+import json
 from pendulum import duration, Duration, DateTime, today
 
-from d3a.constants import TIME_ZONE
-from d3a_interface.exceptions import D3AException
-from d3a.d3a_core.util import format_interval
 from d3a_interface.constants_limits import ConstSettings
-from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
     read_and_convert_identity_profile_to_float
+from d3a_interface.exceptions import D3AException
 from d3a.d3a_core.util import change_global_config
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import \
     ExternalConnectionCommunicator
+from d3a.constants import TIME_ZONE
+from d3a.d3a_core.util import format_interval
 
 
 class SimulationConfig:
@@ -67,6 +68,7 @@ class SimulationConfig:
         max_panel_power_W = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W \
             if max_panel_power_W is None else max_panel_power_W
         self.max_panel_power_W = max_panel_power_W
+        self.external_connection_enabled = external_connection_enabled
         self.external_redis_communicator = ExternalConnectionCommunicator(
             external_connection_enabled)
         if aggregator_device_mapping is not None:
@@ -75,30 +77,19 @@ class SimulationConfig:
             )
 
     def __repr__(self):
-        return (
-            "<SimulationConfig("
-            "sim_duration='{s.sim_duration}', "
-            "slot_length='{s.slot_length}', "
-            "tick_length='{s.tick_length}', "
-            "market_count='{s.market_count}', "
-            "ticks_per_slot='{s.ticks_per_slot}', "
-            "cloud_coverage='{s.cloud_coverage}', "
-            "pv_user_profile='{s.pv_user_profile}', "
-            "max_panel_power_W='{s.max_panel_power_W}', "
-            "grid_fee_type='{s.grid_fee_type}', "
-            ")>"
-        ).format(s=self)
+        return json.dumps(self.as_dict())
 
     def as_dict(self):
         fields = {'sim_duration', 'slot_length', 'tick_length', 'market_count', 'ticks_per_slot',
-                  'total_ticks', 'cloud_coverage', 'max_panel_power_W', 'grid_fee_type'}
+                  'total_ticks', 'cloud_coverage', 'max_panel_power_W', 'grid_fee_type',
+                  'external_connection_enabled'}
         return {
             k: format_interval(v) if isinstance(v, Duration) else v
             for k, v in self.__dict__.items()
             if k in fields
         }
 
-    def update_config_parameters(self, cloud_coverage=None, pv_user_profile=None,
+    def update_config_parameters(self, *, cloud_coverage=None, pv_user_profile=None,
                                  market_maker_rate=None, max_panel_power_W=None):
         if cloud_coverage is not None:
             self.cloud_coverage = cloud_coverage

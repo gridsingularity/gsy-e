@@ -19,22 +19,22 @@ import traceback
 from typing import Union
 from collections import namedtuple
 from enum import Enum
-from pendulum import duration
 from logging import getLogger
 
+from pendulum import duration
+
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.device_validator import validate_storage_device
 from d3a import limit_float_precision
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import MarketException
-from d3a.d3a_core.util import area_name_from_area_or_iaa_name, \
-    find_object_of_same_weekday_and_time
+from d3a.d3a_core.util import area_name_from_area_or_iaa_name
 from d3a.models.state import StorageState, ESSEnergyOrigin, EnergyOrigin
 from d3a.models.strategy import BidEnabledStrategy
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.device_validator import validate_storage_device
 from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
-from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a_interface.utils import key_in_dict_and_not_none
 from d3a import constants
 
 log = getLogger(__name__)
@@ -496,7 +496,9 @@ class StorageStrategy(BidEnabledStrategy):
             if not self.state.has_battery_reached_max_power(-max_energy, market.time_slot):
                 self.state.pledged_buy_kWh[market.time_slot] += max_energy
                 self.accept_offer(market, offer, energy=max_energy,
-                                  buyer_origin=self.owner.name)
+                                  buyer_origin=self.owner.name,
+                                  buyer_origin_id=self.owner.uuid,
+                                  buyer_id=self.owner.uuid)
             return
         except MarketException:
             # Offer already gone etc., try next one.
@@ -535,7 +537,9 @@ class StorageStrategy(BidEnabledStrategy):
                             energy=energy,
                             seller=self.owner.name,
                             original_offer_price=energy * selling_rate,
-                            seller_origin=self.owner.name
+                            seller_origin=self.owner.name,
+                            seller_origin_id=self.owner.uuid,
+                            seller_id=self.owner.uuid
                         )
                         self.offers.post(offer, market.id)
                         self.state.offered_sell_kWh[market.time_slot] += offer.energy
