@@ -20,6 +20,7 @@ from math import isclose
 from copy import deepcopy
 import pytest
 from pendulum import DateTime, now
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 from d3a.constants import TIME_ZONE
@@ -54,7 +55,7 @@ transfer_fees = GridFee(grid_fee_percentage=0, grid_fee_const=0)
 
 class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
     def __init__(self, bids=[], m_id=123, time_slot=now()):
-        super().__init__(bc=NonBlockchainInterface(str(uuid4())),
+        super().__init__(bc=MagicMock(),
                          grid_fees=transfer_fees, time_slot=time_slot)
         self.id = m_id
         self._bids = bids
@@ -218,8 +219,8 @@ def test_market_offer_readonly(market, offer):
 
 
 @pytest.mark.parametrize("market, offer", [
-    (TwoSidedPayAsBid(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer"),
-    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "balancing_offer")
+    (TwoSidedPayAsBid(bc=MagicMock(), time_slot=now()), "offer"),
+    (BalancingMarket(bc=MagicMock(), time_slot=now()), "balancing_offer")
 ])
 def test_market_offer_delete(market, offer):
     print(f"market: {market.bc_interface}")
@@ -230,17 +231,16 @@ def test_market_offer_delete(market, offer):
 
 
 @pytest.mark.parametrize("market",
-                         [OneSidedMarket(bc=NonBlockchainInterface(str(uuid4()))),
-                          BalancingMarket(bc=NonBlockchainInterface(str(uuid4())))])
+                         [OneSidedMarket(bc=MagicMock()),
+                          BalancingMarket(bc=MagicMock())])
 def test_market_offer_delete_missing(market):
-    print(f"market__bc_interface: {market.bc_interface}")
     with pytest.raises(OfferNotFoundException):
         market.delete_offer("no such offer")
 
 
 @pytest.mark.parametrize("market",
-                         [OneSidedMarket(bc=NonBlockchainInterface(str(uuid4()))),
-                          BalancingMarket(bc=NonBlockchainInterface(str(uuid4())))])
+                         [OneSidedMarket(bc=MagicMock()),
+                          BalancingMarket(bc=MagicMock())])
 def test_market_offer_delete_readonly(market):
     market.readonly = True
     with pytest.raises(MarketReadOnlyException):
@@ -303,8 +303,7 @@ def test_balancing_market_negative_offer_trade(market=BalancingMarket(
     assert trade.buyer == 'B'
 
 
-def test_market_bid_trade(market=TwoSidedPayAsBid(bc=NonBlockchainInterface(str(uuid4())),
-                                                  time_slot=now())):
+def test_market_bid_trade(market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
     bid = market.bid(20, 10, 'A', 'A', original_bid_price=20)
     trade_offer_info = TradeBidOfferInfo(2, 2, 0.5, 0.5, 2)
     trade = market.accept_bid(bid, energy=10, seller='B', trade_offer_info=trade_offer_info)
@@ -333,9 +332,9 @@ def test_market_trade_by_id(market, offer, accept_offer):
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
-    (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+    (OneSidedMarket(bc=MagicMock(), time_slot=now()),
      "offer", "accept_offer"),
-    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+    (BalancingMarket(bc=MagicMock(), time_slot=now()),
      "balancing_offer", "accept_offer")
 ])
 def test_market_trade_readonly(market, offer, accept_offer):
@@ -360,7 +359,7 @@ def test_market_trade_not_found(market, offer, accept_offer):
 
 
 def test_market_trade_bid_not_found(
-        market=TwoSidedPayAsBid(bc=NonBlockchainInterface(str(uuid4())), time_slot=now())):
+        market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
     bid = market.bid(20, 10, 'A', 'A')
     trade_offer_info = TradeBidOfferInfo(2, 2, 1, 1, 2)
     assert market.accept_bid(bid, 10, 'B', trade_offer_info=trade_offer_info)
@@ -397,8 +396,7 @@ def test_market_trade_partial(market, offer, accept_offer):
     assert new_offer.id != e_offer.id
 
 
-def test_market_trade_bid_partial(market=TwoSidedPayAsBid(bc=NonBlockchainInterface(str(uuid4())),
-                                                          time_slot=now())):
+def test_market_trade_bid_partial(market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
     bid = market.bid(20, 20, 'A', 'A', original_bid_price=20)
     trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
     trade = market.accept_bid(bid, energy=5, seller='B', trade_offer_info=trade_offer_info)
@@ -419,8 +417,7 @@ def test_market_trade_bid_partial(market=TwoSidedPayAsBid(bc=NonBlockchainInterf
 
 
 def test_market_accept_bid_emits_bid_split_on_partial_bid(
-        called, market=TwoSidedPayAsBid(
-            bc=NonBlockchainInterface(str(uuid4())), time_slot=now())):
+        called, market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
     market.add_listener(called)
     bid = market.bid(20, 20, 'A', 'A')
     trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
@@ -438,8 +435,7 @@ def test_market_accept_bid_emits_bid_split_on_partial_bid(
 @pytest.mark.parametrize('market_method', ('_update_accumulated_trade_price_energy',
                                            '_update_min_max_avg_trade_prices'))
 def test_market_accept_bid_always_updates_trade_stats(
-        called, market_method, market=TwoSidedPayAsBid(
-            bc=NonBlockchainInterface(str(uuid4())), time_slot=now())):
+        called, market_method, market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
     setattr(market, market_method, called)
 
     bid = market.bid(20, 20, 'A', 'A')
@@ -450,14 +446,14 @@ def test_market_accept_bid_always_updates_trade_stats(
 
 
 @pytest.mark.parametrize("market, offer, accept_offer, energy, exception", [
-    (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+    (OneSidedMarket(bc=MagicMock(), time_slot=now()),
      "offer", "accept_offer", 0, InvalidTrade),
-    (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+    (OneSidedMarket(bc=MagicMock(), time_slot=now()),
      "offer", "accept_offer", 21, InvalidTrade),
-    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+    (BalancingMarket(bc=MagicMock(), time_slot=now()),
      "balancing_offer", "accept_offer", 0,
      InvalidBalancingTradeException),
-    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+    (BalancingMarket(bc=MagicMock(), time_slot=now()),
      "balancing_offer", "accept_offer", 21,
      InvalidBalancingTradeException)
 ])
@@ -469,7 +465,7 @@ def test_market_trade_partial_invalid(market, offer, accept_offer, energy, excep
 
 @pytest.mark.parametrize('energy', (0, 21, 100, -20))
 def test_market_trade_partial_bid_invalid(
-        energy, market=TwoSidedPayAsBid(bc=NonBlockchainInterface(str(uuid4())), time_slot=now())):
+        energy, market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
     bid = market.bid(20, 20, 'A', 'A')
     trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
     with pytest.raises(InvalidTrade):
@@ -517,10 +513,8 @@ def test_market_avg_offer_price(market, offer):
 
 
 @pytest.mark.parametrize("market",
-                         [OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())),
-                                         time_slot=now()),
-                          BalancingMarket(bc=NonBlockchainInterface(str(uuid4())),
-                                          time_slot=now())])
+                         [OneSidedMarket(bc=MagicMock(), time_slot=now()),
+                          BalancingMarket(bc=MagicMock(), time_slot=now())])
 def test_market_avg_offer_price_empty(market):
     assert market.avg_offer_price == 0
 
@@ -561,17 +555,14 @@ def test_market_most_affordable_offers(market, offer):
     (BalancingMarket, "balancing_offer")
 ])
 def test_market_listeners_init(market, offer, called):
-    markt = market(bc=NonBlockchainInterface(str(uuid4())), time_slot=now(),
-                   notification_listener=called)
+    markt = market(bc=MagicMock(), time_slot=now(), notification_listener=called)
     getattr(markt, offer)(10, 20, 'A', 'A')
     assert len(called.calls) == 1
 
 
 @pytest.mark.parametrize("market, offer, add_listener", [
-    (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
-     "offer", "add_listener"),
-    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
-     "balancing_offer", "add_listener")
+    (OneSidedMarket(bc=MagicMock(), time_slot=now()), "offer", "add_listener"),
+    (BalancingMarket(bc=MagicMock(), time_slot=now()), "balancing_offer", "add_listener")
 ])
 def test_market_listeners_add(market, offer, add_listener, called):
     getattr(market, add_listener)(called)
@@ -581,9 +572,9 @@ def test_market_listeners_add(market, offer, add_listener, called):
 
 
 @pytest.mark.parametrize("market, offer, add_listener, event", [
-    (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+    (OneSidedMarket(bc=MagicMock(), time_slot=now()),
      "offer", "add_listener", MarketEvent.OFFER),
-    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+    (BalancingMarket(bc=MagicMock(), time_slot=now()),
      "balancing_offer", "add_listener", MarketEvent.BALANCING_OFFER)
 ])
 def test_market_listeners_offer(market, offer, add_listener, event, called):
@@ -621,10 +612,10 @@ def test_market_listeners_offer_split(market, offer, accept_offer, add_listener,
 
 
 @pytest.mark.parametrize("market, offer, delete_offer, add_listener, event", [
-    (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+    (OneSidedMarket(bc=MagicMock(), time_slot=now()),
      "offer", "delete_offer",
      "add_listener", MarketEvent.OFFER_DELETED),
-    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+    (BalancingMarket(bc=MagicMock(), time_slot=now()),
      "balancing_offer", "delete_balancing_offer",
      "add_listener", MarketEvent.BALANCING_OFFER_DELETED)
 ])
@@ -671,7 +662,7 @@ def test_market_accept_offer_yields_partial_trade(market, offer, accept_offer):
 
 
 def test_market_accept_bid_yields_partial_bid_trade(
-        market=TwoSidedPayAsBid(bc=NonBlockchainInterface(str(uuid4())), time_slot=now())):
+        market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
     bid = market.bid(2.0, 4, 'buyer', 'buyer')
     trade_offer_info = TradeBidOfferInfo(2, 2, 1, 1, 2)
     trade = market.accept_bid(bid, energy=1, seller='seller', trade_offer_info=trade_offer_info)
