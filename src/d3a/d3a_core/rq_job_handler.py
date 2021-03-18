@@ -25,6 +25,7 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
                                   saved_state, job_id):
     logging.getLogger().setLevel(logging.ERROR)
     scenario = decompress_and_decode_queued_strings(scenario)
+    d3a.constants.SIMULATION_ID = job_id
     if "collaboration_uuid" in scenario:
         d3a.constants.COLLABORATION_ID = scenario.pop("collaboration_uuid")
         d3a.constants.EXTERNAL_CONNECTION_WEB = True

@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from pendulum import DateTime # noqa
 from typing import Dict  # noqa
-import uuid
 
 from d3a.models.market import GridFee
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
@@ -28,13 +27,14 @@ from d3a.models.market import Market # noqa
 from d3a_interface.constants_limits import ConstSettings
 from collections import OrderedDict
 from d3a.d3a_core.util import is_timeslot_in_simulation_duration
-from d3a import constants
+import d3a.constants
 
 
 class AreaMarkets:
     def __init__(self, market_id, area_log):
         # Children trade in `markets`
         self.market_id = market_id
+        self.simulation_id = d3a.constants.SIMULATION_ID
         self.log = area_log
         self.markets = OrderedDict()  # type: Dict[DateTime, Market]
         self.balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]
@@ -81,7 +81,7 @@ class AreaMarkets:
                                .format(t=timeframe, m=past_markets[timeframe].name))
 
     def _delete_past_markets(self, past_markets):
-        if not constants.D3A_TEST_RUN:
+        if not d3a.constants.D3A_TEST_RUN:
             delete_markets = [pm for pm in past_markets if
                               pm not in self.markets.values()]
             for pm in delete_markets:
@@ -119,7 +119,7 @@ class AreaMarkets:
             if timeframe not in markets:
                 # Create markets for missing slots
                 market = market_class(
-                    simulation_id=str(uuid.uuid4()),
+                    simulation_id=self.simulation_id,
                     market_id=str(self.market_id),
                     time_slot=timeframe,
                     bc=area.bc,
