@@ -31,9 +31,8 @@ import d3a.constants
 
 
 class AreaMarkets:
-    def __init__(self, market_id, area_log):
+    def __init__(self, area_log):
         # Children trade in `markets`
-        self.market_id = market_id
         self.log = area_log
         self.markets = OrderedDict()  # type: Dict[DateTime, Market]
         self.balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]
