@@ -191,7 +191,7 @@ class Simulation:
 
         self._set_traversal_length()
 
-        self.area.activate(self.bc)
+        self.area.activate(self.bc, simulation_id=redis_job_id)
 
     @property
     def finished(self):

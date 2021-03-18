@@ -257,13 +257,13 @@ class Area:
     def set_events(self, event_list):
         self.events = Events(event_list, self)
 
-    def activate(self, bc=None, current_tick=None):
+    def activate(self, bc=None, current_tick=None, simulation_id=None):
         if current_tick is not None:
             self.current_tick = current_tick
         if bc:
-            self._bc = SubstrateBlockchainInterface(self.uuid)
+            self._bc = SubstrateBlockchainInterface(self.uuid, simulation_id)
         else:
-            self._bc = NonBlockchainInterface(self.uuid)
+            self._bc = NonBlockchainInterface(self.uuid, simulation_id)
         if self.strategy:
             if self.parent:
                 self.strategy.area = self.parent
@@ -285,7 +285,8 @@ class Area:
             self.log.debug("No strategy. Using inter area agent.")
         self.log.debug('Activating area')
         self.active = True
-        self.dispatcher.broadcast_activate(current_tick=self.current_tick)
+        self.dispatcher.broadcast_activate(bc=bc, current_tick=self.current_tick,
+                                           simulation_id=simulation_id)
         if self.redis_ext_conn is not None:
             self.redis_ext_conn.sub_to_external_channels()
 
