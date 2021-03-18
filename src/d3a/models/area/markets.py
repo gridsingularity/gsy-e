@@ -119,8 +119,6 @@ class AreaMarkets:
             if timeframe not in markets:
                 # Create markets for missing slots
                 market = market_class(
-                    simulation_id=self.simulation_id,
-                    market_id=str(self.market_id),
                     time_slot=timeframe,
                     bc=area.bc,
                     notification_listener=area.dispatcher.broadcast_callback,

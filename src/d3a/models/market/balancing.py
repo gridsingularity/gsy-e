@@ -36,8 +36,7 @@ log = getLogger(__name__)
 
 
 class BalancingMarket(OneSidedMarket):
-    def __init__(self, simulation_id, market_id, time_slot=None, bc=None,
-                 notification_listener=None, readonly=False,
+    def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
                  grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
                  grid_fees=None, name=None, in_sim_duration=True):
         self.unmatched_energy_upward = 0
@@ -47,8 +46,7 @@ class BalancingMarket(OneSidedMarket):
         self.accumulated_demand_balancing_trade_price = 0
         self.accumulated_demand_balancing_trade_energy = 0
 
-        super().__init__(simulation_id, market_id, time_slot, bc, notification_listener,
-                         readonly, grid_fee_type,
+        super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name, in_sim_duration=in_sim_duration)
 
     def offer(self, price: float, energy: float, seller: str, offer_id=None,
@@ -211,8 +209,7 @@ class BalancingMarket(OneSidedMarket):
                                seller_id=offer.seller_id,
                                buyer_origin_id=buyer_origin_id,
                                buyer_id=buyer_id)
-        self.bc_interface.track_trade_event(self.simulation_id, self.market_id,
-                                            self.time_slot, trade)
+        self.bc_interface.track_trade_event(self.time_slot, trade)
 
         if already_tracked is False:
             self._update_stats_after_trade(trade, offer)

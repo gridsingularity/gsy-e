@@ -40,6 +40,8 @@ from d3a.models.area.throughput_parameters import ThroughputParameters
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.area_validator import validate_area
 from d3a.models.area.redis_external_market_connection import RedisMarketExternalConnection
+from d3a.models.market.blockchain_interface import SubstrateBlockchainInterface, \
+    NonBlockchainInterface
 from d3a_interface.utils import key_in_dict_and_not_none
 import d3a.constants
 
@@ -259,7 +261,9 @@ class Area:
         if current_tick is not None:
             self.current_tick = current_tick
         if bc:
-            self._bc = bc
+            self._bc = SubstrateBlockchainInterface(self.uuid)
+        else:
+            self._bc = NonBlockchainInterface(self.uuid)
         if self.strategy:
             if self.parent:
                 self.strategy.area = self.parent
@@ -438,8 +442,6 @@ class Area:
     def bc(self):
         if self._bc is not None:
             return self._bc
-        if self.parent:
-            return self.parent.bc
         return None
 
     @cached_property

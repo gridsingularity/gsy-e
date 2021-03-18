@@ -34,9 +34,6 @@ from d3a.models.market.market_redis_connection import MarketRedisEventSubscriber
     MarketRedisEventPublisher, TwoSidedMarketRedisEventSubscriber
 from d3a.models.market.grid_fees.base_model import GridFees
 from d3a.models.market.grid_fees.constant_grid_fees import ConstantGridFees
-from d3a.models.market.blockchain_interface import SubstrateBlockchainInterface, \
-    NonBlockchainInterface
-
 log = getLogger(__name__)
 
 GridFee = namedtuple("GridFee", ('grid_fee_percentage', 'grid_fee_const'))
@@ -60,17 +57,11 @@ def lock_market_action(function):
 
 class Market:
 
-    def __init__(self, simulation_id=None, market_id=None, time_slot=None, bc=None,
-                 notification_listener=None, readonly=False,
+    def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
                  grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
                  grid_fees: GridFee = None, name=None):
         self.name = name
-        self.simulation_id = str(uuid.uuid4()) if simulation_id is None else simulation_id
-        self.market_id = str(uuid.uuid4()) if market_id is None else market_id
-        if bc is not None:
-            self.bc_interface = SubstrateBlockchainInterface()
-        else:
-            self.bc_interface = NonBlockchainInterface()
+        self.bc_interface = bc
         self.id = str(uuid.uuid4())
         self.time_slot = time_slot
         self.time_slot_str = time_slot.format(DATE_TIME_FORMAT) \

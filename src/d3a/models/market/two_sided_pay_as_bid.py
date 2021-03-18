@@ -33,12 +33,11 @@ log = getLogger(__name__)
 
 class TwoSidedPayAsBid(OneSidedMarket):
 
-    def __init__(self, simulation_id, market_id, time_slot=None, bc=None,
-                 notification_listener=None, readonly=False,
+    def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
                  grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
                  grid_fees=None, name=None, in_sim_duration=True):
-        super().__init__(simulation_id, market_id, time_slot, bc, notification_listener,
-                         readonly, grid_fee_type, grid_fees, name, in_sim_duration=in_sim_duration)
+        super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
+                         grid_fees, name, in_sim_duration=in_sim_duration)
 
     def __repr__(self):  # pragma: no cover
         return "<TwoSidedPayAsBid{} bids: {} (E: {} kWh V:{}) " \

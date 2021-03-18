@@ -25,7 +25,7 @@ if platform.python_implementation() != "PyPy" and \
     from substrateinterface import SubstrateInterface
 
 
-DEFAULT_SUBSTRATE_URL = "ws://127.0.0.1:9944"
+DEFAULT_SUBSTRATE_URL = "wss://canvas-node.dev.gridsingularity.com/"
 TEMPLATE_NODE_ADDRESS_TYPE = 42
 
 

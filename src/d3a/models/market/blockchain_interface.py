@@ -21,6 +21,7 @@ from d3a.events.event_structures import MarketEvent
 from d3a.d3a_core.exceptions import InvalidTrade
 from d3a.d3a_core.util import retry_function
 from d3a.blockchain import ENABLE_SUBSTRATE, BlockChainInterface
+import d3a.constants
 import platform
 import logging
 
@@ -46,8 +47,8 @@ BC_EVENT_MAP = {
 
 
 class NonBlockchainInterface:
-    def __init__(self):
-        pass
+    def __init__(self, market_id):
+        self.market_id = market_id
 
     def create_new_offer(self, energy, price, seller):
         return str(uuid.uuid4())
@@ -61,7 +62,7 @@ class NonBlockchainInterface:
     def handle_blockchain_trade_event(self, offer, buyer, original_offer, residual_offer):
         return str(uuid.uuid4()), residual_offer
 
-    def track_trade_event(self, simulation_id, market_id, time_slot, trade):
+    def track_trade_event(self, time_slot, trade):
         pass
 
     def bc_listener(self):
@@ -69,7 +70,8 @@ class NonBlockchainInterface:
 
 
 class SubstrateBlockchainInterface(BlockChainInterface):
-    def __init__(self):
+    def __init__(self, market_id):
+        self.market_id = market_id
         super().__init__()
 
     def load_keypair(mnemonic):
@@ -96,12 +98,11 @@ class SubstrateBlockchainInterface(BlockChainInterface):
         return str(uuid.uuid4()), residual_offer
 
     @retry_function(max_retries=3)
-    def track_trade_event(self, simulation_id, market_id, time_slot, trade):
-        print(f"track_trade_event: {trade}")
+    def track_trade_event(self, time_slot, trade):
 
         call_params = {
-            'simulation_id': str(simulation_id),
-            'market_id': str(market_id),
+            'simulation_id': str(d3a.constants.SIMULATION_ID),
+            'market_id': str(self.market_id),
             'market_slot': datetime.timestamp(time_slot),
             'trade_id': trade.id,
             'buyer': ALICE_STASH_ADDRESS,

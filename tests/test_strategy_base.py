@@ -28,6 +28,7 @@ from d3a.models.market.market_structures import Offer, Trade, Bid
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
+from d3a.models.market.blockchain_interface import NonBlockchainInterface
 from d3a_interface.constants_limits import ConstSettings
 from uuid import uuid4
 
@@ -314,7 +315,7 @@ def test_can_offer_be_posted(market_class):
     base.owner = FakeOwner()
     base.area = FakeArea()
 
-    market = market_class(simulation_id=uuid4(), market_id=uuid4(), time_slot=pendulum.now())
+    market = market_class(time_slot=pendulum.now())
 
     base.offers.post(Offer('id', pendulum.now(), price=1, energy=12, seller='A'), market.id)
     base.offers.post(Offer('id2', pendulum.now(), price=1, energy=13, seller='A'), market.id)
@@ -327,7 +328,7 @@ def test_can_offer_be_posted(market_class):
 
 @pytest.mark.parametrize('market_class', [TwoSidedPayAsBid, TwoSidedPayAsClear])
 def test_can_bid_be_posted(market_class, base):
-    market = market_class(simulation_id=uuid4(), market_id=uuid4(), time_slot=pendulum.now())
+    market = market_class(time_slot=pendulum.now())
 
     base.post_bid(market, price=1, energy=23, replace_existing=False)
     base.post_bid(market, price=1, energy=27, replace_existing=False)
@@ -342,7 +343,7 @@ def test_can_bid_be_posted(market_class, base):
 def test_post_bid_with_replace_existing(market_class, base):
     """Calling post_bid with replace_existing=True triggers the removal of the existing bids."""
 
-    market = market_class(simulation_id=uuid4(), market_id=uuid4(), time_slot=pendulum.now())
+    market = market_class(time_slot=pendulum.now())
     base.area._market = market
 
     _ = base.post_bid(market, 10, 5, replace_existing=False)
@@ -358,7 +359,7 @@ def test_post_bid_without_replace_existing(market_class, base):
     """Calling post_bid with replace_existing=False does not trigger the removal of the existing
     bids.
     """
-    market = market_class(simulation_id=uuid4(), market_id=uuid4(), time_slot=pendulum.now())
+    market = market_class(time_slot=pendulum.now())
     base.area._market = market
 
     bid_1 = base.post_bid(market, 10, 5, replace_existing=False)
@@ -377,7 +378,7 @@ def test_post_offer_creates_offer_with_correct_parameters(market_class):
     strategy.owner = FakeOwner()
     strategy.area = FakeArea()
 
-    market = market_class(simulation_id=uuid4(), market_id=uuid4(), time_slot=pendulum.now())
+    market = market_class(bc=NonBlockchainInterface(str(uuid4())), time_slot=pendulum.now())
     strategy.area._market = market
 
     offer_args = {
@@ -400,7 +401,7 @@ def test_post_offer_with_replace_existing(market_class):
     strategy.owner = FakeOwner()
     strategy.area = FakeArea()
 
-    market = market_class(simulation_id=uuid4(), market_id=uuid4(), time_slot=pendulum.now())
+    market = market_class(bc=NonBlockchainInterface(str(uuid4())), time_slot=pendulum.now())
     strategy.area._market = market
 
     # Post a first offer on the market
