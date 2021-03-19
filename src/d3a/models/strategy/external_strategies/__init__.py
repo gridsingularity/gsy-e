@@ -378,8 +378,6 @@ class ExternalMixin:
                 return self._list_offers_aggregator(command)
             elif command["type"] == "device_info":
                 return self._device_info_aggregator(command)
-            elif command["type"] == "last_market_stats":
-                return self._last_market_stats(command)
             else:
                 return {
                     "command": command["type"], "status": "error",
@@ -390,15 +388,6 @@ class ExternalMixin:
                 "command": command["type"], "status": "error",
                 "area_uuid": self.device.uuid,
                 "message": str(e)}
-
-    def _last_market_stats(self, command):
-        market_data = self.device.parent.stats.get_last_market_stats()
-        return {
-            "command": "last_market_stats", "status": "ready",
-            "market_data": market_data,
-            "transaction_id": command.get("transaction_id", None),
-            "area_uuid": self.device.uuid
-        }
 
     def _reject_all_pending_requests(self):
         for req in self.pending_requests:
