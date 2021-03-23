@@ -17,10 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 # Need to import required settings from d3a-interface in order to be available in d3a,
 # thus avoiding accessing the d3a-interface constants.
-from d3a_interface.constants_limits import TIME_FORMAT, DATE_FORMAT # NOQA
-from d3a_interface.constants_limits import DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT  # NOQA
-
-TIME_ZONE = "UTC"
+from d3a_interface.constants_limits import TIME_FORMAT, DATE_FORMAT, GlobalConfig # NOQA
+from d3a_interface.constants_limits import DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, TIME_ZONE  # NOQA
 
 DEFAULT_PRECISION = 8
 FLOATING_POINT_TOLERANCE = 0.00001
@@ -42,7 +40,7 @@ SIMULATION_PAUSE_TIMEOUT = 600
 
 D3A_TEST_RUN = False
 
-IS_CANARY_NETWORK = False
+IS_CANARY_NETWORK = GlobalConfig.IS_CANARY_NETWORK
 CN_PROFILE_EXPANSION_DAYS = 7
 
 RUN_IN_REALTIME = False
