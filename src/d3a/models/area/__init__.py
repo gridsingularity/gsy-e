@@ -27,6 +27,7 @@ from d3a.d3a_core.exceptions import AreaException
 from d3a.models.config import SimulationConfig
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.strategy import BaseStrategy
+from d3a.models.strategy.external_strategies import ExternalMixin
 from d3a.d3a_core.util import TaggedLogWrapper
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.device_registry import DeviceRegistry
@@ -359,11 +360,10 @@ class Area:
             self.dispatcher.broadcast_balancing_market_cycle()
 
     def publish_market_cycle_to_external_clients(self):
-        if self.external_connection_available:
-            if self.strategy:
-                self.strategy.publish_market_cycle()
-            else:
-                self.redis_ext_conn.publish_market_cycle()
+        if self.strategy and isinstance(self.strategy, ExternalMixin):
+            self.strategy.publish_market_cycle()
+        elif not self.strategy and self.external_connection_available:
+            self.redis_ext_conn.publish_market_cycle()
         for child in self.children:
             child.publish_market_cycle_to_external_clients()
 
