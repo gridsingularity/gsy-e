@@ -72,7 +72,7 @@ class AreaStats:
         if self.current_market is not None:
             self.market_bills = \
                 {self.current_market.time_slot: {
-                    "Accumulated Trades", self._extract_from_bills("Accumulated Trades")}}
+                    "Accumulated Trades": self._extract_from_bills("Accumulated Trades")}}
 
             self.rate_stats_market = {
                 self.current_market.time_slot: self.min_max_avg_median_rate_current_market()
