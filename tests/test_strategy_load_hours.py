@@ -35,7 +35,6 @@ from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import d3a_path
 from uuid import uuid4
 
-ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
 
 TIME = today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
@@ -169,10 +168,6 @@ class FakeMarket:
 class TestLoadHoursStrategyInput(unittest.TestCase):
 
     def setUp(self):
-        # MAX_OFFER_TRAVERSAL_LENGTH should be set here, otherwise some tests fail
-        # when only the load tests are executed. Works fine when all tests are executed
-        # though
-        ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 5
         self.strategy1 = MagicMock(spec=LoadHoursStrategy)
 
     def tearDown(self):
