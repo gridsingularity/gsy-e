@@ -1,7 +1,8 @@
-from behave import then
-from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a.d3a_core.util import d3a_path
 from math import isclose
+from behave import then
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a.d3a_core.util import d3a_path
+
 
 sunny_hourly_pv_profile = {
     6: 0.0125,

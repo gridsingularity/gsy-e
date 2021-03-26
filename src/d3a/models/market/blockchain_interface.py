@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
+from datetime import datetime
 from d3a.events.event_structures import MarketEvent
 from d3a.d3a_core.exceptions import InvalidTrade
 from d3a.d3a_core.util import retry_function
@@ -28,7 +29,7 @@ logger = logging.getLogger()
 
 if platform.python_implementation() != "PyPy" and ENABLE_SUBSTRATE:
     from d3a.blockchain.constants import mnemonic, \
-        BOB_STASH_ADDRESS, ALICE_STASH_ADDRESS, \
+        BOB_STASH_ADDRESS, ALICE_STASH_ADDRESS, ENERGY_SCALING_FACTOR, RATE_SCALING_FACTOR, \
         default_call_module, default_call_function, \
         address_type
     from d3a.models.market.blockchain_utils import create_new_offer, \
@@ -45,8 +46,9 @@ BC_EVENT_MAP = {
 
 
 class NonBlockchainInterface:
-    def __init__(self):
-        pass
+    def __init__(self, market_id, simulation_id=None):
+        self.market_id = market_id
+        self.simulation_id = simulation_id
 
     def create_new_offer(self, energy, price, seller):
         return str(uuid.uuid4())
@@ -60,7 +62,7 @@ class NonBlockchainInterface:
     def handle_blockchain_trade_event(self, offer, buyer, original_offer, residual_offer):
         return str(uuid.uuid4()), residual_offer
 
-    def track_trade_event(self, trade):
+    def track_trade_event(self, time_slot, trade):
         pass
 
     def bc_listener(self):
@@ -68,7 +70,9 @@ class NonBlockchainInterface:
 
 
 class SubstrateBlockchainInterface(BlockChainInterface):
-    def __init__(self):
+    def __init__(self, market_id, simulation_id=None):
+        self.market_id = market_id
+        self.simulation_id = simulation_id
         super().__init__()
 
     def load_keypair(mnemonic):
@@ -95,14 +99,17 @@ class SubstrateBlockchainInterface(BlockChainInterface):
         return str(uuid.uuid4()), residual_offer
 
     @retry_function(max_retries=3)
-    def track_trade_event(self, trade):
+    def track_trade_event(self, time_slot, trade):
 
         call_params = {
+            'simulation_id': str(self.simulation_id),
+            'market_id': str(self.market_id),
+            'market_slot': datetime.timestamp(time_slot),
             'trade_id': trade.id,
             'buyer': ALICE_STASH_ADDRESS,
             'seller': BOB_STASH_ADDRESS,
-            'energy': trade.offer.energy,
-            'rate': trade.offer.energy_rate
+            'energy': int(trade.offer.energy * ENERGY_SCALING_FACTOR),
+            'rate': int(trade.offer.energy_rate * RATE_SCALING_FACTOR)
         }
 
         call = self.substrate.compose_call(

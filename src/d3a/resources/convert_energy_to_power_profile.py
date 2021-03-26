@@ -1,9 +1,9 @@
-from d3a_interface.constants_limits import GlobalConfig
-from d3a.models.read_user_profile import _readCSV, default_profile_dict
-from pendulum import duration
 import csv
 import argparse
 from itertools import product
+from pendulum import duration
+from d3a_interface.constants_limits import GlobalConfig
+from d3a_interface.read_user_profile import _readCSV, default_profile_dict
 
 
 def minute_profile_dict(val):

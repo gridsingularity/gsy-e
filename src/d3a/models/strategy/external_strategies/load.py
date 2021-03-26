@@ -201,6 +201,7 @@ class LoadExternalMixin(ExternalMixin):
         self._reject_all_pending_requests()
         self.register_on_market_cycle()
         if not self.should_use_default_strategy:
+            self.add_entry_in_hrs_per_day()
             self._calculate_active_markets()
             self._update_energy_requirement_future_markets()
             if not self.is_aggregator_controlled:

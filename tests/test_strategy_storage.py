@@ -23,13 +23,15 @@ from math import isclose
 from copy import deepcopy
 from uuid import uuid4
 
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.exceptions import D3ADeviceException
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+
 from d3a.d3a_core.util import change_global_config
 from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Offer, Trade, BalancingOffer, Bid
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.state import EnergyOrigin, ESSEnergyOrigin
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.exceptions import D3ADeviceException
 from d3a.models.config import SimulationConfig
 from d3a.constants import TIME_FORMAT, FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.device_registry import DeviceRegistry
@@ -40,8 +42,6 @@ DeviceRegistry.REGISTRY = {
     "seller": (23, 25),
     "FakeArea": (23, 25),
 }
-
-ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
 
 
 class FakeArea:
@@ -263,7 +263,6 @@ def storage_strategy_test3(area_test3, called):
 
 
 def test_if_storage_doesnt_buy_too_expensive(storage_strategy_test3, area_test3):
-    from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
     storage_strategy_test3.bid_update.initial_rate = \
         read_arbitrary_profile(InputProfileTypes.IDENTITY, 0)
     storage_strategy_test3.bid_update.final_rate = \

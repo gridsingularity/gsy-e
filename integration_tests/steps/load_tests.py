@@ -18,18 +18,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from behave import then
 from math import isclose
 
-from d3a.models.read_user_profile import _str_to_datetime
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
+    _str_to_datetime
+from d3a_interface.utils import convert_W_to_Wh, find_object_of_same_weekday_and_time
 from d3a.setup.strategy_tests import user_profile_load_csv  # NOQA
 from d3a.setup.strategy_tests import user_profile_load_csv_multiday  # NOQA
-from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a.d3a_core.util import convert_W_to_Wh
-from d3a_interface.constants_limits import DATE_TIME_FORMAT
+from d3a.constants import FLOATING_POINT_TOLERANCE, DATE_TIME_FORMAT
 
 
 @then('the DefinedLoadStrategy follows the {single_or_multi} day Load profile provided as csv')
 def check_load_profile_csv(context, single_or_multi):
-    from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
-    from d3a.d3a_core.util import find_object_of_same_weekday_and_time
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     load = next(filter(lambda x: x.name == "H1 DefinedLoad", house1.children))
     if single_or_multi == "single":

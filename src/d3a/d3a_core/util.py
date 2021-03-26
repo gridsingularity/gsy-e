@@ -25,9 +25,8 @@ import d3a
 import inspect
 import os
 
-from collections import OrderedDict
 from click.types import ParamType
-from pendulum import duration, from_format, datetime, today
+from pendulum import duration, from_format
 from rex import rex
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
@@ -36,11 +35,11 @@ import d3a.constants
 from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.exceptions import D3AException
-from d3a.constants import DATE_FORMAT, TIME_ZONE, CN_PROFILE_EXPANSION_DAYS, \
-    DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
+
+from d3a.constants import DATE_FORMAT, DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit
-from d3a_interface.utils import generate_market_slot_list_from_config, iterate_over_all_modules,\
-    str_to_pendulum_datetime, format_datetime
+from d3a_interface.utils import iterate_over_all_modules, str_to_pendulum_datetime, \
+    format_datetime, find_object_of_same_weekday_and_time
 
 d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
@@ -228,7 +227,7 @@ def area_name_from_area_or_iaa_name(name):
 
 def is_timeslot_in_simulation_duration(config, time_slot):
     return config.start_date <= time_slot < config.end_date or \
-           d3a.constants.IS_CANARY_NETWORK
+           GlobalConfig.IS_CANARY_NETWORK
 
 
 def format_interval(interval, show_day=True):
@@ -322,24 +321,6 @@ def update_advanced_settings(advanced_settings):
     for settings_class_name in advanced_settings.keys():
         setting_class = getattr(ConstSettings, settings_class_name)
         update_nested_settings(setting_class, settings_class_name, advanced_settings)
-
-
-def generate_market_slot_list():
-    start_date = today(tz=TIME_ZONE) \
-        if d3a.constants.IS_CANARY_NETWORK else GlobalConfig.start_date
-    time_span = duration(days=CN_PROFILE_EXPANSION_DAYS) \
-        if d3a.constants.IS_CANARY_NETWORK else GlobalConfig.sim_duration
-    sim_duration_plus_future_markets = time_span + GlobalConfig.slot_length * \
-        (GlobalConfig.market_count - 1)
-    market_slot_list = \
-        generate_market_slot_list_from_config(sim_duration=sim_duration_plus_future_markets,
-                                              start_date=start_date,
-                                              market_count=GlobalConfig.market_count,
-                                              slot_length=GlobalConfig.slot_length)
-
-    if not getattr(GlobalConfig, 'market_slot_list', []):
-        GlobalConfig.market_slot_list = market_slot_list
-    return market_slot_list
 
 
 def get_market_slot_time_str(slot_number, config):
@@ -530,46 +511,6 @@ def get_market_maker_rate_from_config(next_market, default_value=None):
 def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
     return transfer_capacity_kWA * slot_length.total_minutes() / 60.0 \
         if transfer_capacity_kWA is not None else 0.
-
-
-def find_object_of_same_weekday_and_time(indict, time_slot, ignore_not_found=False):
-    if d3a.constants.IS_CANARY_NETWORK:
-        start_time = list(indict.keys())[0]
-        add_days = time_slot.weekday() - start_time.weekday()
-        if add_days < 0:
-            add_days += 7
-        timestamp_key = datetime(year=start_time.year, month=start_time.month, day=start_time.day,
-                                 hour=time_slot.hour, minute=time_slot.minute, tz=TIME_ZONE).add(
-            days=add_days)
-
-        if timestamp_key in indict:
-            return indict[timestamp_key]
-        else:
-            if not ignore_not_found:
-                log.error(f"Weekday and time not found in dict for {time_slot}")
-            return
-
-    else:
-        return indict[time_slot]
-
-
-def convert_W_to_kWh(power_W, slot_length):
-    return (slot_length / duration(hours=1)) * power_W / 1000
-
-
-def convert_W_to_Wh(power_W, slot_length):
-    return (slot_length / duration(hours=1)) * power_W
-
-
-def convert_kW_to_kWh(power_W, slot_length):
-    return convert_W_to_Wh(power_W, slot_length)
-
-
-def return_ordered_dict(function):
-    @wraps(function)
-    def wrapper(*args, **kwargs):
-        return OrderedDict(sorted(function(*args, **kwargs).items()))
-    return wrapper
 
 
 def get_simulation_queue_name():
