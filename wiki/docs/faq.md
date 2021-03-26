@@ -134,4 +134,4 @@ We have partnered with innovative energy companies to facilitate further D3A dev
 
 ### If I have questions regarding the D3A use, how can I contact you ?
 
-Please first review our [wiki page](d3a-documentation.md) documentation on the UI and the backend code. The best way to engage with us is via the D3A community/ecosystem channel on [Slack](https://join.slack.com/t/gsycommunity/shared_invite/zt-cksg629e-ClRPNV7TkW_cTOxDdlaz1Q). For any additional comments/feedback you can also send us an email at [d3a@gridsingularity.com](mailto:d3a@gridsingularity.com). 
+Please first review our [wiki page](d3a-documentation.md) documentation on the UI and the backend code. The best way to engage with us is via the D3A community/ecosystem channel on [Slack](https://join.slack.com/t/gsycommunity/shared_invite/zt-cksg629e-ClRPNV7TkW_cTOxDdlaz1Q). For any additional comments/feedback you can also send us an email at [contact@gridsingularity.com](mailto:contact@gridsingularity.com). 
