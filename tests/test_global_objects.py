@@ -67,8 +67,7 @@ class TestGlobalObjects(unittest.TestCase):
 
         expected_area_stats_tree_dict = {
             self.grid_area.uuid:
-                {'market_maker_rate': 30,
-                 'last_market_bill': {'accumulated_trades': {}, 'external_trades': {}},
+                {'last_market_bill': {'accumulated_trades': {}, 'external_trades': {}},
                  'last_market_stats': {'min_trade_rate': None, 'max_trade_rate': None,
                                        'avg_trade_rate': None, 'median_trade_rate': None,
                                        'total_traded_energy_kWh': None},
@@ -77,7 +76,6 @@ class TestGlobalObjects(unittest.TestCase):
                  'area_name': 'Grid',
                  'children': {
                      self.house_area.uuid: {
-                         'market_maker_rate': 30,
                          'last_market_bill': {'accumulated_trades': {},
                                               'external_trades': {}},
                          'last_market_stats': {'min_trade_rate': None,
@@ -100,7 +98,7 @@ class TestGlobalObjects(unittest.TestCase):
                                                  'total_cost': 0.0},
                                   'last_slot_asset_info': {'energy_traded': 0.0,
                                                            'total_cost': 0.0},
-                                  'device_bill': None,
+                                  'asset_bill': None,
                                   'area_name': 'Storage'},
                              self.load.uuid: {'asset_info': {
                                         'energy_requirement_kWh': 0.025,
@@ -110,7 +108,7 @@ class TestGlobalObjects(unittest.TestCase):
                                     'last_slot_asset_info': {
                                         'energy_traded': 0.0,
                                         'total_cost': 0.0},
-                                    'device_bill': None,
+                                    'asset_bill': None,
                                     'area_name': 'Load'},
                              self.pv.uuid: {'asset_info': {
                                       'available_energy_kWh': 0.0,
@@ -120,7 +118,7 @@ class TestGlobalObjects(unittest.TestCase):
                                   'last_slot_asset_info': {
                                          'energy_traded': 0,
                                          'total_cost': 0},
-                                  'device_bill': None,
+                                  'asset_bill': None,
                                   'area_name': 'PV'
                                   }}}}}}
 

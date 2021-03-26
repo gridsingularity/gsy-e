@@ -51,12 +51,13 @@ class AggregatorHandler:
                                                outdict[area_uuid]['children'])
             else:
                 if area_uuid not in self.device_aggregator_mapping:
-                    outdict[area_uuid] = {}
+                    outdict[area_uuid] = {'area_name': area_dict['area_name']}
 
     def _create_grid_tree_event_dict(self):
         return {'grid_tree': self._delete_not_owned_devices_from_dict(
             external_global_statistics.area_stats_tree_dict),
-                'feed_in_tariff_rate': external_global_statistics.current_feed_in_tariff}
+                'feed_in_tariff_rate': external_global_statistics.current_feed_in_tariff,
+                'market_maker_rate': external_global_statistics.current_market_maker_rate}
 
     def add_batch_market_event(self, device_uuid, market_info):
         market_info.update(self._create_grid_tree_event_dict())

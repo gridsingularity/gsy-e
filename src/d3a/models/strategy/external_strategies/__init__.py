@@ -29,7 +29,7 @@ from d3a.d3a_core.singletons import external_global_statistics
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
 
 default_market_info = {"device_info": None,
-                       "device_bill": None,
+                       "asset_bill": None,
                        "event": None,
                        "grid_stats_tree": None,
                        "area_uuid": None}
@@ -493,7 +493,7 @@ class ExternalMixin:
     def market_info_dict(self):
         return {'asset_info': self._device_info_dict,
                 'last_slot_asset_info': self.last_slot_asset_info,
-                'device_bill': self.device.stats.aggregated_stats["bills"]
+                'asset_bill': self.device.stats.aggregated_stats["bills"]
                 if "bills" in self.device.stats.aggregated_stats else None
                 }
 

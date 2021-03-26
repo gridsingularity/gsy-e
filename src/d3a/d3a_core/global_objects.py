@@ -26,6 +26,7 @@ class ExternalConnectionGlobalStatistics:
         self.root_area = None
         self.external_tick_counter = None
         self.current_feed_in_tariff = None
+        self.current_market_maker_rate = None
 
     def __call__(self, root_area, ticks_per_slot):
         self.root_area = root_area
@@ -45,6 +46,11 @@ class ExternalConnectionGlobalStatistics:
                                                          current_market_slot)
                 return
 
+    def buffer_market_maker_rate(self):
+        if self.root_area.current_market:
+            self.current_market_maker_rate = get_market_maker_rate_from_config(
+                                                      self.root_area.current_market)
+
     def update(self, market_cycle=False):
         if self.root_area.current_market:
             self._create_grid_tree_dict(self.root_area, self.area_stats_tree_dict)
@@ -63,9 +69,7 @@ class ExternalConnectionGlobalStatistics:
         outdict[area.uuid] = {}
         if area.children:
             if area.current_market:
-                area_dict = {'market_maker_rate': get_market_maker_rate_from_config(
-                                                  area.current_market),
-                             'last_market_bill': area.stats.get_last_market_stats_for_grid_tree(),
+                area_dict = {'last_market_bill': area.stats.get_last_market_stats_for_grid_tree(),
                              'last_market_stats': area.stats.get_price_stats_current_market(),
                              'last_market_fee': area.current_market.fee_class.grid_fee_rate,
                              'current_market_fee': area.get_grid_fee(),
