@@ -28,6 +28,7 @@ from d3a.models.market.market_structures import Offer, Trade, Bid
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
+from d3a.models.market.blockchain_interface import NonBlockchainInterface
 from d3a_interface.constants_limits import ConstSettings
 from uuid import uuid4
 
@@ -377,7 +378,7 @@ def test_post_offer_creates_offer_with_correct_parameters(market_class):
     strategy.owner = FakeOwner()
     strategy.area = FakeArea()
 
-    market = market_class(time_slot=pendulum.now())
+    market = market_class(bc=NonBlockchainInterface(str(uuid4())), time_slot=pendulum.now())
     strategy.area._market = market
 
     offer_args = {
@@ -400,7 +401,7 @@ def test_post_offer_with_replace_existing(market_class):
     strategy.owner = FakeOwner()
     strategy.area = FakeArea()
 
-    market = market_class(time_slot=pendulum.now())
+    market = market_class(bc=NonBlockchainInterface(str(uuid4())), time_slot=pendulum.now())
     strategy.area._market = market
 
     # Post a first offer on the market
