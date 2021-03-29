@@ -128,13 +128,10 @@ class Simulation:
     def _set_traversal_length(self):
         no_of_levels = self._get_setup_levels(self.area) + 1
         num_ticks_to_propagate = no_of_levels * 2
-        ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 2
         time_to_propagate_minutes = num_ticks_to_propagate * \
             self.simulation_config.tick_length.seconds / 60.
-        log.info("Setup has {} levels, offers/bids need at least {} minutes "
-                 "({} ticks) to propagate.".format(no_of_levels, time_to_propagate_minutes,
-                                                   ConstSettings.GeneralSettings.
-                                                   MAX_OFFER_TRAVERSAL_LENGTH,))
+        log.info(f'Setup has {no_of_levels} levels, offers/bids need at '
+                 f'least {time_to_propagate_minutes} minutes to propagate.')
 
     def _get_setup_levels(self, area, level_count=0):
         level_count += 1
@@ -191,7 +188,7 @@ class Simulation:
 
         self._set_traversal_length()
 
-        self.area.activate(self.bc)
+        self.area.activate(self.bc, simulation_id=redis_job_id)
 
     @property
     def finished(self):
