@@ -53,7 +53,7 @@ class AreaMarkets:
     def all_future_spot_markets(self):
         return list(self.markets.values())
 
-    def rotate_markets(self, current_time, dispatcher):
+    def rotate_markets(self, current_time):
         # Move old and current markets & balancing_markets to
         # `past_markets` & past_balancing_markets. We use `list()` here to get a copy since we
         # modify the market list in-place
