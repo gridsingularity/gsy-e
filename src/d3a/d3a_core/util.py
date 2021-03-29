@@ -521,7 +521,6 @@ def get_simulation_queue_name():
 class ExternalTickCounter:
 
     def __init__(self, ticks_per_slot):
-        self._last_dispatched_tick = 0
         self.ticks_per_slot = ticks_per_slot
 
     @property
@@ -531,15 +530,5 @@ class ExternalTickCounter:
             (DISPATCH_EVENT_TICK_FREQUENCY_PERCENT / 100)
         )
 
-    def reset(self):
-        self._last_dispatched_tick = 0
-
-    def _update_current_tick(self, current_tick):
-        self._last_dispatched_tick = current_tick
-
     def is_it_time_for_external_tick(self, current_tick_in_slot) -> bool:
-        if current_tick_in_slot - self._last_dispatched_tick >= self._dispatch_tick_frequency:
-            self._update_current_tick(current_tick_in_slot)
-            return True
-        else:
-            return False
+        return current_tick_in_slot % self._dispatch_tick_frequency == 0

@@ -361,11 +361,14 @@ class Simulation:
                 self.simulation_config.external_redis_communicator.\
                     approve_aggregator_commands()
 
+                current_tick_in_slot = tick_no % config.ticks_per_slot
+                if self.simulation_config.external_connection_enabled and \
+                        external_global_statistics.is_it_time_for_external_tick(
+                            current_tick_in_slot):
+                    external_global_statistics.update()
+
                 self.area.tick_and_dispatch()
                 self.area.update_area_current_tick()
-                if self.simulation_config.external_connection_enabled and \
-                        external_global_statistics.is_it_time_for_external_tick(tick_no):
-                    external_global_statistics.update()
 
                 self.simulation_config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()

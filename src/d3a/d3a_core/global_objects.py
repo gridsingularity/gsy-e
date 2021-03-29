@@ -52,13 +52,12 @@ class ExternalConnectionGlobalStatistics:
                                                       self.root_area.current_market)
 
     def update(self, market_cycle=False):
-        if self.root_area.current_market:
-            self._create_grid_tree_dict(self.root_area, self.area_stats_tree_dict)
+        if self.root_area.current_market is None:
+            return
+        self._create_grid_tree_dict(self.root_area, self.area_stats_tree_dict)
         if market_cycle:
-            self.external_tick_counter.reset()
-            if self.root_area.current_market is not None:
-                self._buffer_feed_in_tariff(self.root_area,
-                                            self.root_area.current_market.time_slot)
+            self._buffer_feed_in_tariff(self.root_area, self.root_area.current_market.time_slot)
+            self.buffer_market_maker_rate()
 
     def is_it_time_for_external_tick(self, current_tick_in_slot):
         return self.external_tick_counter.is_it_time_for_external_tick(current_tick_in_slot)
