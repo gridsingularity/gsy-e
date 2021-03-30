@@ -181,21 +181,10 @@ class UpdateFrequencyMixin:
             except MarketException:
                 continue
 
-    def update_market_cycle_offers(self, strategy):
-        for market in strategy.area.all_markets[:-1]:
-            self.update_counter[market.time_slot] = 0
-            self.update_energy_price(market, strategy)
 
-    def update_offer(self, strategy):
-        for market in strategy.area.all_markets:
-            if self.time_for_price_update(strategy, market.time_slot):
-                self.update_energy_price(market, strategy)
-
-    def update_market_cycle_bids(self, strategy):
-        # decrease energy rate for each market again, except for the newly created one
-        for market in strategy.area.all_markets[:-1]:
-            self.update_counter[market.time_slot] = 0
-            self._post_bids(market, strategy)
+class BidsUpdateFrequencyMixin(UpdateFrequencyMixin):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def _post_bids(self, market, strategy):
         existing_bids = list(strategy.get_posted_bids(market))
@@ -209,7 +198,28 @@ class UpdateFrequencyMixin:
             strategy.post_bid(market, bid.energy * self.get_updated_rate(market.time_slot),
                               bid.energy)
 
+    def update_market_cycle_bids(self, strategy):
+        # decrease energy rate for each market again, except for the newly created one
+        for market in strategy.area.all_markets[:-1]:
+            self.update_counter[market.time_slot] = 0
+            self._post_bids(market, strategy)
+
     def update_posted_bids_over_ticks(self, market, strategy):
         if self.time_for_price_update(strategy, market.time_slot):
             if strategy.are_bids_posted(market.id):
                 self._post_bids(market, strategy)
+
+
+class OffersUpdateFrequencyMixin(UpdateFrequencyMixin):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def update_market_cycle_offers(self, strategy):
+        for market in strategy.area.all_markets[:-1]:
+            self.update_counter[market.time_slot] = 0
+            self.update_energy_price(market, strategy)
+
+    def update_offer(self, strategy):
+        for market in strategy.area.all_markets:
+            if self.time_for_price_update(strategy, market.time_slot):
+                self.update_energy_price(market, strategy)

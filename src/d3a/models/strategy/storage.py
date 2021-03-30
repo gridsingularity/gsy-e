@@ -33,7 +33,8 @@ from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
 from d3a.models.state import StorageState, ESSEnergyOrigin, EnergyOrigin
 from d3a.models.strategy import BidEnabledStrategy
-from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
+from d3a.models.strategy.update_frequency import OffersUpdateFrequencyMixin, \
+    BidsUpdateFrequencyMixin
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a import constants
 
@@ -98,18 +99,19 @@ class StorageStrategy(BidEnabledStrategy):
         BidEnabledStrategy.__init__(self)
 
         self.offer_update = \
-            UpdateFrequencyMixin(initial_rate=initial_selling_rate,
-                                 final_rate=final_selling_rate,
-                                 fit_to_limit=fit_to_limit,
-                                 energy_rate_change_per_update=energy_rate_decrease_per_update,
-                                 update_interval=update_interval)
+            OffersUpdateFrequencyMixin(
+                initial_rate=initial_selling_rate,
+                final_rate=final_selling_rate,
+                fit_to_limit=fit_to_limit,
+                energy_rate_change_per_update=energy_rate_decrease_per_update,
+                update_interval=update_interval)
         for time_slot in self.offer_update.initial_rate_profile_buffer.keys():
             validate_storage_device(
                 initial_selling_rate=self.offer_update.initial_rate_profile_buffer[time_slot],
                 final_selling_rate=find_object_of_same_weekday_and_time(
                     self.offer_update.final_rate_profile_buffer, time_slot))
         self.bid_update = \
-            UpdateFrequencyMixin(
+            BidsUpdateFrequencyMixin(
                 initial_rate=initial_buying_rate,
                 final_rate=final_buying_rate,
                 fit_to_limit=fit_to_limit,
