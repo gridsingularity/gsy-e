@@ -1,2 +1,2 @@
 pandapower
-matplotlib
+matplotlib==3.4.0
