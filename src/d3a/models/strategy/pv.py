@@ -27,7 +27,7 @@ from d3a_interface.utils import key_in_dict_and_not_none, find_object_of_same_we
     convert_W_to_kWh
 from d3a_interface.device_validator import validate_pv_device_energy, validate_pv_device_price
 from d3a.models.strategy import BaseStrategy
-from d3a.models.strategy.update_frequency import OffersUpdateFrequencyMixin
+from d3a.models.strategy.update_frequency import TemplateStrategyOfferUpdater
 from d3a.models.state import PVState
 from d3a.d3a_core.exceptions import MarketException
 from d3a import constants
@@ -85,10 +85,10 @@ class PVStrategy(BaseStrategy):
         validate_pv_device_price(fit_to_limit=fit_to_limit,
                                  energy_rate_decrease_per_update=energy_rate_decrease_per_update)
 
-        self.offer_update = OffersUpdateFrequencyMixin(initial_selling_rate, final_selling_rate,
-                                                       fit_to_limit,
-                                                       energy_rate_decrease_per_update,
-                                                       update_interval)
+        self.offer_update = TemplateStrategyOfferUpdater(initial_selling_rate, final_selling_rate,
+                                                         fit_to_limit,
+                                                         energy_rate_decrease_per_update,
+                                                         update_interval)
 
     def area_reconfigure_event(self, **kwargs):
         self._area_reconfigure_prices(**kwargs)
@@ -189,7 +189,7 @@ class PVStrategy(BaseStrategy):
         self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
 
     def event_tick(self):
-        self.offer_update.update_offer(self)
+        self.offer_update.update(self)
         self.offer_update.increment_update_counter_all_markets(self)
 
     def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
@@ -241,7 +241,7 @@ class PVStrategy(BaseStrategy):
 
     def event_market_cycle_price(self):
         self.offer_update.update_and_populate_price_settings(self.area)
-        self.offer_update.update_market_cycle_offers(self)
+        self.offer_update.reset(self)
 
         # Iterate over all markets open in the future
         for market in self.area.all_markets:

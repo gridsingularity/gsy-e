@@ -33,8 +33,8 @@ from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
 from d3a.models.state import StorageState, ESSEnergyOrigin, EnergyOrigin
 from d3a.models.strategy import BidEnabledStrategy
-from d3a.models.strategy.update_frequency import OffersUpdateFrequencyMixin, \
-    BidsUpdateFrequencyMixin
+from d3a.models.strategy.update_frequency import TemplateStrategyOfferUpdater, \
+    TemplateStrategyBidUpdater
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a import constants
 
@@ -99,7 +99,7 @@ class StorageStrategy(BidEnabledStrategy):
         BidEnabledStrategy.__init__(self)
 
         self.offer_update = \
-            OffersUpdateFrequencyMixin(
+            TemplateStrategyOfferUpdater(
                 initial_rate=initial_selling_rate,
                 final_rate=final_selling_rate,
                 fit_to_limit=fit_to_limit,
@@ -111,7 +111,7 @@ class StorageStrategy(BidEnabledStrategy):
                 final_selling_rate=find_object_of_same_weekday_and_time(
                     self.offer_update.final_rate_profile_buffer, time_slot))
         self.bid_update = \
-            BidsUpdateFrequencyMixin(
+            TemplateStrategyBidUpdater(
                 initial_rate=initial_buying_rate,
                 final_rate=final_buying_rate,
                 fit_to_limit=fit_to_limit,
@@ -348,7 +348,7 @@ class StorageStrategy(BidEnabledStrategy):
                     ConstSettings.IAASettings.MARKET_TYPE == 3:
                 self.state.clamp_energy_to_buy_kWh(self.future_markets_time_slots)
                 if self.are_bids_posted(market.id):
-                    self.bid_update.update_posted_bids_over_ticks(market, self)
+                    self.bid_update.update(market, self)
                 else:
                     energy_kWh = self.state.energy_to_buy_dict[market.time_slot]
                     if energy_kWh > 0:
@@ -361,7 +361,7 @@ class StorageStrategy(BidEnabledStrategy):
 
             self.state.tick(self.area, market.time_slot)
         if self.cap_price_strategy is False:
-            self.offer_update.update_offer(self)
+            self.offer_update.update(self)
 
         self.bid_update.increment_update_counter_all_markets(self)
         if self.offer_update.increment_update_counter_all_markets(self):
@@ -425,7 +425,7 @@ class StorageStrategy(BidEnabledStrategy):
         super().event_market_cycle()
         self._set_alternative_pricing_scheme()
         self._update_profiles_with_default_values()
-        self.offer_update.update_market_cycle_offers(self)
+        self.offer_update.reset(self)
         for market in self.area.all_markets[:-1]:
             self.bid_update.update_counter[market.time_slot] = 0
         current_market = self.area.next_market
@@ -443,7 +443,7 @@ class StorageStrategy(BidEnabledStrategy):
         if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
            ConstSettings.IAASettings.MARKET_TYPE == 3:
             self.state.clamp_energy_to_buy_kWh([current_market.time_slot])
-            self.bid_update.update_market_cycle_bids(self)
+            self.bid_update.reset(self)
             energy_kWh = self.state.energy_to_buy_dict[current_market.time_slot]
             if energy_kWh > 0:
                 try:
