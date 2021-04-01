@@ -449,7 +449,6 @@ class ExportAndPlot:
         """
         Plots stock stats for each knot in the hierarchy per market_slot
         """
-
         area_stats = self.endpoint_buffer.offer_bid_trade_hr.state[area.name]
         self.market_slot_data_mapping = {}
         fig = go.Figure()
