@@ -36,6 +36,7 @@ nav:
     - 'Blockchain Integration': 'blockchain.md'
 - 'Configuration general settings and installation':
     - 'General Configuration Settings': 'general-settings.md'
+    - 'Data Requirements for Customized Simulations': 'data-requirements.md'
     - 'Backend Installation Instructions':
         - 'Linux Installation Instructions': 'linux-installation-instructions.md'
         - 'Mac Installation Instructions': 'ios-installation-instructions.md'
