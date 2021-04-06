@@ -107,11 +107,12 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         BidEnabledStrategy.__init__(self)
         self.bid_update = \
-            TemplateStrategyBidUpdater(initial_rate=initial_buying_rate,
-                                       final_rate=final_buying_rate,
-                                       fit_to_limit=fit_to_limit,
-                                       energy_rate_change_per_update=energy_rate_increase_per_update,
-                                       update_interval=update_interval, rate_limit_object=min)
+            TemplateStrategyBidUpdater(
+                initial_rate=initial_buying_rate,
+                final_rate=final_buying_rate,
+                fit_to_limit=fit_to_limit,
+                energy_rate_change_per_update=energy_rate_increase_per_update,
+                update_interval=update_interval, rate_limit_object=min)
         self.fit_to_limit = fit_to_limit
 
     @staticmethod

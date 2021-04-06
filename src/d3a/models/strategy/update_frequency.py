@@ -69,9 +69,17 @@ class UpdateFrequencyMixin:
     def initial_rate(self):
         return self._initial_rate
 
+    @initial_rate.setter
+    def initial_rate(self, initial_rate):
+        self._initial_rate = initial_rate
+
     @property
     def final_rate(self):
         return self._final_rate
+
+    @final_rate.setter
+    def final_rate(self, final_rate):
+        self._final_rate = final_rate
 
     @property
     def final_rate_profile_buffer(self):
@@ -92,7 +100,8 @@ class UpdateFrequencyMixin:
     @energy_rate_change_per_update_profile_buffer.setter
     def energy_rate_change_per_update_profile_buffer(self,
                                                      energy_rate_change_per_update_profile_buffer):
-        self._energy_rate_change_per_update_profile_buffer = energy_rate_change_per_update_profile_buffer
+        self._energy_rate_change_per_update_profile_buffer =\
+            energy_rate_change_per_update_profile_buffer
 
     @property
     def update_interval(self):
