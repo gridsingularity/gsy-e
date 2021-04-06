@@ -29,24 +29,77 @@ class UpdateFrequencyMixin:
                  energy_rate_change_per_update=None, update_interval=duration(
                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
                  rate_limit_object=max):
-        self.fit_to_limit = fit_to_limit
-        self.initial_rate_profile_buffer = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                  initial_rate)
-        self.initial_rate = {}
-        self.final_rate_profile_buffer = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                final_rate)
-        self.final_rate = {}
+        self._fit_to_limit = fit_to_limit
+        self._initial_rate_profile_buffer = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                                   initial_rate)
+        self._initial_rate = {}
+        self._final_rate_profile_buffer = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                                 final_rate)
+        self._final_rate = {}
         if fit_to_limit is False:
-            self.energy_rate_change_per_update_profile_buffer = \
+            self._energy_rate_change_per_update_profile_buffer = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY, energy_rate_change_per_update)
         else:
-            self.energy_rate_change_per_update_profile_buffer = {}
+            self._energy_rate_change_per_update_profile_buffer = {}
 
         self.energy_rate_change_per_update = {}
-        self.update_interval = update_interval
-        self.update_counter = {}
+        self._update_interval = update_interval
+        self._update_counter = {}
         self.number_of_available_updates = 0
         self.rate_limit_object = rate_limit_object
+
+    @property
+    def fit_to_limit(self):
+        return self._fit_to_limit
+
+    @fit_to_limit.setter
+    def fit_to_limit(self, fit_to_limit):
+        self._fit_to_limit = fit_to_limit
+
+    @property
+    def initial_rate_profile_buffer(self):
+        return self._initial_rate_profile_buffer
+
+    @initial_rate_profile_buffer.setter
+    def initial_rate_profile_buffer(self, initial_rate_profile_buffer):
+        self._initial_rate_profile_buffer = initial_rate_profile_buffer
+
+    @property
+    def initial_rate(self):
+        return self._initial_rate
+
+    @property
+    def final_rate(self):
+        return self._final_rate
+
+    @property
+    def final_rate_profile_buffer(self):
+        return self._final_rate_profile_buffer
+
+    @final_rate_profile_buffer.setter
+    def final_rate_profile_buffer(self, final_rate_profile_buffer):
+        self._final_rate_profile_buffer = final_rate_profile_buffer
+
+    @property
+    def energy_rate_change_per_update_profile_buffer(self):
+        return self._energy_rate_change_per_update_profile_buffer
+
+    @property
+    def update_counter(self):
+        return self._update_counter
+
+    @energy_rate_change_per_update_profile_buffer.setter
+    def energy_rate_change_per_update_profile_buffer(self,
+                                                     energy_rate_change_per_update_profile_buffer):
+        self._energy_rate_change_per_update_profile_buffer = energy_rate_change_per_update_profile_buffer
+
+    @property
+    def update_interval(self):
+        return self._update_interval
+
+    @update_interval.setter
+    def update_interval(self, update_interval):
+        self._update_interval = update_interval
 
     def delete_past_state_values(self, current_market_time_slot):
         to_delete = []
