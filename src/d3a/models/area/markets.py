@@ -53,22 +53,20 @@ class AreaMarkets:
     def all_future_spot_markets(self):
         return list(self.markets.values())
 
-    def rotate_markets(self, current_time, dispatcher):
+    def rotate_markets(self, current_time):
         # Move old and current markets & balancing_markets to
         # `past_markets` & past_balancing_markets. We use `list()` here to get a copy since we
         # modify the market list in-place
         self._market_rotation(current_time=current_time, markets=self.markets,
-                              past_markets=self.past_markets,
-                              area_agent=dispatcher.interarea_agents)
+                              past_markets=self.past_markets)
         if self.balancing_markets is not None:
             self._market_rotation(current_time=current_time, markets=self.balancing_markets,
-                                  past_markets=self.past_balancing_markets,
-                                  area_agent=dispatcher.balancing_agents)
+                                  past_markets=self.past_balancing_markets)
         self._indexed_future_markets = {
             m.id: m for m in self.all_future_spot_markets
         }
 
-    def _market_rotation(self, current_time, markets, past_markets, area_agent):
+    def _market_rotation(self, current_time, markets, past_markets):
         for timeframe in list(markets.keys()):
             if timeframe < current_time:
                 market = markets.pop(timeframe)
