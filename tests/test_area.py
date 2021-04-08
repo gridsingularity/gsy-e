@@ -102,12 +102,12 @@ class TestAreaClass(unittest.TestCase):
         assert len(self.area.past_markets) == 0
 
         current_time = today(tz=TIME_ZONE).add(hours=1)
-        self.area._markets.rotate_markets(current_time, self.dispatcher)
+        self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
         self.area._markets.create_future_markets(current_time, True, self.area)
         current_time = today(tz=TIME_ZONE).add(hours=2)
-        self.area._markets.rotate_markets(current_time, self.dispatcher)
+        self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
         assert list(self.area.past_markets)[-1].time_slot == today(tz=TIME_ZONE).add(hours=1)
 
@@ -123,12 +123,12 @@ class TestAreaClass(unittest.TestCase):
         assert len(self.area.past_markets) == 0
 
         current_time = today(tz=TIME_ZONE).add(hours=1)
-        self.area._markets.rotate_markets(current_time, self.dispatcher)
+        self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
         self.area._markets.create_future_markets(current_time, True, self.area)
         current_time = today(tz=TIME_ZONE).add(hours=2)
-        self.area._markets.rotate_markets(current_time, self.dispatcher)
+        self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 2
 
     def test_market_with_most_expensive_offer(self):

@@ -40,6 +40,8 @@ from d3a.models.area.throughput_parameters import ThroughputParameters
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.area_validator import validate_area
 from d3a.models.area.redis_external_market_connection import RedisMarketExternalConnection
+from d3a.models.market.blockchain_interface import SubstrateBlockchainInterface, \
+    NonBlockchainInterface
 from d3a_interface.utils import key_in_dict_and_not_none
 import d3a.constants
 
@@ -107,7 +109,8 @@ class Area:
                  throughput: ThroughputParameters = ThroughputParameters()
                  ):
         validate_area(grid_fee_constant=grid_fee_constant,
-                      grid_fee_percentage=grid_fee_percentage)
+                      grid_fee_percentage=grid_fee_percentage,
+                      name=name)
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
@@ -149,10 +152,10 @@ class Area:
 
     @name.setter
     def name(self, new_name):
-        if not check_area_name_exists_in_parent_area(self.parent, new_name):
-            self.__name = new_name
-        else:
+        if check_area_name_exists_in_parent_area(self.parent, new_name):
             raise AreaException("Area name should be unique inside the same Parent Area")
+        validate_area(name=new_name)
+        self.__name = new_name
 
     def get_state(self):
         state = {}
@@ -255,11 +258,13 @@ class Area:
     def set_events(self, event_list):
         self.events = Events(event_list, self)
 
-    def activate(self, bc=None, current_tick=None):
+    def activate(self, bc=None, current_tick=None, simulation_id=None):
         if current_tick is not None:
             self.current_tick = current_tick
         if bc:
-            self._bc = bc
+            self._bc = SubstrateBlockchainInterface(self.uuid, simulation_id)
+        else:
+            self._bc = NonBlockchainInterface(self.uuid, simulation_id)
         if self.strategy:
             if self.parent:
                 self.strategy.area = self.parent
@@ -281,7 +286,8 @@ class Area:
             self.log.debug("No strategy. Using inter area agent.")
         self.log.debug('Activating area')
         self.active = True
-        self.dispatcher.broadcast_activate(current_tick=self.current_tick)
+        self.dispatcher.broadcast_activate(bc=bc, current_tick=self.current_tick,
+                                           simulation_id=simulation_id)
         if self.redis_ext_conn is not None:
             self.redis_ext_conn.sub_to_external_channels()
 
@@ -325,7 +331,7 @@ class Area:
             self.budget_keeper.process_market_cycle()
 
         self.log.debug("Cycling markets")
-        self._markets.rotate_markets(now_value, self.dispatcher)
+        self._markets.rotate_markets(now_value)
         self.dispatcher._delete_past_agents(self.dispatcher._inter_area_agents)
 
         # area_market_stats have to updated when cycling market of each area:
@@ -438,8 +444,6 @@ class Area:
     def bc(self):
         if self._bc is not None:
             return self._bc
-        if self.parent:
-            return self.parent.bc
         return None
 
     @cached_property

@@ -43,8 +43,6 @@ DeviceRegistry.REGISTRY = {
     "FakeArea": (23, 25),
 }
 
-ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
-
 
 class FakeArea:
     def __init__(self, count):
