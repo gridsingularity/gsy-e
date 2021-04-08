@@ -42,7 +42,7 @@ from d3a_interface.area_validator import validate_area
 from d3a.models.area.redis_external_market_connection import RedisMarketExternalConnection
 from d3a.models.market.blockchain_interface import SubstrateBlockchainInterface, \
     NonBlockchainInterface
-from d3a_interface.utils import key_in_dict_and_not_none, scenario_representation_traversal
+from d3a_interface.utils import key_in_dict_and_not_none
 import d3a.constants
 
 log = getLogger(__name__)
@@ -373,7 +373,7 @@ class Area:
         for child in self.children:
             child.publish_market_cycle_to_external_clients()
 
-    def consume_commands_from_aggregator(self):
+    def _consume_commands_from_aggregator(self):
         if self.redis_ext_conn is not None and self.redis_ext_conn.is_aggregator_controlled:
             self.redis_ext_conn.aggregator.\
                 consume_all_area_commands(self.uuid,
@@ -386,6 +386,8 @@ class Area:
                                           self.strategy.trigger_aggregator_commands)
 
     def tick(self):
+        self._consume_commands_from_aggregator()
+
         if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                 ConstSettings.IAASettings.MARKET_TYPE == 3:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
@@ -405,8 +407,6 @@ class Area:
             child.update_area_current_tick()
 
     def tick_and_dispatch(self):
-        for area, _ in scenario_representation_traversal(self):
-            area.consume_commands_from_aggregator()
         if d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP:
             self.dispatcher.broadcast_tick()
             self.tick()
