@@ -144,7 +144,7 @@ class Offers:
 
         if replace_existing:
             # Do not consider previous offers, since they would be replaced by the current one
-            posted_offer_energy = 0.0
+            posted_offer_energy = self.sold_offer_energy(market.id)
         else:
             posted_offer_energy = self.posted_offer_energy(market.id)
 
@@ -176,13 +176,6 @@ class Offers:
             self.remove(offer)
             deleted_offer_ids.append(offer.id)
         return deleted_offer_ids
-
-    def remove_offer_by_id(self, market_id, offer_id=None):
-        try:
-            offer = [o for o, m in self.posted.items() if o.id == offer_id][0]
-            self.remove(offer)
-        except (IndexError, KeyError):
-            self.strategy.warning(f"Could not find offer to remove: {offer_id}")
 
     def remove(self, offer):
         try:
