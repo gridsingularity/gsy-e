@@ -421,3 +421,26 @@ def test_post_offer_with_replace_existing(market_class):
         'price': 1, 'energy': 1, 'seller': 'seller-name', 'seller_origin': 'seller-origin-name'}
     offer_3 = strategy.post_offer(market, **offer_3_args)
     assert strategy.offers.open_in_market(market.id) == [offer_3]
+
+
+def test_energy_traded_and_cost_traded(base):
+    ConstSettings.IAASettings.MARKET_TYPE = 2
+    market = FakeMarket(raises=True)
+    base.area._market = market
+    o1 = Offer('id', pendulum.now(), price=1, energy=23, seller='A')
+    o2 = Offer('id2', pendulum.now(), price=1, energy=27, seller='A')
+    o3 = Offer('id3', pendulum.now(), price=1, energy=10, seller='A')
+    base.offers.sold_offer(o1, market.id)
+    base.offers.sold_offer(o2, market.id)
+    base.offers.sold_offer(o3, market.id)
+    assert base.energy_traded(market.id) == 60
+    assert base.energy_traded_costs(market.id) == 3
+    b1 = base.post_bid(market, 1, 23)
+    b2 = base.post_bid(market, 1, 27)
+    b3 = base.post_bid(market, 1, 10)
+    base.add_bid_to_bought(b1, market.id)
+    base.add_bid_to_bought(b2, market.id)
+    base.add_bid_to_bought(b3, market.id)
+    # energy and costs get accumulated from both offers and bids
+    assert base.energy_traded(market.id) == 120
+    assert base.energy_traded_costs(market.id) == 6
