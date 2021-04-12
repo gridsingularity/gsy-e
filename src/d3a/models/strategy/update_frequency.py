@@ -197,18 +197,6 @@ class UpdateFrequencyMixin:
             self.update_counter[market.time_slot] = 0
             self._post_bids(market, strategy)
 
-    def _post_bids(self, market, strategy):
-        existing_bids = list(strategy.get_posted_bids(market))
-        for bid in existing_bids:
-            assert bid.buyer == strategy.owner.name
-            if bid.id in market.bids.keys():
-                bid = market.bids[bid.id]
-            market.delete_bid(bid.id)
-
-            strategy.remove_bid_from_pending(market.id, bid.id)
-            strategy.post_bid(market, bid.energy * self.get_updated_rate(market.time_slot),
-                              bid.energy)
-
     def update_posted_bids_over_ticks(self, market, strategy):
         if self.time_for_price_update(strategy, market.time_slot):
             if strategy.are_bids_posted(market.id):
