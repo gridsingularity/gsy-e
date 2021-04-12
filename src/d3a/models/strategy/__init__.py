@@ -21,21 +21,21 @@ from logging import getLogger
 from typing import List, Dict, Any, Union  # noqa
 from uuid import uuid4
 
+from d3a import constants
+from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
+from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.d3a_core.exceptions import D3ARedisException
 from d3a.d3a_core.exceptions import SimulationException, D3AException
+from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
+from d3a.d3a_core.util import append_or_create_key
+from d3a.events import EventMixin
+from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer, Bid, trade_from_JSON_string, \
     offer_from_JSON_string
 from d3a_interface.constants_limits import ConstSettings
-from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
-from d3a.events import EventMixin
-from d3a.d3a_core.exceptions import D3ARedisException
-from d3a.d3a_core.util import append_or_create_key
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
-from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a import constants
 
 log = getLogger(__name__)
 
