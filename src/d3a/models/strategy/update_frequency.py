@@ -21,7 +21,6 @@ from pendulum import duration
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import find_object_of_same_weekday_and_time
-from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import write_default_to_dict
 
 
@@ -221,61 +220,25 @@ class UpdateFrequencyMixin:
 
 
 class TemplateStrategyBidUpdater(UpdateFrequencyMixin):
-    def _post_bids(self, market, strategy):
-        existing_bids = list(strategy.get_posted_bids(market))
-        for bid in existing_bids:
-            assert bid.buyer == strategy.owner.name
-            if bid.id in market.bids.keys():
-                bid = market.bids[bid.id]
-            market.delete_bid(bid.id)
-
-            strategy.remove_bid_from_pending(market.id, bid.id)
-            strategy.post_bid(market, bid.energy * self.get_updated_rate(market.time_slot),
-                              bid.energy)
-
     def reset(self, strategy):
         # decrease energy rate for each market again, except for the newly created one
         for market in strategy.area.all_markets[:-1]:
             self.update_counter[market.time_slot] = 0
-            self._post_bids(market, strategy)
+            strategy.post_bids(market, self.get_updated_rate(market.time_slot))
 
     def update(self, market, strategy):
         if self.time_for_price_update(strategy, market.time_slot):
             if strategy.are_bids_posted(market.id):
-                self._post_bids(market, strategy)
+                strategy.post_bids(market, self.get_updated_rate(market.time_slot))
 
 
 class TemplateStrategyOfferUpdater(UpdateFrequencyMixin):
     def reset(self, strategy):
         for market in strategy.area.all_markets[:-1]:
             self.update_counter[market.time_slot] = 0
-            self.update_energy_price(market, strategy)
+            strategy.update_energy_price(market, )
 
     def update(self, strategy):
         for market in strategy.area.all_markets:
             if self.time_for_price_update(strategy, market.time_slot):
-                self.update_energy_price(market, strategy)
-
-    def update_energy_price(self, market, strategy):
-        if market.id not in strategy.offers.open.values():
-            return
-
-        for offer, iterated_market_id in strategy.offers.open.items():
-            iterated_market = strategy.area.get_future_market_from_id(iterated_market_id)
-            if market is None or iterated_market is None or iterated_market.id != market.id:
-                continue
-            try:
-                iterated_market.delete_offer(offer.id)
-                updated_price = round(offer.energy * self.get_updated_rate(market.time_slot), 10)
-                new_offer = iterated_market.offer(
-                    updated_price,
-                    offer.energy,
-                    strategy.owner.name,
-                    original_offer_price=updated_price,
-                    seller_origin=offer.seller_origin,
-                    seller_origin_id=offer.seller_origin_id,
-                    seller_id=strategy.owner.uuid
-                )
-                strategy.offers.replace(offer, new_offer, iterated_market.id)
-            except MarketException:
-                continue
+                strategy.update_energy_price(market, self.get_updated_rate(market.time_slot))
