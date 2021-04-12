@@ -214,8 +214,12 @@ class AggregatorHandler:
             response = [strategy_method({**command, 'transaction_id': transaction_id})
                         for command in area_commands]
             if transaction_id not in self.responses_batch_commands:
-                self.responses_batch_commands[transaction_id] = {aggregator_uuid: []}
-            self.responses_batch_commands[transaction_id][aggregator_uuid].append(response)
+                self.responses_batch_commands[transaction_id] = {aggregator_uuid: {}}
+            if area_uuid not in self.responses_batch_commands[transaction_id][aggregator_uuid]:
+                self.responses_batch_commands[transaction_id][aggregator_uuid] \
+                    .update({area_uuid: []})
+            self.responses_batch_commands[transaction_id][aggregator_uuid][area_uuid] \
+                .extend(response)
 
     def _publish_all_events_from_one_type(self, redis, event_dict, event_type):
         for aggregator_uuid, event in event_dict.items():
