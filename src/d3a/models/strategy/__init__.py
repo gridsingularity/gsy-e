@@ -21,7 +21,7 @@ from logging import getLogger
 from typing import List, Dict, Any, Union  # noqa
 from uuid import uuid4
 
-from d3a.d3a_core.exceptions import SimulationException, D3AException
+from d3a.d3a_core.exceptions import SimulationException, D3AException, MarketException
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer, Bid, trade_from_JSON_string, \
@@ -496,6 +496,30 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                 "Strategy does not have a state. "
                 "State is required to support load state functionality.")
 
+    def update_energy_price(self, market, updated_rate):
+        if market.id not in self.offers.open.values():
+            return
+
+        for offer, iterated_market_id in self.offers.open.items():
+            iterated_market = self.area.get_future_market_from_id(iterated_market_id)
+            if market is None or iterated_market is None or iterated_market.id != market.id:
+                continue
+            try:
+                iterated_market.delete_offer(offer.id)
+                updated_price = round(offer.energy * updated_rate, 10)
+                new_offer = iterated_market.offer(
+                    updated_price,
+                    offer.energy,
+                    self.owner.name,
+                    original_offer_price=updated_price,
+                    seller_origin=offer.seller_origin,
+                    seller_origin_id=offer.seller_origin_id,
+                    seller_id=self.owner.uuid
+                )
+                self.offers.replace(offer, new_offer, iterated_market.id)
+            except MarketException:
+                continue
+
 
 class BidEnabledStrategy(BaseStrategy):
     def __init__(self):
@@ -532,6 +556,18 @@ class BidEnabledStrategy(BaseStrategy):
             buyer_id=self.owner.uuid)
         self.add_bid_to_posted(market.id, bid)
         return bid
+
+    def post_bids(self, market, updated_rate):
+        existing_bids = list(self.get_posted_bids(market))
+        for bid in existing_bids:
+            assert bid.buyer == self.owner.name
+            if bid.id in market.bids.keys():
+                bid = market.bids[bid.id]
+            market.delete_bid(bid.id)
+
+            self.remove_bid_from_pending(market.id, bid.id)
+            self.post_bid(market, bid.energy * updated_rate,
+                          bid.energy)
 
     def can_bid_be_posted(
             self, bid_energy, bid_price, required_energy_kWh, market, replace_existing=False):
