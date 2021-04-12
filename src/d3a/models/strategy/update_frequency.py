@@ -236,7 +236,7 @@ class TemplateStrategyOfferUpdater(UpdateFrequencyMixin):
     def reset(self, strategy):
         for market in strategy.area.all_markets[:-1]:
             self.update_counter[market.time_slot] = 0
-            strategy.update_energy_price(market, )
+            strategy.update_energy_price(market, self.get_updated_rate(market.time_slot))
 
     def update(self, strategy):
         for market in strategy.area.all_markets:
