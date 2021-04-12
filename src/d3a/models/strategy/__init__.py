@@ -143,7 +143,7 @@ class Offers:
             self, offer_energy, offer_price, available_energy, market, replace_existing=False):
 
         if replace_existing:
-            # Do not consider previous offers, since they would be replaced by the current one
+            # Do not consider previous open offers, since they would be replaced by the current one
             posted_offer_energy = self.sold_offer_energy(market.id)
         else:
             posted_offer_energy = self.posted_offer_energy(market.id)

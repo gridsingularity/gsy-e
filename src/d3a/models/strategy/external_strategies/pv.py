@@ -316,8 +316,8 @@ class PVExternalMixin(ExternalMixin):
                     offer_arguments['energy'] = offer.energy
                     offer_arguments['price'] = \
                         (offer_arguments['price'] / offer_arguments['energy']) * offer.energy
-                    offer_arguments['seller'] = offer.seller
-                    offer_arguments['seller_origin'] = offer.seller_origin
+                    offer_arguments["seller"] = offer.seller
+                    offer_arguments["seller_origin"] = offer.seller_origin
                     new_offer = iterated_market.offer(**offer_arguments)
                     self.offers.replace(offer, new_offer, iterated_market.id)
                     return {
