@@ -1241,7 +1241,7 @@
                 
                 <p>Files can be uploaded to generate custom energy supply or load profiles. The following file formats are supported:</p>
 <h2 id="comma-separated-values-csv">Comma Separated Values (.csv)<a class="headerlink" href="#comma-separated-values-csv" title="Permanent link">&para;</a></h2>
-<p>The separation can be done by comma <code>,</code> or semicolon <code>;</code>. Two time formats are supported, see below. Power set-points are given in <strong>Watts</strong>. The software handles any conversions to energy (in kWh).</p>
+<p>The separation can be done by comma <code>,</code> or semicolon <code>;</code>. Two time formats are supported, see below. Power set-points are given in <strong>Watts</strong>. The software handles any conversions to energy (in kWh). All entered csv data values need to be positive</p>
 <h3 id="hhmm">hh:mm<a class="headerlink" href="#hhmm" title="Permanent link">&para;</a></h3>
 <p><strong>Example:</strong></p>
 <div class="codehilite"><pre><span></span><code>INTERVAL;POWER(W):
@@ -1252,6 +1252,7 @@
 01:00;10
 </code></pre></div>
 
+
 <h3 id="yyyy-mm-ddthhmm">YYYY-MM-DDThh:mm<a class="headerlink" href="#yyyy-mm-ddthhmm" title="Permanent link">&para;</a></h3>
 <p><strong>Example:</strong></p>
 <div class="codehilite"><pre><span></span><code>INTERVAL,POWER(W)
@@ -1261,6 +1262,7 @@
 2019-01-01T00:45,10.0
 2019-01-01T01:00,10.0
 </code></pre></div>
+
 
 <p>Note: If you upload csv files with date information, the <strong>start-date</strong> of the simulation should be identical in the csv files and <a href="../general-settings/">simulation settings</a>.</p>
                 

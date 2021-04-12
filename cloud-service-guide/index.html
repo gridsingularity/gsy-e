@@ -1302,16 +1302,19 @@
 <div class="codehilite"><pre><span></span><code>chmod 400 path_to/mykey.pem
 </code></pre></div>
 
+
 <h3 id="step-2-upload-relevant-files-onto-the-instance">Step 2: Upload relevant files onto the instance<a class="headerlink" href="#step-2-upload-relevant-files-onto-the-instance" title="Permanent link">&para;</a></h3>
 <p>To copy a file into your AWS instance please run the equivalent command (with your own information)</p>
 <div class="codehilite"><pre><span></span><code>scp -i path_to_ssh_key.pem path_to_file   username@public_DNS:/path_to_copy
 </code></pre></div>
+
 
 <p>The username can be found after clicking on connect. The default username will depend on the instance platform you are using. If you are using Linux, “ubuntu” will be the default username.</p>
 <p>Additionally we recommend copying your files into the home directory of your instance <code>/home/ubuntu</code>.</p>
 <p>Here is an example of command  </p>
 <div class="codehilite"><pre><span></span><code>scp -i Desktop/mykey.pem myscript.py   ubuntu@ec2-18-188-221-121.us-east-2.compute.amazonaws.com:/home/ubuntu/
 </code></pre></div>
+
 
 <h3 id="step-3-connect-to-the-instance">Step 3: Connect to the instance<a class="headerlink" href="#step-3-connect-to-the-instance" title="Permanent link">&para;</a></h3>
 <p>Once you have copied all necessary files onto you AWS instance you can connect to your instance with 2 ways </p>
@@ -1323,17 +1326,21 @@
 <div class="codehilite"><pre><span></span><code>ssh -i path_to/mykey.pem username@public_DNS
 </code></pre></div>
 
+
 <p>Example </p>
 <div class="codehilite"><pre><span></span><code>ssh -i Desktop/mykey.pem ubuntu@ec2-18-188-221-121.us-east-2.compute.amazonaws.com
 </code></pre></div>
+
 
 <p>Once connected, go into the directory you have previously sent your files. If you have copied them in <code>/home/ubuntu</code>, just run the following command </p>
 <div class="codehilite"><pre><span></span><code>cd /home/ubuntu
 </code></pre></div>
 
+
 <p>You can list all the files in the directory, to confirm that your files are correctly copied onto the instance by running </p>
 <div class="codehilite"><pre><span></span><code>ls
 </code></pre></div>
+
 
 <h3 id="step-4-initialize-the-instances-environment-and-install-grid-singularity-client">Step 4: Initialize the instance's environment and install Grid Singularity Client<a class="headerlink" href="#step-4-initialize-the-instances-environment-and-install-grid-singularity-client" title="Permanent link">&para;</a></h3>
 <p>Update and install all required package on your AWS instance</p>
@@ -1341,54 +1348,67 @@
 <div class="codehilite"><pre><span></span><code>sudo apt update
 </code></pre></div>
 
+
 <p>Install python3 pip</p>
 <div class="codehilite"><pre><span></span><code>sudo apt install python3-pip
 </code></pre></div>
+
 
 <p>Add <code>deadnakes</code> to your system source </p>
 <div class="codehilite"><pre><span></span><code>sudo add-apt-repository ppa:deadsnakes/ppa
 </code></pre></div>
 
+
 <p>Install python 3.6</p>
 <div class="codehilite"><pre><span></span><code>sudo apt-get install python3.6
 </code></pre></div>
+
 
 <p>Install virtual environment</p>
 <div class="codehilite"><pre><span></span><code>sudo apt install python3-virtualenv
 </code></pre></div>
 
+
 <p>Create a virtual environment with python 3.6</p>
 <div class="codehilite"><pre><span></span><code>virtualenv /tmp/d3a --python=/usr/bin/python3.6
 </code></pre></div>
+
 
 <p>Activate your virtual environment</p>
 <div class="codehilite"><pre><span></span><code>source /tmp/d3a/bin/activate
 </code></pre></div>
 
+
 <p>Install d3a api client </p>
 <div class="codehilite"><pre><span></span><code>pip3 install git+https://github.com/gridsingularity/d3a-api-client.git
 </code></pre></div>
+
 
 <h3 id="step-5-install-screen-and-run-the-api-agent">Step 5: Install screen and run the API agent<a class="headerlink" href="#step-5-install-screen-and-run-the-api-agent" title="Permanent link">&para;</a></h3>
 <p>To be able to run the script indefinitely on your AWS instance you need to install Linux <a href="https://kapeli.com/cheat_sheets/screen.docset/Contents/Resources/Documents/index">Screen</a> (that allows to have multiple screen within your terminal) with the following command </p>
 <div class="codehilite"><pre><span></span><code>sudo apt-get install screen
 </code></pre></div>
 
+
 <p>Create a new screen </p>
 <div class="codehilite"><pre><span></span><code>screen -S screen_name
 </code></pre></div>
+
 
 <p>Run your python script</p>
 <div class="codehilite"><pre><span></span><code>python3 assets.py
 </code></pre></div>
 
+
 <p>To detach from the current screen session </p>
 <div class="codehilite"><pre><span></span><code>Ctr+a+d
 </code></pre></div>
 
+
 <p>If you want to log back in the relevant screen run </p>
 <div class="codehilite"><pre><span></span><code>screen -r screen_name
 </code></pre></div>
+
 
 <p>Once you are detached for the running screen you are able to close your terminal and your script will continue to run indefinitely on your AWS instance</p>
                 

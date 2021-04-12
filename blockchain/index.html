@@ -1311,6 +1311,7 @@
 <div class="codehilite"><pre><span></span><code>https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fcanvas-node.dev.gridsingularity.com
 </code></pre></div>
 
+
 <p>When you go to the endpoint, you will see the standard interface. That’s the easiest point of interaction with the node, where you can call extrinsics, upload contracts, deploy them, test their functions, send funds and more.</p>
 <h2 id="simulating-grid-singularity-local-energy-markets-on-substrate">Simulating Grid Singularity local energy markets on Substrate<a class="headerlink" href="#simulating-grid-singularity-local-energy-markets-on-substrate" title="Permanent link">&para;</a></h2>
 <h3 id="wallet">Wallet<a class="headerlink" href="#wallet" title="Permanent link">&para;</a></h3>
@@ -1324,11 +1325,13 @@
 <div class="codehilite"><pre><span></span><code>fab sync
 </code></pre></div>
 
+
 <p>Each transaction in the simulation triggers a call to the pallet. Currently, the buyer and the seller are default addresses. In addition to the buyer and seller, the trade structure has a trade ID, energy quantity, and rate. Following D3A’s integration with the decentralized identity registry (Energy Web Switchboard), the addresses will be actual user accounts. In the terminal, you should see the extrinsic hash and the block hash.</p>
 <div class="codehilite"><pre><span></span><code>17:39:37.466 WARNING  ( 333) d3a.d3a_core.simulation       : Slot 1 of 96 - (1.0%) 0.00 second elapsed, ETA: 0.01 second
 17:39:41.974 INFO     ( 122) root                          : Extrinsic &#39;0xe1357be7db683e0f3f85e101ea017da10fcaa63310e4dc7040e505cad9ac1a0a&#39; sent and included in block &#39;0x2199d0870583183e6f2c591b66e9a1a9cb2399b7b3ed21b21c3804c3cfcf730f&#39;
 17:39:41.975 INFO     ( 271) d3a.models.market.one_sided   : [TRADE] [Grid] [2021-01-26T00:00] {7f15aa} [origin: H1 Storage2 -&gt; Cell Tower] [IAA House 1 -&gt; Cell Tower] 0.025 kWh @ 0.7500000000000001 30.0 db09b600-22a9-4feb-ae4d-620cb6247702 [fee: 0.0 cts.]
 </code></pre></div>
+
 
 <p>The block hash will allow you to find your extrinsic hash, as in this <a href="https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fcanvas-node.dev.gridsingularity.com#/explorer/query/0xf33563d5a2e3e5cef0629fa8c83b39a216fb2e61700855a67c232f800fe6b44e">example</a>.</p>
 <p>View events → tradestorage.TradeMapStored (this event is triggered every time we call the pallet’s store trade map function).</p>
