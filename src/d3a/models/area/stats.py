@@ -131,7 +131,7 @@ class AreaStats:
         out_dict["market_fee_revenue"] = self._area.current_market.market_fee
         if dso:
             out_dict["area_throughput"] = self._get_current_market_area_throughput()
-            out_dict["self-sufficiency"] = self.kpi.get("self_sufficiency", None)
+            out_dict["self_sufficiency"] = self.kpi.get("self_sufficiency", None)
             out_dict["self_consumption"] = self.kpi.get("self_consumption", None)
         return out_dict
 
