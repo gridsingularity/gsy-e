@@ -21,21 +21,21 @@ from logging import getLogger
 from typing import List, Dict, Any, Union  # noqa
 from uuid import uuid4
 
+from d3a import constants
+from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
+from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.d3a_core.exceptions import D3ARedisException
 from d3a.d3a_core.exceptions import SimulationException, D3AException
+from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
+from d3a.d3a_core.util import append_or_create_key
+from d3a.events import EventMixin
+from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer, Bid, trade_from_JSON_string, \
     offer_from_JSON_string
 from d3a_interface.constants_limits import ConstSettings
-from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
-from d3a.events import EventMixin
-from d3a.d3a_core.exceptions import D3ARedisException
-from d3a.d3a_core.util import append_or_create_key
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
-from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a import constants
 
 log = getLogger(__name__)
 
@@ -143,8 +143,8 @@ class Offers:
             self, offer_energy, offer_price, available_energy, market, replace_existing=False):
 
         if replace_existing:
-            # Do not consider previous offers, since they would be replaced by the current one
-            posted_offer_energy = 0.0
+            # Do not consider previous open offers, since they would be replaced by the current one
+            posted_offer_energy = self.sold_offer_energy(market.id)
         else:
             posted_offer_energy = self.posted_offer_energy(market.id)
 
@@ -176,13 +176,6 @@ class Offers:
             self.remove(offer)
             deleted_offer_ids.append(offer.id)
         return deleted_offer_ids
-
-    def remove_offer_by_id(self, market_id, offer_id=None):
-        try:
-            offer = [o for o, m in self.posted.items() if o.id == offer_id][0]
-            self.remove(offer)
-        except (IndexError, KeyError):
-            self.strategy.warning(f"Could not find offer to remove: {offer_id}")
 
     def remove(self, offer):
         try:

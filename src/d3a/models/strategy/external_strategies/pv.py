@@ -20,15 +20,14 @@ import logging
 import traceback
 from collections import deque
 
-from pendulum import duration
-
 from d3a.d3a_core.exceptions import MarketException
-from d3a.models.strategy.external_strategies import IncomingRequest, default_market_info
-from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
-from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
 from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
+from d3a.models.strategy.external_strategies import IncomingRequest, default_market_info
+from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
+from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
+from pendulum import duration
 
 
 class PVExternalMixin(ExternalMixin):
@@ -316,6 +315,8 @@ class PVExternalMixin(ExternalMixin):
                     offer_arguments['energy'] = offer.energy
                     offer_arguments['price'] = \
                         (offer_arguments['price'] / offer_arguments['energy']) * offer.energy
+                    offer_arguments["seller"] = offer.seller
+                    offer_arguments["seller_origin"] = offer.seller_origin
                     new_offer = iterated_market.offer(**offer_arguments)
                     self.offers.replace(offer, new_offer, iterated_market.id)
                     return {
