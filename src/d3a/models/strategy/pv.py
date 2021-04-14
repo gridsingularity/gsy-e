@@ -142,12 +142,13 @@ class PVStrategy(BaseStrategy):
                       f"Traceback: {traceback.format_exc()}")
             return
 
-        self.offer_update.initial_rate_profile_buffer = initial_rate
-        self.offer_update.final_rate_profile_buffer = final_rate
-        self.offer_update.energy_rate_change_per_update_profile_buffer = \
-            energy_rate_change_per_update
-        self.offer_update.fit_to_limit = fit_to_limit
-        self.offer_update.update_interval = update_interval
+        self.offer_update.update_members(
+            initial_rate_profile_buffer=initial_rate,
+            final_rate_profile_buffer=final_rate,
+            energy_rate_change_per_update_profile_buffer=energy_rate_change_per_update,
+            fit_to_limit=fit_to_limit,
+            update_interval=update_interval
+        )
 
     @staticmethod
     def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):

@@ -156,6 +156,11 @@ class UpdateFrequencyMixin:
         return self.elapsed_seconds(strategy) >= \
                self.update_interval.seconds * self.update_counter[time_slot]
 
+    def update_members(self, **kwargs):
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+
 
 class TemplateStrategyBidUpdater(UpdateFrequencyMixin):
     def reset(self, strategy):

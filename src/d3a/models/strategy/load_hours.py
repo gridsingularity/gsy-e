@@ -204,12 +204,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
                       f"Traceback: {traceback.format_exc()}")
             return
 
-        self.bid_update.initial_rate_profile_buffer = initial_rate
-        self.bid_update.final_rate_profile_buffer = final_rate
-        self.bid_update.energy_rate_change_per_update_profile_buffer = \
-            energy_rate_change_per_update
-        self.bid_update.fit_to_limit = fit_to_limit
-        self.bid_update.update_interval = update_interval
+        self.bid_update.update_members(
+            initial_rate_profile_buffer=initial_rate,
+            final_rate_profile_buffer=final_rate,
+            energy_rate_change_per_update_profile_buffer=energy_rate_change_per_update,
+            fit_to_limit=fit_to_limit,
+            update_interval=update_interval
+        )
 
     def area_reconfigure_event(self, **kwargs):
         if key_in_dict_and_not_none(kwargs, 'hrs_per_day') or \
