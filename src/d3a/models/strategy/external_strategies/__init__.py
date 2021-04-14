@@ -15,24 +15,18 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import logging
 import json
-from threading import Lock
+import logging
 from collections import deque, namedtuple
+from threading import Lock
+
+import d3a.constants
+from d3a.d3a_core.singletons import external_global_statistics
 from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import key_in_dict_and_not_none
-import d3a.constants
-from d3a.d3a_core.singletons import external_global_statistics
-
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
-
-default_market_info = {"device_info": None,
-                       "asset_bill": None,
-                       "event": None,
-                       "grid_stats_tree": None,
-                       "area_uuid": None}
 
 
 class CommandTypeNotSupported(Exception):
@@ -118,9 +112,12 @@ class ExternalMixin:
     def channel_dict(self):
         return {
             f'{self.channel_prefix}/register_participant': self._register,
-            f'{self.channel_prefix}/unregister_participant': self._unregister,
-            f'{self.channel_prefix}/device_info': self._device_info,
+            f'{self.channel_prefix}/unregister_participant': self._unregister
         }
+
+    def event_activate(self, **kwargs):
+        super().event_activate(**kwargs)
+        self.redis.sub_to_multiple_channels(self.channel_dict)
 
     @property
     def channel_prefix(self):
@@ -168,31 +165,6 @@ class ExternalMixin:
         if self.connected is True and self._connected is False:
             self._remove_area_uuid_from_aggregator_mapping()
         self.connected = self._connected
-
-    def _device_info(self, payload):
-        device_info_response_channel = f'{self.channel_prefix}/response/device_info'
-        if not check_for_connected_and_reply(self.redis, device_info_response_channel,
-                                             self.connected):
-            return
-        arguments = json.loads(payload["data"])
-        self.pending_requests.append(
-            IncomingRequest("device_info", arguments, device_info_response_channel))
-
-    def _device_info_impl(self, arguments, response_channel):
-        try:
-            self.redis.publish_json(
-                response_channel,
-                {"command": "device_info", "status": "ready",
-                 "device_info": self._device_info_dict,
-                 "transaction_id": arguments.get("transaction_id", None)})
-        except Exception as e:
-            logging.error(f"Error when handling device info on area {self.device.name}: "
-                          f"Exception: {str(e)}")
-            self.redis.publish_json(
-                response_channel,
-                {"command": "device_info", "status": "error",
-                 "error_message": f"Error when handling device info on area {self.device.name}.",
-                 "transaction_id": arguments.get("transaction_id", None)})
 
     def _device_info_aggregator(self, arguments):
         try:
@@ -306,29 +278,6 @@ class ExternalMixin:
 
             external_global_statistics.update()
             self.redis.aggregator.add_batch_trade_event(self.device.uuid, event_response_dict)
-        elif self.connected:
-            event_response_dict = {'device_info': self._device_info_dict,
-                                   'event': 'trade',
-                                   'trade_id': trade.id,
-                                   'time': trade.time.isoformat(),
-                                   'trade_price': trade.offer.price,
-                                   'traded_energy': trade.offer.energy,
-                                   'fee_price': trade.fee_price,
-                                   'area_uuid': self.device.uuid,
-                                   'seller': trade.seller
-                                   if trade.seller == self.device.name else 'anonymous',
-                                   'buyer': trade.buyer
-                                   if trade.buyer == self.device.name else 'anonymous',
-                                   'residual_id': trade.residual.id
-                                   if trade.residual is not None else 'None'}
-
-            bid_offer_key = 'bid_id' if is_bid_trade else 'offer_id'
-            event_response_dict['event_type'] = 'buy' \
-                if trade.buyer == self.device.name else 'sell'
-            event_response_dict[bid_offer_key] = trade.offer.id
-
-            trade_event_channel = f"{self.channel_prefix}/events/trade"
-            self.redis.publish_json(trade_event_channel, event_response_dict)
 
     def event_bid_traded(self, market_id, bid_trade):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)

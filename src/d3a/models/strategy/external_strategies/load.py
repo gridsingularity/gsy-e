@@ -15,20 +15,16 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import json
 import logging
 import traceback
 from collections import deque
 from typing import List, Dict, Union
 
-from pendulum import duration
-
-from d3a.models.strategy.external_strategies import IncomingRequest, default_market_info
+from d3a.models.strategy.external_strategies import ExternalMixin
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
-from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
-from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a_interface.constants_limits import ConstSettings
+from pendulum import duration
 
 
 class LoadExternalMixin(ExternalMixin):
@@ -40,14 +36,6 @@ class LoadExternalMixin(ExternalMixin):
         super().__init__(*args, **kwargs)
 
     @property
-    def channel_dict(self):
-        return {**super().channel_dict,
-                f'{self.channel_prefix}/bid': self._bid,
-                f'{self.channel_prefix}/delete_bid': self._delete_bid,
-                f'{self.channel_prefix}/list_bids': self._list_bids,
-                }
-
-    @property
     def filtered_bids_next_market(self) -> List[Dict]:
         """Get a representation of each of the device's bids from the next market."""
 
@@ -55,137 +43,6 @@ class LoadExternalMixin(ExternalMixin):
             {'id': bid.id, 'price': bid.price, 'energy': bid.energy}
             for _, bid in self.next_market.get_bids().items()
             if bid.buyer == self.device.name]
-
-    def event_activate(self, **kwargs):
-        super().event_activate(**kwargs)
-        self.redis.sub_to_multiple_channels(self.channel_dict)
-
-    def _list_bids(self, payload):
-        self._get_transaction_id(payload)
-        list_bids_response_channel = f'{self.channel_prefix}/response/list_bids'
-        if not check_for_connected_and_reply(self.redis, list_bids_response_channel,
-                                             self.connected):
-            return
-        arguments = json.loads(payload["data"])
-        self.pending_requests.append(
-            IncomingRequest("list_bids", arguments, list_bids_response_channel))
-
-    def _list_bids_impl(self, arguments, response_channel):
-        try:
-            self.redis.publish_json(
-                response_channel, {
-                    "command": "list_bids", "status": "ready",
-                    "bid_list": self.filtered_bids_next_market,
-                    "transaction_id": arguments.get("transaction_id", None)})
-        except Exception as e:
-            logging.error(f"Error when handling list bids on area {self.device.name}: "
-                          f"Exception: {str(e)}")
-            self.redis.publish_json(
-                response_channel,
-                {"command": "list_bids", "status": "error",
-                 "error_message": f"Error when listing bids on area {self.device.name}.",
-                 "transaction_id": arguments.get("transaction_id", None)})
-
-    def _delete_bid(self, payload):
-        transaction_id = self._get_transaction_id(payload)
-        delete_bid_response_channel = f'{self.channel_prefix}/response/delete_bid'
-        if not check_for_connected_and_reply(self.redis,
-                                             delete_bid_response_channel, self.connected):
-            return
-        try:
-            arguments = json.loads(payload["data"])
-            if ("bid" in arguments and arguments["bid"] is not None) and \
-                    not self.is_bid_posted(self.next_market, arguments["bid"]):
-                raise Exception("Bid_id is not associated with any posted bid.")
-        except Exception as e:
-            self.redis.publish_json(
-                delete_bid_response_channel,
-                {"command": "bid_delete",
-                 "error": f"Incorrect delete bid request. Available parameters: (bid)."
-                          f"Exception: {str(e)}",
-                 "transaction_id": transaction_id}
-            )
-        else:
-            self.pending_requests.append(
-                IncomingRequest("delete_bid", arguments, delete_bid_response_channel))
-
-    def _delete_bid_impl(self, arguments, response_channel):
-        try:
-            to_delete_bid_id = arguments["bid"] if "bid" in arguments else None
-            deleted_bids = \
-                self.remove_bid_from_pending(self.next_market.id, bid_id=to_delete_bid_id)
-            self.redis.publish_json(
-                response_channel,
-                {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
-                 "transaction_id": arguments.get("transaction_id", None)})
-        except Exception as e:
-            logging.error(f"Error when handling bid delete on area {self.device.name}: "
-                          f"Exception: {str(e)}, Bid Arguments: {arguments}")
-            self.redis.publish_json(
-                response_channel,
-                {"command": "bid_delete", "status": "error",
-                 "error_message": f"Error when handling bid delete "
-                                  f"on area {self.device.name} with arguments {arguments}. "
-                                  f"Bid does not exist on the current market.",
-                 "transaction_id": arguments.get("transaction_id", None)})
-
-    def _bid(self, payload):
-        transaction_id = self._get_transaction_id(payload)
-        required_args = {'price', 'energy', 'transaction_id'}
-        allowed_args = required_args.union({'replace_existing'})
-
-        bid_response_channel = f'{self.channel_prefix}/response/bid'
-        if not check_for_connected_and_reply(self.redis, bid_response_channel, self.connected):
-            return
-        try:
-            arguments = json.loads(payload["data"])
-
-            # Check that all required arguments have been provided
-            assert all(arg in arguments.keys() for arg in required_args)
-            # Check that every provided argument is allowed
-            assert all(arg in allowed_args for arg in arguments.keys())
-
-        except Exception:
-            self.redis.publish_json(
-                bid_response_channel,
-                {"command": "bid",
-                 "error": (
-                     "Incorrect bid request. "
-                     "Available parameters: ('price', 'energy', 'replace_existing')."),
-                 "transaction_id": transaction_id})
-        else:
-            self.pending_requests.append(
-                IncomingRequest("bid", arguments, bid_response_channel))
-
-    def _bid_impl(self, arguments, bid_response_channel):
-        try:
-            replace_existing = arguments.get('replace_existing', True)
-            assert self.can_bid_be_posted(
-                arguments["energy"],
-                arguments["price"],
-                self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0,
-                self.next_market,
-                replace_existing=replace_existing)
-
-            bid = self.post_bid(
-                self.next_market,
-                arguments["price"],
-                arguments["energy"],
-                replace_existing=replace_existing)
-            self.redis.publish_json(
-                bid_response_channel, {
-                    "command": "bid", "status": "ready",
-                    "bid": bid.to_JSON_string(replace_existing=replace_existing),
-                    "transaction_id": arguments.get("transaction_id", None)})
-        except Exception as e:
-            logging.error(f"Error when handling bid create on area {self.device.name}: "
-                          f"Exception: {str(e)}, Bid Arguments: {arguments}")
-            self.redis.publish_json(
-                bid_response_channel,
-                {"command": "bid", "status": "error",
-                 "error_message": f"Error when handling bid create "
-                                  f"on area {self.device.name} with arguments {arguments}.",
-                 "transaction_id": arguments.get("transaction_id", None)})
 
     @property
     def _device_info_dict(self):
@@ -200,54 +57,22 @@ class LoadExternalMixin(ExternalMixin):
     def event_market_cycle(self):
         self._reject_all_pending_requests()
         self.register_on_market_cycle()
-        if not self.should_use_default_strategy:
+        if self.should_use_default_strategy:
+            super().event_market_cycle()
+        else:
             self.add_entry_in_hrs_per_day()
             self._calculate_active_markets()
             self._update_energy_requirement_future_markets()
-            if not self.is_aggregator_controlled:
-                market_event_channel = f"{self.channel_prefix}/events/market"
-                market_info = self.next_market.info
-                if self.is_aggregator_controlled:
-                    market_info.update(default_market_info)
-                market_info['device_info'] = self._device_info_dict
-                market_info["event"] = "market"
-                market_info["area_uuid"] = self.device.uuid
-                market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
-                    if "bills" in self.device.stats.aggregated_stats else None
-                market_info["last_market_maker_rate"] = \
-                    get_market_maker_rate_from_config(self.area.current_market)
-                market_info['last_market_stats'] = \
-                    self.market_area.stats.get_price_stats_current_market()
-                self.redis.publish_json(market_event_channel, market_info)
-
             self._delete_past_state()
-        else:
-            super().event_market_cycle()
 
     def _area_reconfigure_prices(self, **kwargs):
         if self.should_use_default_strategy:
             super()._area_reconfigure_prices(**kwargs)
 
-    def _incoming_commands_callback_selection(self, req):
-        if req.request_type == "bid":
-            self._bid_impl(req.arguments, req.response_channel)
-        elif req.request_type == "delete_bid":
-            self._delete_bid_impl(req.arguments, req.response_channel)
-        elif req.request_type == "list_bids":
-            self._list_bids_impl(req.arguments, req.response_channel)
-        elif req.request_type == "device_info":
-            self._device_info_impl(req.arguments, req.response_channel)
-        else:
-            assert False, f"Incorrect incoming request name: {req}"
-
     def event_tick(self):
         if self.should_use_default_strategy:
             super().event_tick()
         else:
-            while self.pending_requests:
-                # We want to process requests as First-In-First-Out, so we use popleft
-                req = self.pending_requests.popleft()
-                self._incoming_commands_callback_selection(req)
             self._dispatch_event_tick_to_external_agent()
 
     def event_offer(self, *, market_id, offer):
@@ -430,8 +255,6 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
     def _incoming_commands_callback_selection(self, req):
         if req.request_type == "set_energy_forecast":
             self._set_energy_forecast_impl(req.arguments, req.response_channel)
-        else:
-            super()._incoming_commands_callback_selection(req)
 
     def event_market_cycle(self):
         self.update_energy_forecast()
@@ -445,9 +268,6 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
         energy_forecast_Wh = self.energy_forecast_buffer_Wh
         slot_time = self.area.next_market.time_slot
         self.state.set_desired_energy(energy_forecast_Wh, slot_time, overwrite=True)
-        # TODO: Check self-sufficiency / self-consumption of LoadForecastExternalStrategy and
-        #  and consider re-adding:
-        # self.state.update_total_demanded_energy(slot_time)
 
     def _update_energy_requirement_future_markets(self):
         """

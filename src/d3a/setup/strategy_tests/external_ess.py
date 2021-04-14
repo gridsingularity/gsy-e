@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.area import Area
 from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
 from d3a_interface.constants_limits import ConstSettings
 
@@ -30,9 +31,10 @@ def get_setup(config):
             Area(
                 'House 1',
                 [
-                    # TODO: initial_selling_rate is adjusted from 30 to 40, in order to avoid
-                    #  getting instantly matched with incoming bids from external ess agent.
-                    #  To be re-checked in context to D3ASIM-3220(replace_existing)
+                    Area('load', strategy=LoadHoursStrategy(
+                        hrs_of_day=list(range(2, 24)), hrs_per_day=20, avg_power_W=4000,
+                        initial_buying_rate=0, final_buying_rate=30),
+                         ),
                     Area('PV', strategy=PVStrategy(
                         max_panel_power_W=2000, initial_selling_rate=40, final_selling_rate=30.0)
                          ),

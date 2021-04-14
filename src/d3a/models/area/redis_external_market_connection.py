@@ -77,9 +77,6 @@ class RedisMarketExternalConnection:
     def sub_to_external_channels(self):
         self.redis_com = self.area.config.external_redis_communicator
         sub_channel_dict = {
-            f"{self.channel_prefix}/market_stats": self.market_stats_callback,
-            f"{self.channel_prefix}/dso_market_stats": self.dso_market_stats_callback,
-            f"{self.channel_prefix}/grid_fees": self.set_grid_fees_callback,
             f"{self.channel_prefix}/register_participant": self._register,
             f"{self.channel_prefix}/unregister_participant": self._unregister}
         if self.area.config.external_redis_communicator.is_enabled:
@@ -122,14 +119,14 @@ class RedisMarketExternalConnection:
             self.area.grid_fee_constant = payload_data["fee_const"]
             ret_val = {
                 "status": "ready",
-                "market_fee_const": str(self.area.grid_fee_constant),
+                "market_fee_const": self.area.grid_fee_constant,
                 **base_dict}
         elif "fee_percent" in payload_data and payload_data["fee_percent"] is not None and \
                 self.area.config.grid_fee_type == 2:
             self.area.grid_fee_percentage = payload_data["fee_percent"]
             ret_val = {
                 "status": "ready",
-                "market_fee_percent": str(self.area.grid_fee_percentage),
+                "market_fee_percent": self.area.grid_fee_percentage,
                 **base_dict}
         else:
             ret_val = {
