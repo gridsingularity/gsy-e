@@ -222,38 +222,6 @@ class TestExternalMixin(unittest.TestCase):
         [PVExternalStrategy(2, max_panel_power_W=160)],
         [StorageExternalStrategy()]
     ])
-    def test_dispatch_event_trade_to_external_agent(self, strategy):
-        strategy._track_energy_sell_type = lambda _: None
-        self._create_and_activate_strategy_area(strategy)
-        strategy.redis.aggregator.is_controlling_device = lambda _: False
-        market = self.area.get_future_market_from_id(1)
-        self.area._markets.markets = {1: market}
-        strategy.state._available_energy_kWh = {market.time_slot: 1000.0}
-        strategy.state.pledged_sell_kWh = {market.time_slot: 0.0}
-        strategy.state.offered_sell_kWh = {market.time_slot: 0.0}
-        current_time = now()
-        trade = Trade('id', current_time, Offer('offer_id', now(), 20, 1.0, 'test_area'),
-                      'test_area', 'parent_area', fee_price=0.23)
-        strategy.event_trade(market_id="test_market", trade=trade)
-        assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/events/trade"
-        call_args = strategy.redis.publish_json.call_args_list[0][0][1]
-        assert call_args['trade_id'] == trade.id
-        assert call_args['event'] == "trade"
-        assert call_args['trade_price'] == 20
-        assert call_args['traded_energy'] == 1.0
-        assert call_args['fee_price'] == 0.23
-        assert call_args['offer_id'] == trade.offer.id
-        assert call_args['residual_id'] == "None"
-        assert call_args['time'] == current_time.isoformat()
-        assert call_args['seller'] == trade.seller
-        assert call_args['buyer'] == "anonymous"
-        assert call_args['device_info'] == strategy._device_info_dict
-
-    @parameterized.expand([
-        [LoadHoursExternalStrategy(100)],
-        [PVExternalStrategy(2, max_panel_power_W=160)],
-        [StorageExternalStrategy()]
-    ])
     def test_skip_dispatch_double_event_trade_to_external_agent_two_sided_market(self, strategy):
         ConstSettings.IAASettings.MARKET_TYPE = 2
         strategy._track_energy_sell_type = lambda _: None
