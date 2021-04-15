@@ -1312,7 +1312,6 @@
 <span class="bp">self</span><span class="o">.</span><span class="n">market_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_command</span><span class="p">(</span><span class="n">batch_commands_stats</span><span class="p">)</span>
 </code></pre></div>
 
-
 <h3 id="dso-market-stats">dso market stats<a class="headerlink" href="#dso-market-stats" title="Permanent link">&para;</a></h3>
 <p>This command is used to request information from different markets for the last market slot, more specific to grid operators (e.g. import and export of the market).</p>
 <p>A batch_command dictionary structure is used and the response is stored in a variable:</p>
@@ -1320,14 +1319,12 @@
 <span class="bp">self</span><span class="o">.</span><span class="n">dso_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_command</span><span class="p">(</span><span class="n">batch_commands_stats</span><span class="p">)[</span><span class="s2">&quot;responses&quot;</span><span class="p">]</span>
 </code></pre></div>
 
-
 <h3 id="grid-fee">grid fee<a class="headerlink" href="#grid-fee" title="Permanent link">&para;</a></h3>
 <p>This command is used to send the new grid fee for a specific market. The grid fee needs to be sent as an integer and the unit is cents/kWh.</p>
 <p>A batch_command dictionary structure is used:</p>
 <div class="codehilite"><pre><span></span><code><span class="n">batch_commands</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;grid_fees&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;fee_const&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_fee</span><span class="p">}})</span>
 <span class="bp">self</span><span class="o">.</span><span class="n">batch_command</span><span class="p">(</span><span class="n">batch_commands</span><span class="p">)</span>
 </code></pre></div>
-
 
 <p>For a video tutorial on the Grid Operator API, please follow this <a href="https://youtu.be/HXNme8Rt3pI">link</a> and a template Grid Operator API script <a href="https://github.com/gridsingularity/d3a/blob/master/src/d3a/setup/odyssey_momentum/markets_api_template.py">here</a>.</p>
                 

@@ -1307,17 +1307,14 @@
 <div class="codehilite"><pre><span></span><code>@&quot;%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe&quot; -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command &quot;[System.Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object System.Net.WebClient).DownloadString(&#39;https://chocolatey.org/install.ps1&#39;))&quot; &amp;&amp; SET &quot;PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin&quot;
 </code></pre></div>
 
-
 <p>Install Virtualbox from a Windows console</p>
 <div class="codehilite"><pre><span></span><code>choco install virtualbox
 </code></pre></div>
-
 
 <p>Install Vagrant (this is a software wrapper around virtualbox and other supervisors, that allows easy creation, download, and installation of virtual machines.</p>
 <div class="codehilite"><pre><span></span><code>choco install vagrant
 vagrant plugin install vagrant-disksize
 </code></pre></div>
-
 
 <h3 id="step-3-install-d3a-while-sharing-a-folder-between-guest-and-host-machine-via-vagrant">Step 3: Install D3A while sharing a folder between guest and host machine via vagrant<a class="headerlink" href="#step-3-install-d3a-while-sharing-a-folder-between-guest-and-host-machine-via-vagrant" title="Permanent link">&para;</a></h3>
 <p>Create a new-folder that you want to share across guest and host machines.</p>
@@ -1326,11 +1323,9 @@ vagrant plugin install vagrant-disksize
 <div class="codehilite"><pre><span></span><code>cd &lt;path-to-your-folder&gt;
 </code></pre></div>
 
-
 <p>If it is your first time do:</p>
 <div class="codehilite"><pre><span></span><code>vagrant up  
 </code></pre></div>
-
 
 <p>If vagrant was already running, please delete re-initialize with the following steps first :</p>
 <ul>
@@ -1339,33 +1334,27 @@ vagrant plugin install vagrant-disksize
 <div class="codehilite"><pre><span></span><code>vagrant destroy --force
 </code></pre></div>
 
-
 <ul>
 <li>Remove residues of old vagrant boxes via :</li>
 </ul>
 <div class="codehilite"><pre><span></span><code>vagrant box remove ubuntu/&lt;your-box-name&gt; --all --force
 </code></pre></div>
 
-
 <h3 id="step-4-reload-your-virtual-machine">Step 4: Reload your virtual machine:<a class="headerlink" href="#step-4-reload-your-virtual-machine" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><code>vagrant reload 
 </code></pre></div>
-
 
 <h3 id="step-5-access-your-virtual-machine-terminal-to-run-d3a">Step 5: Access your virtual machine terminal to run D3A:<a class="headerlink" href="#step-5-access-your-virtual-machine-terminal-to-run-d3a" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><code>vagrant ssh
 </code></pre></div>
 
-
 <h3 id="step-6-share-folder-to-windows-host-by-running-these-three-commands">Step 6: Share folder to Windows host by running these three commands:<a class="headerlink" href="#step-6-share-folder-to-windows-host-by-running-these-three-commands" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><code>cp -r /home/vagrant/d3a /vagrant/
 </code></pre></div>
 
-
 <p>Share d3a-api-client :</p>
 <div class="codehilite"><pre><span></span><code>cp -r /home/vagrant/d3a-api-client /vagrant/
 </code></pre></div>
-
 
 <p>If you have results you want to export to windows :</p>
 <div class="codehilite"><pre><span></span><code>cd /home/vagrant/d3a-simulation/
@@ -1373,24 +1362,20 @@ zip -r &lt;your-zip-filename&gt;.zip ./&lt;folder-to-be-zipped&gt;/
 cp -r &lt;your-zip-filename&gt;.zip /vagrant/
 </code></pre></div>
 
-
 <h3 id="step-7-run-grid-singularity-d3a-simulation">Step 7: Run Grid Singularity D3A simulation<a class="headerlink" href="#step-7-run-grid-singularity-d3a-simulation" title="Permanent link">&para;</a></h3>
 <p>Activate the D3A environment:</p>
 <div class="codehilite"><pre><span></span><code>source /home/vagrant/envs/d3a/bin/activate
 </code></pre></div>
-
 
 <p>Run simulation with:</p>
 <div class="codehilite"><pre><span></span><code>cd /vagrant/d3a
 d3a run
 </code></pre></div>
 
-
 <h3 id="step-8-run-the-d3a-api-client-in-vagrant">Step 8: Run the D3A API client in Vagrant<a class="headerlink" href="#step-8-run-the-d3a-api-client-in-vagrant" title="Permanent link">&para;</a></h3>
 <p>Activate the API-client environment:</p>
 <div class="codehilite"><pre><span></span><code>source /home/vagrant/envs/api-client/bin/activate
 </code></pre></div>
-
 
 <p>To run your API script, run the following command (template here):</p>
 <div class="codehilite"><pre><span></span><code>python your_api_script.py

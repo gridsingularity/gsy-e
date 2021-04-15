@@ -1440,18 +1440,15 @@
 <div class="codehilite"><pre><span></span><code>brew install redis
 </code></pre></div>
 
-
 <h3 id="install-d3a-client">Install d3a-client<a class="headerlink" href="#install-d3a-client" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><code>mkvirtualenv d3a-api-env
 pip install git+https://github.com/gridsingularity/d3a-api-client.git
 </code></pre></div>
 
-
 <h3 id="update-d3a-client-as-needed-when-an-update-is-deployed">Update d3a-client (as needed when an update is deployed)<a class="headerlink" href="#update-d3a-client-as-needed-when-an-update-is-deployed" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><code>pip uninstall d3a-api-client
 pip install git+https://github.com/gridsingularity/d3a-api-client.git
 </code></pre></div>
-
 
 <h2 id="user-interface">User Interface<a class="headerlink" href="#user-interface" title="Permanent link">&para;</a></h2>
 <p>To connect the API to simulations, the user needs to register and be approved for a collaborative simulation by following these <a href="../collaboration/#how-to-connect">steps</a>. Once the user successfully registers for the relevant assets or markets, the user needs to adapt their API scripts. </p>
@@ -1460,7 +1457,6 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
 <p>To use the API locally, your script interacts with the simulation using a local Redis instance. To start the redis instance, open a new terminal and run the following command :</p>
 <div class="codehilite"><pre><span></span><code>redis-server /usr/local/etc/redis.conf
 </code></pre></div>
-
 
 <h3 id="open-external-connection-to-api-for-assets">Open external connection to API for Assets<a class="headerlink" href="#open-external-connection-to-api-for-assets" title="Permanent link">&para;</a></h3>
 <p>In the setup file (template available <a href="https://github.com/gridsingularity/d3a/blob/master/src/d3a/setup/odyssey_momentum/odyssey_training.py">here</a>), an asset must be designated as <strong>open to external connection</strong> via the API. This is controlled when setting up the simulation in the setup file by designating the ExternalStrategy for each relevant energy assets :</p>
@@ -1483,7 +1479,6 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
            <span class="p">),</span>
 </code></pre></div>
 
-
 <p>By default, trading strategies do not allow API connections unless the <code>ExternalStrategy</code> is used. Please also ensure that the appropriate libraries are imported to use the API (as in the template setup file provided).</p>
 <h3 id="open-markets-for-external-connection">Open Markets for external connection<a class="headerlink" href="#open-markets-for-external-connection" title="Permanent link">&para;</a></h3>
 <p>The API supports multiple markets managed with the <a href="../grid-operator-api/">Grid Operator API</a>. Access is controlled when setting up the simulation, using the <code>Area</code> class’ boolean argument called external_connection_available:</p>
@@ -1493,7 +1488,6 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
          <span class="n">external_connection_available</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">),</span>
 </code></pre></div>
-
 
 <p>If set to true, the area allows all of its submarkets and assets to request the the area’s market statistics through the API. By default, this <code>external_connection_available</code> is set to <code>False</code>.</p>
 <h3 id="launch-simulation">Launch simulation<a class="headerlink" href="#launch-simulation" title="Permanent link">&para;</a></h3>
@@ -1510,7 +1504,6 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
 <div class="codehilite"><pre><span></span><code>oracle_name = &#39;oracle&#39;
 </code></pre></div>
 
-
 <h3 id="assetsmarkets-list">Assets/markets list<a class="headerlink" href="#assetsmarkets-list" title="Permanent link">&para;</a></h3>
 <p>The list of assets / markets needs to be updated to include the assets registered to user through the registration process, in arrays as follows:</p>
 <div class="codehilite"><pre><span></span><code><span class="n">load_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Load 1&#39;</span><span class="p">,</span> <span class="s1">&#39;Load 2&#39;</span><span class="p">]</span>
@@ -1518,10 +1511,8 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
 <span class="n">storage_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Storage 1&#39;</span><span class="p">]</span>
 </code></pre></div>
 
-
 <div class="codehilite"><pre><span></span><code><span class="n">market_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Grid&quot;</span><span class="p">,</span> <span class="s2">&quot;Community&quot;</span><span class="p">]</span>
 </code></pre></div>
-
 
 <h3 id="environment-setting">Environment setting :<a class="headerlink" href="#environment-setting" title="Permanent link">&para;</a></h3>
 <p>The user needs to define if the simulation is run locally (using the backend and redis) or on User-Interface.</p>
@@ -1529,12 +1520,10 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
 <div class="codehilite"><pre><span></span><code><span class="n">RUN_ON_D3A_WEB</span> <span class="o">=</span> <span class="kc">False</span>
 </code></pre></div>
 
-
 <p>If it is run on the <a href="https://www.d3a.io/">UI</a> the user need to set the parameter to <code>True</code> and specify the simulation ID (found in the simulation’s URL) : </p>
 <div class="codehilite"><pre><span></span><code><span class="n">RUN_ON_D3A_WEB</span> <span class="o">=</span> <span class="kc">True</span> 
 <span class="n">simulation_id</span> <span class="o">=</span> <span class="s1">&#39;9682dc94-ad8f-4661-bfbb-a3b8a3b209a9&#39;</span>
 </code></pre></div>
-
 
 <p>Once the script is adapted, the user can launch it with the following command, replacing the template name with the updated script’s name :</p>
 <div class="codehilite"><pre><span></span><code>python assets_api_template.py

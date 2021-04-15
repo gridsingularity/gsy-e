@@ -1256,12 +1256,10 @@
 <div class="codehilite"><pre><span></span><code><span class="n">Market</span><span class="p">(</span><span class="s1">&#39;Load&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadHoursStrategy</span><span class="p">(</span><span class="n">avg_power_W</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">hrs_per_day</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span><span class="n">hrs_of_day</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">18</span><span class="p">)),</span> <span class="n">initial_buying_rate</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">final_buying_rate</span><span class="o">=</span><span class="mi">35</span><span class="p">))</span>
 </code></pre></div>
 
-
 <p><a href="https://github.com/gridsingularity/d3a/blob/master/src/d3a/models/strategy/predefined_load.py">User upload Profile</a></p>
 <div class="codehilite"><pre><span></span><code><span class="n">user_profile_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">d3a_path</span><span class="p">,</span><span class="s2">&quot;assets/load.csv&quot;</span><span class="p">)</span>
 <span class="n">Market</span><span class="p">(</span><span class="s1">&#39;Load&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadProfileStrategy</span><span class="p">(</span><span class="n">daily_load_profile</span><span class="o">=</span><span class="n">user_profile_path</span><span class="p">,</span> <span class="n">initial_buying_rate</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">final_buying_rate</span><span class="o">=</span><span class="mi">35</span><span class="p">))</span>
 </code></pre></div>
-
 
 <h2 id="addendum-hrs_of_day-and-hrs_per_day">Addendum: hrs_of_day and hrs_per_day<a class="headerlink" href="#addendum-hrs_of_day-and-hrs_per_day" title="Permanent link">&para;</a></h2>
 <p>hrs_of_day defines the allowed time-window in which the load has to consume for a time defined by hrs_per_day. </p>
