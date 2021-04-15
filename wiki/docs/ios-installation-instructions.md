@@ -39,7 +39,7 @@ pyenv global 3.8.6
 
 ```
 pip install virtualenvwrapper
-echo -e 'export WORKON_HOME=~/Envs\nsource ~/.pyenv/versions/3.8.3/bin/virtualenvwrapper.sh' >> ~/.bash_profile
+echo -e 'export WORKON_HOME=~/Envs\nsource ~/.pyenv/versions/3.8.6/bin/virtualenvwrapper.sh' >> ~/.bash_profile
 ```
 
 ###Step 8: Setup paths for compiling python libraries:
