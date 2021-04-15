@@ -15,6 +15,10 @@ print(current_dir)
 print(platform.python_implementation())
 
 
+# PV production profile was generated with Energy Data Map https://energydatamap.com/
+# Load consumption profiles were generated with Load Profile Generator https://www.loadprofilegenerator.de/
+
+
 def get_setup(config):
 
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 1
