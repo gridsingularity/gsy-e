@@ -156,10 +156,15 @@ class UpdateFrequencyMixin:
         return self.elapsed_seconds(strategy) >= \
                self.update_interval.seconds * self.update_counter[time_slot]
 
-    def update_members(self, **kwargs):
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
+    def set_parameters(self, *, initial_rate_profile_buffer=None, final_rate_profile_buffer=None,
+                       energy_rate_change_per_update_profile_buffer=None, fit_to_limit=None, update_interval=None, ):
+        initial_rate_profile_buffer = initial_rate_profile_buffer or self.initial_rate_profile_buffer
+        final_rate_profile_buffer = final_rate_profile_buffer or final_rate_profile_buffer
+        energy_rate_change_per_update_profile_buffer = (energy_rate_change_per_update_profile_buffer
+                                                        or energy_rate_change_per_update_profile_buffer)
+        fit_to_limit = fit_to_limit or self.fit_to_limit
+        update_interval = update_interval or self.update_interval
+
 
 
 class TemplateStrategyBidUpdater(UpdateFrequencyMixin):

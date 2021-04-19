@@ -142,7 +142,7 @@ class PVStrategy(BaseStrategy):
                       f"Traceback: {traceback.format_exc()}")
             return
 
-        self.offer_update.update_members(
+        self.offer_update.set_parameters(
             initial_rate_profile_buffer=initial_rate,
             final_rate_profile_buffer=final_rate,
             energy_rate_change_per_update_profile_buffer=energy_rate_change_per_update,

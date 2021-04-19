@@ -204,7 +204,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                       f"Traceback: {traceback.format_exc()}")
             return
 
-        self.bid_update.update_members(
+        self.bid_update.set_parameters(
             initial_rate_profile_buffer=initial_rate,
             final_rate_profile_buffer=final_rate,
             energy_rate_change_per_update_profile_buffer=energy_rate_change_per_update,
