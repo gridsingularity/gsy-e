@@ -169,7 +169,6 @@ class UpdateFrequencyMixin:
         self.update_interval = update_interval or self.update_interval
 
 
-
 class TemplateStrategyBidUpdater(UpdateFrequencyMixin):
     def reset(self, strategy):
         # decrease energy rate for each market again, except for the newly created one
