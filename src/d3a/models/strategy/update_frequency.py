@@ -159,14 +159,17 @@ class UpdateFrequencyMixin:
     def set_parameters(self, *, initial_rate_profile_buffer=None, final_rate_profile_buffer=None,
                        energy_rate_change_per_update_profile_buffer=None, fit_to_limit=None,
                        update_interval=None, ):
-        self.initial_rate_profile_buffer = (
-                initial_rate_profile_buffer or self.initial_rate_profile_buffer)
-        self.final_rate_profile_buffer = final_rate_profile_buffer or final_rate_profile_buffer
-        self.energy_rate_change_per_update_profile_buffer = (
+        if initial_rate_profile_buffer is not None:
+            self.initial_rate_profile_buffer = initial_rate_profile_buffer
+        if final_rate_profile_buffer is not None:
+            self.final_rate_profile_buffer = final_rate_profile_buffer
+        if energy_rate_change_per_update_profile_buffer is not None:
+            self.energy_rate_change_per_update_profile_buffer = \
                 energy_rate_change_per_update_profile_buffer
-                or energy_rate_change_per_update_profile_buffer)
-        self.fit_to_limit = fit_to_limit or self.fit_to_limit
-        self.update_interval = update_interval or self.update_interval
+        if fit_to_limit is not None:
+            self.fit_to_limit = fit_to_limit
+        if update_interval is not None:
+            self.update_interval = update_interval
 
 
 class TemplateStrategyBidUpdater(UpdateFrequencyMixin):
