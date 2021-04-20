@@ -22,10 +22,9 @@ from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from d3a_interface.constants_limits import ConstSettings
 
-ConstSettings.IAASettings.MARKET_TYPE = 2
-
 
 def get_setup(config):
+    ConstSettings.IAASettings.MARKET_TYPE = 4
     ConstSettings.IAASettings.MIN_BID_AGE = 0
     ConstSettings.IAASettings.MIN_OFFER_AGE = 0
     area = Area(

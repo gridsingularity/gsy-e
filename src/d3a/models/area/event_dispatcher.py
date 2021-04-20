@@ -136,7 +136,7 @@ class AreaDispatcher:
                     return OneSidedAlternativePricingAgent(**agent_constructor_arguments)
                 else:
                     return OneSidedAgent(**agent_constructor_arguments)
-            elif ConstSettings.IAASettings.MARKET_TYPE == 2:
+            elif ConstSettings.IAASettings.MARKET_TYPE in [2, 4]:
                 return TwoSidedPayAsBidAgent(
                     **agent_constructor_arguments,
                     min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE

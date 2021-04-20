@@ -383,8 +383,7 @@ class Area:
     def tick(self):
         self._consume_commands_from_aggregator()
 
-        if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
-                ConstSettings.IAASettings.MARKET_TYPE == 3:
+        if ConstSettings.IAASettings.MARKET_TYPE in [2, 3, 4]:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                 self.dispatcher.publish_market_clearing()
             else:
