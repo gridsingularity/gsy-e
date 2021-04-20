@@ -19,7 +19,7 @@ from d3a_interface.constants_limits import ConstSettings, DATE_TIME_UI_FORMAT, G
 from d3a_interface.sim_results.all_results import ResultsHandler
 
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.d3a_core.sim_results.area_market_stock_stats import OfferBidTradeGraphStats
+from d3a.d3a_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
@@ -59,7 +59,7 @@ class SimulationEndpointBuffer:
 
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or \
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
-            self.area_market_stocks_stats = OfferBidTradeGraphStats()
+            self.offer_bid_trade_hr = OfferBidTradeGraphStats()
 
     @staticmethod
     def _structure_results_from_area_object(target_area):
@@ -223,7 +223,7 @@ class SimulationEndpointBuffer:
 
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or \
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
-            self.area_market_stocks_stats.update(area)
+            self.offer_bid_trade_hr.update(area)
 
         self.result_area_uuids = set()
         self.update_results_area_uuids(area)

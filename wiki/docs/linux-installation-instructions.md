@@ -1,13 +1,13 @@
 ##Installing Grid Singularity energy exchange (D3A) on Linux Ubuntu 18.04:
 
-###Step 1: In case you have not already installed git, python3.6 and pip (otherwise please go directly to step 2):
+###Step 1: In case you have not already installed git, python3.8 and pip (otherwise please go directly to step 2):
 
 ```
 sudo apt-get update
 sudo apt-get install git-core software-properties-common -y
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt-get update
-sudo apt-get install python3.6 -y
+sudo apt-get install python3.8 -y
 sudo apt-get install git-core -y
 sudo apt-get install python3-pip -y
 ```
@@ -18,7 +18,7 @@ sudo apt-get install python3-pip -y
 pip3 install virtualenv
 mkdir envs
 cd envs
-virtualenv -p /usr/bin/python3.6 d3a
+virtualenv -p /usr/bin/python3.8 d3a
 ```
 
 ####How to activate the environment:
@@ -78,5 +78,5 @@ error: command 'x86_64-linux-gnu-gcc' failed with exit status 1
 please install the following package: 
 
 ```
-sudo apt-get install build-essential python3.6-dev -y
+sudo apt-get install build-essential python3.8-dev -y
 ```

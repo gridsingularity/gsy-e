@@ -2,7 +2,7 @@ Files can be uploaded to generate custom energy supply or load profiles. The fol
 
 ##Comma Separated Values (.csv)
 
-The separation can be done by comma `,` or semicolon `;`. Two time formats are supported, see below. Power set-points are given in **Watts**. The software handles any conversions to energy (in kWh).
+The separation can be done by comma `,` or semicolon `;`. Two time formats are supported, see below. Power set-points are given in **Watts**. The software handles any conversions to energy (in kWh). All entered csv data values need to be positive
 
 ###hh:mm
 
