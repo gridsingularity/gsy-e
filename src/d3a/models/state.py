@@ -356,8 +356,11 @@ class StorageState:
         charge = limit_float_precision(self.used_storage / self.capacity)
         max_value = self.capacity - self.min_allowed_soc_ratio * self.capacity
         assert self.min_allowed_soc_ratio <= charge or \
-            isclose(self.min_allowed_soc_ratio, charge, rel_tol=1e-06)
-        assert limit_float_precision(self.used_storage) <= self.capacity
+            isclose(self.min_allowed_soc_ratio, charge, rel_tol=1e-06), \
+            f"Battery charge ({charge}) less than min soc ({self.min_allowed_soc_ratio})"
+        assert limit_float_precision(self.used_storage) <= self.capacity or \
+            isclose(self.used_storage, self.capacity, rel_tol=1e-06), \
+            f"Battery used_storage ({self.used_storage}) surpassed the capacity ({self.capacity})"
         assert 0 <= limit_float_precision(self.offered_sell_kWh[time_slot]) <= max_value
         assert 0 <= limit_float_precision(self.pledged_sell_kWh[time_slot]) <= max_value
         assert 0 <= limit_float_precision(self.pledged_buy_kWh[time_slot]) <= max_value
