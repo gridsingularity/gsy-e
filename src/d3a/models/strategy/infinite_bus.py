@@ -38,7 +38,6 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         self.buying_rate_profile = buying_rate_profile
         self.energy_rate = energy_sell_rate
         self.energy_rate_profile = energy_rate_profile
-
         # This is done to support the UI which handles the Infinite Bus only as a Market Maker.
         # If one plans to allow multiple Infinite Bus devices in the grid, this should be
         # amended.
@@ -48,7 +47,6 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         if self.energy_rate_profile is not None:
             GlobalConfig.market_maker_rate = \
                 read_and_convert_identity_profile_to_float(self.energy_rate_profile)
-            del self.energy_rate_profile
         elif isinstance(self.energy_rate, int):
             GlobalConfig.market_maker_rate = self.energy_rate
         elif isinstance(self.energy_rate, str):
