@@ -38,10 +38,6 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         self.buying_rate_profile = buying_rate_profile
         self.energy_rate = energy_sell_rate
         self.energy_rate_profile = energy_rate_profile
-        # This is done to support the UI which handles the Infinite Bus only as a Market Maker.
-        # If one plans to allow multiple Infinite Bus devices in the grid, this should be
-        # amended.
-        GlobalConfig.market_maker_rate = self.energy_rate
 
     def event_activate(self, **kwargs):
         if self.energy_rate_profile is not None:
@@ -59,6 +55,10 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             self.energy_buy_rate = self.area.config.market_maker_rate \
                 if self.energy_buy_rate is None \
                 else read_arbitrary_profile(InputProfileTypes.IDENTITY, self.energy_buy_rate)
+        # This is done to support the UI which handles the Infinite Bus only as a Market Maker.
+        # If one plans to allow multiple Infinite Bus devices in the grid, this should be
+        # amended.
+        GlobalConfig.market_maker_rate = self.energy_rate
 
     def buy_energy(self, market):
         for offer in market.sorted_offers:
