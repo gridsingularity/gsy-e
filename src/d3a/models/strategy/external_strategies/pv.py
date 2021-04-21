@@ -20,16 +20,14 @@ import logging
 import traceback
 from collections import deque
 
-from pendulum import duration
-
 from d3a.d3a_core.exceptions import MarketException
-from d3a.models.strategy.external_strategies import IncomingRequest
-from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
+from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
-from d3a.d3a_core.redis_connections.aggregator_connection import default_market_info
-from d3a.d3a_core.util import get_current_market_maker_rate
+from d3a.models.strategy.external_strategies import IncomingRequest, default_market_info
+from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
+from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
+from pendulum import duration
 
 
 class PVExternalMixin(ExternalMixin):
@@ -187,7 +185,10 @@ class PVExternalMixin(ExternalMixin):
     def _device_info_dict(self):
         return {
             'available_energy_kWh':
-                self.state.get_available_energy_kWh(self.next_market.time_slot)
+                self.state.get_available_energy_kWh(self.next_market.time_slot),
+            'energy_active_in_offers': self.offers.open_offer_energy(self.next_market.id),
+            'energy_traded': self.energy_traded(self.next_market.id),
+            'total_cost': self.energy_traded_costs(self.next_market.id),
         }
 
     def event_market_cycle(self):
@@ -195,26 +196,21 @@ class PVExternalMixin(ExternalMixin):
         self.register_on_market_cycle()
         if not self.should_use_default_strategy:
             self.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
-            self._reset_event_tick_counter()
-            market_event_channel = f"{self.channel_prefix}/events/market"
-            market_info = self.next_market.info
-            if self.is_aggregator_controlled:
-                market_info.update(default_market_info)
-            market_info['device_info'] = self._device_info_dict
-            market_info["event"] = "market"
-            market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
-                if "bills" in self.device.stats.aggregated_stats else None
-            market_info["area_uuid"] = self.device.uuid
-            market_info["last_market_maker_rate"] = \
-                get_current_market_maker_rate(self.area.current_market.time_slot) \
-                if self.area.current_market else None
-            market_info['last_market_stats'] = \
-                self.market_area.stats.get_price_stats_current_market()
-            self.redis.publish_json(market_event_channel, market_info)
-            if self.is_aggregator_controlled:
-                self.redis.aggregator.add_batch_market_event(self.device.uuid,
-                                                             market_info,
-                                                             self.area.global_objects)
+            if not self.is_aggregator_controlled:
+                market_event_channel = f"{self.channel_prefix}/events/market"
+                market_info = self.next_market.info
+                if self.is_aggregator_controlled:
+                    market_info.update(default_market_info)
+                market_info['device_info'] = self._device_info_dict
+                market_info["event"] = "market"
+                market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
+                    if "bills" in self.device.stats.aggregated_stats else None
+                market_info["area_uuid"] = self.device.uuid
+                market_info["last_market_maker_rate"] = \
+                    get_market_maker_rate_from_config(self.area.current_market)
+                market_info['last_market_stats'] = \
+                    self.market_area.stats.get_price_stats_current_market()
+                self.redis.publish_json(market_event_channel, market_info)
             self._delete_past_state()
         else:
             super().event_market_cycle()
@@ -243,15 +239,11 @@ class PVExternalMixin(ExternalMixin):
                 # We want to process requests as First-In-First-Out, so we use popleft
                 req = self.pending_requests.popleft()
                 self._incoming_commands_callback_selection(req)
-        self._dispatch_event_tick_to_external_agent()
+            self._dispatch_event_tick_to_external_agent()
 
     def event_offer(self, *, market_id, offer):
         if self.should_use_default_strategy:
             super().event_offer(market_id=market_id, offer=offer)
-
-    def event_market_cycle_price(self):
-        if self.should_use_default_strategy:
-            super().event_market_cycle_price()
 
     def _delete_offer_aggregator(self, arguments):
         if ("offer" in arguments and arguments["offer"] is not None) and \
@@ -323,6 +315,8 @@ class PVExternalMixin(ExternalMixin):
                     offer_arguments['energy'] = offer.energy
                     offer_arguments['price'] = \
                         (offer_arguments['price'] / offer_arguments['energy']) * offer.energy
+                    offer_arguments["seller"] = offer.seller
+                    offer_arguments["seller_origin"] = offer.seller_origin
                     new_offer = iterated_market.offer(**offer_arguments)
                     self.offers.replace(offer, new_offer, iterated_market.id)
                     return {
