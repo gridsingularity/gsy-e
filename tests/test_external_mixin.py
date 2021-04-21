@@ -13,6 +13,8 @@ import d3a.models.strategy.external_strategies
 from d3a.models.market.market_structures import Trade, Offer, Bid
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.constants_limits import ConstSettings
+from d3a.constants import DATE_TIME_FORMAT
+from d3a.d3a_core.singletons import external_global_statistics
 
 d3a.models.strategy.external_strategies.ResettableCommunicator = MagicMock
 
@@ -22,14 +24,17 @@ class TestExternalMixin(unittest.TestCase):
     def _create_and_activate_strategy_area(self, strategy):
         self.config = MagicMock()
         self.config.max_panel_power_W = 160
+        self.config.ticks_per_slot = 90
         GlobalConfig.end_date = GlobalConfig.start_date + Duration(days=1)
-        self.area = Area(name="test_area", config=self.config, strategy=strategy)
-        parent = Area(name="parent_area", children=[self.area])
-        parent.activate()
+        self.area = Area(name="test_area", config=self.config, strategy=strategy,
+                         external_connection_available=True)
+        self.parent = Area(name="parent_area", children=[self.area])
+        self.parent.activate()
+        external_global_statistics(self.area, self.config.ticks_per_slot)
         strategy.connected = True
         market = MagicMock()
         market.time_slot = GlobalConfig.start_date
-        parent.get_future_market_from_id = lambda _: market
+        self.parent.get_future_market_from_id = lambda _: market
         self.area.get_future_market_from_id = lambda _: market
 
     def tearDown(self) -> None:
@@ -38,24 +43,74 @@ class TestExternalMixin(unittest.TestCase):
     def test_dispatch_tick_frequency_gets_calculated_correctly(self):
         self.external_strategy = LoadHoursExternalStrategy(100)
         self._create_and_activate_strategy_area(self.external_strategy)
-        d3a.models.strategy.external_strategies.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
+        d3a.d3a_core.util.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
         self.config.ticks_per_slot = 90
-        assert self.external_strategy._dispatch_tick_frequency == 18
+        external_global_statistics(self.area, self.config.ticks_per_slot)
+        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 18
         self.config.ticks_per_slot = 10
-        assert self.external_strategy._dispatch_tick_frequency == 2
+        external_global_statistics(self.area, self.config.ticks_per_slot)
+        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 2
         self.config.ticks_per_slot = 100
-        assert self.external_strategy._dispatch_tick_frequency == 20
+        external_global_statistics(self.area, self.config.ticks_per_slot)
+        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 20
         self.config.ticks_per_slot = 99
-        assert self.external_strategy._dispatch_tick_frequency == 19
-        d3a.models.strategy.external_strategies.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 50
+        external_global_statistics(self.area, self.config.ticks_per_slot)
+        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 19
+        d3a.d3a_core.util.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 50
         self.config.ticks_per_slot = 90
-        assert self.external_strategy._dispatch_tick_frequency == 45
+        external_global_statistics(self.area, self.config.ticks_per_slot)
+        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 45
         self.config.ticks_per_slot = 10
-        assert self.external_strategy._dispatch_tick_frequency == 5
+        external_global_statistics(self.area, self.config.ticks_per_slot)
+        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 5
         self.config.ticks_per_slot = 100
-        assert self.external_strategy._dispatch_tick_frequency == 50
+        external_global_statistics(self.area, self.config.ticks_per_slot)
+        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 50
         self.config.ticks_per_slot = 99
-        assert self.external_strategy._dispatch_tick_frequency == 49
+        external_global_statistics(self.area, self.config.ticks_per_slot)
+        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 49
+
+    @parameterized.expand([
+        [LoadHoursExternalStrategy(100)],
+        [PVExternalStrategy(2, max_panel_power_W=160)],
+        [StorageExternalStrategy()]
+    ])
+    def test_dispatch_event_tick_to_external_aggregator(self, strategy):
+        d3a.d3a_core.util.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
+        self._create_and_activate_strategy_area(strategy)
+        strategy.redis.aggregator.is_controlling_device = lambda _: True
+        self.config.ticks_per_slot = 90
+        strategy.event_activate()
+        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 18
+        self.area.current_tick = 1
+        strategy._dispatch_event_tick_to_external_agent()
+        strategy.redis.aggregator.add_batch_tick_event.assert_not_called()
+        self.area.current_tick = 17
+        strategy._dispatch_event_tick_to_external_agent()
+        strategy.redis.aggregator.add_batch_tick_event.assert_not_called()
+        self.area.current_tick = 18
+        strategy._dispatch_event_tick_to_external_agent()
+        strategy.redis.aggregator.add_batch_tick_event.assert_called_once()
+        assert strategy.redis.aggregator.add_batch_tick_event.call_args_list[0][0][0] == \
+            self.area.uuid
+        result = strategy.redis.aggregator.add_batch_tick_event.call_args_list[0][0][1]
+        assert result == \
+            {'market_slot': GlobalConfig.start_date.format(DATE_TIME_FORMAT),
+             'slot_completion': '20%'}
+        strategy.redis.reset_mock()
+        strategy.redis.aggregator.add_batch_tick_event.reset_mock()
+        self.area.current_tick = 35
+        strategy._dispatch_event_tick_to_external_agent()
+        strategy.redis.aggregator.add_batch_tick_event.assert_not_called()
+        self.area.current_tick = 36
+        strategy._dispatch_event_tick_to_external_agent()
+        strategy.redis.aggregator.add_batch_tick_event.assert_called_once()
+        assert strategy.redis.aggregator.add_batch_tick_event.call_args_list[0][0][0] == \
+            self.area.uuid
+        result = strategy.redis.aggregator.add_batch_tick_event.call_args_list[0][0][1]
+        assert result == \
+            {'market_slot': GlobalConfig.start_date.format(DATE_TIME_FORMAT),
+             'slot_completion': '40%'}
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
@@ -63,10 +118,12 @@ class TestExternalMixin(unittest.TestCase):
         [StorageExternalStrategy()]
     ])
     def test_dispatch_event_tick_to_external_agent(self, strategy):
-        d3a.models.strategy.external_strategies.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
+        d3a.d3a_core.util.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
         self._create_and_activate_strategy_area(strategy)
+        strategy.redis.aggregator.is_controlling_device = lambda _: False
         self.config.ticks_per_slot = 90
-        assert strategy._dispatch_tick_frequency == 18
+        strategy.event_activate()
+        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 18
         self.area.current_tick = 1
         strategy._dispatch_event_tick_to_external_agent()
         strategy.redis.publish_json.assert_not_called()
@@ -80,7 +137,10 @@ class TestExternalMixin(unittest.TestCase):
         result = strategy.redis.publish_json.call_args_list[0][0][1]
         result.pop('area_uuid')
         assert result == \
-            {'device_info': strategy._device_info_dict, 'event': 'tick', 'slot_completion': '20%'}
+            {'slot_completion': '20%',
+             'market_slot': GlobalConfig.start_date.format(DATE_TIME_FORMAT), 'event': 'tick',
+             'device_info': strategy._device_info_dict}
+
         strategy.redis.reset_mock()
         strategy.redis.publish_json.reset_mock()
         self.area.current_tick = 35
@@ -93,7 +153,69 @@ class TestExternalMixin(unittest.TestCase):
         result = strategy.redis.publish_json.call_args_list[0][0][1]
         result.pop('area_uuid')
         assert result == \
-            {'device_info': strategy._device_info_dict, 'event': 'tick', 'slot_completion': '40%'}
+            {'slot_completion': '40%',
+             'market_slot': GlobalConfig.start_date.format(DATE_TIME_FORMAT), 'event': 'tick',
+             'device_info': strategy._device_info_dict}
+
+    @parameterized.expand([
+        [LoadHoursExternalStrategy(100),
+         Bid('bid_id', now(), 20, 1.0, 'test_area')],
+        [PVExternalStrategy(2, max_panel_power_W=160),
+         Offer('offer_id', now(), 20, 1.0, 'test_area')],
+        [StorageExternalStrategy(),
+         Bid('bid_id', now(), 20, 1.0, 'test_area')],
+        [StorageExternalStrategy(),
+         Offer('offer_id', now(), 20, 1.0, 'test_area')]
+    ])
+    def test_dispatch_event_trade_to_external_aggregator(self, strategy, offer_bid):
+        strategy._track_energy_sell_type = lambda _: None
+        self._create_and_activate_strategy_area(strategy)
+        strategy.redis.aggregator.is_controlling_device = lambda _: True
+        market = self.area.get_future_market_from_id(1)
+        self.area._markets.markets = {1: market}
+        strategy.state._available_energy_kWh = {market.time_slot: 1000.0}
+        strategy.state.pledged_sell_kWh = {market.time_slot: 0.0}
+        strategy.state.offered_sell_kWh = {market.time_slot: 0.0}
+        current_time = now()
+        if isinstance(offer_bid, Bid):
+            self.area.strategy.add_bid_to_posted(market.id, offer_bid)
+            trade = Trade('id', current_time, offer_bid,
+                          'parent_area', 'test_area', fee_price=0.23, seller_id=self.area.uuid,
+                          buyer_id=self.parent.uuid)
+        else:
+            self.area.strategy.offers.post(offer_bid, market.id)
+            trade = Trade('id', current_time, offer_bid,
+                          'test_area', 'parent_area', fee_price=0.23, buyer_id=self.area.uuid,
+                          seller_id=self.parent.uuid)
+
+        strategy.event_trade(market_id="test_market", trade=trade)
+        assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
+            self.area.uuid
+
+        call_args = strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][1]
+        assert set(call_args.keys()) == {'attributes', 'residual_bid_id', 'asset_id', 'buyer',
+                                         'local_market_fee', 'residual_offer_id', 'total_fee',
+                                         'traded_energy', 'bid_id', 'time', 'seller',
+                                         'trade_price', 'trade_id', 'offer_id', 'event'}
+        assert call_args['trade_id'] == trade.id
+        assert call_args['asset_id'] == self.area.uuid
+        assert call_args['event'] == 'trade'
+        assert call_args['trade_price'] == 20
+        assert call_args['traded_energy'] == 1.0
+        assert call_args['total_fee'] == 0.23
+        assert call_args['time'] == current_time.isoformat()
+        assert call_args['residual_bid_id'] == 'None'
+        assert call_args['residual_offer_id'] == 'None'
+        if isinstance(offer_bid, Bid):
+            assert call_args['bid_id'] == trade.offer.id
+            assert call_args['offer_id'] == 'None'
+            assert call_args['seller'] == trade.seller
+            assert call_args['buyer'] == 'anonymous'
+        else:
+            assert call_args['bid_id'] == 'None'
+            assert call_args['offer_id'] == trade.offer.id
+            assert call_args['seller'] == 'anonymous'
+            assert call_args['buyer'] == trade.buyer
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
@@ -103,6 +225,7 @@ class TestExternalMixin(unittest.TestCase):
     def test_dispatch_event_trade_to_external_agent(self, strategy):
         strategy._track_energy_sell_type = lambda _: None
         self._create_and_activate_strategy_area(strategy)
+        strategy.redis.aggregator.is_controlling_device = lambda _: False
         market = self.area.get_future_market_from_id(1)
         self.area._markets.markets = {1: market}
         strategy.state._available_energy_kWh = {market.time_slot: 1000.0}
@@ -116,8 +239,8 @@ class TestExternalMixin(unittest.TestCase):
         call_args = strategy.redis.publish_json.call_args_list[0][0][1]
         assert call_args['trade_id'] == trade.id
         assert call_args['event'] == "trade"
-        assert call_args['price'] == 20
-        assert call_args['energy'] == 1.0
+        assert call_args['trade_price'] == 20
+        assert call_args['traded_energy'] == 1.0
         assert call_args['fee_price'] == 0.23
         assert call_args['offer_id'] == trade.offer.id
         assert call_args['residual_id'] == "None"
@@ -148,13 +271,14 @@ class TestExternalMixin(unittest.TestCase):
                 Trade('id', current_time, bid, 'test_area', 'parent_area', fee_price=0.23)
 
             strategy.event_trade(market_id=market.id, trade=skipped_trade)
-            call_args = strategy.redis.publish_json.call_args_list
+            call_args = strategy.redis.aggregator.add_batch_trade_event.call_args_list
             assert call_args == []
 
             published_trade = \
                 Trade('id', current_time, bid, 'parent_area', 'test_area', fee_price=0.23)
             strategy.event_trade(market_id=market.id, trade=published_trade)
-            assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/events/trade"
+            assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
+                self.area.uuid
         else:
             offer = Offer('offer_id', now(), 20, 1.0, 'test_area')
             strategy.offers.post(offer, market.id)
@@ -163,13 +287,14 @@ class TestExternalMixin(unittest.TestCase):
             strategy.offers.sold_offer(offer, market.id)
 
             strategy.event_trade(market_id=market.id, trade=skipped_trade)
-            call_args = strategy.redis.publish_json.call_args_list
+            call_args = strategy.redis.aggregator.add_batch_trade_event.call_args_list
             assert call_args == []
 
             published_trade =\
                 Trade('id', current_time, offer, 'test_area', 'parent_area', fee_price=0.23)
             strategy.event_trade(market_id=market.id, trade=published_trade)
-            assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/events/trade"
+            assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
+                self.area.uuid
 
     def test_device_info_dict_for_load_strategy_reports_required_energy(self):
         strategy = LoadHoursExternalStrategy(100)

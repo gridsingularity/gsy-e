@@ -20,6 +20,7 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
+from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a_interface.constants_limits import ConstSettings
 
 ConstSettings.IAASettings.MARKET_TYPE = 2
@@ -60,10 +61,7 @@ def get_setup(config):
 
                 ], external_connection_available=True, grid_fee_constant=1
             ),
-            Area('Cell Tower', strategy=LoadHoursStrategy(avg_power_W=100,
-                                                          hrs_per_day=24,
-                                                          hrs_of_day=list(range(0, 24)),
-                                                          final_buying_rate=35)
+            Area('Market Maker', strategy=MarketMakerStrategy(energy_rate=30)
                  ),
         ], grid_fee_constant=10,
         config=config
