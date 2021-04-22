@@ -18,14 +18,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import json
 from threading import Lock
-from collections import namedtuple
-from d3a.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
+from collections import deque, namedtuple
 from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import key_in_dict_and_not_none
 import d3a.constants
+from d3a.d3a_core.singletons import external_global_statistics
+
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
+
+default_market_info = {"device_info": None,
+                       "asset_bill": None,
+                       "event": None,
+                       "grid_stats_tree": None,
+                       "area_uuid": None}
 
 
 class CommandTypeNotSupported(Exception):
@@ -83,13 +90,14 @@ def unregister_area(redis, channel_prefix, is_connected, transaction_id):
 
 
 class ExternalMixin:
+
     def __init__(self, *args, **kwargs):
         self._connected = False
         self.connected = False
         self._use_template_strategy = False
         super().__init__(*args, **kwargs)
         self._last_dispatched_tick = 0
-        self.pending_requests = []
+        self.pending_requests = deque()
         self.lock = Lock()
 
     def get_state(self):
@@ -125,17 +133,13 @@ class ExternalMixin:
     def is_aggregator_controlled(self):
         return self.redis.aggregator.is_controlling_device(self.device.uuid)
 
+    def _remove_area_uuid_from_aggregator_mapping(self):
+        self.redis.aggregator.device_aggregator_mapping.pop(self.device.uuid, None)
+
     @property
     def should_use_default_strategy(self):
         return self._use_template_strategy or \
                not (self.connected or self.is_aggregator_controlled)
-
-    @property
-    def _dispatch_tick_frequency(self):
-        return int(
-            self.device.config.ticks_per_slot *
-            (DISPATCH_EVENT_TICK_FREQUENCY_PERCENT / 100)
-        )
 
     @staticmethod
     def _get_transaction_id(payload):
@@ -161,6 +165,8 @@ class ExternalMixin:
                                           self._get_transaction_id(payload))
 
     def register_on_market_cycle(self):
+        if self.connected is True and self._connected is False:
+            self._remove_area_uuid_from_aggregator_mapping()
         self.connected = self._connected
 
     def _device_info(self, payload):
@@ -224,29 +230,34 @@ class ExternalMixin:
     def _device_info_dict(self):
         return {}
 
-    def _reset_event_tick_counter(self):
-        self._last_dispatched_tick = 0
+    @property
+    def _progress_info(self):
+        slot_completion_percent = int((self.device.current_tick_in_slot /
+                                       self.device.config.ticks_per_slot) * 100)
+        return {'slot_completion': f'{slot_completion_percent}%',
+                'market_slot': self.area.next_market.time_slot_str}
 
     def _dispatch_event_tick_to_external_agent(self):
-        if not self.connected and not self.is_aggregator_controlled:
-            return
-
-        current_tick = self.device.current_tick % self.device.config.ticks_per_slot
-        if current_tick - self._last_dispatched_tick >= self._dispatch_tick_frequency:
-            tick_event_channel = f"{self.channel_prefix}/events/tick"
-            current_tick_info = {
-                "event": "tick",
-                "slot_completion":
-                    f"{int((current_tick / self.device.config.ticks_per_slot) * 100)}%",
-                "area_uuid": self.device.uuid,
-                "device_info": self._device_info_dict
-            }
-            self._last_dispatched_tick = current_tick
-            if self.connected:
+        if external_global_statistics.is_it_time_for_external_tick(self.device.current_tick):
+            if self.is_aggregator_controlled:
+                self.redis.aggregator.add_batch_tick_event(self.device.uuid, self._progress_info)
+            elif self.connected:
+                tick_event_channel = f'{self.channel_prefix}/events/tick'
+                current_tick_info = {
+                    **self._progress_info,
+                    'event': 'tick',
+                    'area_uuid': self.device.uuid,
+                    'device_info': self._device_info_dict
+                }
                 self.redis.publish_json(tick_event_channel, current_tick_info)
 
-            if self.is_aggregator_controlled:
-                self.redis.aggregator.add_batch_tick_event(self.device.uuid, current_tick_info)
+    def event_market_cycle(self):
+        if self.should_use_default_strategy:
+            super().event_market_cycle()
+
+    def publish_market_cycle(self):
+        if not self.should_use_default_strategy and self.is_aggregator_controlled:
+            self.redis.aggregator.add_batch_market_event(self.device.uuid, self._progress_info)
 
     def _publish_trade_event(self, trade, is_bid_trade):
 
@@ -264,31 +275,60 @@ class ExternalMixin:
             # the bid clearing and one for the offer clearing.
             return
 
-        event_response_dict = {"device_info": self._device_info_dict,
-                               "event": "trade",
-                               "trade_id": trade.id,
-                               "time": trade.time.isoformat(),
-                               "price": trade.offer.price,
-                               "energy": trade.offer.energy,
-                               "fee_price": trade.fee_price,
-                               "area_uuid": self.device.uuid,
-                               "seller": trade.seller
-                               if trade.seller == self.device.name else "anonymous",
-                               "buyer": trade.buyer
-                               if trade.buyer == self.device.name else "anonymous",
-                               "residual_id": trade.residual.id
-                               if trade.residual is not None else "None"}
-
-        bid_offer_key = 'bid_id' if is_bid_trade else 'offer_id'
-        event_response_dict["event_type"] = "buy" \
-            if trade.buyer == self.device.name else "sell"
-        event_response_dict[bid_offer_key] = trade.offer.id
-        trade_event_channel = f"{self.channel_prefix}/events/trade"
-        if self.connected:
-            self.redis.publish_json(trade_event_channel, event_response_dict)
-
         if self.is_aggregator_controlled:
+            event_response_dict = {'event': 'trade',
+                                   'asset_id': self.device.uuid,
+                                   'trade_id': trade.id,
+                                   'time': trade.time.isoformat(),
+                                   'trade_price': trade.offer.price,
+                                   'traded_energy': trade.offer.energy,
+                                   'total_fee': trade.fee_price,
+                                   'local_market_fee':
+                                       self.area.current_market.fee_class.grid_fee_rate
+                                       if self.area.current_market is not None else "None",
+                                   'attributes': {},
+                                   'seller': trade.seller
+                                   if trade.seller_id == self.device.uuid else 'anonymous',
+                                   'buyer': trade.buyer
+                                   if trade.buyer_id == self.device.uuid else 'anonymous',
+                                   'bid_id': trade.offer.id
+                                   if isinstance(trade.offer, Bid) else 'None',
+                                   'offer_id': trade.offer.id
+                                   if isinstance(trade.offer, Offer) else 'None',
+                                   'residual_bid_id': trade.residual.id
+                                   if trade.residual is not None and isinstance(trade.residual,
+                                                                                Bid)
+                                   else 'None',
+                                   'residual_offer_id': trade.residual.id
+                                   if trade.residual is not None and isinstance(trade.residual,
+                                                                                Offer)
+                                   else 'None'}
+
+            external_global_statistics.update()
             self.redis.aggregator.add_batch_trade_event(self.device.uuid, event_response_dict)
+        elif self.connected:
+            event_response_dict = {'device_info': self._device_info_dict,
+                                   'event': 'trade',
+                                   'trade_id': trade.id,
+                                   'time': trade.time.isoformat(),
+                                   'trade_price': trade.offer.price,
+                                   'traded_energy': trade.offer.energy,
+                                   'fee_price': trade.fee_price,
+                                   'area_uuid': self.device.uuid,
+                                   'seller': trade.seller
+                                   if trade.seller == self.device.name else 'anonymous',
+                                   'buyer': trade.buyer
+                                   if trade.buyer == self.device.name else 'anonymous',
+                                   'residual_id': trade.residual.id
+                                   if trade.residual is not None else 'None'}
+
+            bid_offer_key = 'bid_id' if is_bid_trade else 'offer_id'
+            event_response_dict['event_type'] = 'buy' \
+                if trade.buyer == self.device.name else 'sell'
+            event_response_dict[bid_offer_key] = trade.offer.id
+
+            trade_event_channel = f"{self.channel_prefix}/events/trade"
+            self.redis.publish_json(trade_event_channel, event_response_dict)
 
     def event_bid_traded(self, market_id, bid_trade):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
@@ -302,17 +342,17 @@ class ExternalMixin:
 
     def deactivate(self):
         super().deactivate()
-        if self.connected or self.redis.aggregator.is_controlling_device(self.device.uuid):
+
+        if self.is_aggregator_controlled:
+            deactivate_msg = {'event': 'finish'}
+            self.redis.aggregator.add_batch_finished_event(self.owner.uuid, deactivate_msg)
+        elif self.connected:
             deactivate_event_channel = f"{self.channel_prefix}/events/finish"
             deactivate_msg = {
                 "event": "finish",
                 "area_uuid": self.device.uuid
             }
-            if self.connected:
-                self.redis.publish_json(deactivate_event_channel, deactivate_msg)
-
-            if self.is_aggregator_controlled:
-                self.redis.aggregator.add_batch_finished_event(self.owner.uuid, "finish")
+            self.redis.publish_json(deactivate_event_channel, deactivate_msg)
 
     def _bid_aggregator(self, command):
         raise CommandTypeNotSupported(
@@ -372,8 +412,6 @@ class ExternalMixin:
                 return self._list_offers_aggregator(command)
             elif command["type"] == "device_info":
                 return self._device_info_aggregator(command)
-            elif command["type"] == "last_market_stats":
-                return self._last_market_stats(command)
             else:
                 return {
                     "command": command["type"], "status": "error",
@@ -385,15 +423,6 @@ class ExternalMixin:
                 "area_uuid": self.device.uuid,
                 "message": str(e)}
 
-    def _last_market_stats(self, command):
-        market_data = self.device.parent.stats.get_last_market_stats()
-        return {
-            "command": "last_market_stats", "status": "ready",
-            "market_data": market_data,
-            "transaction_id": command.get("transaction_id", None),
-            "area_uuid": self.device.uuid
-        }
-
     def _reject_all_pending_requests(self):
         for req in self.pending_requests:
             self.redis.publish_json(
@@ -402,7 +431,7 @@ class ExternalMixin:
                  "error_message": f"Error when handling {req.request_type} "
                                   f"on area {self.device.name} with arguments {req.arguments}."
                                   f"Market cycle already finished."})
-        self.pending_requests = []
+        self.pending_requests = deque()
 
     def _set_energy_forecast(self, payload):
         transaction_id = self._get_transaction_id(payload)
@@ -448,3 +477,20 @@ class ExternalMixin:
                  "error_message": f"Error when handling _set_energy_forecast_impl "
                                   f"on area {self.device.name} with arguments {arguments}.",
                  "transaction_id": arguments.get("transaction_id", None)})
+
+    @property
+    def market_info_dict(self):
+        return {'asset_info': self._device_info_dict,
+                'last_slot_asset_info': self.last_slot_asset_info,
+                'asset_bill': self.device.stats.aggregated_stats["bills"]
+                if "bills" in self.device.stats.aggregated_stats else None
+                }
+
+    @property
+    def last_slot_asset_info(self):
+        return {
+                'energy_traded': self.energy_traded(self.area.current_market.id)
+                if self.area.current_market else None,
+                'total_cost': self.energy_traded_costs(self.area.current_market.id)
+                if self.area.current_market else None,
+                }

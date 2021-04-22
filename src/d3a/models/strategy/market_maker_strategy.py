@@ -15,11 +15,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.read_user_profile import read_and_convert_identity_profile_to_float
+from d3a_interface.read_user_profile import read_and_convert_identity_profile_to_float
 from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 from d3a_interface.device_validator import validate_market_maker
 from d3a_interface.utils import key_in_dict_and_not_none
+from d3a.models.strategy.commercial_producer import CommercialStrategy
 
 
 class MarketMakerStrategy(CommercialStrategy):

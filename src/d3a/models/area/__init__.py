@@ -27,10 +27,10 @@ from d3a.d3a_core.exceptions import AreaException
 from d3a.models.config import SimulationConfig
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.strategy import BaseStrategy
+from d3a.models.strategy.external_strategies import ExternalMixin
 from d3a.d3a_core.util import TaggedLogWrapper
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.d3a_core.global_objects import GlobalObjects
 from d3a.constants import TIME_FORMAT
 from d3a.models.area.stats import AreaStats
 from d3a.models.area.event_dispatcher import DispatcherFactory
@@ -40,6 +40,8 @@ from d3a.models.area.throughput_parameters import ThroughputParameters
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.area_validator import validate_area
 from d3a.models.area.redis_external_market_connection import RedisMarketExternalConnection
+from d3a.models.market.blockchain_interface import SubstrateBlockchainInterface, \
+    NonBlockchainInterface
 from d3a_interface.utils import key_in_dict_and_not_none
 import d3a.constants
 
@@ -107,7 +109,8 @@ class Area:
                  throughput: ThroughputParameters = ThroughputParameters()
                  ):
         validate_area(grid_fee_constant=grid_fee_constant,
-                      grid_fee_percentage=grid_fee_percentage)
+                      grid_fee_percentage=grid_fee_percentage,
+                      name=name)
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
@@ -126,7 +129,6 @@ class Area:
             raise AreaException("A leaf area can not have children.")
         self.strategy = strategy
         self._config = config
-        self._global_objects = None
         self.events = Events(event_list, self)
         self.budget_keeper = budget_keeper
         if budget_keeper:
@@ -142,6 +144,7 @@ class Area:
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available and self.strategy is None else None
         self.should_update_child_strategies = False
+        self.external_connection_available = external_connection_available
 
     @property
     def name(self):
@@ -149,10 +152,10 @@ class Area:
 
     @name.setter
     def name(self, new_name):
-        if not check_area_name_exists_in_parent_area(self.parent, new_name):
-            self.__name = new_name
-        else:
+        if check_area_name_exists_in_parent_area(self.parent, new_name):
             raise AreaException("Area name should be unique inside the same Parent Area")
+        validate_area(name=new_name)
+        self.__name = new_name
 
     def get_state(self):
         state = {}
@@ -228,15 +231,15 @@ class Area:
                       f"Traceback: {traceback.format_exc()}")
             return
 
-    def _set_grid_fees(self, transfer_fee_const, grid_fee_percentage):
+    def _set_grid_fees(self, grid_fee_const, grid_fee_percentage):
         grid_fee_type = self.config.grid_fee_type \
             if self.config is not None \
             else ConstSettings.IAASettings.GRID_FEE_TYPE
         if grid_fee_type == 1:
             grid_fee_percentage = None
         elif grid_fee_type == 2:
-            transfer_fee_const = None
-        self.grid_fee_constant = transfer_fee_const
+            grid_fee_const = None
+        self.grid_fee_constant = grid_fee_const
         self.grid_fee_percentage = grid_fee_percentage
 
     def get_path_to_root_fees(self):
@@ -255,11 +258,13 @@ class Area:
     def set_events(self, event_list):
         self.events = Events(event_list, self)
 
-    def activate(self, bc=None, current_tick=None):
+    def activate(self, bc=None, current_tick=None, simulation_id=None):
         if current_tick is not None:
             self.current_tick = current_tick
         if bc:
-            self._bc = bc
+            self._bc = SubstrateBlockchainInterface(self.uuid, simulation_id)
+        else:
+            self._bc = NonBlockchainInterface(self.uuid, simulation_id)
         if self.strategy:
             if self.parent:
                 self.strategy.area = self.parent
@@ -281,7 +286,8 @@ class Area:
             self.log.debug("No strategy. Using inter area agent.")
         self.log.debug('Activating area')
         self.active = True
-        self.dispatcher.broadcast_activate(current_tick=self.current_tick)
+        self.dispatcher.broadcast_activate(bc=bc, current_tick=self.current_tick,
+                                           simulation_id=simulation_id)
         if self.redis_ext_conn is not None:
             self.redis_ext_conn.sub_to_external_channels()
 
@@ -325,7 +331,7 @@ class Area:
             self.budget_keeper.process_market_cycle()
 
         self.log.debug("Cycling markets")
-        self._markets.rotate_markets(now_value, self.dispatcher)
+        self._markets.rotate_markets(now_value)
         self.dispatcher._delete_past_agents(self.dispatcher._inter_area_agents)
 
         # area_market_stats have to updated when cycling market of each area:
@@ -359,8 +365,13 @@ class Area:
                 and _trigger_event and ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.dispatcher.broadcast_balancing_market_cycle()
 
-        if not self.strategy and self.redis_ext_conn is not None:
-            self.redis_ext_conn.event_market_cycle()
+    def publish_market_cycle_to_external_clients(self):
+        if self.strategy and isinstance(self.strategy, ExternalMixin):
+            self.strategy.publish_market_cycle()
+        elif not self.strategy and self.external_connection_available:
+            self.redis_ext_conn.publish_market_cycle()
+        for child in self.children:
+            child.publish_market_cycle_to_external_clients()
 
     def _consume_commands_from_aggregator(self):
         if self.redis_ext_conn is not None and self.redis_ext_conn.is_aggregator_controlled:
@@ -426,20 +437,9 @@ class Area:
         return GlobalConfig
 
     @property
-    def global_objects(self):
-        if self._global_objects:
-            return self._global_objects
-        if self.parent:
-            return self.parent.global_objects
-        else:
-            return GlobalObjects()
-
-    @property
     def bc(self):
         if self._bc is not None:
             return self._bc
-        if self.parent:
-            return self.parent.bc
         return None
 
     @cached_property

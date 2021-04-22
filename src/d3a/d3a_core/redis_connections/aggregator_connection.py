@@ -1,15 +1,10 @@
 import json
 import logging
-from threading import Lock
 from copy import deepcopy
+from threading import Lock
 import d3a.constants
-
-
-default_market_info = {"device_info": None,
-                       "device_bill": None,
-                       "event": None,
-                       "grid_stats_tree": None,
-                       "area_uuid": None}
+from d3a_interface.utils import create_subdict_or_update
+from d3a.d3a_core.singletons import external_global_statistics
 
 
 class AggregatorHandler:
@@ -21,7 +16,6 @@ class AggregatorHandler:
         self.processing_batch_commands = {}
         self.responses_batch_commands = {}
         self.batch_market_cycle_events = {}
-        self.already_sent_grid_stats = False
         self.batch_tick_events = {}
         self.batch_trade_events = {}
         self.batch_finished_events = {}
@@ -43,31 +37,47 @@ class AggregatorHandler:
 
     def _add_batch_event(self, device_uuid, event, batch_event_dict):
         aggregator_uuid = self.device_aggregator_mapping[device_uuid]
+        create_subdict_or_update(batch_event_dict, aggregator_uuid, event)
 
-        if aggregator_uuid not in batch_event_dict:
-            batch_event_dict[aggregator_uuid] = []
+    def _delete_not_owned_devices_from_dict(self, area_stats_tree_dict):
+        out_dict = deepcopy(area_stats_tree_dict)
+        self._delete_not_owned_devices(area_stats_tree_dict, out_dict)
+        return out_dict
 
-        batch_event_dict[aggregator_uuid].append(event)
+    def _delete_not_owned_devices(self, indict, outdict):
+        for area_uuid, area_dict in indict.items():
+            if 'children' in area_dict:
+                self._delete_not_owned_devices(indict[area_uuid]['children'],
+                                               outdict[area_uuid]['children'])
+            else:
+                if area_uuid not in self.device_aggregator_mapping:
+                    outdict[area_uuid] = {'area_name': area_dict['area_name']}
 
-    def _add_grid_stats_to_market_event(self, device_uuid, global_objects):
-        market_info = deepcopy(default_market_info)
-        market_info["grid_stats_tree"] = global_objects.area_tree_dict
+    def _create_grid_tree_event_dict(self):
+        return {'grid_tree': self._delete_not_owned_devices_from_dict(
+            external_global_statistics.area_stats_tree_dict),
+                'feed_in_tariff_rate': external_global_statistics.current_feed_in_tariff,
+                'market_maker_rate': external_global_statistics.current_market_maker_rate}
+
+    def add_batch_market_event(self, device_uuid, market_info):
+        market_info.update(self._create_grid_tree_event_dict())
         self._add_batch_event(device_uuid, market_info, self.batch_market_cycle_events)
-        self.already_sent_grid_stats = True
 
-    def add_batch_market_event(self, device_uuid, event, global_objects):
-        if not self.already_sent_grid_stats and global_objects.area_tree_dict:
-            self._add_grid_stats_to_market_event(device_uuid, global_objects)
-        self._add_batch_event(device_uuid, event, self.batch_market_cycle_events)
+    def add_batch_tick_event(self, device_uuid, tick_info):
+        tick_info.update(self._create_grid_tree_event_dict())
+        self._add_batch_event(device_uuid, tick_info, self.batch_tick_events)
 
-    def add_batch_tick_event(self, device_uuid, event):
-        self._add_batch_event(device_uuid, event, self.batch_tick_events)
+    def add_batch_finished_event(self, device_uuid, finish_info):
+        self._add_batch_event(device_uuid, finish_info, self.batch_finished_events)
 
-    def add_batch_trade_event(self, device_uuid, event):
-        self._add_batch_event(device_uuid, event, self.batch_trade_events)
+    def add_batch_trade_event(self, device_uuid, trade_info):
+        aggregator_uuid = self.device_aggregator_mapping[device_uuid]
+        if aggregator_uuid not in self.batch_trade_events:
+            self.batch_trade_events[aggregator_uuid] = \
+                {'trade_list': []}
 
-    def add_batch_finished_event(self, device_uuid, event):
-        self._add_batch_event(device_uuid, event, self.batch_finished_events)
+        self.batch_trade_events[aggregator_uuid].update(self._create_grid_tree_event_dict())
+        self.batch_trade_events[aggregator_uuid]["trade_list"].append(trade_info)
 
     def aggregator_callback(self, payload):
         message = json.loads(payload["data"])
@@ -80,6 +90,8 @@ class AggregatorHandler:
             self._delete_aggregator(message)
         elif message["type"] == "SELECT":
             self._select_aggregator(message)
+        elif message["type"] == "UNSELECT":
+            self._unselect_aggregator(message)
 
     def _select_aggregator(self, message):
         if message['aggregator_uuid'] not in self.aggregator_device_mapping:
@@ -87,35 +99,55 @@ class AggregatorHandler:
             self.aggregator_device_mapping[message['aggregator_uuid']].\
                 append(message['device_uuid'])
             self.device_aggregator_mapping[message['device_uuid']] = message['aggregator_uuid']
-            success_response_message = {
+            response_message = {
                 "status": "SELECTED", "aggregator_uuid": message['aggregator_uuid'],
                 "device_uuid": message['device_uuid'],
                 "transaction_id": message['transaction_id']}
-            self.redis_db.publish(
-                "aggregator_response", json.dumps(success_response_message)
-            )
         elif message['device_uuid'] in self.device_aggregator_mapping:
             msg = f"Device already have selected " \
                   f"{self.device_aggregator_mapping[message['device_uuid']]}"
-            error_response_message = {
+            response_message = {
                 "status": "error", "aggregator_uuid": message['aggregator_uuid'],
                 "device_uuid": message['device_uuid'],
                 "transaction_id": message['transaction_id'],
                 "msg": msg
             }
-            self.redis_db.publish(
-                "aggregator_response", json.dumps(error_response_message)
-            )
         else:
             self.aggregator_device_mapping[message['aggregator_uuid']].\
                 append(message['device_uuid'])
             self.device_aggregator_mapping[message['device_uuid']] = message['aggregator_uuid']
-            success_response_message = {
+            response_message = {
                 "status": "SELECTED", "aggregator_uuid": message['aggregator_uuid'],
                 "device_uuid": message['device_uuid'],
                 "transaction_id": message['transaction_id']}
+        self.redis_db.publish(
+            "aggregator_response", json.dumps(response_message)
+        )
+
+    def _unselect_aggregator(self, message):
+        if message['device_uuid'] in self.device_aggregator_mapping and \
+                message['aggregator_uuid'] in self.aggregator_device_mapping:
+            try:
+                with self.lock:
+                    del self.device_aggregator_mapping[message['device_uuid']]
+                    self.aggregator_device_mapping[message['aggregator_uuid']]\
+                        .remove(message['device_uuid'])
+                response_message = {
+                    "status": "UNSELECTED", "aggregator_uuid": message['aggregator_uuid'],
+                    "device_uuid": message['device_uuid'],
+                    "transaction_id": message['transaction_id']}
+                self.redis_db.publish(
+                    "aggregator_response", json.dumps(response_message)
+                )
+            except Exception as e:
+                response_message = {
+                    "status": "error", "aggregator_uuid": message['aggregator_uuid'],
+                    "device_uuid": message['device_uuid'],
+                    "transaction_id": message['transaction_id'],
+                    "msg": f"Error unselecting aggregator : {e}"
+                }
             self.redis_db.publish(
-                "aggregator_response", json.dumps(success_response_message)
+                "aggregator_response", json.dumps(response_message)
             )
 
     def _create_aggregator(self, message):
@@ -182,25 +214,34 @@ class AggregatorHandler:
             response = [strategy_method({**command, 'transaction_id': transaction_id})
                         for command in area_commands]
             if transaction_id not in self.responses_batch_commands:
-                self.responses_batch_commands[transaction_id] = {aggregator_uuid: []}
-            self.responses_batch_commands[transaction_id][aggregator_uuid].append(response)
+                self.responses_batch_commands[transaction_id] = {aggregator_uuid: {}}
+            if area_uuid not in self.responses_batch_commands[transaction_id][aggregator_uuid]:
+                self.responses_batch_commands[transaction_id][aggregator_uuid] \
+                    .update({area_uuid: []})
+            self.responses_batch_commands[transaction_id][aggregator_uuid][area_uuid] \
+                .extend(response)
 
     def _publish_all_events_from_one_type(self, redis, event_dict, event_type):
-        for aggregator_uuid, event_list in event_dict.items():
+        for aggregator_uuid, event in event_dict.items():
             event_channel = f"external-aggregator/{d3a.constants.COLLABORATION_ID}/" \
                             f"{aggregator_uuid}/events/all"
-            redis.publish_json(
-                event_channel,
-                {"event": event_type, "content": event_list}
-            )
+
+            publish_event_dict = {**event,
+                                  'event': event_type,
+                                  'num_ticks': 100 /
+                                  d3a.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT,
+                                  'simulation_id': d3a.constants.COLLABORATION_ID if
+                                  d3a.constants.EXTERNAL_CONNECTION_WEB else None
+                                  }
+            redis.publish_json(event_channel, publish_event_dict)
+
         event_dict.clear()
 
     def publish_all_events(self, redis):
         self._publish_all_events_from_one_type(redis, self.batch_market_cycle_events, "market")
         self._publish_all_events_from_one_type(redis, self.batch_tick_events, "tick")
-        self._publish_all_events_from_one_type(redis, self.batch_trade_events, "trade")
         self._publish_all_events_from_one_type(redis, self.batch_finished_events, "finish")
-        self.already_sent_grid_stats = False
+        self._publish_all_events_from_one_type(redis, self.batch_trade_events, "trade")
 
     def publish_all_commands_responses(self, redis):
         for transaction_id, batch_commands in self.responses_batch_commands.items():

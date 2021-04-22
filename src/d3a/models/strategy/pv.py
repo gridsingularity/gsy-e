@@ -18,19 +18,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import traceback
 import math
 from typing import Dict  # noqa
+from logging import getLogger
 from pendulum import Time  # noqa
 from pendulum import duration
-from logging import getLogger
 
-from d3a.d3a_core.util import find_object_of_same_weekday_and_time, convert_W_to_kWh
-from d3a.models.strategy import BaseStrategy
+from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.utils import find_object_of_same_weekday_and_time, convert_W_to_kWh
 from d3a_interface.device_validator import validate_pv_device_energy, validate_pv_device_price
-from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
+from d3a.models.strategy import BaseStrategy
+from d3a.models.strategy.update_frequency import TemplateStrategyOfferUpdater
 from d3a.models.state import PVState
 from d3a.d3a_core.exceptions import MarketException
-from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.utils import key_in_dict_and_not_none
 from d3a import constants
 
@@ -87,9 +87,10 @@ class PVStrategy(BaseStrategy):
         validate_pv_device_price(fit_to_limit=fit_to_limit,
                                  energy_rate_decrease_per_update=energy_rate_decrease_per_update)
 
-        self.offer_update = UpdateFrequencyMixin(initial_selling_rate, final_selling_rate,
-                                                 fit_to_limit, energy_rate_decrease_per_update,
-                                                 update_interval)
+        self.offer_update = TemplateStrategyOfferUpdater(initial_selling_rate, final_selling_rate,
+                                                         fit_to_limit,
+                                                         energy_rate_decrease_per_update,
+                                                         update_interval)
 
     def area_reconfigure_event(self, **kwargs):
         self._area_reconfigure_prices(**kwargs)
@@ -143,12 +144,13 @@ class PVStrategy(BaseStrategy):
                       f"Traceback: {traceback.format_exc()}")
             return
 
-        self.offer_update.initial_rate_profile_buffer = initial_rate
-        self.offer_update.final_rate_profile_buffer = final_rate
-        self.offer_update.energy_rate_change_per_update_profile_buffer = \
-            energy_rate_change_per_update
-        self.offer_update.fit_to_limit = fit_to_limit
-        self.offer_update.update_interval = update_interval
+        self.offer_update.set_parameters(
+            initial_rate_profile_buffer=initial_rate,
+            final_rate_profile_buffer=final_rate,
+            energy_rate_change_per_update_profile_buffer=energy_rate_change_per_update,
+            fit_to_limit=fit_to_limit,
+            update_interval=update_interval
+        )
 
     @staticmethod
     def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
@@ -170,15 +172,10 @@ class PVStrategy(BaseStrategy):
     def event_activate_price(self):
         # If use_market_maker_rate is true, overwrite initial_selling_rate to market maker rate
         if self.use_market_maker_rate:
-            if isinstance(GlobalConfig.market_maker_rate, dict):
-                self._area_reconfigure_prices(
-                    initial_selling_rate=find_object_of_same_weekday_and_time(
-                        GlobalConfig.market_maker_rate, self.owner.parent.next_market.time_slot
-                    ) - self.owner.get_path_to_root_fees(),
-                    validate=False)
-            else:
-                self._area_reconfigure_prices(initial_selling_rate=GlobalConfig.market_maker_rate -
-                                              self.owner.get_path_to_root_fees(), validate=False)
+            self._area_reconfigure_prices(
+                initial_selling_rate=get_market_maker_rate_from_config(
+                    self.area.next_market, 0) - self.owner.get_path_to_root_fees(), validate=False)
+
         self._validate_rates(self.offer_update.initial_rate_profile_buffer,
                              self.offer_update.final_rate_profile_buffer,
                              self.offer_update.energy_rate_change_per_update_profile_buffer,
@@ -190,7 +187,7 @@ class PVStrategy(BaseStrategy):
         self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
 
     def event_tick(self):
-        self.offer_update.update_offer(self)
+        self.offer_update.update(self)
         self.offer_update.increment_update_counter_all_markets(self)
 
     def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
@@ -242,7 +239,7 @@ class PVStrategy(BaseStrategy):
 
     def event_market_cycle_price(self):
         self.offer_update.update_and_populate_price_settings(self.area)
-        self.offer_update.update_market_cycle_offers(self)
+        self.offer_update.reset(self)
 
         # Iterate over all markets open in the future
         for market in self.area.all_markets:
@@ -259,7 +256,9 @@ class PVStrategy(BaseStrategy):
                         offer_energy_kWh,
                         self.owner.name,
                         original_offer_price=offer_price,
-                        seller_origin=self.owner.name
+                        seller_origin=self.owner.name,
+                        seller_origin_id=self.owner.uuid,
+                        seller_id=self.owner.uuid
                     )
                     self.offers.post(offer, market.id)
                 except MarketException:

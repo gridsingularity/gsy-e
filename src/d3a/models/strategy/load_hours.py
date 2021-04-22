@@ -16,25 +16,24 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import traceback
-from numpy import random
 from logging import getLogger
-from pendulum import duration, DateTime  # NOQA
 from typing import Union, Dict  # NOQA
 from collections import namedtuple
+from numpy import random
+from pendulum import duration, DateTime  # NOQA
 
-from d3a.d3a_core.util import find_object_of_same_weekday_and_time, convert_W_to_Wh
+from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.utils import key_in_dict_and_not_none
+from d3a_interface.device_validator import validate_load_device_price, validate_load_device_energy
+from d3a_interface.utils import find_object_of_same_weekday_and_time, convert_W_to_Wh
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import LoadState
 from d3a.models.strategy import BidEnabledStrategy
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.device_validator import validate_load_device_price, validate_load_device_energy
-from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
+from d3a.models.strategy.update_frequency import TemplateStrategyBidUpdater
 from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.models.read_user_profile import read_arbitrary_profile
-from d3a.models.read_user_profile import InputProfileTypes
 from d3a.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
-from d3a_interface.constants_limits import GlobalConfig
-from d3a_interface.utils import key_in_dict_and_not_none
 from d3a import constants
 
 log = getLogger(__name__)
@@ -109,11 +108,12 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         BidEnabledStrategy.__init__(self)
         self.bid_update = \
-            UpdateFrequencyMixin(initial_rate=initial_buying_rate,
-                                 final_rate=final_buying_rate,
-                                 fit_to_limit=fit_to_limit,
-                                 energy_rate_change_per_update=energy_rate_increase_per_update,
-                                 update_interval=update_interval, rate_limit_object=min)
+            TemplateStrategyBidUpdater(
+                initial_rate=initial_buying_rate,
+                final_rate=final_buying_rate,
+                fit_to_limit=fit_to_limit,
+                energy_rate_change_per_update=energy_rate_increase_per_update,
+                update_interval=update_interval, rate_limit_object=min)
         self.fit_to_limit = fit_to_limit
 
     @staticmethod
@@ -205,12 +205,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
                       f"Traceback: {traceback.format_exc()}")
             return
 
-        self.bid_update.initial_rate_profile_buffer = initial_rate
-        self.bid_update.final_rate_profile_buffer = final_rate
-        self.bid_update.energy_rate_change_per_update_profile_buffer = \
-            energy_rate_change_per_update
-        self.bid_update.fit_to_limit = fit_to_limit
-        self.bid_update.update_interval = update_interval
+        self.bid_update.set_parameters(
+            initial_rate_profile_buffer=initial_rate,
+            final_rate_profile_buffer=final_rate,
+            energy_rate_change_per_update_profile_buffer=energy_rate_change_per_update,
+            fit_to_limit=fit_to_limit,
+            update_interval=update_interval
+        )
 
     def area_reconfigure_event(self, **kwargs):
         if key_in_dict_and_not_none(kwargs, 'hrs_per_day') or \
@@ -226,13 +227,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def event_activate_price(self):
         # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
         if self.use_market_maker_rate:
-            if isinstance(GlobalConfig.market_maker_rate, dict):
-                self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate.get(
-                    self.owner.parent.next_market.time_slot, 0) +
-                        self.owner.get_path_to_root_fees())
-            else:
-                self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate +
-                                            self.owner.get_path_to_root_fees())
+            self._area_reconfigure_prices(
+                final_buying_rate=get_market_maker_rate_from_config(
+                    self.area.next_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
+
         self._validate_rates(self.bid_update.initial_rate_profile_buffer,
                              self.bid_update.final_rate_profile_buffer,
                              self.bid_update.energy_rate_change_per_update_profile_buffer,
@@ -265,7 +263,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 energy_Wh = self.state.calculate_energy_to_accept(
                     acceptable_offer.energy * 1000.0, time_slot)
                 self.accept_offer(market, acceptable_offer, energy=energy_Wh / 1000.0,
-                                  buyer_origin=self.owner.name)
+                                  buyer_origin=self.owner.name,
+                                  buyer_origin_id=self.owner.uuid,
+                                  buyer_id=self.owner.uuid)
                 self.state.decrement_energy_requirement(energy_Wh, time_slot, self.owner.name)
                 self.hrs_per_day[current_day] -= self._operating_hours(energy_Wh / 1000.0)
 
@@ -273,7 +273,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self.log.exception("An Error occurred while buying an offer")
 
     def _double_sided_market_event_tick(self, market):
-        self.bid_update.update_posted_bids_over_ticks(market, self)
+        self.bid_update.update(market, self)
 
     def event_tick(self):
         for market in self.active_markets:
@@ -322,7 +322,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                     if not self.are_bids_posted(market.id):
                         self.post_first_bid(market, bid_energy)
                     else:
-                        self.bid_update.update_market_cycle_bids(self)
+                        self.bid_update.reset(self)
                 except MarketException:
                     pass
 

@@ -48,7 +48,7 @@ from d3a_interface.utils import format_datetime, str_to_pendulum_datetime
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
-from d3a.d3a_core.global_objects import GlobalObjects
+from d3a.d3a_core.singletons import external_global_statistics
 from d3a.blockchain.constants import ENABLE_SUBSTRATE
 import d3a.constants
 
@@ -92,7 +92,6 @@ class Simulation:
         )
         self.progress_info = SimulationProgressInfo()
         self.simulation_config = simulation_config
-        self.global_objects = GlobalObjects()
         self.use_repl = repl
         self.export_on_finish = not no_export
         self.export_path = export_path
@@ -128,13 +127,10 @@ class Simulation:
     def _set_traversal_length(self):
         no_of_levels = self._get_setup_levels(self.area) + 1
         num_ticks_to_propagate = no_of_levels * 2
-        ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 2
         time_to_propagate_minutes = num_ticks_to_propagate * \
             self.simulation_config.tick_length.seconds / 60.
-        log.info("Setup has {} levels, offers/bids need at least {} minutes "
-                 "({} ticks) to propagate.".format(no_of_levels, time_to_propagate_minutes,
-                                                   ConstSettings.GeneralSettings.
-                                                   MAX_OFFER_TRAVERSAL_LENGTH,))
+        log.info(f'Setup has {no_of_levels} levels, offers/bids need at '
+                 f'least {time_to_propagate_minutes} minutes to propagate.')
 
     def _get_setup_levels(self, area, level_count=0):
         level_count += 1
@@ -169,7 +165,8 @@ class Simulation:
             log.info("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
-        self.area._global_objects = self.global_objects
+        external_global_statistics(self.area, self.simulation_config.ticks_per_slot)
+
         self.endpoint_buffer = SimulationEndpointBuffer(
             redis_job_id, self.initial_params,
             self.area, self.should_export_results)
@@ -191,7 +188,7 @@ class Simulation:
 
         self._set_traversal_length()
 
-        self.area.activate(self.bc)
+        self.area.activate(self.bc, simulation_id=redis_job_id)
 
     @property
     def finished(self):
@@ -248,9 +245,10 @@ class Simulation:
     def update_area_stats(self, area, endpoint_buffer):
         for child in area.children:
             self.update_area_stats(child, endpoint_buffer)
-        bills = endpoint_buffer.market_bills.bills_redis_results.get(area.uuid, {})
+        bills = endpoint_buffer.results_handler.all_ui_results["bills"].get(area.uuid, {})
         area.stats.update_aggregated_stats({"bills": bills})
-        area.stats.kpi.update(endpoint_buffer.kpi.performance_indices_redis.get(area.uuid, {}))
+        area.stats.kpi.update(
+            endpoint_buffer.results_handler.all_ui_results["kpi"].get(area.uuid, {}))
 
     def _update_and_send_results(self, is_final=False):
         self.endpoint_buffer.update_stats(
@@ -336,9 +334,12 @@ class Simulation:
                         f"{self.progress_info.elapsed_time} elapsed, "
                         f"ETA: {self.progress_info.eta}")
 
-            self.global_objects.update(self.area)
-
             self.area.cycle_markets()
+
+            if self.simulation_config.external_connection_enabled:
+                external_global_statistics.update(market_cycle=True)
+                self.area.publish_market_cycle_to_external_clients()
+
             self._update_and_send_results()
             self.live_events.handle_all_events(self.area)
 
@@ -359,6 +360,12 @@ class Simulation:
 
                 self.simulation_config.external_redis_communicator.\
                     approve_aggregator_commands()
+
+                current_tick_in_slot = tick_no % config.ticks_per_slot
+                if self.simulation_config.external_connection_enabled and \
+                        external_global_statistics.is_it_time_for_external_tick(
+                            current_tick_in_slot):
+                    external_global_statistics.update()
 
                 self.area.tick_and_dispatch()
                 self.area.update_area_current_tick()

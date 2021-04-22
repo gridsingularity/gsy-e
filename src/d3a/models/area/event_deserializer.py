@@ -1,14 +1,14 @@
 from copy import deepcopy
-from d3a.models.area.event_types import DisconnectAreaEvent, ConnectAreaEvent, \
-    DisableAreaEvent, EnableAreaEvent, ConfigEvents
+from d3a.models.area.event_types import DisconnectMarketEvent, ConnectMarketEvent, \
+    DisableMarketEvent, EnableMarketEvent, ConfigEvents
 import datetime
 
 
 _deserialize_event = {
-    1: DisconnectAreaEvent,
-    2: ConnectAreaEvent,
-    3: DisableAreaEvent,
-    4: EnableAreaEvent
+    1: DisconnectMarketEvent,
+    2: ConnectMarketEvent,
+    3: DisableMarketEvent,
+    4: EnableMarketEvent
 }
 
 
