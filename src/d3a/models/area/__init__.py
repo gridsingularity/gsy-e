@@ -42,6 +42,7 @@ from d3a_interface.area_validator import validate_area
 from d3a.models.area.redis_external_market_connection import RedisMarketExternalConnection
 from d3a.models.market.blockchain_interface import SubstrateBlockchainInterface, \
     NonBlockchainInterface
+from d3a.models.myco_matcher import MycoMatcher
 from d3a_interface.utils import key_in_dict_and_not_none
 import d3a.constants
 
@@ -145,6 +146,7 @@ class Area:
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available and self.strategy is None else None
         self.should_update_child_strategies = False
+        self.matcher = MycoMatcher()
 
     @property
     def name(self):
@@ -383,12 +385,16 @@ class Area:
     def tick(self):
         self._consume_commands_from_aggregator()
 
-        if ConstSettings.IAASettings.MARKET_TYPE in [2, 3, 4]:
+        if ConstSettings.IAASettings.MARKET_TYPE in [2, 3]:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                 self.dispatcher.publish_market_clearing()
             else:
                 for market in self.all_markets:
                     market.match_offers_bids()
+        elif ConstSettings.IAASettings.MARKET_TYPE == 4:
+            if self.next_market is not None:
+                self.matcher.calculate_recommendation(*self.next_market.get_open_stock)
+                self.next_market.match_recommendation(self.matcher.bid_offer_pairs)
 
         self.events.update_events(self.now)
 

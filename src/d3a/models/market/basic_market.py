@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from logging import getLogger
 
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
-from d3a.models.market.myco_matcher import MycoMatcher
 from d3a.models.market.market_structures import TradeBidOfferInfo
 from d3a_interface.constants_limits import ConstSettings
 
@@ -35,7 +34,6 @@ class BasicMarket(TwoSidedPayAsBid):
                  grid_fees=None, name=None, in_sim_duration=True):
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name, in_sim_duration=in_sim_duration)
-        self.matcher = MycoMatcher()
 
     def __repr__(self):  # pragma: no cover
         return "<BasicMarket{} bids: {} (E: {} kWh V:{}) " \
@@ -53,11 +51,14 @@ class BasicMarket(TwoSidedPayAsBid):
                     )
 
     def match_offers_bids(self):
-        self.matcher.match_offers_bids(self.bids, self.offers)
-        for bid, offer in self.matcher.offer_bid_pairs:
+        pass
+
+    def match_recommendation(self, recommended_list):
+        for bid, offer, matched_rate in recommended_list:
             selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
             original_bid_rate = bid.original_bid_price / bid.energy
-            matched_rate = bid.energy_rate
+            if matched_rate > bid.energy_rate:
+                continue
 
             trade_bid_info = TradeBidOfferInfo(
                 original_bid_rate=original_bid_rate,

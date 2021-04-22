@@ -3,7 +3,7 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 
 class MycoMatcher:
     def __init__(self):
-        self.offer_bid_pairs = []
+        self.bid_offer_pairs = []
 
     @staticmethod
     def sorting(obj, reverse_order=False):
@@ -33,19 +33,21 @@ class MycoMatcher:
         sorted_offers = self.sorting(self.offers, True)
 
         already_selected_bids = set()
-        offer_bid_pairs = []
+        bid_offer_pairs = []
         for offer in sorted_offers:
             for bid in sorted_bids:
                 if bid.id not in already_selected_bids and \
                         (offer.energy_rate - bid.energy_rate) <= \
                         FLOATING_POINT_TOLERANCE and offer.seller != bid.buyer:
                     already_selected_bids.add(bid.id)
-                    offer_bid_pairs.append(tuple((bid, offer)))
+                    bid_offer_pairs.append(tuple((bid, offer, bid.energy_rate)))
                     break
-        return offer_bid_pairs
+        return bid_offer_pairs
 
-    def match_offers_bids(self, bids, offers):
+    def calculate_recommendation(self, bids, offers):
         self.bids = bids
         self.offers = offers
-        self.offer_bid_pairs = []
-        self.offer_bid_pairs = self._perform_pay_as_bid_matching()
+        self.bid_offer_pairs = []
+
+        # any matching algo to be plugged in here
+        self.bid_offer_pairs = self._perform_pay_as_bid_matching()
