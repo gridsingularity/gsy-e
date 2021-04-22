@@ -27,10 +27,10 @@ from d3a.d3a_core.exceptions import AreaException
 from d3a.models.config import SimulationConfig
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.strategy import BaseStrategy
+from d3a.models.strategy.external_strategies import ExternalMixin
 from d3a.d3a_core.util import TaggedLogWrapper
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.d3a_core.global_objects import GlobalObjects
 from d3a.constants import TIME_FORMAT
 from d3a.models.area.stats import AreaStats
 from d3a.models.area.event_dispatcher import DispatcherFactory
@@ -130,7 +130,6 @@ class Area:
             raise AreaException("A leaf area can not have children.")
         self.strategy = strategy
         self._config = config
-        self._global_objects = None
         self.events = Events(event_list, self)
         self.budget_keeper = budget_keeper
         if budget_keeper:
@@ -147,6 +146,7 @@ class Area:
             if external_connection_available and self.strategy is None else None
         self.should_update_child_strategies = False
         self.matcher = MycoMatcher()
+        self.external_connection_available = external_connection_available
 
     @property
     def name(self):
@@ -367,8 +367,13 @@ class Area:
                 and _trigger_event and ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.dispatcher.broadcast_balancing_market_cycle()
 
-        if not self.strategy and self.redis_ext_conn is not None:
-            self.redis_ext_conn.event_market_cycle()
+    def publish_market_cycle_to_external_clients(self):
+        if self.strategy and isinstance(self.strategy, ExternalMixin):
+            self.strategy.publish_market_cycle()
+        elif not self.strategy and self.external_connection_available:
+            self.redis_ext_conn.publish_market_cycle()
+        for child in self.children:
+            child.publish_market_cycle_to_external_clients()
 
     def _consume_commands_from_aggregator(self):
         if self.redis_ext_conn is not None and self.redis_ext_conn.is_aggregator_controlled:
@@ -435,15 +440,6 @@ class Area:
         if self.parent:
             return self.parent.config
         return GlobalConfig
-
-    @property
-    def global_objects(self):
-        if self._global_objects:
-            return self._global_objects
-        if self.parent:
-            return self.parent.global_objects
-        else:
-            return GlobalObjects()
 
     @property
     def bc(self):

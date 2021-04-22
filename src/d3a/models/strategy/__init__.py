@@ -21,21 +21,21 @@ from logging import getLogger
 from typing import List, Dict, Any, Union  # noqa
 from uuid import uuid4
 
-from d3a.d3a_core.exceptions import SimulationException, D3AException
+from d3a import constants
+from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
+from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.d3a_core.exceptions import D3ARedisException
+from d3a.d3a_core.exceptions import SimulationException, D3AException, MarketException
+from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
+from d3a.d3a_core.util import append_or_create_key
+from d3a.events import EventMixin
+from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer, Bid, trade_from_JSON_string, \
     offer_from_JSON_string
 from d3a_interface.constants_limits import ConstSettings
-from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
-from d3a.events import EventMixin
-from d3a.d3a_core.exceptions import D3ARedisException
-from d3a.d3a_core.util import append_or_create_key
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
-from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a import constants
 
 log = getLogger(__name__)
 
@@ -136,12 +136,15 @@ class Offers:
     def sold_offer_energy(self, market_id):
         return sum(o.energy for o in self.sold_in_market(market_id))
 
+    def sold_offer_price(self, market_id):
+        return sum(o.price for o in self.sold_in_market(market_id))
+
     def can_offer_be_posted(
             self, offer_energy, offer_price, available_energy, market, replace_existing=False):
 
         if replace_existing:
-            # Do not consider previous offers, since they would be replaced by the current one
-            posted_offer_energy = 0.0
+            # Do not consider previous open offers, since they would be replaced by the current one
+            posted_offer_energy = self.sold_offer_energy(market.id)
         else:
             posted_offer_energy = self.posted_offer_energy(market.id)
 
@@ -173,13 +176,6 @@ class Offers:
             self.remove(offer)
             deleted_offer_ids.append(offer.id)
         return deleted_offer_ids
-
-    def remove_offer_by_id(self, market_id, offer_id=None):
-        try:
-            offer = [o for o, m in self.posted.items() if o.id == offer_id][0]
-            self.remove(offer)
-        except (IndexError, KeyError):
-            self.strategy.warning(f"Could not find offer to remove: {offer_id}")
 
     def remove(self, offer):
         try:
@@ -233,6 +229,12 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             self.event_response_uuids = []
 
     parameters = None
+
+    def energy_traded(self, market_id):
+        return self.offers.sold_offer_energy(market_id)
+
+    def energy_traded_costs(self, market_id):
+        return self.offers.sold_offer_price(market_id)
 
     def _send_events_to_market(self, event_type_str, market_id, data, callback):
         if not isinstance(market_id, str):
@@ -487,12 +489,44 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                 "Strategy does not have a state. "
                 "State is required to support load state functionality.")
 
+    def update_energy_price(self, market, updated_rate):
+        if market.id not in self.offers.open.values():
+            return
+
+        for offer, iterated_market_id in self.offers.open.items():
+            iterated_market = self.area.get_future_market_from_id(iterated_market_id)
+            if market is None or iterated_market is None or iterated_market.id != market.id:
+                continue
+            try:
+                iterated_market.delete_offer(offer.id)
+                updated_price = round(offer.energy * updated_rate, 10)
+                new_offer = iterated_market.offer(
+                    updated_price,
+                    offer.energy,
+                    self.owner.name,
+                    original_offer_price=updated_price,
+                    seller_origin=offer.seller_origin,
+                    seller_origin_id=offer.seller_origin_id,
+                    seller_id=self.owner.uuid
+                )
+                self.offers.replace(offer, new_offer, iterated_market.id)
+            except MarketException:
+                continue
+
 
 class BidEnabledStrategy(BaseStrategy):
     def __init__(self):
         super().__init__()
         self._bids = {}
         self._traded_bids = {}
+
+    def energy_traded(self, market_id):
+        offer_energy = super().energy_traded(market_id)
+        return offer_energy + self._traded_bid_energy(market_id)
+
+    def energy_traded_costs(self, market_id):
+        offer_costs = super().energy_traded_costs(market_id)
+        return offer_costs + self._traded_bid_costs(market_id)
 
     def _remove_existing_bids(self, market: Market) -> None:
         """Remove all existing bids in the market."""
@@ -516,6 +550,18 @@ class BidEnabledStrategy(BaseStrategy):
         self.add_bid_to_posted(market.id, bid)
         return bid
 
+    def post_bids(self, market, updated_rate):
+        existing_bids = list(self.get_posted_bids(market))
+        for bid in existing_bids:
+            assert bid.buyer == self.owner.name
+            if bid.id in market.bids.keys():
+                bid = market.bids[bid.id]
+            market.delete_bid(bid.id)
+
+            self.remove_bid_from_pending(market.id, bid.id)
+            self.post_bid(market, bid.energy * updated_rate,
+                          bid.energy)
+
     def can_bid_be_posted(
             self, bid_energy, bid_price, required_energy_kWh, market, replace_existing=False):
 
@@ -535,6 +581,16 @@ class BidEnabledStrategy(BaseStrategy):
         if market_id not in self._bids:
             return 0.0
         return sum(b.energy for b in self._bids[market_id])
+
+    def _traded_bid_energy(self, market_id):
+        if market_id not in self._traded_bids:
+            return 0.0
+        return sum(b.energy for b in self._traded_bids[market_id])
+
+    def _traded_bid_costs(self, market_id):
+        if market_id not in self._traded_bids:
+            return 0.0
+        return sum(b.price for b in self._traded_bids[market_id])
 
     def remove_bid_from_pending(self, market_id, bid_id=None):
         market = self.area.get_future_market_from_id(market_id)

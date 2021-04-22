@@ -35,9 +35,11 @@ import d3a.constants
 from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.exceptions import D3AException
-from d3a.constants import DATE_FORMAT
+
+from d3a.constants import DATE_FORMAT, DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit
-from d3a_interface.utils import iterate_over_all_modules, str_to_pendulum_datetime, format_datetime
+from d3a_interface.utils import iterate_over_all_modules, str_to_pendulum_datetime, \
+    format_datetime, find_object_of_same_weekday_and_time
 
 d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
@@ -496,12 +498,14 @@ def if_not_in_list_append(target_list, obj):
         target_list.append(obj)
 
 
-def get_current_market_maker_rate(market_slot):
-    mmr_rate = GlobalConfig.market_maker_rate
-    if isinstance(mmr_rate, dict):
-        return mmr_rate[market_slot] if market_slot in mmr_rate else None
+def get_market_maker_rate_from_config(next_market, default_value=None):
+    if next_market is None:
+        return default_value
+    if isinstance(GlobalConfig.market_maker_rate, dict):
+        return find_object_of_same_weekday_and_time(GlobalConfig.market_maker_rate,
+                                                    next_market.time_slot)
     else:
-        return mmr_rate
+        return GlobalConfig.market_maker_rate
 
 
 def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
@@ -512,3 +516,19 @@ def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
 def get_simulation_queue_name():
     listen_to_cn = os.environ.get("LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE", "no") == "yes"
     return "canary_network" if listen_to_cn else "d3a"
+
+
+class ExternalTickCounter:
+
+    def __init__(self, ticks_per_slot):
+        self.ticks_per_slot = ticks_per_slot
+
+    @property
+    def _dispatch_tick_frequency(self) -> int:
+        return int(
+            self.ticks_per_slot *
+            (DISPATCH_EVENT_TICK_FREQUENCY_PERCENT / 100)
+        )
+
+    def is_it_time_for_external_tick(self, current_tick_in_slot) -> bool:
+        return current_tick_in_slot % self._dispatch_tick_frequency == 0

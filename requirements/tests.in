@@ -1,13 +1,12 @@
--r base.txt
+-r dev.txt
 
 behave
 coverage
-flake8==3.7.9
+deepdiff
 flake8-tuple
+flake8==3.7.9
 hypothesis==4.38.0
 isort
 parameterized
 pytest
-ptpython
 requests-mock
-deepdiff
