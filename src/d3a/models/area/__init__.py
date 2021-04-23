@@ -390,16 +390,13 @@ class Area:
     def tick(self):
         self._consume_commands_from_aggregator()
 
-        if ConstSettings.IAASettings.MARKET_TYPE in [2, 3]:
+        if ConstSettings.IAASettings.MARKET_TYPE == 2:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                 self.dispatcher.publish_market_clearing()
             else:
-                for market in self.all_markets:
-                    market.match_offers_bids()
-        elif ConstSettings.IAASettings.MARKET_TYPE == 4:
-            if self.next_market is not None:
-                self.matcher.calculate_recommendation(*self.next_market.get_open_stock)
-                self.next_market.match_recommendation(self.matcher.bid_offer_pairs)
+                if self.next_market is not None:
+                    self.matcher.calculate_recommendation(*self.next_market.get_open_stock)
+                    self.next_market.match_recommendation(self.matcher.bid_offer_pairs)
 
         self.events.update_events(self.now)
 

@@ -33,7 +33,7 @@ from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rul
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade, InvalidBalancingTradeException, InvalidBid, \
     BidNotFound, DeviceNotInRegistryError
-from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
+from d3a.models.market.two_sided import TwoSidedMarket
 from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.market_structures import Bid, Offer, Trade, TradeBidOfferInfo
@@ -53,7 +53,7 @@ device_registry_dict = {
 transfer_fees = GridFee(grid_fee_percentage=0, grid_fee_const=0)
 
 
-class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
+class FakeTwoSidedPayAsBid(TwoSidedMarket):
     def __init__(self, bids=[], m_id=123, time_slot=now()):
         super().__init__(bc=MagicMock(),
                          grid_fees=transfer_fees, time_slot=time_slot)
@@ -123,7 +123,7 @@ def teardown_function():
 
 @pytest.yield_fixture
 def market():
-    return TwoSidedPayAsBid(time_slot=now())
+    return TwoSidedMarket(time_slot=now())
 
 
 def test_double_sided_performs_pay_as_bid_matching(market):
@@ -172,7 +172,7 @@ def test_market_offer(market, offer):
     assert len(e_offer.id) == 36
 
 
-def test_market_bid(market: TwoSidedPayAsBid):
+def test_market_bid(market: TwoSidedMarket):
     bid = market.bid(1, 2, 'bidder', 'bidder')
     assert market.bids[bid.id] == bid
     assert bid.price == 1
@@ -181,7 +181,7 @@ def test_market_bid(market: TwoSidedPayAsBid):
     assert len(bid.id) == 36
 
 
-def test_market_bid_accepts_bid_id(market: TwoSidedPayAsBid):
+def test_market_bid_accepts_bid_id(market: TwoSidedMarket):
     bid = market.bid(1, 2, 'bidder', 'bidder', bid_id='123')
     assert market.bids['123'] == bid
     assert bid.id == '123'
@@ -203,13 +203,13 @@ def test_market_offer_invalid(market: OneSidedMarket):
         market.offer(10, -1, 'someone', 'someone')
 
 
-def test_market_bid_invalid(market: TwoSidedPayAsBid):
+def test_market_bid_invalid(market: TwoSidedMarket):
     with pytest.raises(InvalidBid):
         market.bid(10, -1, 'someone',  'someone')
 
 
 @pytest.mark.parametrize("market, offer", [
-    (TwoSidedPayAsBid(), "offer"),
+    (TwoSidedMarket(), "offer"),
     (BalancingMarket(), "balancing_offer")
 ])
 def test_market_offer_readonly(market, offer):
@@ -219,7 +219,7 @@ def test_market_offer_readonly(market, offer):
 
 
 @pytest.mark.parametrize("market, offer", [
-    (TwoSidedPayAsBid(bc=MagicMock(), time_slot=now()), "offer"),
+    (TwoSidedMarket(bc=MagicMock(), time_slot=now()), "offer"),
     (BalancingMarket(bc=MagicMock(), time_slot=now()), "balancing_offer")
 ])
 def test_market_offer_delete(market, offer):
@@ -247,7 +247,7 @@ def test_market_offer_delete_readonly(market):
         market.delete_offer("no such offer")
 
 
-def test_market_bid_delete(market: TwoSidedPayAsBid):
+def test_market_bid_delete(market: TwoSidedMarket):
     bid = market.bid(20, 10, 'someone', 'someone')
     assert bid.id in market.bids
 
@@ -255,7 +255,7 @@ def test_market_bid_delete(market: TwoSidedPayAsBid):
     assert bid.id not in market.bids
 
 
-def test_market_bid_delete_id(market: TwoSidedPayAsBid):
+def test_market_bid_delete_id(market: TwoSidedMarket):
     bid = market.bid(20, 10, 'someone', 'someone')
     assert bid.id in market.bids
 
@@ -263,7 +263,7 @@ def test_market_bid_delete_id(market: TwoSidedPayAsBid):
     assert bid.id not in market.bids
 
 
-def test_market_bid_delete_missing(market: TwoSidedPayAsBid):
+def test_market_bid_delete_missing(market: TwoSidedMarket):
     with pytest.raises(BidNotFound):
         market.delete_bid("no such offer")
 
@@ -303,7 +303,7 @@ def test_balancing_market_negative_offer_trade(market=BalancingMarket(
     assert trade.buyer == 'B'
 
 
-def test_market_bid_trade(market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
+def test_market_bid_trade(market=TwoSidedMarket(bc=MagicMock(), time_slot=now())):
     bid = market.bid(20, 10, 'A', 'A', original_bid_price=20)
     trade_offer_info = TradeBidOfferInfo(2, 2, 0.5, 0.5, 2)
     trade = market.accept_bid(bid, energy=10, seller='B', trade_offer_info=trade_offer_info)
@@ -359,7 +359,7 @@ def test_market_trade_not_found(market, offer, accept_offer):
 
 
 def test_market_trade_bid_not_found(
-        market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
+        market=TwoSidedMarket(bc=MagicMock(), time_slot=now())):
     bid = market.bid(20, 10, 'A', 'A')
     trade_offer_info = TradeBidOfferInfo(2, 2, 1, 1, 2)
     assert market.accept_bid(bid, 10, 'B', trade_offer_info=trade_offer_info)
@@ -396,7 +396,7 @@ def test_market_trade_partial(market, offer, accept_offer):
     assert new_offer.id != e_offer.id
 
 
-def test_market_trade_bid_partial(market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
+def test_market_trade_bid_partial(market=TwoSidedMarket(bc=MagicMock(), time_slot=now())):
     bid = market.bid(20, 20, 'A', 'A', original_bid_price=20)
     trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
     trade = market.accept_bid(bid, energy=5, seller='B', trade_offer_info=trade_offer_info)
@@ -417,7 +417,7 @@ def test_market_trade_bid_partial(market=TwoSidedPayAsBid(bc=MagicMock(), time_s
 
 
 def test_market_accept_bid_emits_bid_split_on_partial_bid(
-        called, market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
+        called, market=TwoSidedMarket(bc=MagicMock(), time_slot=now())):
     market.add_listener(called)
     bid = market.bid(20, 20, 'A', 'A')
     trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
@@ -435,7 +435,7 @@ def test_market_accept_bid_emits_bid_split_on_partial_bid(
 @pytest.mark.parametrize('market_method', ('_update_accumulated_trade_price_energy',
                                            '_update_min_max_avg_trade_prices'))
 def test_market_accept_bid_always_updates_trade_stats(
-        called, market_method, market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
+        called, market_method, market=TwoSidedMarket(bc=MagicMock(), time_slot=now())):
     setattr(market, market_method, called)
 
     bid = market.bid(20, 20, 'A', 'A')
@@ -465,7 +465,7 @@ def test_market_trade_partial_invalid(market, offer, accept_offer, energy, excep
 
 @pytest.mark.parametrize('energy', (0, 21, 100, -20))
 def test_market_trade_partial_bid_invalid(
-        energy, market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
+        energy, market=TwoSidedMarket(bc=MagicMock(), time_slot=now())):
     bid = market.bid(20, 20, 'A', 'A')
     trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
     with pytest.raises(InvalidTrade):
@@ -662,7 +662,7 @@ def test_market_accept_offer_yields_partial_trade(market, offer, accept_offer):
 
 
 def test_market_accept_bid_yields_partial_bid_trade(
-        market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
+        market=TwoSidedMarket(bc=MagicMock(), time_slot=now())):
     bid = market.bid(2.0, 4, 'buyer', 'buyer')
     trade_offer_info = TradeBidOfferInfo(2, 2, 1, 1, 2)
     trade = market.accept_bid(bid, energy=1, seller='seller', trade_offer_info=trade_offer_info)

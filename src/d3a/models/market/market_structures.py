@@ -352,9 +352,9 @@ class BalancingTrade(namedtuple('BalancingTrade', ('id', 'time', 'offer', 'selle
 
 class MarketClearingState:
     def __init__(self):
-        self.cumulative_offers = dict()  # type: Dict[DateTime, dict()]
-        self.cumulative_bids = dict()  # type: Dict[DateTime, dict()]
-        self.clearing = {}  # type: Dict[DateTime, tuple()]
+        self.cumulative_offers = dict()
+        self.cumulative_bids = dict()
+        self.clearing = {}
 
     @classmethod
     def _csv_fields(cls):

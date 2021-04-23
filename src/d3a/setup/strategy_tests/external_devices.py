@@ -24,7 +24,7 @@ from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 4
+    ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.IAASettings.MIN_BID_AGE = 0
     ConstSettings.IAASettings.MIN_OFFER_AGE = 0
     area = Area(

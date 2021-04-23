@@ -19,10 +19,8 @@ from pendulum import DateTime # noqa
 from typing import Dict  # noqa
 
 from d3a.models.market import GridFee
-from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
-from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
+from d3a.models.market.two_sided import TwoSidedMarket
 from d3a.models.market.one_sided import OneSidedMarket
-from d3a.models.market.basic_market import BasicMarket
 from d3a.models.market.balancing import BalancingMarket
 from d3a.models.market import Market # noqa
 from d3a_interface.constants_limits import ConstSettings
@@ -99,17 +97,14 @@ class AreaMarkets:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 return OneSidedMarket
             elif ConstSettings.IAASettings.MARKET_TYPE == 2:
-                return TwoSidedPayAsBid
-            elif ConstSettings.IAASettings.MARKET_TYPE == 3:
-                return TwoSidedPayAsClear
-            elif ConstSettings.IAASettings.MARKET_TYPE == 4:
-                return BasicMarket
+                return TwoSidedMarket
         else:
             return BalancingMarket
 
     def create_future_markets(self, current_time, is_spot_market, area):
         markets = self.markets if is_spot_market else self.balancing_markets
         market_class = self.select_market_class(is_spot_market)
+        print(f'market_class: {market_class}')
 
         changed = False
         for offset in (area.config.slot_length * i
