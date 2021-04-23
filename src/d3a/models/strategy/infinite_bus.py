@@ -49,7 +49,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
                 read_and_convert_identity_profile_to_float(self.energy_rate_profile)
         elif isinstance(self.energy_rate, int):
             GlobalConfig.market_maker_rate = self.energy_rate
-        elif isinstance(self.energy_rate, str):
+        elif isinstance(self.energy_rate, str) or isinstance(self.energy_rate, dict):
             GlobalConfig.market_maker_rate = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY, self.energy_rate)
         else:
