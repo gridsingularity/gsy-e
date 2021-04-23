@@ -125,7 +125,7 @@ class Market:
         return isinstance(self.fee_class, ConstantGridFees)
 
     @property
-    def get_open_stock(self):
+    def get_open_bids_and_offers(self):
         return self.bids, self.offers
 
     def add_listener(self, listener):

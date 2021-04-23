@@ -395,7 +395,8 @@ class Area:
                 self.dispatcher.publish_market_clearing()
             else:
                 if self.next_market is not None:
-                    self.matcher.calculate_recommendation(*self.next_market.get_open_stock)
+                    self.matcher.calculate_recommendation(
+                        *self.next_market.get_open_bids_and_offers)
                     self.next_market.match_recommendation(self.matcher.bid_offer_pairs)
 
         self.events.update_events(self.now)
