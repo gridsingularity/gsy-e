@@ -24,8 +24,9 @@ from d3a.models.market.market_structures import Offer, Trade, BalancingOffer, Bi
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.constants import TIME_ZONE
+from d3a_interface.utils import find_object_of_same_weekday_and_time
 
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
@@ -126,6 +127,15 @@ def bus_test1(area_test1):
     c.area = area_test1
     c.owner = area_test1
     return c
+
+
+def test_global_market_maker_rate_set_at_instantiation(area_test1):
+    strategy = InfiniteBusStrategy(energy_sell_rate=35)
+    assert strategy.energy_rate == GlobalConfig.market_maker_rate
+    strategy = InfiniteBusStrategy(energy_rate_profile={"01:15": 40})
+    timestamp_key = pendulum.today("utc").set(hour=1, minute=15)
+    rate = find_object_of_same_weekday_and_time(GlobalConfig.market_maker_rate, timestamp_key)
+    assert rate == 40
 
 
 def testing_offer_is_created_at_first_market_not_on_activate(bus_test1, area_test1):
