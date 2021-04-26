@@ -41,7 +41,20 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         # This is done to support the UI which handles the Infinite Bus only as a Market Maker.
         # If one plans to allow multiple Infinite Bus devices in the grid, this should be
         # amended.
-        GlobalConfig.market_maker_rate = self.energy_rate
+        self._set_market_maker_rate()
+
+    def _set_market_maker_rate(self):
+        if self.energy_rate_profile is not None:
+            GlobalConfig.market_maker_rate = \
+                read_and_convert_identity_profile_to_float(self.energy_rate_profile)
+        elif isinstance(self.energy_rate, (int, float)):
+            GlobalConfig.market_maker_rate = self.energy_rate
+        elif isinstance(self.energy_rate, (str, dict)):
+            GlobalConfig.market_maker_rate = \
+                read_arbitrary_profile(InputProfileTypes.IDENTITY, self.energy_rate)
+        else:
+            GlobalConfig.market_maker_rate = \
+                ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
 
     def event_activate(self, **kwargs):
         if self.energy_rate_profile is not None:
