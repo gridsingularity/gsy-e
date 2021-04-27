@@ -35,6 +35,7 @@ Lastly for the Grid Operator API, 3 additional packages are required for the tem
 pip install pandas
 pip install openpyxl
 pip install tabulate
+pip install pendulum
 ```
 
 
