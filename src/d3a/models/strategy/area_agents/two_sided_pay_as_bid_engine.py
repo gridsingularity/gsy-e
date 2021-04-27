@@ -57,7 +57,9 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 energy=bid.energy,
                 buyer=self.owner.name,
                 original_bid_price=bid.original_bid_price,
-                buyer_origin=bid.buyer_origin
+                buyer_origin=bid.buyer_origin,
+                buyer_origin_id=bid.buyer_origin_id,
+                buyer_id=self.owner.uuid
             )
         except MarketException:
             self.owner.log.debug("Bid is not forwarded because grid fees of the target market "
@@ -148,7 +150,9 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 already_tracked=False,
                 trade_rate=trade_rate,
                 trade_offer_info=trade_offer_info,
-                seller_origin=bid_trade.seller_origin
+                seller_origin=bid_trade.seller_origin,
+                seller_origin_id=bid_trade.seller_origin_id,
+                seller_id=bid_trade.seller_id
             )
             self.delete_forwarded_bids(bid_info)
             self.bid_age.pop(bid_info.source_bid.id, None)

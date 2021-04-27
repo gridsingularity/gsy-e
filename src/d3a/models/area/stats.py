@@ -70,9 +70,10 @@ class AreaStats:
 
     def update_area_market_stats(self):
         if self.current_market is not None:
-            self.market_bills[self.current_market.time_slot] = \
-                {key: self._extract_from_bills(key)
-                 for key in ["Accumulated Trades"]}
+            self.market_bills = \
+                {self.current_market.time_slot: {
+                    "Accumulated Trades": self._extract_from_bills("Accumulated Trades")}}
+
             self.rate_stats_market = {
                 self.current_market.time_slot: self.min_max_avg_median_rate_current_market()
             }
@@ -124,17 +125,14 @@ class AreaStats:
         out_dict = {}
         if self.current_market is None:
             return out_dict
-        current_market_time_slot_str = self.current_market.time_slot_str
-        out_dict[current_market_time_slot_str] = copy(self.rate_stats_market.get(
-            self.current_market.time_slot, default_trade_stats_dict))
-        out_dict[current_market_time_slot_str]["market_bill"] = \
-            self._get_current_market_bills()
-        out_dict[current_market_time_slot_str]["market_fee_revenue"] = \
-            self._area.current_market.market_fee
+        out_dict = copy(self.rate_stats_market.get(self.current_market.time_slot,
+                                                   default_trade_stats_dict))
+        out_dict["market_bill"] = self._get_current_market_bills()
+        out_dict["market_fee_revenue"] = self._area.current_market.market_fee
         if dso:
-            out_dict[current_market_time_slot_str]["area_throughput"] = \
-                self._get_current_market_area_throughput()
-
+            out_dict["area_throughput"] = self._get_current_market_area_throughput()
+            out_dict["self_sufficiency"] = self.kpi.get("self_sufficiency", None)
+            out_dict["self_consumption"] = self.kpi.get("self_consumption", None)
         return out_dict
 
     def _aggregate_exported_imported_energy(self):

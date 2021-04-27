@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from pendulum import DateTime # noqa
 from typing import Dict  # noqa
 
-from d3a.models.market import TransferFees
+from d3a.models.market import GridFee
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
 from d3a.models.market.one_sided import OneSidedMarket
@@ -27,7 +27,7 @@ from d3a.models.market import Market # noqa
 from d3a_interface.constants_limits import ConstSettings
 from collections import OrderedDict
 from d3a.d3a_core.util import is_timeslot_in_simulation_duration
-from d3a import constants
+import d3a.constants
 
 
 class AreaMarkets:
@@ -53,22 +53,20 @@ class AreaMarkets:
     def all_future_spot_markets(self):
         return list(self.markets.values())
 
-    def rotate_markets(self, current_time, dispatcher):
+    def rotate_markets(self, current_time):
         # Move old and current markets & balancing_markets to
         # `past_markets` & past_balancing_markets. We use `list()` here to get a copy since we
         # modify the market list in-place
         self._market_rotation(current_time=current_time, markets=self.markets,
-                              past_markets=self.past_markets,
-                              area_agent=dispatcher.interarea_agents)
+                              past_markets=self.past_markets)
         if self.balancing_markets is not None:
             self._market_rotation(current_time=current_time, markets=self.balancing_markets,
-                                  past_markets=self.past_balancing_markets,
-                                  area_agent=dispatcher.balancing_agents)
+                                  past_markets=self.past_balancing_markets)
         self._indexed_future_markets = {
             m.id: m for m in self.all_future_spot_markets
         }
 
-    def _market_rotation(self, current_time, markets, past_markets, area_agent):
+    def _market_rotation(self, current_time, markets, past_markets):
         for timeframe in list(markets.keys()):
             if timeframe < current_time:
                 market = markets.pop(timeframe)
@@ -79,7 +77,7 @@ class AreaMarkets:
                                .format(t=timeframe, m=past_markets[timeframe].name))
 
     def _delete_past_markets(self, past_markets):
-        if not constants.D3A_TEST_RUN:
+        if not d3a.constants.D3A_TEST_RUN:
             delete_markets = [pm for pm in past_markets if
                               pm not in self.markets.values()]
             for pm in delete_markets:
@@ -121,8 +119,8 @@ class AreaMarkets:
                     bc=area.bc,
                     notification_listener=area.dispatcher.broadcast_callback,
                     grid_fee_type=area.config.grid_fee_type,
-                    transfer_fees=TransferFees(grid_fee_percentage=area.grid_fee_percentage,
-                                               transfer_fee_const=area.grid_fee_constant),
+                    grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
+                                      grid_fee_const=area.grid_fee_constant),
                     name=area.name,
                     in_sim_duration=is_timeslot_in_simulation_duration(area.config, timeframe)
                 )

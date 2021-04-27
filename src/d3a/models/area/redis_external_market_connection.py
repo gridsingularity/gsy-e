@@ -49,14 +49,6 @@ class RedisMarketExternalConnection:
         else:
             return f"{self.area.slug}"
 
-    @property
-    def _market_stats_channel(self):
-        return f"{self.channel_prefix}/market_stats"
-
-    @property
-    def _grid_fees_channel(self):
-        return f"{self.channel_prefix}/grid_fees"
-
     @staticmethod
     def _get_transaction_id(payload):
         data = json.loads(payload["data"])
@@ -77,7 +69,6 @@ class RedisMarketExternalConnection:
     def sub_to_external_channels(self):
         self.redis_com = self.area.config.external_redis_communicator
         sub_channel_dict = {
-            f"{self.channel_prefix}/market_stats": self.market_stats_callback,
             f"{self.channel_prefix}/dso_market_stats": self.dso_market_stats_callback,
             f"{self.channel_prefix}/grid_fees": self.set_grid_fees_callback,
             f"{self.channel_prefix}/register_participant": self._register,
@@ -85,22 +76,6 @@ class RedisMarketExternalConnection:
         if self.area.config.external_redis_communicator.is_enabled:
             self.aggregator = self.area.config.external_redis_communicator.aggregator
         self.redis_com.sub_to_multiple_channels(sub_channel_dict)
-
-    def market_stats_callback(self, payload):
-        market_stats_response_channel = f"{self.channel_prefix}/response/market_stats"
-        payload_data = payload["data"] \
-            if isinstance(payload["data"], dict) else json.loads(payload["data"])
-        ret_val = {"status": "ready",
-                   'name': self.area.name,
-                   "area_uuid": self.area.uuid,
-                   "command": "market_stats",
-                   "market_stats":
-                       self.area.stats.get_last_market_stats()}
-        if self.is_aggregator_controlled:
-            return ret_val
-        else:
-            ret_val["transaction_id"] = payload_data.get("transaction_id", None)
-            self.redis_com.publish_json(market_stats_response_channel, ret_val)
 
     def set_grid_fees_callback(self, payload):
         # TODO: This function should reuse the area_reconfigure_event function
@@ -160,36 +135,29 @@ class RedisMarketExternalConnection:
             ret_val["transaction_id"] = payload_data.get("transaction_id", None)
             self.redis_com.publish_json(dso_market_stats_response_channel, ret_val)
 
-    def event_market_cycle(self):
+    @property
+    def _progress_info(self):
+        slot_completion_percent = int((self.area.current_tick_in_slot /
+                                       self.area.config.ticks_per_slot) * 100)
+        return {'slot_completion': f'{slot_completion_percent}%',
+                'market_slot': self.area.next_market.time_slot_str}
+
+    def publish_market_cycle(self):
         if self.area.current_market is None:
             return
-        market_event_channel = f"{self.channel_prefix}/market-events/market"
-        market_info = self.next_market.info
-        market_info["current_market_fee"] = \
-            self.area.current_market.fee_class.grid_fee_rate
-        market_info["next_market_fee"] = self.area.get_grid_fee()
-        market_info["last_market_stats"] = \
-            self.area.stats.get_price_stats_current_market()
-        market_info["self_sufficiency"] = \
-            self.area.stats.kpi.get("self_sufficiency", None)
-        market_info["area_uuid"] = self.area.uuid
-        data = {"status": "ready",
-                "event": "market",
-                "market_info": market_info}
+
         if self.is_aggregator_controlled:
-            self.aggregator.add_batch_market_event(self.area.uuid, market_info,
-                                                   self.area.global_objects)
-        else:
-            self.redis_com.publish_json(market_event_channel, data)
+            self.aggregator.add_batch_market_event(self.area.uuid, self._progress_info)
 
     def deactivate(self):
-        deactivate_event_channel = f"{self.channel_prefix}/events/finish"
-        deactivate_msg = {
-            "event": "finish"
-        }
         if self.is_aggregator_controlled:
+            deactivate_msg = {'event': 'finish'}
             self.aggregator.add_batch_finished_event(self.area.uuid, deactivate_msg)
         else:
+            deactivate_event_channel = f"{self.channel_prefix}/events/finish"
+            deactivate_msg = {
+                "event": "finish"
+            }
             self.redis_com.publish_json(deactivate_event_channel, deactivate_msg)
 
     def trigger_aggregator_commands(self, command):
@@ -202,8 +170,6 @@ class RedisMarketExternalConnection:
         try:
             if command["type"] == "grid_fees":
                 return self.set_grid_fees_callback(command)
-            elif command["type"] == "market_stats":
-                return self.market_stats_callback(command)
             elif command["type"] == "dso_market_stats":
                 return self.dso_market_stats_callback(command)
             else:

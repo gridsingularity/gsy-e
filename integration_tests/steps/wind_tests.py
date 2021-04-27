@@ -16,12 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
-from d3a.models.read_user_profile import _readCSV
+from d3a_interface.read_user_profile import _readCSV
+from d3a_interface.utils import convert_W_to_kWh
 
 
 @then('the UserProfileWind follows the Wind profile of csv')
 def check_wind_csv_profile(context):
-    from d3a.d3a_core.util import convert_W_to_kWh
     wind = list(filter(lambda x: x.name == "Wind Turbine", context.simulation.area.children))[0]
     from d3a.setup.strategy_tests.user_profile_wind_csv import user_profile_path
     profile_data = _readCSV(user_profile_path)

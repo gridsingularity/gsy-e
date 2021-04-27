@@ -22,22 +22,22 @@ import importlib
 import logging
 import glob
 import traceback
-
 from math import isclose
+from copy import deepcopy
 from pendulum import duration, today, from_format
 from behave import given, when, then
 from deepdiff import DeepDiff
-from copy import deepcopy
 
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
+    default_profile_dict
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.utils import convert_W_to_Wh, convert_W_to_kWh, convert_kW_to_kWh, \
+    get_area_name_uuid_mapping
 from d3a.models.config import SimulationConfig
-from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.simulation import Simulation
 from d3a.d3a_core.util import d3a_path
-from d3a_interface.utils import get_area_name_uuid_mapping
 from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
-from d3a_interface.constants_limits import ConstSettings
 from d3a import constants
-from d3a.d3a_core.util import convert_W_to_Wh, convert_W_to_kWh, convert_kW_to_kWh
 
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
@@ -98,7 +98,7 @@ def json_string_profile(context, device):
 @given('we have a profile of market_maker_rate for {scenario}')
 def hour_profile_of_market_maker_rate(context, scenario):
     import importlib
-    from d3a.models.read_user_profile import InputProfileTypes
+    from d3a_interface.read_user_profile import InputProfileTypes
     setup_file_module = importlib.import_module("d3a.setup.{}".format(scenario))
     context._market_maker_rate = \
         read_arbitrary_profile(InputProfileTypes.IDENTITY, setup_file_module.market_maker_rate)
@@ -349,29 +349,22 @@ def run_d3a_with_settings_file(context):
                                                                      "d3a-settings.json")))
 
 
-@when('the reported unmatched loads are saved')
-def save_reported_unmatched_loads(context):
-    unmatched_loads_object = context.simulation.endpoint_buffer.market_unmatched_loads
-    context.unmatched_loads = deepcopy(unmatched_loads_object.unmatched_loads)
-
-
 @when('the reported price energy day results are saved')
 def step_impl(context):
-    context.price_energy_day = deepcopy(
-        context.simulation.endpoint_buffer.price_energy_day.csv_output
-    )
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    price_energy_day = raw_results["price_energy_day"]
+    context.price_energy_day = deepcopy(price_energy_day)
 
 
 @when('the reported {bill_type} bills are saved')
 def save_reported_bills(context, bill_type):
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    ui_results = context.simulation.endpoint_buffer.results_handler.all_ui_results
     if bill_type == "energy":
-        context.energy_bills = deepcopy(
-            context.simulation.endpoint_buffer.market_bills.bills_results)
-        context.energy_bills_redis = \
-            deepcopy(context.simulation.endpoint_buffer.market_bills.bills_redis_results)
+        context.energy_bills = deepcopy(raw_results["bills"])
+        context.energy_bills_redis = deepcopy(ui_results["bills"])
     elif bill_type == "cumulative":
-        context.energy_bills = deepcopy(
-            context.simulation.endpoint_buffer.cumulative_bills.cumulative_bills)
+        context.energy_bills = deepcopy(raw_results["cumulative_bills"])
 
 
 @when('the past markets are not kept in memory')
@@ -446,8 +439,7 @@ def test_aggregated_result_files(context):
                  os.path.join(base_path, 'kpi.json'),
                  os.path.join(base_path, 'price_energy_day.json'),
                  os.path.join(base_path, 'random_seed.json'),
-                 os.path.join(base_path, 'status.json'),
-                 os.path.join(base_path, 'unmatched_loads.json')]
+                 os.path.join(base_path, 'status.json')]
 
     assert all(len(glob.glob(f)) == 1 for f in file_list)
     assert all(len(open(glob.glob(f)[0]).readlines()) > 0 for f in file_list)
@@ -455,9 +447,8 @@ def test_aggregated_result_files(context):
 
 @then('we test that cloud coverage [{cloud_coverage}] and market_maker_rate are parsed correctly')
 def test_simulation_config_parameters(context, cloud_coverage):
-    from d3a.models.read_user_profile import default_profile_dict
     assert context.simulation.simulation_config.cloud_coverage == int(cloud_coverage)
-    day_factor = 24 * 7 if constants.IS_CANARY_NETWORK else 24
+    day_factor = 24 * 7 if GlobalConfig.IS_CANARY_NETWORK else 24
     assert len(context.simulation.simulation_config.market_maker_rate) == \
         day_factor / context.simulation.simulation_config.slot_length.hours + \
         context.simulation.simulation_config.market_count
@@ -679,10 +670,6 @@ def test_output(context, scenario, sim_duration, slot_length, tick_length):
     from integration_tests.steps.integration_tests import get_simulation_raw_results
     get_simulation_raw_results(context)
 
-    if scenario in ["default_2a", "default_2b", "default_3"]:
-        from integration_tests.steps.two_sided_market import no_unmatched_loads
-        no_unmatched_loads(context)
-
     # (check if simulation successfully finished):
     assert len(context.raw_sim_data.keys()) == 24
     if scenario == "default":
@@ -694,7 +681,8 @@ def test_output(context, scenario, sim_duration, slot_length, tick_length):
 
 @then('the energy bills report the correct accumulated traded energy price')
 def test_accumulated_energy_price(context):
-    bills = context.simulation.endpoint_buffer.market_bills.bills_results
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    bills = raw_results["bills"]
     for bills_key in [c for c in bills.keys() if "Accumulated Trades" in c]:
         extern_trades = bills[bills_key]["External Trades"]
         assert extern_trades["total_energy"] == extern_trades["bought"] - extern_trades["sold"]
@@ -723,7 +711,8 @@ def test_accumulated_energy_price(context):
 
 @then('the traded energy report the correct accumulated traded energy')
 def test_accumulated_energy(context):
-    bills = context.simulation.endpoint_buffer.market_bills.bills_results
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    bills = raw_results["bills"]
     if "Cell Tower" not in bills:
         return
     cell_tower_net = bills["Cell Tower"]["sold"] - bills["Cell Tower"]["bought"]
@@ -748,8 +737,10 @@ def test_external_trade_energy_price(context):
     # TODO: Deactivating this test for now, because it will fail due to D3ASIM-1887.
     # Please activate the test when implementing the aforementioned bug.
     return
-    bills = context.simulation.endpoint_buffer.market_bills.bills_results
-    current_trades = context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades
+
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    current_trades = raw_results["cumulative_grid_trades"]
+    bills = raw_results["bills"]
     houses = [child for child in context.simulation.area.children
               if child.name in ["House 1", "House 2"]]
     for house in houses:
@@ -774,27 +765,32 @@ def test_external_trade_energy_price(context):
 
 @then('the cumulative energy bills for each area are the sum of its children')
 def cumulative_bills_sum(context):
-    cumulative_bills = context.simulation.endpoint_buffer.cumulative_bills.cumulative_bills_results
-    bills = context.simulation.endpoint_buffer.market_bills.bills_redis_results
+    ui_results = context.simulation.endpoint_buffer.results_handler.all_ui_results
+    cumulative_bills = ui_results["cumulative_bills"]
+    bills = ui_results["bills"]
 
     def assert_area_cumulative_bills(area):
         area_bills = cumulative_bills[area.uuid]
         if len(area.children) == 0:
             estimated_total = area_bills["spent_total"] - area_bills["earned"] + \
                               area_bills["penalties"]
-            assert isclose(area_bills["total"], estimated_total, rel_tol=1e-2)
+            assert isclose(area_bills["total"], estimated_total, abs_tol=0.0011)
             assert isclose(bills[area.uuid]["spent"] + bills[area.uuid]["market_fee"],
-                           cumulative_bills[area.uuid]["spent_total"], rel_tol=1e-2)
+                           cumulative_bills[area.uuid]["spent_total"], abs_tol=0.0011)
             return
         child_uuids = [child.uuid for child in area.children]
         assert isclose(area_bills["spent_total"],
-                       sum(cumulative_bills[uuid]["spent_total"] for uuid in child_uuids))
+                       sum(cumulative_bills[uuid]["spent_total"] for uuid in child_uuids),
+                       abs_tol=0.0011)
         assert isclose(area_bills["earned"],
-                       sum(cumulative_bills[uuid]["earned"] for uuid in child_uuids))
+                       sum(cumulative_bills[uuid]["earned"] for uuid in child_uuids),
+                       abs_tol=0.0011)
         assert isclose(area_bills["penalties"],
-                       sum(cumulative_bills[uuid]["penalties"] for uuid in child_uuids))
+                       sum(cumulative_bills[uuid]["penalties"] for uuid in child_uuids),
+                       abs_tol=0.0011)
         assert isclose(area_bills["total"],
-                       sum(cumulative_bills[uuid]["total"] for uuid in child_uuids))
+                       sum(cumulative_bills[uuid]["total"] for uuid in child_uuids),
+                       abs_tol=0.0011)
 
         for child in area.children:
             assert_area_cumulative_bills(child)
@@ -811,7 +807,7 @@ def generate_area_uuid_map(sim_area, results):
 
 @then('the predefined load follows the load profile')
 def check_load_profile(context):
-    if constants.IS_CANARY_NETWORK:
+    if GlobalConfig.IS_CANARY_NETWORK:
         return
     if isinstance(context._device_profile, str):
         context._device_profile = context._device_profile_dict
@@ -949,7 +945,7 @@ def test_finite_plant_max_power(context, plant_name):
 
 @then("the results are the same for each simulation run")
 def test_sim_market_count(context):
-    if constants.IS_CANARY_NETWORK:
+    if GlobalConfig.IS_CANARY_NETWORK:
         return
     grid_1 = context.simulation_1.area
     grid_4 = context.simulation_4.area
@@ -1013,32 +1009,29 @@ def assert_multiple_trade_rates_any(context, market_name, trade_rate1, trade_rat
 
 @then('the unmatched loads are identical no matter if the past markets are kept')
 def identical_unmatched_loads(context):
-    unmatched_loads = context.simulation.endpoint_buffer.market_unmatched_loads.unmatched_loads
-    assert len(DeepDiff(unmatched_loads, context.unmatched_loads)) == 0
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    assert len(DeepDiff(raw_results["unmatched_loads"], context.unmatched_loads)) == 0
 
 
 @then('the cumulative grid trades are identical no matter if the past markets are kept')
 def identical_cumulative_grid_trades(context):
-    cumulative_grid_trades = \
-        context.simulation.endpoint_buffer.cumulative_grid_trades.accumulated_trades
-    cumulative_grid_balancing_trades = \
-        context.simulation.endpoint_buffer.cumulative_grid_trades.current_balancing_trades
-    assert len(DeepDiff(cumulative_grid_trades, context.cumulative_grid_trades,
-                        significant_digits=5)) == 0
-    assert len(DeepDiff(cumulative_grid_balancing_trades, context.cumulative_grid_balancing_trades,
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    assert len(DeepDiff(raw_results["cumulative_grid_trades"], context.cumulative_grid_trades,
                         significant_digits=5)) == 0
 
 
 @then('the price energy day results are identical no matter if the past markets are kept')
 def identical_price_energy_day(context):
-    price_energy_day = context.simulation.endpoint_buffer.price_energy_day.csv_output
-    assert len(DeepDiff(price_energy_day, context.price_energy_day)) == 0
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    assert len(DeepDiff(raw_results["price_energy_day"], context.price_energy_day)) == 0
 
 
 @then('the energy bills are identical no matter if the past markets are kept')
 def identical_energy_bills(context):
-    energy_bills = context.simulation.endpoint_buffer.market_bills.bills_results
-    energy_bills_redis = context.simulation.endpoint_buffer.market_bills.bills_redis_results
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    ui_results = context.simulation.endpoint_buffer.results_handler.all_ui_results
+    energy_bills = raw_results["bills"]
+    energy_bills_redis = ui_results["bills"]
 
     assert len(DeepDiff(energy_bills, context.energy_bills)) == 0
     for _, v in energy_bills_redis.items():
@@ -1048,7 +1041,8 @@ def identical_energy_bills(context):
 
 @then('the cumulative bills are identical no matter if the past markets are kept')
 def identical_cumulative_bills(context):
-    energy_bills = context.simulation.endpoint_buffer.cumulative_bills.cumulative_bills
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    energy_bills = raw_results["cumulative_bills"]
 
     for _, v in energy_bills.items():
         assert any(len(DeepDiff(v, old_area_results)) == 0
@@ -1057,7 +1051,8 @@ def identical_cumulative_bills(context):
 
 @then("the load profile should be identical on each day")
 def identical_profiles(context):
-    device_stats_dict = context.simulation.endpoint_buffer.device_statistics.device_stats_dict
+    raw_results = context.simulation.endpoint_buffer.results_handler.all_raw_results
+    device_stats_dict = raw_results["device_statistics"]
     load_profile = device_stats_dict['House 1']['H1 DefinedLoad']['load_profile_kWh']
     load_profile_ts = {int(from_format(time_slot, DATE_TIME_FORMAT).timestamp()): value
                        for time_slot, value in load_profile.items()}

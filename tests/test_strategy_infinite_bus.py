@@ -18,13 +18,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 import sys
 import pendulum
+from uuid import uuid4
 
 from d3a.models.market.market_structures import Offer, Trade, BalancingOffer, Bid
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.constants import TIME_ZONE
+from d3a_interface.utils import find_object_of_same_weekday_and_time
 
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
@@ -34,6 +36,7 @@ class FakeArea:
         self.current_tick = 2
         self.appliance = None
         self.name = 'FakeArea'
+        self.uuid = str(uuid4())
         self.test_market = FakeMarket(0)
         self.test_balancing_market = FakeMarket(1)
         self.test_balancing_market_2 = FakeMarket(2)
@@ -79,8 +82,9 @@ class FakeMarket:
         return TIME
 
     def offer(self, price, energy, seller, original_offer_price=None,
-              seller_origin=None):
-        offer = Offer('id', pendulum.now(), price, energy, seller)
+              seller_origin=None, seller_origin_id=None, seller_id=None):
+        offer = Offer('id', pendulum.now(), price, energy, seller, seller_origin=seller_origin,
+                      seller_origin_id=seller_origin_id, seller_id=seller_id)
         self.created_offers.append(offer)
         offer.id = 'id'
         return offer
@@ -92,16 +96,19 @@ class FakeMarket:
         return offer
 
     def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
+                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
+                     buyer_origin_id=None, buyer_id=None):
         offer = offer_or_id
         trade = Trade('trade_id', time, offer, offer.seller, buyer,
-                      seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
+                      seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
+                      buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
         self.traded_offers.append(trade)
         return trade
 
     def bid(self, price, energy, buyer, original_bid_price=None,
-            buyer_origin=None):
-        bid = Bid("bid_id", pendulum.now(), price, energy, buyer, buyer_origin=buyer_origin)
+            buyer_origin=None, buyer_origin_id=None, buyer_id=None):
+        bid = Bid("bid_id", pendulum.now(), price, energy, buyer, buyer_origin=buyer_origin,
+                  buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
         return bid
 
 
@@ -120,6 +127,15 @@ def bus_test1(area_test1):
     c.area = area_test1
     c.owner = area_test1
     return c
+
+
+def test_global_market_maker_rate_set_at_instantiation(area_test1):
+    strategy = InfiniteBusStrategy(energy_sell_rate=35)
+    assert strategy.energy_rate == GlobalConfig.market_maker_rate
+    strategy = InfiniteBusStrategy(energy_rate_profile={"01:15": 40})
+    timestamp_key = pendulum.today("utc").set(hour=1, minute=15)
+    rate = find_object_of_same_weekday_and_time(GlobalConfig.market_maker_rate, timestamp_key)
+    assert rate == 40
 
 
 def testing_offer_is_created_at_first_market_not_on_activate(bus_test1, area_test1):

@@ -18,16 +18,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import logging
 import traceback
-from pendulum import duration
+from collections import deque
 
 from d3a.d3a_core.exceptions import MarketException
-from d3a.models.strategy.external_strategies import IncomingRequest
-from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
+from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
-from d3a.d3a_core.redis_connections.aggregator_connection import default_market_info
-from d3a.d3a_core.util import get_current_market_maker_rate
+from d3a.models.strategy.external_strategies import IncomingRequest, default_market_info
+from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
+from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
+from pendulum import duration
 
 
 class PVExternalMixin(ExternalMixin):
@@ -123,21 +123,29 @@ class PVExternalMixin(ExternalMixin):
 
     def _offer(self, payload):
         transaction_id = self._get_transaction_id(payload)
+        required_args = {'price', 'energy', 'transaction_id'}
+        allowed_args = required_args.union({'replace_existing'})
+
         offer_response_channel = f'{self.channel_prefix}/response/offer'
         if not check_for_connected_and_reply(self.redis, offer_response_channel,
                                              self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'price', 'energy', 'transaction_id'}
-            arguments['seller'] = self.device.name
-            arguments['seller_origin'] = self.device.name
+
+            # Check that all required arguments have been provided
+            assert all(arg in arguments.keys() for arg in required_args)
+            # Check that every provided argument is allowed
+            assert all(arg in allowed_args for arg in arguments.keys())
+
         except Exception as e:
             logging.error(f"Incorrect offer request. Payload {payload}. Exception {str(e)}.")
             self.redis.publish_json(
                 offer_response_channel,
                 {"command": "offer",
-                 "error": "Incorrect offer request. Available parameters: (price, energy).",
+                 "error": (
+                     "Incorrect offer request. "
+                     "Available parameters: ('price', 'energy', 'replace_existing')."),
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
@@ -145,17 +153,23 @@ class PVExternalMixin(ExternalMixin):
 
     def _offer_impl(self, arguments, response_channel):
         try:
+            replace_existing = arguments.pop('replace_existing', True)
+
             assert self.can_offer_be_posted(
                 arguments["energy"],
                 arguments["price"],
                 self.state.get_available_energy_kWh(self.next_market.time_slot),
-                self.next_market)
-            offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
-            offer = self.next_market.offer(**offer_arguments)
-            self.offers.post(offer, self.next_market.id)
+                self.next_market,
+                replace_existing=replace_existing)
+
+            offer_arguments = {k: v for k, v in arguments.items() if not k == 'transaction_id'}
+            offer = self.post_offer(
+                self.next_market, replace_existing=replace_existing, **offer_arguments)
+
             self.redis.publish_json(
                 response_channel,
-                {"command": "offer", "status": "ready", "offer": offer.to_JSON_string(),
+                {"command": "offer", "status": "ready",
+                 "offer": offer.to_JSON_string(replace_existing=replace_existing),
                  "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling offer create on area {self.device.name}: "
@@ -171,7 +185,10 @@ class PVExternalMixin(ExternalMixin):
     def _device_info_dict(self):
         return {
             'available_energy_kWh':
-                self.state.get_available_energy_kWh(self.next_market.time_slot)
+                self.state.get_available_energy_kWh(self.next_market.time_slot),
+            'energy_active_in_offers': self.offers.open_offer_energy(self.next_market.id),
+            'energy_traded': self.energy_traded(self.next_market.id),
+            'total_cost': self.energy_traded_costs(self.next_market.id),
         }
 
     def event_market_cycle(self):
@@ -179,26 +196,21 @@ class PVExternalMixin(ExternalMixin):
         self.register_on_market_cycle()
         if not self.should_use_default_strategy:
             self.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
-            self._reset_event_tick_counter()
-            market_event_channel = f"{self.channel_prefix}/events/market"
-            market_info = self.next_market.info
-            if self.is_aggregator_controlled:
-                market_info.update(default_market_info)
-            market_info['device_info'] = self._device_info_dict
-            market_info["event"] = "market"
-            market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
-                if "bills" in self.device.stats.aggregated_stats else None
-            market_info["area_uuid"] = self.device.uuid
-            market_info["last_market_maker_rate"] = \
-                get_current_market_maker_rate(self.area.current_market.time_slot) \
-                if self.area.current_market else None
-            market_info['last_market_stats'] = \
-                self.market_area.stats.get_price_stats_current_market()
-            self.redis.publish_json(market_event_channel, market_info)
-            if self.is_aggregator_controlled:
-                self.redis.aggregator.add_batch_market_event(self.device.uuid,
-                                                             market_info,
-                                                             self.area.global_objects)
+            if not self.is_aggregator_controlled:
+                market_event_channel = f"{self.channel_prefix}/events/market"
+                market_info = self.next_market.info
+                if self.is_aggregator_controlled:
+                    market_info.update(default_market_info)
+                market_info['device_info'] = self._device_info_dict
+                market_info["event"] = "market"
+                market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
+                    if "bills" in self.device.stats.aggregated_stats else None
+                market_info["area_uuid"] = self.device.uuid
+                market_info["last_market_maker_rate"] = \
+                    get_market_maker_rate_from_config(self.area.current_market)
+                market_info['last_market_stats'] = \
+                    self.market_area.stats.get_price_stats_current_market()
+                self.redis.publish_json(market_event_channel, market_info)
             self._delete_past_state()
         else:
             super().event_market_cycle()
@@ -223,18 +235,15 @@ class PVExternalMixin(ExternalMixin):
         if not self.connected and not self.is_aggregator_controlled:
             super().event_tick()
         else:
-            while len(self.pending_requests) > 0:
-                req = self.pending_requests.pop()
+            while self.pending_requests:
+                # We want to process requests as First-In-First-Out, so we use popleft
+                req = self.pending_requests.popleft()
                 self._incoming_commands_callback_selection(req)
-        self._dispatch_event_tick_to_external_agent()
+            self._dispatch_event_tick_to_external_agent()
 
     def event_offer(self, *, market_id, offer):
         if self.should_use_default_strategy:
             super().event_offer(market_id=market_id, offer=offer)
-
-    def event_market_cycle_price(self):
-        if self.should_use_default_strategy:
-            super().event_market_cycle_price()
 
     def _delete_offer_aggregator(self, arguments):
         if ("offer" in arguments and arguments["offer"] is not None) and \
@@ -285,8 +294,6 @@ class PVExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id", None)}
 
         with self.lock:
-            arguments['seller'] = self.device.name
-            arguments['seller_origin'] = self.device.name
             offer_arguments = {k: v
                                for k, v in arguments.items()
                                if k not in ["transaction_id", "type"]}
@@ -308,6 +315,10 @@ class PVExternalMixin(ExternalMixin):
                     offer_arguments['energy'] = offer.energy
                     offer_arguments['price'] = \
                         (offer_arguments['price'] / offer_arguments['energy']) * offer.energy
+                    offer_arguments["seller"] = offer.seller
+                    offer_arguments["seller_origin"] = offer.seller_origin
+                    offer_arguments["seller_id"] = offer.seller_id
+                    offer_arguments["seller_origin_id"] = offer.seller_origin_id
                     new_offer = iterated_market.offer(**offer_arguments)
                     self.offers.replace(offer, new_offer, iterated_market.id)
                     return {
@@ -321,24 +332,35 @@ class PVExternalMixin(ExternalMixin):
                     continue
 
     def _offer_aggregator(self, arguments):
-        assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
-        arguments['seller'] = self.device.name
-        arguments['seller_origin'] = self.device.name
+        required_args = {'price', 'energy', 'type', 'transaction_id'}
+        allowed_args = required_args.union({'replace_existing'})
+
+        # Check that all required arguments have been provided
+        assert all(arg in arguments.keys() for arg in required_args)
+        # Check that every provided argument is allowed
+        assert all(arg in allowed_args for arg in arguments.keys())
+
         try:
+            replace_existing = arguments.pop('replace_existing', True)
+
             assert self.can_offer_be_posted(
                 arguments["energy"],
                 arguments["price"],
                 self.state.get_available_energy_kWh(self.next_market.time_slot),
-                self.next_market)
+                self.next_market,
+                replace_existing=replace_existing)
+
             offer_arguments = {k: v
                                for k, v in arguments.items()
                                if k not in ["transaction_id", "type"]}
-            offer = self.next_market.offer(**offer_arguments)
-            self.offers.post(offer, self.next_market.id)
+
+            offer = self.post_offer(
+                self.next_market, replace_existing=replace_existing, **offer_arguments)
+
             return {
                 "command": "offer",
                 "status": "ready",
-                "offer": offer.to_JSON_string(),
+                "offer": offer.to_JSON_string(replace_existing=replace_existing),
                 "transaction_id": arguments.get("transaction_id", None),
                 "area_uuid": self.device.uuid
             }
@@ -406,8 +428,10 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
             if req.request_type == "set_energy_forecast":
                 self._set_energy_forecast_impl(req.arguments, req.response_channel)
 
-        self.pending_requests = [req for req in self.pending_requests
-                                 if req.request_type not in "set_energy_forecast"]
+        self.pending_requests = deque(
+            req for req in self.pending_requests
+            if req.request_type not in "set_energy_forecast")
+
         super().event_tick()
 
     def _incoming_commands_callback_selection(self, req):

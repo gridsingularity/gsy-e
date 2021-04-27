@@ -16,14 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
+    read_and_convert_identity_profile_to_float
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy import BidEnabledStrategy, INF_ENERGY
 from d3a.d3a_core.exceptions import MarketException
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
-from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
-    read_and_convert_identity_profile_to_float
-from d3a.d3a_core.util import find_object_of_same_weekday_and_time
+from d3a_interface.utils import find_object_of_same_weekday_and_time
 
 
 class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
@@ -41,7 +41,20 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         # This is done to support the UI which handles the Infinite Bus only as a Market Maker.
         # If one plans to allow multiple Infinite Bus devices in the grid, this should be
         # amended.
-        GlobalConfig.market_maker_rate = self.energy_rate
+        self._set_market_maker_rate()
+
+    def _set_market_maker_rate(self):
+        if self.energy_rate_profile is not None:
+            GlobalConfig.market_maker_rate = \
+                read_and_convert_identity_profile_to_float(self.energy_rate_profile)
+        elif isinstance(self.energy_rate, (int, float)):
+            GlobalConfig.market_maker_rate = self.energy_rate
+        elif isinstance(self.energy_rate, (str, dict)):
+            GlobalConfig.market_maker_rate = \
+                read_arbitrary_profile(InputProfileTypes.IDENTITY, self.energy_rate)
+        else:
+            GlobalConfig.market_maker_rate = \
+                ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
 
     def event_activate(self, **kwargs):
         if self.energy_rate_profile is not None:
@@ -68,7 +81,9 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             if offer.energy_rate <= find_object_of_same_weekday_and_time(self.energy_buy_rate,
                                                                          market.time_slot):
                 try:
-                    self.accept_offer(market, offer, buyer_origin=self.owner.name)
+                    self.accept_offer(market, offer, buyer_origin=self.owner.name,
+                                      buyer_origin_id=self.owner.uuid,
+                                      buyer_id=self.owner.uuid)
                 except MarketException:
                     # Offer already gone etc., try next one.
                     continue
@@ -88,8 +103,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
                                                                     market.time_slot)
                     self.post_bid(market,
                                   buy_rate * INF_ENERGY,
-                                  INF_ENERGY,
-                                  buyer_origin=self.owner.name)
+                                  INF_ENERGY)
                 except MarketException:
                     pass
 

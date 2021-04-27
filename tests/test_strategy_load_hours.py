@@ -33,8 +33,8 @@ from d3a_interface.exceptions import D3ADeviceException
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import d3a_path
+from uuid import uuid4
 
-ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
 
 TIME = today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
@@ -50,6 +50,7 @@ class FakeArea:
         self.config = DEFAULT_CONFIG
         self.appliance = None
         self.name = 'FakeArea'
+        self.uuid = str(uuid4())
 
         self._next_market = FakeMarket(0)
         self.current_market = FakeMarket(0)
@@ -112,10 +113,11 @@ class FakeMarket:
         return deepcopy(self.bids)
 
     def bid(self, price: float, energy: float, buyer: str, original_bid_price=None,
-            buyer_origin=None) -> Bid:
+            buyer_origin=None, buyer_origin_id=None, buyer_id=None) -> Bid:
         bid = Bid(id='bid_id', time=now(), price=price, energy=energy, buyer=buyer,
                   original_bid_price=original_bid_price,
-                  buyer_origin=buyer_origin)
+                  buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id,
+                  buyer_id=buyer_id)
         self.bids[bid.id] = bid
         return bid
 
@@ -166,10 +168,6 @@ class FakeMarket:
 class TestLoadHoursStrategyInput(unittest.TestCase):
 
     def setUp(self):
-        # MAX_OFFER_TRAVERSAL_LENGTH should be set here, otherwise some tests fail
-        # when only the load tests are executed. Works fine when all tests are executed
-        # though
-        ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 5
         self.strategy1 = MagicMock(spec=LoadHoursStrategy)
 
     def tearDown(self):

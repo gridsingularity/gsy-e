@@ -1,2 +1,4 @@
+-r dev.txt
+
 pandapower
-matplotlib
+matplotlib==3.4.0

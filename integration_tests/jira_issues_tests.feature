@@ -20,7 +20,7 @@ Feature: Jira Issues Tests
      And d3a is installed
      And export is_needed
      When we run the simulation with setup file strategy_tests.home_cp_ess_load and parameters [24, 60, 60, 1]
-     Then there should be no unmatched loads
+     Then all load demands in setup was fulfilled on every market slot
      And on every market slot there should be matching trades on grid and house markets
 
   @slow
@@ -50,7 +50,7 @@ Feature: Jira Issues Tests
      And d3a is installed
      And export is_needed
      When we run the simulation with setup file jira.d3asim_871 and parameters [24, 60, 60, 1]
-     Then there should be no unmatched loads
+     Then all load demands in setup was fulfilled on every market slot
 
   @disabled
   Scenario: D3ASIM-874, alternative pricing can buy energy from IAA if there is not enough self-consumption
@@ -76,8 +76,9 @@ Feature: Jira Issues Tests
   Scenario: D3ASIM-1139, no unmatched loads on setup with many loads and only one CEP
     Given we have a scenario named jira/d3asim_1139
     And d3a is installed
+    And export is_needed
     When we run the simulation with setup file jira.d3asim_1139 and parameters [24, 60, 60, 1]
-    Then there should be no unmatched loads
+    Then all load demands in setup was fulfilled on every market slot
 
   Scenario: D3ASIM-1475, default_2off finishes successfully for two-sided pay as clear market
     Given we have a scenario named jira/default_2off_d3asim_1475
@@ -117,14 +118,14 @@ Feature: Jira Issues Tests
     And d3a uses an two-sided-pay-as-bid market
     And the file jira/d3asim_1637.json is used for the area setup
     When we run the simulation with setup file json_file and parameters [24, 30, 30, 1]
-    Then there should be no unmatched loads
+    Then all load demands in setup was fulfilled on every market slot
 
   Scenario: D3ASIM-1690: No unmatched load
     Given we have a scenario named two_sided_pay_as_clear/jira_d3asim_1690
     And d3a is installed
     And export is_needed
     When we run the simulation with setup file two_sided_pay_as_clear.jira_d3asim_1690 and parameters [24, 60, 60, 1]
-    Then there should be no unmatched loads
+    Then all load demands in setup was fulfilled on every market slot
 
   Scenario: D3ASIM-1862: DSO doesnt pay the grid fee of the Grid
     Given we have a scenario named jira/d3asim_1862

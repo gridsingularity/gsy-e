@@ -19,25 +19,27 @@ import csv
 import logging
 import pathlib
 import os
-import plotly.graph_objs as go
 import shutil
 import json
 import operator
 from typing import Dict
-from slugify import slugify
-from sortedcontainers import SortedDict
 from collections import namedtuple
 from copy import deepcopy
-from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
-from d3a.models.area import Area
+from functools import reduce  # forward compatibility for Python 3
+
+import plotly.graph_objs as go
+from slugify import slugify
+from sortedcontainers import SortedDict
+
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
-from d3a_interface.utils import mkdir_from_str
-from d3a.d3a_core.util import constsettings_to_dict, generate_market_slot_list, round_floats_for_ui
+from d3a_interface.utils import mkdir_from_str, generate_market_slot_list
+from d3a.d3a_core.util import constsettings_to_dict, round_floats_for_ui
 from d3a.models.market.market_structures import MarketClearingState
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.state import ESSEnergyOrigin
 from d3a.d3a_core.sim_results.plotly_graph import PlotlyGraph
-from functools import reduce  # forward compatibility for Python 3
+from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
+from d3a.models.area import Area
 import d3a.constants
 
 _log = logging.getLogger(__name__)
@@ -309,7 +311,8 @@ class ExportAndPlot:
         device_address_list = address_list[1::]
 
         device_name = device_address_list[-1].replace(" ", "_")
-        device_dict = get_from_dict(self.endpoint_buffer.device_statistics.device_stats_dict,
+        device_stats = self.endpoint_buffer.results_handler.all_raw_results["device_statistics"]
+        device_dict = get_from_dict(device_stats,
                                     device_address_list)
         # converting address_list into plot_dir by slugifying the members
         plot_dir = os.path.join(self.plot_dir,
@@ -325,11 +328,7 @@ class ExportAndPlot:
         """
 
         energy_profile = \
-            self.endpoint_buffer.trade_profile.convert_timestamp_strings_to_datetimes(
-                self.endpoint_buffer.trade_profile.traded_energy_profile
-            )
-
-        self.endpoint_buffer.trade_profile.add_sold_bought_lists(energy_profile)
+            self.endpoint_buffer.results_handler.trade_profile_plot_results
 
         new_subdir = os.path.join(subdir, area.slug)
         self._plot_energy_profile(new_subdir, area.name, energy_profile)
@@ -450,8 +449,7 @@ class ExportAndPlot:
         """
         Plots stock stats for each knot in the hierarchy per market_slot
         """
-
-        area_stats = self.endpoint_buffer.area_market_stocks_stats.state[area.name]
+        area_stats = self.endpoint_buffer.offer_bid_trade_hr.state[area.name]
         self.market_slot_data_mapping = {}
         fig = go.Figure()
 
@@ -725,7 +723,7 @@ class ExportAndPlot:
         """
         Plots history of energy trades plotted for each market_slot
         """
-        area_stats = self.endpoint_buffer.area_market_stocks_stats.state[area.name]
+        area_stats = self.endpoint_buffer.offer_bid_trade_hr.state[area.name]
         barmode = "relative"
         xtitle = 'Time'
         ytitle = 'Energy [kWh]'

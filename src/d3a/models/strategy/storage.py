@@ -19,22 +19,23 @@ import traceback
 from typing import Union
 from collections import namedtuple
 from enum import Enum
-from pendulum import duration
 from logging import getLogger
 
+from pendulum import duration
+
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.device_validator import validate_storage_device
 from d3a import limit_float_precision
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import MarketException
-from d3a.d3a_core.util import area_name_from_area_or_iaa_name, \
-    find_object_of_same_weekday_and_time
+from d3a.d3a_core.util import area_name_from_area_or_iaa_name
 from d3a.models.state import StorageState, ESSEnergyOrigin, EnergyOrigin
 from d3a.models.strategy import BidEnabledStrategy
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.device_validator import validate_storage_device
-from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
-from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a.models.strategy.update_frequency import TemplateStrategyOfferUpdater, \
+    TemplateStrategyBidUpdater
 from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a_interface.utils import key_in_dict_and_not_none
 from d3a import constants
 
 log = getLogger(__name__)
@@ -98,18 +99,19 @@ class StorageStrategy(BidEnabledStrategy):
         BidEnabledStrategy.__init__(self)
 
         self.offer_update = \
-            UpdateFrequencyMixin(initial_rate=initial_selling_rate,
-                                 final_rate=final_selling_rate,
-                                 fit_to_limit=fit_to_limit,
-                                 energy_rate_change_per_update=energy_rate_decrease_per_update,
-                                 update_interval=update_interval)
+            TemplateStrategyOfferUpdater(
+                initial_rate=initial_selling_rate,
+                final_rate=final_selling_rate,
+                fit_to_limit=fit_to_limit,
+                energy_rate_change_per_update=energy_rate_decrease_per_update,
+                update_interval=update_interval)
         for time_slot in self.offer_update.initial_rate_profile_buffer.keys():
             validate_storage_device(
                 initial_selling_rate=self.offer_update.initial_rate_profile_buffer[time_slot],
                 final_selling_rate=find_object_of_same_weekday_and_time(
                     self.offer_update.final_rate_profile_buffer, time_slot))
         self.bid_update = \
-            UpdateFrequencyMixin(
+            TemplateStrategyBidUpdater(
                 initial_rate=initial_buying_rate,
                 final_rate=final_buying_rate,
                 fit_to_limit=fit_to_limit,
@@ -192,18 +194,20 @@ class StorageStrategy(BidEnabledStrategy):
                       f"Traceback: {traceback.format_exc()}")
             return
 
-        self.offer_update.initial_rate_profile_buffer = initial_selling_rate
-        self.offer_update.final_rate_profile_buffer = final_selling_rate
-        self.bid_update.initial_rate_profile_buffer = initial_buying_rate
-        self.bid_update.final_rate_profile_buffer = final_buying_rate
-        self.bid_update.energy_rate_change_per_update_profile_buffer = \
-            energy_rate_increase_per_update
-        self.offer_update.energy_rate_change_per_update_profile_buffer = \
-            energy_rate_decrease_per_update
-        self.bid_update.fit_to_limit = bid_fit_to_limit
-        self.offer_update.fit_to_limit = offer_fit_to_limit
-        self.bid_update.update_interval = update_interval
-        self.offer_update.update_interval = update_interval
+        self.offer_update.set_parameters(
+            initial_rate_profile_buffer=initial_selling_rate,
+            final_rate_profile_buffer=final_selling_rate,
+            energy_rate_change_per_update_profile_buffer=energy_rate_decrease_per_update,
+            fit_to_limit=offer_fit_to_limit,
+            update_interval=update_interval
+        )
+        self.bid_update.set_parameters(
+            initial_rate_profile_buffer=initial_buying_rate,
+            final_rate_profile_buffer=final_buying_rate,
+            energy_rate_change_per_update_profile_buffer=energy_rate_increase_per_update,
+            fit_to_limit=bid_fit_to_limit,
+            update_interval=update_interval
+        )
 
     def area_reconfigure_event(self, **kwargs):
         self._area_reconfigure_prices(**kwargs)
@@ -346,7 +350,7 @@ class StorageStrategy(BidEnabledStrategy):
                     ConstSettings.IAASettings.MARKET_TYPE == 3:
                 self.state.clamp_energy_to_buy_kWh(self.future_markets_time_slots)
                 if self.are_bids_posted(market.id):
-                    self.bid_update.update_posted_bids_over_ticks(market, self)
+                    self.bid_update.update(market, self)
                 else:
                     energy_kWh = self.state.energy_to_buy_dict[market.time_slot]
                     if energy_kWh > 0:
@@ -359,7 +363,7 @@ class StorageStrategy(BidEnabledStrategy):
 
             self.state.tick(self.area, market.time_slot)
         if self.cap_price_strategy is False:
-            self.offer_update.update_offer(self)
+            self.offer_update.update(self)
 
         self.bid_update.increment_update_counter_all_markets(self)
         if self.offer_update.increment_update_counter_all_markets(self):
@@ -423,7 +427,7 @@ class StorageStrategy(BidEnabledStrategy):
         super().event_market_cycle()
         self._set_alternative_pricing_scheme()
         self._update_profiles_with_default_values()
-        self.offer_update.update_market_cycle_offers(self)
+        self.offer_update.reset(self)
         for market in self.area.all_markets[:-1]:
             self.bid_update.update_counter[market.time_slot] = 0
         current_market = self.area.next_market
@@ -441,7 +445,7 @@ class StorageStrategy(BidEnabledStrategy):
         if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
            ConstSettings.IAASettings.MARKET_TYPE == 3:
             self.state.clamp_energy_to_buy_kWh([current_market.time_slot])
-            self.bid_update.update_market_cycle_bids(self)
+            self.bid_update.reset(self)
             energy_kWh = self.state.energy_to_buy_dict[current_market.time_slot]
             if energy_kWh > 0:
                 try:
@@ -496,7 +500,9 @@ class StorageStrategy(BidEnabledStrategy):
             if not self.state.has_battery_reached_max_power(-max_energy, market.time_slot):
                 self.state.pledged_buy_kWh[market.time_slot] += max_energy
                 self.accept_offer(market, offer, energy=max_energy,
-                                  buyer_origin=self.owner.name)
+                                  buyer_origin=self.owner.name,
+                                  buyer_origin_id=self.owner.uuid,
+                                  buyer_id=self.owner.uuid)
             return
         except MarketException:
             # Offer already gone etc., try next one.
@@ -535,7 +541,9 @@ class StorageStrategy(BidEnabledStrategy):
                             energy=energy,
                             seller=self.owner.name,
                             original_offer_price=energy * selling_rate,
-                            seller_origin=self.owner.name
+                            seller_origin=self.owner.name,
+                            seller_origin_id=self.owner.uuid,
+                            seller_id=self.owner.uuid
                         )
                         self.offers.post(offer, market.id)
                         self.state.offered_sell_kWh[market.time_slot] += offer.energy
