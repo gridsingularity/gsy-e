@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from d3a.models.myco_matcher.pay_as_bid import PayAsBidMatch
 
 import math
 from logging import getLogger
@@ -27,12 +26,13 @@ from d3a.models.market.market_structures import MarketClearingState, BidOfferMat
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import add_or_create_key
 from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.models.myco_matcher.base_matcher import BaseMatcher
 
 
 log = getLogger(__name__)
 
 
-class PayAsClear(PayAsBidMatch):
+class PayAsClear(BaseMatcher):
     def __init__(self):
         self.state = MarketClearingState()
         self.sorted_bids = []

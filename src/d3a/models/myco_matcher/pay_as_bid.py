@@ -1,24 +1,9 @@
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.models.market.market_structures import BidOfferMatch
+from d3a.models.myco_matcher.base_matcher import BaseMatcher
 
 
-class PayAsBidMatch:
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def sort_by_energy_rate(obj, reverse_order=False):
-        if reverse_order:
-            # Sorted bids in descending order
-            return list(reversed(sorted(
-                obj.values(),
-                key=lambda b: b.energy_rate)))
-
-        else:
-            # Sorted bids in ascending order
-            return list(sorted(
-                obj.values(),
-                key=lambda b: b.energy_rate))
+class PayAsBidMatch(BaseMatcher):
 
     def calculate_match_recommendation(self, bids, offers):
         """
