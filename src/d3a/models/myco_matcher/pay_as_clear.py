@@ -21,8 +21,7 @@ import math
 from logging import getLogger
 from collections import OrderedDict
 
-from d3a.models.market.market_structures import MarketClearingState, BidOfferMatch, \
-    TradeBidOfferInfo, Clearing
+from d3a.models.market.market_structures import MarketClearingState, BidOfferMatch, Clearing
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import add_or_create_key
 from d3a.constants import FLOATING_POINT_TOLERANCE
@@ -136,53 +135,7 @@ class PayAsClear(BaseMatcher):
         return max_rate
 
     def match_offers_bids(self):
-        clearing = self._perform_pay_as_clear_matching()
-
-        if clearing is None:
-            return
-
-        clearing_rate, clearing_energy = clearing
-        if clearing_energy > 0:
-            log.info(f"Market Clearing Rate: {clearing_rate} "
-                     f"||| Clearing Energy: {clearing_energy} "
-                     f"||| Clearing Market {self.name}")
-            self.state.clearing[self.now] = (clearing_rate, clearing_energy)
-
-        matchings = self._create_bid_offer_matchings(
-            clearing_energy, self.sorted_offers, self.sorted_bids
-        )
-
-        for index, match in enumerate(matchings):
-            offer = match.offer
-            bid = match.bid
-
-            assert math.isclose(match.offer_energy, match.bid_energy)
-
-            selected_energy = match.offer_energy
-            original_bid_rate = bid.original_bid_price / bid.energy
-            propagated_bid_rate = bid.energy_rate
-            offer_original_rate = offer.original_offer_price / offer.energy
-            offer_propagated_rate = offer.energy_rate
-
-            trade_rate_original = self.fee_class.calculate_original_trade_rate_from_clearing_rate(
-                original_bid_rate, propagated_bid_rate, clearing_rate
-            )
-
-            trade_bid_info = TradeBidOfferInfo(
-                original_bid_rate=original_bid_rate,
-                propagated_bid_rate=propagated_bid_rate,
-                original_offer_rate=offer_original_rate,
-                propagated_offer_rate=offer_propagated_rate,
-                trade_rate=trade_rate_original)
-
-            bid_trade, trade = self.accept_bid_offer_pair(
-                bid, offer, clearing_rate, trade_bid_info, selected_energy
-            )
-
-            if trade.residual is not None or bid_trade.residual is not None:
-                matchings = self._replace_offers_bids_with_residual_in_matching_list(
-                    matchings, index+1, trade, bid_trade
-                )
+        pass
 
     @classmethod
     def _create_bid_offer_matchings(cls, clearing, offer_list, bid_list):
@@ -238,20 +191,3 @@ class PayAsClear(BaseMatcher):
                     return bid_offer_matchings
 
         return bid_offer_matchings
-
-    @classmethod
-    def _replace_offers_bids_with_residual_in_matching_list(
-            cls, matchings, start_index, offer_trade, bid_trade
-    ):
-        def _convert_match_to_residual(match):
-            if match.offer.id == offer_trade.offer.id:
-                assert offer_trade.residual is not None
-                match = match._replace(offer=offer_trade.residual)
-            if match.bid.id == bid_trade.offer.id:
-                assert bid_trade.residual is not None
-                match = match._replace(bid=bid_trade.residual)
-            return match
-
-        matchings[start_index:] = [_convert_match_to_residual(match)
-                                   for match in matchings[start_index:]]
-        return matchings
