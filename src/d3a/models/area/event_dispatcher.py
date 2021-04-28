@@ -27,6 +27,7 @@ from d3a.models.strategy.area_agents.one_sided_alternative_pricing_agent import 
 from d3a.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
 from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
 from d3a_interface.constants_limits import ConstSettings
+from d3a.d3a_core.exceptions import WrongMarketTypeException
 from d3a.d3a_core.util import create_subdict_or_update
 from d3a.models.area.redis_dispatcher.market_event_dispatcher import AreaRedisMarketEventDispatcher
 from d3a.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
@@ -141,8 +142,8 @@ class AreaDispatcher:
                     min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE
                 )
             else:
-                assert False, f'Wrong market type setting flag ' \
-                              f'{ConstSettings.IAASettings.MARKET_TYPE}'
+                raise WrongMarketTypeException(f'Wrong market type setting flag '
+                                               f'{ConstSettings.IAASettings.MARKET_TYPE}')
         else:
             return BalancingAgent(**agent_constructor_arguments)
 

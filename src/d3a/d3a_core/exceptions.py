@@ -65,3 +65,7 @@ class DeviceNotInRegistryError(MarketException):
 
 class D3ARedisException(D3AException):
     pass
+
+
+class WrongMarketTypeException(D3AException):
+    pass

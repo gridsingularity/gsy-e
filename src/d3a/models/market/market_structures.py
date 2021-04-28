@@ -354,7 +354,7 @@ class MarketClearingState:
     def __init__(self):
         self.cumulative_offers = dict()
         self.cumulative_bids = dict()
-        self.clearing = {}
+        self.clearing = dict()
 
     @classmethod
     def _csv_fields(cls):

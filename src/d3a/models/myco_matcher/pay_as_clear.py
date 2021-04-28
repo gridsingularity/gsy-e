@@ -37,21 +37,6 @@ class PayAsClear(PayAsBidMatch):
         self.state = MarketClearingState()
         self.sorted_bids = []
 
-    def __repr__(self):  # pragma: no cover
-        return "<TwoSidedPayAsClear{} bids: {} (E: {} kWh V:{}) " \
-               "offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>"\
-            .format(" {}".format(self.time_slot_str),
-                    len(self.bids),
-                    sum(b.energy for b in self.bids.values()),
-                    sum(b.price for b in self.bids.values()),
-                    len(self.offers),
-                    sum(o.energy for o in self.offers.values()),
-                    sum(o.price for o in self.offers.values()),
-                    len(self.trades),
-                    self.accumulated_trade_energy,
-                    self.accumulated_trade_price
-                    )
-
     def _discrete_point_curve(self, obj_list, round_functor):
         cumulative = {}
         for obj in obj_list:
@@ -104,9 +89,9 @@ class PayAsClear(PayAsBidMatch):
             if len(clearing) > 0:
                 return clearing[-1].rate, clearing[-1].energy
 
-    def calculate_match_recommend(self, bids, offers):
-        self.sorted_bids = self.sorting(bids, True)
-        self.sorted_offers = self.sorting(offers)
+    def calculate_match_recommendation(self, bids, offers):
+        self.sorted_bids = self.sort_by_energy_rate(bids, True)
+        self.sorted_offers = self.sort_by_energy_rate(offers)
         clearing = None
 
         if len(self.sorted_bids) == 0 or len(self.sorted_offers) == 0:

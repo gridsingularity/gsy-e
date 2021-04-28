@@ -104,7 +104,6 @@ class AreaMarkets:
     def create_future_markets(self, current_time, is_spot_market, area):
         markets = self.markets if is_spot_market else self.balancing_markets
         market_class = self.select_market_class(is_spot_market)
-        print(f'market_class: {market_class}')
 
         changed = False
         for offset in (area.config.slot_length * i
