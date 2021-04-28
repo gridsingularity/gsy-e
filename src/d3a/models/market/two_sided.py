@@ -233,18 +233,45 @@ class TwoSidedMarket(OneSidedMarket):
     def match_recommendation(self, recommended_list):
         if recommended_list is None:
             return
-        for bid, offer, matched_rate in recommended_list:
-            selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
-            original_bid_rate = bid.original_bid_price / bid.energy
-            if matched_rate > bid.energy_rate:
-                continue
+        for index, recommended_pair in enumerate(recommended_list):
+
+            selected_energy = recommended_pair.bid_energy
+            bid = recommended_pair.bid
+            offer = recommended_pair.offer
+            print(f'recommended_pair.offer: {recommended_pair.offer}')
+            print(f'offer: {offer}')
+            original_bid_rate = \
+                bid.original_bid_price / bid.energy
 
             trade_bid_info = TradeBidOfferInfo(
                 original_bid_rate=original_bid_rate,
                 propagated_bid_rate=bid.price/bid.energy,
                 original_offer_rate=offer.original_offer_price/offer.energy,
                 propagated_offer_rate=offer.price/offer.energy,
-                trade_rate=original_bid_rate)
+                trade_rate=recommended_pair.trade_rate)
 
-            self.accept_bid_offer_pair(bid, offer, matched_rate,
-                                       trade_bid_info, selected_energy)
+            bid_trade, trade = self.accept_bid_offer_pair(
+                bid, offer, trade_bid_info.trade_rate, trade_bid_info, selected_energy
+            )
+
+            if trade.residual is not None or bid_trade.residual is not None:
+                recommended_list = self._replace_offers_bids_with_residual_in_matching_list(
+                    recommended_list, index+1, trade, bid_trade
+                )
+
+    @classmethod
+    def _replace_offers_bids_with_residual_in_matching_list(
+            cls, matchings, start_index, offer_trade, bid_trade
+    ):
+        def _convert_match_to_residual(match):
+            if match.offer.id == offer_trade.offer.id:
+                assert offer_trade.residual is not None
+                match = match._replace(offer=offer_trade.residual)
+            if match.bid.id == bid_trade.offer.id:
+                assert bid_trade.residual is not None
+                match = match._replace(bid=bid_trade.residual)
+            return match
+
+        matchings[start_index:] = [_convert_match_to_residual(match)
+                                   for match in matchings[start_index:]]
+        return matchings

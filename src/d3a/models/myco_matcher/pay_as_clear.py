@@ -120,7 +120,7 @@ class PayAsClear(PayAsBidMatch):
             log.info(f"Market Clearing Rate: {clearing_rate} "
                      f"||| Clearing Energy: {clearing_energy} ")
         matchings = self._create_bid_offer_matchings(
-            clearing_energy, self.sorted_offers, self.sorted_bids
+            clearing, self.sorted_offers, self.sorted_bids
             )
         return matchings
 
@@ -185,7 +185,8 @@ class PayAsClear(PayAsBidMatch):
                 )
 
     @classmethod
-    def _create_bid_offer_matchings(cls, clearing_energy, offer_list, bid_list):
+    def _create_bid_offer_matchings(cls, clearing, offer_list, bid_list):
+        clearing_rate, clearing_energy = clearing
         # Return value, holds the bid-offer matches
         bid_offer_matchings = []
         # Keeps track of the residual energy from offers that have been matched once,
@@ -210,7 +211,8 @@ class PayAsClear(PayAsBidMatch):
                     # Save the matching
                     bid_offer_matchings.append(
                         BidOfferMatch(bid=bid, bid_energy=bid_energy,
-                                      offer=offer, offer_energy=bid_energy)
+                                      offer=offer, offer_energy=bid_energy,
+                                      trade_rate=clearing_rate)
                     )
                     # Update total clearing energy
                     clearing_energy -= bid_energy
@@ -221,7 +223,8 @@ class PayAsClear(PayAsBidMatch):
                     # Save the matching offer to accept later
                     bid_offer_matchings.append(
                         BidOfferMatch(bid=bid, bid_energy=offer_energy,
-                                      offer=offer, offer_energy=offer_energy)
+                                      offer=offer, offer_energy=offer_energy,
+                                      trade_rate=clearing_rate)
                     )
                     # Subtract the offer energy from the bid, in order to not be taken into account
                     # from following matchings

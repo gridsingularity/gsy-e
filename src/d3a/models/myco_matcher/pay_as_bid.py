@@ -1,4 +1,5 @@
 from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.models.market.market_structures import BidOfferMatch
 
 
 class PayAsBidMatch:
@@ -42,6 +43,9 @@ class PayAsBidMatch:
                     continue
                 if (bid.energy_rate - offer.energy_rate) > FLOATING_POINT_TOLERANCE:
                     already_selected_bids.add(bid.id)
-                    bid_offer_pairs.append(tuple((bid, offer, bid.energy_rate)))
+                    selected_energy = min(bid.energy, offer.energy)
+                    bid_offer_pairs.append(BidOfferMatch(
+                        bid=bid, offer=offer, bid_energy=selected_energy,
+                        offer_energy=selected_energy, trade_rate=bid.energy_rate))
                     break
         return bid_offer_pairs
