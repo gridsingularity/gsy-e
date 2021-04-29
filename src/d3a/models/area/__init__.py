@@ -18,32 +18,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import traceback
 from logging import getLogger
 from typing import List  # noqa
+from uuid import uuid4
+
 from cached_property import cached_property
+from d3a_interface.area_validator import validate_area
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.utils import key_in_dict_and_not_none
 from pendulum import DateTime, duration, today
 from slugify import slugify
-from uuid import uuid4
-from d3a.constants import TIME_ZONE
+
+import d3a.constants
+from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
-from d3a.models.config import SimulationConfig
+from d3a.d3a_core.util import TaggedLogWrapper
 from d3a.events.event_structures import TriggerMixin
+from d3a.models.area.event_dispatcher import DispatcherFactory
+from d3a.models.area.events import Events
+from d3a.models.area.markets import AreaMarkets
+from d3a.models.area.redis_external_market_connection import RedisMarketExternalConnection
+from d3a.models.area.stats import AreaStats
+from d3a.models.area.throughput_parameters import ThroughputParameters
+from d3a.models.config import SimulationConfig
+from d3a.models.market.blockchain_interface import (
+    NonBlockchainInterface, SubstrateBlockchainInterface)
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
-from d3a.d3a_core.util import TaggedLogWrapper
-from d3a_interface.constants_limits import ConstSettings
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.constants import TIME_FORMAT
-from d3a.models.area.stats import AreaStats
-from d3a.models.area.event_dispatcher import DispatcherFactory
-from d3a.models.area.markets import AreaMarkets
-from d3a.models.area.events import Events
-from d3a.models.area.throughput_parameters import ThroughputParameters
-from d3a_interface.constants_limits import GlobalConfig
-from d3a_interface.area_validator import validate_area
-from d3a.models.area.redis_external_market_connection import RedisMarketExternalConnection
-from d3a.models.market.blockchain_interface import SubstrateBlockchainInterface, \
-    NonBlockchainInterface
-from d3a_interface.utils import key_in_dict_and_not_none
-import d3a.constants
 
 log = getLogger(__name__)
 
@@ -56,7 +55,7 @@ DEFAULT_CONFIG = SimulationConfig(
     slot_length=duration(minutes=15),
     tick_length=duration(seconds=1),
     cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
-    start_date=today(tz=TIME_ZONE),
+    start_date=today(tz=d3a.constants.TIME_ZONE),
     max_panel_power_W=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W
 )
 
@@ -416,7 +415,7 @@ class Area:
     def __repr__(self):
         return "<Area '{s.name}' markets: {markets}>".format(
             s=self,
-            markets=[t.format(TIME_FORMAT) for t in self._markets.markets.keys()]
+            markets=[t.format(d3a.constants.TIME_FORMAT) for t in self._markets.markets.keys()]
         )
 
     @property
