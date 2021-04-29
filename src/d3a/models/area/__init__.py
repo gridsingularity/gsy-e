@@ -109,8 +109,7 @@ class Area:
                  throughput: ThroughputParameters = ThroughputParameters()
                  ):
         validate_area(grid_fee_constant=grid_fee_constant,
-                      grid_fee_percentage=grid_fee_percentage,
-                      name=name)
+                      grid_fee_percentage=grid_fee_percentage)
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
@@ -154,7 +153,7 @@ class Area:
     def name(self, new_name):
         if check_area_name_exists_in_parent_area(self.parent, new_name):
             raise AreaException("Area name should be unique inside the same Parent Area")
-        validate_area(name=new_name)
+
         self.__name = new_name
 
     def get_state(self):
