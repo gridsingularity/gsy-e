@@ -26,15 +26,16 @@ from d3a.d3a_core.util import make_iaa_name
 def test_traded_energy_rate(context):
     def has_one_of_clearing_rates(trade, market):
         return any(isclose((trade.offer.price / trade.offer.energy), clearing_rate)
-                   for clearing_rate in market.state.clearing[trade.time])
+                   for clearing_rate in list(market.state.clearing.values()))
 
-    assert all(has_one_of_clearing_rates(trade, market)
-               for child in context.simulation.area.children
-               for market in child.past_markets
-               for trade in market.trades
-               if trade.time in market.state.clearing and
-               market.state.clearing[trade.time] != 0 and
-               trade.buyer == make_iaa_name(child))
+    for child in context.simulation.area.children:
+        match_algo = child.offers_bids_matcher.match_algorithm
+        for market in child.past_markets:
+            for trade in market.trades:
+                if trade.buyer == make_iaa_name(child) and \
+                        trade.time in match_algo.state.clearing and \
+                        match_algo.state.clearing[trade.time] != 0:
+                    has_one_of_clearing_rates(trade, child.offers_bids_matcher.match_algorithm)
 
 
 @then('buyers and sellers are not same')
@@ -103,23 +104,24 @@ def test_offer_bid_market_clearing_rate_files(context):
 
 @then('one-on-one matching of offer & bid in PAC happens at bid rate')
 def one_on_one_matching_at_clearing_rate_at_bid_rate(context):
-    assert all(isclose(clearing[0], 30.0)
-               for child in context.simulation.area.children
-               for market in child.past_markets
-               for clearing in list(market.state.clearing.values()))
+    for child in context.simulation.area.children:
+        for clearing in list(child.offers_bids_matcher.match_algorithm.state.clearing.values()):
+            assert isclose(clearing, 30.0)
 
 
 @then('clearing rate is the bid rate of last matched bid')
 def clearing_rate_at_last_matched_bid_rate(context):
-    assert all(isclose(clearing[0], 15.0)
-               for child in context.simulation.area.children
-               for market in child.past_markets
-               for clearing in list(market.state.clearing.values()))
+    count = 0
+    for child in context.simulation.area.children:
+        for clearing in list(child.offers_bids_matcher.match_algorithm.state.clearing.values()):
+            count += 1
+            assert isclose(clearing, 15.0)
+    assert count > 0
 
 
 @then('clearing rate is equal to the bid_rate')
 def clearing_rate_at_bid_rate(context):
-    assert all(isclose(clearing[0], 25.0)
+    assert all(isclose(clearing, 25.0)
                for child in context.simulation.area.children
-               for market in child.past_markets
-               for clearing in list(market.state.clearing.values()))
+               for clearing in
+               list(child.offers_bids_matcher.match_algorithm.state.clearing.values()))

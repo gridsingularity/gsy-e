@@ -88,7 +88,7 @@ class PayAsClear(BaseMatcher):
             if len(clearing) > 0:
                 return clearing[-1].rate, clearing[-1].energy
 
-    def get_clearing_point(self, bids, offers):
+    def get_clearing_point(self, bids, offers, current_time):
         self.sorted_bids = self.sort_by_energy_rate(bids, True)
         self.sorted_offers = self.sort_by_energy_rate(offers)
         clearing = None
@@ -110,10 +110,14 @@ class PayAsClear(BaseMatcher):
             max_rate = self._populate_market_cumulative_offer_and_bid(cumulative_bids,
                                                                       cumulative_offers)
             clearing = self._get_clearing_point(max_rate)
+        if clearing is not None:
+            self.state.clearing[current_time] = clearing[0]
         return clearing
 
-    def calculate_match_recommendation(self, bids, offers):
-        clearing = self.get_clearing_point(bids, offers)
+    def calculate_match_recommendation(self, bids, offers, current_time):
+        clearing = self.get_clearing_point(bids, offers, current_time)
+        if clearing is None:
+            return []
 
         clearing_rate, clearing_energy = clearing
         if clearing_energy > 0:

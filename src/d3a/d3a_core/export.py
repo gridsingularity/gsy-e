@@ -132,8 +132,9 @@ class ExportAndPlot:
                 self.plot_device_stats(self.area, [])
             if ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
                 self.plot_energy_trade_profile_hr(self.area, self.plot_dir)
-            if ConstSettings.IAASettings.MARKET_TYPE == 3 and \
-                    ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS:
+            if ConstSettings.IAASettings.MARKET_TYPE == 2 and \
+                    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == 2 and \
+                    ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS is True:
                 self.plot_supply_demand_curve(self.area, self.plot_dir)
             self.move_root_plot_folder()
 
@@ -199,7 +200,8 @@ class ExportAndPlot:
                                                         BalancingOffer, "offer_history",
                                                         area.past_balancing_markets,
                                                         is_first=is_first)
-            if ConstSettings.IAASettings.MARKET_TYPE == 3:
+            if ConstSettings.IAASettings.MARKET_TYPE == 2 and \
+                    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == 2:
                 self._export_area_clearing_rate(area, directory, "market-clearing-rate", is_first)
 
     def _export_area_clearing_rate(self, area, directory, file_suffix, is_first):
@@ -211,9 +213,13 @@ class ExportAndPlot:
                 if is_first:
                     writer.writerow(labels)
                 for market in area.past_markets:
-                    for time, clearing in market.state.clearing.items():
-                        row = (market.time_slot, time, clearing[0])
-                        writer.writerow(row)
+                    for time, clearing in \
+                            area.offers_bids_matcher.match_algorithm.state.clearing.items():
+                        print(f'market.time_slot: {market.time_slot}')
+                        print(f'time: {time}')
+                        if market.time_slot > time:
+                            row = (market.time_slot, time, clearing)
+                            writer.writerow(row)
         except OSError:
             _log.exception("Could not export area market_clearing_rate")
 

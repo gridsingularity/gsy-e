@@ -396,7 +396,7 @@ class Area:
             else:
                 if self.next_market is not None:
                     self.offers_bids_matcher.calculate_recommendation(
-                        *self.next_market.open_bids_and_offers)
+                        *self.next_market.open_bids_and_offers, self.now)
                     self.next_market.match_recommendation(self.offers_bids_matcher.bid_offer_pairs)
 
         self.events.update_events(self.now)

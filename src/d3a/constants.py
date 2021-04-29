@@ -47,9 +47,6 @@ CN_PROFILE_EXPANSION_DAYS = 7
 RUN_IN_REALTIME = False
 
 
-BID_OFFER_MATCH_TYPE = 1  # 1--PAB; 2--PAC
-
-
 class BidOfferMatchEnum(Enum):
     PAY_AS_BID = 1
     PAY_AS_CLEAR = 2
