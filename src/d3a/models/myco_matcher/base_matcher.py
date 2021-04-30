@@ -20,5 +20,5 @@ class BaseMatcher(ABC):
                 key=lambda b: b.energy_rate))
 
     @abstractmethod
-    def calculate_match_recommendation(self, bids, offers):
+    def calculate_match_recommendation(self, bids, offers, current_time=None):
         pass

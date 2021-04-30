@@ -215,8 +215,6 @@ class ExportAndPlot:
                 for market in area.past_markets:
                     for time, clearing in \
                             area.offers_bids_matcher.match_algorithm.state.clearing.items():
-                        print(f'market.time_slot: {market.time_slot}')
-                        print(f'time: {time}')
                         if market.time_slot > time:
                             row = (market.time_slot, time, clearing)
                             writer.writerow(row)

@@ -26,7 +26,8 @@ from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 3
+    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = 2
     ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT = 1
     ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS = False
 

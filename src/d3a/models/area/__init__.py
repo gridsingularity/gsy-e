@@ -394,10 +394,10 @@ class Area:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                 self.dispatcher.publish_market_clearing()
             else:
-                if self.next_market is not None:
+                for market in self.all_markets:
                     self.offers_bids_matcher.calculate_recommendation(
-                        *self.next_market.open_bids_and_offers, self.now)
-                    self.next_market.match_recommendation(self.offers_bids_matcher.bid_offer_pairs)
+                        *market.open_bids_and_offers, self.now)
+                    market.match_recommendation(self.offers_bids_matcher.bid_offer_pairs)
 
         self.events.update_events(self.now)
 

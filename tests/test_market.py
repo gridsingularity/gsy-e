@@ -714,7 +714,7 @@ def test_double_sided_market_performs_pay_as_clear_matching(pac_market, offer, b
                        "bid7": Bid('bid_id7', now(), bid[6], 1, 'B', 'S')}
 
     matched_rate, matched_energy = pac_market.get_clearing_point(
-        pac_market.bids, pac_market.offers
+        pac_market.bids, pac_market.offers, now()
     )
     assert matched_rate == mcp_rate
     assert matched_energy == mcp_energy
@@ -731,7 +731,7 @@ def test_double_sided_pay_as_clear_market_works_with_floats(pac_market):
                     "bid2": Bid('bid_id2', now(), 2.2, 1, 'B', 'S'),
                     "bid3": Bid('bid_id3', now(), 1.1, 1, 'B', 'S')}
 
-    matched = pac_market.get_clearing_point(pac_market.bids, pac_market.offers)[0]
+    matched = pac_market.get_clearing_point(pac_market.bids, pac_market.offers, now())[0]
     assert matched == 2.2
 
 

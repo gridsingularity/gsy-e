@@ -5,7 +5,7 @@ from d3a.models.myco_matcher.base_matcher import BaseMatcher
 
 class PayAsBidMatch(BaseMatcher):
 
-    def calculate_match_recommendation(self, bids, offers):
+    def calculate_match_recommendation(self, bids, offers, current_time=None):
         """
         Pay as bid first
         There are 2 simplistic approaches to the problem
@@ -26,7 +26,7 @@ class PayAsBidMatch(BaseMatcher):
             for bid in sorted_bids:
                 if bid.id in already_selected_bids or offer.seller == bid.buyer:
                     continue
-                if (bid.energy_rate - offer.energy_rate) > FLOATING_POINT_TOLERANCE:
+                if (offer.energy_rate - bid.energy_rate) <= FLOATING_POINT_TOLERANCE:
                     already_selected_bids.add(bid.id)
                     selected_energy = min(bid.energy, offer.energy)
                     bid_offer_pairs.append(BidOfferMatch(
