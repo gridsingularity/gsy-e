@@ -27,7 +27,6 @@ from d3a.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
 from d3a.models.market.market_structures import Offer, Trade, Bid
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.two_sided import TwoSidedMarket
-# from d3a.models.myco_matcher.pay_as_clear import PayAsClear
 from d3a.models.market.blockchain_interface import NonBlockchainInterface
 from d3a_interface.constants_limits import ConstSettings
 from uuid import uuid4

@@ -238,8 +238,6 @@ class TwoSidedMarket(OneSidedMarket):
             selected_energy = recommended_pair.bid_energy
             bid = recommended_pair.bid
             offer = recommended_pair.offer
-            print(f'recommended_pair.offer: {recommended_pair.offer}')
-            print(f'offer: {offer}')
             original_bid_rate = \
                 bid.original_bid_price / bid.energy
 
