@@ -14,12 +14,13 @@ class PayAsBidMatch(BaseMatcher):
            since the most affordable offers will be allocated for the most aggressive buyers.
         """
 
+        return self._perform_pay_as_bid_match(bids, offers)
+
+    def _perform_pay_as_bid_match(self, bids, offers):
         # Sorted bids in descending order
         sorted_bids = self.sort_by_energy_rate(bids, True)
-
         # Sorted offers in descending order
         sorted_offers = self.sort_by_energy_rate(offers, True)
-
         already_selected_bids = set()
         bid_offer_pairs = []
         for offer in sorted_offers:

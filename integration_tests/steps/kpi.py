@@ -38,8 +38,11 @@ def test_export_of_kpi_result(context, kpi, expected_kpis):
         kpi_data = json.load(sf)
     expected_kpis = ast.literal_eval(expected_kpis)
     for area, value in expected_kpis.items():
+        print(f'area: {area}')
+        print(f'value: {value}')
         area_uuid = name_uuid_map[area]
         if kpi == "self_sufficiency":
+            print(f"ACT_suf: {kpi_data[area_uuid]['self_sufficiency']}")
             assert isclose(kpi_data[area_uuid]['self_sufficiency'], float(value), abs_tol=1e-03)
 
             assert isclose(
@@ -48,6 +51,7 @@ def test_export_of_kpi_result(context, kpi, expected_kpis):
                     kpi_data[area_uuid]['total_energy_demanded_wh'], 1.0), abs_tol=1e-03)
 
         elif kpi == "self_consumption":
+            print(f"ACT_con: {kpi_data[area_uuid]['self_consumption']}")
             if value is None:
                 assert kpi_data[area_uuid]['self_consumption'] is None
             else:
