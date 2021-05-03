@@ -252,10 +252,12 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 acceptable_offer = offer
             time_slot = market.time_slot
             current_day = self._get_day_of_timestamp(time_slot)
+            max_affordable_offer_rate = min(self.bid_update.get_updated_rate(market.time_slot),
+                                            self.bid_update.final_rate[market.time_slot])
             if acceptable_offer and \
                     self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE and \
                     round(acceptable_offer.energy_rate, DEFAULT_PRECISION) <= \
-                    self.bid_update.final_rate[time_slot] + FLOATING_POINT_TOLERANCE:
+                    max_affordable_offer_rate + FLOATING_POINT_TOLERANCE:
 
                 if not self.state.can_buy_more_energy(time_slot):
                     return
