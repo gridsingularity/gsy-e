@@ -1583,7 +1583,7 @@
                 
                 <h2 id="definition">Definition<a class="headerlink" href="#definition" title="Permanent link">&para;</a></h2>
 <p>To enable users to interact with a running collaboration or a canary test network, two different application interfaces (APIs) are available. The <a href="../assets-api/">Asset API</a> allows the user to manage multiple energy assets by implementing custom trading strategies. The <a href="../grid-operator-api/">Grid Operator API</a> allows the user to manage multiple markets by implementing custom grid fee strategies. Both interfaces allow strategies to incorporate market and asset statistics. Two examples of template API scripts are available in the Grid Singularity’s GitHub repository: <a href="https://github.com/gridsingularity/d3a/blob/master/src/d3a/setup/odyssey_momentum/assets_api_template.py">Asset API</a> and <a href="https://github.com/gridsingularity/d3a/blob/master/src/d3a/setup/odyssey_momentum/markets_api_template.py">Grid Operator API</a>.  These two APIs interact with Grid Singularity simulations through the open source Grid Singularity’s <a href="https://github.com/gridsingularity/d3a-api-client">API client</a>. </p>
-<p><img alt="alt_text" src="../img/api-overview-0.png" /></p>
+<p><img alt="alt_text" src="../img/api-overview-1.png" /></p>
 <h2 id="api-client-installation">API Client Installation<a class="headerlink" href="#api-client-installation" title="Permanent link">&para;</a></h2>
 <p><em>Note:</em> If you are running the Grid Singularity energy exchange engine (D3A) using a virtual machine and <code>vagrant</code>, the latest <code>api-client</code> is already installed on your machine and you can skip to the <a href="./#launch-simulation">Launch Simulation</a> section below. If you are running the engine locally, please follow the following instructions.</p>
 <h3 id="install-redis-server-open-a-new-terminal-and-type">Install Redis server. Open a new terminal and type<a class="headerlink" href="#install-redis-server-open-a-new-terminal-and-type" title="Permanent link">&para;</a></h3>
@@ -1664,7 +1664,7 @@ initial_selling_rate=30,                                                        
 
 <p><em>For more information on launching a simulation on the backend please visit <a href="../general-settings/#simulation-launch">this page</a>.</em></p>
 <p>After few seconds, the simulation should begin, waiting for the API template as mentioned in the figure below:</p>
-<p><img alt="alt_text" src="../img/api-overview-1.png" /></p>
+<p><img alt="alt_text" src="../img/api-overview-2.png" /></p>
 <h2 id="initialise-and-start-the-api">Initialise and start the API :<a class="headerlink" href="#initialise-and-start-the-api" title="Permanent link">&para;</a></h2>
 <p>Before launching the API script, the user needs to adapt the following information in their script (script template available here) : </p>
 <h3 id="oracle-name">Oracle name<a class="headerlink" href="#oracle-name" title="Permanent link">&para;</a></h3>
@@ -1716,14 +1716,14 @@ storage_names = [&#39;Tesla Powerwall 3&#39;]
 </ol>
 <h4 id="simulation-configuration-file">Simulation configuration file:<a class="headerlink" href="#simulation-configuration-file" title="Permanent link">&para;</a></h4>
 <p>The simulation configuration file is a JSON format file downloadable on the User-Interface. It contains all the information about the simulation setup (username, simulation name and UUID, domain name, websocket domain name, global settings of the simulation and the registry, consisting of all the grid hierarchy including markets and assets and whether or not the user is connected to those). To download this file the user needs to go to the registry page of the relevant collaboration/CN and click on the top right edit icon and Download API Client Summary.</p>
-<p><img alt="alt_text" src="../img/api-overview-2.png" /></p>
+<p><img alt="alt_text" src="../img/api-overview-3.png" /></p>
 <p>To run the API agent you can run the following command by adapting the arguments to your case:</p>
 <div class="codehilite"><pre><span></span><code>d3a-api-client --log-level INFO run  --setup asset_api_template -u username -p password -i absolute_path/my_simulation_config.json 
 </code></pre></div>
 
 <h4 id="cli-command">CLI command:<a class="headerlink" href="#cli-command" title="Permanent link">&para;</a></h4>
 <p>Instead of passing the JSON file, the user can directly pass the relevant variables as arguments in the CLI commands. For that to work, users need to pass the domain name and websocket name (both are optional parameters and only relevant when connecting to specific domains) and the simulation_id. The simulation_id corresponds to the Universally Unique IDentifier. This token can be found in the URL of a collaboration or a Canary Network in the User Interface. </p>
-<p><img alt="alt_text" src="../img/api-overview-3.png" /></p>
+<p><img alt="alt_text" src="../img/api-overview-4.png" /></p>
 <p>To run the API agent you can run the following command by adapting the arguments to your case:</p>
 <div class="codehilite"><pre><span></span><code>d3a-api-client --log-level INFO run  --setup asset_api_template -u username -p password --simulation-id UUID
 </code></pre></div>
