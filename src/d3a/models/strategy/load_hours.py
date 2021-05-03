@@ -86,23 +86,23 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         self.assign_hours_of_per_day(hrs_of_day, hrs_per_day)
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
+        self.use_market_maker_rate = use_market_maker_rate
+        self.fit_to_limit = fit_to_limit
 
         self._init_price_update(fit_to_limit, energy_rate_increase_per_update, update_interval,
-                                use_market_maker_rate, initial_buying_rate, final_buying_rate)
+                                initial_buying_rate, final_buying_rate)
         self._calculate_active_markets()
         self._cycled_market = set()
         self._simulation_start_timestamp = None
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
-                           use_market_maker_rate, initial_buying_rate, final_buying_rate):
+                           initial_buying_rate, final_buying_rate):
         validate_load_device_price(fit_to_limit=fit_to_limit,
                                    energy_rate_increase_per_update=energy_rate_increase_per_update)
 
         if update_interval is None:
             update_interval = \
                 duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
-
-        self.use_market_maker_rate = use_market_maker_rate
 
         if isinstance(update_interval, int):
             update_interval = duration(minutes=update_interval)
@@ -115,7 +115,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 fit_to_limit=fit_to_limit,
                 energy_rate_change_per_update=energy_rate_increase_per_update,
                 update_interval=update_interval, rate_limit_object=min)
-        self.fit_to_limit = fit_to_limit
 
     @staticmethod
     def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
