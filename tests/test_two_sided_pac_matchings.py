@@ -20,15 +20,15 @@ import pendulum
 from parameterized import parameterized
 from d3a.models.market.market_structures import Bid, Offer, BidOfferMatch, Trade
 from d3a.models.market.two_sided import TwoSidedMarket
-from d3a.models.myco_matcher.pay_as_clear import PayAsClear
+from d3a.models.myco_matcher.pay_as_clear import PayAsClearMatcher
 
 
 class TestCreateBidOfferMatchings(unittest.TestCase):
 
     def validate_matching(self, matching, matched_energy, offer_id, bid_id):
-        assert matching.offer_energy == matched_energy
+        assert matching.selected_energy == matched_energy
         assert matching.offer.id == offer_id
-        assert matching.bid_energy == matched_energy
+        assert matching.selected_energy == matched_energy
         assert matching.bid.id == bid_id
 
     @parameterized.expand([
@@ -56,7 +56,7 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
             Offer('offer_id4', pendulum.now(), 5, en5, 'S')
         ]
 
-        matchings = PayAsClear._create_bid_offer_matchings(
+        matchings = PayAsClearMatcher._create_bid_offer_matchings(
             (1, clearing_energy), offer_list, bid_list
         )
 
@@ -82,7 +82,7 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
             Offer('offer_id4', pendulum.now(), 5, 5, 'S')
         ]
 
-        matchings = PayAsClear._create_bid_offer_matchings((1, 15), offer_list, bid_list)
+        matchings = PayAsClearMatcher._create_bid_offer_matchings((1, 15), offer_list, bid_list)
 
         assert len(matchings) == 7
         self.validate_matching(matchings[0], 1, 'offer_id', 'bid_id')
@@ -108,7 +108,7 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
             Offer('offer_id2', pendulum.now(), 3, 3, 'S'),
         ]
 
-        matchings = PayAsClear._create_bid_offer_matchings((1, 15), offer_list, bid_list)
+        matchings = PayAsClearMatcher._create_bid_offer_matchings((1, 15), offer_list, bid_list)
 
         self.validate_matching(matchings[0], 1, 'offer_id', 'bid_id')
         self.validate_matching(matchings[1], 2, 'offer_id', 'bid_id1')
@@ -133,7 +133,7 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
             Offer('offer_id2', pendulum.now(), 13, 13, 'S'),
         ]
 
-        matchings = PayAsClear._create_bid_offer_matchings((1, 15), offer_list, bid_list)
+        matchings = PayAsClearMatcher._create_bid_offer_matchings((1, 15), offer_list, bid_list)
 
         assert len(matchings) == 7
         self.validate_matching(matchings[0], 1, 'offer_id', 'bid_id')
@@ -159,7 +159,7 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
             Offer('offer_id2', pendulum.now(), 5003, 5003, 'S'),
         ]
 
-        matchings = PayAsClear._create_bid_offer_matchings((1, 15), offer_list, bid_list)
+        matchings = PayAsClearMatcher._create_bid_offer_matchings((1, 15), offer_list, bid_list)
 
         assert len(matchings) == 7
         self.validate_matching(matchings[0], 1, 'offer_id', 'bid_id')
@@ -183,7 +183,7 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
             Offer('offer_id', pendulum.now(), 8, 800000000, 'S')
         ]
 
-        matchings = PayAsClear._create_bid_offer_matchings((1, 15), offer_list, bid_list)
+        matchings = PayAsClearMatcher._create_bid_offer_matchings((1, 15), offer_list, bid_list)
 
         assert len(matchings) == 5
         self.validate_matching(matchings[0], 1, 'offer_id', 'bid_id')
@@ -205,7 +205,7 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
             Offer('offer_id4', pendulum.now(), 5, 5, 'S')
         ]
 
-        matchings = PayAsClear._create_bid_offer_matchings((1, 15), offer_list, bid_list)
+        matchings = PayAsClearMatcher._create_bid_offer_matchings((1, 15), offer_list, bid_list)
 
         assert len(matchings) == 5
         self.validate_matching(matchings[0], 1, 'offer_id', 'bid_id')
@@ -216,12 +216,10 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
 
     def test_matching_list_gets_updated_with_residual_offers(self):
         matchings = [
-            BidOfferMatch(offer=Offer('offer_id', pendulum.now(), 1, 1, 'S'), offer_energy=1,
-                          bid=Bid('bid_id', pendulum.now(), 1, 1, 'B', 'S'), bid_energy=1,
-                          trade_rate=1),
-            BidOfferMatch(offer=Offer('offer_id2', pendulum.now(), 2, 2, 'S'), offer_energy=2,
-                          bid=Bid('bid_id2', pendulum.now(), 2, 2, 'B', 'S'), bid_energy=2,
-                          trade_rate=1)
+            BidOfferMatch(offer=Offer('offer_id', pendulum.now(), 1, 1, 'S'), selected_energy=1,
+                          bid=Bid('bid_id', pendulum.now(), 1, 1, 'B', 'S'), trade_rate=1),
+            BidOfferMatch(offer=Offer('offer_id2', pendulum.now(), 2, 2, 'S'), selected_energy=2,
+                          bid=Bid('bid_id2', pendulum.now(), 2, 2, 'B', 'S'), trade_rate=1)
         ]
 
         offer_trade = Trade('trade', 1, Offer('offer_id', pendulum.now(), 1, 1, 'S'), 'S', 'B',
@@ -238,15 +236,12 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
 
     def test_matching_list_affects_only_matches_after_start_index(self):
         matchings = [
-            BidOfferMatch(offer=Offer('offer_id', pendulum.now(), 1, 1, 'S'), offer_energy=1,
-                          bid=Bid('bid_id', pendulum.now(), 1, 1, 'B', 'S'), bid_energy=1,
-                          trade_rate=1),
-            BidOfferMatch(offer=Offer('offer_id2', pendulum.now(), 2, 2, 'S'), offer_energy=2,
-                          bid=Bid('bid_id2', pendulum.now(), 2, 2, 'B', 'S'), bid_energy=2,
-                          trade_rate=1),
-            BidOfferMatch(offer=Offer('offer_id', pendulum.now(), 1, 1, 'S'), offer_energy=1,
-                          bid=Bid('bid_id', pendulum.now(), 1, 1, 'B', 'S'), bid_energy=1,
-                          trade_rate=1)
+            BidOfferMatch(offer=Offer('offer_id', pendulum.now(), 1, 1, 'S'), selected_energy=1,
+                          bid=Bid('bid_id', pendulum.now(), 1, 1, 'B', 'S'), trade_rate=1),
+            BidOfferMatch(offer=Offer('offer_id2', pendulum.now(), 2, 2, 'S'), selected_energy=2,
+                          bid=Bid('bid_id2', pendulum.now(), 2, 2, 'B', 'S'), trade_rate=1),
+            BidOfferMatch(offer=Offer('offer_id', pendulum.now(), 1, 1, 'S'), selected_energy=1,
+                          bid=Bid('bid_id', pendulum.now(), 1, 1, 'B', 'S'), trade_rate=1)
         ]
 
         offer_trade = Trade('trade', 1, Offer('offer_id', pendulum.now(), 1, 1, 'S'), 'S', 'B',

@@ -31,7 +31,7 @@ from d3a.models.myco_matcher.base_matcher import BaseMatcher
 log = getLogger(__name__)
 
 
-class PayAsClear(BaseMatcher):
+class PayAsClearMatcher(BaseMatcher):
     def __init__(self):
         self.state = MarketClearingState()
         self.sorted_bids = []
@@ -114,7 +114,7 @@ class PayAsClear(BaseMatcher):
             self.state.clearing[current_time] = clearing[0]
         return clearing
 
-    def calculate_match_recommendation(self, bids, offers, current_time):
+    def calculate_match_recommendation(self, bids, offers, current_time=None):
         clearing = self.get_clearing_point(bids, offers, current_time)
         if clearing is None:
             return []
@@ -168,9 +168,8 @@ class PayAsClear(BaseMatcher):
                     offer_list.insert(0, offer)
                     # Save the matching
                     bid_offer_matchings.append(
-                        BidOfferMatch(bid=bid, bid_energy=bid_energy,
-                                      offer=offer, offer_energy=bid_energy,
-                                      trade_rate=clearing_rate)
+                        BidOfferMatch(bid=bid, selected_energy=bid_energy,
+                                      offer=offer, trade_rate=clearing_rate)
                     )
                     # Update total clearing energy
                     clearing_energy -= bid_energy
@@ -180,9 +179,8 @@ class PayAsClear(BaseMatcher):
                     # Offer is exhausted by the bid. More offers are needed to cover the bid.
                     # Save the matching offer to accept later
                     bid_offer_matchings.append(
-                        BidOfferMatch(bid=bid, bid_energy=offer_energy,
-                                      offer=offer, offer_energy=offer_energy,
-                                      trade_rate=clearing_rate)
+                        BidOfferMatch(bid=bid, selected_energy=offer_energy,
+                                      offer=offer, trade_rate=clearing_rate)
                     )
                     # Subtract the offer energy from the bid, in order to not be taken into account
                     # from following matchings

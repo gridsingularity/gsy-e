@@ -19,7 +19,7 @@ import uuid
 from typing import Union  # noqa
 from logging import getLogger
 
-from d3a.models.market import lock_market_action
+from d3a.models.market import lock_market_action, validate_authentic_bid_offer_pair
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade, MarketException
 from d3a.models.market.market_structures import Bid, Trade, TradeBidOfferInfo
@@ -204,6 +204,7 @@ class TwoSidedMarket(OneSidedMarket):
         return trade
 
     def accept_bid_offer_pair(self, bid, offer, clearing_rate, trade_bid_info, selected_energy):
+        validate_authentic_bid_offer_pair(bid, offer, clearing_rate, selected_energy)
         already_tracked = bid.buyer == offer.seller
         trade = self.accept_offer(offer_or_id=offer,
                                   buyer=bid.buyer,
@@ -235,7 +236,7 @@ class TwoSidedMarket(OneSidedMarket):
             return
         for index, recommended_pair in enumerate(recommended_list):
 
-            selected_energy = recommended_pair.bid_energy
+            selected_energy = recommended_pair.selected_energy
             bid = recommended_pair.bid
             offer = recommended_pair.offer
             original_bid_rate = \

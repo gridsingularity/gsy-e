@@ -25,7 +25,7 @@ from uuid import uuid4
 
 from d3a.constants import TIME_ZONE
 from d3a.events.event_structures import MarketEvent
-from d3a.models.myco_matcher.pay_as_bid import PayAsBidMatch
+from d3a.models.myco_matcher.pay_as_bid import PayAsBidMatcher
 
 from hypothesis import strategies as st
 from hypothesis.control import assume
@@ -35,7 +35,7 @@ from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade, InvalidBalancingTradeException, InvalidBid, \
     BidNotFound, DeviceNotInRegistryError
 from d3a.models.market.two_sided import TwoSidedMarket
-from d3a.models.myco_matcher.pay_as_clear import PayAsClear
+from d3a.models.myco_matcher.pay_as_clear import PayAsClearMatcher
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.market_structures import Bid, Offer, Trade, TradeBidOfferInfo
 from d3a.models.market.balancing import BalancingMarket
@@ -129,7 +129,7 @@ def market():
 
 @pytest.yield_fixture
 def market_matcher():
-    return PayAsBidMatch()
+    return PayAsBidMatcher()
 
 
 def test_double_sided_performs_pay_as_bid_matching(market, market_matcher):
@@ -678,7 +678,7 @@ def test_market_accept_bid_yields_partial_bid_trade(
 
 @pytest.yield_fixture
 def pac_market():
-    return PayAsClear()
+    return PayAsClearMatcher()
 
 
 @pytest.mark.parametrize("offer, bid, mcp_rate, mcp_energy", [

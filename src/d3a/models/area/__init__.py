@@ -143,7 +143,7 @@ class Area:
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available and self.strategy is None else None
         self.should_update_child_strategies = False
-        self.offers_bids_matcher = MycoMatcher()
+        self.bid_offer_matcher = MycoMatcher()
         self.external_connection_available = external_connection_available
 
     @property
@@ -393,9 +393,9 @@ class Area:
                 self.dispatcher.publish_market_clearing()
             else:
                 for market in self.all_markets:
-                    self.offers_bids_matcher.calculate_recommendation(
+                    bid_offer_pairs = self.bid_offer_matcher.calculate_recommendation(
                         *market.open_bids_and_offers, self.now)
-                    market.match_recommendation(self.offers_bids_matcher.bid_offer_pairs)
+                    market.match_recommendation(bid_offer_pairs)
 
         self.events.update_events(self.now)
 

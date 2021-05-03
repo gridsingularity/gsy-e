@@ -133,7 +133,8 @@ class ExportAndPlot:
             if ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
                 self.plot_energy_trade_profile_hr(self.area, self.plot_dir)
             if ConstSettings.IAASettings.MARKET_TYPE == 2 and \
-                    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == 2 and \
+                    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == \
+                    d3a.constants.BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value and \
                     ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS is True:
                 self.plot_supply_demand_curve(self.area, self.plot_dir)
             self.move_root_plot_folder()
@@ -201,7 +202,8 @@ class ExportAndPlot:
                                                         area.past_balancing_markets,
                                                         is_first=is_first)
             if ConstSettings.IAASettings.MARKET_TYPE == 2 and \
-                    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == 2:
+                    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == \
+                    d3a.constants.BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value:
                 self._export_area_clearing_rate(area, directory, "market-clearing-rate", is_first)
 
     def _export_area_clearing_rate(self, area, directory, file_suffix, is_first):
@@ -214,7 +216,7 @@ class ExportAndPlot:
                     writer.writerow(labels)
                 for market in area.past_markets:
                     for time, clearing in \
-                            area.offers_bids_matcher.match_algorithm.state.clearing.items():
+                            area.bid_offer_matcher.match_algorithm.state.clearing.items():
                         if market.time_slot > time:
                             row = (market.time_slot, time, clearing)
                             writer.writerow(row)

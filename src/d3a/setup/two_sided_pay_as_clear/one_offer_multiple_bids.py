@@ -13,7 +13,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-
+import d3a.constants
 from d3a.models.area import Area
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.load_hours import LoadHoursStrategy
@@ -22,7 +22,8 @@ from d3a_interface.constants_limits import ConstSettings
 
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = 2
+    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
+        d3a.constants.BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
 
     area = Area(
         'Grid',

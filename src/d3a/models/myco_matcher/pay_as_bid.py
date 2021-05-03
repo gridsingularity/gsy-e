@@ -3,7 +3,7 @@ from d3a.models.market.market_structures import BidOfferMatch
 from d3a.models.myco_matcher.base_matcher import BaseMatcher
 
 
-class PayAsBidMatch(BaseMatcher):
+class PayAsBidMatcher(BaseMatcher):
 
     def calculate_match_recommendation(self, bids, offers, current_time=None):
         """
@@ -31,7 +31,7 @@ class PayAsBidMatch(BaseMatcher):
                     already_selected_bids.add(bid.id)
                     selected_energy = min(bid.energy, offer.energy)
                     bid_offer_pairs.append(BidOfferMatch(
-                        bid=bid, offer=offer, bid_energy=selected_energy,
-                        offer_energy=selected_energy, trade_rate=bid.energy_rate))
+                        bid=bid, offer=offer, selected_energy=selected_energy,
+                        trade_rate=bid.energy_rate))
                     break
         return bid_offer_pairs
