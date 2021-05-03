@@ -660,6 +660,40 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#api-events" title="API Events" class="md-nav__link">
+    API Events
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#each-new-market-slot" title="Each new market slot" class="md-nav__link">
+    Each new market slot
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-event-or-response" title="On event or response" class="md-nav__link">
+    On event or response
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-finish" title="On finish" class="md-nav__link">
+    On finish
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#api-command" title="API command" class="md-nav__link">
     API command
   </a>
@@ -668,22 +702,49 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#market-stats" title="market stats" class="md-nav__link">
-    market stats
+  <a href="#last_market_dso_stats" title="last_market_dso_stats()" class="md-nav__link">
+    last_market_dso_stats()
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#dso-market-stats" title="dso market stats" class="md-nav__link">
-    dso market stats
+  <a href="#grid_fees" title="grid_fees()" class="md-nav__link">
+    grid_fees()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-template-script" title="API template script" class="md-nav__link">
+    API template script
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#time-of-use-tou" title="Time-of-Use (ToU)" class="md-nav__link">
+    Time-of-Use (ToU)
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#grid-fee" title="grid fee" class="md-nav__link">
-    grid fee
+  <a href="#aziiz-pricing" title="Aziiz pricing" class="md-nav__link">
+    Aziiz pricing
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#script-configuration" title="Script Configuration" class="md-nav__link">
+    Script Configuration
   </a>
   
 </li>
@@ -1227,6 +1288,40 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#api-events" title="API Events" class="md-nav__link">
+    API Events
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#each-new-market-slot" title="Each new market slot" class="md-nav__link">
+    Each new market slot
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-event-or-response" title="On event or response" class="md-nav__link">
+    On event or response
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-finish" title="On finish" class="md-nav__link">
+    On finish
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#api-command" title="API command" class="md-nav__link">
     API command
   </a>
@@ -1235,22 +1330,49 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#market-stats" title="market stats" class="md-nav__link">
-    market stats
+  <a href="#last_market_dso_stats" title="last_market_dso_stats()" class="md-nav__link">
+    last_market_dso_stats()
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#dso-market-stats" title="dso market stats" class="md-nav__link">
-    dso market stats
+  <a href="#grid_fees" title="grid_fees()" class="md-nav__link">
+    grid_fees()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-template-script" title="API template script" class="md-nav__link">
+    API template script
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#time-of-use-tou" title="Time-of-Use (ToU)" class="md-nav__link">
+    Time-of-Use (ToU)
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#grid-fee" title="grid fee" class="md-nav__link">
-    grid fee
+  <a href="#aziiz-pricing" title="Aziiz pricing" class="md-nav__link">
+    Aziiz pricing
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#script-configuration" title="Script Configuration" class="md-nav__link">
+    Script Configuration
   </a>
   
 </li>
@@ -1281,52 +1403,89 @@
                 
                   <h1>Grid Operator API</h1>
                 
-                <p>The Grid Singularity API client allows you to create agents that can <strong>dynamically change the grid fee</strong> in different markets. The agent can request and receive information through the Grid Operator API, feed that information into a tariff model, and change grid fees on a live simulated exchange. The Grid Operator API is designed for grid operators (notably <strong>Distribution System Operators</strong> or DSOs) to manage different markets on specific grid levels. The structure is designed so that multiple markets can be managed from a single agent. Notably this allows the agent to aggregate information to integrate a more efficient grid management. </p>
+                <p>The Grid Singularity Grid Operator API client allows you to create agents that can dynamically change the grid fee in different markets. The agent can request and receive information through the Grid Operator API, feed that information into a tariff model, and submit grid fees through the API client to change grid fees on a live simulated exchange. The Grid Operator API is designed for grid operators (notably Distribution System Operators or DSOs) to manage congestion and grid constraints in different markets across the grid. The structure is designed so that multiple markets can be managed from a single agent, allowing information to be aggregated for integrated grid management.</p>
 <h2 id="market-information">Market Information<a class="headerlink" href="#market-information" title="Permanent link">&para;</a></h2>
 <p>The Grid Operator API receives information concerning the markets that it manages. Different metrics are shared through the API :</p>
 <ul>
 <li>Minimum, median, average and maximum trade price [€/kWh]</li>
 <li>Total energy volume traded [kWh]</li>
-<li>Self sufficiency [%]</li>
+<li>Self sufficiency / self consumption [%]</li>
 <li>Import / Export [kWh]</li>
 <li>Current market fee [cents/kWh]</li>
 <li>Next market fee [cents/kWh]</li>
 <li>Market fee revenue [cents]</li>
 </ul>
 <h2 id="interaction-with-the-running-exchange">Interaction with the running exchange<a class="headerlink" href="#interaction-with-the-running-exchange" title="Permanent link">&para;</a></h2>
-<p>As explained above the Grid Operator API function is triggered at the end of each market slot. Here is one example:</p>
-<p><img alt="alt_text" src="../img/grid-operator-1.png" /></p>
+<p>As explained above the Grid Operator API function is triggered at the start of each market slot. Here is one example:</p>
+<p><img alt="alt_text" src="../img/grid-operator-api-1.png" /></p>
 <ol>
-<li>At the end of the 12:45 market slot, the Grid Operator API function on_market_cycle is triggered.</li>
-<li>The Grid Operator agent receives a dictionary with information from the last market slot (12:45-13:00).</li>
+<li>At the end of the <code>12:45</code> market slot, the Grid Operator API function <code>on_market_cycle</code> is triggered.</li>
+<li>The Grid Operator agent receives a nested dictionary with information from the last market slot, including the grid tree (<code>12:45-13:00</code>).</li>
 <li>Based on these inputs, the agent script sets a new grid fee for the markets it manages.</li>
-<li>The grid fees sent between 13:00 and 13:15 will be applied for the 13:15 market slot</li>
+<li>The grid fees sent during the <code>13:00</code> will be applied for the <code>13:15</code> market slot</li>
 </ol>
+<h2 id="api-events">API Events<a class="headerlink" href="#api-events" title="Permanent link">&para;</a></h2>
+<p>In the Grid Operator there are 3 events that are triggered while a simulation is running.</p>
+<h3 id="each-new-market-slot">Each new market slot<a class="headerlink" href="#each-new-market-slot" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span><code>def on_market_cycle(self, market_info):
+</code></pre></div>
+
+<p>As shown in the schematic above, this event triggered at the start of every market slot. When a new market slot is created the API receives the <code>market_info</code>, containing market information and the code within the script event is executed.</p>
+<h3 id="on-event-or-response">On event or response<a class="headerlink" href="#on-event-or-response" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span><code>def on_event_or_response(self, message):
+</code></pre></div>
+
+<p>In this event, the API receives a message for every event (<code>on_market_cycle</code>) or response for each commands (e.g. submitting new grid fees)</p>
+<h3 id="on-finish">On finish<a class="headerlink" href="#on-finish" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span><code>def on_finish(self, finish_info):
+</code></pre></div>
+
+<p>This event is triggered when the simulation/collaboration finishes. Within that function, information stored during the simulation could potentially be exported for further analysis.</p>
 <h2 id="api-command">API command<a class="headerlink" href="#api-command" title="Permanent link">&para;</a></h2>
-<p>The Grid Operator API can function once at the end of each market slot. When the current market slot ends, the client will get notified via an event. It is possible to capture this event and perform operations when it occurs by overriding the functionality of the on_market_cycle method e.g. def on_market_cycle(self, market_info):</p>
-<p>The Grid Operator API can send batch commands, grouping different commands, for different markets. Three different commands are available :</p>
-<h3 id="market-stats">market stats<a class="headerlink" href="#market-stats" title="Permanent link">&para;</a></h3>
-<p>This command is used to request information from different markets for the last market slot.</p>
-<p>A batch_command dictionary structure is used and the response is stored in a variable :</p>
-<div class="codehilite"><pre><span></span><code><span class="n">batch_commands</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;market_stats&quot;</span><span class="p">,</span><span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;market_slots&quot;</span><span class="p">:</span> <span class="n">market_slot</span><span class="p">}})</span>
-<span class="bp">self</span><span class="o">.</span><span class="n">market_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_command</span><span class="p">(</span><span class="n">batch_commands_stats</span><span class="p">)</span>
+<p>The Grid Operator API can function once at the start of each <a href="../markets/#market-slots">market slot</a>. When the current market slot ends, a new one is automatically created and the client is notified via the on_market_cycle event. It is possible to capture this event and perform operations when it occurs by overriding the functionality of the <a href="./#each-new-market-slot">on_market_cycle</a> method.</p>
+<p>The Grid Operator API can send batch commands, grouping different commands, for different markets. The commands can be grouped and then all executed at the same time. Three different commands are available for the Grid Operator API :</p>
+<h3 id="last_market_dso_stats">last_market_dso_stats()<a class="headerlink" href="#last_market_dso_stats" title="Permanent link">&para;</a></h3>
+<p>This command is used to <strong>request information</strong> from different markets for the last market slot.</p>
+<p>This batch command receives one argument : <strong>area_uuid</strong>. This latter is the Universal Unique Identifier of the requested market statistic. Here is an example:</p>
+<div class="codehilite"><pre><span></span><code>self.add_to_batch_commands.last_market_dso_stats(area_uuid = &quot;62f827ec-ef86-4782-b5c3-88327751d97d&quot;)
 </code></pre></div>
 
-<h3 id="dso-market-stats">dso market stats<a class="headerlink" href="#dso-market-stats" title="Permanent link">&para;</a></h3>
-<p>This command is used to request information from different markets for the last market slot, more specific to grid operators (e.g. import and export of the market).</p>
-<p>A batch_command dictionary structure is used and the response is stored in a variable:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">batch_commands_stats</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;dso_market_stats&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;market_slots&quot;</span><span class="p">:</span> <span class="n">market_slot</span><span class="p">}})</span>
-<span class="bp">self</span><span class="o">.</span><span class="n">dso_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_command</span><span class="p">(</span><span class="n">batch_commands_stats</span><span class="p">)[</span><span class="s2">&quot;responses&quot;</span><span class="p">]</span>
+<h3 id="grid_fees">grid_fees()<a class="headerlink" href="#grid_fees" title="Permanent link">&para;</a></h3>
+<p>This command is used to <strong>send the new grid fee</strong> for a specific market. The grid fee needs to be set as a positive value and the unit is cents/kWh.</p>
+<p>This batch command receives two arguments: <strong>area_uuid</strong> and <strong>fee_cents_kwh</strong>. Here is an example:</p>
+<div class="codehilite"><pre><span></span><code>self.add_to_batch_commands.grid_fees(area_uuid=62f827ec-ef86-4782-b5c3-88327751d97d&quot;, fee_cents_kwh=3.2)
 </code></pre></div>
 
-<h3 id="grid-fee">grid fee<a class="headerlink" href="#grid-fee" title="Permanent link">&para;</a></h3>
-<p>This command is used to send the new grid fee for a specific market. The grid fee needs to be sent as an integer and the unit is cents/kWh.</p>
-<p>A batch_command dictionary structure is used:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">batch_commands</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;grid_fees&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;fee_const&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_fee</span><span class="p">}})</span>
-<span class="bp">self</span><span class="o">.</span><span class="n">batch_command</span><span class="p">(</span><span class="n">batch_commands</span><span class="p">)</span>
+<p>After adding all the wanted commands in the batch, the API can execute it with the following command:</p>
+<div class="codehilite"><pre><span></span><code>response = self.execute_batch_commands()
 </code></pre></div>
 
-<p>For a video tutorial on the Grid Operator API, please follow this <a href="https://youtu.be/HXNme8Rt3pI">link</a> and a template Grid Operator API script <a href="https://github.com/gridsingularity/d3a/blob/master/src/d3a/setup/odyssey_momentum/markets_api_template.py">here</a>.</p>
+<p>In return the simulation will provide a response for all commands submitted.</p>
+<h2 id="api-template-script">API template script<a class="headerlink" href="#api-template-script" title="Permanent link">&para;</a></h2>
+<p>A Grid Operator API template script is available on <a href="https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/grid_operator_api_template.py">github</a>. This shows an example of what can be done with this API, and offers a flexible structure, easy to modify to implement custom grid fee strategies. In this script two template strategies are available already.</p>
+<h3 id="time-of-use-tou">Time-of-Use (ToU)<a class="headerlink" href="#time-of-use-tou" title="Permanent link">&para;</a></h3>
+<p>This is a strategy where grid fee is applied depending on the <strong>time of the day</strong> (hours and minutes) regardless of the market conditions. After analysing import and export patterns of their client, grid operators can create a time-based curve, increasing fees at peak predicted times (e.g. morning and dinner time). </p>
+<p>Here is an example of ToU strategy that was used by the DSOs in one of the experiments at <a href="https://gridsingularity.medium.com/energy-singularity-challenge-2020-testing-novel-grid-fee-models-and-intelligent-peer-to-peer-6a0d715a9063">Odyssey hackathon</a>.</p>
+<p><img alt="alt_text" src="../img/grid-operator-api-2.png" /></p>
+<h3 id="aziiz-pricing">Aziiz pricing<a class="headerlink" href="#aziiz-pricing" title="Permanent link">&para;</a></h3>
+<p>The Aziiz model is using past market information to determine the next grid fee. The model looks at <strong>past imports and exports</strong> on a specific market, applies a moving average and then based on this number sets the next grid fee for that market. This model has the advantage of integrating market conditions into its strategy. For instance if past market slots experienced high imports, the model will increase fees in the relevant market to incentivise market participants to contain the energy within that area. </p>
+<h3 id="script-configuration">Script Configuration<a class="headerlink" href="#script-configuration" title="Permanent link">&para;</a></h3>
+<p>As mentioned on this page, at the start of the API script the user needs to specify the markets she/he wishes to connect and manage and the oracle name. </p>
+<p>Right after that the user <a href="https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/grid_operator_api_template.py#L32-L34">selects</a> the strategy to use (Time of Use or Aziiz model). To select the Time of Use strategy the user needs to set TimeOfUse to True and Aziiz to False. On the other hand, to select the Aziiz model, the user has to set TimeOfUse to False and Aziiz to True.</p>
+<p>If the Aziiz model is selected, the user can tune <a href="https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/grid_operator_api_template.py#L35-L36">parameters</a> such as applying the moving average and specifying the number of past market slots to average.</p>
+<p>For both strategies, the script reads an Excel file to adjust the grid fees (<a href="https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/resources/ToU.xlsx">ToU.xlsx</a> and <a href="https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/resources/Aziiz.xlsx">Aziiz.xlsx</a>). </p>
+<p>In ToU.xlsx the user can define the grid fees for each market she/he manages for every quarter hours of the day.</p>
+<p><img alt="alt_text" src="../img/grid-operator-api-3.png" /></p>
+<p>In Aziiz.xlsx grid fees can be set for every peak import/export thresholds for each market. The Aziiz strategy will compare the average of the last markets’ peak import/export to the threshold. If the average is lower than the threshold the relevant grid fee will be applied (for instance on the figure below if the average peak is equal to 22kWh, the next grid fee will be 3 cents/KWh. Each sheet’s name represents the market connected to. </p>
+<p><img alt="alt_text" src="../img/grid-operator-api-4.png" /></p>
+<p><a href="https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/grid_operator_api_template.py#L85">On_market_slot event</a> is used to gather market statistics and set the grid fees for the next market slot. In <a href="https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/grid_operator_api_template.py#L111-L120">these lines</a>, the API is requesting dso market statistics from the simulation. After that, the API is <a href="https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/grid_operator_api_template.py#L122-L138">storing</a> some of the relevant market data to local variables, easier to manipulate. To improve the API monitoring, the script is <a href="https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/grid_operator_api_template.py#L140-L187">printing relevant data</a> in the terminal: </p>
+<p><img alt="alt_text" src="../img/grid-operator-api-5.png" /></p>
+<p>In <a href="https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/grid_operator_api_template.py#L192-L228">these lines</a>, the script applies the grid fee depending on the fee strategy defined at the start. If the Time of Use was set, the markets’ grid fee is set based on the ToU excel file. If the Aziiz model was chosen the next fee is defined based on the Aziiz excel file. Additionally if the peak import/export is higher than all threshold defined in the excel sheets <a href="https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/grid_operator_api_template.py#L222-L224">this</a> sets the next fee as 2000cts/kWh. All the fees are <a href="https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/grid_operator_api_template.py#L226">added to the batch command</a> and then <a href="https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/grid_operator_api_template.py#L228">executed</a>. </p>
+<p>After that the script <a href="https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/grid_operator_api_template.py#L230-L245">prints</a> the current fee and next fee for each market. </p>
+<p><img alt="alt_text" src="../img/grid-operator-api-6.png" /></p>
+<p>Later, the <a href="https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/grid_operator_api_template.py#L247-L252">on_event_or_response</a> is overwritten. By default we do not perform any operation in this event but the user could add some if needed. For instance the user could record all the grid fee change responses received in that event.</p>
+<p>Lastly the API script overwrites the <a href="https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/grid_operator_api_template.py#L250-L252">on_finish event</a> so that whenever the function is triggered the script stops. If the user wishes to save some information recorded within the API client this would be the opportunity to export them to external files.</p>
+<p>The <a href="https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/grid_operator_api_template.py#L262-L333">rest of the scrip</a> is used to connect to a running simulation/collaboration/canary network. These lines should work as is and no changes are required.</p>
                 
                   
                 
