@@ -35,7 +35,6 @@ Lastly for the Grid Operator API, 3 additional packages are required for the tem
 pip install pandas
 pip install openpyxl
 pip install tabulate
-pip install pendulum
 ```
 
 
@@ -120,7 +119,7 @@ _For more information on launching a simulation on the backend please visit [thi
 
 After few seconds, the simulation should begin, waiting for the API template as mentioned in the figure below:
 
-![alt_text](img/api-overview-1.png)
+![alt_text](img/api-overview-2.png)
 
 
 ##Initialise and start the API :
@@ -196,7 +195,7 @@ The API agent can interface with a local simulation (d3a backend) or a collabora
 
 The simulation configuration file is a JSON format file downloadable on the User-Interface. It contains all the information about the simulation setup (username, simulation name and UUID, domain name, websocket domain name, global settings of the simulation and the registry, consisting of all the grid hierarchy including markets and assets and whether or not the user is connected to those). To download this file the user needs to go to the registry page of the relevant collaboration/CN and click on the top right edit icon and Download API Client Summary.
 
-![alt_text](img/api-overview-2.png)
+![alt_text](img/api-overview-3.png)
 
 To run the API agent you can run the following command by adapting the arguments to your case:
 
@@ -208,7 +207,7 @@ d3a-api-client --log-level INFO run  --setup asset_api_template -u username -p p
 
 Instead of passing the JSON file, the user can directly pass the relevant variables as arguments in the CLI commands. For that to work, users need to pass the domain name and websocket name (both are optional parameters and only relevant when connecting to specific domains) and the simulation_id. The simulation_id corresponds to the Universally Unique IDentifier. This token can be found in the URL of a collaboration or a Canary Network in the User Interface. 
 
-![alt_text](img/api-overview-3.png)
+![alt_text](img/api-overview-4.png)
 
 To run the API agent you can run the following command by adapting the arguments to your case:
 
