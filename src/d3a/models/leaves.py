@@ -118,16 +118,16 @@ class LoadProfile(Leaf):
     strategy_type = DefinedLoadStrategy
 
 
+class LoadHours(Leaf):
+    strategy_type = LoadHoursStrategy
+
+
 class Storage(Leaf):
     strategy_type = StorageStrategy
 
 
 class HomeMeter(Leaf):
     strategy_type = HomeMeterStrategy
-
-
-class LoadHours(Leaf):
-    strategy_type = LoadHoursStrategy
 
 
 class FiniteDieselGenerator(Leaf):
