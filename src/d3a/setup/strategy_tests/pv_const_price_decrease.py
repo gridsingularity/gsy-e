@@ -47,6 +47,7 @@ def get_setup(config):
                             hrs_per_day=24,
                             hrs_of_day=list(
                                 range(0, 24)),
+                            initial_buying_rate=5,
                             final_buying_rate=30.1
                         )
                          ),

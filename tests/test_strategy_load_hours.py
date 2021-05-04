@@ -221,7 +221,9 @@ def market_test2():
 
 @pytest.fixture
 def load_hours_strategy_test(called):
-    strategy = LoadHoursStrategy(avg_power_W=620, hrs_per_day=4, hrs_of_day=[8, 9, 10, 12])
+    strategy = LoadHoursStrategy(
+        avg_power_W=620, hrs_per_day=4, hrs_of_day=[8, 9, 10, 12],
+        initial_buying_rate=10)
     strategy.accept_offer = called
     return strategy
 
@@ -242,7 +244,9 @@ def load_hours_strategy_test2(load_hours_strategy_test, area_test2):
 
 @pytest.fixture
 def load_hours_strategy_test4():
-    strategy = LoadHoursStrategy(avg_power_W=620, hrs_per_day=4, hrs_of_day=[8, 9, 10, 12])
+    strategy = LoadHoursStrategy(
+        avg_power_W=620, hrs_per_day=4, hrs_of_day=[8, 9, 10, 12],
+        initial_buying_rate=10)
     strategy.accept_offer = Mock()
     return strategy
 
