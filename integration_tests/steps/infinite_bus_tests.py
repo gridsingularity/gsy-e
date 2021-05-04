@@ -35,7 +35,6 @@ def check_buy_behaviour_ib(context):
     grid = context.simulation.area
     bus = list(filter(lambda x: x.name == "Infinite Bus", grid.children))[0]
     for time_slot, core_stats in context.raw_sim_data.items():
-        print(core_stats[name_uuid_map['Grid']]['trades'])
         for trade in core_stats[name_uuid_map['Grid']]['trades']:
             if trade['seller'] == "Infinite Bus":
                 assert limit_float_precision(trade['energy_rate']) >= \

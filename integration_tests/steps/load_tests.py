@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from behave import then
 from math import isclose
 
+from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
     _str_to_datetime
 from d3a_interface.utils import convert_W_to_Wh, find_object_of_same_weekday_and_time
@@ -49,6 +50,28 @@ def check_traded_energy_rate(context):
             if trade.buyer == load.name:
                 assert (trade.offer.price / trade.offer.energy) < \
                        load.strategy.bid_update.final_rate[market.time_slot]
+
+
+@then('the Load strategy increases its accepted offers price as expected')
+def load_price_increase(context):
+    house = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
+    load = list(filter(lambda x: "H1 General Load" in x.name, house.children))[0]
+
+    number_of_available_updates = \
+        int(load.config.slot_length.seconds / load.strategy.bid_update.update_interval.seconds) - 1
+    energy_rate_change_per_update = 4
+    rate_list = \
+        [ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE - i *
+         energy_rate_change_per_update
+         for i in range(number_of_available_updates)]
+    if load.strategy.bid_update.fit_to_limit is False:
+        for market in house.past_markets:
+            for trade in market.trades:
+                if trade.buyer == load.name:
+                    assert any([isclose(trade.offer.price / trade.offer.energy,
+                                        rate) for rate in rate_list])
+    else:
+        assert False
 
 
 @then('the DefinedLoadStrategy follows the Load profile provided as dict')
