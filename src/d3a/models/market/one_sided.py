@@ -38,6 +38,8 @@ class OneSidedMarket(Market):
                  grid_fees=None, name=None, in_sim_duration=True):
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name)
+
+        # If True, the current market slot is included in the expected duration of the simulation
         self.in_sim_duration = in_sim_duration
 
     def __repr__(self):  # pragma: no cover
