@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a_interface.constants_limits import ConstSettings, DATE_TIME_UI_FORMAT, GlobalConfig
 from d3a_interface.sim_results.all_results import ResultsHandler
+from kafka import KafkaProducer
 
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.d3a_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
@@ -60,6 +61,12 @@ class SimulationEndpointBuffer:
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or \
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
             self.offer_bid_trade_hr = OfferBidTradeGraphStats()
+
+        self.producer = KafkaProducer(
+            bootstrap_servers='localhost:9092',
+            api_version=(0, 10),
+            retries=5
+        )
 
     @staticmethod
     def _structure_results_from_area_object(target_area):

@@ -64,3 +64,5 @@ urllib3==1.26.3
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
+
+kafka-python==2.0.2

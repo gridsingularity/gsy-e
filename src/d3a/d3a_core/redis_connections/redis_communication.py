@@ -188,6 +188,10 @@ class RedisSimulationCommunication:
 
         self._handle_redis_job_metadata()
         self.redis_db.publish(self.result_channel, results)
+        # key = '_simulation_1'.encode('ascii')
+        endpoint_buffer.producer.send(
+            'simulations', value=json.dumps(result_report).encode('ascii'),
+            key=json.dumps(result_report['job_id']).encode('ascii'))
 
     def publish_intermediate_results(self, endpoint_buffer):
         # Should have a different format in the future, hence the code duplication
