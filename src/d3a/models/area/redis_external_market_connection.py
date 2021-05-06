@@ -45,7 +45,7 @@ class RedisMarketExternalConnection:
     @property
     def channel_prefix(self):
         if d3a.constants.EXTERNAL_CONNECTION_WEB:
-            return f"external/{d3a.constants.COLLABORATION_ID}/{self.area.uuid}"
+            return f"external/{d3a.constants.CONFIGURATION_ID}/{self.area.uuid}"
         else:
             return f"{self.area.slug}"
 

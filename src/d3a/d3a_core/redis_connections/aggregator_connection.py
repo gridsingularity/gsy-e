@@ -4,7 +4,7 @@ from copy import deepcopy
 from threading import Lock
 import d3a.constants
 from d3a_interface.utils import create_subdict_or_update
-from d3a.d3a_core.singletons import external_global_statistics
+from d3a.d3a_core.singletons import global_objects
 
 
 class AggregatorHandler:
@@ -55,9 +55,10 @@ class AggregatorHandler:
 
     def _create_grid_tree_event_dict(self):
         return {'grid_tree': self._delete_not_owned_devices_from_dict(
-            external_global_statistics.area_stats_tree_dict),
-                'feed_in_tariff_rate': external_global_statistics.current_feed_in_tariff,
-                'market_maker_rate': external_global_statistics.current_market_maker_rate}
+            global_objects.external_global_stats.area_stats_tree_dict),
+                'feed_in_tariff_rate': global_objects.external_global_stats.current_feed_in_tariff,
+                'market_maker_rate':
+                global_objects.external_global_stats.current_market_maker_rate}
 
     def add_batch_market_event(self, device_uuid, market_info):
         market_info.update(self._create_grid_tree_event_dict())
@@ -82,7 +83,7 @@ class AggregatorHandler:
     def aggregator_callback(self, payload):
         message = json.loads(payload["data"])
         if d3a.constants.EXTERNAL_CONNECTION_WEB is True and \
-                message['config_uuid'] != d3a.constants.COLLABORATION_ID:
+                message['config_uuid'] != d3a.constants.CONFIGURATION_ID:
             return
         if message["type"] == "CREATE":
             self._create_aggregator(message)
@@ -223,14 +224,14 @@ class AggregatorHandler:
 
     def _publish_all_events_from_one_type(self, redis, event_dict, event_type):
         for aggregator_uuid, event in event_dict.items():
-            event_channel = f"external-aggregator/{d3a.constants.COLLABORATION_ID}/" \
+            event_channel = f"external-aggregator/{d3a.constants.CONFIGURATION_ID}/" \
                             f"{aggregator_uuid}/events/all"
 
             publish_event_dict = {**event,
                                   'event': event_type,
                                   'num_ticks': 100 /
                                   d3a.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT,
-                                  'simulation_id': d3a.constants.COLLABORATION_ID if
+                                  'simulation_id': d3a.constants.CONFIGURATION_ID if
                                   d3a.constants.EXTERNAL_CONNECTION_WEB else None
                                   }
             redis.publish_json(event_channel, publish_event_dict)
@@ -247,7 +248,7 @@ class AggregatorHandler:
         for transaction_id, batch_commands in self.responses_batch_commands.items():
             for aggregator_uuid, response_body in batch_commands.items():
                 redis.publish_json(
-                    f"external-aggregator/{d3a.constants.COLLABORATION_ID}/"
+                    f"external-aggregator/{d3a.constants.CONFIGURATION_ID}/"
                     f"{aggregator_uuid}/response/batch_commands",
                     {
                         "command": "batch_commands",

@@ -16,14 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import contextlib
-import shutil
 import os
+import shutil
+from time import sleep
 
 import d3a.constants
+from d3a import constants
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import update_advanced_settings, constsettings_to_dict
 from d3a_interface.constants_limits import GlobalConfig
-from d3a import constants
 
 """
 before_step(context, step), after_step(context, step)
@@ -41,6 +42,31 @@ before_tag(context, tag), after_tag(context, tag)
 # -- SETUP: Use cfparse as default matcher
 # from behave import use_step_matcher
 # step_matcher("cfparse")
+
+
+if d3a.constants.CONNECT_TO_PROFILES_DB is True:
+    # profiles_handler needs to be a singleton in the integration tests:
+    from integration_tests.write_user_profiles import ProfilesHandler
+    profiles_handler = ProfilesHandler()
+    profiles_handler.connect()
+
+
+def before_feature(context, feature):
+    if feature.name == "User Profiles Tests":
+        d3a.constants.CONNECT_TO_PROFILES_DB = True
+        os.environ["PROFILE_DB_USER"] = "d3a_profiles_user"
+        os.environ["PROFILE_DB_PASSWORD"] = ""
+        os.environ["PROFILE_DB_NAME"] = "d3a_profiles"
+        os.system("docker-compose -f integration_tests/compose/docker_compose_postgres.yml up -d")
+        sleep(2)
+
+
+def after_feature(context, feature):
+    if feature.name == "User Profiles Tests":
+        d3a.constants.CONNECT_TO_PROFILES_DB = True
+        os.system("docker-compose -f integration_tests/compose/docker_compose_postgres.yml down")
+        os.system("docker rmi compose_postgres:latest")
+        sleep(2)
 
 
 def before_scenario(context, scenario):

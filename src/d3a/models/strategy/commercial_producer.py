@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.read_user_profile import InputProfileTypes
 from d3a_interface.device_validator import validate_commercial_producer
 from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
 from d3a.models.strategy import BaseStrategy, INF_ENERGY
@@ -31,12 +31,20 @@ class CommercialStrategy(BaseStrategy):
     def __init__(self, energy_rate=None):
         validate_commercial_producer(energy_rate=energy_rate)
         super().__init__()
-        self.energy_rate = energy_rate
+        self.energy_rate_input = energy_rate
+        self.energy_rate = None
         self.energy_per_slot_kWh = INF_ENERGY
 
     def event_activate(self, **kwargs):
-        self.energy_rate = self.area.config.market_maker_rate if self.energy_rate is None \
-            else read_arbitrary_profile(InputProfileTypes.IDENTITY, self.energy_rate)
+        self._read_or_rotate_rate_profiles()
+
+    def _read_or_rotate_rate_profiles(self):
+        if self.energy_rate_input is None:
+            self.energy_rate = self.area.config.market_maker_rate
+        else:
+            self.energy_rate = self.rotate_profile(InputProfileTypes.IDENTITY,
+                                                   self.energy_rate
+                                                   if self.energy_rate else self.energy_rate_input)
 
     def _markets_to_offer_on_activate(self):
         return self.area.all_markets
@@ -49,6 +57,7 @@ class CommercialStrategy(BaseStrategy):
             self._offer_balancing_energy(market)
 
     def event_market_cycle(self):
+        self._read_or_rotate_rate_profiles()
         if not self.area.last_past_market:
             # Post new offers only on first time_slot:
             self.place_initial_offers()

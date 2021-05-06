@@ -15,6 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.d3a_core.global_objects import ExternalConnectionGlobalStatistics
+from d3a.d3a_core.global_objects import GlobalObjects
 
-external_global_statistics = ExternalConnectionGlobalStatistics()
+global_objects = GlobalObjects()

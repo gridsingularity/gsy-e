@@ -42,9 +42,9 @@ BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
 
 class LoadHoursStrategy(BidEnabledStrategy):
-    parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day', 'fit_to_limit',
-                  'energy_rate_increase_per_update', 'update_interval', 'initial_buying_rate',
-                  'final_buying_rate', 'balancing_energy_ratio', 'use_market_maker_rate')
+    parameters = ("avg_power_W", "hrs_per_day", "hrs_of_day", "fit_to_limit",
+                  "energy_rate_increase_per_update", "update_interval", "initial_buying_rate",
+                  "final_buying_rate", "balancing_energy_ratio", "use_market_maker_rate")
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
                  fit_to_limit=True, energy_rate_increase_per_update=None,
@@ -116,11 +116,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 update_interval=update_interval, rate_limit_object=min)
         self.fit_to_limit = fit_to_limit
 
-    @staticmethod
-    def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
+    def _validate_rates(self, initial_rate, final_rate, energy_rate_change_per_update,
                         fit_to_limit):
-        # all parameters have to be validated for each time slot here
+        # all parameters have to be validated for each time slot starting from the current time
         for time_slot in initial_rate.keys():
+            if self.area and \
+                    self.area.current_market and time_slot < self.area.current_market.time_slot:
+                continue
             rate_change = None if fit_to_limit else \
                 find_object_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
             validate_load_device_price(
@@ -206,9 +208,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
             return
 
         self.bid_update.set_parameters(
-            initial_rate_profile_buffer=initial_rate,
-            final_rate_profile_buffer=final_rate,
-            energy_rate_change_per_update_profile_buffer=energy_rate_change_per_update,
+            self.area,
+            initial_rate=initial_rate,
+            final_rate=final_rate,
+            energy_rate_change_per_update=energy_rate_change_per_update,
             fit_to_limit=fit_to_limit,
             update_interval=update_interval
         )

@@ -23,7 +23,7 @@ from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import key_in_dict_and_not_none
 import d3a.constants
-from d3a.d3a_core.singletons import external_global_statistics
+from d3a.d3a_core.singletons import global_objects
 
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
@@ -125,7 +125,7 @@ class ExternalMixin:
     @property
     def channel_prefix(self):
         if d3a.constants.EXTERNAL_CONNECTION_WEB:
-            return f"external/{d3a.constants.COLLABORATION_ID}/{self.device.uuid}"
+            return f"external/{d3a.constants.CONFIGURATION_ID}/{self.device.uuid}"
         else:
             return f"{self.device.name}"
 
@@ -238,7 +238,8 @@ class ExternalMixin:
                 'market_slot': self.area.next_market.time_slot_str}
 
     def _dispatch_event_tick_to_external_agent(self):
-        if external_global_statistics.is_it_time_for_external_tick(self.device.current_tick):
+        if global_objects.external_global_stats.\
+                is_it_time_for_external_tick(self.device.current_tick):
             if self.is_aggregator_controlled:
                 self.redis.aggregator.add_batch_tick_event(self.device.uuid, self._progress_info)
             elif self.connected:
@@ -304,7 +305,7 @@ class ExternalMixin:
                                                                                 Offer)
                                    else 'None'}
 
-            external_global_statistics.update()
+            global_objects.external_global_stats.update()
             self.redis.aggregator.add_batch_trade_event(self.device.uuid, event_response_dict)
         elif self.connected:
             event_response_dict = {'device_info': self._device_info_dict,

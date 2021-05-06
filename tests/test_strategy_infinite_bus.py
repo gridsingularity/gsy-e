@@ -15,18 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import pytest
 import sys
-import pendulum
 from uuid import uuid4
 
+import pendulum
+import pytest
+from d3a.constants import TIME_ZONE
+from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade, BalancingOffer, Bid
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
-from d3a.models.area import DEFAULT_CONFIG
-from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a.constants import TIME_ZONE
-from d3a_interface.utils import find_object_of_same_weekday_and_time
 
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
@@ -49,6 +48,10 @@ class FakeArea:
     @property
     def all_markets(self):
         return [self.test_market]
+
+    @property
+    def next_market(self):
+        return self.test_market
 
     @property
     def balancing_markets(self):
@@ -123,19 +126,18 @@ def area_test1():
 
 @pytest.fixture()
 def bus_test1(area_test1):
-    c = InfiniteBusStrategy(energy_sell_rate=30)
+    c = InfiniteBusStrategy()
     c.area = area_test1
     c.owner = area_test1
     return c
 
 
-def test_global_market_maker_rate_set_at_instantiation(area_test1):
-    strategy = InfiniteBusStrategy(energy_sell_rate=35)
-    assert strategy.energy_rate == GlobalConfig.market_maker_rate
-    strategy = InfiniteBusStrategy(energy_rate_profile={"01:15": 40})
-    timestamp_key = pendulum.today("utc").set(hour=1, minute=15)
-    rate = find_object_of_same_weekday_and_time(GlobalConfig.market_maker_rate, timestamp_key)
-    assert rate == 40
+def test_global_market_maker_rate_set_at_instantiation(bus_test1):
+    bus_test1.event_activate()
+    assert all(energy_rate == GlobalConfig.market_maker_rate
+               for energy_rate in bus_test1.energy_rate.values())
+    assert all(energy_buy_rate == GlobalConfig.market_maker_rate
+               for energy_buy_rate in bus_test1.energy_buy_rate.values())
 
 
 def testing_offer_is_created_at_first_market_not_on_activate(bus_test1, area_test1):
@@ -299,7 +301,7 @@ def testing_event_market_cycle_post_offers(bus_test3, area_test3):
     bus_test3.event_market_cycle()
     assert len(area_test3.test_market.created_offers) == 1
     assert area_test3.test_market.created_offers[-1].energy == sys.maxsize
-    assert area_test3.test_market.created_offers[-1].price == 30 * sys.maxsize
+    assert area_test3.test_market.created_offers[-1].price == float(30 * sys.maxsize)
 
 
 """TEST4"""
@@ -331,5 +333,5 @@ def testing_event_market_cycle_posting_bids(bus_test4, area_test4):
     bus_test4.event_market_cycle()
     assert len(bus_test4._bids) == 1
     assert bus_test4._bids[area_test4.test_market.id][-1].energy == sys.maxsize
-    assert bus_test4._bids[area_test4.test_market.id][-1].price == 25 * sys.maxsize
+    assert bus_test4._bids[area_test4.test_market.id][-1].price == float(25 * sys.maxsize)
     ConstSettings.IAASettings.MARKET_TYPE = 1

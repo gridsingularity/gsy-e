@@ -44,6 +44,8 @@ from d3a.models.market.blockchain_interface import SubstrateBlockchainInterface,
     NonBlockchainInterface
 from d3a_interface.utils import key_in_dict_and_not_none
 import d3a.constants
+from d3a.d3a_core.singletons import global_objects
+
 
 log = getLogger(__name__)
 
@@ -355,6 +357,10 @@ class Area:
             changed_balancing_market = self._markets.create_future_markets(now_value, False, self)
         else:
             changed_balancing_market = None
+
+        if d3a.constants.CONNECT_TO_PROFILES_DB and not self.parent and self.next_market:
+            global_objects.profile_db_connection.buffer_profiles_from_db(
+                self.next_market.time_slot)
 
         # Force market cycle event in case this is the first market slot
         if (changed or len(self._markets.past_markets.keys()) == 0) and _trigger_event:

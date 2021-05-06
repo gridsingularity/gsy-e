@@ -25,7 +25,7 @@ from uuid import uuid4
 import pendulum
 from pendulum import DateTime, duration, today, datetime
 
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig, CN_PROFILE_EXPANSION_DAYS
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig, PROFILE_EXPANSION_DAYS
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.exceptions import D3ADeviceException
 from d3a_interface.utils import generate_market_slot_list
@@ -59,6 +59,10 @@ class FakeArea:
 
     @property
     def current_market(self):
+        return self.test_market
+
+    @property
+    def next_market(self):
         return self.test_market
 
     @property
@@ -283,6 +287,7 @@ def testing_produced_energy_forecast_real_data(pv_test66):
     morning_counts = Counts('morning')
     afternoon_counts = Counts('afternoon')
     evening_counts = Counts('evening')
+
     for (time, power) in pv_test66.state._energy_production_forecast_kWh.items():
         if time < morning_time:
             morning_counts.total += 1
@@ -371,15 +376,16 @@ def test_correct_interpolation_power_profile():
 
 
 def test_correct_time_expansion_read_arbitrary_profile():
+    # TODO: this test needs to move to d3a-interface
     market_maker_rate = 30
     if GlobalConfig.IS_CANARY_NETWORK:
         GlobalConfig.sim_duration = duration(hours=3)
-        expected_last_time_slot = today(tz=TIME_ZONE).add(days=CN_PROFILE_EXPANSION_DAYS-1,
+        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS-1,
                                                           hours=23, minutes=45)
         mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
         assert list(mmr.keys())[-1] == expected_last_time_slot
         GlobalConfig.sim_duration = duration(hours=30)
-        expected_last_time_slot = today(tz=TIME_ZONE).add(days=CN_PROFILE_EXPANSION_DAYS-1,
+        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS-1,
                                                           hours=23, minutes=45)
         mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
         assert list(mmr.keys())[-1] == expected_last_time_slot
@@ -390,12 +396,6 @@ def test_correct_time_expansion_read_arbitrary_profile():
         GlobalConfig.sim_duration = duration(hours=36)
         mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
         assert (list(mmr.keys())[-1] - today(tz=TIME_ZONE)).days == 1
-        GlobalConfig.sim_duration = duration(hours=48)
-        mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
-        assert list(mmr.keys())[-1] == today(tz=TIME_ZONE).add(days=1, hours=23, minutes=45)
-        GlobalConfig.sim_duration = duration(hours=49)
-        mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
-        assert list(mmr.keys())[-1] == today(tz=TIME_ZONE).add(days=2, minutes=45)
 
 
 def test_predefined_pv_constructor_rejects_incorrect_parameters():

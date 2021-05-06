@@ -15,29 +15,46 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
-    read_and_convert_identity_profile_to_float
-from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy import BidEnabledStrategy, INF_ENERGY
+import d3a.constants
 from d3a.d3a_core.exceptions import MarketException
+from d3a.models.strategy import BidEnabledStrategy, INF_ENERGY
+from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
+    read_and_convert_identity_profile_to_float, convert_identity_profile_to_float
+from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
 from d3a_interface.utils import find_object_of_same_weekday_and_time
 
 
 class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
-    parameters = ('energy_sell_rate', 'energy_rate_profile', 'energy_buy_rate',
-                  'buying_rate_profile')
+    parameters = ("energy_sell_rate", "energy_rate_profile", "energy_buy_rate",
+                  "buying_rate_profile", "buying_rate_profile_uuid", "energy_rate_profile_uuid")
 
     def __init__(self, energy_sell_rate=None, energy_rate_profile=None, energy_buy_rate=None,
-                 buying_rate_profile=None):
+                 buying_rate_profile=None, buying_rate_profile_uuid=None,
+                 energy_rate_profile_uuid=None):
         super().__init__()
         self.energy_per_slot_kWh = INF_ENERGY
-        self.energy_buy_rate = energy_buy_rate
-        self.buying_rate_profile = buying_rate_profile
-        self.energy_rate = energy_sell_rate
-        self.energy_rate_profile = energy_rate_profile
+        self.energy_buy_rate = None
+
+        if d3a.constants.CONNECT_TO_PROFILES_DB and buying_rate_profile_uuid:
+            self.energy_buy_rate_input = None
+            self.buying_rate_profile = None
+            self.buying_rate_profile_uuid = buying_rate_profile_uuid
+        else:
+            self.energy_buy_rate_input = energy_buy_rate
+            self.buying_rate_profile = buying_rate_profile
+            self.buying_rate_profile_uuid = None
+
+        if d3a.constants.CONNECT_TO_PROFILES_DB and energy_rate_profile_uuid:
+            self.energy_rate_input = None
+            self.energy_rate_profile = None
+            self.energy_rate_profile_uuid = energy_rate_profile_uuid
+        else:
+            self.energy_rate_input = energy_sell_rate
+            self.energy_rate_profile = energy_rate_profile
+            self.energy_rate_profile_uuid = None
+
         # This is done to support the UI which handles the Infinite Bus only as a Market Maker.
         # If one plans to allow multiple Infinite Bus devices in the grid, this should be
         # amended.
@@ -56,22 +73,30 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             GlobalConfig.market_maker_rate = \
                 ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
 
-    def event_activate(self, **kwargs):
-        if self.energy_rate_profile is not None:
-            self.energy_rate = read_and_convert_identity_profile_to_float(self.energy_rate_profile)
-            del self.energy_rate_profile
+    def _read_or_rotate_rate_profiles(self):
+        if self.energy_buy_rate_input is None and \
+                self.buying_rate_profile is None and \
+                self.buying_rate_profile_uuid is None:
+            self.energy_buy_rate = self.area.config.market_maker_rate
         else:
-            self.energy_rate = self.area.config.market_maker_rate if self.energy_rate is None \
-                else read_arbitrary_profile(InputProfileTypes.IDENTITY, self.energy_rate)
-
-        if self.buying_rate_profile is not None:
             self.energy_buy_rate = \
-                read_and_convert_identity_profile_to_float(self.buying_rate_profile)
-            del self.buying_rate_profile
+                convert_identity_profile_to_float(
+                    self.rotate_profile(profile_type=InputProfileTypes.IDENTITY,
+                                        profile=self.energy_buy_rate if self.energy_buy_rate
+                                        else self.energy_buy_rate_input,
+                                        profile_uuid=self.buying_rate_profile_uuid))
+
+        if self.energy_rate_input is None and \
+                self.energy_rate_profile is None and \
+                self.energy_rate_profile_uuid is None:
+            self.energy_rate = self.area.config.market_maker_rate
         else:
-            self.energy_buy_rate = self.area.config.market_maker_rate \
-                if self.energy_buy_rate is None \
-                else read_arbitrary_profile(InputProfileTypes.IDENTITY, self.energy_buy_rate)
+            self.energy_rate = \
+                convert_identity_profile_to_float(
+                    self.rotate_profile(profile_type=InputProfileTypes.IDENTITY,
+                                        profile=self.energy_rate if self.energy_rate
+                                        else self.energy_rate_input,
+                                        profile_uuid=self.energy_rate_profile_uuid))
 
     def buy_energy(self, market):
         for offer in market.sorted_offers:

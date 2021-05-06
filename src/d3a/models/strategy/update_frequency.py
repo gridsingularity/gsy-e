@@ -30,23 +30,39 @@ class UpdateFrequencyMixin:
                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
                  rate_limit_object=max):
         self.fit_to_limit = fit_to_limit
-        self.initial_rate_profile_buffer = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                  initial_rate)
+        self.initial_rate_input = initial_rate
+        self.final_rate_input = final_rate
+        self.energy_rate_change_per_update_input = energy_rate_change_per_update
+        self.initial_rate_profile_buffer = {}
+        self.final_rate_profile_buffer = {}
         self.initial_rate = {}
-        self.final_rate_profile_buffer = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                final_rate)
         self.final_rate = {}
-        if fit_to_limit is False:
-            self.energy_rate_change_per_update_profile_buffer = \
-                read_arbitrary_profile(InputProfileTypes.IDENTITY, energy_rate_change_per_update)
-        else:
-            self.energy_rate_change_per_update_profile_buffer = {}
+        self.fit_to_limit = fit_to_limit
+        self.energy_rate_change_per_update_profile_buffer = {}
+        self._read_or_rotate_rate_profiles(GlobalConfig.start_date)
 
         self.energy_rate_change_per_update = {}
         self.update_interval = update_interval
         self.update_counter = {}
         self.number_of_available_updates = 0
         self.rate_limit_object = rate_limit_object
+
+    def _read_or_rotate_rate_profiles(self, current_timestamp, reconfigure=False):
+        # TODO: this needs to be implemented to except profile UUIDs and DB connection
+        if reconfigure or current_timestamp not in self.initial_rate_profile_buffer.keys():
+            self.initial_rate_profile_buffer = \
+                read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                       self.initial_rate_input,
+                                       current_timestamp=current_timestamp)
+            self.final_rate_profile_buffer = \
+                read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                       self.final_rate_input,
+                                       current_timestamp=current_timestamp)
+            if self.fit_to_limit is False:
+                self.energy_rate_change_per_update_profile_buffer = \
+                    read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                           self.energy_rate_change_per_update_input,
+                                           current_timestamp=current_timestamp)
 
     def delete_past_state_values(self, current_market_time_slot):
         to_delete = []
@@ -126,6 +142,8 @@ class UpdateFrequencyMixin:
 
         self.number_of_available_updates = \
             self._calculate_number_of_available_updates_per_slot
+        if area.current_market:
+            self._read_or_rotate_rate_profiles(area.current_market.time_slot)
         self._populate_profiles(area)
 
     def get_updated_rate(self, time_slot):
@@ -156,20 +174,30 @@ class UpdateFrequencyMixin:
         return self.elapsed_seconds(strategy) >= \
                self.update_interval.seconds * self.update_counter[time_slot]
 
-    def set_parameters(self, *, initial_rate_profile_buffer=None, final_rate_profile_buffer=None,
-                       energy_rate_change_per_update_profile_buffer=None, fit_to_limit=None,
-                       update_interval=None, ):
-        if initial_rate_profile_buffer is not None:
-            self.initial_rate_profile_buffer = initial_rate_profile_buffer
-        if final_rate_profile_buffer is not None:
-            self.final_rate_profile_buffer = final_rate_profile_buffer
-        if energy_rate_change_per_update_profile_buffer is not None:
-            self.energy_rate_change_per_update_profile_buffer = \
-                energy_rate_change_per_update_profile_buffer
+    def set_parameters(self, area, initial_rate=None, final_rate=None,
+                       energy_rate_change_per_update=None, fit_to_limit=None,
+                       update_interval=None):
+
+        update = False
+        if initial_rate is not None:
+            self.initial_rate_input = initial_rate
+            update = True
+        if final_rate is not None:
+            self.final_rate_input = final_rate
+            update = True
+        if energy_rate_change_per_update is not None:
+            self.energy_rate_change_per_update_input = energy_rate_change_per_update
+            update = True
         if fit_to_limit is not None:
             self.fit_to_limit = fit_to_limit
+            update = True
         if update_interval is not None:
             self.update_interval = update_interval
+            update = True
+        if update:
+            self._read_or_rotate_rate_profiles(current_timestamp=area.current_market.time_slot
+                                               if area.current_market else GlobalConfig.start_date,
+                                               reconfigure=True)
 
 
 class TemplateStrategyBidUpdater(UpdateFrequencyMixin):

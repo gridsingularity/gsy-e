@@ -14,7 +14,7 @@ from d3a.models.market.market_structures import Trade, Offer, Bid
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import DATE_TIME_FORMAT
-from d3a.d3a_core.singletons import external_global_statistics
+from d3a.d3a_core.singletons import global_objects
 
 d3a.models.strategy.external_strategies.ResettableCommunicator = MagicMock
 
@@ -30,7 +30,7 @@ class TestExternalMixin(unittest.TestCase):
                          external_connection_available=True)
         self.parent = Area(name="parent_area", children=[self.area])
         self.parent.activate()
-        external_global_statistics(self.area, self.config.ticks_per_slot)
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
         strategy.connected = True
         market = MagicMock()
         market.time_slot = GlobalConfig.start_date
@@ -45,30 +45,38 @@ class TestExternalMixin(unittest.TestCase):
         self._create_and_activate_strategy_area(self.external_strategy)
         d3a.d3a_core.util.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
         self.config.ticks_per_slot = 90
-        external_global_statistics(self.area, self.config.ticks_per_slot)
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 18
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 18
         self.config.ticks_per_slot = 10
-        external_global_statistics(self.area, self.config.ticks_per_slot)
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 2
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 2
         self.config.ticks_per_slot = 100
-        external_global_statistics(self.area, self.config.ticks_per_slot)
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 20
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 20
         self.config.ticks_per_slot = 99
-        external_global_statistics(self.area, self.config.ticks_per_slot)
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 19
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 19
         d3a.d3a_core.util.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 50
         self.config.ticks_per_slot = 90
-        external_global_statistics(self.area, self.config.ticks_per_slot)
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 45
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 45
         self.config.ticks_per_slot = 10
-        external_global_statistics(self.area, self.config.ticks_per_slot)
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 5
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 5
         self.config.ticks_per_slot = 100
-        external_global_statistics(self.area, self.config.ticks_per_slot)
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 50
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 50
         self.config.ticks_per_slot = 99
-        external_global_statistics(self.area, self.config.ticks_per_slot)
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 49
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 49
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
@@ -81,7 +89,8 @@ class TestExternalMixin(unittest.TestCase):
         strategy.redis.aggregator.is_controlling_device = lambda _: True
         self.config.ticks_per_slot = 90
         strategy.event_activate()
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 18
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 18
         self.area.current_tick = 1
         strategy._dispatch_event_tick_to_external_agent()
         strategy.redis.aggregator.add_batch_tick_event.assert_not_called()
@@ -123,7 +132,8 @@ class TestExternalMixin(unittest.TestCase):
         strategy.redis.aggregator.is_controlling_device = lambda _: False
         self.config.ticks_per_slot = 90
         strategy.event_activate()
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 18
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 18
         self.area.current_tick = 1
         strategy._dispatch_event_tick_to_external_agent()
         strategy.redis.publish_json.assert_not_called()

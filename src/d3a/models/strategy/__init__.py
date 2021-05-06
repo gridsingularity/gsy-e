@@ -21,6 +21,7 @@ from logging import getLogger
 from typing import List, Dict, Any, Union  # noqa
 from uuid import uuid4
 
+import d3a.constants
 from d3a import constants
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
@@ -35,7 +36,9 @@ from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer, Bid, trade_from_JSON_string, \
     offer_from_JSON_string
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a.d3a_core.singletons import global_objects
+from d3a_interface.read_user_profile import read_arbitrary_profile
 
 log = getLogger(__name__)
 
@@ -229,6 +232,31 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             self.event_response_uuids = []
 
     parameters = None
+
+    def rotate_profile(self, profile_type, profile, profile_uuid=None):
+        start_timestamp = self.area.next_market.time_slot \
+            if self.area and self.area.next_market else GlobalConfig.start_date
+        if profile and not isinstance(profile, dict):
+            return read_arbitrary_profile(profile_type,
+                                          profile, current_timestamp=start_timestamp)
+        if not profile or self.time_to_rotate_profile(profile):
+
+            if profile_uuid and d3a.constants.CONNECT_TO_PROFILES_DB:
+                db_profile = \
+                    global_objects.profile_db_connection.get_profile_from_db_buffer(profile_uuid)
+                return read_arbitrary_profile(profile_type,
+                                              db_profile,
+                                              current_timestamp=min(db_profile.keys()))
+            else:
+                return read_arbitrary_profile(profile_type,
+                                              profile,
+                                              current_timestamp=start_timestamp)
+        else:
+            return profile
+
+    def time_to_rotate_profile(self, profile):
+        return not profile or not self.area.next_market \
+               or self.area.next_market.time_slot not in profile.keys()
 
     def energy_traded(self, market_id):
         return self.offers.sold_offer_energy(market_id)

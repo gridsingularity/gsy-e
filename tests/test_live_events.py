@@ -110,7 +110,6 @@ class TestLiveEvents(unittest.TestCase):
         }
 
         self.area_grid.activate()
-
         self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
         assert self.area2.strategy.panel_count == 12

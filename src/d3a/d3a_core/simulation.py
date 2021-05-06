@@ -48,7 +48,7 @@ from d3a_interface.utils import format_datetime, str_to_pendulum_datetime
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
-from d3a.d3a_core.singletons import external_global_statistics
+from d3a.d3a_core.singletons import global_objects
 from d3a.blockchain.constants import ENABLE_SUBSTRATE
 import d3a.constants
 
@@ -165,7 +165,9 @@ class Simulation:
             log.info("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
-        external_global_statistics(self.area, self.simulation_config.ticks_per_slot)
+        global_objects.external_global_stats(self.area, self.simulation_config.ticks_per_slot)
+        if d3a.constants.CONNECT_TO_PROFILES_DB:
+            global_objects.profile_db_connection.buffer_profiles_from_db(GlobalConfig.start_date)
 
         self.endpoint_buffer = SimulationEndpointBuffer(
             redis_job_id, self.initial_params,
@@ -337,7 +339,7 @@ class Simulation:
             self.area.cycle_markets()
 
             if self.simulation_config.external_connection_enabled:
-                external_global_statistics.update(market_cycle=True)
+                global_objects.external_global_stats.update(market_cycle=True)
                 self.area.publish_market_cycle_to_external_clients()
 
             self._update_and_send_results()
@@ -363,9 +365,9 @@ class Simulation:
 
                 current_tick_in_slot = tick_no % config.ticks_per_slot
                 if self.simulation_config.external_connection_enabled and \
-                        external_global_statistics.is_it_time_for_external_tick(
+                        global_objects.external_global_stats.is_it_time_for_external_tick(
                             current_tick_in_slot):
-                    external_global_statistics.update()
+                    global_objects.external_global_stats.update()
 
                 self.area.tick_and_dispatch()
                 self.area.update_area_current_tick()

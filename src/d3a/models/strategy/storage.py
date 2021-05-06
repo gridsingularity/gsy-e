@@ -195,16 +195,18 @@ class StorageStrategy(BidEnabledStrategy):
             return
 
         self.offer_update.set_parameters(
-            initial_rate_profile_buffer=initial_selling_rate,
-            final_rate_profile_buffer=final_selling_rate,
-            energy_rate_change_per_update_profile_buffer=energy_rate_decrease_per_update,
+            self.area,
+            initial_rate=initial_selling_rate,
+            final_rate=final_selling_rate,
+            energy_rate_change_per_update=energy_rate_decrease_per_update,
             fit_to_limit=offer_fit_to_limit,
             update_interval=update_interval
         )
         self.bid_update.set_parameters(
-            initial_rate_profile_buffer=initial_buying_rate,
-            final_rate_profile_buffer=final_buying_rate,
-            energy_rate_change_per_update_profile_buffer=energy_rate_increase_per_update,
+            self.area,
+            initial_rate=initial_buying_rate,
+            final_rate=final_buying_rate,
+            energy_rate_change_per_update=energy_rate_increase_per_update,
             fit_to_limit=bid_fit_to_limit,
             update_interval=update_interval
         )
@@ -213,13 +215,15 @@ class StorageStrategy(BidEnabledStrategy):
         self._area_reconfigure_prices(**kwargs)
         self._update_profiles_with_default_values()
 
-    @staticmethod
-    def _validate_rates(initial_selling_rate, final_selling_rate,
+    def _validate_rates(self, initial_selling_rate, final_selling_rate,
                         initial_buying_rate, final_buying_rate,
                         energy_rate_increase_per_update, energy_rate_decrease_per_update,
                         bid_fit_to_limit, offer_fit_to_limit):
 
         for time_slot in initial_selling_rate.keys():
+            if self.area and \
+                    self.area.current_market and time_slot < self.area.current_market.time_slot:
+                continue
             bid_rate_change = None if bid_fit_to_limit else \
                 find_object_of_same_weekday_and_time(energy_rate_increase_per_update, time_slot)
             offer_rate_change = None if offer_fit_to_limit else \

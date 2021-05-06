@@ -126,7 +126,7 @@ class ExternalConnectionCommunicator(ResettableCommunicator):
         if not self.is_enabled:
             return
         channel_callback_dict = {
-            f'external/{d3a.constants.COLLABORATION_ID}/aggregator/*/batch_commands':
+            f'external/{d3a.constants.CONFIGURATION_ID}/aggregator/*/batch_commands':
                 self.aggregator.receive_batch_commands_callback,
             'aggregator': self.aggregator.aggregator_callback
         }
