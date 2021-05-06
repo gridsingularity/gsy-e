@@ -152,7 +152,7 @@ class TwoSidedEngine(IAAEngine):
                 trade_offer_info=trade_offer_info,
                 seller_origin=bid_trade.seller_origin,
                 seller_origin_id=bid_trade.seller_origin_id,
-                seller_id=bid_trade.seller_id
+                seller_id=self.owner.uuid
             )
             self.delete_forwarded_bids(bid_info)
             self.bid_age.pop(bid_info.source_bid.id, None)
