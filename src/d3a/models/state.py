@@ -170,6 +170,10 @@ class LoadState:
         self._total_energy_demanded_Wh = state_dict["total_energy_demanded_Wh"]
 
 
+class HomeMeterState(LoadState):  # TODO: implement
+    pass
+
+
 class ESSEnergyOrigin(Enum):
     LOCAL = 1
     EXTERNAL = 2
