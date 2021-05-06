@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from typing import Union  # noqa
 from logging import getLogger
 from pendulum import DateTime
+from math import isclose
 
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market.market_structures import Offer, Trade
@@ -215,7 +216,7 @@ class OneSidedMarket(Market):
         if offer is None:
             raise OfferNotFoundException()
 
-        if energy is None:
+        if energy is None or isclose(energy, offer.energy, abs_tol=1e-8):
             energy = offer.energy
 
         original_offer = offer
@@ -246,7 +247,8 @@ class OneSidedMarket(Market):
                 offer.update_price(trade_price)
 
             elif energy > offer.energy:
-                raise InvalidTrade("Energy can't be greater than offered energy")
+                raise InvalidTrade(f"Energy ({energy}) can't be greater than "
+                                   f"offered energy ({offer.energy})")
             else:
                 # Requested energy is equal to offer's energy - just proceed normally
                 fee_price, trade_price = self.determine_offer_price(
