@@ -16,17 +16,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
-from typing import Union  # noqa
 from logging import getLogger
+from math import isclose
+from typing import Union  # noqa
 
-from d3a.models.market import lock_market_action
-from d3a.models.market.one_sided import OneSidedMarket
-from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade, MarketException
-from d3a.models.market.market_structures import Bid, Trade, TradeBidOfferInfo
-from d3a.events.event_structures import MarketEvent
-from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a_interface.constants_limits import ConstSettings
+
+from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade, MarketException
+from d3a.d3a_core.util import short_offer_bid_log_str
+from d3a.events.event_structures import MarketEvent
+from d3a.models.market import lock_market_action
+from d3a.models.market.market_structures import Bid, Trade, TradeBidOfferInfo
+from d3a.models.market.one_sided import OneSidedMarket
 
 log = getLogger(__name__)
 
@@ -156,7 +158,9 @@ class TwoSidedPayAsBid(OneSidedMarket):
             raise BidNotFound("During accept bid: " + str(bid))
 
         buyer = market_bid.buyer if buyer is None else buyer
-        energy = market_bid.energy if energy is None else energy
+
+        if energy is None or isclose(energy, market_bid.energy, abs_tol=1e-8):
+            energy = market_bid.energy
 
         orig_price = bid.original_bid_price if bid.original_bid_price is not None else bid.price
         residual_bid = None
@@ -164,7 +168,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
         if energy <= 0:
             raise InvalidTrade("Energy cannot be negative or zero.")
         elif energy > market_bid.energy:
-            raise InvalidTrade("Traded energy cannot be more than the bid energy.")
+            raise InvalidTrade(f"Traded energy ({energy}) cannot be more than the "
+                               f"bid energy ({market_bid.energy}).")
         elif energy < market_bid.energy:
             # partial bid trade
             accepted_bid, residual_bid = self.split_bid(market_bid, energy, orig_price)
