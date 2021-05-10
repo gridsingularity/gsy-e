@@ -123,4 +123,4 @@ def clearing_rate_at_bid_rate(context):
     assert all(isclose(clearing, 25.0)
                for child in context.simulation.area.children
                for clearing in
-               list(child.bid_offer_matcher.match_algorithm.state.clearing.values()))
+               child.bid_offer_matcher.match_algorithm.state.clearing.values())
