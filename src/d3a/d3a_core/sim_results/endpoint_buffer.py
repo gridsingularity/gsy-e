@@ -15,6 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import os
+
 from d3a_interface.constants_limits import ConstSettings, DATE_TIME_UI_FORMAT, GlobalConfig
 from d3a_interface.sim_results.all_results import ResultsHandler
 from kafka import KafkaProducer
@@ -33,6 +35,8 @@ _NO_VALUE = {
     'avg': None,
     'max': None
 }
+
+KAFKA_URL = os.environ.get('KAFKA_URL', 'localhost:9092')
 
 
 class SimulationEndpointBuffer:
@@ -63,7 +67,7 @@ class SimulationEndpointBuffer:
             self.offer_bid_trade_hr = OfferBidTradeGraphStats()
 
         self.producer = KafkaProducer(
-            bootstrap_servers='localhost:9092',
+            bootstrap_servers=KAFKA_URL,
             api_version=(0, 10),
             retries=5
         )
