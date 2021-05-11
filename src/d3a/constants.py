@@ -50,3 +50,4 @@ RUN_IN_REALTIME = False
 class BidOfferMatchAlgoEnum(Enum):
     PAY_AS_BID = 1
     PAY_AS_CLEAR = 2
+    CUSTOM = 3
