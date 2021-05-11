@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import os
+import ssl
 
 from d3a_interface.constants_limits import ConstSettings, DATE_TIME_UI_FORMAT, GlobalConfig
 from d3a_interface.sim_results.all_results import ResultsHandler
@@ -36,7 +37,16 @@ _NO_VALUE = {
     'max': None
 }
 
-KAFKA_URL = os.environ.get('KAFKA_URL', 'localhost:9092')
+BOOTSTRAP_SERVERS = os.environ.get('BOOTSTRAP_SERVERS')
+SASL_PLAIN_USERNAME = os.environ.get('SASL_PLAIN_USERNAME')
+SASL_PLAIN_PASSWORD = os.environ.get('SASL_PLAIN_PASSWORD')
+SECURITY_PROTOCOL = os.environ.get('SECURITY_PROTOCOL', 'SASL_SSL')
+SASL_MECHANISM = os.environ.get('SASL_MECHANISM', 'SCRAM-SHA-512')
+
+# Create a new context using system defaults, disable all but TLS1.2
+context = ssl.create_default_context()
+context.options &= ssl.OP_NO_TLSv1
+context.options &= ssl.OP_NO_TLSv1_1
 
 
 class SimulationEndpointBuffer:
@@ -66,11 +76,18 @@ class SimulationEndpointBuffer:
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
             self.offer_bid_trade_hr = OfferBidTradeGraphStats()
 
-        self.producer = KafkaProducer(
-            bootstrap_servers=KAFKA_URL,
-            api_version=(0, 10),
-            retries=5
-        )
+        if BOOTSTRAP_SERVERS is not None:
+            kwargs = {'bootstrap_servers': BOOTSTRAP_SERVERS,
+                      'sasl_plain_username': SASL_PLAIN_USERNAME,
+                      'sasl_plain_password': SASL_PLAIN_PASSWORD,
+                      'security_protocol': SECURITY_PROTOCOL,
+                      'ssl_context': context, 'sasl_mechanism': SASL_MECHANISM,
+                      'api_version': (0, 10), 'retries': 5, 'buffer_memory': 2048000000,
+                      'max_request_size': 2048000000}
+        else:
+            kwargs = {'bootstrap_servers': 'localhost:9092'}
+
+        self.producer = KafkaProducer(**kwargs)
 
     @staticmethod
     def _structure_results_from_area_object(target_area):
