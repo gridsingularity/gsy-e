@@ -24,9 +24,10 @@ from d3a.models.market.market_structures import MarketClearingState, BidOfferMat
     TradeBidOfferInfo, Clearing
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.d3a_core.util import add_or_create_key
-from d3a.constants import FLOATING_POINT_TOLERANCE
 
 log = getLogger(__name__)
+
+MATCH_FLOATING_POINT_TOLERANCE = 1e-8
 
 
 class TwoSidedPayAsClear(TwoSidedPayAsBid):
@@ -95,7 +96,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
         clearing = []
         for b_rate, b_energy in bids.items():
             for o_rate, o_energy in offers.items():
-                if o_rate <= (b_rate + FLOATING_POINT_TOLERANCE):
+                if o_rate <= (b_rate + MATCH_FLOATING_POINT_TOLERANCE):
                     if o_energy >= b_energy:
                         clearing.append(Clearing(b_rate, b_energy))
         # if cumulative_supply is greater than cumulative_demand
@@ -104,7 +105,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
         else:
             for b_rate, b_energy in bids.items():
                 for o_rate, o_energy in offers.items():
-                    if o_rate <= (b_rate + FLOATING_POINT_TOLERANCE):
+                    if o_rate <= (b_rate + MATCH_FLOATING_POINT_TOLERANCE):
                         if o_energy < b_energy:
                             clearing.append(Clearing(b_rate, o_energy))
             if len(clearing) > 0:
@@ -166,7 +167,8 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
             offer = match.offer
             bid = match.bid
 
-            assert math.isclose(match.offer_energy, match.bid_energy)
+            assert math.isclose(match.offer_energy, match.bid_energy, abs_tol=1e-8), \
+                f"Match energy failed {match.offer_energy} {match.bid_energy}"
 
             selected_energy = match.offer_energy
             original_bid_rate = bid.original_bid_price / bid.energy
@@ -203,14 +205,14 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
         residual_offer_energy = {}
         for bid in bid_list:
             bid_energy = bid.energy
-            while bid_energy > FLOATING_POINT_TOLERANCE:
+            while bid_energy > MATCH_FLOATING_POINT_TOLERANCE:
                 # Get the first offer from the list
                 offer = offer_list.pop(0)
                 # See if this offer has been matched with another bid beforehand.
                 # If it has, fetch the offer energy from the residual dict
                 # Otherwise, use offer energy as is.
                 offer_energy = residual_offer_energy.get(offer.id, offer.energy)
-                if offer_energy - bid_energy > FLOATING_POINT_TOLERANCE:
+                if offer_energy - bid_energy > MATCH_FLOATING_POINT_TOLERANCE:
                     # Bid energy completely covered by offer energy
                     # Update the residual offer energy to take into account the matched offer
                     residual_offer_energy[offer.id] = offer_energy - bid_energy
@@ -240,7 +242,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                     residual_offer_energy.pop(offer.id, None)
                     # Update total clearing energy
                     clearing_energy -= offer_energy
-                if clearing_energy <= FLOATING_POINT_TOLERANCE:
+                if clearing_energy <= MATCH_FLOATING_POINT_TOLERANCE:
                     # Clearing energy has been satisfied by existing matches. Return the matches
                     return bid_offer_matchings
 
