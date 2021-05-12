@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import d3a.constants
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
@@ -22,11 +23,12 @@ from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from d3a_interface.constants_limits import ConstSettings
 
-ConstSettings.IAASettings.MARKET_TYPE = 2
-
 
 def get_setup(config):
+    ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.IAASettings.MIN_BID_AGE = 0
+    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
+        d3a.constants.BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
     ConstSettings.IAASettings.MIN_OFFER_AGE = 0
     area = Area(
         'Grid',
