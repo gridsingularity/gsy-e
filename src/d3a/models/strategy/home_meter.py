@@ -86,6 +86,8 @@ class HomeMeterStrategy(BidEnabledStrategy):
         super().__init__()  # TODO: what about args and kwargs?
 
         self.home_meter_profile = home_meter_profile
+        self.profile = None  # Store the preprocessed data extracted from home_meter_profile
+
         self.initial_selling_rate = initial_selling_rate
         self.final_selling_rate = final_selling_rate
         self.energy_rate_decrease_per_update = energy_rate_decrease_per_update
@@ -161,6 +163,21 @@ class HomeMeterStrategy(BidEnabledStrategy):
         self.event_activate_energy()
         # TODO: do the same operations for the offer prices!
 
+    # TODO: refactor naming (it is not an event in the strict sense of the term)
+    def event_activate_energy(self):
+        """Run on ACTIVATE event."""
+        # Read the power profile data and calculate the required energy for each slot
+        self._event_activate_energy(self.home_meter_profile)  # TODO: cambia profile
+        self._simulation_start_timestamp = self.area.now
+        self._update_energy_requirement_future_markets()
+        del self.home_meter_profile  # TODO: Why?
+
+    def _event_activate_energy(self, home_meter_profile):
+        """Read and preprocess the data of the power profile."""
+        self.profile = read_arbitrary_profile(
+            InputProfileTypes.POWER,
+            home_meter_profile)
+
     @staticmethod
     def _convert_update_interval_to_duration(update_interval):
         if update_interval is None:
@@ -170,19 +187,11 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
     def event_market_cycle(self):
         super().event_market_cycle()
-
-        # For energy consumption (bids)
         self.bid_update.update_and_populate_price_settings(self.area)
         self._calculate_active_markets()
         self._update_energy_requirement_future_markets()
-        self._set_alternative_pricing_scheme()  # TODO: is this needed for the home meter?
+        self._set_alternative_pricing_scheme()
         self.update_state()
-
-        # For energy production (offers)
-        self.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
-        # self._set_alternative_pricing_scheme()
-        self.event_market_cycle_price()
-        self._delete_past_state()
 
     # TODO: rename to homogenize with `_update_energy_requirement_future_markets`
     def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
@@ -249,21 +258,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
         # Bids prices have been updated, so we increase the counter of the updates
         self.bid_update.increment_update_counter_all_markets(self)
 
-    # TODO: refactor naming (it is not an event in the strict sense of the term)
-    def event_activate_energy(self):
-        """Run on ACTIVATE event."""
-        # Read the power profile data and calculate the required energy for each slot
-        self._event_activate_energy(self.home_meter_profile)  # TODO: cambia profile
-        self._simulation_start_timestamp = self.area.now
-        self._update_energy_requirement_future_markets()
-        del self.home_meter_profile  # TODO: cambia profile
-
-    def _event_activate_energy(self, home_meter_profile):
-        """Read the power profile data."""
-        self.home_meter_profile = read_arbitrary_profile(
-            InputProfileTypes.POWER,
-            home_meter_profile)
-
     # TODO: is this needed?
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
@@ -277,27 +271,13 @@ class HomeMeterStrategy(BidEnabledStrategy):
         """Update required energy values for each market slot."""
         for market in self.area.all_markets:
             slot_time = market.time_slot
-            if not self.load_profile:
+            if not self.profile:
                 raise D3AException(
-                    f"Load {self.owner.name} tries to set its energy forecasted requirement "
-                    f"without a profile.")
-            load_energy_kWh = \
-                find_object_of_same_weekday_and_time(self.load_profile, slot_time)
-            self.state.set_desired_energy(load_energy_kWh * 1000, slot_time, overwrite=False)
-            self.state.update_total_demanded_energy(slot_time)
-
-    # def _update_energy_requirement_future_markets(self):
-    #     # Compute the average energy consumption for each slot
-    #     self.energy_per_slot_Wh = convert_W_to_Wh(
-    #         self.avg_consumption_W, self.area.config.slot_length)
-    #     for market in self.area.all_markets:
-    #         self.state.set_desired_energy(self.energy_per_slot_Wh, market.time_slot)
-    #
-    #     # TODO: refactor (this is not about energy requirement for future markets)
-    #     # Update the total amount of requested energy with the energy of the last (finished)
-    #     # market
-    #     if self.area.current_market:
-    #         self.state.update_total_demanded_energy(self.area.current_market.time_slot)
+                    f"Home Meter {self.owner.name} tries to set its energy forecasted requirement "
+                    "without a profile.")
+            energy_kWh = find_object_of_same_weekday_and_time(self.profile, slot_time)
+            self.state.set_desired_energy(energy_kWh * 1000, slot_time, overwrite=False)
+            self.state.update_total_demanded_energy(slot_time)  # TODO: check if this must change
 
     # TODO: refactor naming (it is not an event in the strict sense of the term)
     def event_activate_price(self):
