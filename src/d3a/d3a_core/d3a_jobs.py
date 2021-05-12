@@ -15,12 +15,16 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import logging
 from os import environ, getpid
+
+from d3a.d3a_core.util import get_simulation_queue_name
 from pendulum import now
 from redis import StrictRedis
 from rq import Connection, Worker, get_current_job
 from rq.decorators import job
-from d3a.d3a_core.util import get_simulation_queue_name
+
+logger = logging.getLogger()
 
 
 @job('d3a')
@@ -41,7 +45,8 @@ def main():
         )
         try:
             worker.work(max_jobs=1, burst=True)
-        except Exception:
+        except Exception as ex:
+            logger.error(ex)
             worker.kill_horse()
             worker.wait_for_horse()
 
