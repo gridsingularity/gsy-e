@@ -393,8 +393,11 @@ class Area:
                 self.dispatcher.publish_market_clearing()
             else:
                 for market in self.all_markets:
-                    while bid_offer_pairs:=self.bid_offer_matcher.calculate_recommendation(  # NOQA
-                            *market.open_bids_and_offers, self.now):  # NOQA
+                    bid_offer_pairs = self.bid_offer_matcher.calculate_recommendation(
+                        *market.open_bids_and_offers, self.now)
+                    while bid_offer_pairs:
+                        bid_offer_pairs = self.bid_offer_matcher.calculate_recommendation(
+                            *market.open_bids_and_offers, self.now)
                         market.match_recommendation(bid_offer_pairs)
 
         self.events.update_events(self.now)
