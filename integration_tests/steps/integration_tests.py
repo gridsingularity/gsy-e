@@ -36,7 +36,7 @@ from d3a_interface.utils import convert_W_to_Wh, convert_W_to_kWh, convert_kW_to
 from d3a.models.config import SimulationConfig
 from d3a.d3a_core.simulation import Simulation
 from d3a.d3a_core.util import d3a_path
-from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
+from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE, BidOfferMatchAlgoEnum
 from d3a import constants
 
 
@@ -214,8 +214,10 @@ def one_sided_market(context, market_type):
         ConstSettings.IAASettings.MARKET_TYPE = 1
     elif market_type == "two-sided-pay-as-bid":
         ConstSettings.IAASettings.MARKET_TYPE = 2
-    if market_type == "two-sided-pay-as-clear":
-        ConstSettings.IAASettings.MARKET_TYPE = 3
+        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
+    elif market_type == "two-sided-pay-as-clear":
+        ConstSettings.IAASettings.MARKET_TYPE = 2
+        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
 
 
 @given('d3a dispatches events from top to bottom')

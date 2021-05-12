@@ -28,7 +28,7 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
 
 
-class TwoSidedPayAsBidEngine(IAAEngine):
+class TwoSidedEngine(IAAEngine):
     def __init__(self, name: str, market_1, market_2, min_offer_age: int, min_bid_age: int,
                  owner: "InterAreaAgent"):
         super().__init__(name, market_1, market_2, min_offer_age, owner)
@@ -152,7 +152,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 trade_offer_info=trade_offer_info,
                 seller_origin=bid_trade.seller_origin,
                 seller_origin_id=bid_trade.seller_origin_id,
-                seller_id=bid_trade.seller_id
+                seller_id=self.owner.uuid
             )
             self.delete_forwarded_bids(bid_info)
             self.bid_age.pop(bid_info.source_bid.id, None)

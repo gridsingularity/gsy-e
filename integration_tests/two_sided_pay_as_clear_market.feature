@@ -27,9 +27,11 @@ Feature: Two sided pay_as_clear market tests
      When we run the d3a simulation on console with two_sided_pay_as_clear.default_2a for 2 hrs
      Then there are files with offers, bids & market_clearing_rate for every area
 
+  @slow
   Scenario: Supply Demand Curve
      Given we have a scenario named two_sided_pay_as_clear/test_clearing_energy
      And d3a is installed
+     And d3a uses an two-sided-pay-as-clear market
      When we run the d3a simulation on console with two_sided_pay_as_clear.test_clearing_energy for 24 hrs
      Then the export functionality of supply/demand curve is tested
 
