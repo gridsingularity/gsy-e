@@ -20,6 +20,7 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.device_validator import validate_load_device_price
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import find_object_of_same_weekday_and_time, key_in_dict_and_not_none
+from numpy import random
 from pendulum import duration
 
 from d3a import constants
@@ -349,6 +350,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
         # Bids prices have been updated, so we increase the counter of the updates
         self.bid_update.increment_update_counter_all_markets(self)
 
+    # TODO: split into two methods (with and without offer)
     def _one_sided_market_event_tick(self, market, offer=None):
         """
         Define the behavior of the device on TICK events in single-sided markets (react to offers).
@@ -363,13 +365,13 @@ class HomeMeterStrategy(BidEnabledStrategy):
                     return
                 acceptable_offer = offer
             time_slot = market.time_slot
-            current_day = self._get_day_of_timestamp(time_slot)
+            # TODO: refactor this if statement (if the price is less than what we decided to spend)
             if acceptable_offer and \
-                    self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE and \
                     round(acceptable_offer.energy_rate, DEFAULT_PRECISION) <= \
                     self.bid_update.final_rate[time_slot] + FLOATING_POINT_TOLERANCE:
 
-                if not self.state.can_buy_more_energy(time_slot):  # TODO: put this on top
+                # TODO: put this on top or remove it
+                if not self.state.can_buy_more_energy(time_slot):
                     return
 
                 # If the device can still buy more energy
@@ -381,12 +383,18 @@ class HomeMeterStrategy(BidEnabledStrategy):
                                   buyer_id=self.owner.uuid)
                 self.state.decrement_energy_requirement(energy_Wh, time_slot, self.owner.name)
 
-                # TODO: ?
-                self.hrs_per_day[current_day] -= self._operating_hours(energy_Wh / 1000.0)
-
         except MarketException:
             self.log.exception("An Error occurred while buying an offer")
 
+    @staticmethod
+    def _find_acceptable_offer(market):
+        offers = market.most_affordable_offers
+        return random.choice(offers)
+
     def _double_sided_market_event_tick(self, market):
+        """
+        Define the behavior of the device on TICK events in double-sided markets (post bids).
+        """
         # Update the price of existing bids to reflect the new rates
         self.bid_update.update(market, self)
+        # TODO: implement offers part
