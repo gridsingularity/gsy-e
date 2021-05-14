@@ -398,3 +398,23 @@ class HomeMeterStrategy(BidEnabledStrategy):
         # Update the price of existing bids to reflect the new rates
         self.bid_update.update(market, self)
         # TODO: implement offers part
+
+    def event_balancing_market_cycle(self):
+        # TODO: implement
+        pass
+
+    def event_offer(self, *, market_id, offer):
+        market = self.area.get_future_market_from_id(market_id)
+        # TODO: do we really need self._cycled_market ?
+        if market.time_slot not in self._cycled_market:
+            return
+
+        if self._can_buy_in_market(market) and self._offer_comes_from_different_seller(offer):
+            if ConstSettings.IAASettings.MARKET_TYPE == 1:
+                self._one_sided_market_event_tick(market, offer)
+
+    def _can_buy_in_market(self, market):
+        return self._is_market_active(market) and self.state.can_buy_more_energy(market.time_slot)
+
+    def _offer_comes_from_different_seller(self, offer):
+        return offer.seller != self.owner.name and offer.seller != self.area.name
