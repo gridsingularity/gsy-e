@@ -16,6 +16,12 @@ import traceback
 from logging import getLogger
 from typing import Dict, Union
 
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.device_validator import validate_load_device_price
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.utils import find_object_of_same_weekday_and_time, key_in_dict_and_not_none
+from pendulum import duration
+
 from d3a import constants
 from d3a.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
 from d3a.d3a_core.exceptions import D3AException
@@ -25,11 +31,6 @@ from d3a.models.state import HomeMeterState
 from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.strategy.update_frequency import (
     TemplateStrategyBidUpdater, TemplateStrategyOfferUpdater)
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.device_validator import validate_load_device_price
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.utils import find_object_of_same_weekday_and_time, key_in_dict_and_not_none
-from pendulum import duration
 
 log = getLogger(__name__)
 
@@ -167,16 +168,15 @@ class HomeMeterStrategy(BidEnabledStrategy):
     def event_activate_energy(self):
         """Run on ACTIVATE event."""
         # Read the power profile data and calculate the required energy for each slot
-        self._event_activate_energy(self.home_meter_profile)  # TODO: cambia profile
+        self._event_activate_energy(self.home_meter_profile)  # TODO: change profile to read +/-
         self._simulation_start_timestamp = self.area.now
         self._update_energy_requirement_future_markets()
         del self.home_meter_profile  # TODO: Why?
 
+    # TODO: refactor (return value, assign it later)
     def _event_activate_energy(self, home_meter_profile):
         """Read and preprocess the data of the power profile."""
-        self.profile = read_arbitrary_profile(
-            InputProfileTypes.POWER,
-            home_meter_profile)
+        self.profile = read_arbitrary_profile(InputProfileTypes.POWER, home_meter_profile)
 
     @staticmethod
     def _convert_update_interval_to_duration(update_interval):
@@ -192,22 +192,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
         self._update_energy_requirement_future_markets()
         self._set_alternative_pricing_scheme()
         self.update_state()
-
-    # TODO: rename to homogenize with `_update_energy_requirement_future_markets`
-    def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
-        """Set the amount of expected energy that will be produced during future market slots.
-
-        A fit of a Gaussian function to those data results in a formula Energy(time).
-        This forecast is based on the real PV system data provided by Enphase, located in the tools
-        folder.
-        """
-        for market in self.area.all_markets:
-            slot_time = market.time_slot
-            difference_to_midnight_in_minutes = \
-                slot_time.diff(self.area.now.start_of("day")).in_minutes() % (60 * 24)
-            available_energy_kWh = self.gaussian_energy_forecast_kWh(
-                difference_to_midnight_in_minutes) * self.panel_count
-            self.state.set_available_energy(available_energy_kWh, slot_time, reconfigure)
 
     def update_state(self):
         self.post_or_update_bid()
@@ -234,31 +218,15 @@ class HomeMeterStrategy(BidEnabledStrategy):
                     pass
 
     def _delete_past_state(self):
-        if constants.D3A_TEST_RUN is True or \
-                self.area.current_market is None:
+        if constants.D3A_TEST_RUN is True or self.area.current_market is None:
             return
 
         self.state.delete_past_state_values(self.area.current_market.time_slot)
         self.bid_update.delete_past_state_values(self.area.current_market.time_slot)
-
-    def event_tick(self):
-        # Check if the device can buy energy in the future available market slots
-        # TODO: check if it can offer as well (do not just immediately `continue`)
-        for market in self.active_markets:
-            if not self.state.can_buy_more_energy(market.time_slot):
-                continue
-
-            # Single-sided market (only offers are posted)
-            if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                self._one_sided_market_event_tick(market)
-            # Double-sided markets (both offers and bids are posted)
-            elif ConstSettings.IAASettings.MARKET_TYPE in [2, 3]:
-                self._double_sided_market_event_tick(market)
-
-        # Bids prices have been updated, so we increase the counter of the updates
-        self.bid_update.increment_update_counter_all_markets(self)
+        # TODO: do the same for the offers
 
     # TODO: is this needed?
+    # TODO: include features for offers (PV)
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             for market in self.area.all_markets:
@@ -363,6 +331,23 @@ class HomeMeterStrategy(BidEnabledStrategy):
                 energy_rate_increase_per_update=rate_change,
                 final_buying_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
                 fit_to_limit=fit_to_limit)
+
+    def event_tick(self):
+        # Check if the device can buy energy in the future available market slots
+        # TODO: check if it can offer as well (do not just immediately `continue`)
+        for market in self.active_markets:
+            if not self.state.can_buy_more_energy(market.time_slot):
+                continue
+
+            # Single-sided market (only offers are posted)
+            if ConstSettings.IAASettings.MARKET_TYPE == 1:
+                self._one_sided_market_event_tick(market)
+            # Double-sided markets (both offers and bids are posted)
+            elif ConstSettings.IAASettings.MARKET_TYPE in [2, 3]:
+                self._double_sided_market_event_tick(market)
+
+        # Bids prices have been updated, so we increase the counter of the updates
+        self.bid_update.increment_update_counter_all_markets(self)
 
     def _one_sided_market_event_tick(self, market, offer=None):
         """
