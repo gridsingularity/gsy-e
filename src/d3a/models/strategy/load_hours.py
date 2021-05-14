@@ -27,6 +27,7 @@ from d3a_interface.utils import (
     convert_W_to_Wh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
 from numpy import random
 from pendulum import duration
+from pendulum.datetime import DateTime
 
 from d3a import constants
 from d3a.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
@@ -237,11 +238,15 @@ class LoadHoursStrategy(BidEnabledStrategy):
                              self.bid_update.energy_rate_change_per_update_profile_buffer,
                              self.bid_update.fit_to_limit)
 
-    def _find_acceptable_offer(self, market):
+    @staticmethod
+    def _find_acceptable_offer(market):
         offers = market.most_affordable_offers
         return random.choice(offers)
 
     def _one_sided_market_event_tick(self, market, offer=None):
+        """
+        Define the behavior of the device on TICK events in single-sided markets (react to offers).
+        """
         try:
             if offer is None:
                 if not market.offers:
@@ -275,6 +280,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self.log.exception("An Error occurred while buying an offer")
 
     def _double_sided_market_event_tick(self, market):
+        """
+        Define the behavior of the device on TICK events in double-sided markets (post bids).
+        """
         self.bid_update.update(market, self)
 
     def event_tick(self):
@@ -296,12 +304,16 @@ class LoadHoursStrategy(BidEnabledStrategy):
         # TODO: do we really need self._cycled_market ?
         if market.time_slot not in self._cycled_market:
             return
-        if self._is_market_active(market) and \
-                self.state.can_buy_more_energy(market.time_slot) and \
-                offer.seller != self.owner.name and \
-                offer.seller != self.area.name:
+
+        if self._can_buy_in_market(market) and self._offer_comes_from_different_seller(offer):
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 self._one_sided_market_event_tick(market, offer)
+
+    def _can_buy_in_market(self, market):
+        return self._is_market_active(market) and self.state.can_buy_more_energy(market.time_slot)
+
+    def _offer_comes_from_different_seller(self, offer):
+        return offer.seller != self.owner.name and offer.seller != self.area.name
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
@@ -444,7 +456,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         return (((energy_kWh * 1000) / self.energy_per_slot_Wh)
                 * (self.area.config.slot_length / duration(hours=1)))
 
-    def _get_day_of_timestamp(self, time_slot):
+    def _get_day_of_timestamp(self, time_slot: DateTime):
+        """Return the number of days passed from the simulation start date to the time slot."""
         if self._simulation_start_timestamp is None:
             return 0
         return (time_slot - self._simulation_start_timestamp).days
