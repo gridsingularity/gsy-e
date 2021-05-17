@@ -206,9 +206,10 @@ class HomeMeterStrategy(BidEnabledStrategy):
         for market in self.active_markets:
             if self.state.can_buy_more_energy(market.time_slot):
                 bid_energy = self.state.calculate_energy_to_bid(market.time_slot)
-                if self.is_eligible_for_balancing_market:
-                    bid_energy -= self.state.get_desired_energy(market.time_slot) * \
-                                  self.balancing_energy_ratio.demand
+                # TODO: balancing market support not yet implemented
+                # if self.is_eligible_for_balancing_market:
+                #     bid_energy -= self.state.get_desired_energy(market.time_slot) * \
+                #                   self.balancing_energy_ratio.demand
                 try:
                     if not self.are_bids_posted(market.id):
                         self.post_first_bid(market, bid_energy)
@@ -416,3 +417,38 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
     def _offer_comes_from_different_seller(self, offer):
         return offer.seller != self.owner.name and offer.seller != self.area.name
+
+    def event_trade(self, *, market_id, trade):
+        market = self.area.get_future_market_from_id(market_id)
+        assert market is not None
+
+        self.assert_if_trade_bid_price_is_too_high(market, trade)
+
+        if ConstSettings.BalancingSettings.FLEXIBLE_LOADS_SUPPORT:
+            # TODO: balancing market support not yet implemented
+            # Load can put supply_balancing_offers only when there is a trade in spot_market
+            # self._supply_balancing_offer(market, trade)
+            pass
+
+        super().event_trade(market_id=market_id, trade=trade)
+
+    def event_bid_traded(self, *, market_id, bid_trade):
+        super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
+        market = self.area.get_future_market_from_id(market_id)
+
+        if bid_trade.offer.buyer == self.owner.name:
+            self.state.decrement_energy_requirement(
+                bid_trade.offer.energy * 1000,
+                market.time_slot, self.owner.name)
+
+    def area_reconfigure_event(self, *args, **kwargs):
+        """Reconfigure the device properties at runtime using the provided arguments.
+
+        This method is triggered when the device strategy is updated while the simulation is
+        running. The update can happen via live events (triggered by the user) or scheduled events.
+        """
+        # TODO: what can be modified at runtime in the HomeMeter?
+        self._area_reconfigure_prices(**kwargs)
+
+        if key_in_dict_and_not_none(kwargs, "home_meter_profile"):
+            self._event_activate_energy(kwargs["home_meter_profile"])
