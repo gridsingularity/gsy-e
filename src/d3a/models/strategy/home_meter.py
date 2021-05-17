@@ -12,7 +12,6 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. If not,
 see <http://www.gnu.org/licenses/>.
 """
-import traceback
 from logging import getLogger
 from typing import Dict, Union
 
@@ -271,44 +270,43 @@ class HomeMeterStrategy(BidEnabledStrategy):
         provided by the UpdateFrequencyMixin.
         """
         # TODO: use offer_update as well (TemplateStrategyOfferUpdater)
-        if key_in_dict_and_not_none(kwargs, 'initial_buying_rate'):
+        if key_in_dict_and_not_none(kwargs, "initial_buying_rate"):
             initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                  kwargs['initial_buying_rate'])
+                                                  kwargs["initial_buying_rate"])
         else:
             initial_rate = self.bid_update.initial_rate_profile_buffer
-        if key_in_dict_and_not_none(kwargs, 'final_buying_rate'):
+        if key_in_dict_and_not_none(kwargs, "final_buying_rate"):
             final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                kwargs['final_buying_rate'])
+                                                kwargs["final_buying_rate"])
         else:
             final_rate = self.bid_update.final_rate_profile_buffer
-        if key_in_dict_and_not_none(kwargs, 'energy_rate_increase_per_update'):
+        if key_in_dict_and_not_none(kwargs, "energy_rate_increase_per_update"):
             energy_rate_change_per_update = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                       kwargs['energy_rate_increase_per_update'])
+                                       kwargs["energy_rate_increase_per_update"])
         else:
             energy_rate_change_per_update = \
                 self.bid_update.energy_rate_change_per_update_profile_buffer
-        if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
-            fit_to_limit = kwargs['fit_to_limit']
+        if key_in_dict_and_not_none(kwargs, "fit_to_limit"):
+            fit_to_limit = kwargs["fit_to_limit"]
         else:
             fit_to_limit = self.bid_update.fit_to_limit
-        if key_in_dict_and_not_none(kwargs, 'update_interval'):
-            if isinstance(kwargs['update_interval'], int):
-                update_interval = duration(minutes=kwargs['update_interval'])
+        if key_in_dict_and_not_none(kwargs, "update_interval"):
+            if isinstance(kwargs["update_interval"], int):
+                update_interval = duration(minutes=kwargs["update_interval"])
             else:
-                update_interval = kwargs['update_interval']
+                update_interval = kwargs["update_interval"]
         else:
             update_interval = self.bid_update.update_interval
 
-        if key_in_dict_and_not_none(kwargs, 'use_market_maker_rate'):
-            self.use_market_maker_rate = kwargs['use_market_maker_rate']
+        if key_in_dict_and_not_none(kwargs, "use_market_maker_rate"):
+            self.use_market_maker_rate = kwargs["use_market_maker_rate"]
 
         try:
             self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
                                  fit_to_limit)
-        except Exception as e:
-            log.error(f"LoadHours._area_reconfigure_prices failed. Exception: {e}. "
-                      f"Traceback: {traceback.format_exc()}")
+        except Exception as ex:
+            log.exception(ex)
             return
 
         self.bid_update.set_parameters(
