@@ -15,6 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import os
+
 from d3a.models.area import Area
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy
@@ -22,7 +24,7 @@ from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.d3a_core.util import d3a_path
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a_interface.constants_limits import ConstSettings
-import os
+import d3a.constants
 
 """
 This setup file reenacts a case where the assert "Accepted bids were not enough to satisfy the
@@ -62,7 +64,9 @@ house3_load_dict = {
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 3
+    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
+        d3a.constants.BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
     area = Area(
             'Grid',
             [

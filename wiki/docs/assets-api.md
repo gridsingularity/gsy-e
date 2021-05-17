@@ -112,4 +112,4 @@ Note: The total amount of energy bid at any point is limited to the energy requi
 
 ###Trading Strategies
 
-A simple trading strategy is available in the [template agent](https://github.com/gridsingularity/d3a/blob/master/src/d3a/setup/odyssey_momentum/assets_api_template.py). See the `TODO` flags there to see how you may configure your trading strategy and extract market and asset data.
+A simple trading strategy is available in the [template agent](https://github.com/gridsingularity/d3a-api-client/blob/API_script_update/d3a_api_client/setups/asset_api_template.py). See the `TODO` flags there to see how you may configure your trading strategy and extract market and asset data.

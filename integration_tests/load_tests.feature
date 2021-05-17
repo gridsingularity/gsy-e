@@ -33,9 +33,3 @@ Feature: Load Tests
      And export is_needed
     When we run the simulation with setup file strategy_tests.user_rate_profile_load_dict and parameters [24, 30, 30, 4]
     Then LoadHoursStrategy does not buy energy with rates that are higher than the provided profile
-
-  Scenario: LOAD CONSTANT based price increase
-     Given we have a scenario named strategy_tests/load_const_price_increase
-     And d3a is installed
-     When we run the simulation with setup file strategy_tests.load_const_price_increase and parameters [24, 60, 60, 1]
-     Then the Load strategy increases its accepted offers price as expected

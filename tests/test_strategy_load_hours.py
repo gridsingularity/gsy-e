@@ -164,6 +164,9 @@ class FakeMarket:
         offer.id = 'id'
         return offer
 
+    def accept_offer(self, **kwargs):
+        return Trade("", "", "", "", "")
+
 
 class TestLoadHoursStrategyInput(unittest.TestCase):
 
@@ -501,12 +504,22 @@ def test_predefined_load_strategy_rejects_incorrect_rate_parameters(use_mmr, ini
                             energy_rate_increase_per_update=-1)
 
 
-def test_load_hour_strategy_increases_rate_when_fit_to_limit_is_false():
+def test_load_hour_strategy_increases_rate_when_fit_to_limit_is_false(market_test1):
     load = LoadHoursStrategy(avg_power_W=100, initial_buying_rate=0, final_buying_rate=30,
                              fit_to_limit=False, energy_rate_increase_per_update=10,
                              update_interval=5)
     load.area = FakeArea()
+    load.owner = load.area
     load.event_activate()
+    assert load.state._energy_requirement_Wh[TIME] == 25.0
+    offer = Offer('id', now(), 1, (MIN_BUY_ENERGY/500), 'A', market_test1)
+    load._one_sided_market_event_tick(market_test1, offer)
+    assert load.bid_update.get_updated_rate(TIME) == 0
+    assert load.state._energy_requirement_Wh[TIME] == 25.0
+    load.event_tick()
+    assert load.bid_update.get_updated_rate(TIME) == 10
+    load._one_sided_market_event_tick(market_test1, offer)
+    assert load.state._energy_requirement_Wh[TIME] == 0
     assert all([rate == -10 for rate in load.bid_update.energy_rate_change_per_update.values()])
 
 

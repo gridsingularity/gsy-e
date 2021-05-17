@@ -52,4 +52,4 @@ batch_commands[area_uuid].append({"type": "grid_fees", "data": {"fee_const": sel
 self.batch_command(batch_commands)
 ```
 
-For a video tutorial on the Grid Operator API, please follow this [link](https://youtu.be/HXNme8Rt3pI) and a template Grid Operator API script [here](https://github.com/gridsingularity/d3a/blob/master/src/d3a/setup/odyssey_momentum/markets_api_template.py).
+For a video tutorial on the Grid Operator API, please follow this [link](https://youtu.be/HXNme8Rt3pI) and a template Grid Operator API script [here](https://github.com/gridsingularity/d3a-api-client/blob/API_script_update/d3a_api_client/setups/grid_operator_api_template.py).
