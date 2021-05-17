@@ -396,10 +396,12 @@ class Area:
                         update({self.uuid: self.all_markets})
                 else:
                     for market in self.all_markets:
-                        market.time_slot_str
                         bid_offer_pairs = self.bid_offer_matcher.calculate_recommendation(
                             *market.open_bids_and_offers, self.now)
-                        market.match_recommendation(bid_offer_pairs)
+                        while bid_offer_pairs:
+                            bid_offer_pairs = self.bid_offer_matcher.calculate_recommendation(
+                                *market.open_bids_and_offers, self.now)
+                            market.match_recommendation(bid_offer_pairs)
 
         self.events.update_events(self.now)
 
