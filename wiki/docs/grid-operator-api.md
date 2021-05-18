@@ -136,3 +136,7 @@ Lastly the API script overwrites the [on_finish event](https://github.com/gridsi
 
 The [rest of the scrip](https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/grid_operator_api_template.py#L262-L333) is used to connect to a running simulation/collaboration/canary network. These lines should work as is and no changes are required.
 
+
+Please find the following tutorial describing the required steps to run the grid operator API locally and on a collaboration:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/LoYoyIy-C7M" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

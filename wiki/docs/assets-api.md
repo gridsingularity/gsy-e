@@ -277,3 +277,8 @@ After that, the [on_event_or_response](https://github.com/gridsingularity/d3a-ap
 Lastly the API script overwrites the [on_finish event](https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/asset_api_template.py#L242-L247) so that whenever the function is triggered the script stops. If the user wishes to save some information recorded within the API client this would be the opportunity to export them to external files.
 
 The [rest of the script](https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/asset_api_template.py#L250-L331) is used to connect to the energy assets of a running simulation/collaboration/canary network. These lines should work as is and no changes are required.
+
+
+Please find the following tutorial describing the required steps to run the asset API locally and on a collaboration:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/oCcQ6pYFd5w" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
