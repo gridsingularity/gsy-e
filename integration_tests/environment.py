@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import contextlib
 import shutil
 import os
+from time import sleep
 
 import d3a.constants
 from d3a.d3a_core.device_registry import DeviceRegistry
@@ -51,7 +52,7 @@ def before_scenario(context, scenario):
     ConstSettings.IAASettings.MIN_OFFER_AGE = 0
     ConstSettings.IAASettings.MIN_BID_AGE = 0
     constants.D3A_TEST_RUN = True
-    constants.KAFKA_MOCK = True
+    # constants.KAFKA_MOCK = True
     context.no_export = True
     context.raise_exception_when_running_sim = True
     if os.environ.get("DISPATCH_EVENTS_BOTTOM_TO_TOP") == "False":
@@ -74,7 +75,8 @@ def before_all(context):
     if os.environ.get("DISPATCH_EVENTS_BOTTOM_TO_TOP") == "False":
         d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = False
     os.system('docker-compose up -d')
+    sleep(60)
 
 
 def after_all(context):
-    os.system('docker-compose down -d')
+    os.system('docker-compose down')
