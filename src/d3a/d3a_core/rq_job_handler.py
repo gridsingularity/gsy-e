@@ -86,7 +86,16 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
 
         spot_market_type = settings.get('spot_market_type', None)
         if spot_market_type is not None:
-            ConstSettings.IAASettings.MARKET_TYPE = spot_market_type
+            if spot_market_type == 1:
+                ConstSettings.IAASettings.MARKET_TYPE = spot_market_type
+            if spot_market_type == 2:
+                ConstSettings.IAASettings.MARKET_TYPE = spot_market_type
+                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
+                    d3a.constants.BidOfferMatchAlgoEnum.PAY_AS_BID.value
+            if spot_market_type == 3:
+                ConstSettings.IAASettings.MARKET_TYPE = 2
+                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
+                    d3a.constants.BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
 
         if scenario is None:
             scenario_name = "default_2a"

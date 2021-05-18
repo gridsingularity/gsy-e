@@ -8,7 +8,7 @@ try:
     with open('requirements/dev.txt') as req:
         REQUIREMENTS = [r.partition('#')[0] for r in req if not r.startswith('-e')]
         REQUIREMENTS.extend(
-            ['d3a-interface @ '
+            [f'd3a-interface @ '
              f'git+https://github.com/gridsingularity/d3a-interface.git@{d3a_interface_branch}'
              ])
 except OSError:
