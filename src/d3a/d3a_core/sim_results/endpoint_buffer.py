@@ -76,7 +76,11 @@ class SimulationEndpointBuffer:
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
             self.offer_bid_trade_hr = OfferBidTradeGraphStats()
 
-        if BOOTSTRAP_SERVERS is not None:
+        import d3a
+        from unittest.mock import Mock
+        if d3a.constants.KAFKA_MOCK:
+            self.producer = Mock()
+        elif BOOTSTRAP_SERVERS is not None:
             kwargs = {'bootstrap_servers': BOOTSTRAP_SERVERS,
                       'sasl_plain_username': SASL_PLAIN_USERNAME,
                       'sasl_plain_password': SASL_PLAIN_PASSWORD,
@@ -84,10 +88,10 @@ class SimulationEndpointBuffer:
                       'ssl_context': context, 'sasl_mechanism': SASL_MECHANISM,
                       'api_version': (0, 10), 'retries': 5, 'buffer_memory': 2048000000,
                       'max_request_size': 2048000000}
+            self.producer = KafkaProducer(**kwargs)
         else:
             kwargs = {'bootstrap_servers': 'localhost:9092'}
-
-        self.producer = KafkaProducer(**kwargs)
+            self.producer = KafkaProducer(**kwargs)
 
     @staticmethod
     def _structure_results_from_area_object(target_area):

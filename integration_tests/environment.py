@@ -51,6 +51,7 @@ def before_scenario(context, scenario):
     ConstSettings.IAASettings.MIN_OFFER_AGE = 0
     ConstSettings.IAASettings.MIN_BID_AGE = 0
     constants.D3A_TEST_RUN = True
+    constants.KAFKA_MOCK = True
     context.no_export = True
     context.raise_exception_when_running_sim = True
     if os.environ.get("DISPATCH_EVENTS_BOTTOM_TO_TOP") == "False":
@@ -72,3 +73,8 @@ def before_all(context):
     constants.D3A_TEST_RUN = True
     if os.environ.get("DISPATCH_EVENTS_BOTTOM_TO_TOP") == "False":
         d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = False
+    os.system('docker-compose up -d')
+
+
+def after_all(context):
+    os.system('docker-compose down -d')
