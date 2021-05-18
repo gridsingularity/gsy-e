@@ -141,8 +141,7 @@ def grid():
 
 
 def test_energy_bills(grid):
-    import d3a
-    d3a.constants.KAFKA_MOCK = True
+    constants.KAFKA_MOCK = True
     epb = SimulationEndpointBuffer("1", {"seed": 0}, grid, True)
     epb.current_market_time_slot_str = grid.current_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid)
