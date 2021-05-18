@@ -31,11 +31,7 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
         GlobalConfig.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
         d3a.constants.RUN_IN_REALTIME = GlobalConfig.IS_CANARY_NETWORK
     saved_state = decompress_and_decode_queued_strings(saved_state)
-    log.error(f"Scenario: {scenario}\n"
-              f"Settings: {settings}\n"
-              f"Events: {events}\n"
-              f"Aggregator device mapping: {aggregator_device_mapping}\n"
-              f"Previous simulation state: {saved_state}")
+    log.error(f"Starting simulation with job_id: {job_id}")
 
     try:
         if settings is None:
