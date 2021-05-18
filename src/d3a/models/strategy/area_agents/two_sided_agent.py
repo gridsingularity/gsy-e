@@ -17,20 +17,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from numpy.random import random
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
-from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import TwoSidedPayAsBidEngine
+from d3a.models.strategy.area_agents.two_sided_engine import TwoSidedEngine
 from d3a_interface.constants_limits import ConstSettings
 
 
-class TwoSidedPayAsBidAgent(OneSidedAgent):
+class TwoSidedAgent(OneSidedAgent):
 
     def __init__(self, *, owner, higher_market, lower_market,
                  min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
                  min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE):
         self.engines = [
-            TwoSidedPayAsBidEngine('High -> Low', higher_market, lower_market, min_offer_age,
-                                   min_bid_age, self),
-            TwoSidedPayAsBidEngine('Low -> High', lower_market, higher_market, min_offer_age,
-                                   min_bid_age, self),
+            TwoSidedEngine('High -> Low', higher_market, lower_market, min_offer_age,
+                           min_bid_age, self),
+            TwoSidedEngine('Low -> High', lower_market, higher_market, min_offer_age,
+                           min_bid_age, self),
         ]
         super().__init__(owner=owner,
                          higher_market=higher_market, lower_market=lower_market,
