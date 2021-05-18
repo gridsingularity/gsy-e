@@ -16,7 +16,7 @@ from logging import getLogger
 from typing import Dict, Union
 
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.device_validator import validate_load_device_price
+from d3a_interface.device_validator import validate_home_meter_device_price
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import find_object_of_same_weekday_and_time, key_in_dict_and_not_none
 from numpy import random
@@ -100,7 +100,11 @@ class HomeMeterStrategy(BidEnabledStrategy):
         self.use_market_maker_rate = use_market_maker_rate
 
         # validate_home_meter_device_energy()  # TODO (see pv.py and load_hours.py)
-        # validate_home_meter_device_price()  # TODO (see pv.py)
+        validate_home_meter_device_price(
+            fit_to_limit=fit_to_limit,
+            energy_rate_increase_per_update=energy_rate_increase_per_update,
+            energy_rate_decrease_per_update=energy_rate_decrease_per_update)
+
         self.state = HomeMeterState()  # TODO: make hybrid with PV and Load states
 
         self._cycled_market = set()
@@ -248,21 +252,39 @@ class HomeMeterStrategy(BidEnabledStrategy):
             self.state.set_desired_energy(energy_kWh * 1000, slot_time, overwrite=False)
             self.state.update_total_demanded_energy(slot_time)  # TODO: check if this must change
 
+    def _replace_rates_with_market_maker_rates(self):
+        # Reconfigure the final buying rate (for energy consumption)
+        self._area_reconfigure_prices(
+            final_buying_rate=get_market_maker_rate_from_config(
+                self.area.next_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
+
+        # Reconfigure the initial selling rate (for energy production)
+        self._area_reconfigure_prices(
+            initial_selling_rate=get_market_maker_rate_from_config(
+                self.area.next_market, 0) - self.owner.get_path_to_root_fees(), validate=False)
+
     # TODO: refactor naming (it is not an event in the strict sense of the term)
     def event_activate_price(self):
         """Configure all the rates for the device."""
-        # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
+        # If we want to use the Market Maker rate, we must overwrite the existing rates with it.
         if self.use_market_maker_rate:
-            self._area_reconfigure_prices(
-                final_buying_rate=get_market_maker_rate_from_config(
-                    self.area.next_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
-            # TODO: do the same for initial_selling_rate
+            self._replace_rates_with_market_maker_rates()
 
-        # TODO: ?
-        self._validate_rates(self.bid_update.initial_rate_profile_buffer,
-                             self.bid_update.final_rate_profile_buffer,
-                             self.bid_update.energy_rate_change_per_update_profile_buffer,
-                             self.bid_update.fit_to_limit)
+        # TODO: create some specialized class, e.g. RatesValidator or HomeMeterValidator (subclass
+        # DeviceValidator) that can validate both consumption and production rates
+        self._validate_consumption_rates(
+            initial_rate=self.bid_update.initial_rate_profile_buffer,
+            final_rate=self.bid_update.final_rate_profile_buffer,
+            energy_rate_change_per_update=(
+                self.bid_update.energy_rate_change_per_update_profile_buffer),
+            fit_to_limit=self.bid_update.fit_to_limit)
+
+        self._validate_production_rates(
+            initial_rate=self.offer_update.initial_rate_profile_buffer,
+            final_rate=self.offer_update.final_rate_profile_buffer,
+            energy_rate_change_per_update=(
+                self.offer_update.energy_rate_change_per_update_profile_buffer),
+            fit_to_limit=self.offer_update.fit_to_limit)
 
     def _area_reconfigure_prices(self, **kwargs):
         """Reconfigure the prices (rates) of the area.
@@ -304,8 +326,11 @@ class HomeMeterStrategy(BidEnabledStrategy):
             self.use_market_maker_rate = kwargs["use_market_maker_rate"]
 
         try:
-            self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
-                                 fit_to_limit)
+            self._validate_consumption_rates(
+                initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit)
+            # TODO: this should be done for consumption as well (use method already impl below)
+            # self._validate_production_rates(
+            #     initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit)
         except Exception as ex:
             log.exception(ex)
             return
@@ -319,17 +344,31 @@ class HomeMeterStrategy(BidEnabledStrategy):
         )
 
     @staticmethod
-    def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
-                        fit_to_limit):
-        # all parameters have to be validated for each time slot here
+    def _validate_consumption_rates(
+            initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
+        # All parameters have to be validated for each time slot
         for time_slot in initial_rate.keys():
-            rate_change = None if fit_to_limit else \
-                find_object_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
-            # TODO: this is not a load device. Create a new validation method for the HomeMeter
-            validate_load_device_price(
+            rate_change = None if fit_to_limit else find_object_of_same_weekday_and_time(
+                energy_rate_change_per_update, time_slot)
+
+            validate_home_meter_device_price(
                 initial_buying_rate=initial_rate[time_slot],
                 energy_rate_increase_per_update=rate_change,
                 final_buying_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
+                fit_to_limit=fit_to_limit)
+
+    @staticmethod
+    def _validate_production_rates(
+            initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
+        # All parameters have to be validated for each time slot
+        for time_slot in initial_rate.keys():
+            rate_change = None if fit_to_limit else find_object_of_same_weekday_and_time(
+                energy_rate_change_per_update, time_slot)
+
+            validate_home_meter_device_price(
+                initial_selling_rate=initial_rate[time_slot],
+                final_selling_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
+                energy_rate_decrease_per_update=rate_change,
                 fit_to_limit=fit_to_limit)
 
     def event_tick(self):
