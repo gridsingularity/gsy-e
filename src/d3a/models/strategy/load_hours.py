@@ -400,6 +400,11 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     @property
     def active_markets(self):
+        """Return market slots in which the load device is active.
+
+        Active market slots are specific to the LoadHoursStrategy and depend on the hours of day
+        in which the device will be active (selected by the user).
+        """
         return self._active_markets
 
     def _calculate_active_markets(self):
