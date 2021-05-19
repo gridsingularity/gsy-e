@@ -138,50 +138,47 @@ class HomeMeterStrategy(BidEnabledStrategy):
     def event_activate(self, **kwargs):
         """Activate the device."""
         self.event_activate_price()
-        self.bid_update.update_and_populate_price_settings(self.area)
         self.event_activate_energy()
-        # TODO: do the same operations for the offer prices!
+        self.bid_update.update_and_populate_price_settings(self.area)
+        self.offer_update.update_and_populate_price_settings(self.area)
 
-    # TODO: refactor naming (it is not an event in the strict sense of the term)
     def event_activate_energy(self):
         """Read the power profile and update the energy requirements for future market slots.
 
         This method is triggered by the ACTIVATE event.
         """
-        # TODO: change profile to read +/-
         self.profile = self._read_raw_profile_data(self.home_meter_profile)
         self._simulation_start_timestamp = self.area.now
-        del self.home_meter_profile  # TODO: Why?
-        # TODO: merge the two methods below (the new merged method should read +/- values and act
-        #  based on it)
-        self._update_energy_requirement_future_markets()
-        self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
+        self._set_energy_forecast_for_future_markets(reconfigure=True)
 
-    def _update_energy_requirement_future_markets(self) -> None:
-        """Update required energy values for each market slot."""
-        for market in self.area.all_markets:
-            slot_time = market.time_slot
-            if not self.profile:
-                raise D3AException(
-                    f"Home Meter {self.owner.name} tries to set its energy forecasted requirement "
-                    "without a profile.")
-            energy_kWh = find_object_of_same_weekday_and_time(self.profile, slot_time)
-            self.state.set_desired_energy(energy_kWh * 1000, slot_time, overwrite=False)
-            self.state.update_total_demanded_energy(slot_time)  # TODO: check if this must change
-
-    def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
+    def _set_energy_forecast_for_future_markets(self, reconfigure=True):
+        """Set the energy consumption/production expectations for the upcoming market slots."""
         if reconfigure:
             self.profile = self._read_raw_profile_data(self.home_meter_profile)
 
+        if not self.profile:
+            raise D3AException(
+                f"Home Meter {self.owner.name} tries to set its required energy forecast without "
+                "a profile.")
+
         for market in self.area.all_markets:
             slot_time = market.time_slot
-            if not self.profile:
-                raise D3AException(
-                    f"PV {self.owner.name} tries to set its energy forecast without a "
-                    f"power profile.")
-            available_energy_kWh = find_object_of_same_weekday_and_time(self.profile, slot_time)
-            # TODO: available_energy_kWh can be +/-, so our action should depend on its value!
-            self.state.set_available_energy(available_energy_kWh, slot_time, reconfigure)
+            # pylint: disable=invalid-name
+            energy_kWh = find_object_of_same_weekday_and_time(self.profile, slot_time)
+            # For the Home Meter, the energy amount can be either positive (consumption) or
+            # negative (production).
+            consumed_energy = energy_kWh if energy_kWh > 0 else 0.0
+            # Turn energy into a positive number (required for set_available_energy method)
+            produced_energy = abs(energy_kWh) if energy_kWh < 0 else 0.0
+
+            print("\nenergy_kWh, consumed_energy, produced_energy")
+            print(energy_kWh, consumed_energy, produced_energy)
+
+            # TODO: this State is different than the LoadState. It must be a hybrid of PV/Load
+            self.state.set_desired_energy(consumed_energy * 1000, slot_time, overwrite=False)
+            self.state.update_total_demanded_energy(slot_time)
+            # TODO: implement following method in state
+            self.state.set_available_energy(produced_energy, slot_time, reconfigure)
 
     @staticmethod
     def _read_raw_profile_data(profile):
@@ -198,7 +195,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
     def event_market_cycle(self):
         super().event_market_cycle()
         self.bid_update.update_and_populate_price_settings(self.area)
-        self._update_energy_requirement_future_markets()
+        self._set_energy_forecast_for_future_markets(reconfigure=False)
         self._set_alternative_pricing_scheme()
         self.update_state()
 
