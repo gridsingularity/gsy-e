@@ -189,8 +189,11 @@ class HomeMeterStrategy(BidEnabledStrategy):
     def _convert_update_interval_to_duration(update_interval):
         if update_interval is None:
             return duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
-        elif isinstance(update_interval, int):
+
+        if isinstance(update_interval, int):
             return duration(minutes=update_interval)
+
+        return
 
     def event_market_cycle(self):
         super().event_market_cycle()
