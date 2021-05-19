@@ -96,7 +96,7 @@ class PVPredefinedStrategy(PVStrategy):
             slot_time = market.time_slot
             if not self.power_profile:
                 raise D3AException(
-                    f"PV {self.owner.name} tries to set its energy forecast without a "
+                    f"PV {self.owner.name} tries to set its available energy forecast without a "
                     f"power profile.")
             available_energy_kWh = find_object_of_same_weekday_and_time(
                 self.power_profile, slot_time) * self.panel_count
