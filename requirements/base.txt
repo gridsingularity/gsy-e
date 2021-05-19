@@ -59,7 +59,7 @@ sortedcontainers==2.3.0
     # via -r requirements/base.in
 unidecode==0.4.21
     # via awesome-slugify
-urllib3==1.26.3
+urllib3==1.26.4
     # via -r requirements/base.in
 
 # The following packages are considered to be unsafe in a requirements file:
