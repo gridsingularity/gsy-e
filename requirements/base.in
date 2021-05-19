@@ -14,4 +14,4 @@ redis
 rq
 pytz
 sortedcontainers
-urllib3==1.26.3
+urllib3==1.26.4
