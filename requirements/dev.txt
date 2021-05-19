@@ -141,7 +141,7 @@ unidecode==0.4.21
     # via
     #   -r requirements/base.txt
     #   awesome-slugify
-urllib3==1.26.3
+urllib3==1.26.4
     # via -r requirements/base.txt
 virtualenv==20.2.2
     # via
