@@ -86,8 +86,8 @@ class HomeMeterStrategy(BidEnabledStrategy):
         """
         super().__init__()  # TODO: what about args and kwargs?
 
-        self.home_meter_profile = home_meter_profile
-        self.profile = None  # Store the preprocessed data extracted from home_meter_profile
+        self.home_meter_profile = home_meter_profile  # Raw profile data
+        self.profile = None  # Preprocessed data extracted from home_meter_profile
 
         self.initial_selling_rate = initial_selling_rate
         self.final_selling_rate = final_selling_rate
@@ -106,7 +106,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
             energy_rate_decrease_per_update=energy_rate_decrease_per_update)
 
         self.state = HomeMeterState()  # TODO: make hybrid with PV and Load states
-
+        self._simulation_start_timestamp = None
         self._cycled_market = set()
 
         # Instances to update the Home Meter's bids and offers across all market slots
@@ -144,17 +144,49 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
     # TODO: refactor naming (it is not an event in the strict sense of the term)
     def event_activate_energy(self):
-        """Run on ACTIVATE event."""
-        # Read the power profile data and calculate the required energy for each slot
-        self._event_activate_energy(self.home_meter_profile)  # TODO: change profile to read +/-
-        self._simulation_start_timestamp = self.area.now
-        self._update_energy_requirement_future_markets()
-        del self.home_meter_profile  # TODO: Why?
+        """Read the power profile and update the energy requirements for future market slots.
 
-    # TODO: refactor (return value, assign it later)
-    def _event_activate_energy(self, home_meter_profile):
-        """Read and preprocess the data of the power profile."""
-        self.profile = read_arbitrary_profile(InputProfileTypes.POWER, home_meter_profile)
+        This method is triggered by the ACTIVATE event.
+        """
+        # TODO: change profile to read +/-
+        self.profile = self._read_raw_profile_data(self.home_meter_profile)
+        self._simulation_start_timestamp = self.area.now
+        del self.home_meter_profile  # TODO: Why?
+        # TODO: merge the two methods below (the new merged method should read +/- values and act
+        #  based on it)
+        self._update_energy_requirement_future_markets()
+        self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
+
+    def _update_energy_requirement_future_markets(self) -> None:
+        """Update required energy values for each market slot."""
+        for market in self.area.all_markets:
+            slot_time = market.time_slot
+            if not self.profile:
+                raise D3AException(
+                    f"Home Meter {self.owner.name} tries to set its energy forecasted requirement "
+                    "without a profile.")
+            energy_kWh = find_object_of_same_weekday_and_time(self.profile, slot_time)
+            self.state.set_desired_energy(energy_kWh * 1000, slot_time, overwrite=False)
+            self.state.update_total_demanded_energy(slot_time)  # TODO: check if this must change
+
+    def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
+        if reconfigure:
+            self.profile = self._read_raw_profile_data(self.home_meter_profile)
+
+        for market in self.area.all_markets:
+            slot_time = market.time_slot
+            if not self.profile:
+                raise D3AException(
+                    f"PV {self.owner.name} tries to set its energy forecast without a "
+                    f"power profile.")
+            available_energy_kWh = find_object_of_same_weekday_and_time(self.profile, slot_time)
+            # TODO: available_energy_kWh can be +/-, so our action should depend on its value!
+            self.state.set_available_energy(available_energy_kWh, slot_time, reconfigure)
+
+    @staticmethod
+    def _read_raw_profile_data(profile):
+        """Return the preprocessed the raw profile data."""
+        return read_arbitrary_profile(InputProfileTypes.POWER, profile)
 
     @staticmethod
     def _convert_update_interval_to_duration(update_interval):
@@ -213,18 +245,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
                 self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
                                                          final_rate=final_rate)
 
-    def _update_energy_requirement_future_markets(self) -> None:
-        """Update required energy values for each market slot."""
-        for market in self.area.all_markets:
-            slot_time = market.time_slot
-            if not self.profile:
-                raise D3AException(
-                    f"Home Meter {self.owner.name} tries to set its energy forecasted requirement "
-                    "without a profile.")
-            energy_kWh = find_object_of_same_weekday_and_time(self.profile, slot_time)
-            self.state.set_desired_energy(energy_kWh * 1000, slot_time, overwrite=False)
-            self.state.update_total_demanded_energy(slot_time)  # TODO: check if this must change
-
     def _replace_rates_with_market_maker_rates(self):
         # Reconfigure the final buying rate (for energy consumption)
         self._area_reconfigure_prices(
@@ -236,9 +256,8 @@ class HomeMeterStrategy(BidEnabledStrategy):
             initial_selling_rate=get_market_maker_rate_from_config(
                 self.area.next_market, 0) - self.owner.get_path_to_root_fees(), validate=False)
 
-    # TODO: refactor naming (it is not an event in the strict sense of the term)
     def event_activate_price(self):
-        """Configure all the rates for the device."""
+        """Configure all the rates for the device (both consumption and production)."""
         # If we want to use the Market Maker rate, we must overwrite the existing rates with it.
         if self.use_market_maker_rate:
             self._replace_rates_with_market_maker_rates()
@@ -462,4 +481,4 @@ class HomeMeterStrategy(BidEnabledStrategy):
         self._area_reconfigure_prices(**kwargs)
 
         if key_in_dict_and_not_none(kwargs, "home_meter_profile"):
-            self._event_activate_energy(kwargs["home_meter_profile"])
+            self.profile = self._read_raw_profile_data(kwargs["home_meter_profile"])
