@@ -114,8 +114,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
         self.offer_update = None
         self._init_price_update()
 
-        self._calculate_active_markets()  # TODO refactor
-
     def _init_price_update(self):
         """Initialize the bid and offer updaters."""
 
@@ -137,32 +135,8 @@ class HomeMeterStrategy(BidEnabledStrategy):
             update_interval=self.update_interval,
             rate_limit_object=max)
 
-    @property
-    def active_markets(self):  # TODO: refactor
-        return self._active_markets
-
-    def _calculate_active_markets(self):  # TODO: refactor
-        self._active_markets = [
-            market for market in self.area.all_markets
-            if self._is_market_active(market)
-        ] if self.area else []
-
-    def _is_market_active(self, market):  # TODO: refactor
-        """
-        Check if the market is active.
-
-        To be defined as active, the market must be part of the total duration of the simulation,
-        and it must come after the current market (if any).
-        """
-        return (
-            market.in_sim_duration
-            and (
-                not self.area.current_market
-                or market.time_slot >= self.area.current_market.time_slot))
-
     def event_activate(self, **kwargs):
         """Activate the device."""
-        self._calculate_active_markets()
         self.event_activate_price()
         self.bid_update.update_and_populate_price_settings(self.area)
         self.event_activate_energy()
@@ -192,7 +166,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
     def event_market_cycle(self):
         super().event_market_cycle()
         self.bid_update.update_and_populate_price_settings(self.area)
-        self._calculate_active_markets()
         self._update_energy_requirement_future_markets()
         self._set_alternative_pricing_scheme()
         self.update_state()
@@ -207,7 +180,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
             return  # In a single-sided market, only offers are posted/updated
 
-        for market in self.active_markets:
+        for market in self.area.all_markets:
             if self.state.can_buy_more_energy(market.time_slot):
                 bid_energy = self.state.calculate_energy_to_bid(market.time_slot)
                 # TODO: balancing market support not yet implemented
@@ -374,7 +347,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
     def event_tick(self):
         # Check if the device can buy energy in the future available market slots
         # TODO: check if it can offer as well (do not just immediately `continue`)
-        for market in self.active_markets:
+        for market in self.area.all_markets:
             if not self.state.can_buy_more_energy(market.time_slot):
                 continue
 
@@ -447,12 +420,11 @@ class HomeMeterStrategy(BidEnabledStrategy):
         if market.time_slot not in self._cycled_market:
             return
 
-        if self._can_buy_in_market(market) and self._offer_comes_from_different_seller(offer):
+        if (
+                self.state.can_buy_more_energy(market.time_slot)
+                and self._offer_comes_from_different_seller(offer)):
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 self._one_sided_market_event_tick(market, offer)
-
-    def _can_buy_in_market(self, market):
-        return self._is_market_active(market) and self.state.can_buy_more_energy(market.time_slot)
 
     def _offer_comes_from_different_seller(self, offer):
         return offer.seller != self.owner.name and offer.seller != self.area.name
