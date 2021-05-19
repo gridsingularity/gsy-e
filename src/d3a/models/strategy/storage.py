@@ -513,8 +513,7 @@ class StorageStrategy(BidEnabledStrategy):
             return
         if self.state.has_battery_reached_max_power(-FLOATING_POINT_TOLERANCE, market.time_slot):
             return
-        max_affordable_offer_rate = min(self.bid_update.get_updated_rate(market.time_slot),
-                                        self.bid_update.final_rate[market.time_slot])
+        max_affordable_offer_rate = self.bid_update.get_updated_rate(market.time_slot)
         # Check if storage has free capacity
         if self.state.free_storage(market.time_slot) <= 0.0:
             return

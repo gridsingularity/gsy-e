@@ -26,8 +26,7 @@ from d3a.d3a_core.exceptions import MarketException
 from d3a.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
 from d3a.models.market.market_structures import Offer, Trade, Bid
 from d3a.models.market.one_sided import OneSidedMarket
-from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
-from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
+from d3a.models.market.two_sided import TwoSidedMarket
 from d3a.models.market.blockchain_interface import NonBlockchainInterface
 from d3a_interface.constants_limits import ConstSettings
 from uuid import uuid4
@@ -309,7 +308,7 @@ def test_bid_traded_moves_bid_from_posted_to_traded(base):
     assert base.get_traded_bids_from_market(market) == [test_bid]
 
 
-@pytest.mark.parametrize('market_class', [OneSidedMarket, TwoSidedPayAsBid, TwoSidedPayAsClear])
+@pytest.mark.parametrize('market_class', [OneSidedMarket, TwoSidedMarket])
 def test_can_offer_be_posted(market_class):
     base = BaseStrategy()
     base.owner = FakeOwner()
@@ -326,7 +325,7 @@ def test_can_offer_be_posted(market_class):
     assert base.can_offer_be_posted(5.001, 1, 50, market) is False
 
 
-@pytest.mark.parametrize('market_class', [TwoSidedPayAsBid, TwoSidedPayAsClear])
+@pytest.mark.parametrize('market_class', [TwoSidedMarket])
 def test_can_bid_be_posted(market_class, base):
     market = market_class(time_slot=pendulum.now())
 
@@ -339,7 +338,7 @@ def test_can_bid_be_posted(market_class, base):
     assert base.can_bid_be_posted(10.001, 1, 70, market) is False
 
 
-@pytest.mark.parametrize('market_class', [TwoSidedPayAsBid, TwoSidedPayAsClear])
+@pytest.mark.parametrize('market_class', [TwoSidedMarket])
 def test_post_bid_with_replace_existing(market_class, base):
     """Calling post_bid with replace_existing=True triggers the removal of the existing bids."""
 
@@ -354,7 +353,7 @@ def test_post_bid_with_replace_existing(market_class, base):
     assert base.get_posted_bids(market) == [bid_3, bid_4]
 
 
-@pytest.mark.parametrize('market_class', [TwoSidedPayAsBid, TwoSidedPayAsClear])
+@pytest.mark.parametrize('market_class', [TwoSidedMarket])
 def test_post_bid_without_replace_existing(market_class, base):
     """Calling post_bid with replace_existing=False does not trigger the removal of the existing
     bids.
@@ -369,7 +368,7 @@ def test_post_bid_without_replace_existing(market_class, base):
     assert base.get_posted_bids(market) == [bid_1, bid_2, bid_3]
 
 
-@pytest.mark.parametrize('market_class', [OneSidedMarket, TwoSidedPayAsBid, TwoSidedPayAsClear])
+@pytest.mark.parametrize('market_class', [OneSidedMarket, TwoSidedMarket])
 def test_post_offer_creates_offer_with_correct_parameters(market_class):
     """Calling post_offer with replace_existing=False does not trigger the removal of the existing
     offers.
@@ -393,7 +392,7 @@ def test_post_offer_creates_offer_with_correct_parameters(market_class):
     assert offer.seller_origin == strategy.owner.name
 
 
-@pytest.mark.parametrize('market_class', [OneSidedMarket, TwoSidedPayAsBid, TwoSidedPayAsClear])
+@pytest.mark.parametrize('market_class', [OneSidedMarket, TwoSidedMarket])
 def test_post_offer_with_replace_existing(market_class):
     """Calling post_offer with replace_existing triggers the removal of the existing offers."""
 
