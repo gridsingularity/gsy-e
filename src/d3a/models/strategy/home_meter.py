@@ -199,7 +199,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
         super().event_market_cycle()
         self.bid_update.update_and_populate_price_settings(self.area)
         self._set_energy_forecast_for_future_markets(reconfigure=False)
-        self._set_alternative_pricing_scheme()
         self.update_state()
 
     def update_state(self):
@@ -234,16 +233,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
         self.state.delete_past_state_values(self.area.current_market.time_slot)
         self.bid_update.delete_past_state_values(self.area.current_market.time_slot)
         # TODO: do the same for the offers
-
-    # TODO: is this needed?
-    # TODO: include features for offers (PV)
-    def _set_alternative_pricing_scheme(self):
-        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            for market in self.area.all_markets:
-                time_slot = market.time_slot
-                final_rate = self.area.config.market_maker_rate[time_slot]
-                self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
-                                                         final_rate=final_rate)
 
     def _replace_rates_with_market_maker_rates(self):
         # Reconfigure the final buying rate (for energy consumption)
