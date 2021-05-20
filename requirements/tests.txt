@@ -238,7 +238,7 @@ unidecode==0.4.21
     # via
     #   -r requirements/dev.txt
     #   awesome-slugify
-urllib3==1.26.3
+urllib3==1.26.4
     # via
     #   -r requirements/dev.txt
     #   requests
