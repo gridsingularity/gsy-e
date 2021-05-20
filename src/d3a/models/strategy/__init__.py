@@ -490,14 +490,17 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                 "State is required to support load state functionality.")
 
     def update_energy_price(self, market, updated_rate):
+        """Update the total price of all offers in the specified market based on their new rate."""
         if market.id not in self.offers.open.values():
             return
 
         for offer, iterated_market_id in self.offers.open.items():
             iterated_market = self.area.get_future_market_from_id(iterated_market_id)
+            # Skip offers that don't belong to the specified market slot
             if market is None or iterated_market is None or iterated_market.id != market.id:
                 continue
             try:
+                # Delete the old offer and create a new equivalent one with an updated price
                 iterated_market.delete_offer(offer.id)
                 updated_price = round(offer.energy * updated_rate, 10)
                 new_offer = iterated_market.offer(
@@ -626,6 +629,7 @@ class BidEnabledStrategy(BaseStrategy):
             return self._traded_bids[market.id]
 
     def are_bids_posted(self, market_id):
+        """Checks if any bids have been posted in the market slot with the given ID."""
         if market_id not in self._bids:
             return False
         return len(self._bids[market_id]) > 0

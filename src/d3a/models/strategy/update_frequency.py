@@ -129,6 +129,7 @@ class UpdateFrequencyMixin:
         self._populate_profiles(area)
 
     def get_updated_rate(self, time_slot):
+        """Compute the rate for offers/bids at a specific time slot."""
         calculated_rate = \
             self.initial_rate[time_slot] - \
             self.energy_rate_change_per_update[time_slot] * self.update_counter[time_slot]
@@ -176,6 +177,7 @@ class UpdateFrequencyMixin:
 
 class TemplateStrategyBidUpdater(UpdateFrequencyMixin):
     def reset(self, strategy):
+        """Reset the price of all bids to use their initial rate."""
         # decrease energy rate for each market again, except for the newly created one
         for market in strategy.area.all_markets[:-1]:
             self.update_counter[market.time_slot] = 0
@@ -190,6 +192,7 @@ class TemplateStrategyBidUpdater(UpdateFrequencyMixin):
 
 class TemplateStrategyOfferUpdater(UpdateFrequencyMixin):
     def reset(self, strategy):
+        """Reset the price of all offers based to use their initial rate."""
         for market in strategy.area.all_markets[:-1]:
             self.update_counter[market.time_slot] = 0
             strategy.update_energy_price(market, self.get_updated_rate(market.time_slot))
