@@ -52,21 +52,22 @@ if d3a.constants.CONNECT_TO_PROFILES_DB is True:
 
 
 def before_feature(context, feature):
+    # TODO: Ignore the following if one has only selected an individual scenario with
+    #  behave integration_tests -n ""
     if feature.name == "User Profiles Tests":
         d3a.constants.CONNECT_TO_PROFILES_DB = True
         os.environ["PROFILE_DB_USER"] = "d3a_profiles_user"
         os.environ["PROFILE_DB_PASSWORD"] = ""
         os.environ["PROFILE_DB_NAME"] = "d3a_profiles"
         os.system("docker-compose -f integration_tests/compose/docker_compose_postgres.yml up -d")
-        sleep(2)
+        sleep(3)
 
 
 def after_feature(context, feature):
     if feature.name == "User Profiles Tests":
-        d3a.constants.CONNECT_TO_PROFILES_DB = True
+        d3a.constants.CONNECT_TO_PROFILES_DB = False
         os.system("docker-compose -f integration_tests/compose/docker_compose_postgres.yml down")
         os.system("docker rmi compose_postgres:latest")
-        sleep(2)
 
 
 def before_scenario(context, scenario):
