@@ -251,6 +251,10 @@ wcwidth==0.2.5
     # via
     #   -r requirements/dev.txt
     #   prompt-toolkit
+pony==0.7.14
+    # via -r requirements/base.in
+psycopg2==2.8.6
+    # via -r requirements/base.in
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
