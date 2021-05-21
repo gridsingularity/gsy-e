@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from pendulum import duration
+from pendulum import duration, DateTime
 
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
@@ -47,7 +47,15 @@ class UpdateFrequencyMixin:
         self.number_of_available_updates = 0
         self.rate_limit_object = rate_limit_object
 
-    def _read_or_rotate_rate_profiles(self, current_timestamp, reconfigure=False):
+    def _read_or_rotate_rate_profiles(self, current_timestamp: DateTime,
+                                      reconfigure: bool = False):
+        """ Creates a new chunk of profiles if the current_timestamp is not in the profile buffers
+
+        Args:
+            current_timestamp: current time slot time
+            reconfigure: Force overwriting the current profile
+
+        """
         # TODO: this needs to be implemented to except profile UUIDs and DB connection
         if reconfigure or current_timestamp not in self.initial_rate_profile_buffer.keys():
             self.initial_rate_profile_buffer = \

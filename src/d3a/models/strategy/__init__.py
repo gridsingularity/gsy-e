@@ -29,6 +29,7 @@ from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import D3ARedisException
 from d3a.d3a_core.exceptions import SimulationException, D3AException, MarketException
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
+from d3a.d3a_core.singletons import global_objects
 from d3a.d3a_core.util import append_or_create_key
 from d3a.events import EventMixin
 from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
@@ -37,8 +38,8 @@ from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer, Bid, trade_from_JSON_string, \
     offer_from_JSON_string
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a.d3a_core.singletons import global_objects
-from d3a_interface.read_user_profile import read_arbitrary_profile
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from pendulum import DateTime
 
 log = getLogger(__name__)
 
@@ -233,7 +234,21 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     parameters = None
 
-    def rotate_profile(self, profile_type, profile, profile_uuid=None):
+    def rotate_profile(self, profile_type: InputProfileTypes, profile,
+                       profile_uuid: str = None) -> Dict[DateTime, float]:
+        """ Reads a new chunk of profile if the buffer does not contain the current time stamp
+        Profile chunks are either generated from single values, input daily profiles or profiles
+        that are read from the DB
+
+        Args:
+            profile_type (InputProfileTypes): Type of the profile
+            profile (any of str, dict, float): Any arbitrary input
+                                               (same input as for read_arbitrary_profile)
+            profile_uuid (str): optional, if set the profiles is read from the DB
+
+        Returns: Profile chunk as dictionary
+
+        """
         start_timestamp = self.area.next_market.time_slot \
             if self.area and self.area.next_market else GlobalConfig.start_date
         if profile and not isinstance(profile, dict):
