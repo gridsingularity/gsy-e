@@ -139,6 +139,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         super().event_market_cycle()
         self.add_entry_in_hrs_per_day()
         self.bid_update.update_and_populate_price_settings(self.area)
+        self.bid_update.reset(self)
         self._calculate_active_markets()
         self._update_energy_requirement_future_markets()
         self._set_alternative_pricing_scheme()
@@ -322,8 +323,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 try:
                     if not self.are_bids_posted(market.id):
                         self.post_first_bid(market, bid_energy)
-                    else:
-                        self.bid_update.reset(self)
                 except MarketException:
                     pass
 
