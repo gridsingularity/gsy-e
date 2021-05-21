@@ -352,16 +352,16 @@ class BalancingTrade(namedtuple('BalancingTrade', ('id', 'time', 'offer', 'selle
 
 class MarketClearingState:
     def __init__(self):
-        self.cumulative_offers = dict()  # type: Dict[DateTime, dict()]
-        self.cumulative_bids = dict()  # type: Dict[DateTime, dict()]
-        self.clearing = {}  # type: Dict[DateTime, tuple()]
+        self.cumulative_offers = dict()
+        self.cumulative_bids = dict()
+        self.clearing = dict()
 
     @classmethod
     def _csv_fields(cls):
         return 'time', 'rate [ct./kWh]'
 
 
-BidOfferMatch = namedtuple('BidOfferMatch', ['bid', 'bid_energy', 'offer', 'offer_energy'])
+BidOfferMatch = namedtuple('BidOfferMatch', ['bid', 'selected_energy', 'offer', 'trade_rate'])
 
 
 def parse_event_and_parameters_from_json_string(payload):

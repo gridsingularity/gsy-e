@@ -19,8 +19,7 @@ from pendulum import DateTime # noqa
 from typing import Dict  # noqa
 
 from d3a.models.market import GridFee
-from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
-from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
+from d3a.models.market.two_sided import TwoSidedMarket
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.balancing import BalancingMarket
 from d3a.models.market import Market # noqa
@@ -98,9 +97,7 @@ class AreaMarkets:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 return OneSidedMarket
             elif ConstSettings.IAASettings.MARKET_TYPE == 2:
-                return TwoSidedPayAsBid
-            elif ConstSettings.IAASettings.MARKET_TYPE == 3:
-                return TwoSidedPayAsClear
+                return TwoSidedMarket
         else:
             return BalancingMarket
 

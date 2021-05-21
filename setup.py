@@ -8,7 +8,7 @@ try:
     with open('requirements/dev.txt') as req:
         REQUIREMENTS = [r.partition('#')[0] for r in req if not r.startswith('-e')]
         REQUIREMENTS.extend(
-            ['d3a-interface @ '
+            [f'd3a-interface @ '
              f'git+https://github.com/gridsingularity/d3a-interface.git@{d3a_interface_branch}'
              ])
 except OSError:
@@ -19,7 +19,7 @@ with open("README.rst", "r") as readme:
     README = readme.read()
 
 # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
-VERSION = '0.11.0'
+VERSION = '0.12.0'
 
 setup(
     name="d3a",

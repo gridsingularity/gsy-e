@@ -18,34 +18,32 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import traceback
 from logging import getLogger
 from typing import List  # noqa
-from cached_property import cached_property
-from pendulum import DateTime, duration, today
-from slugify import slugify
 from uuid import uuid4
-from d3a.constants import TIME_ZONE
+
+import d3a.constants
+from cached_property import cached_property
+from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
-from d3a.models.config import SimulationConfig
+from d3a.d3a_core.singletons import global_objects
+from d3a.d3a_core.util import TaggedLogWrapper
 from d3a.events.event_structures import TriggerMixin
+from d3a.models.area.event_dispatcher import DispatcherFactory
+from d3a.models.area.events import Events
+from d3a.models.area.markets import AreaMarkets
+from d3a.models.area.redis_external_market_connection import RedisMarketExternalConnection
+from d3a.models.area.stats import AreaStats
+from d3a.models.area.throughput_parameters import ThroughputParameters
+from d3a.models.config import SimulationConfig
+from d3a.models.market.blockchain_interface import (
+    NonBlockchainInterface, SubstrateBlockchainInterface)
+from d3a.models.myco_matcher import MycoMatcher
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
-from d3a.d3a_core.util import TaggedLogWrapper
-from d3a_interface.constants_limits import ConstSettings
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.constants import TIME_FORMAT
-from d3a.models.area.stats import AreaStats
-from d3a.models.area.event_dispatcher import DispatcherFactory
-from d3a.models.area.markets import AreaMarkets
-from d3a.models.area.events import Events
-from d3a.models.area.throughput_parameters import ThroughputParameters
-from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.area_validator import validate_area
-from d3a.models.area.redis_external_market_connection import RedisMarketExternalConnection
-from d3a.models.market.blockchain_interface import SubstrateBlockchainInterface, \
-    NonBlockchainInterface
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.utils import key_in_dict_and_not_none
-import d3a.constants
-from d3a.d3a_core.singletons import global_objects
-
+from pendulum import DateTime, duration, today
+from slugify import slugify
 
 log = getLogger(__name__)
 
@@ -58,7 +56,7 @@ DEFAULT_CONFIG = SimulationConfig(
     slot_length=duration(minutes=15),
     tick_length=duration(seconds=1),
     cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
-    start_date=today(tz=TIME_ZONE),
+    start_date=today(tz=d3a.constants.TIME_ZONE),
     max_panel_power_W=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W
 )
 
@@ -111,8 +109,7 @@ class Area:
                  throughput: ThroughputParameters = ThroughputParameters()
                  ):
         validate_area(grid_fee_constant=grid_fee_constant,
-                      grid_fee_percentage=grid_fee_percentage,
-                      name=name)
+                      grid_fee_percentage=grid_fee_percentage)
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
@@ -146,6 +143,7 @@ class Area:
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available and self.strategy is None else None
         self.should_update_child_strategies = False
+        self.bid_offer_matcher = MycoMatcher()
         self.external_connection_available = external_connection_available
 
     @property
@@ -156,7 +154,7 @@ class Area:
     def name(self, new_name):
         if check_area_name_exists_in_parent_area(self.parent, new_name):
             raise AreaException("Area name should be unique inside the same Parent Area")
-        validate_area(name=new_name)
+
         self.__name = new_name
 
     def get_state(self):
@@ -394,13 +392,17 @@ class Area:
     def tick(self):
         self._consume_commands_from_aggregator()
 
-        if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
-                ConstSettings.IAASettings.MARKET_TYPE == 3:
+        if ConstSettings.IAASettings.MARKET_TYPE == 2:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                 self.dispatcher.publish_market_clearing()
             else:
                 for market in self.all_markets:
-                    market.match_offers_bids()
+                    bid_offer_pairs = self.bid_offer_matcher.calculate_recommendation(
+                        *market.open_bids_and_offers, self.now)
+                    while bid_offer_pairs:
+                        bid_offer_pairs = self.bid_offer_matcher.calculate_recommendation(
+                            *market.open_bids_and_offers, self.now)
+                        market.match_recommendation(bid_offer_pairs)
 
         self.events.update_events(self.now)
 
@@ -423,7 +425,7 @@ class Area:
     def __repr__(self):
         return "<Area '{s.name}' markets: {markets}>".format(
             s=self,
-            markets=[t.format(TIME_FORMAT) for t in self._markets.markets.keys()]
+            markets=[t.format(d3a.constants.TIME_FORMAT) for t in self._markets.markets.keys()]
         )
 
     @property
