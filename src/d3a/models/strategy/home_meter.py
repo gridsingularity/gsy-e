@@ -143,6 +143,28 @@ class HomeMeterStrategy(BidEnabledStrategy):
         self.bid_update.update_and_populate_price_settings(self.area)
         self.offer_update.update_and_populate_price_settings(self.area)
 
+    def event_activate_price(self):
+        """Configure all the rates for the device (both consumption and production)."""
+        # If we want to use the Market Maker rate, we must overwrite the existing rates with it.
+        if self.use_market_maker_rate:
+            self._replace_rates_with_market_maker_rates()
+
+        # TODO: create some specialized class, e.g. RatesValidator or HomeMeterValidator (subclass
+        # DeviceValidator) that can validate both consumption and production rates
+        self._validate_consumption_rates(
+            initial_rate=self.bid_update.initial_rate_profile_buffer,
+            final_rate=self.bid_update.final_rate_profile_buffer,
+            energy_rate_change_per_update=(
+                self.bid_update.energy_rate_change_per_update_profile_buffer),
+            fit_to_limit=self.bid_update.fit_to_limit)
+
+        self._validate_production_rates(
+            initial_rate=self.offer_update.initial_rate_profile_buffer,
+            final_rate=self.offer_update.final_rate_profile_buffer,
+            energy_rate_change_per_update=(
+                self.offer_update.energy_rate_change_per_update_profile_buffer),
+            fit_to_limit=self.offer_update.fit_to_limit)
+
     def event_activate_energy(self):
         """Read the power profile and update the energy requirements for future market slots.
 
@@ -151,51 +173,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
         self.profile = self._read_raw_profile_data(self.home_meter_profile)
         self._simulation_start_timestamp = self.area.now
         self._set_energy_forecast_for_future_markets(reconfigure=True)
-
-    def _set_energy_forecast_for_future_markets(self, reconfigure=True):
-        """Set the energy consumption/production expectations for the upcoming market slots."""
-        if reconfigure:
-            self.profile = self._read_raw_profile_data(self.home_meter_profile)
-
-        if not self.profile:
-            raise D3AException(
-                f"Home Meter {self.owner.name} tries to set its required energy forecast without "
-                "a profile.")
-
-        for market in self.area.all_markets:
-            slot_time = market.time_slot
-            energy_kWh = find_object_of_same_weekday_and_time(self.profile, slot_time)
-            # For the Home Meter, the energy amount can be either positive (consumption) or
-            # negative (production).
-            consumed_energy = energy_kWh if energy_kWh > 0 else 0.0
-            # Turn energy into a positive number (required for set_available_energy method)
-            produced_energy = abs(energy_kWh) if energy_kWh < 0 else 0.0
-
-            print("\nenergy_kWh, consumed_energy, produced_energy")
-            print(energy_kWh, consumed_energy, produced_energy)
-            if consumed_energy and produced_energy:
-                raise Exception("The home meter can't produce+consume energy at the same time.")
-
-            # TODO: this State is different than the LoadState. It must be a hybrid of PV/Load
-            self.state.set_desired_energy(consumed_energy * 1000, slot_time, overwrite=False)
-            self.state.update_total_demanded_energy(slot_time)
-            # TODO: implement following method in state
-            self.state.set_available_energy(produced_energy, slot_time, reconfigure)
-
-    @staticmethod
-    def _read_raw_profile_data(profile):
-        """Return the preprocessed the raw profile data."""
-        return read_arbitrary_profile(InputProfileTypes.POWER, profile)
-
-    @staticmethod
-    def _convert_update_interval_to_duration(update_interval):
-        if update_interval is None:
-            return duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
-
-        if isinstance(update_interval, int):
-            return duration(minutes=update_interval)
-
-        return
 
     def event_market_cycle(self):
         super().event_market_cycle()
@@ -214,7 +191,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
         #  profile?
         for market in self.area.all_markets:
             if self.state.can_buy_more_energy(market.time_slot):
-                bid_energy = self.state.calculate_energy_to_bid(market.time_slot)
+                bid_energy = self.state.get_energy_to_bid(market.time_slot)
                 # TODO: balancing market support not yet implemented
                 # if self.is_eligible_for_balancing_market:
                 #     bid_energy -= self.state.get_desired_energy(market.time_slot) * \
@@ -227,7 +204,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
         # -- End Bids -- #
         # -- Start Offers -- #
-
         self.offer_update.update_and_populate_price_settings(self.area)
         self.offer_update.reset(self)  # Update the price of all offers using the initial rate
 
@@ -260,6 +236,50 @@ class HomeMeterStrategy(BidEnabledStrategy):
         #         self.area.current_market.time_slot)  # TODO: wait for PV offers first!
         self._delete_past_state()  # TODO: fix this method to add the offers side
 
+    def _set_energy_forecast_for_future_markets(self, reconfigure=True):
+        """Set the energy consumption/production expectations for the upcoming market slots."""
+        if reconfigure:
+            self.profile = self._read_raw_profile_data(self.home_meter_profile)
+
+        if not self.profile:
+            raise D3AException(
+                f"Home Meter {self.owner.name} tries to set its required energy forecast without "
+                "a profile.")
+
+        for market in self.area.all_markets:
+            slot_time = market.time_slot
+            energy_kWh = find_object_of_same_weekday_and_time(self.profile, slot_time)
+            # For the Home Meter, the energy amount can be either positive (consumption) or
+            # negative (production).
+            consumed_energy = energy_kWh if energy_kWh > 0 else 0.0
+            # Turn energy into a positive number (required for set_available_energy method)
+            produced_energy = abs(energy_kWh) if energy_kWh < 0 else 0.0
+
+            print("\nenergy_kWh, consumed_energy, produced_energy")
+            print(energy_kWh, consumed_energy, produced_energy)
+            if consumed_energy and produced_energy:
+                # TODO: create better custom exception
+                raise Exception("The home meter can't produce+consume energy at the same time.")
+
+            self.state.set_desired_energy(consumed_energy * 1000, slot_time, overwrite=False)
+            self.state.set_available_energy(produced_energy, slot_time, reconfigure)
+            self.state.update_total_demanded_energy(slot_time)
+
+    @staticmethod
+    def _read_raw_profile_data(profile):
+        """Return the preprocessed the raw profile data."""
+        return read_arbitrary_profile(InputProfileTypes.POWER, profile)
+
+    @staticmethod
+    def _convert_update_interval_to_duration(update_interval):
+        if update_interval is None:
+            return duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+
+        if isinstance(update_interval, int):
+            return duration(minutes=update_interval)
+
+        return
+
     def _delete_past_state(self):
         if constants.D3A_TEST_RUN is True or self.area.current_market is None:
             return
@@ -281,28 +301,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
         self._area_reconfigure_prices(
             initial_selling_rate=get_market_maker_rate_from_config(
                 self.area.next_market, 0) - self.owner.get_path_to_root_fees(), validate=False)
-
-    def event_activate_price(self):
-        """Configure all the rates for the device (both consumption and production)."""
-        # If we want to use the Market Maker rate, we must overwrite the existing rates with it.
-        if self.use_market_maker_rate:
-            self._replace_rates_with_market_maker_rates()
-
-        # TODO: create some specialized class, e.g. RatesValidator or HomeMeterValidator (subclass
-        # DeviceValidator) that can validate both consumption and production rates
-        self._validate_consumption_rates(
-            initial_rate=self.bid_update.initial_rate_profile_buffer,
-            final_rate=self.bid_update.final_rate_profile_buffer,
-            energy_rate_change_per_update=(
-                self.bid_update.energy_rate_change_per_update_profile_buffer),
-            fit_to_limit=self.bid_update.fit_to_limit)
-
-        self._validate_production_rates(
-            initial_rate=self.offer_update.initial_rate_profile_buffer,
-            final_rate=self.offer_update.final_rate_profile_buffer,
-            energy_rate_change_per_update=(
-                self.offer_update.energy_rate_change_per_update_profile_buffer),
-            fit_to_limit=self.offer_update.fit_to_limit)
 
     def _area_reconfigure_prices(self, **kwargs):
         """Reconfigure the prices (rates) of the area.
