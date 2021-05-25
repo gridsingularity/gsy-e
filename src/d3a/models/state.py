@@ -174,8 +174,55 @@ class LoadState:
         self._total_energy_demanded_Wh = state_dict["total_energy_demanded_Wh"]
 
 
-class HomeMeterState(LoadState):  # TODO: implement
-    pass
+class HomeMeterState:
+    """State for the Home Meter device"""
+
+    def __init__(self):
+        # Energy that the load wants to consume (given by the profile or live energy requirements)
+        self._desired_energy_Wh = {}
+        # Energy that the load needs to consume. It's reduced when new energy is bought
+        self._energy_requirement_Wh = {}
+        self._total_energy_demanded_Wh = 0
+
+        self._available_energy_kWh = {}
+        self._energy_production_forecast_kWh = {}
+
+    # TODO: remove duplicate in LoadState
+    def set_desired_energy(self, energy, time_slot, overwrite=False):
+        if overwrite is False and time_slot in self._energy_requirement_Wh:
+            return
+        self._energy_requirement_Wh[time_slot] = energy
+        self._desired_energy_Wh[time_slot] = energy
+
+    # TODO: remove duplicate in LoadState
+    def update_total_demanded_energy(self, time_slot):
+        self._total_energy_demanded_Wh += self._desired_energy_Wh.get(time_slot, 0.)
+
+    # TODO: remove duplicate in PVState
+    def set_available_energy(self, energy_kWh, time_slot, overwrite=False):
+        if overwrite is False and time_slot in self._energy_production_forecast_kWh:
+            return
+        self._energy_production_forecast_kWh[time_slot] = energy_kWh
+        self._available_energy_kWh[time_slot] = energy_kWh
+
+        # TODO: replace assertion with raising custom exception
+        assert self._energy_production_forecast_kWh[time_slot] >= 0.0
+
+    # TODO: remove duplicate in LoadState
+    def can_buy_more_energy(self, time_slot):
+        if time_slot not in self._energy_requirement_Wh:
+            return False
+
+        return self._energy_requirement_Wh[time_slot] > FLOATING_POINT_TOLERANCE
+
+    def get_energy_to_bid(self, time_slot):
+        return self._energy_requirement_Wh[time_slot]
+
+    def get_available_energy_kWh(self, time_slot, default_value=None):
+        available_energy = self._available_energy_kWh.get(time_slot, default_value)
+
+        assert available_energy >= -FLOATING_POINT_TOLERANCE
+        return available_energy
 
 
 class ESSEnergyOrigin(Enum):

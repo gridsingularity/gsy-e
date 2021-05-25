@@ -106,7 +106,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
             energy_rate_increase_per_update=energy_rate_increase_per_update,
             energy_rate_decrease_per_update=energy_rate_decrease_per_update)
 
-        self.state = HomeMeterState()  # TODO: make hybrid with PV and Load states
+        self.state = HomeMeterState()
         self._simulation_start_timestamp = None
         # self._cycled_market = set()
 
