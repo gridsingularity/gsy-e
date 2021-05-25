@@ -232,7 +232,7 @@ class PVStrategy(BaseStrategy):
                 self.area.current_market is None:
             return
 
-        self.state.delete_past_state(self.area.current_market.time_slot)
+        self.state.delete_past_state_values(self.area.current_market.time_slot)
         self.offer_update.delete_past_state_values(self.area.current_market.time_slot)
 
     def event_market_cycle_price(self):

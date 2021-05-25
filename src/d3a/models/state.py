@@ -55,10 +55,7 @@ class PVState:
         return self._energy_production_forecast_kWh[time_slot]
 
     def get_available_energy_kWh(self, time_slot, default_value=None):
-        if default_value is not None:
-            available_energy = self._available_energy_kWh.get(time_slot, default_value)
-        else:
-            available_energy = self._available_energy_kWh.get(time_slot)
+        available_energy = self._available_energy_kWh.get(time_slot, default_value)
 
         assert available_energy >= -FLOATING_POINT_TOLERANCE
         return available_energy
@@ -76,7 +73,7 @@ class PVState:
         self._available_energy_kWh[time_slot] = energy_kWh
         assert self._energy_production_forecast_kWh[time_slot] >= 0.0
 
-    def delete_past_state(self, current_market_time_slot):
+    def delete_past_state_values(self, current_market_time_slot):
         to_delete = []
         for market_slot in self._available_energy_kWh.keys():
             if market_slot < current_market_time_slot:
