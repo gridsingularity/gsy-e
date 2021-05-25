@@ -1,7 +1,7 @@
 import json
 
 import d3a.constants
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import RedisCommunicator
+from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
 from d3a.models.market import validate_authentic_bid_offer_pair
 from d3a.models.market.market_structures import BidOfferMatch
 from d3a.models.myco_matcher.base_matcher import BaseMatcher
@@ -19,13 +19,11 @@ class ExternalMatcher(BaseMatcher):
         self.recommendations = []
 
     def _setup_redis_connection(self):
-        self.myco_ext_conn = RedisCommunicator()
-        self.myco_ext_conn.sub_to_channel("external-myco/get_job_uuid",
-                                          self.get_job_uuid)
-        self.myco_ext_conn.sub_to_channel(f"{self.channel_prefix}get_offers_bids/",
-                                          self.publish_offers_bids)
-        self.myco_ext_conn.sub_to_channel(f"{self.channel_prefix}post_recommendations/",
-                                          self.match_recommendations)
+        self.myco_ext_conn = ResettableCommunicator()
+        self.myco_ext_conn.sub_to_multiple_channels(
+            {"external-myco/get_job_uuid": self.get_job_uuid,
+             f"{self.channel_prefix}get_offers_bids/": self.publish_offers_bids,
+             f"{self.channel_prefix}post_recommendations/": self.match_recommendations})
 
     def publish_offers_bids(self, message):
         """
@@ -50,11 +48,15 @@ class ExternalMatcher(BaseMatcher):
         })
 
         channel = f"{self.channel_prefix}response/get_offers_bids/"
-        self.myco_ext_conn.publish(channel, json.dumps(data))
+        self.myco_ext_conn.publish_json(channel, data)
 
-    def match_recommendations(self, message):
-        for record in message["data"]:
-            market = self.markets_mapping[record["market_id"]]
+    def match_recommendations(self, payload):
+        """
+        Receive trade recommendations and match them in the relevant market
+        """
+        recommendations = json.loads(payload.get("data"))
+        for record in recommendations:
+            market = self.markets_mapping[record.get("market_id")]
             validate_authentic_bid_offer_pair(
                 record.get("bid"),
                 record.get("offer"),
@@ -66,11 +68,15 @@ class ExternalMatcher(BaseMatcher):
                                                         record.get("offer"),
                                                         record.get("trade_rate")), ])
         channel = f"{self.channel_prefix}response/matched_recommendations/"
-        self.myco_ext_conn.publish(channel, json.dumps({"event": "match", "status": "success"}))
+        data = {"event": "match", "status": "success"}
+        self.myco_ext_conn.publish_json(channel, data)
 
     def calculate_match_recommendation(self, bids, offers, current_time=None):
         pass
 
     def get_job_uuid(self, message):
+        """
+        Publish the job uuid to the Myco client
+        """
         channel = "external-myco/get_job_uuid/response"
-        self.myco_ext_conn.publish(channel, json.dumps({"job_uuid": self.job_uuid}))
+        self.myco_ext_conn.publish_json(channel, {"job_uuid": self.job_uuid})

@@ -16,42 +16,40 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import click
-import platform
-import os
-import psutil
-import gc
-import sys
 import datetime
-
-from pendulum import now, duration
-from ptpython.repl import embed
-from time import sleep, time, mktime
-from numpy import random
+import gc
+import os
+import platform
+import sys
 from importlib import import_module
 from logging import getLogger
+from time import sleep, time, mktime
 
+import click
+import d3a.constants
+import psutil
+# noinspection PyUnresolvedReferences
+from d3a import setup as d3a_setup  # noqa
+from d3a.blockchain.constants import ENABLE_SUBSTRATE
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, SIMULATION_PAUSE_TIMEOUT
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.d3a_core.export import ExportAndPlot
-from d3a.models.config import SimulationConfig
-from d3a.models.power_flow.pandapower import PandaPowerFlow
-# noinspection PyUnresolvedReferences
-from d3a import setup as d3a_setup  # noqa
+from d3a.d3a_core.live_events import LiveEvents
+from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCommunication
+from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
+from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
+from d3a.d3a_core.singletons import external_global_statistics
 from d3a.d3a_core.util import NonBlockingConsole, validate_const_settings_for_simulation, \
     get_market_slot_time_str
-from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
-from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCommunication
+from d3a.models.area.event_deserializer import deserialize_events_to_areas
+from d3a.models.config import SimulationConfig
+from d3a.models.power_flow.pandapower import PandaPowerFlow
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.exceptions import D3AException
 from d3a_interface.utils import format_datetime, str_to_pendulum_datetime
-from d3a.models.area.event_deserializer import deserialize_events_to_areas
-from d3a.d3a_core.live_events import LiveEvents
-from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
-from d3a.d3a_core.singletons import external_global_statistics
-from d3a.blockchain.constants import ENABLE_SUBSTRATE
-import d3a.constants
-
+from numpy import random
+from pendulum import now, duration
+from ptpython.repl import embed
 
 if platform.python_implementation() != "PyPy" and \
         ENABLE_SUBSTRATE:
@@ -339,6 +337,7 @@ class Simulation:
             if self.simulation_config.external_connection_enabled:
                 external_global_statistics.update(market_cycle=True)
                 self.area.publish_market_cycle_to_external_clients()
+                self.redis_connection.publish_market_cycle_myco()
 
             self._update_and_send_results()
             self.live_events.handle_all_events(self.area)
@@ -362,10 +361,11 @@ class Simulation:
                     approve_aggregator_commands()
 
                 current_tick_in_slot = tick_no % config.ticks_per_slot
-                if self.simulation_config.external_connection_enabled and \
-                        external_global_statistics.is_it_time_for_external_tick(
+                if self.simulation_config.external_connection_enabled:
+                    self.redis_connection.publish_event_tick_myco()
+                    if external_global_statistics.is_it_time_for_external_tick(
                             current_tick_in_slot):
-                    external_global_statistics.update()
+                        external_global_statistics.update()
 
                 self.area.tick_and_dispatch()
                 self.area.update_area_current_tick()
@@ -388,7 +388,8 @@ class Simulation:
         self.deactivate_areas(self.area)
         self.simulation_config.external_redis_communicator.\
             publish_aggregator_commands_responses_events()
-
+        if self.simulation_config.external_connection_enabled:
+            self.redis_connection.publish_event_finish_myco()
         if not self.is_stopped:
             self._update_progress_info(slot_count - 1, slot_count)
             paused_duration = duration(seconds=self.paused_time)
