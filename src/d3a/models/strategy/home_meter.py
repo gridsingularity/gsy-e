@@ -84,7 +84,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
             use_market_maker_rate: If set to True, the Home Meter will track its final buying and
                 selling rate as per utility's trading rate.
         """
-        super().__init__()  # TODO: what about args and kwargs?
+        super().__init__()
 
         self.home_meter_profile = home_meter_profile  # Raw profile data
         self.profile = None  # Preprocessed data extracted from home_meter_profile
@@ -197,20 +197,19 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
     def event_market_cycle(self):
         super().event_market_cycle()
+
+        # -- Start Bids -- #
         self.bid_update.update_and_populate_price_settings(self.area)
+        self.bid_update.reset(self)
         self._set_energy_forecast_for_future_markets(reconfigure=False)
-        self.update_state()
 
-    def update_state(self):
-        self.post_or_update_bid()
-        if self.area.current_market:
-            self._cycled_market.add(self.area.current_market.time_slot)
-        self._delete_past_state()
-
-    def post_or_update_bid(self):
+        # self.post_or_update_bid()
+        # def post_or_update_bid(self):
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
             return  # In a single-sided market, only offers are posted/updated
 
+        # TODO: should we always do both bids and offers, or should we first check the +/- of the
+        #  profile?
         for market in self.area.all_markets:
             if self.state.can_buy_more_energy(market.time_slot):
                 bid_energy = self.state.calculate_energy_to_bid(market.time_slot)
@@ -221,18 +220,54 @@ class HomeMeterStrategy(BidEnabledStrategy):
                 try:
                     if not self.are_bids_posted(market.id):
                         self.post_first_bid(market, bid_energy)
-                    else:
-                        self.bid_update.reset(self)
                 except MarketException:
                     pass
+
+        # -- End Bids -- #
+        # -- Start Offers -- #
+
+        self.offer_update.update_and_populate_price_settings(self.area)
+        self.offer_update.reset(self)  # Update the price of all offers using the initial rate
+
+        # Iterate over all markets open in the future
+        for market in self.area.all_markets:
+            offer_energy_kWh = self.state.get_available_energy_kWh(market.time_slot)
+            # We need to subtract the energy from the offers that are already posted in this
+            # market slot in order to validate that more offers need to be posted.
+            offer_energy_kWh -= self.offers.open_offer_energy(market.id)
+            if offer_energy_kWh > 0:
+                offer_price = self.offer_update.initial_rate[market.time_slot] * offer_energy_kWh
+                try:
+                    offer = market.offer(
+                        offer_price,
+                        offer_energy_kWh,
+                        self.owner.name,
+                        original_offer_price=offer_price,
+                        seller_origin=self.owner.name,
+                        seller_origin_id=self.owner.uuid,
+                        seller_id=self.owner.uuid)
+                    self.offers.post(offer, market.id)
+                except MarketException:
+                    pass
+
+        # BOTH
+
+        # TODO: this part is only implmemented in load_hours. Why?
+        # if self.area.current_market:
+        #     self._cycled_market.add(
+        #         self.area.current_market.time_slot)  # TODO: wait for PV offers first!
+        self._delete_past_state()  # TODO: fix this method to add the offers side
 
     def _delete_past_state(self):
         if constants.D3A_TEST_RUN is True or self.area.current_market is None:
             return
 
-        self.state.delete_past_state_values(self.area.current_market.time_slot)
+        # Delete past energy requirements and availability
+        self.state.delete_past_state_values(self.area.current_market.time_slot)  # TODO: do offers
+        # Delete bid rates for previous market slots
         self.bid_update.delete_past_state_values(self.area.current_market.time_slot)
-        # TODO: do the same for the offers
+        # Delete offer rates for previous market slots
+        self.offer_update.delete_past_state_values(self.area.current_market.time_slot)
 
     def _replace_rates_with_market_maker_rates(self):
         # Reconfigure the final buying rate (for energy consumption)
