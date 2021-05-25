@@ -215,8 +215,10 @@ class HomeMeterState:
 
         return self._energy_requirement_Wh[time_slot] > FLOATING_POINT_TOLERANCE
 
-    def get_energy_to_bid(self, time_slot):
-        return self._energy_requirement_Wh[time_slot]
+    def get_energy_requirement_Wh(self, time_slot, default_value=0.0):
+        if default_value is None:
+            return self._energy_requirement_Wh[time_slot]
+        return self._energy_requirement_Wh.get(time_slot, default_value)
 
     def get_available_energy_kWh(self, time_slot, default_value=None):
         available_energy = self._available_energy_kWh.get(time_slot, default_value)

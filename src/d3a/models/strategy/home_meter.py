@@ -191,7 +191,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
         #  profile?
         for market in self.area.all_markets:
             if self.state.can_buy_more_energy(market.time_slot):
-                bid_energy = self.state.get_energy_to_bid(market.time_slot)
+                bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
                 # TODO: balancing market support not yet implemented
                 # if self.is_eligible_for_balancing_market:
                 #     bid_energy -= self.state.get_desired_energy(market.time_slot) * \
