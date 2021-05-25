@@ -48,6 +48,7 @@ from d3a_interface.utils import format_datetime, str_to_pendulum_datetime
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
+from d3a.d3a_core.kafka_connection import kafka_connection_factory
 from d3a.d3a_core.singletons import external_global_statistics
 from d3a.blockchain.constants import ENABLE_SUBSTRATE
 import d3a.constants
@@ -110,6 +111,7 @@ class Simulation:
         self.is_stopped = False
 
         self.live_events = LiveEvents(self.simulation_config)
+        self.kafka_connection = kafka_connection_factory()
         self.redis_connection = RedisSimulationCommunication(self, redis_job_id, self.live_events)
         self._simulation_id = redis_job_id
         self._started_from_cli = redis_job_id is None
@@ -250,7 +252,7 @@ class Simulation:
         area.stats.kpi.update(
             endpoint_buffer.results_handler.all_ui_results["kpi"].get(area.uuid, {}))
 
-    def _update_and_send_results(self, is_final=False):
+    def _update_and_send_results(self):
         self.endpoint_buffer.update_stats(
             self.area, self.status, self.progress_info, self.current_state)
         self.update_area_stats(self.area, self.endpoint_buffer)
@@ -263,12 +265,7 @@ class Simulation:
         if self.should_export_results:
             self.file_stats_endpoint(self.area)
             return
-        if is_final or self.is_stopped:
-            self.redis_connection.publish_results(self.endpoint_buffer)
-        else:
-            self.redis_connection.publish_intermediate_results(
-                self.endpoint_buffer
-            )
+        self.kafka_connection.publish(self.endpoint_buffer)
 
     def _update_progress_info(self, slot_no, slot_count):
         run_duration = (
@@ -398,7 +395,7 @@ class Simulation:
                 " ({} paused)".format(paused_duration) if paused_duration else "",
                 config.sim_duration / (self.progress_info.elapsed_time - paused_duration)
             )
-        self._update_and_send_results(is_final=True)
+        self._update_and_send_results()
         if self.export_on_finish and self.should_export_results:
             log.info("Exporting simulation data.")
             self.export.data_to_csv(self.area, False)
@@ -414,7 +411,7 @@ class Simulation:
 
     @property
     def should_export_results(self):
-        return not self.redis_connection.is_enabled()
+        return not self.kafka_connection.is_enabled()
 
     def handle_slowdown_and_realtime(self, tick_no):
         if d3a.constants.RUN_IN_REALTIME:

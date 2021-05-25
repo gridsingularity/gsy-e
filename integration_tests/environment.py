@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import contextlib
 import shutil
 import os
-from time import sleep
 
 import d3a.constants
 from d3a.d3a_core.device_registry import DeviceRegistry
@@ -38,10 +37,6 @@ before_feature(context, feature), after_feature(context, feature)
     The feature passed in is an instance of Feature.
 before_tag(context, tag), after_tag(context, tag)
 """
-
-# -- SETUP: Use cfparse as default matcher
-# from behave import use_step_matcher
-# step_matcher("cfparse")
 
 
 def before_scenario(context, scenario):
@@ -73,9 +68,3 @@ def before_all(context):
     constants.D3A_TEST_RUN = True
     if os.environ.get("DISPATCH_EVENTS_BOTTOM_TO_TOP") == "False":
         d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = False
-    os.system('docker-compose up -d')
-    sleep(60)
-
-
-def after_all(context):
-    os.system('docker-compose down')

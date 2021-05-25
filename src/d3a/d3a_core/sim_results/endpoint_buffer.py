@@ -15,40 +15,29 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import os
-import ssl
+import json
+import logging
+from zlib import compress
 
-from unittest.mock import Mock
 from d3a_interface.constants_limits import ConstSettings, DATE_TIME_UI_FORMAT, GlobalConfig
+from d3a_interface.results_validator import results_validator
 from d3a_interface.sim_results.all_results import ResultsHandler
-from kafka import KafkaProducer
+from d3a_interface.utils import get_json_dict_memory_allocation_size
 
-from d3a import constants
-from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.d3a_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
-from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
+from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.storage import StorageStrategy
 
 _NO_VALUE = {
     'min': None,
     'avg': None,
     'max': None
 }
-
-BOOTSTRAP_SERVERS = os.environ.get('BOOTSTRAP_SERVERS')
-SASL_PLAIN_USERNAME = os.environ.get('SASL_PLAIN_USERNAME')
-SASL_PLAIN_PASSWORD = os.environ.get('SASL_PLAIN_PASSWORD')
-SECURITY_PROTOCOL = os.environ.get('SECURITY_PROTOCOL', 'SASL_SSL')
-SASL_MECHANISM = os.environ.get('SASL_MECHANISM', 'SCRAM-SHA-512')
-
-# Create a new context using system defaults, disable all but TLS1.2
-context = ssl.create_default_context()
-context.options &= ssl.OP_NO_TLSv1
-context.options &= ssl.OP_NO_TLSv1_1
 
 
 class SimulationEndpointBuffer:
@@ -78,20 +67,21 @@ class SimulationEndpointBuffer:
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
             self.offer_bid_trade_hr = OfferBidTradeGraphStats()
 
-        if constants.KAFKA_MOCK:
-            self.producer = Mock()
-        elif BOOTSTRAP_SERVERS is not None:
-            kwargs = {'bootstrap_servers': BOOTSTRAP_SERVERS,
-                      'sasl_plain_username': SASL_PLAIN_USERNAME,
-                      'sasl_plain_password': SASL_PLAIN_PASSWORD,
-                      'security_protocol': SECURITY_PROTOCOL,
-                      'ssl_context': context, 'sasl_mechanism': SASL_MECHANISM,
-                      'api_version': (0, 10), 'retries': 5, 'buffer_memory': 2048000000,
-                      'max_request_size': 2048000000}
-            self.producer = KafkaProducer(**kwargs)
-        else:
-            kwargs = {'bootstrap_servers': 'localhost:9092'}
-            self.producer = KafkaProducer(**kwargs)
+    def prepare_results_for_publish(self):
+        result_report = self.generate_result_report()
+        results_validator(result_report)
+
+        results = json.dumps(result_report)
+        message_size = get_json_dict_memory_allocation_size(result_report)
+        if message_size > 64000:
+            logging.error(f"Do not publish message bigger than 64 MB, current message size "
+                          f"{message_size / 1000.0} MB.")
+            return None
+        logging.debug(f"Publishing {message_size} KB of data via Redis.")
+
+        results = results.encode('utf-8')
+        results = compress(results)
+        return results
 
     @staticmethod
     def _structure_results_from_area_object(target_area):

@@ -16,7 +16,6 @@ Feature: GridFee integration tests
      |       5       |     60      |     10      |
      |       9       |     60      |     5       |
 
-  @disabled
   Scenario Outline: Grid fees are calculated based on the original bid rate
      Given we have a scenario named grid_fees/non_compounded_grid_fees
      And d3a is installed
@@ -34,7 +33,6 @@ Feature: GridFee integration tests
      |       5       |
      |       9       |
 
-  @disabled
   Scenario Outline: Grid fees are calculated based on the clearing rate for pay as clear while dispatching top to bottom
      Given we have a scenario named grid_fees/non_compounded_grid_fees
      And d3a is installed
@@ -53,8 +51,7 @@ Feature: GridFee integration tests
      |       5       |
      |       9       |
 
-  @disabled
-  Scenario Outline: Grid fees are calculated based on the clearinkpg rate for pay as clear while dispatching bottom to top
+  Scenario Outline: Grid fees are calculated based on the clearing rate for pay as clear while dispatching bottom to top
      Given we have a scenario named grid_fees/non_compounded_grid_fees
      And d3a is installed
      And d3a uses an two-sided-pay-as-clear market

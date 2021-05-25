@@ -512,38 +512,24 @@ def message_on_channel(context, channel):
     context.simulation.redis_connection._sub_callback_dict[channel](payload)
 
 
-@when('the simulation is able to transmit intermediate results')
+@when('the simulation is able to transmit intermediate and final results')
 def interm_results(context):
     context.interm_results_count = 0
 
     def interm_res_count(_):
         context.interm_results_count += 1
-    context.simulation.redis_connection.publish_intermediate_results = interm_res_count
-
-
-@when('the simulation is able to transmit final results')
-def final_results(context):
-    context.final_results_count = 0
-
-    def final_res_count(_):
-        context.final_results_count += 1
-    context.simulation.redis_connection.publish_results = final_res_count
+    context.simulation.kafka_connection.publish = interm_res_count
 
 
 @when('the redis_connection is enabled')
 def transmit_zipped_results(context):
-    context.simulation.redis_connection.is_enabled = lambda: True
+    context.simulation.kafka_connection.is_enabled = lambda: True
 
 
-@then('intermediate results are transmitted on every slot')
+@then('intermediate results are transmitted on every slot and final results once')
 def interm_res_report(context):
     # Add an extra result for the start of the simulation
-    assert context.interm_results_count == 12
-
-
-@then('final results are transmitted once')
-def final_res_report(context):
-    assert context.final_results_count == 1
+    assert context.interm_results_count == 13
 
 
 @then('{method} is called')

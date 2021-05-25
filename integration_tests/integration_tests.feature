@@ -80,11 +80,9 @@ Feature: Run integration tests
      Given d3a is installed
      When a simulation is created for scenario default_2a
      When the redis_connection is enabled
-     And the simulation is able to transmit intermediate results
-     And the simulation is able to transmit final results
+     And the simulation is able to transmit intermediate and final results
      And the configured simulation is running
-     Then intermediate results are transmitted on every slot
-     And final results are transmitted once
+     Then intermediate results are transmitted on every slot and final results once
 
   Scenario: Run integration tests with settings file
      Given we have a scenario named default_2a
