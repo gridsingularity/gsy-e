@@ -15,17 +15,21 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from pendulum import DateTime  # NOQA
-from typing import Dict  # NOQA
+from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from enum import Enum
 from math import isclose
+from typing import Dict  # NOQA
+
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict, \
-    convert_kW_to_kWh
+from d3a_interface.utils import (
+    convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict,
+    convert_kW_to_kWh)
+from pendulum import DateTime  # NOQA
+
 from d3a import limit_float_precision
-from d3a.d3a_core.util import write_default_to_dict
 from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.d3a_core.util import write_default_to_dict
 
 StorageSettings = ConstSettings.StorageSettings
 
@@ -43,7 +47,16 @@ StorageSettings = ConstSettings.StorageSettings
 # - If a device has no state, maybe it doesn't need its own appliance class either
 
 
-class PVState:
+class StateInterface(metaclass=ABCMeta):
+    """Interface containing methods that need to be defined by each State class."""
+
+    @abstractmethod
+    def get_state(self) -> Dict:
+        """Return the current state of the device."""
+        pass
+
+
+class PVState(StateInterface):
     def __init__(self):
         self._available_energy_kWh = {}
         self._energy_production_forecast_kWh = {}
@@ -96,7 +109,7 @@ class PVState:
             convert_str_to_pendulum_in_dict(state_dict["energy_production_forecast_kWh"]))
 
 
-class LoadState:
+class LoadState(StateInterface):
     def __init__(self):
         # Energy that the load wants to consume (given by the profile or live energy requirements)
         self._desired_energy_Wh = {}
@@ -252,7 +265,7 @@ class ESSEnergyOrigin(Enum):
 EnergyOrigin = namedtuple('EnergyOrigin', ('origin', 'value'))
 
 
-class StorageState:
+class StorageState(StateInterface):
     def __init__(self,
                  initial_soc=StorageSettings.MIN_ALLOWED_SOC,
                  initial_energy_origin=ESSEnergyOrigin.EXTERNAL,
