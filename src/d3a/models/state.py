@@ -275,7 +275,8 @@ class HomeMeterState(StateInterface):
         """
         return min(offer_energy_Wh, self._energy_requirement_Wh[time_slot])
 
-    def decrement_energy_requirement(self, purchased_energy_Wh, time_slot, area_name):
+    def decrement_energy_requirement(
+            self, purchased_energy_Wh: float, time_slot: DateTime, area_name: str) -> None:
         """Decrease the energy required by the device in a specific market slot."""
         self._energy_requirement_Wh[time_slot] -= purchased_energy_Wh
         assert self._energy_requirement_Wh[time_slot] >= -FLOATING_POINT_TOLERANCE, \

@@ -27,6 +27,8 @@ from d3a.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
 from d3a.d3a_core.exceptions import D3AException
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a.models.market import Market
+from d3a.models.market.market_structures import Offer
 from d3a.models.state import HomeMeterState
 from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.strategy.update_frequency import (
@@ -175,55 +177,30 @@ class HomeMeterStrategy(BidEnabledStrategy):
         self._set_energy_forecast_for_future_markets(reconfigure=True)
 
     def event_market_cycle(self):
+        """Prepare rates and execute bids/offers when a new market slot begins.
+
+        This method is triggered by the MARKET_CYCLE event.
+        """
         super().event_market_cycle()
 
-        # -- Start Bids -- #
+        # Update the price of all bids/offers based on their the initial rate
         self.bid_update.update_and_populate_price_settings(self.area)
         self.bid_update.reset(self)
-
         self.offer_update.update_and_populate_price_settings(self.area)
-        self.offer_update.reset(self)  # Update the price of all offers using the initial rate
+        self.offer_update.reset(self)
 
         self._set_energy_forecast_for_future_markets(reconfigure=False)
-
-        if ConstSettings.IAASettings.MARKET_TYPE == 1:
-            return  # In a single-sided market, only offers are posted/updated
 
         # TODO: should we always do both bids and offers, or should we first check the +/- of the
         #  profile?
         for market in self.area.all_markets:
-            # Consumption side (bids)
-            if self.state.can_buy_more_energy(market.time_slot):
-                bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
-                # TODO: balancing market support not yet implemented
-                # if self.is_eligible_for_balancing_market:
-                #     bid_energy -= self.state.get_desired_energy(market.time_slot) * \
-                #                   self.balancing_energy_ratio.demand
-                try:
-                    if not self.are_bids_posted(market.id):
-                        self.post_first_bid(market, bid_energy)
-                except MarketException:
-                    pass
+            # If we are in a two-sided market, post the first bid for each market slot
+            # TODO: why do we post a new bid even in future markets, if we're not there yet?
+            if ConstSettings.IAASettings.MARKET_TYPE != 1:
+                self._post_first_bid(market)
 
-            # Production side (offers)
-            offer_energy_kWh = self.state.get_available_energy_kWh(market.time_slot)
-            # We need to subtract the energy from the offers that are already posted in this
-            # market slot in order to validate that more offers need to be posted.
-            offer_energy_kWh -= self.offers.open_offer_energy(market.id)
-            if offer_energy_kWh > 0:
-                offer_price = self.offer_update.initial_rate[market.time_slot] * offer_energy_kWh
-                try:
-                    offer = market.offer(
-                        offer_price,
-                        offer_energy_kWh,
-                        self.owner.name,
-                        original_offer_price=offer_price,
-                        seller_origin=self.owner.name,
-                        seller_origin_id=self.owner.uuid,
-                        seller_id=self.owner.uuid)
-                    self.offers.post(offer, market.id)
-                except MarketException:
-                    pass
+            # Production (offers)
+            self._post_offer(market)
 
         # BOTH
         # TODO: this part is only implmemented in load_hours. Why?
@@ -231,6 +208,75 @@ class HomeMeterStrategy(BidEnabledStrategy):
         #     self._cycled_market.add(
         #         self.area.current_market.time_slot)  # TODO: wait for PV offers first!
         self._delete_past_state()
+
+    def event_tick(self):
+        """Buy or offer energy on market tick. This method is triggered by the TICK event."""
+        # Energy consumption (bids)
+        for market in self.area.all_markets:
+            # Single-sided market (only offers are posted)
+            if ConstSettings.IAASettings.MARKET_TYPE == 1:
+                self._one_sided_market_event_tick(market)
+            # Double-sided markets (both offers and bids are posted)
+            elif ConstSettings.IAASettings.MARKET_TYPE in [2, 3]:
+                self._double_sided_market_event_tick(market)
+
+        # TODO: the following three methods will cycle again on all markets. Refactor them.
+        # Bid prices have been updated, so we increase the counter of the bid updates
+        self.bid_update.increment_update_counter_all_markets(self)
+        # Energy production (offers)
+        self.offer_update.update(self)
+        self.offer_update.increment_update_counter_all_markets(self)
+
+    def event_offer(self, *, market_id, offer):
+        """Automatically react to offers (trying to buy energy) in single-sided markets.
+
+        This method is triggered by the OFFER event.
+        """
+        # In two-sided markets, the device doesn't automatically react to offers (it actively bids)
+        if ConstSettings.IAASettings.MARKET_TYPE != 1:
+            return
+
+        market = self.area.get_future_market_from_id(market_id)
+        # # TODO: do we really need self._cycled_market ?
+        # if market.time_slot not in self._cycled_market:
+        #     return
+        if self._offer_comes_from_different_seller(offer):
+            self._one_sided_market_event_tick(market, offer)
+
+    def _post_offer(self, market):
+        offer_energy_kWh = self.state.get_available_energy_kWh(market.time_slot)
+        # We need to subtract the energy from the offers that are already posted in this
+        # market slot in order to validate that more offers need to be posted.
+        offer_energy_kWh -= self.offers.open_offer_energy(market.id)
+        if offer_energy_kWh > 0:
+            offer_price = self.offer_update.initial_rate[market.time_slot] * offer_energy_kWh
+            try:
+                offer = market.offer(
+                    offer_price,
+                    offer_energy_kWh,
+                    self.owner.name,
+                    original_offer_price=offer_price,
+                    seller_origin=self.owner.name,
+                    seller_origin_id=self.owner.uuid,
+                    seller_id=self.owner.uuid)
+                self.offers.post(offer, market.id)
+            except MarketException:
+                pass
+
+    def _post_first_bid(self, market):
+        if not self.state.can_buy_more_energy(market.time_slot):
+            return
+
+        bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
+        # TODO: balancing market support not yet implemented
+        # if self.is_eligible_for_balancing_market:
+        #     bid_energy -= self.state.get_desired_energy(market.time_slot) * \
+        #                   self.balancing_energy_ratio.demand
+        try:
+            if not self.are_bids_posted(market.id):
+                self.post_first_bid(market, bid_energy)
+        except MarketException:
+            pass
 
     def _set_energy_forecast_for_future_markets(self, reconfigure=True):
         """Set the energy consumption/production expectations for the upcoming market slots."""
@@ -384,28 +430,21 @@ class HomeMeterStrategy(BidEnabledStrategy):
                 energy_rate_decrease_per_update=rate_change,
                 fit_to_limit=fit_to_limit)
 
-    def event_tick(self):
-        # Check if the device can buy energy in the future available market slots
-        # TODO: check if it can offer as well (do not just immediately `continue`)
-        for market in self.area.all_markets:
-            if not self.state.can_buy_more_energy(market.time_slot):
-                continue
-
-            # Single-sided market (only offers are posted)
-            if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                self._one_sided_market_event_tick(market)
-            # Double-sided markets (both offers and bids are posted)
-            elif ConstSettings.IAASettings.MARKET_TYPE in [2, 3]:
-                self._double_sided_market_event_tick(market)
-
-        # Bids prices have been updated, so we increase the counter of the updates
-        self.bid_update.increment_update_counter_all_markets(self)
+    def _offer_rate_can_be_accepted(self, offer: Offer, market_slot: Market):
+        """Check if the offer rate is less than what the device wants to pay."""
+        max_affordable_offer_rate = self.bid_update.get_updated_rate(market_slot.time_slot)
+        return (
+            round(offer.energy_rate, DEFAULT_PRECISION)
+            <= max_affordable_offer_rate + FLOATING_POINT_TOLERANCE)
 
     # TODO: split into two methods (with and without offer)
     def _one_sided_market_event_tick(self, market, offer=None):
         """
         Define the behavior of the device on TICK events in single-sided markets (react to offers).
         """
+        if not self.state.can_buy_more_energy(market.time_slot):
+            return
+
         try:
             if offer is None:
                 if not market.offers:
@@ -415,16 +454,9 @@ class HomeMeterStrategy(BidEnabledStrategy):
                 if offer.id not in market.offers:
                     return
                 acceptable_offer = offer
+
             time_slot = market.time_slot
-            # TODO: refactor this if statement (if the price is less than what we decided to spend)
-            if acceptable_offer and \
-                    round(acceptable_offer.energy_rate, DEFAULT_PRECISION) <= \
-                    self.bid_update.final_rate[time_slot] + FLOATING_POINT_TOLERANCE:
-
-                # TODO: put this on top or remove it
-                if not self.state.can_buy_more_energy(time_slot):
-                    return
-
+            if acceptable_offer and self._offer_rate_can_be_accepted(acceptable_offer, market):
                 # If the device can still buy more energy
                 energy_Wh = self.state.calculate_energy_to_accept(
                     acceptable_offer.energy * 1000.0, time_slot)
@@ -435,7 +467,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
                 self.state.decrement_energy_requirement(energy_Wh, time_slot, self.owner.name)
 
         except MarketException:
-            self.log.exception("An Error occurred while buying an offer")
+            self.log.exception("An Error occurred while buying an offer.")
 
     @staticmethod
     def _find_acceptable_offer(market):
@@ -453,18 +485,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
     def event_balancing_market_cycle(self):
         # TODO: implement
         pass
-
-    def event_offer(self, *, market_id, offer):
-        market = self.area.get_future_market_from_id(market_id)
-        # # TODO: do we really need self._cycled_market ?
-        # if market.time_slot not in self._cycled_market:
-        #     return
-
-        if (
-                self.state.can_buy_more_energy(market.time_slot)
-                and self._offer_comes_from_different_seller(offer)):
-            if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                self._one_sided_market_event_tick(market, offer)
 
     def _offer_comes_from_different_seller(self, offer):
         return offer.seller != self.owner.name and offer.seller != self.area.name
