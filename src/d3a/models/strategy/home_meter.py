@@ -180,16 +180,19 @@ class HomeMeterStrategy(BidEnabledStrategy):
         # -- Start Bids -- #
         self.bid_update.update_and_populate_price_settings(self.area)
         self.bid_update.reset(self)
+
+        self.offer_update.update_and_populate_price_settings(self.area)
+        self.offer_update.reset(self)  # Update the price of all offers using the initial rate
+
         self._set_energy_forecast_for_future_markets(reconfigure=False)
 
-        # self.post_or_update_bid()
-        # def post_or_update_bid(self):
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
             return  # In a single-sided market, only offers are posted/updated
 
         # TODO: should we always do both bids and offers, or should we first check the +/- of the
         #  profile?
         for market in self.area.all_markets:
+            # Consumption side (bids)
             if self.state.can_buy_more_energy(market.time_slot):
                 bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
                 # TODO: balancing market support not yet implemented
@@ -202,13 +205,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
                 except MarketException:
                     pass
 
-        # -- End Bids -- #
-        # -- Start Offers -- #
-        self.offer_update.update_and_populate_price_settings(self.area)
-        self.offer_update.reset(self)  # Update the price of all offers using the initial rate
-
-        # Iterate over all markets open in the future
-        for market in self.area.all_markets:
+            # Production side (offers)
             offer_energy_kWh = self.state.get_available_energy_kWh(market.time_slot)
             # We need to subtract the energy from the offers that are already posted in this
             # market slot in order to validate that more offers need to be posted.
@@ -258,7 +255,8 @@ class HomeMeterStrategy(BidEnabledStrategy):
             print(energy_kWh, consumed_energy, produced_energy)
             if consumed_energy and produced_energy:
                 # TODO: create better custom exception
-                raise Exception("The home meter can't produce+consume energy at the same time.")
+                raise Exception(
+                    "The home meter can't both produce and consume energy at the same time.")
 
             self.state.set_desired_energy(consumed_energy * 1000, slot_time, overwrite=False)
             self.state.set_available_energy(produced_energy, slot_time, reconfigure)
