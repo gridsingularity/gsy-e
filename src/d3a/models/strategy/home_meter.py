@@ -35,6 +35,7 @@ from d3a.models.strategy.update_frequency import (
 log = getLogger(__name__)
 
 
+# pylint: disable=invalid-name
 class HomeMeterStrategy(BidEnabledStrategy):
     """Class defining a strategy for Home Meter devices."""
 
@@ -107,7 +108,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
         self.state = HomeMeterState()  # TODO: make hybrid with PV and Load states
         self._simulation_start_timestamp = None
-        self._cycled_market = set()
+        # self._cycled_market = set()
 
         # Instances to update the Home Meter's bids and offers across all market slots
         self.bid_update = None
@@ -163,7 +164,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
         for market in self.area.all_markets:
             slot_time = market.time_slot
-            # pylint: disable=invalid-name
             energy_kWh = find_object_of_same_weekday_and_time(self.profile, slot_time)
             # For the Home Meter, the energy amount can be either positive (consumption) or
             # negative (production).
@@ -173,6 +173,8 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
             print("\nenergy_kWh, consumed_energy, produced_energy")
             print(energy_kWh, consumed_energy, produced_energy)
+            if consumed_energy and produced_energy:
+                raise Exception("The home meter can't produce+consume energy at the same time.")
 
             # TODO: this State is different than the LoadState. It must be a hybrid of PV/Load
             self.state.set_desired_energy(consumed_energy * 1000, slot_time, overwrite=False)
@@ -459,9 +461,9 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
     def event_offer(self, *, market_id, offer):
         market = self.area.get_future_market_from_id(market_id)
-        # TODO: do we really need self._cycled_market ?
-        if market.time_slot not in self._cycled_market:
-            return
+        # # TODO: do we really need self._cycled_market ?
+        # if market.time_slot not in self._cycled_market:
+        #     return
 
         if (
                 self.state.can_buy_more_energy(market.time_slot)
