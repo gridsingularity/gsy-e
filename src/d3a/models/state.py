@@ -223,8 +223,24 @@ class HomeMeterState:
     def get_available_energy_kWh(self, time_slot, default_value=None):
         available_energy = self._available_energy_kWh.get(time_slot, default_value)
 
+        # TODO: replace assertion with raising custom exception
         assert available_energy >= -FLOATING_POINT_TOLERANCE
         return available_energy
+
+    def delete_past_state_values(self, current_market_time_slot):
+        """Delete the information about energy requirements and availability from past markets."""
+        to_delete = []
+        # We want to iterate on all market slots that have both available and required energy
+        market_slots = self._available_energy_kWh.keys() | self._energy_requirement_Wh.keys()
+        for market_slot in market_slots:
+            if market_slot < current_market_time_slot:
+                to_delete.append(market_slot)
+
+        for market_slot in to_delete:
+            self._available_energy_kWh.pop(market_slot, None)
+            self._energy_production_forecast_kWh.pop(market_slot, None)
+            self._energy_requirement_Wh.pop(market_slot, None)
+            self._desired_energy_Wh.pop(market_slot, None)
 
 
 class ESSEnergyOrigin(Enum):

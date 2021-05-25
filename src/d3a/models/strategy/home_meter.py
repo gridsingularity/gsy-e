@@ -229,12 +229,11 @@ class HomeMeterStrategy(BidEnabledStrategy):
                     pass
 
         # BOTH
-
         # TODO: this part is only implmemented in load_hours. Why?
         # if self.area.current_market:
         #     self._cycled_market.add(
         #         self.area.current_market.time_slot)  # TODO: wait for PV offers first!
-        self._delete_past_state()  # TODO: fix this method to add the offers side
+        self._delete_past_state()
 
     def _set_energy_forecast_for_future_markets(self, reconfigure=True):
         """Set the energy consumption/production expectations for the upcoming market slots."""
@@ -285,7 +284,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
             return
 
         # Delete past energy requirements and availability
-        self.state.delete_past_state_values(self.area.current_market.time_slot)  # TODO: do offers
+        self.state.delete_past_state_values(self.area.current_market.time_slot)
         # Delete bid rates for previous market slots
         self.bid_update.delete_past_state_values(self.area.current_market.time_slot)
         # Delete offer rates for previous market slots
