@@ -98,8 +98,10 @@ class PVState:
 
 class LoadState:
     def __init__(self):
+        # Energy that the load wants to consume (given by the profile or live energy requirements)
         self._desired_energy_Wh = {}
         self._total_energy_demanded_Wh = 0
+        # Energy that the load needs to consume. It's reduced when new energy is bought
         self._energy_requirement_Wh = {}
 
     def get_energy_requirement_Wh(self, time_slot, default_value=0.0):
