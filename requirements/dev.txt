@@ -97,7 +97,7 @@ pytzdata==2020.1
     # via
     #   -r requirements/base.txt
     #   pendulum
-pyyaml==5.3.1
+pyyaml==5.4
     # via
     #   -r requirements/dev.in
     #   pre-commit
@@ -141,7 +141,7 @@ unidecode==0.4.21
     # via
     #   -r requirements/base.txt
     #   awesome-slugify
-urllib3==1.26.3
+urllib3==1.26.4
     # via -r requirements/base.txt
 virtualenv==20.2.2
     # via

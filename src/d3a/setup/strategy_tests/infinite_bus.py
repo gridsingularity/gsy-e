@@ -32,6 +32,7 @@ def get_setup(config):
                                                                        hrs_per_day=23,
                                                                        hrs_of_day=list(
                                                                            range(0, 23)),
+                                                                       initial_buying_rate=25,
                                                                        final_buying_rate=25)
                          ),
                     Area('H1 PV', strategy=PVStrategy(panel_count=4,
