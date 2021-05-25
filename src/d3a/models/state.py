@@ -136,11 +136,12 @@ class LoadState(StateInterface):
             return False
         return self._energy_requirement_Wh[time_slot] > FLOATING_POINT_TOLERANCE
 
-    def calculate_energy_to_accept(self, offer_energy_Wh, time_slot):
-        if offer_energy_Wh > self._energy_requirement_Wh[time_slot]:
-            return self._energy_requirement_Wh[time_slot]
-        else:
-            return offer_energy_Wh
+    def calculate_energy_to_accept(self, offer_energy_Wh: float, time_slot: DateTime) -> float:
+        """Return the amount of energy that can be accepted in a specific market slot.
+
+        The acceptable energy can't be more than the total energy required in that slot.
+        """
+        return min(offer_energy_Wh, self._energy_requirement_Wh[time_slot])
 
     def get_energy_to_bid(self, time_slot):
         return self._energy_requirement_Wh[time_slot]
@@ -187,7 +188,7 @@ class LoadState(StateInterface):
         self._total_energy_demanded_Wh = state_dict["total_energy_demanded_Wh"]
 
 
-class HomeMeterState:
+class HomeMeterState(StateInterface):
     """State for the Home Meter device"""
 
     def __init__(self):
@@ -199,6 +200,15 @@ class HomeMeterState:
 
         self._available_energy_kWh = {}
         self._energy_production_forecast_kWh = {}
+
+    def get_state(self):
+        """Return the current state of the device."""
+        return {
+            "desired_energy_Wh": convert_pendulum_to_str_in_dict(self._desired_energy_Wh),
+            "total_energy_demanded_Wh": self._total_energy_demanded_Wh,
+            "available_energy_kWh": convert_pendulum_to_str_in_dict(self._available_energy_kWh),
+            "energy_production_forecast_kWh": convert_pendulum_to_str_in_dict(
+                self._energy_production_forecast_kWh)}
 
     # TODO: remove duplicate in LoadState
     def set_desired_energy(self, energy, time_slot, overwrite=False):
@@ -228,11 +238,13 @@ class HomeMeterState:
 
         return self._energy_requirement_Wh[time_slot] > FLOATING_POINT_TOLERANCE
 
+    # TODO: remove duplicate in LoadState
     def get_energy_requirement_Wh(self, time_slot, default_value=0.0):
         if default_value is None:
             return self._energy_requirement_Wh[time_slot]
         return self._energy_requirement_Wh.get(time_slot, default_value)
 
+    # TODO: remove duplicate in PVState
     def get_available_energy_kWh(self, time_slot, default_value=None):
         available_energy = self._available_energy_kWh.get(time_slot, default_value)
 
@@ -254,6 +266,14 @@ class HomeMeterState:
             self._energy_production_forecast_kWh.pop(market_slot, None)
             self._energy_requirement_Wh.pop(market_slot, None)
             self._desired_energy_Wh.pop(market_slot, None)
+
+    # TODO: remove duplicate in LoadState
+    def calculate_energy_to_accept(self, offer_energy_Wh: float, time_slot: DateTime) -> float:
+        """Return the amount of energy that can be accepted in a specific market slot.
+
+        The acceptable energy can't be more than the total energy required in that slot.
+        """
+        return min(offer_energy_Wh, self._energy_requirement_Wh[time_slot])
 
 
 class ESSEnergyOrigin(Enum):
