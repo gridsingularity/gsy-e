@@ -337,7 +337,9 @@ class Simulation:
             if self.simulation_config.external_connection_enabled:
                 external_global_statistics.update(market_cycle=True)
                 self.area.publish_market_cycle_to_external_clients()
-                self.redis_connection.publish_market_cycle_myco()
+                if ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == \
+                        d3a.constants.BidOfferMatchAlgoEnum.CUSTOM.value:
+                    self.simulation_config.external_redis_communicator.publish_market_cycle_myco()
 
             self._update_and_send_results()
             self.live_events.handle_all_events(self.area)
@@ -362,13 +364,16 @@ class Simulation:
 
                 current_tick_in_slot = tick_no % config.ticks_per_slot
                 if self.simulation_config.external_connection_enabled:
-                    self.redis_connection.publish_event_tick_myco()
                     if external_global_statistics.is_it_time_for_external_tick(
                             current_tick_in_slot):
                         external_global_statistics.update()
 
                 self.area.tick_and_dispatch()
                 self.area.update_area_current_tick()
+                if self.simulation_config.external_connection_enabled and \
+                        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == \
+                        d3a.constants.BidOfferMatchAlgoEnum.CUSTOM.value:
+                    self.simulation_config.external_redis_communicator.publish_event_tick_myco()
 
                 self.simulation_config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()
@@ -388,8 +393,10 @@ class Simulation:
         self.deactivate_areas(self.area)
         self.simulation_config.external_redis_communicator.\
             publish_aggregator_commands_responses_events()
-        if self.simulation_config.external_connection_enabled:
-            self.redis_connection.publish_event_finish_myco()
+        if self.simulation_config.external_connection_enabled and \
+                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == \
+                d3a.constants.BidOfferMatchAlgoEnum.CUSTOM.value:
+            self.simulation_config.external_redis_communicator.publish_event_finish_myco()
         if not self.is_stopped:
             self._update_progress_info(slot_count - 1, slot_count)
             paused_duration = duration(seconds=self.paused_time)

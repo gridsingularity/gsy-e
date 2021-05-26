@@ -143,6 +143,30 @@ class ExternalConnectionCommunicator(ResettableCommunicator):
         self.aggregator.publish_all_commands_responses(self)
         self.aggregator.publish_all_events(self)
 
+    def publish_event_tick_myco(self):
+        """
+        Myco API
+        """
+        channel = f"external-myco/{d3a.constants.COLLABORATION_ID}/response/events/"
+        data = {"event": "tick"}
+        self.publish_json(channel, data)
+
+    def publish_market_cycle_myco(self):
+        """
+        Myco API
+        """
+        channel = f"external-myco/{d3a.constants.COLLABORATION_ID}/response/events/"
+        data = {"event": "market"}
+        self.publish_json(channel, data)
+
+    def publish_event_finish_myco(self):
+        """
+        Myco API
+        """
+        channel = f"external-myco/{d3a.constants.COLLABORATION_ID}/response/events/"
+        data = {"event": "finish"}
+        self.publish_json(channel, data)
+
 
 class BlockingCommunicator(RedisCommunicator):
     def __init__(self):

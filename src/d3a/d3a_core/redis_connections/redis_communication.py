@@ -22,7 +22,6 @@ import traceback
 from logging import getLogger
 from zlib import compress
 
-import d3a.constants
 from d3a_interface.constants_limits import HeartBeat
 from d3a_interface.exceptions import D3AException
 from d3a_interface.results_validator import results_validator  # NOQA
@@ -204,30 +203,6 @@ class RedisSimulationCommunication:
         heartbeat_channel = f"{HeartBeat.CHANNEL_NAME}/{self._simulation_id}"
         data = {"time": int(time.time())}
         self.redis_db.publish(heartbeat_channel, json.dumps(data))
-
-    def publish_event_tick_myco(self):
-        """
-        Myco API
-        """
-        channel = f"external-myco/{d3a.constants.COLLABORATION_ID}/response/events/"
-        data = {"event": "tick"}
-        self.redis_db.publish(channel, json.dumps(data))
-
-    def publish_market_cycle_myco(self):
-        """
-        Myco API
-        """
-        channel = f"external-myco/{d3a.constants.COLLABORATION_ID}/response/events/"
-        data = {"event": "market"}
-        self.redis_db.publish(channel, json.dumps(data))
-
-    def publish_event_finish_myco(self):
-        """
-        Myco API
-        """
-        channel = f"external-myco/{d3a.constants.COLLABORATION_ID}/response/events/"
-        data = {"event": "finish"}
-        self.redis_db.publish(channel, json.dumps(data))
 
 
 def publish_job_error_output(job_id, traceback):
