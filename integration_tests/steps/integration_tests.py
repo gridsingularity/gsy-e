@@ -521,7 +521,7 @@ def interm_results(context):
     context.simulation.kafka_connection.publish = interm_res_count
 
 
-@when('the redis_connection is enabled')
+@when('the kafka_connection is enabled')
 def transmit_zipped_results(context):
     context.simulation.kafka_connection.is_enabled = lambda: True
 

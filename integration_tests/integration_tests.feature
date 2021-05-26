@@ -79,7 +79,7 @@ Feature: Run integration tests
   Scenario: Simulation publishes intermediate and final results
      Given d3a is installed
      When a simulation is created for scenario default_2a
-     When the redis_connection is enabled
+     When the kafka_connection is enabled
      And the simulation is able to transmit intermediate and final results
      And the configured simulation is running
      Then intermediate results are transmitted on every slot and final results once

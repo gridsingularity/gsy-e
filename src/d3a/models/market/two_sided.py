@@ -255,7 +255,7 @@ class TwoSidedMarket(OneSidedMarket):
                 trade_rate=original_bid_rate)
 
             bid_trade, trade = self.accept_bid_offer_pair(
-                bid, offer, bid.energy_rate, trade_bid_info, selected_energy
+                bid, offer, recommended_pair.trade_rate, trade_bid_info, selected_energy
             )
 
             if trade.residual is not None or bid_trade.residual is not None:
