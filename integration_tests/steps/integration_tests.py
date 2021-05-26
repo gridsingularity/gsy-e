@@ -516,7 +516,7 @@ def message_on_channel(context, channel):
 def interm_results(context):
     context.interm_results_count = 0
 
-    def interm_res_count(_):
+    def interm_res_count(_, _1):
         context.interm_results_count += 1
     context.simulation.kafka_connection.publish = interm_res_count
 
