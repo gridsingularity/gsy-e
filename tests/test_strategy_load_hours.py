@@ -15,26 +15,26 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import pytest
+import os
 import unittest
 from copy import deepcopy
-from unittest.mock import MagicMock, Mock
-from pendulum import DateTime, duration, today, now
-from parameterized import parameterized
 from math import isclose
-import os
-from d3a.models.area import DEFAULT_CONFIG
-from d3a.models.market.market_structures import Offer, BalancingOffer, Bid, Trade
+from unittest.mock import MagicMock, Mock
+from uuid import uuid4
 
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.predefined_load import DefinedLoadStrategy
+import pytest
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.exceptions import D3ADeviceException
+from parameterized import parameterized
+from pendulum import DateTime, duration, today, now
+
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import d3a_path
-from uuid import uuid4
-
+from d3a.models.area import DEFAULT_CONFIG
+from d3a.models.market.market_structures import Offer, BalancingOffer, Bid, Trade
+from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 
 TIME = today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
