@@ -372,7 +372,9 @@ class Simulation:
                 self.area.update_area_current_tick()
                 if self.simulation_config.external_connection_enabled and \
                         ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == \
-                        d3a.constants.BidOfferMatchAlgoEnum.CUSTOM.value:
+                        d3a.constants.BidOfferMatchAlgoEnum.CUSTOM.value and \
+                        external_global_statistics.is_it_time_for_external_tick(
+                            current_tick_in_slot):
                     self.simulation_config.external_redis_communicator.publish_event_tick_myco()
 
                 self.simulation_config.external_redis_communicator.\
