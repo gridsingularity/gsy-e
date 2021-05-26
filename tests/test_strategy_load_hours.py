@@ -294,6 +294,24 @@ def test_active_markets(load_hours_strategy_test1):
         load_hours_strategy_test1.area.all_markets
 
 
+def test_event_tick_updates_rates(load_hours_strategy_test1, market_test1):
+    """The event_tick method should update bids' rates exactly once (in all market types)."""
+
+    rates_updates_mock = MagicMock()
+    load_hours_strategy_test1.bid_update.increment_update_counter_all_markets = rates_updates_mock
+
+    # Test for all available market types (one-sided and two-sided markets)
+    available_market_types = [1, 2, 3]
+    for market_type_id in available_market_types:
+        ConstSettings.IAASettings.MARKET_TYPE = market_type_id
+        load_hours_strategy_test1.event_tick()
+
+    # Rates should be updated once for each event_tick call
+    assert (
+        load_hours_strategy_test1.bid_update.increment_update_counter_all_markets.call_count
+        == len(available_market_types))
+
+
 def test_event_tick(load_hours_strategy_test1, market_test1):
     market_test1.most_affordable_energy = 0.155
     load_hours_strategy_test1.event_activate()
