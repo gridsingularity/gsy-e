@@ -262,9 +262,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
                     round(acceptable_offer.energy_rate, DEFAULT_PRECISION) <= \
                     max_affordable_offer_rate + FLOATING_POINT_TOLERANCE:
 
-                if not self.state.can_buy_more_energy(time_slot):
-                    return
-
                 energy_Wh = self.state.calculate_energy_to_accept(
                     acceptable_offer.energy * 1000.0, time_slot)
                 self.accept_offer(market, acceptable_offer, energy=energy_Wh / 1000.0,
