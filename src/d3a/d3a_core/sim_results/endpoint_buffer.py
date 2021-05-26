@@ -15,9 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import json
 import logging
-from zlib import compress
 
 from d3a_interface.constants_limits import ConstSettings, DATE_TIME_UI_FORMAT, GlobalConfig
 from d3a_interface.results_validator import results_validator
@@ -71,17 +69,13 @@ class SimulationEndpointBuffer:
         result_report = self.generate_result_report()
         results_validator(result_report)
 
-        results = json.dumps(result_report)
         message_size = get_json_dict_memory_allocation_size(result_report)
         if message_size > 64000:
             logging.error(f"Do not publish message bigger than 64 MB, current message size "
                           f"{message_size / 1000.0} MB.")
             return None
         logging.debug(f"Publishing {message_size} KB of data via Redis.")
-
-        results = results.encode('utf-8')
-        results = compress(results)
-        return results
+        return result_report
 
     @staticmethod
     def _structure_results_from_area_object(target_area):

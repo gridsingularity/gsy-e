@@ -48,7 +48,7 @@ from d3a_interface.utils import format_datetime, str_to_pendulum_datetime
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
-from d3a.d3a_core.kafka_connection import kafka_connection_factory
+from d3a_interface.kafka_communication.kafka_producer import kafka_connection_factory
 from d3a.d3a_core.singletons import external_global_statistics
 from d3a.blockchain.constants import ENABLE_SUBSTRATE
 import d3a.constants
@@ -265,7 +265,11 @@ class Simulation:
         if self.should_export_results:
             self.file_stats_endpoint(self.area)
             return
-        self.kafka_connection.publish(self.endpoint_buffer)
+
+        results = self.endpoint_buffer.prepare_results_for_publish()
+        if results is None:
+            return
+        self.kafka_connection.publish(results, self._simulation_id)
 
     def _update_progress_info(self, slot_no, slot_count):
         run_duration = (
