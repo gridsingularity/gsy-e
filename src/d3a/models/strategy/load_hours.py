@@ -242,6 +242,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
         return random.choice(offers)
 
     def _one_sided_market_event_tick(self, market, offer=None):
+        if not self.state.can_buy_more_energy(market.time_slot):
+            return
+
         try:
             if offer is None:
                 if not market.offers:
@@ -279,9 +282,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def event_tick(self):
         for market in self.active_markets:
-            if not self.state.can_buy_more_energy(market.time_slot):
-                continue
-
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 self._one_sided_market_event_tick(market)
             elif ConstSettings.IAASettings.MARKET_TYPE == 2 or \
@@ -297,7 +297,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if market.time_slot not in self._cycled_market:
             return
         if self._is_market_active(market) and \
-                self.state.can_buy_more_energy(market.time_slot) and \
                 offer.seller != self.owner.name and \
                 offer.seller != self.area.name:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
