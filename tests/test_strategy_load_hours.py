@@ -296,23 +296,26 @@ def test_active_markets(load_hours_strategy_test1):
 
 def test_event_tick_updates_rates(load_hours_strategy_test1, market_test1):
     """The event_tick method updates bids' rates correctly."""
-    load_hours_strategy_test1.state.can_buy_more_energy = Mock(return_value=False)
+    load_hours_strategy_test1.state.can_buy_more_energy = Mock()
     load_hours_strategy_test1.bid_update.update = Mock()
     load_hours_strategy_test1.event_activate()
 
     number_of_markets = len(load_hours_strategy_test1.area.all_markets)
     # Test for all available market types (one-sided and two-sided markets)
     available_market_types = (1, 2, 3)
-    for market_type_id in available_market_types:
-        ConstSettings.IAASettings.MARKET_TYPE = market_type_id
-        load_hours_strategy_test1.bid_update.update.reset_mock()
-        load_hours_strategy_test1.event_tick()
-        if market_type_id == 1:
-            # Bids' rates are not updated in one-sided markets
-            load_hours_strategy_test1.bid_update.update.assert_not_called()
-        else:
-            # Bids' rates are updated once for each market slot in two-sided markets
-            assert load_hours_strategy_test1.bid_update.update.call_count == number_of_markets
+    # Bids' rates should be updated both when the load can buy energy and when it cannot do it
+    for can_buy_energy in (True, False):
+        load_hours_strategy_test1.state.can_buy_more_energy.return_value = can_buy_energy
+        for market_type_id in available_market_types:
+            ConstSettings.IAASettings.MARKET_TYPE = market_type_id
+            load_hours_strategy_test1.bid_update.update.reset_mock()
+            load_hours_strategy_test1.event_tick()
+            if market_type_id == 1:
+                # Bids' rates are not updated in one-sided markets
+                load_hours_strategy_test1.bid_update.update.assert_not_called()
+            else:
+                # Bids' rates are updated once for each market slot in two-sided markets
+                assert load_hours_strategy_test1.bid_update.update.call_count == number_of_markets
 
 
 def test_event_tick(load_hours_strategy_test1, market_test1):
