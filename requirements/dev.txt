@@ -4,151 +4,71 @@
 #
 #    pip-compile --max-rounds=100 --no-emit-index-url requirements/dev.in
 #
-appdirs==1.4.4
-    # via
-    #   ptpython
-    #   virtualenv
-attrs==20.3.0
-    # via -r requirements/base.txt
-awesome-slugify==1.6.5
-    # via -r requirements/base.txt
-base58==2.1.0
-    # via -r requirements/base.txt
-bcrypt==3.2.0
-    # via paramiko
-cached-property==1.5.2
-    # via -r requirements/base.txt
-cffi==1.14.4
-    # via
-    #   bcrypt
-    #   cryptography
-    #   pynacl
-cfgv==3.2.0
-    # via pre-commit
-click-default-group==1.2.2
-    # via -r requirements/base.txt
-click==7.1.2
-    # via
-    #   -r requirements/base.txt
-    #   click-default-group
-    #   pip-tools
-    #   rq
-colorlog==4.7.2
-    # via -r requirements/base.txt
-cryptography==3.3.1
-    # via paramiko
-distlib==0.3.1
-    # via virtualenv
-fabric3==1.14.post1
-    # via -r requirements/dev.in
-filelock==3.0.12
-    # via
-    #   tox
-    #   virtualenv
-identify==1.5.10
-    # via pre-commit
-jedi==0.17.2
-    # via ptpython
-nodeenv==1.5.0
-    # via pre-commit
-numpy==1.19.4
-    # via -r requirements/base.txt
-packaging==20.7
-    # via tox
-paramiko==2.7.2
-    # via fabric3
-parso==0.7.1
-    # via jedi
-pendulum==2.1.2
-    # via -r requirements/base.txt
-pip-tools==5.4.0
-    # via -r requirements/base.txt
-plotly==4.14.1
-    # via -r requirements/base.txt
-pluggy==0.13.1
-    # via tox
-pre-commit==2.9.3
-    # via -r requirements/dev.in
-prompt-toolkit==3.0.8
-    # via ptpython
-psutil==5.7.3
-    # via -r requirements/dev.in
-ptpython==3.0.7
-    # via -r requirements/dev.in
-py==1.9.0
-    # via tox
-pycparser==2.20
-    # via cffi
-pygments==2.8.1
-    # via ptpython
-pynacl==1.4.0
-    # via paramiko
-pyparsing==2.4.7
-    # via packaging
-python-dateutil==2.8.1
-    # via
-    #   -r requirements/base.txt
-    #   pendulum
-python-rex==0.4
-    # via -r requirements/base.txt
-pytz==2020.5
-    # via -r requirements/base.txt
-pytzdata==2020.1
-    # via
-    #   -r requirements/base.txt
-    #   pendulum
-pyyaml==5.4
-    # via
-    #   -r requirements/dev.in
-    #   pre-commit
-redis==3.5.3
-    # via
-    #   -r requirements/base.txt
-    #   rq
-regex==2020.11.13
-    # via
-    #   -r requirements/base.txt
-    #   awesome-slugify
-retrying==1.3.3
-    # via
-    #   -r requirements/base.txt
-    #   plotly
-rq==1.7.0
-    # via -r requirements/base.txt
-six==1.15.0
-    # via
-    #   -r requirements/base.txt
-    #   bcrypt
-    #   cryptography
-    #   fabric3
-    #   pip-tools
-    #   plotly
-    #   pynacl
-    #   python-dateutil
-    #   python-rex
-    #   retrying
-    #   tox
-    #   virtualenv
-sortedcontainers==2.3.0
-    # via -r requirements/base.txt
-toml==0.10.2
-    # via
-    #   pre-commit
-    #   tox
-tox==3.20.1
-    # via -r requirements/dev.in
-unidecode==0.4.21
-    # via
-    #   -r requirements/base.txt
-    #   awesome-slugify
-urllib3==1.26.4
-    # via -r requirements/base.txt
-virtualenv==20.2.2
-    # via
-    #   pre-commit
-    #   tox
-wcwidth==0.2.5
-    # via prompt-toolkit
+-e git+https://github.com/gridsingularity/d3a-interface@master#egg=d3a_interface  # via -r requirements/base.txt
+appdirs==1.4.4            # via -r requirements/base.txt, black, d3a-interface, ptpython, virtualenv
+attrs==20.3.0             # via -r requirements/base.txt, d3a-interface, jsonschema
+awesome-slugify==1.6.5    # via -r requirements/base.txt
+base58==2.1.0             # via -r requirements/base.txt
+bcrypt==3.2.0             # via paramiko
+black==21.5b1             # via ptpython
+cached-property==1.5.2    # via -r requirements/base.txt
+certifi==2020.12.5        # via -r requirements/base.txt, d3a-interface, requests
+cffi==1.14.5              # via bcrypt, cryptography, pynacl
+cfgv==3.3.0               # via pre-commit
+chardet==3.0.4            # via -r requirements/base.txt, d3a-interface, requests
+click-default-group==1.2.2  # via -r requirements/base.txt
+click==7.1.2              # via -r requirements/base.txt, black, click-default-group, d3a-interface, pip-tools, rq
+colorlog==4.7.2           # via -r requirements/base.txt
+cryptography==3.4.7       # via paramiko
+distlib==0.3.1            # via -r requirements/base.txt, d3a-interface, virtualenv
+fabric3==1.14.post1       # via -r requirements/dev.in
+filelock==3.0.12          # via -r requirements/base.txt, d3a-interface, tox, virtualenv
+identify==2.2.6           # via pre-commit
+idna==2.10                # via -r requirements/base.txt, d3a-interface, requests
+jedi==0.18.0              # via ptpython
+jsonschema==3.2.0         # via -r requirements/base.txt, d3a-interface
+kafka-python==2.0.2       # via -r requirements/base.txt
+mypy-extensions==0.4.3    # via black
+nodeenv==1.6.0            # via pre-commit
+numpy==1.20.3             # via -r requirements/base.txt
+packaging==20.7           # via -r requirements/base.txt, d3a-interface, tox
+paramiko==2.7.2           # via fabric3
+parso==0.8.2              # via jedi
+pathspec==0.8.1           # via black
+pendulum==2.1.2           # via -r requirements/base.txt, d3a-interface
+pip-tools==5.4.0          # via -r requirements/base.txt, d3a-interface
+plotly==4.14.3            # via -r requirements/base.txt
+pluggy==0.13.1            # via -r requirements/base.txt, d3a-interface, tox
+pre-commit==2.13.0        # via -r requirements/dev.in
+prompt-toolkit==3.0.18    # via ptpython
+psutil==5.8.0             # via -r requirements/dev.in
+ptpython==3.0.17          # via -r requirements/dev.in
+py==1.9.0                 # via -r requirements/base.txt, d3a-interface, tox
+pycparser==2.20           # via cffi
+pygments==2.9.0           # via ptpython
+pynacl==1.4.0             # via paramiko
+pyparsing==2.4.7          # via -r requirements/base.txt, d3a-interface, packaging
+pyrsistent==0.17.3        # via -r requirements/base.txt, d3a-interface, jsonschema
+python-dateutil==2.8.1    # via -r requirements/base.txt, d3a-interface, pendulum
+python-rex==0.4           # via -r requirements/base.txt
+pytz==2021.1              # via -r requirements/base.txt
+pytzdata==2020.1          # via -r requirements/base.txt, d3a-interface, pendulum
+pyyaml==5.4.1             # via -r requirements/dev.in, pre-commit
+redis==3.5.3              # via -r requirements/base.txt, d3a-interface, rq
+regex==2021.4.4           # via -r requirements/base.txt, awesome-slugify, black
+requests==2.25.0          # via -r requirements/base.txt, d3a-interface
+retrying==1.3.3           # via -r requirements/base.txt, plotly
+rq==1.8.1                 # via -r requirements/base.txt
+six==1.15.0               # via -r requirements/base.txt, bcrypt, d3a-interface, fabric3, jsonschema, pip-tools, plotly, pynacl, python-dateutil, python-rex, retrying, tox, virtualenv
+sortedcontainers==2.4.0   # via -r requirements/base.txt
+toml==0.10.2              # via -r requirements/base.txt, black, d3a-interface, pre-commit, tox
+tox==3.20.1               # via -r requirements/base.txt, -r requirements/dev.in, d3a-interface
+unidecode==0.4.21         # via -r requirements/base.txt, awesome-slugify
+urllib3==1.26.4           # via -r requirements/base.txt, d3a-interface, requests
+virtualenv==20.2.2        # via -r requirements/base.txt, d3a-interface, pre-commit, tox
+wcwidth==0.2.5            # via prompt-toolkit
+websockets==8.1           # via -r requirements/base.txt, d3a-interface
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
+# setuptools
