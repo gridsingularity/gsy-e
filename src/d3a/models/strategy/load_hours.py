@@ -253,9 +253,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
             <= max_affordable_offer_rate + FLOATING_POINT_TOLERANCE)
 
     def _one_sided_market_event_tick(self, market, offer=None):
-        """
-        Define the behavior of the device on TICK events in single-sided markets (react to offers).
-        """
         try:
             if offer is None:
                 if not market.offers:
@@ -287,9 +284,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self.log.exception("An Error occurred while buying an offer")
 
     def _double_sided_market_event_tick(self, market):
-        """
-        Define the behavior of the device on TICK events in double-sided markets (post bids).
-        """
         self.bid_update.update(market, self)
 
     def event_tick(self):
