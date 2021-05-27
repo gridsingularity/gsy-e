@@ -6,7 +6,6 @@ click
 click-default-group
 colorlog==4.7.2
 numpy
-kafka-python
 pendulum==2.1.2
 pip-tools
 plotly
@@ -16,3 +15,4 @@ rq
 pytz
 sortedcontainers
 urllib3==1.26.4
+-e git+https://github.com/gridsingularity/d3a-interface@master#egg=d3a_interface
