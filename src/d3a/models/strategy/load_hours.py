@@ -341,14 +341,15 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
             return
         for market in self.active_markets:
-            if self.state.can_buy_more_energy(market.time_slot):
+            if (
+                    self.state.can_buy_more_energy(market.time_slot)
+                    and not self.are_bids_posted(market.id)):
                 bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
                 if self.is_eligible_for_balancing_market:
                     bid_energy -= self.state.get_desired_energy(market.time_slot) * \
                                   self.balancing_energy_ratio.demand
                 try:
-                    if not self.are_bids_posted(market.id):
-                        self.post_first_bid(market, bid_energy)
+                    self.post_first_bid(market, bid_energy)
                 except MarketException:
                     pass
 
