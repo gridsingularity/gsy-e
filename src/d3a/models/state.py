@@ -143,13 +143,9 @@ class LoadState(StateInterface):
         """
         return min(offer_energy_Wh, self._energy_requirement_Wh[time_slot])
 
-    def get_energy_to_bid(self, time_slot):
-        return self._energy_requirement_Wh[time_slot]
-
     def decrement_energy_requirement(
             self, purchased_energy_Wh: float, time_slot: DateTime, area_name: str) -> None:
         """Decrease the energy required by the device in a specific market slot."""
-
         self._energy_requirement_Wh[time_slot] -= purchased_energy_Wh
         assert self._energy_requirement_Wh[time_slot] >= -FLOATING_POINT_TOLERANCE, \
             f"Energy requirement for load {area_name} fell below zero " \
