@@ -318,6 +318,37 @@ def test_event_tick_updates_rates(load_hours_strategy_test1, market_test1):
                 assert load_hours_strategy_test1.bid_update.update.call_count == number_of_markets
 
 
+def test_event_tick_one_sided_market_no_energy_required(load_hours_strategy_test1, market_test1):
+    """
+    The load does not make offers on tick events in one-sided markets when it cannot buy energy.
+    """
+    load_hours_strategy_test1.state.can_buy_more_energy = Mock()
+    load_hours_strategy_test1.state.can_buy_more_energy.return_value = False
+    load_hours_strategy_test1.accept_offer = Mock()
+    load_hours_strategy_test1.state.decrement_energy_requirement = Mock()
+
+    load_hours_strategy_test1.event_activate()
+    load_hours_strategy_test1.event_tick()
+    load_hours_strategy_test1.accept_offer.assert_not_called()
+    load_hours_strategy_test1.state.decrement_energy_requirement.assert_not_called()
+
+
+def test_event_tick_one_sided_market_energy_required(load_hours_strategy_test1, market_test1):
+    """The load makes offers on tick events in one-sided markets when it can buy energy."""
+    load_hours_strategy_test1.state.can_buy_more_energy = Mock()
+    load_hours_strategy_test1.state.can_buy_more_energy.return_value = True
+    load_hours_strategy_test1.accept_offer = Mock()
+    load_hours_strategy_test1.state.decrement_energy_requirement = Mock()
+
+    load_hours_strategy_test1.event_activate()
+    assert load_hours_strategy_test1.hrs_per_day == {0: 4}
+    load_hours_strategy_test1.event_tick()
+    load_hours_strategy_test1.accept_offer.assert_called()
+    load_hours_strategy_test1.state.decrement_energy_requirement.assert_called()
+    # The amount of operating hours has decreased
+    assert load_hours_strategy_test1.hrs_per_day == {0: 3.25}
+
+
 def test_event_tick(load_hours_strategy_test1, market_test1):
     market_test1.most_affordable_energy = 0.155
     load_hours_strategy_test1.event_activate()
