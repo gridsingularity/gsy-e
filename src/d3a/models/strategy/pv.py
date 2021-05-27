@@ -95,6 +95,7 @@ class PVStrategy(BaseStrategy):
                                                          update_interval)
 
     def area_reconfigure_event(self, **kwargs):
+        """Reconfigure the device properties at runtime using the provided arguments."""
         self._area_reconfigure_prices(**kwargs)
         self.offer_update.update_and_populate_price_settings(self.area)
 

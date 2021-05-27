@@ -175,6 +175,7 @@ class Area:
             self.strategy.restore_state(saved_state)
 
     def area_reconfigure_event(self, **kwargs):
+        """Reconfigure the device properties at runtime using the provided arguments."""
         if self.strategy is not None:
             self.strategy.area_reconfigure_event(**kwargs)
             return True

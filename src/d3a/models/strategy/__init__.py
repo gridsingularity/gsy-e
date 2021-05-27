@@ -258,7 +258,11 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             self.event_response_uuids.remove(data["transaction_uuid"])
 
     def area_reconfigure_event(self, *args, **kwargs):
-        pass
+        """Reconfigure the device properties at runtime using the provided arguments.
+
+        This method is triggered when the device strategy is updated while the simulation is
+        running. The update can happen via live events (triggered by the user) or scheduled events.
+        """
 
     def event_on_disabled_area(self):
         pass

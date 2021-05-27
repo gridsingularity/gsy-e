@@ -125,11 +125,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         return True
 
     def area_reconfigure_event(self, **kwargs):
-        """Reconfigure the device properties at runtime using the provided arguments.
-
-        This method is triggered when the device strategy is updated while the simulation is
-        running. The update can happen via live events (triggered by the user) or scheduled events.
-        """
+        """Reconfigure the device properties at runtime using the provided arguments."""
         self._area_reconfigure_prices(**kwargs)
         if key_in_dict_and_not_none(kwargs, 'daily_load_profile'):
             self._event_activate_energy(kwargs['daily_load_profile'])

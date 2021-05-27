@@ -210,6 +210,7 @@ class StorageStrategy(BidEnabledStrategy):
         )
 
     def area_reconfigure_event(self, **kwargs):
+        """Reconfigure the device properties at runtime using the provided arguments."""
         self._area_reconfigure_prices(**kwargs)
         self._update_profiles_with_default_values()
 
