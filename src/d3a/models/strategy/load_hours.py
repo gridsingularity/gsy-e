@@ -34,6 +34,8 @@ from d3a.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a.models.market import Market
+from d3a.models.market.market_structures import Offer
 from d3a.models.state import LoadState
 from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.strategy.update_frequency import TemplateStrategyBidUpdater
@@ -153,7 +155,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 self.hrs_per_day[current_day] = self._initial_hrs_per_day
 
     def update_state(self):
-        self.post_or_update_bid()
+        self._post_first_bid()
         if self.area.current_market:
             self._cycled_market.add(self.area.current_market.time_slot)
         self._delete_past_state()
@@ -243,6 +245,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
         offers = market.most_affordable_offers
         return random.choice(offers)
 
+    def _offer_rate_can_be_accepted(self, offer: Offer, market_slot: Market):
+        """Check if the offer rate is less than what the device wants to pay."""
+        max_affordable_offer_rate = self.bid_update.get_updated_rate(market_slot.time_slot)
+        return (
+            round(offer.energy_rate, DEFAULT_PRECISION)
+            <= max_affordable_offer_rate + FLOATING_POINT_TOLERANCE)
+
     def _one_sided_market_event_tick(self, market, offer=None):
         """
         Define the behavior of the device on TICK events in single-sided markets (react to offers).
@@ -258,11 +267,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 acceptable_offer = offer
             time_slot = market.time_slot
             current_day = self._get_day_of_timestamp(time_slot)
-            max_affordable_offer_rate = self.bid_update.get_updated_rate(market.time_slot)
             if acceptable_offer and \
                     self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE and \
-                    round(acceptable_offer.energy_rate, DEFAULT_PRECISION) <= \
-                    max_affordable_offer_rate + FLOATING_POINT_TOLERANCE:
+                    self._offer_rate_can_be_accepted(acceptable_offer, market):
 
                 if not self.state.can_buy_more_energy(time_slot):
                     return
@@ -299,15 +306,22 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.bid_update.increment_update_counter_all_markets(self)
 
     def event_offer(self, *, market_id, offer):
+        """Automatically react to offers in single-sided markets.
+
+        This method is triggered by the OFFER event.
+        """
         super().event_offer(market_id=market_id, offer=offer)
+        # In two-sided markets, the device doesn't automatically react to offers (it actively bids)
+        if ConstSettings.IAASettings.MARKET_TYPE != 1:
+            return
+
         market = self.area.get_future_market_from_id(market_id)
         # TODO: do we really need self._cycled_market ?
         if market.time_slot not in self._cycled_market:
             return
 
         if self._can_buy_in_market(market) and self._offer_comes_from_different_seller(offer):
-            if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                self._one_sided_market_event_tick(market, offer)
+            self._one_sided_market_event_tick(market, offer)
 
     def _can_buy_in_market(self, market):
         return self._is_market_active(market) and self.state.can_buy_more_energy(market.time_slot)
@@ -323,7 +337,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
                                                          final_rate=final_rate)
 
-    def post_or_update_bid(self):
+    def _post_first_bid(self):
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
             return
         for market in self.active_markets:
