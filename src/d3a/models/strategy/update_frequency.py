@@ -181,13 +181,13 @@ class TemplateStrategyBidUpdater(UpdateFrequencyMixin):
         # decrease energy rate for each market again, except for the newly created one
         for market in strategy.area.all_markets[:-1]:
             self.update_counter[market.time_slot] = 0
-            strategy.post_bids(market, self.get_updated_rate(market.time_slot))
+            strategy.update_bid_rates(market, self.get_updated_rate(market.time_slot))
 
     def update(self, market, strategy):
         """Update the price of existing bids to reflect the new rates."""
         if self.time_for_price_update(strategy, market.time_slot):
             if strategy.are_bids_posted(market.id):
-                strategy.post_bids(market, self.get_updated_rate(market.time_slot))
+                strategy.update_bid_rates(market, self.get_updated_rate(market.time_slot))
 
 
 class TemplateStrategyOfferUpdater(UpdateFrequencyMixin):

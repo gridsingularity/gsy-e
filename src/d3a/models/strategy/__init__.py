@@ -553,7 +553,8 @@ class BidEnabledStrategy(BaseStrategy):
         self.add_bid_to_posted(market.id, bid)
         return bid
 
-    def post_bids(self, market, updated_rate):
+    def update_bid_rates(self, market, updated_rate):
+        """Replace the rate of all bids in the market slot with the given updated rate."""
         existing_bids = list(self.get_posted_bids(market))
         for bid in existing_bids:
             assert bid.buyer == self.owner.name
