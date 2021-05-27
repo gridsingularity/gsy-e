@@ -67,14 +67,18 @@ class PVStrategy(BaseStrategy):
         self.panel_count = panel_count
         self.max_panel_power_W = max_panel_power_W
         self.state = PVState()
-        self.use_market_maker_rate = use_market_maker_rate
-        self.final_selling_rate = final_selling_rate
 
         self._init_price_update(update_interval, initial_selling_rate, final_selling_rate,
-                                fit_to_limit, energy_rate_decrease_per_update)
+                                use_market_maker_rate, fit_to_limit,
+                                energy_rate_decrease_per_update)
 
     def _init_price_update(self, update_interval, initial_selling_rate, final_selling_rate,
-                           fit_to_limit, energy_rate_decrease_per_update):
+                           use_market_maker_rate, fit_to_limit, energy_rate_decrease_per_update):
+
+        # Instantiate instance variables that should not be shared with child classes
+        self.final_selling_rate = final_selling_rate
+        self.use_market_maker_rate = use_market_maker_rate
+
         if update_interval is None:
             update_interval = \
                 duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)

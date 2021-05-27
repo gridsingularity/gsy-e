@@ -89,17 +89,21 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         self.assign_hours_of_per_day(hrs_of_day, hrs_per_day)
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
-        self.use_market_maker_rate = use_market_maker_rate
-        self.fit_to_limit = fit_to_limit
 
         self._init_price_update(fit_to_limit, energy_rate_increase_per_update, update_interval,
-                                initial_buying_rate, final_buying_rate)
+                                use_market_maker_rate, initial_buying_rate, final_buying_rate)
+
         self._calculate_active_markets()
         self._cycled_market = set()
         self._simulation_start_timestamp = None
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
-                           initial_buying_rate, final_buying_rate):
+                           use_market_maker_rate, initial_buying_rate, final_buying_rate):
+
+        # Instantiate instance variables that should not be shared with child classes
+        self.use_market_maker_rate = use_market_maker_rate
+        self.fit_to_limit = fit_to_limit
+
         validate_load_device_price(fit_to_limit=fit_to_limit,
                                    energy_rate_increase_per_update=energy_rate_increase_per_update)
 
