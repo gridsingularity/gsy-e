@@ -295,7 +295,7 @@ def test_active_markets(load_hours_strategy_test1):
 
 
 def test_event_tick_updates_rates(load_hours_strategy_test1, market_test1):
-    """The event_tick method updates bids' rates correctly."""
+    """The event_tick method invokes bids' rates updates correctly."""
     load_hours_strategy_test1.state.can_buy_more_energy = Mock()
     load_hours_strategy_test1.bid_update.update = Mock()
     load_hours_strategy_test1.event_activate()
@@ -322,8 +322,7 @@ def test_event_tick_one_sided_market_no_energy_required(load_hours_strategy_test
     """
     The load does not make offers on tick events in one-sided markets when it cannot buy energy.
     """
-    load_hours_strategy_test1.state.can_buy_more_energy = Mock()
-    load_hours_strategy_test1.state.can_buy_more_energy.return_value = False
+    load_hours_strategy_test1.state.can_buy_more_energy = Mock(return_value=False)
     load_hours_strategy_test1.accept_offer = Mock()
     load_hours_strategy_test1.state.decrement_energy_requirement = Mock()
 
@@ -335,8 +334,7 @@ def test_event_tick_one_sided_market_no_energy_required(load_hours_strategy_test
 
 def test_event_tick_one_sided_market_energy_required(load_hours_strategy_test1, market_test1):
     """The load makes offers on tick events in one-sided markets when it can buy energy."""
-    load_hours_strategy_test1.state.can_buy_more_energy = Mock()
-    load_hours_strategy_test1.state.can_buy_more_energy.return_value = True
+    load_hours_strategy_test1.state.can_buy_more_energy = Mock(return_value=True)
     load_hours_strategy_test1.accept_offer = Mock()
     load_hours_strategy_test1.state.decrement_energy_requirement = Mock()
 
