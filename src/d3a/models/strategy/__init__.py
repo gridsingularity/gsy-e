@@ -445,6 +445,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             super().event_listener(event_type, **kwargs)
 
     def event_trade(self, *, market_id, trade):
+        """React to offer trades. This method is triggered by the MarketEvent.TRADE event."""
         self.offers.on_trade(market_id, trade)
 
     def event_offer_split(self, *, market_id, original_offer, accepted_offer, residual_offer):

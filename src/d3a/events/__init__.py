@@ -79,7 +79,7 @@ class EventMixin:
         pass
 
     def event_trade(self, *, market_id, trade):
-        pass
+        """Method triggered by the MarketEvent.TRADE event."""
 
     def event_bid_traded(self, *, market_id, bid_trade):
         pass
