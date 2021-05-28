@@ -209,6 +209,22 @@ class HomeMeterStrategy(BidEnabledStrategy):
         #         self.area.current_market.time_slot)  # TODO: wait for PV offers first!
         self._delete_past_state()
 
+    def event_offer(self, *, market_id, offer):
+        """Automatically react to offers (trying to buy energy) in single-sided markets.
+
+        This method is triggered by the OFFER event.
+        """
+        # In two-sided markets, the device doesn't automatically react to offers (it actively bids)
+        if ConstSettings.IAASettings.MARKET_TYPE != 1:
+            return
+
+        market = self.area.get_future_market_from_id(market_id)
+        # # TODO: do we really need self._cycled_market ?
+        # if market.time_slot not in self._cycled_market:
+        #     return
+        if self._offer_comes_from_different_seller(offer):
+            self._one_sided_market_event_tick(market, offer)
+
     def event_tick(self):
         """Buy or offer energy on market tick. This method is triggered by the TICK event."""
         # Energy consumption (bids)
@@ -227,21 +243,32 @@ class HomeMeterStrategy(BidEnabledStrategy):
         self.offer_update.update(self)
         self.offer_update.increment_update_counter_all_markets(self)
 
-    def event_offer(self, *, market_id, offer):
-        """Automatically react to offers (trying to buy energy) in single-sided markets.
+    def event_trade(self, *, market_id, trade):
+        """Validate the trade for both offers and bids. Extends the superclass method.
 
-        This method is triggered by the OFFER event.
+        This method is triggered by the MarketEvent.TRADE event.
         """
-        # In two-sided markets, the device doesn't automatically react to offers (it actively bids)
-        if ConstSettings.IAASettings.MARKET_TYPE != 1:
+        market = self.area.get_future_market_from_id(market_id)
+        if not market:
             return
 
-        market = self.area.get_future_market_from_id(market_id)
-        # # TODO: do we really need self._cycled_market ?
-        # if market.time_slot not in self._cycled_market:
-        #     return
-        if self._offer_comes_from_different_seller(offer):
-            self._one_sided_market_event_tick(market, offer)
+        if self.owner.name not in (trade.seller, trade.buyer):
+            return  # Only react to trades in which the device took part
+
+        super().event_trade(market_id=market_id, trade=trade)
+
+        is_buyer = self.owner.name == trade.buyer
+        if is_buyer:
+            self.assert_if_trade_bid_price_is_too_high(market, trade)
+            if ConstSettings.BalancingSettings.FLEXIBLE_LOADS_SUPPORT:
+                # TODO: balancing market support not yet implemented
+                # Load can put supply_balancing_offers only when there is a trade in spot_market
+                # self._supply_balancing_offer(market, trade)
+                pass
+        else:
+            self.assert_if_trade_offer_price_is_too_low(market_id, trade)
+            self.state.decrement_available_energy(
+                trade.offer.energy, market.time_slot, self.owner.name)
 
     def _post_offer(self, market):
         offer_energy_kWh = self.state.get_available_energy_kWh(market.time_slot)
@@ -488,20 +515,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
     def _offer_comes_from_different_seller(self, offer):
         return offer.seller != self.owner.name and offer.seller != self.area.name
-
-    def event_trade(self, *, market_id, trade):
-        market = self.area.get_future_market_from_id(market_id)
-        assert market is not None
-
-        self.assert_if_trade_bid_price_is_too_high(market, trade)
-
-        if ConstSettings.BalancingSettings.FLEXIBLE_LOADS_SUPPORT:
-            # TODO: balancing market support not yet implemented
-            # Load can put supply_balancing_offers only when there is a trade in spot_market
-            # self._supply_balancing_offer(market, trade)
-            pass
-
-        super().event_trade(market_id=market_id, trade=trade)
 
     def event_bid_traded(self, *, market_id, bid_trade):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
