@@ -678,6 +678,10 @@ class BidEnabledStrategy(BaseStrategy):
         self.add_bid_to_posted(market_id, bid=residual_bid)
 
     def event_bid_traded(self, *, market_id, bid_trade):
+        """Register a successful bid when a trade is concluded for it.
+
+        This method is triggered by the MarketEvent.BID_TRADED event.
+        """
         assert ConstSettings.IAASettings.MARKET_TYPE != 1, \
             "Invalid state, cannot receive a bid if single sided market is globally configured."
 
