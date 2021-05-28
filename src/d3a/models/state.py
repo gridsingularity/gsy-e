@@ -271,10 +271,14 @@ class HomeMeterState(StateInterface):
         """
         return min(offer_energy_Wh, self._energy_requirement_Wh[time_slot])
 
+    # TODO: remove duplicate in LoadState
     def decrement_energy_requirement(
             self, purchased_energy_Wh: float, time_slot: DateTime, area_name: str) -> None:
         """Decrease the energy required by the device in a specific market slot."""
         self._energy_requirement_Wh[time_slot] -= purchased_energy_Wh
+        assert self._energy_requirement_Wh[time_slot] >= -FLOATING_POINT_TOLERANCE, (
+            f"Energy requirement for home meter {area_name} fell below zero "
+            f"({self._energy_requirement_Wh[time_slot]}).")
 
     # TODO: remove duplicate in PVState
     def decrement_available_energy(self, sold_energy_kWh, time_slot, area_name):
