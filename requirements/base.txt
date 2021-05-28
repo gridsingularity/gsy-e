@@ -19,6 +19,7 @@ distlib==0.3.1            # via d3a-interface, virtualenv
 filelock==3.0.12          # via d3a-interface, tox, virtualenv
 idna==2.10                # via d3a-interface, requests
 jsonschema==3.2.0         # via d3a-interface
+kafka-python==2.0.2       # via d3a-interface
 numpy==1.20.3             # via -r requirements/base.in
 packaging==20.7           # via d3a-interface, tox
 pendulum==2.1.2           # via -r requirements/base.in, d3a-interface

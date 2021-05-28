@@ -25,7 +25,6 @@ import sys
 import datetime
 
 from pendulum import now, duration
-from ptpython.repl import embed
 from time import sleep, time, mktime
 from numpy import random
 from importlib import import_module
@@ -410,9 +409,6 @@ class Simulation:
             else:
                 self.export.export(self.should_export_results)
 
-        if self.use_repl:
-            self._start_repl()
-
     @property
     def should_export_results(self):
         return not self.kafka_connection.is_enabled()
@@ -461,8 +457,6 @@ class Simulation:
 
                 if cmd == 'r':
                     self.reset()
-                elif cmd == 'R':
-                    self._start_repl()
                 elif cmd == 'i':
                     self._info()
                 elif cmd == 'p':
@@ -526,13 +520,6 @@ class Simulation:
             "  Completed: %(percent).1f%%",
             info
         )
-
-    def _start_repl(self):
-        log.debug(
-            "An interactive REPL has been started. The root Area is available as "
-            "`root_area`.")
-        log.debug("Ctrl-D to quit.")
-        embed({'root_area': self.area})
 
     @property
     def status(self):
