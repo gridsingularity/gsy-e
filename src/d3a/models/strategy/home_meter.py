@@ -270,6 +270,20 @@ class HomeMeterStrategy(BidEnabledStrategy):
             self.state.decrement_available_energy(
                 trade.offer.energy, market.time_slot, self.owner.name)
 
+    def event_bid_traded(self, *, market_id, bid_trade):
+        """Register the bid traded by the device. Extends the superclass method.
+
+        This method is triggered by the MarketEvent.BID_TRADED event.
+        """
+        if self.owner.name != bid_trade.buyer:
+            return
+
+        super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
+
+        market = self.area.get_future_market_from_id(market_id)
+        self.state.decrement_energy_requirement(
+            bid_trade.offer.energy * 1000, market.time_slot, self.owner.name)
+
     def _post_offer(self, market):
         offer_energy_kWh = self.state.get_available_energy_kWh(market.time_slot)
         # We need to subtract the energy from the offers that are already posted in this
@@ -515,15 +529,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
     def _offer_comes_from_different_seller(self, offer):
         return offer.seller != self.owner.name and offer.seller != self.area.name
-
-    def event_bid_traded(self, *, market_id, bid_trade):
-        super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
-        market = self.area.get_future_market_from_id(market_id)
-
-        if bid_trade.offer.buyer == self.owner.name:
-            self.state.decrement_energy_requirement(
-                bid_trade.offer.energy * 1000,
-                market.time_slot, self.owner.name)
 
     def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments.
