@@ -440,8 +440,12 @@ class HomeMeterStrategy(BidEnabledStrategy):
         except MarketException:
             pass
 
-    def _set_energy_forecast_for_future_markets(self, reconfigure=True):
-        """Set the energy consumption/production expectations for the upcoming market slots."""
+    def _set_energy_forecast_for_future_markets(self, reconfigure: bool = True):
+        """Set the energy consumption/production expectations for the upcoming market slots.
+
+        Args:
+            reconfigure: if True, re-read and preprocess the raw profile data.
+        """
         if reconfigure:
             self.profile = self._read_raw_profile_data(self.home_meter_profile)
 
@@ -524,7 +528,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
     @staticmethod
     def _validate_production_rates(
             initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
-        # All parameters have to be validated for each time slot
         for time_slot in initial_rate.keys():
             rate_change = None if fit_to_limit else find_object_of_same_weekday_and_time(
                 energy_rate_change_per_update, time_slot)
