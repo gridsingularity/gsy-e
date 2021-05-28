@@ -18,7 +18,7 @@ from typing import Dict, Union
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.device_validator import validate_home_meter_device_price
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.utils import find_object_of_same_weekday_and_time, key_in_dict_and_not_none
+from d3a_interface.utils import find_object_of_same_weekday_and_time
 from numpy import random
 from pendulum import duration
 
@@ -284,6 +284,127 @@ class HomeMeterStrategy(BidEnabledStrategy):
         self.state.decrement_energy_requirement(
             bid_trade.offer.energy * 1000, market.time_slot, self.owner.name)
 
+    def area_reconfigure_event(self, *args, **kwargs):
+        """Reconfigure the device properties at runtime using the provided arguments.
+
+        If custom profiles are provided in the `kwargs`, use them to replace the default ones
+        provided by the UpdateFrequencyMixin.
+        """
+        self._area_reconfigure_consumption_prices(**kwargs)
+        self._area_reconfigure_production_prices(**kwargs)
+
+        # Update the raw profile. It will be read later while setting the energy forecast.
+        if kwargs.get("home_meter_profile") is not None:
+            self.home_meter_profile = kwargs["home_meter_profile"]
+
+        # Offers side
+        self.offer_update.update_and_populate_price_settings(self.area)
+        self._set_energy_forecast_for_future_markets(reconfigure=True)
+
+    def _area_reconfigure_production_prices(self, **kwargs):
+        if kwargs.get("initial_selling_rate") is not None:
+            initial_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs["initial_selling_rate"])
+        else:
+            initial_rate = self.offer_update.initial_rate_profile_buffer
+
+        if kwargs.get("final_selling_rate") is not None:
+            final_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs["final_selling_rate"])
+        else:
+            final_rate = self.offer_update.final_rate_profile_buffer
+
+        if kwargs.get("energy_rate_decrease_per_update") is not None:
+            energy_rate_change_per_update = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs["energy_rate_decrease_per_update"])
+        else:
+            energy_rate_change_per_update = (
+                self.offer_update.energy_rate_change_per_update_profile_buffer)
+
+        if kwargs.get("fit_to_limit") is not None:
+            fit_to_limit = kwargs["fit_to_limit"]
+        else:
+            fit_to_limit = self.offer_update.fit_to_limit
+
+        if kwargs.get("update_interval") is not None:
+            if isinstance(kwargs["update_interval"], int):
+                update_interval = duration(minutes=kwargs["update_interval"])
+            else:
+                update_interval = kwargs["update_interval"]
+        else:
+            update_interval = self.offer_update.update_interval
+
+        if kwargs.get("use_market_maker_rate") is not None:
+            self.use_market_maker_rate = kwargs["use_market_maker_rate"]
+
+        try:
+            self._validate_production_rates(
+                initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit)
+        except Exception as ex:
+            log.exception("HomeMeterStrategy._area_reconfigure_production_prices failed: %s", ex)
+            return
+
+        self.offer_update.set_parameters(
+            initial_rate_profile_buffer=initial_rate,
+            final_rate_profile_buffer=final_rate,
+            energy_rate_change_per_update_profile_buffer=energy_rate_change_per_update,
+            fit_to_limit=fit_to_limit,
+            update_interval=update_interval
+        )
+
+    def _area_reconfigure_consumption_prices(self, **kwargs):
+        if kwargs.get("initial_buying_rate") is not None:
+            initial_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs["initial_buying_rate"])
+        else:
+            initial_rate = self.bid_update.initial_rate_profile_buffer
+
+        if kwargs.get("final_buying_rate") is not None:
+            final_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs["final_buying_rate"])
+        else:
+            final_rate = self.bid_update.final_rate_profile_buffer
+
+        if kwargs.get("energy_rate_increase_per_update") is not None:
+            energy_rate_change_per_update = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs["energy_rate_increase_per_update"])
+        else:
+            energy_rate_change_per_update = (
+                self.bid_update.energy_rate_change_per_update_profile_buffer)
+
+        if kwargs.get("fit_to_limit") is not None:
+            fit_to_limit = kwargs["fit_to_limit"]
+        else:
+            fit_to_limit = self.bid_update.fit_to_limit
+
+        if kwargs.get("update_interval") is not None:
+            if isinstance(kwargs["update_interval"], int):
+                update_interval = duration(minutes=kwargs["update_interval"])
+            else:
+                update_interval = kwargs["update_interval"]
+        else:
+            update_interval = self.bid_update.update_interval
+
+        if kwargs.get("use_market_maker_rate") is not None:
+            self.use_market_maker_rate = kwargs["use_market_maker_rate"]
+
+        try:
+            self._validate_consumption_rates(
+                initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit)
+            # TODO: this should be done for production as well (use method already impl below)
+            # self._validate_production_rates(
+            #     initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit)
+        except Exception as ex:
+            log.exception(ex)
+            return
+
+        self.bid_update.set_parameters(
+            initial_rate_profile_buffer=initial_rate,
+            final_rate_profile_buffer=final_rate,
+            energy_rate_change_per_update_profile_buffer=energy_rate_change_per_update,
+            fit_to_limit=fit_to_limit,
+            update_interval=update_interval)
+
     def _post_offer(self, market):
         offer_energy_kWh = self.state.get_available_energy_kWh(market.time_slot)
         # We need to subtract the energy from the offers that are already posted in this
@@ -377,71 +498,14 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
     def _replace_rates_with_market_maker_rates(self):
         # Reconfigure the final buying rate (for energy consumption)
-        self._area_reconfigure_prices(
+        self._area_reconfigure_consumption_prices(
             final_buying_rate=get_market_maker_rate_from_config(
                 self.area.next_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
 
         # Reconfigure the initial selling rate (for energy production)
-        self._area_reconfigure_prices(
+        self._area_reconfigure_production_prices(
             initial_selling_rate=get_market_maker_rate_from_config(
                 self.area.next_market, 0) - self.owner.get_path_to_root_fees(), validate=False)
-
-    def _area_reconfigure_prices(self, **kwargs):
-        """Reconfigure the prices (rates) of the area.
-
-        If custom profiles are provided in the `kwargs`, use them to replace the default ones
-        provided by the UpdateFrequencyMixin.
-        """
-        # TODO: use offer_update as well (TemplateStrategyOfferUpdater)
-        if key_in_dict_and_not_none(kwargs, "initial_buying_rate"):
-            initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                  kwargs["initial_buying_rate"])
-        else:
-            initial_rate = self.bid_update.initial_rate_profile_buffer
-        if key_in_dict_and_not_none(kwargs, "final_buying_rate"):
-            final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                kwargs["final_buying_rate"])
-        else:
-            final_rate = self.bid_update.final_rate_profile_buffer
-        if key_in_dict_and_not_none(kwargs, "energy_rate_increase_per_update"):
-            energy_rate_change_per_update = \
-                read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                       kwargs["energy_rate_increase_per_update"])
-        else:
-            energy_rate_change_per_update = \
-                self.bid_update.energy_rate_change_per_update_profile_buffer
-        if key_in_dict_and_not_none(kwargs, "fit_to_limit"):
-            fit_to_limit = kwargs["fit_to_limit"]
-        else:
-            fit_to_limit = self.bid_update.fit_to_limit
-        if key_in_dict_and_not_none(kwargs, "update_interval"):
-            if isinstance(kwargs["update_interval"], int):
-                update_interval = duration(minutes=kwargs["update_interval"])
-            else:
-                update_interval = kwargs["update_interval"]
-        else:
-            update_interval = self.bid_update.update_interval
-
-        if key_in_dict_and_not_none(kwargs, "use_market_maker_rate"):
-            self.use_market_maker_rate = kwargs["use_market_maker_rate"]
-
-        try:
-            self._validate_consumption_rates(
-                initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit)
-            # TODO: this should be done for consumption as well (use method already impl below)
-            # self._validate_production_rates(
-            #     initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit)
-        except Exception as ex:
-            log.exception(ex)
-            return
-
-        self.bid_update.set_parameters(
-            initial_rate_profile_buffer=initial_rate,
-            final_rate_profile_buffer=final_rate,
-            energy_rate_change_per_update_profile_buffer=energy_rate_change_per_update,
-            fit_to_limit=fit_to_limit,
-            update_interval=update_interval
-        )
 
     @staticmethod
     def _validate_consumption_rates(
@@ -529,15 +593,3 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
     def _offer_comes_from_different_seller(self, offer):
         return offer.seller != self.owner.name and offer.seller != self.area.name
-
-    def area_reconfigure_event(self, *args, **kwargs):
-        """Reconfigure the device properties at runtime using the provided arguments.
-
-        This method is triggered when the device strategy is updated while the simulation is
-        running. The update can happen via live events (triggered by the user) or scheduled events.
-        """
-        # TODO: what can be modified at runtime in the HomeMeter?
-        self._area_reconfigure_prices(**kwargs)
-
-        if key_in_dict_and_not_none(kwargs, "home_meter_profile"):
-            self.profile = self._read_raw_profile_data(kwargs["home_meter_profile"])
