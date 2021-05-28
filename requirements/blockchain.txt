@@ -19,6 +19,7 @@ distlib==0.3.1            # via -r requirements/base.txt, d3a-interface, virtual
 filelock==3.0.12          # via -r requirements/base.txt, d3a-interface, tox, virtualenv
 idna==2.10                # via -r requirements/base.txt, d3a-interface, requests, substrate-interface
 jsonschema==3.2.0         # via -r requirements/base.txt, d3a-interface
+kafka-python==2.0.2       # via -r requirements/base.txt, d3a-interface
 more-itertools==8.7.0     # via scalecodec
 numpy==1.20.3             # via -r requirements/base.txt
 packaging==20.7           # via -r requirements/base.txt, d3a-interface, tox
