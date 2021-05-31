@@ -293,6 +293,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.bid_update.update(market, self)
 
     def event_tick(self):
+        """Post bids on market tick. This method is triggered by the TICK event."""
         for market in self.active_markets:
             if not self.state.can_buy_more_energy(market.time_slot):
                 continue

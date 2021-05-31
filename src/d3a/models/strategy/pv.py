@@ -190,6 +190,10 @@ class PVStrategy(BaseStrategy):
         self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
 
     def event_tick(self):
+        """Update the prices of existing offers on market tick.
+
+        This method is triggered by the TICK event.
+        """
         self.offer_update.update(self)
         self.offer_update.increment_update_counter_all_markets(self)
 

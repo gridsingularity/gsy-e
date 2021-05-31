@@ -344,6 +344,10 @@ class StorageStrategy(BidEnabledStrategy):
             raise ValueError("energy_rate_change_per_update should be a non-negative value.")
 
     def event_tick(self):
+        """Post bids or update existing bid prices on market tick.
+
+        This method is triggered by the TICK event.
+        """
         self.state.clamp_energy_to_buy_kWh(self.future_markets_time_slots)
 
         for market in self.area.all_markets:
