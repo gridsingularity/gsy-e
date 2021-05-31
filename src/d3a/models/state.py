@@ -19,7 +19,7 @@ from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from enum import Enum
 from math import isclose
-from typing import Dict  # NOQA
+from typing import Dict
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import (
@@ -53,87 +53,66 @@ class StateInterface(metaclass=ABCMeta):
     @abstractmethod
     def get_state(self) -> Dict:
         """Return the current state of the device."""
+        return {}
+
+    @abstractmethod
+    def restore_state(self, state_dict: Dict):
+        pass
+
+    @abstractmethod
+    def delete_past_state_values(self, time_slot):
         pass
 
 
-class PVState(StateInterface):
+class ConsumptionState(StateInterface):
+    """State for devices that can consume energy."""
+
     def __init__(self):
-        self._available_energy_kWh = {}
-        self._energy_production_forecast_kWh = {}
-
-    def get_energy_production_forecast_kWh(self, time_slot, default_value=None):
-        assert self._energy_production_forecast_kWh[time_slot] >= -FLOATING_POINT_TOLERANCE
-        if default_value is not None:
-            return self._energy_production_forecast_kWh.get(time_slot, default_value)
-        return self._energy_production_forecast_kWh[time_slot]
-
-    def get_available_energy_kWh(self, time_slot, default_value=0.0):
-        available_energy = self._available_energy_kWh.get(time_slot, default_value)
-
-        assert available_energy >= -FLOATING_POINT_TOLERANCE
-        return available_energy
-
-    def decrement_available_energy(self, sold_energy_kWh, time_slot, area_name):
-        self._available_energy_kWh[time_slot] -= sold_energy_kWh
-        assert self._available_energy_kWh[time_slot] >= -FLOATING_POINT_TOLERANCE, \
-            f"Available energy for PV {area_name} fell below zero " \
-            f"({self._available_energy_kWh[time_slot]})."
-
-    def set_available_energy(self, energy_kWh, time_slot, overwrite=False):
-        if overwrite is False and time_slot in self._energy_production_forecast_kWh:
-            return
-        self._energy_production_forecast_kWh[time_slot] = energy_kWh
-        self._available_energy_kWh[time_slot] = energy_kWh
-        assert self._energy_production_forecast_kWh[time_slot] >= 0.0
-
-    def delete_past_state_values(self, current_market_time_slot):
-        to_delete = []
-        for market_slot in self._available_energy_kWh.keys():
-            if market_slot < current_market_time_slot:
-                to_delete.append(market_slot)
-        for market_slot in to_delete:
-            self._available_energy_kWh.pop(market_slot, None)
-            self._energy_production_forecast_kWh.pop(market_slot, None)
-
-    def get_state(self):
-        return {
-            "available_energy_kWh": convert_pendulum_to_str_in_dict(self._available_energy_kWh),
-            "energy_production_forecast_kWh":
-                convert_pendulum_to_str_in_dict(self._energy_production_forecast_kWh)
-        }
-
-    def restore_state(self, state_dict):
-        self._available_energy_kWh.update(
-            convert_str_to_pendulum_in_dict(state_dict["available_energy_kWh"]))
-        self._energy_production_forecast_kWh.update(
-            convert_str_to_pendulum_in_dict(state_dict["energy_production_forecast_kWh"]))
-
-
-class LoadState(StateInterface):
-    def __init__(self):
+        super().__init__()
         # Energy that the load wants to consume (given by the profile or live energy requirements)
         self._desired_energy_Wh = {}
         # Energy that the load needs to consume. It's reduced when new energy is bought
         self._energy_requirement_Wh = {}
         self._total_energy_demanded_Wh = 0
 
+    def get_state(self) -> Dict:
+        """Return the current state of the device. Extends super implementation."""
+        state = super().get_state()
+        consumption_state = {
+            "desired_energy_Wh": convert_pendulum_to_str_in_dict(self._desired_energy_Wh),
+            "total_energy_demanded_Wh": self._total_energy_demanded_Wh}
+        # The inherited state should not have keys with the same name (to avoid overwriting them)
+        conflicting_keys = state.keys() & consumption_state.keys()
+        assert not conflicting_keys, f"Conflicting state values found for {conflicting_keys}."
+
+        state.update(consumption_state)
+        return state
+
+    def restore_state(self, state_dict: Dict):
+        super().restore_state()
+
+        self._desired_energy_Wh.update(convert_str_to_pendulum_in_dict(
+            state_dict["desired_energy_Wh"]))
+        self._total_energy_demanded_Wh = state_dict["total_energy_demanded_Wh"]
+
     def get_energy_requirement_Wh(self, time_slot, default_value=0.0):
         if default_value is None:
             return self._energy_requirement_Wh[time_slot]
         return self._energy_requirement_Wh.get(time_slot, default_value)
 
-    def get_desired_energy_Wh(self, time_slot, default_value=0.0):
-        if default_value is None:
-            return self._desired_energy_Wh[time_slot]
-        return self._desired_energy_Wh.get(time_slot, default_value)
+    def set_desired_energy(self, energy, time_slot, overwrite=False):
+        if overwrite is False and time_slot in self._energy_requirement_Wh:
+            return
+        self._energy_requirement_Wh[time_slot] = energy
+        self._desired_energy_Wh[time_slot] = energy
 
-    @property
-    def total_energy_demanded_Wh(self):
-        return self._total_energy_demanded_Wh
+    def update_total_demanded_energy(self, time_slot):
+        self._total_energy_demanded_Wh += self._desired_energy_Wh.get(time_slot, 0.)
 
     def can_buy_more_energy(self, time_slot):
         if time_slot not in self._energy_requirement_Wh:
             return False
+
         return self._energy_requirement_Wh[time_slot] > FLOATING_POINT_TOLERANCE
 
     def calculate_energy_to_accept(self, offer_energy_Wh: float, time_slot: DateTime) -> float:
@@ -147,21 +126,100 @@ class LoadState(StateInterface):
             self, purchased_energy_Wh: float, time_slot: DateTime, area_name: str) -> None:
         """Decrease the energy required by the device in a specific market slot."""
         self._energy_requirement_Wh[time_slot] -= purchased_energy_Wh
-        assert self._energy_requirement_Wh[time_slot] >= -FLOATING_POINT_TOLERANCE, \
-            f"Energy requirement for load {area_name} fell below zero " \
-            f"({self._energy_requirement_Wh[time_slot]})."
+        assert self._energy_requirement_Wh[time_slot] >= -FLOATING_POINT_TOLERANCE, (
+            f"Energy requirement for device {area_name} fell below zero "
+            f"({self._energy_requirement_Wh[time_slot]}).")
 
-    def set_desired_energy(self, energy, time_slot, overwrite=False):
-        if overwrite is False and time_slot in self._energy_requirement_Wh:
+
+class ProductionState(StateInterface):
+    """State for devices that can produce energy."""
+
+    def __init__(self):
+        super().__init__()
+        self._available_energy_kWh = {}
+        self._energy_production_forecast_kWh = {}
+
+    def get_state(self) -> Dict:
+        """Return the current state of the device. Extends super implementation."""
+        state = super().get_state()
+        production_state = {
+            "available_energy_kWh": convert_pendulum_to_str_in_dict(self._available_energy_kWh),
+            "energy_production_forecast_kWh":
+                convert_pendulum_to_str_in_dict(self._energy_production_forecast_kWh)}
+        # The inherited state should not have keys with the same name (to avoid overwriting them)
+        conflicting_keys = state.keys() & production_state.keys()
+        assert not conflicting_keys, f"Conflicting state values found for {conflicting_keys}."
+
+        state.update(production_state)
+        return state
+
+    def restore_state(self, state_dict: Dict):
+        super().restore_state()
+
+        self._available_energy_kWh.update(
+            convert_str_to_pendulum_in_dict(state_dict["available_energy_kWh"]))
+        self._energy_production_forecast_kWh.update(
+            convert_str_to_pendulum_in_dict(state_dict["energy_production_forecast_kWh"]))
+
+    def set_available_energy(self, energy_kWh, time_slot, overwrite=False):
+        if overwrite is False and time_slot in self._energy_production_forecast_kWh:
             return
-        self._energy_requirement_Wh[time_slot] = energy
-        self._desired_energy_Wh[time_slot] = energy
+        self._energy_production_forecast_kWh[time_slot] = energy_kWh
+        self._available_energy_kWh[time_slot] = energy_kWh
+
+        # TODO: replace assertion with raising custom exception
+        assert self._energy_production_forecast_kWh[time_slot] >= 0.0
+
+    def get_available_energy_kWh(self, time_slot, default_value=None):
+        available_energy = self._available_energy_kWh.get(time_slot, default_value)
+
+        # TODO: replace assertion with raising custom exception
+        assert available_energy >= -FLOATING_POINT_TOLERANCE
+        return available_energy
+
+    # TODO: remove duplicate in PVState
+    def decrement_available_energy(self, sold_energy_kWh, time_slot, area_name):
+        self._available_energy_kWh[time_slot] -= sold_energy_kWh
+        assert self._available_energy_kWh[time_slot] >= -FLOATING_POINT_TOLERANCE, (
+            f"Available energy for device {area_name} fell below zero "
+            f"({self._available_energy_kWh[time_slot]}).")
+
+
+class PVState(ProductionState):
+    def __init__(self):
+        super().__init__()
+
+    def get_energy_production_forecast_kWh(self, time_slot, default_value=None):
+        assert self._energy_production_forecast_kWh[time_slot] >= -FLOATING_POINT_TOLERANCE
+        if default_value is not None:
+            return self._energy_production_forecast_kWh.get(time_slot, default_value)
+        return self._energy_production_forecast_kWh[time_slot]
+
+    def delete_past_state_values(self, current_market_time_slot):
+        to_delete = []
+        for market_slot in self._available_energy_kWh.keys():
+            if market_slot < current_market_time_slot:
+                to_delete.append(market_slot)
+        for market_slot in to_delete:
+            self._available_energy_kWh.pop(market_slot, None)
+            self._energy_production_forecast_kWh.pop(market_slot, None)
+
+
+class LoadState(ConsumptionState):
+    def __init__(self):
+        super().__init__()
+
+    def get_desired_energy_Wh(self, time_slot, default_value=0.0):
+        if default_value is None:
+            return self._desired_energy_Wh[time_slot]
+        return self._desired_energy_Wh.get(time_slot, default_value)
+
+    @property
+    def total_energy_demanded_Wh(self):
+        return self._total_energy_demanded_Wh
 
     def get_desired_energy(self, time_slot):
         return self._desired_energy_Wh[time_slot]
-
-    def update_total_demanded_energy(self, time_slot):
-        self._total_energy_demanded_Wh += self._desired_energy_Wh.get(time_slot, 0.)
 
     def delete_past_state_values(self, current_time_slot):
         to_delete = []
@@ -172,32 +230,14 @@ class LoadState(StateInterface):
             self._energy_requirement_Wh.pop(market_slot, None)
             self._desired_energy_Wh.pop(market_slot, None)
 
-    def get_state(self):
-        return {
-            "desired_energy_Wh": convert_pendulum_to_str_in_dict(self._desired_energy_Wh),
-            "total_energy_demanded_Wh": self._total_energy_demanded_Wh
-        }
 
-    def restore_state(self, state_dict):
-        self._desired_energy_Wh.update(convert_str_to_pendulum_in_dict(
-            state_dict["desired_energy_Wh"]))
-        self._total_energy_demanded_Wh = state_dict["total_energy_demanded_Wh"]
-
-
-class HomeMeterState(StateInterface):
+class HomeMeterState(ConsumptionState, ProductionState):
     """State for the Home Meter device"""
 
     def __init__(self):
-        # Energy that the load wants to consume (given by the profile or live energy requirements)
-        self._desired_energy_Wh = {}
-        # Energy that the load needs to consume. It's reduced when new energy is bought
-        self._energy_requirement_Wh = {}
-        self._total_energy_demanded_Wh = 0
+        super().__init__()
 
-        self._available_energy_kWh = {}
-        self._energy_production_forecast_kWh = {}
-
-    def get_state(self):
+    def get_state(self) -> Dict:
         """Return the current state of the device."""
         return {
             "desired_energy_Wh": convert_pendulum_to_str_in_dict(self._desired_energy_Wh),
@@ -205,48 +245,6 @@ class HomeMeterState(StateInterface):
             "available_energy_kWh": convert_pendulum_to_str_in_dict(self._available_energy_kWh),
             "energy_production_forecast_kWh": convert_pendulum_to_str_in_dict(
                 self._energy_production_forecast_kWh)}
-
-    # TODO: remove duplicate in LoadState
-    def set_desired_energy(self, energy, time_slot, overwrite=False):
-        if overwrite is False and time_slot in self._energy_requirement_Wh:
-            return
-        self._energy_requirement_Wh[time_slot] = energy
-        self._desired_energy_Wh[time_slot] = energy
-
-    # TODO: remove duplicate in LoadState
-    def update_total_demanded_energy(self, time_slot):
-        self._total_energy_demanded_Wh += self._desired_energy_Wh.get(time_slot, 0.)
-
-    # TODO: remove duplicate in PVState
-    def set_available_energy(self, energy_kWh, time_slot, overwrite=False):
-        if overwrite is False and time_slot in self._energy_production_forecast_kWh:
-            return
-        self._energy_production_forecast_kWh[time_slot] = energy_kWh
-        self._available_energy_kWh[time_slot] = energy_kWh
-
-        # TODO: replace assertion with raising custom exception
-        assert self._energy_production_forecast_kWh[time_slot] >= 0.0
-
-    # TODO: remove duplicate in LoadState
-    def can_buy_more_energy(self, time_slot):
-        if time_slot not in self._energy_requirement_Wh:
-            return False
-
-        return self._energy_requirement_Wh[time_slot] > FLOATING_POINT_TOLERANCE
-
-    # TODO: remove duplicate in LoadState
-    def get_energy_requirement_Wh(self, time_slot, default_value=0.0):
-        if default_value is None:
-            return self._energy_requirement_Wh[time_slot]
-        return self._energy_requirement_Wh.get(time_slot, default_value)
-
-    # TODO: remove duplicate in PVState
-    def get_available_energy_kWh(self, time_slot, default_value=None):
-        available_energy = self._available_energy_kWh.get(time_slot, default_value)
-
-        # TODO: replace assertion with raising custom exception
-        assert available_energy >= -FLOATING_POINT_TOLERANCE
-        return available_energy
 
     def delete_past_state_values(self, current_market_time_slot):
         """Delete the information about energy requirements and availability from past markets."""
@@ -262,30 +260,6 @@ class HomeMeterState(StateInterface):
             self._energy_production_forecast_kWh.pop(market_slot, None)
             self._energy_requirement_Wh.pop(market_slot, None)
             self._desired_energy_Wh.pop(market_slot, None)
-
-    # TODO: remove duplicate in LoadState
-    def calculate_energy_to_accept(self, offer_energy_Wh: float, time_slot: DateTime) -> float:
-        """Return the amount of energy that can be accepted in a specific market slot.
-
-        The acceptable energy can't be more than the total energy required in that slot.
-        """
-        return min(offer_energy_Wh, self._energy_requirement_Wh[time_slot])
-
-    # TODO: remove duplicate in LoadState
-    def decrement_energy_requirement(
-            self, purchased_energy_Wh: float, time_slot: DateTime, area_name: str) -> None:
-        """Decrease the energy required by the device in a specific market slot."""
-        self._energy_requirement_Wh[time_slot] -= purchased_energy_Wh
-        assert self._energy_requirement_Wh[time_slot] >= -FLOATING_POINT_TOLERANCE, (
-            f"Energy requirement for home meter {area_name} fell below zero "
-            f"({self._energy_requirement_Wh[time_slot]}).")
-
-    # TODO: remove duplicate in PVState
-    def decrement_available_energy(self, sold_energy_kWh, time_slot, area_name):
-        self._available_energy_kWh[time_slot] -= sold_energy_kWh
-        assert self._available_energy_kWh[time_slot] >= -FLOATING_POINT_TOLERANCE, (
-            f"Available energy for home meter {area_name} fell below zero "
-            f"({self._available_energy_kWh[time_slot]}).")
 
 
 class ESSEnergyOrigin(Enum):
@@ -338,7 +312,7 @@ class StorageState(StateInterface):
         self._battery_energy_per_slot = 0.0
         self._used_storage_share = [EnergyOrigin(initial_energy_origin, self.initial_capacity_kWh)]
 
-    def get_state(self):
+    def get_state(self) -> Dict:
         return {
             "pledged_sell_kWh": convert_pendulum_to_str_in_dict(self.pledged_sell_kWh),
             "offered_sell_kWh": convert_pendulum_to_str_in_dict(self.offered_sell_kWh),
@@ -354,7 +328,7 @@ class StorageState(StateInterface):
             "battery_energy_per_slot": self._battery_energy_per_slot,
         }
 
-    def restore_state(self, state_dict):
+    def restore_state(self, state_dict: Dict):
         self.pledged_sell_kWh.update(
             convert_str_to_pendulum_in_dict(state_dict["pledged_sell_kWh"]))
         self.offered_sell_kWh.update(
