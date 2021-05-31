@@ -237,15 +237,6 @@ class HomeMeterState(ConsumptionState, ProductionState):
     def __init__(self):
         super().__init__()
 
-    def get_state(self) -> Dict:
-        """Return the current state of the device."""
-        return {
-            "desired_energy_Wh": convert_pendulum_to_str_in_dict(self._desired_energy_Wh),
-            "total_energy_demanded_Wh": self._total_energy_demanded_Wh,
-            "available_energy_kWh": convert_pendulum_to_str_in_dict(self._available_energy_kWh),
-            "energy_production_forecast_kWh": convert_pendulum_to_str_in_dict(
-                self._energy_production_forecast_kWh)}
-
     def delete_past_state_values(self, current_market_time_slot):
         """Delete the information about energy requirements and availability from past markets."""
         to_delete = []
