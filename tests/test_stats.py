@@ -361,6 +361,7 @@ def test_energy_bills_accumulate_fees(grid_fees):
 
 def test_energy_bills_use_only_last_market_if_not_keep_past_markets(grid_fees):
     constants.D3A_TEST_RUN = False
+
     epb = SimulationEndpointBuffer("1", {"seed": 0}, grid_fees, True)
     epb.current_market_time_slot_str = grid_fees.current_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid_fees)

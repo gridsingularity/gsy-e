@@ -16,40 +16,42 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import datetime
-import gc
-import os
+import click
 import platform
+import os
+import psutil
+import gc
 import sys
+import datetime
+
+from pendulum import now, duration
+from time import sleep, time, mktime
+from numpy import random
 from importlib import import_module
 from logging import getLogger
-from time import sleep, time, mktime
 
-import click
-import d3a.constants
-import psutil
-# noinspection PyUnresolvedReferences
-from d3a import setup as d3a_setup  # noqa
-from d3a.blockchain.constants import ENABLE_SUBSTRATE
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, SIMULATION_PAUSE_TIMEOUT
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.d3a_core.export import ExportAndPlot
-from d3a.d3a_core.live_events import LiveEvents
-from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCommunication
-from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
-from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
-from d3a.d3a_core.singletons import external_global_statistics
-from d3a.d3a_core.util import NonBlockingConsole, validate_const_settings_for_simulation, \
-    get_market_slot_time_str
-from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.models.config import SimulationConfig
 from d3a.models.power_flow.pandapower import PandaPowerFlow
+# noinspection PyUnresolvedReferences
+from d3a import setup as d3a_setup  # noqa
+from d3a.d3a_core.util import NonBlockingConsole, validate_const_settings_for_simulation, \
+    get_market_slot_time_str
+from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
+from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCommunication
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.exceptions import D3AException
 from d3a_interface.utils import format_datetime, str_to_pendulum_datetime
-from numpy import random
-from pendulum import now, duration
-from ptpython.repl import embed
+from d3a.models.area.event_deserializer import deserialize_events_to_areas
+from d3a.d3a_core.live_events import LiveEvents
+from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
+from d3a_interface.kafka_communication.kafka_producer import kafka_connection_factory
+from d3a.d3a_core.singletons import external_global_statistics
+from d3a.blockchain.constants import ENABLE_SUBSTRATE
+import d3a.constants
+
 
 if platform.python_implementation() != "PyPy" and \
         ENABLE_SUBSTRATE:
@@ -108,6 +110,7 @@ class Simulation:
         self.is_stopped = False
 
         self.live_events = LiveEvents(self.simulation_config)
+        self.kafka_connection = kafka_connection_factory()
         self.redis_connection = RedisSimulationCommunication(self, redis_job_id, self.live_events)
         self._simulation_id = redis_job_id
         self._started_from_cli = redis_job_id is None
@@ -248,7 +251,7 @@ class Simulation:
         area.stats.kpi.update(
             endpoint_buffer.results_handler.all_ui_results["kpi"].get(area.uuid, {}))
 
-    def _update_and_send_results(self, is_final=False):
+    def _update_and_send_results(self):
         self.endpoint_buffer.update_stats(
             self.area, self.status, self.progress_info, self.current_state)
         self.update_area_stats(self.area, self.endpoint_buffer)
@@ -261,12 +264,11 @@ class Simulation:
         if self.should_export_results:
             self.file_stats_endpoint(self.area)
             return
-        if is_final or self.is_stopped:
-            self.redis_connection.publish_results(self.endpoint_buffer)
-        else:
-            self.redis_connection.publish_intermediate_results(
-                self.endpoint_buffer
-            )
+
+        results = self.endpoint_buffer.prepare_results_for_publish()
+        if results is None:
+            return
+        self.kafka_connection.publish(results, self._simulation_id)
 
     def _update_progress_info(self, slot_no, slot_count):
         run_duration = (
@@ -408,7 +410,7 @@ class Simulation:
                 " ({} paused)".format(paused_duration) if paused_duration else "",
                 config.sim_duration / (self.progress_info.elapsed_time - paused_duration)
             )
-        self._update_and_send_results(is_final=True)
+        self._update_and_send_results()
         if self.export_on_finish and self.should_export_results:
             log.info("Exporting simulation data.")
             self.export.data_to_csv(self.area, False)
@@ -419,12 +421,9 @@ class Simulation:
             else:
                 self.export.export(self.should_export_results)
 
-        if self.use_repl:
-            self._start_repl()
-
     @property
     def should_export_results(self):
-        return not self.redis_connection.is_enabled()
+        return not self.kafka_connection.is_enabled()
 
     def handle_slowdown_and_realtime(self, tick_no):
         if d3a.constants.RUN_IN_REALTIME:
@@ -470,8 +469,6 @@ class Simulation:
 
                 if cmd == 'r':
                     self.reset()
-                elif cmd == 'R':
-                    self._start_repl()
                 elif cmd == 'i':
                     self._info()
                 elif cmd == 'p':
@@ -535,13 +532,6 @@ class Simulation:
             "  Completed: %(percent).1f%%",
             info
         )
-
-    def _start_repl(self):
-        log.debug(
-            "An interactive REPL has been started. The root Area is available as "
-            "`root_area`.")
-        log.debug("Ctrl-D to quit.")
-        embed({'root_area': self.area})
 
     @property
     def status(self):
