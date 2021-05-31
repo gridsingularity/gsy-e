@@ -21,7 +21,6 @@ from logging import getLogger
 from typing import List, Dict, Any, Union  # noqa
 from uuid import uuid4
 
-import d3a.constants
 from d3a import constants
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
@@ -30,7 +29,7 @@ from d3a.d3a_core.exceptions import D3ARedisException
 from d3a.d3a_core.exceptions import SimulationException, D3AException, MarketException
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
 from d3a.d3a_core.singletons import global_objects
-from d3a.d3a_core.util import append_or_create_key
+from d3a.d3a_core.util import append_or_create_key, should_read_profile_from_db
 from d3a.events import EventMixin
 from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
 from d3a.models.base import AreaBehaviorBase
@@ -256,7 +255,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                                           profile, current_timestamp=start_timestamp)
         if not profile or self.time_to_rotate_profile(profile):
 
-            if profile_uuid and d3a.constants.CONNECT_TO_PROFILES_DB:
+            if should_read_profile_from_db(profile_uuid):
                 db_profile = \
                     global_objects.profile_db_connection.get_profile_from_db_buffer(profile_uuid)
                 return read_arbitrary_profile(profile_type,

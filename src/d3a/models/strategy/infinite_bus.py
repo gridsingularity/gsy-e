@@ -15,15 +15,15 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import d3a.constants
+from d3a.d3a_core.util import should_read_profile_from_db
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.strategy import BidEnabledStrategy, INF_ENERGY
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
     read_and_convert_identity_profile_to_float, convert_identity_profile_to_float
-from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
-from d3a_interface.utils import find_object_of_same_weekday_and_time
+from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict, \
+    find_object_of_same_weekday_and_time
 
 
 class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
@@ -37,7 +37,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         self.energy_per_slot_kWh = INF_ENERGY
         self.energy_buy_rate = None
 
-        if d3a.constants.CONNECT_TO_PROFILES_DB and buying_rate_profile_uuid:
+        if should_read_profile_from_db(buying_rate_profile_uuid):
             self.energy_buy_rate_input = None
             self.buying_rate_profile = None
             self.buying_rate_profile_uuid = buying_rate_profile_uuid
@@ -46,7 +46,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             self.buying_rate_profile = buying_rate_profile
             self.buying_rate_profile_uuid = None
 
-        if d3a.constants.CONNECT_TO_PROFILES_DB and energy_rate_profile_uuid:
+        if should_read_profile_from_db(energy_rate_profile_uuid):
             self.energy_rate_input = None
             self.energy_rate_profile = None
             self.energy_rate_profile_uuid = energy_rate_profile_uuid

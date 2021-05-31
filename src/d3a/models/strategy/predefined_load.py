@@ -17,8 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import Union
 
-import d3a.constants
 from d3a.d3a_core.exceptions import D3AException
+from d3a.d3a_core.util import should_read_profile_from_db
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.read_user_profile import InputProfileTypes
@@ -82,7 +82,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         self.profile_uuid = daily_load_profile_uuid
         self.load_profile = None
 
-        if d3a.constants.CONNECT_TO_PROFILES_DB and daily_load_profile:
+        if should_read_profile_from_db(daily_load_profile):
             self._load_profile_input = None
         else:
             self._load_profile_input = daily_load_profile

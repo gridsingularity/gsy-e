@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import d3a.constants
+from d3a.d3a_core.util import should_read_profile_from_db
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 from d3a_interface.device_validator import validate_market_maker
@@ -35,7 +35,7 @@ class MarketMakerStrategy(CommercialStrategy):
 
         self.energy_rate = None
 
-        if d3a.constants.CONNECT_TO_PROFILES_DB and energy_rate_profile_uuid:
+        if should_read_profile_from_db(energy_rate_profile_uuid):
             self.energy_rate_profile = None
             self.energy_rate_input = None
             self.energy_rate_profile_uuid = energy_rate_profile_uuid

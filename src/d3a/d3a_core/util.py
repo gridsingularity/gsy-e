@@ -530,3 +530,7 @@ class ExternalTickCounter:
 
     def is_it_time_for_external_tick(self, current_tick_in_slot) -> bool:
         return current_tick_in_slot % self._dispatch_tick_frequency == 0
+
+
+def should_read_profile_from_db(profile_uuid):
+    return profile_uuid is not None and d3a.constants.CONNECT_TO_PROFILES_DB

@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pathlib
 
-import d3a.constants
+from d3a.d3a_core.util import should_read_profile_from_db
 from d3a.d3a_core.exceptions import D3AException
 from d3a.d3a_core.util import d3a_path
 from d3a.models.strategy.pv import PVStrategy
@@ -168,7 +168,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         self.power_profile = None
         self.power_profile_uuid = power_profile_uuid
 
-        if d3a.constants.CONNECT_TO_PROFILES_DB and power_profile_uuid:
+        if should_read_profile_from_db(power_profile_uuid):
             self._power_profile_input = None
         else:
             self._power_profile_input = power_profile
