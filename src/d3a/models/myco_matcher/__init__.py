@@ -1,3 +1,4 @@
+from d3a.global_utils import check_is_exact_match_type
 from d3a.models.myco_matcher.external_matcher import ExternalMatcher
 from d3a_interface.constants_limits import ConstSettings
 
@@ -9,16 +10,11 @@ from d3a.d3a_core.exceptions import WrongMarketTypeException
 
 class MycoMatcher:
     def __init__(self):
-        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-            BidOfferMatchAlgoEnum.CUSTOM.value  # For testing
-        if ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == \
-                BidOfferMatchAlgoEnum.PAY_AS_BID.value:
+        if check_is_exact_match_type(BidOfferMatchAlgoEnum.PAY_AS_BID):
             self.match_algorithm = PayAsBidMatcher()
-        elif ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == \
-                BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value:
+        elif check_is_exact_match_type(BidOfferMatchAlgoEnum.PAY_AS_CLEAR):
             self.match_algorithm = PayAsClearMatcher()
-        elif ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == \
-                BidOfferMatchAlgoEnum.CUSTOM.value:
+        elif check_is_exact_match_type(BidOfferMatchAlgoEnum.CUSTOM):
             self.match_algorithm = ExternalMatcher()
         else:
             raise WrongMarketTypeException(f'Wrong market type setting flag '
