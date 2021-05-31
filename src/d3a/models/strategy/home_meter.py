@@ -16,7 +16,7 @@ from logging import getLogger
 from typing import Dict, Union
 
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.device_validator import validate_home_meter_device_price
+from d3a_interface.device_validator import HomeMeterValidator
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import find_object_of_same_weekday_and_time
 from numpy import random
@@ -102,8 +102,9 @@ class HomeMeterStrategy(BidEnabledStrategy):
         self.update_interval = self._convert_update_interval_to_duration(update_interval)
         self.use_market_maker_rate = use_market_maker_rate
 
-        # validate_home_meter_device_energy()  # TODO (see pv.py and load_hours.py)
-        validate_home_meter_device_price(
+        self.validator = HomeMeterValidator
+        # self.validator.validate_energy()  # TODO (see pv.py and load_hours.py)
+        self.validator.validate(
             fit_to_limit=fit_to_limit,
             energy_rate_increase_per_update=energy_rate_increase_per_update,
             energy_rate_decrease_per_update=energy_rate_decrease_per_update)
@@ -391,9 +392,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
         try:
             self._validate_consumption_rates(
                 initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit)
-            # TODO: this should be done for production as well (use method already impl below)
-            # self._validate_production_rates(
-            #     initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit)
         except Exception as ex:
             log.exception(ex)
             return
@@ -511,28 +509,26 @@ class HomeMeterStrategy(BidEnabledStrategy):
             initial_selling_rate=get_market_maker_rate_from_config(
                 self.area.next_market, 0) - self.owner.get_path_to_root_fees(), validate=False)
 
-    @staticmethod
     def _validate_consumption_rates(
-            initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
+            self, initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
         # All parameters have to be validated for each time slot
         for time_slot in initial_rate.keys():
             rate_change = None if fit_to_limit else find_object_of_same_weekday_and_time(
                 energy_rate_change_per_update, time_slot)
 
-            validate_home_meter_device_price(
+            self.validator.validate_price(
                 initial_buying_rate=initial_rate[time_slot],
                 energy_rate_increase_per_update=rate_change,
                 final_buying_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
                 fit_to_limit=fit_to_limit)
 
-    @staticmethod
     def _validate_production_rates(
-            initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
+            self, initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
         for time_slot in initial_rate.keys():
             rate_change = None if fit_to_limit else find_object_of_same_weekday_and_time(
                 energy_rate_change_per_update, time_slot)
 
-            validate_home_meter_device_price(
+            self.validator.validate_price(
                 initial_selling_rate=initial_rate[time_slot],
                 final_selling_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
                 energy_rate_decrease_per_update=rate_change,
