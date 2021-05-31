@@ -103,7 +103,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
         self.use_market_maker_rate = use_market_maker_rate
 
         self.validator = HomeMeterValidator
-        # self.validator.validate_energy()  # TODO (see pv.py and load_hours.py)
         self.validator.validate(
             fit_to_limit=fit_to_limit,
             energy_rate_increase_per_update=energy_rate_increase_per_update,
@@ -111,7 +110,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
         self.state = HomeMeterState()
         self._simulation_start_timestamp = None
-        # self._cycled_market = set()
 
         # Instances to update the Home Meter's bids and offers across all market slots
         self.bid_update = None
@@ -121,7 +119,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
     def _init_price_update(self):
         """Initialize the bid and offer updaters."""
 
-        # TODO: rename variable
         self.bid_update = TemplateStrategyBidUpdater(
             initial_rate=self.initial_buying_rate,
             final_rate=self.final_buying_rate,
@@ -130,7 +127,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
             update_interval=self.update_interval,
             rate_limit_object=min)
 
-        # TODO: rename variable
         self.offer_update = TemplateStrategyOfferUpdater(
             initial_rate=self.initial_selling_rate,
             final_rate=self.final_selling_rate,
@@ -152,8 +148,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
         if self.use_market_maker_rate:
             self._replace_rates_with_market_maker_rates()
 
-        # TODO: create some specialized class, e.g. RatesValidator or HomeMeterValidator (subclass
-        # DeviceValidator) that can validate both consumption and production rates
         self._validate_consumption_rates(
             initial_rate=self.bid_update.initial_rate_profile_buffer,
             final_rate=self.bid_update.final_rate_profile_buffer,
@@ -184,34 +178,22 @@ class HomeMeterStrategy(BidEnabledStrategy):
         """
         super().event_market_cycle()
 
-        # Update the price of all bids/offers based on their the initial rate
-        self.bid_update.update_and_populate_price_settings(self.area)
-        self.bid_update.reset(self)
-        self.offer_update.update_and_populate_price_settings(self.area)
-        self.offer_update.reset(self)
-
+        self._reset_rates_and_update_prices()
         self._set_energy_forecast_for_future_markets(reconfigure=False)
 
         # TODO: should we always do both bids and offers, or should we first check the +/- of the
         #  profile?
+        # Create bids/offers for the expected energy consumption/production in future markets
         for market in self.area.all_markets:
-            # If we are in a two-sided market, post the first bid for each market slot
-            # TODO: why do we post a new bid even in future markets, if we're not there yet?
+            self._post_offer(market)
+            # Only make bids in two-sided markets
             if ConstSettings.IAASettings.MARKET_TYPE != 1:
                 self._post_first_bid(market)
 
-            # Production (offers)
-            self._post_offer(market)
-
-        # BOTH
-        # TODO: this part is only implmemented in load_hours. Why?
-        # if self.area.current_market:
-        #     self._cycled_market.add(
-        #         self.area.current_market.time_slot)  # TODO: wait for PV offers first!
         self._delete_past_state()
 
     def event_offer(self, *, market_id, offer):
-        """Automatically react to offers (trying to buy energy) in single-sided markets.
+        """Automatically react to offers (trying to buy energy) in one-sided markets.
 
         This method is triggered by the OFFER event.
         """
@@ -220,29 +202,15 @@ class HomeMeterStrategy(BidEnabledStrategy):
             return
 
         market = self.area.get_future_market_from_id(market_id)
-        # # TODO: do we really need self._cycled_market ?
-        # if market.time_slot not in self._cycled_market:
-        #     return
         if self._offer_comes_from_different_seller(offer):
             self._one_sided_market_event_tick(market, offer)
 
     def event_tick(self):
         """Buy or offer energy on market tick. This method is triggered by the TICK event."""
-        # Energy consumption (bids)
-        for market in self.area.all_markets:
-            # Single-sided market (only offers are posted)
-            if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                self._one_sided_market_event_tick(market)
-            # Double-sided markets (both offers and bids are posted)
-            elif ConstSettings.IAASettings.MARKET_TYPE in [2, 3]:
-                self._double_sided_market_event_tick(market)
 
-        # TODO: the following three methods will cycle again on all markets. Refactor them.
-        # Bid prices have been updated, so we increase the counter of the bid updates
-        self.bid_update.increment_update_counter_all_markets(self)
-        # Energy production (offers)
-        self.offer_update.update(self)
-        self.offer_update.increment_update_counter_all_markets(self)
+        # TODO: the following methods will cycle many times on all markets and should be refactored
+        self._event_tick_consumption()
+        self._event_tick_production()
 
     def event_trade(self, *, market_id, trade):
         """Validate the trade for both offers and bids. Extends the superclass method.
@@ -350,8 +318,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
             final_rate_profile_buffer=final_rate,
             energy_rate_change_per_update_profile_buffer=energy_rate_change_per_update,
             fit_to_limit=fit_to_limit,
-            update_interval=update_interval
-        )
+            update_interval=update_interval)
 
     def _area_reconfigure_consumption_prices(self, **kwargs):
         if kwargs.get("initial_buying_rate") is not None:
@@ -402,6 +369,13 @@ class HomeMeterStrategy(BidEnabledStrategy):
             energy_rate_change_per_update_profile_buffer=energy_rate_change_per_update,
             fit_to_limit=fit_to_limit,
             update_interval=update_interval)
+
+    def _reset_rates_and_update_prices(self):
+        """Set the initial/final rates and update the price of all bids/offers consequently."""
+        self.bid_update.update_and_populate_price_settings(self.area)
+        self.bid_update.reset(self)
+        self.offer_update.update_and_populate_price_settings(self.area)
+        self.offer_update.reset(self)
 
     def _post_offer(self, market):
         offer_energy_kWh = self.state.get_available_energy_kWh(market.time_slot)
@@ -461,11 +435,8 @@ class HomeMeterStrategy(BidEnabledStrategy):
             # Turn energy into a positive number (required for set_available_energy method)
             produced_energy = abs(energy_kWh) if energy_kWh < 0 else 0.0
 
-            print("\nenergy_kWh, consumed_energy, produced_energy")
-            print(energy_kWh, consumed_energy, produced_energy)
             if consumed_energy and produced_energy:
-                # TODO: create better custom exception
-                raise Exception(
+                raise InconsistentEnergyException(
                     "The home meter can't both produce and consume energy at the same time.")
 
             self.state.set_desired_energy(consumed_energy * 1000, slot_time, overwrite=False)
@@ -485,7 +456,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
         if isinstance(update_interval, int):
             return duration(minutes=update_interval)
 
-        return
+        return None
 
     def _delete_past_state(self):
         if constants.D3A_TEST_RUN is True or self.area.current_market is None:
@@ -511,7 +482,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
     def _validate_consumption_rates(
             self, initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
-        # All parameters have to be validated for each time slot
         for time_slot in initial_rate.keys():
             rate_change = None if fit_to_limit else find_object_of_same_weekday_and_time(
                 energy_rate_change_per_update, time_slot)
@@ -541,10 +511,26 @@ class HomeMeterStrategy(BidEnabledStrategy):
             round(offer.energy_rate, DEFAULT_PRECISION)
             <= max_affordable_offer_rate + FLOATING_POINT_TOLERANCE)
 
-    # TODO: split into two methods (with and without offer)
+    def _event_tick_consumption(self):
+        for market in self.area.all_markets:
+            # One-sided market (only offers are posted)
+            if ConstSettings.IAASettings.MARKET_TYPE == 1:
+                self._one_sided_market_event_tick(market)
+            # Two-sided markets (both offers and bids are posted)
+            elif ConstSettings.IAASettings.MARKET_TYPE in [2, 3]:
+                # Update the price of existing bids to reflect the new rates
+                self.bid_update.update(market, self)
+
+        # Bid prices have been updated, so we increase the counter of the bid updates
+        self.bid_update.increment_update_counter_all_markets(self)
+
+    def _event_tick_production(self):
+        self.offer_update.update(self)
+        self.offer_update.increment_update_counter_all_markets(self)
+
     def _one_sided_market_event_tick(self, market, offer=None):
         """
-        Define the behavior of the device on TICK events in single-sided markets (react to offers).
+        Define the behavior of the device on TICK events in one-sided markets (react to offers).
         """
         if not self.state.can_buy_more_energy(market.time_slot):
             return
@@ -578,17 +564,13 @@ class HomeMeterStrategy(BidEnabledStrategy):
         offers = market.most_affordable_offers
         return random.choice(offers)
 
-    def _double_sided_market_event_tick(self, market):
-        """
-        Define the behavior of the device on TICK events in double-sided markets (post bids).
-        """
-        # Update the price of existing bids to reflect the new rates
-        self.bid_update.update(market, self)
-        # TODO: implement offers part
-
     def event_balancing_market_cycle(self):
         # TODO: implement
         pass
 
     def _offer_comes_from_different_seller(self, offer):
         return offer.seller != self.owner.name and offer.seller != self.area.name
+
+
+class InconsistentEnergyException(Exception):
+    """Exception raised when the energy produced/consumed by the Home Meter does not make sense."""
