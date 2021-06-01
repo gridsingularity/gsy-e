@@ -45,6 +45,7 @@ class InterAreaAgent(BaseStrategy):
         assert 0 <= min_offer_age <= 360
 
     def area_reconfigure_event(self, min_offer_age):
+        """Reconfigure the minimum offer age at runtime with the given value."""
         self._validate_constructor_arguments(min_offer_age)
         self.min_offer_age = min_offer_age
         for engine in sorted(self.engines, key=lambda _: random()):

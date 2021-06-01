@@ -96,7 +96,7 @@ class PVPredefinedStrategy(PVStrategy):
             slot_time = market.time_slot
             if not self.power_profile:
                 raise D3AException(
-                    f"PV {self.owner.name} tries to set its energy forecast without a "
+                    f"PV {self.owner.name} tries to set its available energy forecast without a "
                     f"power profile.")
             available_energy_kWh = find_object_of_same_weekday_and_time(
                 self.power_profile, slot_time) * self.panel_count
@@ -126,6 +126,7 @@ class PVPredefinedStrategy(PVStrategy):
             InputProfileTypes.POWER, str(profile_path))
 
     def area_reconfigure_event(self, **kwargs):
+        """Reconfigure the device properties at runtime using the provided arguments."""
         if key_in_dict_and_not_none(kwargs, 'cloud_coverage'):
             self.cloud_coverage = kwargs['cloud_coverage']
         super().area_reconfigure_event(**kwargs)
@@ -175,6 +176,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
             self._power_profile_W)
 
     def area_reconfigure_event(self, **kwargs):
+        """Reconfigure the device properties at runtime using the provided arguments."""
         super().area_reconfigure_event(**kwargs)
         if key_in_dict_and_not_none(kwargs, 'power_profile'):
             self._power_profile_W = kwargs['power_profile']
