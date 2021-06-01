@@ -241,6 +241,7 @@ class LoadExternalMixin(ExternalMixin):
             assert False, f"Incorrect incoming request name: {req}"
 
     def event_tick(self):
+        """Post bids on market tick. This method is triggered by the TICK event."""
         if self.should_use_default_strategy:
             super().event_tick()
         else:
@@ -415,6 +416,10 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
                 f'{self.channel_prefix}/set_energy_forecast': self._set_energy_forecast}
 
     def event_tick(self):
+        """Set the energy forecast using pending requests. Extends super implementation.
+
+        This method is triggered by the TICK event.
+        """
         # Need to repeat he pending request parsing in order to handle power forecasts
         # from the MQTT subscriber (non-connected admin)
         for req in self.pending_requests:

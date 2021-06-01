@@ -15,24 +15,23 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import traceback
 import math
-from typing import Dict  # noqa
+import traceback
 from logging import getLogger
-from pendulum import Time  # noqa
-from pendulum import duration
 
-from d3a.d3a_core.util import get_market_maker_rate_from_config
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.utils import find_object_of_same_weekday_and_time, convert_W_to_kWh
 from d3a_interface.device_validator import validate_pv_device_energy, validate_pv_device_price
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.utils import (
+    convert_W_to_kWh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
+from pendulum import duration, Time  # noqa
+
+from d3a import constants
+from d3a.d3a_core.exceptions import MarketException
+from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a.models.state import PVState
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.update_frequency import TemplateStrategyOfferUpdater
-from d3a.models.state import PVState
-from d3a.d3a_core.exceptions import MarketException
-from d3a_interface.utils import key_in_dict_and_not_none
-from d3a import constants
 
 log = getLogger(__name__)
 
@@ -75,6 +74,11 @@ class PVStrategy(BaseStrategy):
 
     def _init_price_update(self, update_interval, initial_selling_rate, final_selling_rate,
                            use_market_maker_rate, fit_to_limit, energy_rate_decrease_per_update):
+
+        # Instantiate instance variables that should not be shared with child classes
+        self.final_selling_rate = final_selling_rate
+        self.use_market_maker_rate = use_market_maker_rate
+
         if update_interval is None:
             update_interval = \
                 duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
@@ -82,8 +86,6 @@ class PVStrategy(BaseStrategy):
         if isinstance(update_interval, int):
             update_interval = duration(minutes=update_interval)
 
-        self.final_selling_rate = final_selling_rate
-        self.use_market_maker_rate = use_market_maker_rate
         validate_pv_device_price(fit_to_limit=fit_to_limit,
                                  energy_rate_decrease_per_update=energy_rate_decrease_per_update)
 
@@ -93,6 +95,7 @@ class PVStrategy(BaseStrategy):
                                                          update_interval)
 
     def area_reconfigure_event(self, **kwargs):
+        """Reconfigure the device properties at runtime using the provided arguments."""
         self._area_reconfigure_prices(**kwargs)
         self.offer_update.update_and_populate_price_settings(self.area)
 
@@ -187,6 +190,10 @@ class PVStrategy(BaseStrategy):
         self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
 
     def event_tick(self):
+        """Update the prices of existing offers on market tick.
+
+        This method is triggered by the TICK event.
+        """
         self.offer_update.update(self)
         self.offer_update.increment_update_counter_all_markets(self)
 
@@ -234,7 +241,7 @@ class PVStrategy(BaseStrategy):
                 self.area.current_market is None:
             return
 
-        self.state.delete_past_state(self.area.current_market.time_slot)
+        self.state.delete_past_state_values(self.area.current_market.time_slot)
         self.offer_update.delete_past_state_values(self.area.current_market.time_slot)
 
     def event_market_cycle_price(self):

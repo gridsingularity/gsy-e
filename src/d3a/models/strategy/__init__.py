@@ -258,7 +258,11 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             self.event_response_uuids.remove(data["transaction_uuid"])
 
     def area_reconfigure_event(self, *args, **kwargs):
-        pass
+        """Reconfigure the device properties at runtime using the provided arguments.
+
+        This method is triggered when the device strategy is updated while the simulation is
+        running. The update can happen via live events (triggered by the user) or scheduled events.
+        """
 
     def event_on_disabled_area(self):
         pass
@@ -490,14 +494,17 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                 "State is required to support load state functionality.")
 
     def update_energy_price(self, market, updated_rate):
+        """Update the total price of all offers in the specified market based on their new rate."""
         if market.id not in self.offers.open.values():
             return
 
         for offer, iterated_market_id in self.offers.open.items():
             iterated_market = self.area.get_future_market_from_id(iterated_market_id)
+            # Skip offers that don't belong to the specified market slot
             if market is None or iterated_market is None or iterated_market.id != market.id:
                 continue
             try:
+                # Delete the old offer and create a new equivalent one with an updated price
                 iterated_market.delete_offer(offer.id)
                 updated_price = round(offer.energy * updated_rate, 10)
                 new_offer = iterated_market.offer(
@@ -550,7 +557,8 @@ class BidEnabledStrategy(BaseStrategy):
         self.add_bid_to_posted(market.id, bid)
         return bid
 
-    def post_bids(self, market, updated_rate):
+    def update_bid_rates(self, market, updated_rate):
+        """Replace the rate of all bids in the market slot with the given updated rate."""
         existing_bids = list(self.get_posted_bids(market))
         for bid in existing_bids:
             assert bid.buyer == self.owner.name
@@ -626,6 +634,7 @@ class BidEnabledStrategy(BaseStrategy):
             return self._traded_bids[market.id]
 
     def are_bids_posted(self, market_id):
+        """Checks if any bids have been posted in the market slot with the given ID."""
         if market_id not in self._bids:
             return False
         return len(self._bids[market_id]) > 0

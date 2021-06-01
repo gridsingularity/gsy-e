@@ -232,6 +232,10 @@ class PVExternalMixin(ExternalMixin):
             assert False, f"Incorrect incoming request name: {req}"
 
     def event_tick(self):
+        """Process aggregator requests on market tick. Extends super implementation.
+
+        This method is triggered by the TICK event.
+        """
         if not self.connected and not self.is_aggregator_controlled:
             super().event_tick()
         else:
@@ -422,6 +426,10 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
                 f'{self.channel_prefix}/set_energy_forecast': self._set_energy_forecast}
 
     def event_tick(self):
+        """Set the energy forecast using pending requests. Extends super implementation.
+
+        This method is triggered by the TICK event.
+        """
         # Need to repeat he pending request parsing in order to handle energy forecasts
         # from the MQTT subscriber (non-connected admin)
         for req in self.pending_requests:

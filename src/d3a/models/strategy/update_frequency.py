@@ -129,6 +129,7 @@ class UpdateFrequencyMixin:
         self._populate_profiles(area)
 
     def get_updated_rate(self, time_slot):
+        """Compute the rate for offers/bids at a specific time slot."""
         calculated_rate = \
             self.initial_rate[time_slot] - \
             self.energy_rate_change_per_update[time_slot] * self.update_counter[time_slot]
@@ -147,14 +148,16 @@ class UpdateFrequencyMixin:
         return any(should_update)
 
     def increment_update_counter(self, strategy, time_slot):
+        """Increment the counter of the number of times in which prices have been updated."""
         if self.time_for_price_update(strategy, time_slot):
             self.update_counter[time_slot] += 1
             return True
         return False
 
     def time_for_price_update(self, strategy, time_slot):
-        return self.elapsed_seconds(strategy) >= \
-               self.update_interval.seconds * self.update_counter[time_slot]
+        """Check if the prices of bids/offers should be updated."""
+        return self.elapsed_seconds(strategy) >= (
+            self.update_interval.seconds * self.update_counter[time_slot])
 
     def set_parameters(self, *, initial_rate_profile_buffer=None, final_rate_profile_buffer=None,
                        energy_rate_change_per_update_profile_buffer=None, fit_to_limit=None,
@@ -174,24 +177,28 @@ class UpdateFrequencyMixin:
 
 class TemplateStrategyBidUpdater(UpdateFrequencyMixin):
     def reset(self, strategy):
+        """Reset the price of all bids to use their initial rate."""
         # decrease energy rate for each market again, except for the newly created one
         for market in strategy.area.all_markets[:-1]:
             self.update_counter[market.time_slot] = 0
-            strategy.post_bids(market, self.get_updated_rate(market.time_slot))
+            strategy.update_bid_rates(market, self.get_updated_rate(market.time_slot))
 
     def update(self, market, strategy):
+        """Update the price of existing bids to reflect the new rates."""
         if self.time_for_price_update(strategy, market.time_slot):
             if strategy.are_bids_posted(market.id):
-                strategy.post_bids(market, self.get_updated_rate(market.time_slot))
+                strategy.update_bid_rates(market, self.get_updated_rate(market.time_slot))
 
 
 class TemplateStrategyOfferUpdater(UpdateFrequencyMixin):
     def reset(self, strategy):
+        """Reset the price of all offers based to use their initial rate."""
         for market in strategy.area.all_markets[:-1]:
             self.update_counter[market.time_slot] = 0
             strategy.update_energy_price(market, self.get_updated_rate(market.time_slot))
 
     def update(self, strategy):
+        """Update the price of existing offers to reflect the new rates."""
         for market in strategy.area.all_markets:
             if self.time_for_price_update(strategy, market.time_slot):
                 strategy.update_energy_price(market, self.get_updated_rate(market.time_slot))
