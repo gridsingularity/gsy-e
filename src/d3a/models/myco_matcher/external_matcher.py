@@ -54,19 +54,23 @@ class ExternalMatcher(BaseMatcher):
         """
         Receive trade recommendations and match them in the relevant market
         """
-        recommendations = json.loads(payload.get("data"))
+        data = json.loads(payload.get("data"))
+        recommendations = data.get("recommended_matches", [])
         for record in recommendations:
-            market = self.markets_mapping[record.get("market_id")]
+            market = self.markets_mapping.get(record.get("market_id"), None)
+            if market is None:
+                continue
             validate_authentic_bid_offer_pair(
                 record.get("bid"),
                 record.get("offer"),
                 record.get("trade_rate"),
                 record.get("selected_energy")
                 )
-            market.match_recommendations([BidOfferMatch(record.get("bid"),
-                                                        record.get("selected_energy"),
-                                                        record.get("offer"),
-                                                        record.get("trade_rate")), ])
+            market.match_recommendation([BidOfferMatch(
+                record.get("bid"),
+                record.get("selected_energy"),
+                record.get("offer"),
+                record.get("trade_rate")), ])
         channel = f"{self.channel_prefix}response/matched_recommendations/"
         data = {"event": "match", "status": "success"}
         self.myco_ext_conn.publish_json(channel, data)
