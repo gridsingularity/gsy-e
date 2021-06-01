@@ -259,6 +259,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
             <= max_affordable_offer_rate + FLOATING_POINT_TOLERANCE)
 
     def _one_sided_market_event_tick(self, market, offer=None):
+        if not self.state.can_buy_more_energy(market.time_slot):
+            return
+
         try:
             if offer is None:
                 if not market.offers:
@@ -273,9 +276,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
             if acceptable_offer and \
                     self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE and \
                     self._offer_rate_can_be_accepted(acceptable_offer, market):
-
-                if not self.state.can_buy_more_energy(time_slot):
-                    return
 
                 energy_Wh = self.state.calculate_energy_to_accept(
                     acceptable_offer.energy * 1000.0, time_slot)
@@ -295,9 +295,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def event_tick(self):
         """Post bids on market tick. This method is triggered by the TICK event."""
         for market in self.active_markets:
-            if not self.state.can_buy_more_energy(market.time_slot):
-                continue
-
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 self._one_sided_market_event_tick(market)
             elif ConstSettings.IAASettings.MARKET_TYPE == 2 or \
