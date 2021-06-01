@@ -10,9 +10,9 @@ from d3a.models.myco_matcher.base_matcher import BaseMatcher
 class ExternalMatcher(BaseMatcher):
     def __init__(self):
         super(ExternalMatcher, self).__init__()
-        self.job_uuid = d3a.constants.COLLABORATION_ID
+        self.simulation_id = d3a.constants.COLLABORATION_ID
         self.myco_ext_conn = None
-        self.channel_prefix = f"external-myco/{self.job_uuid}/"
+        self.channel_prefix = f"external-myco/{self.simulation_id}/"
         self._setup_redis_connection()
         self.area_uuid_markets_mapping = {}
         self.markets_mapping = {}
@@ -21,7 +21,7 @@ class ExternalMatcher(BaseMatcher):
     def _setup_redis_connection(self):
         self.myco_ext_conn = ResettableCommunicator()
         self.myco_ext_conn.sub_to_multiple_channels(
-            {"external-myco/get_job_uuid": self.get_job_uuid,
+            {"external-myco/get_simulation_id": self.get_simulation_id,
              f"{self.channel_prefix}get_offers_bids/": self.publish_offers_bids,
              f"{self.channel_prefix}post_recommendations/": self.match_recommendations})
 
@@ -74,9 +74,9 @@ class ExternalMatcher(BaseMatcher):
     def calculate_match_recommendation(self, bids, offers, current_time=None):
         pass
 
-    def get_job_uuid(self, message):
+    def get_simulation_id(self, message):
         """
-        Publish the job uuid to the Myco client
+        Publish the simulation id to the Myco client
         """
-        channel = "external-myco/get_job_uuid/response"
-        self.myco_ext_conn.publish_json(channel, {"job_uuid": self.job_uuid})
+        channel = "external-myco/get_simulation_id/response"
+        self.myco_ext_conn.publish_json(channel, {"simulation_id": self.simulation_id})
