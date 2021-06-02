@@ -130,6 +130,17 @@ class ConsumptionState(StateInterface):
             f"Energy requirement for device {area_name} fell below zero "
             f"({self._energy_requirement_Wh[time_slot]}).")
 
+    def delete_past_state_values(self, current_time_slot):
+        """Delete data regarding energy consumption for past market slots."""
+        to_delete = []
+        for market_slot in self._energy_requirement_Wh.keys():
+            if market_slot < current_time_slot:
+                to_delete.append(market_slot)
+
+        for market_slot in to_delete:
+            self._energy_requirement_Wh.pop(market_slot, None)
+            self._desired_energy_Wh.pop(market_slot, None)
+
 
 class ProductionState(StateInterface):
     """State for devices that can produce energy."""
@@ -167,22 +178,30 @@ class ProductionState(StateInterface):
         self._energy_production_forecast_kWh[time_slot] = energy_kWh
         self._available_energy_kWh[time_slot] = energy_kWh
 
-        # TODO: replace assertion with raising custom exception
         assert self._energy_production_forecast_kWh[time_slot] >= 0.0
 
     def get_available_energy_kWh(self, time_slot, default_value=None):
         available_energy = self._available_energy_kWh.get(time_slot, default_value)
 
-        # TODO: replace assertion with raising custom exception
         assert available_energy >= -FLOATING_POINT_TOLERANCE
         return available_energy
 
-    # TODO: remove duplicate in PVState
     def decrement_available_energy(self, sold_energy_kWh, time_slot, area_name):
         self._available_energy_kWh[time_slot] -= sold_energy_kWh
         assert self._available_energy_kWh[time_slot] >= -FLOATING_POINT_TOLERANCE, (
             f"Available energy for device {area_name} fell below zero "
             f"({self._available_energy_kWh[time_slot]}).")
+
+    def delete_past_state_values(self, current_market_time_slot):
+        """Delete data regarding energy production for past market slots."""
+        to_delete = []
+        for market_slot in self._available_energy_kWh.keys():
+            if market_slot < current_market_time_slot:
+                to_delete.append(market_slot)
+
+        for market_slot in to_delete:
+            self._available_energy_kWh.pop(market_slot, None)
+            self._energy_production_forecast_kWh.pop(market_slot, None)
 
 
 class PVState(ProductionState):
@@ -194,15 +213,6 @@ class PVState(ProductionState):
         if default_value is not None:
             return self._energy_production_forecast_kWh.get(time_slot, default_value)
         return self._energy_production_forecast_kWh[time_slot]
-
-    def delete_past_state_values(self, current_market_time_slot):
-        to_delete = []
-        for market_slot in self._available_energy_kWh.keys():
-            if market_slot < current_market_time_slot:
-                to_delete.append(market_slot)
-        for market_slot in to_delete:
-            self._available_energy_kWh.pop(market_slot, None)
-            self._energy_production_forecast_kWh.pop(market_slot, None)
 
 
 class LoadState(ConsumptionState):
@@ -221,15 +231,6 @@ class LoadState(ConsumptionState):
     def get_desired_energy(self, time_slot):
         return self._desired_energy_Wh[time_slot]
 
-    def delete_past_state_values(self, current_time_slot):
-        to_delete = []
-        for market_slot in self._energy_requirement_Wh.keys():
-            if market_slot < current_time_slot:
-                to_delete.append(market_slot)
-        for market_slot in to_delete:
-            self._energy_requirement_Wh.pop(market_slot, None)
-            self._desired_energy_Wh.pop(market_slot, None)
-
 
 class HomeMeterState(ConsumptionState, ProductionState):
     """State for the Home Meter device"""
@@ -238,7 +239,7 @@ class HomeMeterState(ConsumptionState, ProductionState):
         super().__init__()
 
     def delete_past_state_values(self, current_market_time_slot):
-        """Delete the information about energy requirements and availability from past markets."""
+        """Delete data regarding energy requirements and availability for past market slots."""
         to_delete = []
         # We want to iterate on all market slots that have both available and required energy
         market_slots = self._available_energy_kWh.keys() | self._energy_requirement_Wh.keys()
