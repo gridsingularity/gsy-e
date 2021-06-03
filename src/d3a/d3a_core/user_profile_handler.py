@@ -50,7 +50,7 @@ class ProfileDBConnectionHandler:
         profile_type = Required(int)  # values of InputProfileTypes
 
     def __init__(self):
-        self._profile_uuid_type_mapping = {}
+        # self._profile_uuid_type_mapping = {}
         self._user_profiles = {}
         self._buffered_times = []
         self._profile_uuids = None
@@ -86,27 +86,21 @@ class ProfileDBConnectionHandler:
 
         """
         selection = select(datapoint for datapoint in self.ProfileTimeSeries
-                           if datapoint.profile_uuid in self._profile_uuid_type_mapping.keys()
+                           if datapoint.profile_uuid in self._profile_uuids
                            and datapoint.time >= start_time and datapoint.time <= end_time)
 
         return selection
 
     @db_session
-    def _populate_profile_uuid_type_mapping(self):
-        """ Buffers a mapping between profile uuid and the type of the profile into
-        self._profile_uuid_type_mapping which is currently used to keep track
-        of the list of profile_uuids
-
-        """
+    def _buffer_profile_uuid_list(self):
+        """ Buffers list of the profile_uuids that correspond to this simulation into
+        self._profile_uuids"""
         profile_selection = select(
-            (datapoint.profile_uuid, datapoint.profile_type)
+            datapoint.profile_uuid
             for datapoint in self.ConfigurationAreaProfileUuids
             if datapoint.configuration_uuid == d3a.constants.CONFIGURATION_ID)
 
-        for profile_uuid, profile_type in profile_selection:
-            self._profile_uuid_type_mapping[profile_uuid] = profile_type
-
-        self._profile_uuids = list(self._profile_uuid_type_mapping.keys())
+        self._profile_uuids = list(profile_selection)
 
     @db_session
     def _buffer_all_profiles(self, current_timestamp: DateTime):
@@ -120,7 +114,7 @@ class ProfileDBConnectionHandler:
         query_ret_val = self._get_profiles_from_db(self.convert_pendulum_to_datetime(start_time),
                                                    self.convert_pendulum_to_datetime(end_time))
 
-        for profile_uuid in self._profile_uuid_type_mapping.keys():
+        for profile_uuid in self._profile_uuids:
             self._user_profiles[profile_uuid] = \
                 {instance(data_point.time, TIME_ZONE): data_point.value
                  for data_point in query_ret_val if data_point.profile_uuid == profile_uuid}
@@ -159,7 +153,7 @@ class ProfileDBConnectionHandler:
 
         """
         if self.should_buffer_profiles(current_timestamp):
-            self._populate_profile_uuid_type_mapping()
+            self._buffer_profile_uuid_list()
             self._buffer_all_profiles(current_timestamp)
             self._buffer_time_slots()
 
