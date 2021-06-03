@@ -134,10 +134,12 @@ def bus_test1(area_test1):
 
 def test_global_market_maker_rate_set_at_instantiation(bus_test1):
     bus_test1.event_activate()
-    assert all(energy_rate == GlobalConfig.market_maker_rate
-               for energy_rate in bus_test1.energy_rate.values())
-    assert all(energy_buy_rate == GlobalConfig.market_maker_rate
-               for energy_buy_rate in bus_test1.energy_buy_rate.values())
+    assert len(bus_test1.energy_rate) > 0
+    assert len(bus_test1.energy_buy_rate) > 0
+    for time, value in bus_test1.energy_rate.items():
+        assert value == GlobalConfig.market_maker_rate[time]
+    for time, value in bus_test1.energy_buy_rate.items():
+        assert value == GlobalConfig.market_maker_rate[time]
 
 
 def testing_offer_is_created_at_first_market_not_on_activate(bus_test1, area_test1):
