@@ -180,27 +180,27 @@ class UpdateFrequencyMixin:
         return self.elapsed_seconds(strategy) >= (
             self.update_interval.seconds * self.update_counter[time_slot])
 
-    def set_parameters(self, area, initial_rate=None, final_rate=None,
+    def set_parameters(self, *, initial_rate=None, final_rate=None,
                        energy_rate_change_per_update=None, fit_to_limit=None,
                        update_interval=None):
 
-        update = False
+        should_update = False
         if initial_rate is not None:
             self.initial_rate_input = initial_rate
-            update = True
+            should_update = True
         if final_rate is not None:
             self.final_rate_input = final_rate
-            update = True
+            should_update = True
         if energy_rate_change_per_update is not None:
             self.energy_rate_change_per_update_input = energy_rate_change_per_update
-            update = True
+            should_update = True
         if fit_to_limit is not None:
             self.fit_to_limit = fit_to_limit
-            update = True
+            should_update = True
         if update_interval is not None:
             self.update_interval = update_interval
-            update = True
-        if update:
+            should_update = True
+        if should_update:
             self._read_or_rotate_rate_profiles()
 
 

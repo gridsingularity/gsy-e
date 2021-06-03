@@ -195,7 +195,6 @@ class StorageStrategy(BidEnabledStrategy):
             return
 
         self.offer_update.set_parameters(
-            self.area,
             initial_rate=initial_selling_rate,
             final_rate=final_selling_rate,
             energy_rate_change_per_update=energy_rate_decrease_per_update,
@@ -203,7 +202,6 @@ class StorageStrategy(BidEnabledStrategy):
             update_interval=update_interval
         )
         self.bid_update.set_parameters(
-            self.area,
             initial_rate=initial_buying_rate,
             final_rate=final_buying_rate,
             energy_rate_change_per_update=energy_rate_increase_per_update,

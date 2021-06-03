@@ -217,7 +217,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
             return
 
         self.bid_update.set_parameters(
-            self.area,
             initial_rate=initial_rate,
             final_rate=final_rate,
             energy_rate_change_per_update=energy_rate_change_per_update,
