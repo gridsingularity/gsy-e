@@ -73,6 +73,7 @@ class MarketMakerStrategy(CommercialStrategy):
             super().event_market_cycle()
 
     def area_reconfigure_event(self, *args, **kwargs):
+        """Reconfigure the device properties at runtime using the provided arguments."""
         super().area_reconfigure_event(*args, **kwargs)
         if key_in_dict_and_not_none(kwargs, "grid_connected"):
             self._grid_connected = kwargs["grid_connected"]

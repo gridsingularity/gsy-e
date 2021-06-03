@@ -39,10 +39,6 @@ before_feature(context, feature), after_feature(context, feature)
 before_tag(context, tag), after_tag(context, tag)
 """
 
-# -- SETUP: Use cfparse as default matcher
-# from behave import use_step_matcher
-# step_matcher("cfparse")
-
 
 if d3a.constants.CONNECT_TO_PROFILES_DB is True:
     # profiles_handler needs to be a singleton in the integration tests:

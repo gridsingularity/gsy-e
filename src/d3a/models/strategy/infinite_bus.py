@@ -118,6 +118,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
                     continue
 
     def event_tick(self):
+        """Buy energy on market tick. This method is triggered by the TICK event."""
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
             for market in self.area.all_markets:
                 self.buy_energy(market)

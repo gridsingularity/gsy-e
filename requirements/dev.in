@@ -3,6 +3,5 @@
 fabric3
 pre-commit
 psutil
-ptpython
 pyyaml>=4.2b1
 tox

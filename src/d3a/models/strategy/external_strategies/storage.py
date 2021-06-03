@@ -387,6 +387,10 @@ class StorageExternalMixin(ExternalMixin):
             super().event_market_cycle()
 
     def event_tick(self):
+        """Process aggregator requests on market tick. Extends super implementation.
+
+        This method is triggered by the TICK event.
+        """
         if not self.connected and not self.is_aggregator_controlled:
             super().event_tick()
         else:

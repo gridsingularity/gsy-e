@@ -142,6 +142,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         return True
 
     def area_reconfigure_event(self, **kwargs):
+        """Reconfigure the device properties at runtime using the provided arguments."""
         self._area_reconfigure_prices(**kwargs)
         if key_in_dict_and_not_none(kwargs, 'daily_load_profile'):
             self._load_profile_input = kwargs['daily_load_profile']
