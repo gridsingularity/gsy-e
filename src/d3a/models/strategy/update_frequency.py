@@ -16,12 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from pendulum import duration, DateTime
-
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.utils import find_object_of_same_weekday_and_time
+from d3a.d3a_core.singletons import global_objects
 from d3a.d3a_core.util import write_default_to_dict
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.read_user_profile import InputProfileTypes
+from d3a_interface.utils import find_object_of_same_weekday_and_time
+from pendulum import duration
 
 
 class UpdateFrequencyMixin:
@@ -30,47 +30,43 @@ class UpdateFrequencyMixin:
                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
                  rate_limit_object=max):
         self.fit_to_limit = fit_to_limit
+
+        # initial input values (currently of type float)
         self.initial_rate_input = initial_rate
         self.final_rate_input = final_rate
         self.energy_rate_change_per_update_input = energy_rate_change_per_update
+
+        # buffer of populated input values Dict[DateTime, float]
         self.initial_rate_profile_buffer = {}
         self.final_rate_profile_buffer = {}
+        self.energy_rate_change_per_update_profile_buffer = {}
+
+        # dicts that are used for price calculations, contain only all_markets Dict[DatTime, float]
         self.initial_rate = {}
         self.final_rate = {}
-        self.fit_to_limit = fit_to_limit
-        self.energy_rate_change_per_update_profile_buffer = {}
-        self._read_or_rotate_rate_profiles(GlobalConfig.start_date)
-
         self.energy_rate_change_per_update = {}
+
+        self._read_or_rotate_rate_profiles()
+
         self.update_interval = update_interval
         self.update_counter = {}
         self.number_of_available_updates = 0
         self.rate_limit_object = rate_limit_object
 
-    def _read_or_rotate_rate_profiles(self, current_timestamp: DateTime,
-                                      reconfigure: bool = False):
+    def _read_or_rotate_rate_profiles(self):
         """ Creates a new chunk of profiles if the current_timestamp is not in the profile buffers
-
-        Args:
-            current_timestamp: current time slot time
-            reconfigure: Force overwriting the current profile
-
         """
         # TODO: this needs to be implemented to except profile UUIDs and DB connection
-        if reconfigure or current_timestamp not in self.initial_rate_profile_buffer.keys():
-            self.initial_rate_profile_buffer = \
-                read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                       self.initial_rate_input,
-                                       current_timestamp=current_timestamp)
-            self.final_rate_profile_buffer = \
-                read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                       self.final_rate_input,
-                                       current_timestamp=current_timestamp)
-            if self.fit_to_limit is False:
-                self.energy_rate_change_per_update_profile_buffer = \
-                    read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                           self.energy_rate_change_per_update_input,
-                                           current_timestamp=current_timestamp)
+        self.initial_rate_profile_buffer = \
+            global_objects.profiles_handler.rotate_profile(InputProfileTypes.IDENTITY,
+                                                           self.initial_rate_input)
+        self.final_rate_profile_buffer =\
+            global_objects.profiles_handler.rotate_profile(InputProfileTypes.IDENTITY,
+                                                           self.final_rate_input)
+        if self.fit_to_limit is False:
+            self.energy_rate_change_per_update_profile_buffer = \
+                global_objects.profiles_handler.rotate_profile(
+                    InputProfileTypes.IDENTITY, self.energy_rate_change_per_update_input)
 
     def delete_past_state_values(self, current_market_time_slot):
         to_delete = []
@@ -150,8 +146,7 @@ class UpdateFrequencyMixin:
 
         self.number_of_available_updates = \
             self._calculate_number_of_available_updates_per_slot
-        if area.current_market:
-            self._read_or_rotate_rate_profiles(area.current_market.time_slot)
+
         self._populate_profiles(area)
 
     def get_updated_rate(self, time_slot):
@@ -203,9 +198,7 @@ class UpdateFrequencyMixin:
             self.update_interval = update_interval
             update = True
         if update:
-            self._read_or_rotate_rate_profiles(current_timestamp=area.current_market.time_slot
-                                               if area.current_market else GlobalConfig.start_date,
-                                               reconfigure=True)
+            self._read_or_rotate_rate_profiles()
 
 
 class TemplateStrategyBidUpdater(UpdateFrequencyMixin):

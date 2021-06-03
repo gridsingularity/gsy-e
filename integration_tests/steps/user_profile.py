@@ -26,11 +26,11 @@ def pv_yearly_profile(context):
         read_arbitrary_profile(InputProfileTypes.POWER,
                                d3a_path + '/resources/Solar_Curve_W_sunny.csv')
 
-    return write_yearly_user_profiles_to_db(context.daily_profile_pv,
-                                            InputProfileTypes.POWER.value,
-                                            context.config_uuid,
-                                            context.pv_area_uuid,
-                                            context.pv_profile_uuid)
+    write_yearly_user_profiles_to_db(context.daily_profile_pv,
+                                     InputProfileTypes.POWER.value,
+                                     context.config_uuid,
+                                     context.pv_area_uuid,
+                                     context.pv_profile_uuid)
 
 
 @given("a yearly Load profile exist in the DB")
@@ -39,41 +39,47 @@ def load_yearly_profile(context):
     context.daily_profile_load = \
         read_arbitrary_profile(InputProfileTypes.POWER,
                                d3a_path + '/resources/LOAD_DATA_1.csv')
-    return write_yearly_user_profiles_to_db(context.daily_profile_load,
-                                            InputProfileTypes.POWER.value,
-                                            context.config_uuid,
-                                            context.load_area_uuid,
-                                            context.load_profile_uuid)
+    write_yearly_user_profiles_to_db(context.daily_profile_load,
+                                     InputProfileTypes.POWER.value,
+                                     context.config_uuid,
+                                     context.load_area_uuid,
+                                     context.load_profile_uuid)
+
+
+@given("the connection to the profiles DB is disconnected")
+def disconnect_from_profiles_db(context):
+    from integration_tests.environment import profiles_handler
+    profiles_handler.disconnect()
 
 
 @given("a configuration containing a PV and Load using profile_uuids exists")
 def db_profile_scenario(context):
     predefined_load_scenario = {
-      "name": "Grid",
-      "children": [
-        {
-          "name": "Market Maker",
-          "type": "MarketMaker",
-          "energy_rate": 30
-        },
-        {
-          "name": "House",
-          "children": [
+        "name": "Grid",
+        "children": [
             {
-              "name": "Load",
-              "uuid": context.load_area_uuid,
-              "type": "LoadProfile",
-              "daily_load_profile_uuid": context.load_profile_uuid
+                "name": "Market Maker",
+                "type": "MarketMaker",
+                "energy_rate": 30
             },
             {
-              "name": "PV",
-              "uuid": context.pv_area_uuid,
-              "type": "PVProfile",
-              "power_profile_uuid": context.pv_profile_uuid
-            }
-          ]
-        },
-      ]
+                "name": "House",
+                "children": [
+                    {
+                        "name": "Load",
+                        "uuid": context.load_area_uuid,
+                        "type": "LoadProfile",
+                        "daily_load_profile_uuid": context.load_profile_uuid
+                    },
+                    {
+                        "name": "PV",
+                        "uuid": context.pv_area_uuid,
+                        "type": "PVProfile",
+                        "power_profile_uuid": context.pv_profile_uuid
+                    }
+                ]
+            },
+        ]
     }
     context._settings = SimulationConfig(sim_duration=duration(days=3),
                                          tick_length=duration(seconds=60),

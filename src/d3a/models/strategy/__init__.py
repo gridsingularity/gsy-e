@@ -28,17 +28,14 @@ from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import D3ARedisException
 from d3a.d3a_core.exceptions import SimulationException, D3AException, MarketException
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
-from d3a.d3a_core.singletons import global_objects
-from d3a.d3a_core.util import append_or_create_key, should_read_profile_from_db
+from d3a.d3a_core.util import append_or_create_key
 from d3a.events import EventMixin
 from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer, Bid, trade_from_JSON_string, \
     offer_from_JSON_string
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from pendulum import DateTime
+from d3a_interface.constants_limits import ConstSettings
 
 log = getLogger(__name__)
 
@@ -233,44 +230,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     parameters = None
 
-    def rotate_profile(self, profile_type: InputProfileTypes, profile,
-                       profile_uuid: str = None) -> Dict[DateTime, float]:
-        """ Reads a new chunk of profile if the buffer does not contain the current time stamp
-        Profile chunks are either generated from single values, input daily profiles or profiles
-        that are read from the DB
-
-        Args:
-            profile_type (InputProfileTypes): Type of the profile
-            profile (any of str, dict, float): Any arbitrary input
-                                               (same input as for read_arbitrary_profile)
-            profile_uuid (str): optional, if set the profiles is read from the DB
-
-        Returns: Profile chunk as dictionary
-
-        """
-        start_timestamp = self.area.next_market.time_slot \
-            if self.area and self.area.next_market else GlobalConfig.start_date
-        if profile and not isinstance(profile, dict):
-            return read_arbitrary_profile(profile_type,
-                                          profile, current_timestamp=start_timestamp)
-        if not profile or self.time_to_rotate_profile(profile):
-
-            if should_read_profile_from_db(profile_uuid):
-                db_profile = \
-                    global_objects.profile_db_connection.get_profile_from_db_buffer(profile_uuid)
-                return read_arbitrary_profile(profile_type,
-                                              db_profile,
-                                              current_timestamp=min(db_profile.keys()))
-            else:
-                return read_arbitrary_profile(profile_type,
-                                              profile,
-                                              current_timestamp=start_timestamp)
-        else:
-            return profile
-
-    def time_to_rotate_profile(self, profile):
-        return not profile or not self.area.next_market \
-               or self.area.next_market.time_slot not in profile.keys()
+    def _read_or_rotate_rate_profiles(self):
+        pass
 
     def energy_traded(self, market_id):
         return self.offers.sold_offer_energy(market_id)

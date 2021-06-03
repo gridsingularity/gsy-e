@@ -164,10 +164,11 @@ class Simulation:
             self.initial_params["seed"] = random_seed
             log.info("Random seed: {}".format(random_seed))
 
+        # has to be called before get_setup():
+        global_objects.profiles_handler.activate()
+
         self.area = self.setup_module.get_setup(self.simulation_config)
         global_objects.external_global_stats(self.area, self.simulation_config.ticks_per_slot)
-        if d3a.constants.CONNECT_TO_PROFILES_DB:
-            global_objects.profile_db_connection.buffer_profiles_from_db(GlobalConfig.start_date)
 
         self.endpoint_buffer = SimulationEndpointBuffer(
             redis_job_id, self.initial_params,

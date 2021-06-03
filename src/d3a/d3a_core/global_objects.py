@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.d3a_core.util import find_object_of_same_weekday_and_time
 from d3a.d3a_core.util import get_market_maker_rate_from_config, ExternalTickCounter
-from d3a.d3a_core.user_profile_handler import ProfileDBConnectionHandler
+from d3a.d3a_core.user_profile_handler import ProfilesHandler
 
 
 class ExternalConnectionGlobalStatistics:
@@ -88,5 +88,5 @@ class ExternalConnectionGlobalStatistics:
 
 
 class GlobalObjects:
-    profile_db_connection = ProfileDBConnectionHandler()
+    profiles_handler = ProfilesHandler()
     external_global_stats = ExternalConnectionGlobalStatistics()

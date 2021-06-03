@@ -356,8 +356,9 @@ class Area:
         else:
             changed_balancing_market = None
 
-        if d3a.constants.CONNECT_TO_PROFILES_DB and not self.parent and self.next_market:
-            global_objects.profile_db_connection.buffer_profiles_from_db(
+        if not self.parent and self.next_market:
+            # TODO: move this out of here into simulation (if possible)
+            global_objects.profiles_handler.update_time_and_buffer_profiles(
                 self.next_market.time_slot)
 
         # Force market cycle event in case this is the first market slot

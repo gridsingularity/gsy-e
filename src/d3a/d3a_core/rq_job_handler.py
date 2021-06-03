@@ -6,7 +6,6 @@ from datetime import datetime, date
 from zlib import decompress
 
 import d3a.constants
-from d3a.d3a_core.global_objects import GlobalObjects
 from d3a.d3a_core.simulation import run_simulation
 from d3a.d3a_core.util import available_simulation_scenarios, update_advanced_settings
 from d3a.models.config import SimulationConfig
@@ -110,7 +109,6 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
                   "seed": settings.get('random_seed', 0)}
 
         d3a.constants.CONNECT_TO_PROFILES_DB = True
-        GlobalObjects.profile_db_connection.connect()
 
         run_simulation(setup_module_name=scenario_name,
                        simulation_config=config,

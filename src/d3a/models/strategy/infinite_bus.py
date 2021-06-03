@@ -15,8 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.d3a_core.util import should_read_profile_from_db
 from d3a.d3a_core.exceptions import MarketException
+from d3a.d3a_core.singletons import global_objects
+from d3a.d3a_core.util import should_read_profile_from_db
 from d3a.models.strategy import BidEnabledStrategy, INF_ENERGY
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
@@ -81,10 +82,11 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         else:
             self.energy_buy_rate = \
                 convert_identity_profile_to_float(
-                    self.rotate_profile(profile_type=InputProfileTypes.IDENTITY,
-                                        profile=self.energy_buy_rate if self.energy_buy_rate
-                                        else self.energy_buy_rate_input,
-                                        profile_uuid=self.buying_rate_profile_uuid))
+                    global_objects.profiles_handler.rotate_profile(
+                        profile_type=InputProfileTypes.IDENTITY,
+                        profile=self.energy_buy_rate
+                        if self.energy_buy_rate else self.energy_buy_rate_input,
+                        profile_uuid=self.buying_rate_profile_uuid))
 
         if self.energy_rate_input is None and \
                 self.energy_rate_profile is None and \
@@ -93,10 +95,10 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         else:
             self.energy_rate = \
                 convert_identity_profile_to_float(
-                    self.rotate_profile(profile_type=InputProfileTypes.IDENTITY,
-                                        profile=self.energy_rate if self.energy_rate
-                                        else self.energy_rate_input,
-                                        profile_uuid=self.energy_rate_profile_uuid))
+                    global_objects.profiles_handler.rotate_profile(
+                        profile_type=InputProfileTypes.IDENTITY,
+                        profile=self.energy_rate if self.energy_rate else self.energy_rate_input,
+                        profile_uuid=self.energy_rate_profile_uuid))
 
     def buy_energy(self, market):
         for offer in market.sorted_offers:

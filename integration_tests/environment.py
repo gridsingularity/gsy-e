@@ -24,7 +24,7 @@ import d3a.constants
 from d3a import constants
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import update_advanced_settings, constsettings_to_dict
-from d3a_interface.constants_limits import GlobalConfig
+from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 
 """
 before_step(context, step), after_step(context, step)
@@ -46,8 +46,8 @@ before_tag(context, tag), after_tag(context, tag)
 
 if d3a.constants.CONNECT_TO_PROFILES_DB is True:
     # profiles_handler needs to be a singleton in the integration tests:
-    from integration_tests.write_user_profiles import ProfilesHandler
-    profiles_handler = ProfilesHandler()
+    from integration_tests.write_user_profiles import TestProfileDBConnectionHandler
+    profiles_handler = TestProfileDBConnectionHandler()
     profiles_handler.connect()
 
 
@@ -74,7 +74,6 @@ def before_scenario(context, scenario):
     context.simdir = "./d3a-simulation/integration_tests/"
     os.makedirs(context.simdir, exist_ok=True)
     context.resource_manager = contextlib.ExitStack()
-    from d3a_interface.constants_limits import ConstSettings
     ConstSettings.IAASettings.MIN_OFFER_AGE = 0
     ConstSettings.IAASettings.MIN_BID_AGE = 0
     constants.D3A_TEST_RUN = True
@@ -90,7 +89,7 @@ def after_scenario(context, scenario):
     update_advanced_settings(context.default_const_settings)
     context.resource_manager.close()
     DeviceRegistry.REGISTRY = {}
-    GlobalConfig.market_maker_rate = 30
+    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
 
 
 def before_all(context):

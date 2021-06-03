@@ -16,12 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.d3a_core.user_profile_handler import ProfileDBConnectionHandler
+from d3a_interface.constants_limits import TIME_ZONE
 from pendulum import today
 from pony.orm import commit, db_session
-from d3a_interface.constants_limits import TIME_ZONE
 
 
-class ProfilesHandler(ProfileDBConnectionHandler):
+class TestProfileDBConnectionHandler(ProfileDBConnectionHandler):
 
     @db_session
     def write_profile(self, config_uuid: str, area_uuid: str, profile_uuid: str, profile_type: int,
@@ -38,6 +38,8 @@ class ProfilesHandler(ProfileDBConnectionHandler):
 
     def disconnect(self):
         self._db.disconnect()
+        self._db.provider = None
+        self._db.schema = None
 
 
 def copy_profile_to_multiple_days(daily_profile: dict, number_of_days: int):

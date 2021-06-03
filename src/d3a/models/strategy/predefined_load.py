@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from typing import Union
 
 from d3a.d3a_core.exceptions import D3AException
+from d3a.d3a_core.singletons import global_objects
 from d3a.d3a_core.util import should_read_profile_from_db
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a_interface.constants_limits import ConstSettings
@@ -90,9 +91,10 @@ class DefinedLoadStrategy(LoadHoursStrategy):
     def _read_or_rotate_rate_profiles(self, reconfigure=False):
         input_profile = self._load_profile_input \
             if reconfigure or not self.load_profile else self.load_profile
-        self.load_profile = self.rotate_profile(profile_type=InputProfileTypes.POWER,
-                                                profile=input_profile,
-                                                profile_uuid=self.profile_uuid)
+        self.load_profile = \
+            global_objects.profiles_handler.rotate_profile(profile_type=InputProfileTypes.POWER,
+                                                           profile=input_profile,
+                                                           profile_uuid=self.profile_uuid)
 
     def event_activate_energy(self):
         """
