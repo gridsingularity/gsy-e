@@ -24,7 +24,6 @@ import d3a.constants
 from cached_property import cached_property
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
-from d3a.d3a_core.singletons import global_objects
 from d3a.d3a_core.util import TaggedLogWrapper
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.area.event_dispatcher import DispatcherFactory
@@ -356,11 +355,6 @@ class Area:
         else:
             changed_balancing_market = None
 
-        if not self.parent and self.next_market:
-            # TODO: move this out of here into simulation (if possible)
-            global_objects.profiles_handler.update_time_and_buffer_profiles(
-                self.next_market.time_slot)
-
         # Force market cycle event in case this is the first market slot
         if (changed or len(self._markets.past_markets.keys()) == 0) and _trigger_event:
             self.dispatcher.broadcast_market_cycle()
@@ -474,6 +468,10 @@ class Area:
         return self.config.start_date.add(
             seconds=self.config.tick_length.seconds * self.current_tick
         )
+
+    # @property
+    # def next_market_slot(self):
+    #     return self.now.add(seconds=self.config.slot_length.seconds)
 
     @property
     def all_markets(self):

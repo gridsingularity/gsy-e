@@ -337,6 +337,9 @@ class Simulation:
                         f"{self.progress_info.elapsed_time} elapsed, "
                         f"ETA: {self.progress_info.eta}")
 
+            # profiles have to be rotated before the rotation of markets:
+            global_objects.profiles_handler.update_time_and_buffer_profiles(self.area.now)
+
             self.area.cycle_markets()
 
             if self.simulation_config.external_connection_enabled:
