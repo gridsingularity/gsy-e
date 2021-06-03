@@ -264,11 +264,7 @@ class Market:
 
 
 def validate_authentic_bid_offer_pair(bid, offer, clearing_rate, selected_energy):
-    bid_energy = bid["energy"] if isinstance(bid, dict) else bid.energy
-    offer_energy = offer["energy"] if isinstance(offer, dict) else offer.energy
-    bid_energy_rate = bid["energy_rate"] if isinstance(bid, dict) else bid.energy_rate
-    offer_energy_rate = offer["energy_rate"] if isinstance(offer, dict) else offer.energy_rate
-    assert bid_energy >= selected_energy
-    assert offer_energy >= selected_energy
-    assert (bid_energy_rate + FLOATING_POINT_TOLERANCE) >= clearing_rate
-    assert (bid_energy_rate + FLOATING_POINT_TOLERANCE) >= offer_energy_rate
+    assert bid.energy >= selected_energy
+    assert offer.energy >= selected_energy
+    assert (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= clearing_rate
+    assert (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= offer.energy_rate

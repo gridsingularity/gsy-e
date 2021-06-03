@@ -81,6 +81,7 @@ class Offer:
             "id": self.id,
             "energy": self.energy,
             "energy_rate": self.energy_rate,
+            "original_offer_price": self.original_offer_price,
             "seller": self.seller,
             "seller_origin": self.seller_origin,
             "seller_origin_id": self.seller_origin_id,
@@ -117,7 +118,9 @@ def offer_from_JSON_string(offer_string, current_time):
     offer_dict = json.loads(offer_string)
     object_type = offer_dict.pop("type")
     assert object_type == "Offer"
-    real_id = offer_dict.pop('real_id')
+    real_id = offer_dict.pop('real_id', offer_dict["id"])
+    if "price" not in offer_dict:
+        offer_dict["price"] = offer_dict["energy_rate"] * offer_dict["energy"]
     offer_dict.pop('energy_rate', None)
     offer_dict['time'] = current_time
     offer = Offer(**offer_dict)
@@ -177,6 +180,7 @@ class Bid(namedtuple('Bid', ('id', 'time', 'price', 'energy', 'buyer',
             "id": self.id,
             "energy": self.energy,
             "energy_rate": self.energy_rate,
+            "original_bid_price": self.original_bid_price,
             "buyer_origin": self.buyer_origin,
             "buyer_origin_id": self.buyer_origin_id,
             "buyer_id": self.buyer_id,
@@ -189,6 +193,8 @@ def bid_from_JSON_string(bid_string):
     bid_dict = json.loads(bid_string)
     object_type = bid_dict.pop("type")
     assert object_type == "Bid"
+    if "price" not in bid_dict:
+        bid_dict["price"] = bid_dict["energy_rate"] * bid_dict["energy"]
     return Bid(**bid_dict)
 
 

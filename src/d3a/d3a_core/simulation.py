@@ -340,7 +340,8 @@ class Simulation:
                 external_global_statistics.update(market_cycle=True)
                 self.area.publish_market_cycle_to_external_clients()
                 if is_custom_matching_enabled():
-                    self.simulation_config.external_redis_communicator.publish_market_cycle_myco()
+                    self.simulation_config.bid_offer_matcher.\
+                        match_algorithm.publish_market_cycle_myco()
 
             self._update_and_send_results()
             self.live_events.handle_all_events(self.area)
@@ -375,7 +376,8 @@ class Simulation:
                         is_custom_matching_enabled() and \
                         external_global_statistics.is_it_time_for_external_tick(
                             current_tick_in_slot):
-                    self.simulation_config.external_redis_communicator.publish_event_tick_myco()
+                    self.simulation_config.bid_offer_matcher.\
+                        match_algorithm.publish_event_tick_myco()
 
                 self.simulation_config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()
@@ -397,7 +399,8 @@ class Simulation:
             publish_aggregator_commands_responses_events()
         if self.simulation_config.external_connection_enabled and \
                 is_custom_matching_enabled():
-            self.simulation_config.external_redis_communicator.publish_event_finish_myco()
+            self.simulation_config.bid_offer_matcher.\
+                        match_algorithm.publish_event_finish_myco()
         if not self.is_stopped:
             self._update_progress_info(slot_count - 1, slot_count)
             paused_duration = duration(seconds=self.paused_time)
