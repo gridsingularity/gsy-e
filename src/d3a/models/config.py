@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import ast
 import json
 
-from d3a.models.myco_matcher import MycoMatcher
 from pendulum import duration, Duration, DateTime, today
 
 from d3a_interface.constants_limits import ConstSettings
@@ -73,7 +72,6 @@ class SimulationConfig:
         self.external_connection_enabled = external_connection_enabled
         self.external_redis_communicator = ExternalConnectionCommunicator(
             external_connection_enabled)
-        self.bid_offer_matcher = MycoMatcher()
         if aggregator_device_mapping is not None:
             self.external_redis_communicator.aggregator.set_aggregator_device_mapping(
                 aggregator_device_mapping

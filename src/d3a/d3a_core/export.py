@@ -28,6 +28,7 @@ from copy import deepcopy
 from functools import reduce  # forward compatibility for Python 3
 
 import plotly.graph_objs as go
+from d3a.d3a_core.singletons import bid_offer_matcher
 from slugify import slugify
 from sortedcontainers import SortedDict
 
@@ -216,7 +217,7 @@ class ExportAndPlot:
                     writer.writerow(labels)
                 for market in area.past_markets:
                     for time, clearing in \
-                            area.bid_offer_matcher.match_algorithm.state.clearing.items():
+                            bid_offer_matcher.match_algorithm.state.clearing.items():
                         if market.time_slot > time:
                             row = (market.time_slot, time, clearing)
                             writer.writerow(row)

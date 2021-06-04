@@ -38,7 +38,7 @@ from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCommunication
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
-from d3a.d3a_core.singletons import external_global_statistics
+from d3a.d3a_core.singletons import external_global_statistics, bid_offer_matcher
 from d3a.d3a_core.util import (
     NonBlockingConsole, validate_const_settings_for_simulation,
     get_market_slot_time_str)
@@ -78,7 +78,7 @@ class SimulationProgressInfo:
 
 
 class Simulation:
-    def __init__(self, setup_module_name: str, simulation_config: SimulationConfig = None,
+    def __init__(self, setup_module_name: str, simulation_config: SimulationConfig,
                  simulation_events: str = None, seed=None,
                  paused: bool = False, pause_after: duration = None, repl: bool = False,
                  no_export: bool = False, export_path: str = None,
@@ -166,6 +166,7 @@ class Simulation:
             log.info("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
+        bid_offer_matcher.init()
         external_global_statistics(self.area, self.simulation_config.ticks_per_slot)
 
         self.endpoint_buffer = SimulationEndpointBuffer(
@@ -340,7 +341,7 @@ class Simulation:
                 external_global_statistics.update(market_cycle=True)
                 self.area.publish_market_cycle_to_external_clients()
                 if is_custom_matching_enabled():
-                    self.simulation_config.bid_offer_matcher.\
+                    bid_offer_matcher.\
                         match_algorithm.publish_market_cycle_myco()
 
             self._update_and_send_results()
@@ -376,7 +377,7 @@ class Simulation:
                         is_custom_matching_enabled() and \
                         external_global_statistics.is_it_time_for_external_tick(
                             current_tick_in_slot):
-                    self.simulation_config.bid_offer_matcher.\
+                    bid_offer_matcher.\
                         match_algorithm.publish_event_tick_myco()
 
                 self.simulation_config.external_redis_communicator.\
@@ -399,7 +400,7 @@ class Simulation:
             publish_aggregator_commands_responses_events()
         if self.simulation_config.external_connection_enabled and \
                 is_custom_matching_enabled():
-            self.simulation_config.bid_offer_matcher.\
+            bid_offer_matcher.\
                         match_algorithm.publish_event_finish_myco()
         if not self.is_stopped:
             self._update_progress_info(slot_count - 1, slot_count)

@@ -9,7 +9,7 @@ from d3a.d3a_core.exceptions import WrongMarketTypeException
 
 
 class MycoMatcher:
-    def __init__(self):
+    def init(self):
         if ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == \
                 BidOfferMatchAlgoEnum.PAY_AS_BID.value:
             self.match_algorithm = PayAsBidMatcher()
@@ -19,8 +19,8 @@ class MycoMatcher:
         elif is_custom_matching_enabled():
             self.match_algorithm = ExternalMatcher()
         else:
-            raise WrongMarketTypeException(f'Wrong market type setting flag '
-                                           f'{ConstSettings.IAASettings.MARKET_TYPE}')
+            raise WrongMarketTypeException(f"Wrong market type setting flag "
+                                           f"{ConstSettings.IAASettings.MARKET_TYPE}")
 
     def calculate_recommendation(self, bids, offers, current_time):
         return self.match_algorithm.calculate_match_recommendation(

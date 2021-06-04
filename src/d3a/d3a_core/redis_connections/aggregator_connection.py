@@ -4,7 +4,6 @@ from copy import deepcopy
 from threading import Lock
 import d3a.constants
 from d3a_interface.utils import create_subdict_or_update
-from d3a.d3a_core.singletons import external_global_statistics
 
 
 class AggregatorHandler:
@@ -54,6 +53,7 @@ class AggregatorHandler:
                     outdict[area_uuid] = {'area_name': area_dict['area_name']}
 
     def _create_grid_tree_event_dict(self):
+        from d3a.d3a_core.singletons import external_global_statistics
         return {'grid_tree': self._delete_not_owned_devices_from_dict(
             external_global_statistics.area_stats_tree_dict),
                 'feed_in_tariff_rate': external_global_statistics.current_feed_in_tariff,

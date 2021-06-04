@@ -24,6 +24,7 @@ import d3a.constants
 from cached_property import cached_property
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
+from d3a.d3a_core.singletons import bid_offer_matcher
 from d3a.d3a_core.util import TaggedLogWrapper
 from d3a.events.event_structures import TriggerMixin
 from d3a.global_utils import is_custom_matching_enabled
@@ -142,8 +143,6 @@ class Area:
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available and self.strategy is None else None
         self.should_update_child_strategies = False
-        self.bid_offer_matcher = self._config.bid_offer_matcher \
-            if hasattr(self._config, "bid_offer_matcher") else None
         self.external_connection_available = external_connection_available
 
     @property
@@ -392,16 +391,16 @@ class Area:
         if ConstSettings.IAASettings.MARKET_TYPE == 2:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                 self.dispatcher.publish_market_clearing()
-            elif self.bid_offer_matcher:
+            else:
                 if is_custom_matching_enabled():
-                    self.bid_offer_matcher.match_algorithm.area_uuid_markets_mapping.\
+                    bid_offer_matcher.match_algorithm.area_uuid_markets_mapping.\
                         update({self.uuid: self.all_markets})
                 else:
                     for market in self.all_markets:
-                        bid_offer_pairs = self.bid_offer_matcher.calculate_recommendation(
+                        bid_offer_pairs = bid_offer_matcher.calculate_recommendation(
                             *market.open_bids_and_offers, self.now)
                         while bid_offer_pairs:
-                            bid_offer_pairs = self.bid_offer_matcher.calculate_recommendation(
+                            bid_offer_pairs = bid_offer_matcher.calculate_recommendation(
                                 *market.open_bids_and_offers, self.now)
                             market.match_recommendation(bid_offer_pairs)
 
