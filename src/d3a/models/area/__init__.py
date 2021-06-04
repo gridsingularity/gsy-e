@@ -25,9 +25,8 @@ from cached_property import cached_property
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
 from d3a.d3a_core.singletons import bid_offer_matcher
-from d3a.d3a_core.util import TaggedLogWrapper
+from d3a.d3a_core.util import TaggedLogWrapper, is_external_matching_enabled
 from d3a.events.event_structures import TriggerMixin
-from d3a.global_utils import is_custom_matching_enabled
 from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.events import Events
 from d3a.models.area.markets import AreaMarkets
@@ -392,7 +391,7 @@ class Area:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                 self.dispatcher.publish_market_clearing()
             else:
-                if is_custom_matching_enabled():
+                if is_external_matching_enabled():
                     bid_offer_matcher.match_algorithm.area_uuid_markets_mapping.\
                         update({self.uuid: self.all_markets})
                 else:

@@ -1,17 +1,17 @@
-import d3a.constants
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.enums import BidOfferMatchAlgoEnum
 
 
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.IAASettings.MIN_BID_AGE = 0
     ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-        d3a.constants.BidOfferMatchAlgoEnum.CUSTOM.value
+        BidOfferMatchAlgoEnum.EXTERNAL.value
     ConstSettings.IAASettings.MIN_OFFER_AGE = 0
     area = Area(
         "Grid",

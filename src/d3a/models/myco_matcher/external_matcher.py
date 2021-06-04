@@ -10,7 +10,7 @@ from d3a.models.myco_matcher.base_matcher import BaseMatcher
 
 class ExternalMatcher(BaseMatcher):
     def __init__(self):
-        super(ExternalMatcher, self).__init__()
+        super().__init__()
         self.simulation_id = d3a.constants.COLLABORATION_ID
         self.myco_ext_conn = None
         self.channel_prefix = f"external-myco/{self.simulation_id}/"
@@ -23,12 +23,12 @@ class ExternalMatcher(BaseMatcher):
         self.myco_ext_conn = ResettableCommunicator()
         self.myco_ext_conn.sub_to_multiple_channels(
             {"external-myco/get_simulation_id": self.get_simulation_id,
-             f"{self.channel_prefix}get_offers_bids/": self.publish_offers_bids,
+             f"{self.channel_prefix}offers_bids/": self.publish_offers_bids,
              f"{self.channel_prefix}post_recommendations/": self.match_recommendations})
 
     def publish_offers_bids(self, message):
-        """
-        Function that queries publishes open offers and bids
+        """Publish open offers and bids.
+
         published data are of the following format
         market_offers_bids_list_mapping = {"market_id" : {"bids": [], "offers": [] }, }
         """
@@ -48,12 +48,13 @@ class ExternalMatcher(BaseMatcher):
             "market_offers_bids_list_mapping": market_offers_bids_list_mapping,
         })
 
-        channel = f"{self.channel_prefix}response/get_offers_bids/"
+        channel = f"{self.channel_prefix}response/offers_bids/"
         self.myco_ext_conn.publish_json(channel, data)
 
     def match_recommendations(self, message):
-        """
-        Receive trade recommendations and match them in the relevant market
+        """Receive trade recommendations and match them in the relevant market.
+
+        Matching in bulk, any pair that fails validation will cancel the operation
         """
         channel = f"{self.channel_prefix}response/matched_recommendations/"
         response_dict = {"event": "match", "status": "success"}
@@ -64,7 +65,6 @@ class ExternalMatcher(BaseMatcher):
             market = self.markets_mapping.get(record.get("market_id"), None)
             if market is None or market.readonly:
                 # The market is already finished or doesn't exist
-                del record
                 continue
 
             bid = bid_from_JSON_string(json.dumps(record.get("bid")))
@@ -78,8 +78,11 @@ class ExternalMatcher(BaseMatcher):
                     record.get("trade_rate"),
                     record.get("selected_energy")
                     )
-                assert offer.id in market.offers
-                assert bid.id in market.bids
+
+                if not (offer.id in market.offers and bid.id in market.bids):
+                    # Offer or Bid either don't belong to market or were already matched
+                    raise Exception
+
                 if record.get("market_id") not in validated_records:
                     validated_records[record.get("market_id")] = []
 
@@ -103,32 +106,28 @@ class ExternalMatcher(BaseMatcher):
         self.myco_ext_conn.publish_json(channel, response_dict)
 
     def get_simulation_id(self, message):
-        """
-        Publish the simulation id to the Myco client
-        """
+        """Publish the simulation id to the Myco client."""
+
         channel = "external-myco/get_simulation_id/response"
         self.myco_ext_conn.publish_json(channel, {"simulation_id": self.simulation_id})
 
     def publish_event_tick_myco(self):
-        """
-        Myco API
-        """
+        """Publish the tick event to the Myco client."""
+
         channel = f"external-myco/{d3a.constants.COLLABORATION_ID}/response/events/"
         data = {"event": "tick"}
         self.myco_ext_conn.publish_json(channel, data)
 
     def publish_market_cycle_myco(self):
-        """
-        Myco API
-        """
+        """Publish the market event to the Myco client."""
+
         channel = f"external-myco/{d3a.constants.COLLABORATION_ID}/response/events/"
         data = {"event": "market"}
         self.myco_ext_conn.publish_json(channel, data)
 
     def publish_event_finish_myco(self):
-        """
-        Myco API
-        """
+        """Publish the finish event to the Myco client."""
+
         channel = f"external-myco/{d3a.constants.COLLABORATION_ID}/response/events/"
         data = {"event": "finish"}
         self.myco_ext_conn.publish_json(channel, data)

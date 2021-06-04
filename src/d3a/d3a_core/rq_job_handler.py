@@ -3,6 +3,8 @@ import ast
 import json
 import pickle
 from datetime import datetime, date
+
+from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 from pendulum import duration, instance
 from zlib import decompress
 
@@ -86,20 +88,23 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
 
         spot_market_type = settings.get('spot_market_type', None)
         if spot_market_type is not None:
-            if spot_market_type == 1:
-                ConstSettings.IAASettings.MARKET_TYPE = spot_market_type
-            if spot_market_type == 2:
-                ConstSettings.IAASettings.MARKET_TYPE = spot_market_type
+            if spot_market_type == SpotMarketTypeEnum.ONE_SIDED.value:
+                ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
+            if spot_market_type == SpotMarketTypeEnum.TWO_SIDED_PAY_AS_BID.value:
+                ConstSettings.IAASettings.MARKET_TYPE = (
+                    SpotMarketTypeEnum.TWO_SIDED_PAY_AS_BID.value)
+                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = (
+                    BidOfferMatchAlgoEnum.PAY_AS_BID.value)
+            if spot_market_type == SpotMarketTypeEnum.TWO_SIDED_PAY_AS_CLEAR.value:
+                ConstSettings.IAASettings.MARKET_TYPE = (
+                    SpotMarketTypeEnum.TWO_SIDED_PAY_AS_BID.value)
                 ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-                    d3a.constants.BidOfferMatchAlgoEnum.PAY_AS_BID.value
-            if spot_market_type == 3:
-                ConstSettings.IAASettings.MARKET_TYPE = 2
+                    BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+            if spot_market_type == SpotMarketTypeEnum.TWO_SIDED_EXTERNAL.value:
+                ConstSettings.IAASettings.MARKET_TYPE = (
+                    SpotMarketTypeEnum.TWO_SIDED_PAY_AS_BID.value)
                 ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-                    d3a.constants.BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
-            if spot_market_type == 4:
-                ConstSettings.IAASettings.MARKET_TYPE = 2
-                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-                    d3a.constants.BidOfferMatchAlgoEnum.CUSTOM.value
+                    BidOfferMatchAlgoEnum.EXTERNAL.value
 
         if scenario is None:
             scenario_name = "default_2a"
