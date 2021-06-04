@@ -118,7 +118,7 @@ def offer_from_JSON_string(offer_string, current_time):
     offer_dict = json.loads(offer_string)
     object_type = offer_dict.pop("type")
     assert object_type == "Offer"
-    real_id = offer_dict.pop('real_id', offer_dict["id"])
+    real_id = offer_dict.pop("real_id") if "real_id" in offer_dict else offer_dict["id"]
     if "price" not in offer_dict:
         offer_dict["price"] = offer_dict["energy_rate"] * offer_dict["energy"]
     offer_dict.pop('energy_rate', None)

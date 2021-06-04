@@ -78,6 +78,8 @@ class ExternalMatcher(BaseMatcher):
                     record.get("trade_rate"),
                     record.get("selected_energy")
                     )
+                assert offer.id in market.offers
+                assert bid.id in market.bids
                 if record.get("market_id") not in validated_records:
                     validated_records[record.get("market_id")] = []
 
@@ -87,12 +89,12 @@ class ExternalMatcher(BaseMatcher):
                     offer,
                     record.get("trade_rate")))
             except AssertionError:
-                # If validation fails
+                # If validation fails or offer/bid were consumed
                 response_dict["status"] = "fail"
                 response_dict["message"] = "Validation Error"
                 break
         if response_dict["status"] == "success":
-            for market_id, records in validated_records:
+            for market_id, records in validated_records.items():
                 market = self.markets_mapping.get(market_id)
                 if market.readonly:
                     # The market has just finished
