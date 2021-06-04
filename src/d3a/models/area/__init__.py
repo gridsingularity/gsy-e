@@ -142,7 +142,8 @@ class Area:
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available and self.strategy is None else None
         self.should_update_child_strategies = False
-        self.bid_offer_matcher = self._config.bid_offer_matcher
+        self.bid_offer_matcher = self._config.bid_offer_matcher \
+            if hasattr(self._config, "bid_offer_matcher") else None
         self.external_connection_available = external_connection_available
 
     @property
@@ -391,7 +392,7 @@ class Area:
         if ConstSettings.IAASettings.MARKET_TYPE == 2:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                 self.dispatcher.publish_market_clearing()
-            else:
+            elif self.bid_offer_matcher:
                 if is_custom_matching_enabled():
                     self.bid_offer_matcher.match_algorithm.area_uuid_markets_mapping.\
                         update({self.uuid: self.all_markets})
