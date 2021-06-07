@@ -67,7 +67,7 @@ class AggregatorHandler:
     def _create_grid_tree_event_dict(self, aggregator_uuid: str) -> dict:
         """Accumulate area_stats_tree_dict information and initiate a event dictionary
         to be sent to the client"""
-              from d3a.d3a_core.singletons import external_global_statistics
+        from d3a.d3a_core.singletons import external_global_statistics
         return {"grid_tree": self._delete_not_owned_devices_from_dict(
             external_global_statistics.area_stats_tree_dict, aggregator_uuid),
                 "feed_in_tariff_rate": external_global_statistics.current_feed_in_tariff,
