@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import uuid
 from logging import getLogger
 from typing import Dict, List  # noqa
+
+from d3a.d3a_core.exceptions import InvalidBidOfferPair
 from numpy.random import random
 from collections import namedtuple
 from pendulum import DateTime
@@ -268,4 +270,4 @@ def validate_authentic_bid_offer_pair(bid, offer, clearing_rate, selected_energy
             offer.energy >= selected_energy and
             (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= clearing_rate and
             (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= offer.energy_rate):
-        raise Exception
+        raise InvalidBidOfferPair
