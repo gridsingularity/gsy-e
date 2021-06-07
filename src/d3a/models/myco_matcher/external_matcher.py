@@ -91,7 +91,7 @@ class ExternalMatcher(BaseMatcher):
                     record.get("selected_energy"),
                     offer,
                     record.get("trade_rate")))
-            except AssertionError:
+            except Exception:
                 # If validation fails or offer/bid were consumed
                 response_dict["status"] = "fail"
                 response_dict["message"] = "Validation Error"

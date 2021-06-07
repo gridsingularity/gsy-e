@@ -264,7 +264,8 @@ class Market:
 
 
 def validate_authentic_bid_offer_pair(bid, offer, clearing_rate, selected_energy):
-    assert bid.energy >= selected_energy
-    assert offer.energy >= selected_energy
-    assert (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= clearing_rate
-    assert (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= offer.energy_rate
+    if not (bid.energy >= selected_energy and
+            offer.energy >= selected_energy and
+            (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= clearing_rate and
+            (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= offer.energy_rate):
+        raise Exception
