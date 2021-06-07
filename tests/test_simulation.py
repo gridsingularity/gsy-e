@@ -31,7 +31,7 @@ from pendulum import duration, today
 class SimulationTest(unittest.TestCase):
 
     @staticmethod
-    def test_results_not_send_via_kafka_if_started_from_cli():
+    def test_results_are_sent_via_kafka_if_not_started_from_cli():
         redis_job_id = None
         simulation_config = SimulationConfig(duration(hours=int(12)),
                                              duration(minutes=int(60)),
@@ -49,8 +49,8 @@ class SimulationTest(unittest.TestCase):
         results_mapping = ResultsHandler().results_mapping
         simulation.endpoint_buffer.results_handler = MagicMock(spec=ResultsHandler)
         simulation.kafka_connection = MagicMock(spec=DisabledKafkaConnection)
-        simulation.endpoint_buffer.results_handler.all_ui_results = \
-            {k: {} for k in results_mapping}
+        simulation.endpoint_buffer.results_handler.all_ui_results = {
+            k: {} for k in results_mapping}
 
         simulation._update_and_send_results()
 
@@ -58,7 +58,7 @@ class SimulationTest(unittest.TestCase):
         assert not simulation.kafka_connection.publish.called
 
     @staticmethod
-    def test_results_are_send_via_kafka_if_not_started_from():
+    def test_results_not_send_via_kafka_if_started_from_cli():
         redis_job_id = "1234"
         simulation_config = SimulationConfig(duration(hours=int(12)),
                                              duration(minutes=int(60)),
@@ -76,8 +76,8 @@ class SimulationTest(unittest.TestCase):
         results_mapping = ResultsHandler().results_mapping
         simulation.endpoint_buffer.results_handler = MagicMock(spec=KafkaConnection)
         simulation.kafka_connection = MagicMock(spec=DisabledKafkaConnection)
-        simulation.endpoint_buffer.results_handler.all_ui_results = \
-            {k: {} for k in results_mapping}
+        simulation.endpoint_buffer.results_handler.all_ui_results = {
+            k: {} for k in results_mapping}
 
         simulation._update_and_send_results()
 
