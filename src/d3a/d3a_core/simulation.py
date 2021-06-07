@@ -265,10 +265,12 @@ class Simulation:
             self.file_stats_endpoint(self.area)
             return
 
-        results = self.endpoint_buffer.prepare_results_for_publish()
-        if results is None:
-            return
-        self.kafka_connection.publish(results, self._simulation_id)
+        # don't send results to kafka when running on cli even though kafka connection is enabled:
+        if not self._started_from_cli and self.kafka_connection.is_enabled():
+            results = self.endpoint_buffer.prepare_results_for_publish()
+            if results is None:
+                return
+            self.kafka_connection.publish(results, self._simulation_id)
 
     def _update_progress_info(self, slot_no, slot_count):
         run_duration = (
