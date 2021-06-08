@@ -13,6 +13,7 @@ You should have received a copy of the GNU General Public License along with thi
 see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
+from pathlib import Path
 from typing import Dict, Union
 
 from d3a_interface.constants_limits import ConstSettings
@@ -54,7 +55,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
     def __init__(
             self,
-            home_meter_profile: Union[str, Dict[int, float], Dict[str, float]],
+            home_meter_profile: Union[Path, str, Dict[int, float], Dict[str, float]],
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
             final_selling_rate: float = ConstSettings.HomeMeterSettings.SELLING_RATE_RANGE.final,
             energy_rate_decrease_per_update: Union[float, None] = None,
