@@ -572,7 +572,6 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
     paused = False
     pause_after = duration()
     repl = False
-    no_export = True
     export_path = None
     export_subdir = None
     context.simulation = Simulation(
@@ -583,7 +582,7 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
         paused,
         pause_after,
         repl,
-        no_export,
+        context.no_export,
         export_path,
         export_subdir,
     )
@@ -603,6 +602,7 @@ def run_sim_market_count(context, scenario):
 @when('export {flag}')
 def export_logic(context, flag):
     context.no_export = True if flag == 'isnt_needed' else False
+    print(context.no_export)
 
 
 @when('we run the simulation with setup file {scenario} and parameters '
