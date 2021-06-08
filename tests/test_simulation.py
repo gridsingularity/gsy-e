@@ -69,7 +69,7 @@ class SimulationTest(unittest.TestCase):
                                              start_date=today(tz=TIME_ZONE),
                                              external_connection_enabled=False)
         simulation = Simulation(
-            "default_2a", simulation_config, None, 0, False, duration(), False, False, None, None,
+            "default_2a", simulation_config, None, 0, False, duration(), False, True, None, None,
             redis_job_id, False
         )
         simulation.endpoint_buffer = MagicMock(spec=SimulationEndpointBuffer)
