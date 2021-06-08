@@ -253,18 +253,20 @@ class Simulation:
     def _update_and_send_results(self):
         self.endpoint_buffer.update_stats(
             self.area, self.status, self.progress_info, self.current_state)
+
         self.update_area_stats(self.area, self.endpoint_buffer)
-        if self.export_results_on_finish and \
-                self.area.current_market is not None and d3a.constants.D3A_TEST_RUN:
-            # for integration tests:
-            self.export.raw_data_to_json(
-                self.area.current_market.time_slot_str,
-                self.endpoint_buffer.flattened_area_core_stats_dict
-            )
+
         if self.export_results_on_finish:
+            if self.area.current_market is not None and d3a.constants.D3A_TEST_RUN:
+                # for integration tests:
+                self.export.raw_data_to_json(
+                    self.area.current_market.time_slot_str,
+                    self.endpoint_buffer.flattened_area_core_stats_dict
+                )
+
             self.file_stats_endpoint(self.area)
 
-        if self.should_send_results:
+        elif self.should_send_results_to_broker:
             results = self.endpoint_buffer.prepare_results_for_publish()
             if results is None:
                 return
@@ -406,8 +408,8 @@ class Simulation:
             self.export.export(power_flow=self.power_flow if GlobalConfig.POWER_FLOW else None)
 
     @property
-    def should_send_results(self):
-        """Flag that decides whether to send results to the d3a-web via kafka"""
+    def should_send_results_to_broker(self):
+        """Flag that decides whether to send results to the d3a-web"""
         return not self._started_from_cli and self.kafka_connection.is_enabled()
 
     def handle_slowdown_and_realtime(self, tick_no):

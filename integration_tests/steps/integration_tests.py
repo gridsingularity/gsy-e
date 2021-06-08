@@ -602,7 +602,6 @@ def run_sim_market_count(context, scenario):
 @when('export {flag}')
 def export_logic(context, flag):
     context.no_export = True if flag == 'isnt_needed' else False
-    print(context.no_export)
 
 
 @when('we run the simulation with setup file {scenario} and parameters '
