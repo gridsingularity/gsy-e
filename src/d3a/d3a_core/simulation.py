@@ -407,6 +407,7 @@ class Simulation:
 
     @property
     def should_send_results(self):
+        """Flag that decides whether to send results to the d3a-web via kafka"""
         return not self._started_from_cli and self.kafka_connection.is_enabled()
 
     def handle_slowdown_and_realtime(self, tick_no):
