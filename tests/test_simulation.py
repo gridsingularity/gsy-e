@@ -74,8 +74,8 @@ class SimulationTest(unittest.TestCase):
         )
         simulation.endpoint_buffer = MagicMock(spec=SimulationEndpointBuffer)
         results_mapping = ResultsHandler().results_mapping
-        simulation.endpoint_buffer.results_handler = MagicMock(spec=KafkaConnection)
-        simulation.kafka_connection = MagicMock(spec=DisabledKafkaConnection)
+        simulation.endpoint_buffer.results_handler = MagicMock(spec=ResultsHandler)
+        simulation.kafka_connection = MagicMock(spec=KafkaConnection)
         simulation.endpoint_buffer.results_handler.all_ui_results = {
             k: {} for k in results_mapping}
 

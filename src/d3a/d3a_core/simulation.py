@@ -93,7 +93,7 @@ class Simulation:
         self.progress_info = SimulationProgressInfo()
         self.simulation_config = simulation_config
         self.use_repl = repl
-        self.export_on_finish = not no_export
+        self.export_results_on_finish = not no_export
         self.export_path = export_path
 
         self.sim_status = "initializing"
@@ -170,11 +170,10 @@ class Simulation:
 
         self.endpoint_buffer = SimulationEndpointBuffer(
             redis_job_id, self.initial_params,
-            self.area, self.should_export_results)
-        if self.should_export_results:
-            self.file_stats_endpoint = FileExportEndpoints()
+            self.area, self.export_results_on_finish)
 
-        if self.export_on_finish and self.should_export_results:
+        if self.export_results_on_finish:
+            self.file_stats_endpoint = FileExportEndpoints()
             self.export = ExportAndPlot(self.area, self.export_path, self.export_subdir,
                                         self.file_stats_endpoint, self.endpoint_buffer)
         self._update_and_send_results()
@@ -255,18 +254,16 @@ class Simulation:
         self.endpoint_buffer.update_stats(
             self.area, self.status, self.progress_info, self.current_state)
         self.update_area_stats(self.area, self.endpoint_buffer)
-        if self.export_on_finish and self.should_export_results and \
+        if self.export_results_on_finish and \
                 self.area.current_market is not None and d3a.constants.D3A_TEST_RUN:
             self.export.raw_data_to_json(
                 self.area.current_market.time_slot_str,
                 self.endpoint_buffer.flattened_area_core_stats_dict
             )
-        if self.should_export_results:
+        if self.export_results_on_finish:
             self.file_stats_endpoint(self.area)
-            return
 
-        # don't send results to kafka when running on cli even though kafka connection is enabled:
-        if not self._started_from_cli and self.kafka_connection.is_enabled():
+        if self.should_send_results:
             results = self.endpoint_buffer.prepare_results_for_publish()
             if results is None:
                 return
@@ -378,7 +375,7 @@ class Simulation:
                 self.handle_slowdown_and_realtime(tick_no)
                 self.tick_time_counter = time()
 
-            if self.export_on_finish and self.should_export_results:
+            if self.export_results_on_finish:
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
 
             if self.is_stopped:
@@ -401,19 +398,15 @@ class Simulation:
                 config.sim_duration / (self.progress_info.elapsed_time - paused_duration)
             )
         self._update_and_send_results()
-        if self.export_on_finish and self.should_export_results:
+        if self.export_results_on_finish:
             log.info("Exporting simulation data.")
             self.export.data_to_csv(self.area, False)
             self.export.area_tree_summary_to_json(self.endpoint_buffer.area_result_dict)
-            if GlobalConfig.POWER_FLOW:
-                self.export.export(export_plots=self.should_export_results,
-                                   power_flow=self.power_flow)
-            else:
-                self.export.export(self.should_export_results)
+            self.export.export(power_flow=self.power_flow if GlobalConfig.POWER_FLOW else None)
 
     @property
-    def should_export_results(self):
-        return not self.kafka_connection.is_enabled()
+    def should_send_results(self):
+        return not self._started_from_cli or not self.kafka_connection.is_enabled()
 
     def handle_slowdown_and_realtime(self, tick_no):
         if d3a.constants.RUN_IN_REALTIME:
