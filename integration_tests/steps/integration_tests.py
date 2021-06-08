@@ -478,7 +478,7 @@ def create_sim_object(context, scenario):
                                          external_connection_enabled=False)
 
     context.simulation = Simulation(
-        scenario, simulation_config, None, 0, False, duration(), False, False, None, None,
+        scenario, simulation_config, None, 0, False, duration(), False, True, None, None,
         "1234", False
     )
 
