@@ -478,7 +478,7 @@ def create_sim_object(context, scenario):
                                          external_connection_enabled=False)
 
     context.simulation = Simulation(
-        scenario, simulation_config, None, 0, False, duration(), False, False, None, None,
+        scenario, simulation_config, None, 0, False, duration(), False, True, None, None,
         "1234", False
     )
 
@@ -572,7 +572,6 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
     paused = False
     pause_after = duration()
     repl = False
-    no_export = True
     export_path = None
     export_subdir = None
     context.simulation = Simulation(
@@ -583,7 +582,7 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
         paused,
         pause_after,
         repl,
-        no_export,
+        context.no_export,
         export_path,
         export_subdir,
     )
