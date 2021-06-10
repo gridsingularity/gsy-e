@@ -62,6 +62,9 @@ class StateInterface(metaclass=ABCMeta):
     def delete_past_state_values(self, time_slot):
         pass
 
+    def __str__(self):
+        return self.__class__.__name__
+
 
 class ConsumptionState(StateInterface):
     """State for devices that can consume energy."""
@@ -140,6 +143,10 @@ class ConsumptionState(StateInterface):
             self._energy_requirement_Wh.pop(market_slot, None)
             self._desired_energy_Wh.pop(market_slot, None)
 
+    def get_desired_energy_Wh(self, time_slot, default_value=0.0):
+        """Return the expected consumed energy at a specific market slot."""
+        return self._desired_energy_Wh.get(time_slot, default_value)
+
 
 class ProductionState(StateInterface):
     """State for devices that can produce energy."""
@@ -202,26 +209,24 @@ class ProductionState(StateInterface):
             self._available_energy_kWh.pop(market_slot, None)
             self._energy_production_forecast_kWh.pop(market_slot, None)
 
+    def get_energy_production_forecast_kWh(self, time_slot, default_value=None):
+        """Return the expected produced energy at a specific market slot."""
+        production_forecast = self._energy_production_forecast_kWh.get(time_slot, default_value)
+        assert production_forecast >= -FLOATING_POINT_TOLERANCE
+
+        return production_forecast
+
 
 class PVState(ProductionState):
-    def __init__(self):
-        super().__init__()
+    """State class for PV devices.
 
-    def get_energy_production_forecast_kWh(self, time_slot, default_value=None):
-        assert self._energy_production_forecast_kWh[time_slot] >= -FLOATING_POINT_TOLERANCE
-        if default_value is not None:
-            return self._energy_production_forecast_kWh.get(time_slot, default_value)
-        return self._energy_production_forecast_kWh[time_slot]
+    Completely inherits ProductionState, but we keep this class for backward compatibility.
+    """
 
 
 class LoadState(ConsumptionState):
     def __init__(self):
         super().__init__()
-
-    def get_desired_energy_Wh(self, time_slot, default_value=0.0):
-        if default_value is None:
-            return self._desired_energy_Wh[time_slot]
-        return self._desired_energy_Wh.get(time_slot, default_value)
 
     @property
     def total_energy_demanded_Wh(self):
@@ -237,12 +242,30 @@ class HomeMeterState(ConsumptionState, ProductionState):
     def __init__(self):
         super().__init__()
 
-    def delete_past_state_values(self, current_market_time_slot):
+    def _validate_state(self):
+        production_market_slots = {
+            slot for slot, energy in self._available_energy_kWh.items() if energy}
+        consumption_market_slots = {
+            slot for slot, energy in self._energy_requirement_Wh.items() if energy}
+
+        overlapping_market_slots = production_market_slots & consumption_market_slots
+        if overlapping_market_slots:
+            raise UnexpectedStateException(
+                f"{self} reported both produced and consumed energy at market slots: "
+                f"{overlapping_market_slots}.")
+
+    @property
+    def market_slots(self):
+        """Return the market slots that have either available or required energy."""
+        # Energy can either be produced OR consumed, not both, so we can't have duplicates.
+        self._validate_state()
+
+        return self._available_energy_kWh.keys() | self._energy_requirement_Wh.keys()
+
+    def delete_past_state_values(self, current_market_time_slot: DateTime):
         """Delete data regarding energy requirements and availability for past market slots."""
         to_delete = []
-        # We want to iterate on all market slots that have both available and required energy
-        market_slots = self._available_energy_kWh.keys() | self._energy_requirement_Wh.keys()
-        for market_slot in market_slots:
+        for market_slot in self.market_slots:
             if market_slot < current_market_time_slot:
                 to_delete.append(market_slot)
 
@@ -522,3 +545,7 @@ class StorageState(StateInterface):
             self.used_history.pop(market_slot, None)
             self.energy_to_buy_dict.pop(market_slot, None)
             self.energy_to_sell_dict.pop(market_slot, None)
+
+
+class UnexpectedStateException(Exception):
+    """Exception raised when the state of a device is unexpected."""
