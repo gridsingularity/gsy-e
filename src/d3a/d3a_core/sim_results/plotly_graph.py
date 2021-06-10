@@ -37,11 +37,6 @@ blue = 'rgba(0,0,200,alpha)'
 DEVICE_PLOT_COLORS = {"trade_energy_kWh": purple,
                       "sold_trade_energy_kWh": purple,
                       "bought_trade_energy_kWh": purple,
-                      "pv_production_kWh": green,
-                      "energy_buffer_kWh": green,
-                      "production_kWh": green,
-                      "load_profile_kWh": green,
-                      "soc_history_%": green,
                       "trade_price_eur": blue}
 
 DEVICE_YAXIS = {"trade_energy_kWh": 'Traded [kWh]',
@@ -62,7 +57,7 @@ def _invert(inlist: list): return [-1 * ll for ll in inlist]
 
 
 def _get_color(key, alpha):
-    return DEVICE_PLOT_COLORS[key].replace("alpha", str(alpha))
+    return DEVICE_PLOT_COLORS.get(key, green).replace("alpha", str(alpha))
 
 
 class PlotlyGraph:
