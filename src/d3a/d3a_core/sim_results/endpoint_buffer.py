@@ -20,6 +20,7 @@ import logging
 from d3a.d3a_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
+from d3a.models.strategy.home_meter import HomeMeterStrategy
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
@@ -158,6 +159,13 @@ class SimulationEndpointBuffer:
             }
             core_stats_dict['grid_fee_constant'] = area.current_market.const_fee_rate \
                 if area.current_market is not None else 0.
+
+        if isinstance(area.strategy, HomeMeterStrategy):
+            core_stats_dict["home_meter_profile_kWh"] = (
+                area.strategy.state.get_energy_at_market_slot(self.current_market_time_slot))
+            if area.parent.current_market is not None:
+                for trade in area.strategy.trades[area.parent.current_market]:
+                    core_stats_dict["trades"].append(trade.serializable_dict())
 
         if isinstance(area.strategy, PVStrategy):
             core_stats_dict['pv_production_kWh'] = \

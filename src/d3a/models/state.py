@@ -275,6 +275,21 @@ class HomeMeterState(ConsumptionState, ProductionState):
             self._energy_requirement_Wh.pop(market_slot, None)
             self._desired_energy_Wh.pop(market_slot, None)
 
+    def get_energy_at_market_slot(self, time_slot: DateTime) -> float:
+        """Return the energy produced/consumed by the device at a specific market slot (in kWh).
+
+        NOTE: The returned energy can either be negative (production) or positive (consumption).
+        Therefore, this method is only used to plot graphs: do not use it in strategy computations.
+        """
+        # We want the production energy to be a negative number (that's standard practice)
+        produced_energy_kWh = -(abs(self.get_energy_production_forecast_kWh(time_slot, 0.0)))
+        consumed_energy_kWh = self.get_desired_energy_Wh(time_slot, 0.0) / 1000
+        if produced_energy_kWh and consumed_energy_kWh:
+            raise UnexpectedStateException(
+                f"{self} reported both produced and consumed energy at slot {time_slot}.")
+
+        return produced_energy_kWh if produced_energy_kWh else consumed_energy_kWh
+
 
 class ESSEnergyOrigin(Enum):
     LOCAL = 1
