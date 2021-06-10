@@ -23,9 +23,8 @@ from typing import Dict
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import (
-    convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict,
-    convert_kW_to_kWh)
-from pendulum import DateTime  # NOQA
+    convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict, convert_kW_to_kWh)
+from pendulum import DateTime
 
 from d3a import limit_float_precision
 from d3a.constants import FLOATING_POINT_TOLERANCE
