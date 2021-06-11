@@ -69,3 +69,7 @@ class D3ARedisException(D3AException):
 
 class WrongMarketTypeException(D3AException):
     pass
+
+
+class InvalidBidOfferPair(D3AException):
+    pass

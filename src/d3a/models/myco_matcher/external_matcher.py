@@ -1,10 +1,13 @@
 import json
+import logging
 
 import d3a.constants
+from d3a.d3a_core.exceptions import InvalidBidOfferPair
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
 from d3a.models.market import validate_authentic_bid_offer_pair
-from d3a.models.market.market_structures import BidOfferMatch, offer_from_JSON_string, \
-    bid_from_JSON_string
+from d3a.models.market.market_structures import (
+    BidOfferMatch, offer_or_bid_from_json_string)
+
 from d3a.models.myco_matcher.base_matcher import BaseMatcher
 
 
@@ -67,9 +70,9 @@ class ExternalMatcher(BaseMatcher):
                 # The market is already finished or doesn't exist
                 continue
 
-            bid = bid_from_JSON_string(json.dumps(record.get("bid")))
-            offer = offer_from_JSON_string(json.dumps(record.get("offer")),
-                                           record.get("bid").get("time"))
+            bid = offer_or_bid_from_json_string(json.dumps(record.get("bid")))
+            offer = offer_or_bid_from_json_string(json.dumps(record.get("offer")),
+                                                  record.get("bid").get("time"))
 
             try:
                 validate_authentic_bid_offer_pair(
@@ -81,7 +84,7 @@ class ExternalMatcher(BaseMatcher):
 
                 if not (offer.id in market.offers and bid.id in market.bids):
                     # Offer or Bid either don't belong to market or were already matched
-                    raise Exception
+                    raise InvalidBidOfferPair
 
                 if record.get("market_id") not in validated_records:
                     validated_records[record.get("market_id")] = []
@@ -91,10 +94,11 @@ class ExternalMatcher(BaseMatcher):
                     record.get("selected_energy"),
                     offer,
                     record.get("trade_rate")))
-            except Exception:
+            except InvalidBidOfferPair as ex:
                 # If validation fails or offer/bid were consumed
                 response_dict["status"] = "fail"
                 response_dict["message"] = "Validation Error"
+                logging.exception(f"Bid offer pair validation failed with error {ex}")
                 break
         if response_dict["status"] == "success":
             for market_id, records in validated_records.items():
