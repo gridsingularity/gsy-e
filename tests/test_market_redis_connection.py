@@ -226,13 +226,12 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
         self.market.accept_bid = MagicMock(return_value=trade)
         self.subscriber._accept_bid(payload)
         self.subscriber.market.accept_bid.assert_called_once()
-        self.subscriber.redis_db.publish.assert_called()
-        # self.subscriber.redis_db.publish.assert_called_once_with(
-        #     "id/ACCEPT_BID/RESPONSE", json.dumps({
-        #         "status": "ready", "trade": trade.to_json_string(),
-        #         "transaction_uuid": "trans_id"
-        #     })
-        # )
+        self.subscriber.redis_db.publish.assert_called_once_with(
+            "id/ACCEPT_BID/RESPONSE", json.dumps({
+                "status": "ready", "trade": trade.to_json_string(),
+                "transaction_uuid": "trans_id"
+            })
+        )
 
     def test_bid_calls_market_method_and_publishes_response(self):
         payload = {"data": json.dumps({

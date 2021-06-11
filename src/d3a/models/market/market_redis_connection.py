@@ -6,8 +6,8 @@ from uuid import uuid4
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import (
     ResettableCommunicator, BlockingCommunicator)
 from d3a.events import MarketEvent
-from d3a.models.market.market_structures import offer_or_bid_from_json_string, \
-    trade_from_json_string
+from d3a.models.market.market_structures import (
+    offer_or_bid_from_json_string, trade_from_json_string)
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT, MAX_WORKER_THREADS
 
 
@@ -134,12 +134,12 @@ class MarketRedisEventSubscriber:
                     offer_or_bid_from_json_string(data_dict["offer"], current_time)
         if "bid" in data_dict and data_dict["bid"] is not None:
             if isinstance(data_dict["bid"], str):
-                data_dict["bid"] = \
-                    offer_or_bid_from_json_string(data_dict["bid"])
+                data_dict["bid"] = (
+                    offer_or_bid_from_json_string(data_dict["bid"]))
         if "trade" in data_dict and data_dict["trade"] is not None:
             if isinstance(data_dict["trade"], str):
-                data_dict["trade"] = \
-                    trade_from_json_string(data_dict["trade"])
+                data_dict["trade"] = (
+                    trade_from_json_string(data_dict["trade"]))
 
         return data_dict
 

@@ -31,6 +31,11 @@ class Clearing:
     energy: float
 
 
+def my_converter(o):
+    if isinstance(o, DateTime):
+        return o.isoformat()
+
+
 @dataclass
 class Offer:
     id: str
@@ -109,16 +114,10 @@ class Offer:
         return rate, self.energy, self.price, self.seller
 
 
-class BalancingOffer(Offer):
-
-    def __repr__(self):
-        return "<BalancingOffer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller} {rate}'>"\
-            .format(s=self, rate=self.energy_rate)
-
-    def __str__(self):
-        return "<BalancingOffer{{{s.id!s:.6s}}} [{s.seller}]: " \
-               "{s.energy} kWh @ {s.price} @ {rate}>".format(s=self,
-                                                             rate=self.energy_rate)
+def copy_offer(offer):
+    return Offer(offer.id, offer.time, offer.price, offer.energy, offer.seller,
+                 offer.original_offer_price, offer.seller_origin, offer.seller_origin_id,
+                 offer.seller_id)
 
 
 @dataclass
@@ -188,6 +187,19 @@ class Bid:
         }
 
 
+def offer_or_bid_from_json_string(offer_or_bid, current_time=None):
+    offer_bid_dict = json.loads(offer_or_bid)
+    object_type = offer_bid_dict.pop("type")
+    if "price" not in offer_bid_dict:
+        offer_bid_dict["price"] = offer_bid_dict["energy_rate"] * offer_bid_dict["energy"]
+    if object_type == "Offer":
+        offer_bid_dict.pop('energy_rate', None)
+        offer_bid_dict['time'] = current_time
+        return Offer(**offer_bid_dict)
+    elif object_type == "Bid":
+        return Bid(**offer_bid_dict)
+
+
 @dataclass
 class TradeBidOfferInfo:
     original_bid_rate: float
@@ -202,6 +214,11 @@ class TradeBidOfferInfo:
     @classmethod
     def len(cls):
         return cls.len()
+
+
+def trade_bid_info_from_json_string(info_string):
+    info_dict = json.loads(info_string)
+    return TradeBidOfferInfo(**info_dict)
 
 
 @dataclass
@@ -273,6 +290,31 @@ class Trade:
             "fee_price": self.fee_price,
             "time": datetime_to_string_incl_seconds(self.time)
         }
+
+
+def trade_from_json_string(trade_string, current_time):
+    trade_dict = json.loads(trade_string)
+    trade_dict["offer"] = offer_or_bid_from_json_string(trade_dict["offer"], current_time)
+    if key_in_dict_and_not_none(trade_dict, "residual"):
+        trade_dict["residual"] = offer_or_bid_from_json_string(trade_dict["residual"],
+                                                               current_time)
+    trade_dict["time"] = parse(trade_dict["time"])
+    if key_in_dict_and_not_none(trade_dict, "offer_bid_trade_info"):
+        trade_dict["offer_bid_trade_info"] = (
+            trade_bid_info_from_json_string(trade_dict["offer_bid_trade_info"]))
+    return Trade(**trade_dict)
+
+
+class BalancingOffer(Offer):
+
+    def __repr__(self):
+        return "<BalancingOffer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller} {rate}'>"\
+            .format(s=self, rate=self.energy_rate)
+
+    def __str__(self):
+        return "<BalancingOffer{{{s.id!s:.6s}}} [{s.seller}]: " \
+               "{s.energy} kWh @ {s.price} @ {rate}>".format(s=self,
+                                                             rate=self.energy_rate)
 
 
 @dataclass
@@ -348,45 +390,3 @@ def parse_event_and_parameters_from_json_string(payload):
         kwargs["bid_trade"] = trade_from_json_string(kwargs["bid_trade"])
     event_type = MarketEvent(data["event_type"])
     return event_type, kwargs
-
-
-def my_converter(o):
-    if isinstance(o, DateTime):
-        return o.isoformat()
-
-
-def copy_offer(offer):
-    return Offer(offer.id, offer.time, offer.price, offer.energy, offer.seller,
-                 offer.original_offer_price, offer.seller_origin, offer.seller_origin_id,
-                 offer.seller_id)
-
-
-def trade_bid_info_from_json_string(info_string):
-    info_dict = json.loads(info_string)
-    return TradeBidOfferInfo(**info_dict)
-
-
-def offer_or_bid_from_json_string(offer_or_bid, current_time=None):
-    offer_bid_dict = json.loads(offer_or_bid)
-    object_type = offer_bid_dict.pop("type")
-    if "price" not in offer_bid_dict:
-        offer_bid_dict["price"] = offer_bid_dict["energy_rate"] * offer_bid_dict["energy"]
-    if object_type == "Offer":
-        offer_bid_dict.pop('energy_rate', None)
-        offer_bid_dict['time'] = current_time
-        return Offer(**offer_bid_dict)
-    elif object_type == "Bid":
-        return Bid(**offer_bid_dict)
-
-
-def trade_from_json_string(trade_string, current_time):
-    trade_dict = json.loads(trade_string)
-    trade_dict["offer"] = offer_or_bid_from_json_string(trade_dict["offer"], current_time)
-    if key_in_dict_and_not_none(trade_dict, "residual"):
-        trade_dict["residual"] = offer_or_bid_from_json_string(trade_dict["residual"],
-                                                               current_time)
-    trade_dict["time"] = parse(trade_dict["time"])
-    if key_in_dict_and_not_none(trade_dict, "offer_bid_trade_info"):
-        trade_dict["offer_bid_trade_info"] = (
-            trade_bid_info_from_json_string(trade_dict["offer_bid_trade_info"]))
-    return Trade(**trade_dict)
