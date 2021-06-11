@@ -9,6 +9,7 @@ from d3a.events import MarketEvent
 from d3a.models.market.market_structures import (
     offer_or_bid_from_json_string, trade_from_json_string)
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT, MAX_WORKER_THREADS
+from d3a_interface.utils import key_in_dict_and_not_none
 
 
 class MarketRedisEventPublisher:
@@ -124,22 +125,19 @@ class MarketRedisEventSubscriber:
 
     @classmethod
     def sanitize_parameters(cls, data_dict, current_time):
-        if "offer_or_id" in data_dict and data_dict["offer_or_id"] is not None:
-            if isinstance(data_dict["offer_or_id"], str):
-                data_dict["offer_or_id"] = \
-                    offer_or_bid_from_json_string(data_dict["offer_or_id"], current_time)
-        if "offer" in data_dict and data_dict["offer"] is not None:
-            if isinstance(data_dict["offer"], str):
-                data_dict["offer"] = \
-                    offer_or_bid_from_json_string(data_dict["offer"], current_time)
-        if "bid" in data_dict and data_dict["bid"] is not None:
-            if isinstance(data_dict["bid"], str):
-                data_dict["bid"] = (
-                    offer_or_bid_from_json_string(data_dict["bid"]))
-        if "trade" in data_dict and data_dict["trade"] is not None:
-            if isinstance(data_dict["trade"], str):
-                data_dict["trade"] = (
-                    trade_from_json_string(data_dict["trade"]))
+        if (key_in_dict_and_not_none(data_dict, "offer_or_id")
+                and isinstance(data_dict["offer_or_id"], str)):
+            data_dict["offer_or_id"] = (
+                offer_or_bid_from_json_string(data_dict["offer_or_id"], current_time))
+        if key_in_dict_and_not_none(data_dict, "offer") and isinstance(data_dict["offer"], str):
+            data_dict["offer"] = (
+                offer_or_bid_from_json_string(data_dict["offer"], current_time))
+        if key_in_dict_and_not_none(data_dict, "bid") and isinstance(data_dict["bid"], str):
+            data_dict["bid"] = (
+                offer_or_bid_from_json_string(data_dict["bid"]))
+        if key_in_dict_and_not_none(data_dict, "trade") and isinstance(data_dict["trade"], str):
+            data_dict["trade"] = (
+                trade_from_json_string(data_dict["trade"], current_time))
 
         return data_dict
 

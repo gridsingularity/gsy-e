@@ -209,7 +209,7 @@ class TradeBidOfferInfo:
     trade_rate: float
 
     def to_json_string(self):
-        return json.dumps(asdict(self))
+        return json.dumps(asdict(self), default=my_converter)
 
     @classmethod
     def len(cls):
