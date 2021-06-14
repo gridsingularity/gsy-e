@@ -14,14 +14,13 @@ You should have received a copy of the GNU General Public License along with thi
 not, see <http://www.gnu.org/licenses/>.
 """
 from pathlib import Path
+
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.home_meter import HomeMeterStrategy
-import d3a
-
-ROOT_PACKAGE_FOLDER = Path(d3a.__file__).resolve().parent
+from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.strategy.storage import StorageStrategy
+from d3a.d3a_core.util import d3a_path
 
 
 def get_setup(config):
@@ -40,8 +39,7 @@ def get_setup(config):
             Area("House 2", [
                 Area("H2 Home Meter", strategy=HomeMeterStrategy(
                     initial_selling_rate=30, final_selling_rate=5,
-                    home_meter_profile=Path(
-                        ROOT_PACKAGE_FOLDER/"resources/home_meter_profile.csv")))
+                    home_meter_profile=Path(d3a_path) / "resources/home_meter_profile.csv"))
                 ],
                 grid_fee_percentage=0, grid_fee_constant=0,
             ),
