@@ -267,8 +267,8 @@ class HomeMeterStrategy(BidEnabledStrategy):
         if kwargs.get("home_meter_profile") is not None:
             self.home_meter_profile = kwargs["home_meter_profile"]
 
-        # Offers side
         self.offer_update.update_and_populate_price_settings(self.area)
+        self.bid_update.update_and_populate_price_settings(self.area)
         self._set_energy_forecast_for_future_markets(reconfigure=True)
 
     def _area_reconfigure_production_prices(self, **kwargs):
