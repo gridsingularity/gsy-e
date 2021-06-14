@@ -30,6 +30,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
+from d3a.constants import FEED_IN_TARIFF
 
 _NO_VALUE = {
     'min': None,
@@ -146,6 +147,9 @@ class SimulationEndpointBuffer:
                 core_stats_dict['trades'].append(trade.serializable_dict())
         if hasattr(area.current_market, 'market_fee'):
             core_stats_dict['market_fee'] = area.current_market.market_fee
+        if hasattr(area.current_market, 'const_fee_rate'):
+            core_stats_dict['const_fee_rate'] = area.current_market.const_fee_rate
+            core_stats_dict['feed_in_tariff'] = FEED_IN_TARIFF
         if area.strategy is None:
             core_stats_dict['area_throughput'] = {
                 'baseline_peak_energy_import_kWh': area.throughput.baseline_peak_energy_import_kWh,
