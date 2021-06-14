@@ -33,8 +33,7 @@ def get_setup(config):
                 Area("H1 Load", strategy=LoadHoursStrategy(
                      avg_power_W=200, hrs_per_day=6, hrs_of_day=list(range(12, 18)),
                      final_buying_rate=35)),
-                Area("H1 Storage 1", strategy=StorageStrategy(initial_soc=50)),
-                Area("H1 Storage 2", strategy=StorageStrategy(initial_soc=50)),
+                Area("H1 Storage 1", strategy=StorageStrategy(initial_soc=50))
                 ],
                 grid_fee_percentage=0, grid_fee_constant=0,
             ),
@@ -42,7 +41,7 @@ def get_setup(config):
                 Area("H2 Home Meter", strategy=HomeMeterStrategy(
                     initial_selling_rate=30, final_selling_rate=5,
                     home_meter_profile=Path(
-                        ROOT_PACKAGE_FOLDER/"resources/home_meter_profile.csv"))),
+                        ROOT_PACKAGE_FOLDER/"resources/home_meter_profile.csv")))
                 ],
                 grid_fee_percentage=0, grid_fee_constant=0,
             ),
