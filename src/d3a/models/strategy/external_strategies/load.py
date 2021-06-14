@@ -255,40 +255,6 @@ class LoadExternalMixin(ExternalMixin):
         if self.should_use_default_strategy:
             super().event_offer(market_id=market_id, offer=offer)
 
-    def _update_bid_aggregator(self, arguments):
-        assert set(arguments.keys()) == {'price', 'energy', 'type', 'transaction_id'}
-        bid_rate = arguments["price"] / arguments["energy"]
-        if bid_rate < 0.0:
-            return {
-                "command": "update_bid", "status": "error",
-                "area_uuid": self.device.uuid,
-                "error_message": "Updated bid needs to have a positive price.",
-                "transaction_id": arguments.get("transaction_id", None)}
-        with self.lock:
-            existing_bids = list(self.get_posted_bids(self.next_market))
-            existing_bid_energy = sum([bid.energy for bid in existing_bids])
-            for bid in existing_bids:
-                assert bid.buyer == self.owner.name
-                if bid.id in self.next_market.bids.keys():
-                    bid = self.next_market.bids[bid.id]
-                self.next_market.delete_bid(bid.id)
-
-                self.remove_bid_from_pending(self.next_market.id, bid.id)
-            if len(existing_bids) > 0:
-                updated_bid = self.post_bid(self.next_market, bid_rate * existing_bid_energy,
-                                            existing_bid_energy)
-                return {
-                    "command": "update_bid", "status": "ready",
-                    "bid": updated_bid.to_json_string(),
-                    "area_uuid": self.device.uuid,
-                    "transaction_id": arguments.get("transaction_id", None)}
-            else:
-                return {
-                    "command": "update_bid", "status": "error",
-                    "area_uuid": self.device.uuid,
-                    "error_message": "Updated bid would only work if the old exist in market.",
-                    "transaction_id": arguments.get("transaction_id", None)}
-
     def _bid_aggregator(self, arguments):
         required_args = {'price', 'energy', 'type', 'transaction_id'}
         allowed_args = required_args.union({'replace_existing'})

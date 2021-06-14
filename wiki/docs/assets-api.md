@@ -1,4 +1,4 @@
-The Grid Singularity API client allows you to create agents that follow custom trading strategies to buy and sell energy in the energy market. The agent can request and receive information through the Asset API, feed that information into an algorithm, and post bids or offers on a live simulated exchange. 
+The Grid Singularity API client allows you to create agents that follow custom trading strategies to buy and sell energy in the energy market. The agent can request and receive information through the Asset API, feed that information into an algorithm, and post bids or offers on a live simulated exchange.
 
 ![alt_text](img/asset-api-1.png)
 
@@ -35,27 +35,27 @@ In the variable market_info you will get a dictionary with information on the ma
  'market_slot': '2014-10-01T00:15',
  'grid_tree': {'477999f1-fd6e-4c68-8cc8-e8e52049de8e': {'last_market_bill': {'accumulated_trades': {}, 'external_trades': {}},
  'last_market_stats': {'min_trade_rate': 26.0, 'max_trade_rate': 26.0, 'avg_trade_rate': 26.0, 'median_trade_rate': 26.0, 'total_traded_energy_kWh': 7.5239405},
- 'last_market_fee': 4, 
+ 'last_market_fee': 4,
 'current_market_fee': 4,
  'area_name': 'Grid', 'children': {'f02313bb-16c4-427b-90d2-d753822fe21c': {'last_market_bill': {'accumulated_trades': {}, 'external_trades': {}},
  'last_market_stats': {'min_trade_rate': 30.0, 'max_trade_rate': 30.0, 'avg_trade_rate': 30.0, 'median_trade_rate': 30.0, 'total_traded_energy_kWh': 7.5239405},
  'last_market_fee': 4,
  'current_market_fee': 4,
- 'area_name': 'Community', 'children': {'44d19495-39e8-42e0-be2f-0432e644e5e5': {'last_market_bill': {'accumulated_trades': {}, 'external_trades': {}}, 
+ 'area_name': 'Community', 'children': {'44d19495-39e8-42e0-be2f-0432e644e5e5': {'last_market_bill': {'accumulated_trades': {}, 'external_trades': {}},
 'last_market_stats': {'min_trade_rate': None, 'max_trade_rate': None, 'avg_trade_rate': None, 'median_trade_rate': None, 'total_traded_energy_kWh': None},
 'last_market_fee': 0.0,
-'current_market_fee': None, 
+'current_market_fee': None,
 'area_name': 'Member 1', 'children': {'075834dd-5438-4287-8393-781a4a8068f5': {'asset_info': {'energy_requirement_kWh': 0.06802025, 'energy_active_in_bids': 0.0, 'energy_traded': 0.0, 'total_cost': 0.0},
  'last_slot_asset_info': {'energy_traded': 0.0, 'total_cost': 0.0},
  'asset_bill': {},
  'area_name': 'Load 1'}, '2e7866d8-34c6-49ad-a388-fd5876a3e679': {'asset_info': {'available_energy_kWh': 0.0, 'energy_active_in_offers': 0, 'energy_traded': 0, 'total_cost': 0}, 'last_slot_asset_info': {'energy_traded': 0, 'total_cost': 0}, 'asset_bill': {}, 'area_name': 'PV 1'}, '22c495b2-4b2b-43ba-8c76-3eb956014975': {'asset_info': {'energy_to_sell': 0.0, 'energy_active_in_bids': 0, 'energy_to_buy': 1.36275, 'energy_active_in_offers': 0, 'free_storage': 10.0, 'used_storage': 0.0, 'energy_traded': 0.0, 'total_cost': 0.0}, 'last_slot_asset_info': {'energy_traded': 0.0, 'total_cost': 0.0}, 'asset_bill': {}, 'area_name': 'Storage 1'}}}, '5c0c05dd-2e23-4866-a113-e08797a2094e': {'last_market_bill': {'accumulated_trades': {}, 'external_trades': {}},
 'last_market_stats': {'min_trade_rate': 30.0, 'max_trade_rate': 30.0, 'avg_trade_rate': 30.0, 'median_trade_rate': 30.0, 'total_traded_energy_kWh': 0.064779},
-'last_market_fee': 0.0, 
+'last_market_fee': 0.0,
 'current_market_fee': None,
 'feed_in_tariff_rate': 21.9,
 'market_maker_rate': 22,
-'event': 'market', 
-'num_ticks': 10.0, 
+'event': 'market',
+'num_ticks': 10.0,
 'simulation_id': None
 'feed_in_tariff_rate': 21.9,
 'market_maker_rate': 22,
@@ -94,7 +94,7 @@ The oracle is able to request information and post bids and offers for multiple 
 
 ###bid_energy()
 
-Places an energy bid to the registered market. This command receives 4 arguments : 
+Places an energy bid to the registered market. This command receives 4 arguments :
 
 *   **area_uuid**: Universal Unique Identifier of the selected asset
 *   **energy**:  energy in kWh
@@ -109,7 +109,7 @@ self.add_to_batch_commands.bid_energy(area_uuid = "2e7866d8-34c6-49ad-a388-fd587
 
 ###bid_energy_rate()
 
-Places an energy bid to the registered market. This batch command receives 4 arguments : 
+Places an energy bid to the registered market. This batch command receives 4 arguments :
 
 *   **area_uuid**: Universal Unique Identifier  of the selected asset
 *   **energy**: energy in kWh
@@ -120,20 +120,6 @@ Here is an example:
 
 ```
 self.add_to_batch_commands.bid_energy_rate(area_uuid = "2e7866d8-34c6-49ad-a388-fd5876a3e679", energy = 2, rate = 30, replace_existing = True)
-```
-
-###update_bid_energy()
-
-Update the bid of an asset to a new price. This command receives 3 arguments : 
-
-*   **area_uuid**: Universal Unique Identifier  of the selected asset
-*   **energy**:  energy in kWh
-*   **price**: price in Euro cents
-
-Here is an example:
-
-```
-self.add_to_batch_commands.update_bid_energy(area_uuid = "2e7866d8-34c6-49ad-a388-fd5876a3e679", energy = 2, price = 60)
 ```
 
 ###lists_bids()
@@ -148,7 +134,7 @@ self.add_to_batch_commands.list_bids(area_uuid="62f827ec-ef86-4782-b5c3-88327751
 
 ###delete_bid()
 
-Delete a bid posted on the market using its ID. This command receives 2 arguments : 
+Delete a bid posted on the market using its ID. This command receives 2 arguments :
 
 *   **area_uuid**: Universal Unique Identifier of the selected asset
 *   **bid_id**: ID of the selected bid. If None, all the bids posted by the selected asset will be deleted.
@@ -161,7 +147,7 @@ self.add_to_batch_commands.delete_bid(area_uuid="62f827ec-ef86-4782-b5c3-8832775
 
 ###offer_energy()
 
-Places an energy offer to the registered market. This command receives 4 arguments : 
+Places an energy offer to the registered market. This command receives 4 arguments :
 
 *   **area_uuid**: Universal Unique Identifier  of the selected asset
 *   **energy**:  energy in kWh
@@ -176,7 +162,7 @@ self.add_to_batch_commands.offer_energy(area_uuid = "2e7866d8-34c6-49ad-a388-fd5
 
 ###offer_energy_rate()
 
-Places an energy offer to the registered market. This command receives 4 arguments : 
+Places an energy offer to the registered market. This command receives 4 arguments :
 
 *   **area_uuid**: Universal Unique Identifier  of the selected asset
 *   **energy**:  energy in kWh
@@ -187,20 +173,6 @@ Here is an example:
 
 ```
 self.add_to_batch_commands.offer_energy_rate(area_uuid = "2e7866d8-34c6-49ad-a388-fd5876a3e679", energy = 2, rate = 30, replace_existing = True)
-```
-
-###update_offer_energy()
-
-Update the offer of an asset to a new price. This command receives 3 arguments : 
-
-*   **area_uuid**: Universal Unique Identifier  of the selected asset
-*   **energy**:  energy in kWh
-*   **price**: price in Euro cents
-
-Here is an example:
-
-```
-self.add_to_batch_commands.update_offer_energy(area_uuid = "2e7866d8-34c6-49ad-a388-fd5876a3e679", energy = 2, price_cents = 30)
 ```
 
 ###lists_offers()
@@ -215,7 +187,7 @@ self.add_to_batch_commands.list_offers(area_uuid="62f827ec-ef86-4782-b5c3-883277
 
 ###delete_offer()
 
-Delete an offer posted on the market using its ID. This command receives 2 arguments : 
+Delete an offer posted on the market using its ID. This command receives 2 arguments :
 
 *   **area_uuid**: Universal Unique Identifier  of the selected asset
 *   **offer_id**: ID of the selected offer. If None, all the bids posted by the selected asset will be deleted.
@@ -248,9 +220,9 @@ In return the simulation will provide a detailed response for all commands submi
 
 ##API template script
 
-A simple trading strategy is available in the [template agent](https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/asset_api_template.py). This shows an example of what can be done with this API, and offers a flexible structure, easy to modify to implement custom smart trading strategies. See the `TODO` flags there to see how you may configure your trading strategy and extract market and asset data. 
+A simple trading strategy is available in the [template agent](https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/asset_api_template.py). This shows an example of what can be done with this API, and offers a flexible structure, easy to modify to implement custom smart trading strategies. See the `TODO` flags there to see how you may configure your trading strategy and extract market and asset data.
 
-[Here](https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/asset_api_template.py#L16-L31), the name of the oracle and the list of the connected devices are defined. If the user is running the API to the UI and automatic is set to True, the script will automatically connect to all assets the user is approved to. 
+[Here](https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/asset_api_template.py#L16-L31), the name of the oracle and the list of the connected devices are defined. If the user is running the API to the UI and automatic is set to True, the script will automatically connect to all assets the user is approved to.
 
 The event `on_market_cycle` is used to gather market information through market_info and assets information, define the trading strategy and place the first bids/offers. The [first information](https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/asset_api_template.py#L65-L70) to be gathered is the Market Maker price and Feed-in Tariff and calculate the average value between them. These values are required to set the boundaries of the pricing trading strategy.
 
@@ -258,13 +230,13 @@ In these [lines](https://github.com/gridsingularity/d3a-api-client/blob/master/d
 
 After that, the API client [creates a nested dictionary](https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/asset_api_template.py#L103-L143), containing various information for each asset. First we get the name of the assets and the fees between the assets and the [market maker](model-market-maker.md). The `Aggregator` class has a function that calculates the grid fees along the path between two assets or markets in the grid: [calculate_grid_fee](https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/asset_api_template.py#L109). This function takes 3 arguments:
 
-*   **start_market_or_device_name**: UUID of the started market/asset 
-*   **target_market_or_device_name**: UUID of the targeted market/asset 
+*   **start_market_or_device_name**: UUID of the started market/asset
+*   **target_market_or_device_name**: UUID of the targeted market/asset
 *   **fee_type**: can either be `current_market_fee` or `last_market_fee`
 
 These [fees](constant-fees.md) should be integrated in the pricing strategy in order to avoid any power outages for the loads and curtailment for the PVs. Lastly in this asset_strategy dictionary, the pricing strategy is defined for each asset individually. This allows assets to have independent strategies depending on their information and location in the grid.
 
-The current pricing strategies are deterministic, representing a linear function bounded between the Feed-in Tariff - grid fee (lower boundary) and the Market Maker price + grid fee (upper boundary). Since the API client can post up to 10 bids/offers per market slot, the strategies incrementally ramp up (bids) or down (offers) for a total of 10 prices per energy asset. The final bid/offer price is set at least [2 API available ticks](https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/asset_api_template.py#L115) before the end of the market slot length (9th and 10th tick in our case) to make sure that the bids and offers are placed before the [market slot](markets.md#market-slots). 
+The current pricing strategies are deterministic, representing a linear function bounded between the Feed-in Tariff - grid fee (lower boundary) and the Market Maker price + grid fee (upper boundary). Since the API client can post up to 10 bids/offers per market slot, the strategies incrementally ramp up (bids) or down (offers) for a total of 10 prices per energy asset. The final bid/offer price is set at least [2 API available ticks](https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/asset_api_template.py#L115) before the end of the market slot length (9th and 10th tick in our case) to make sure that the bids and offers are placed before the [market slot](markets.md#market-slots).
 
 Here are defined the [loads](https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/asset_api_template.py#L111-L122), [PVs](https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/asset_api_template.py#L124-L133) and [storages](https://github.com/gridsingularity/d3a-api-client/blob/master/d3a_api_client/setups/asset_api_template.py#L135-L143) pricing strategies.
 
