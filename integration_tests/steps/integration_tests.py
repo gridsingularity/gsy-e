@@ -36,7 +36,7 @@ from d3a_interface.utils import convert_W_to_Wh, convert_W_to_kWh, convert_kW_to
 from d3a.models.config import SimulationConfig
 from d3a.d3a_core.simulation import Simulation
 from d3a.d3a_core.util import d3a_path
-from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
+from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE, BidOfferMatchAlgoEnum
 from d3a import constants
 
 
@@ -214,8 +214,10 @@ def one_sided_market(context, market_type):
         ConstSettings.IAASettings.MARKET_TYPE = 1
     elif market_type == "two-sided-pay-as-bid":
         ConstSettings.IAASettings.MARKET_TYPE = 2
-    if market_type == "two-sided-pay-as-clear":
-        ConstSettings.IAASettings.MARKET_TYPE = 3
+        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
+    elif market_type == "two-sided-pay-as-clear":
+        ConstSettings.IAASettings.MARKET_TYPE = 2
+        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
 
 
 @given('d3a dispatches events from top to bottom')
@@ -476,7 +478,7 @@ def create_sim_object(context, scenario):
                                          external_connection_enabled=False)
 
     context.simulation = Simulation(
-        scenario, simulation_config, None, 0, False, duration(), False, False, None, None,
+        scenario, simulation_config, None, 0, False, duration(), False, True, None, None,
         "1234", False
     )
 
@@ -510,38 +512,24 @@ def message_on_channel(context, channel):
     context.simulation.redis_connection._sub_callback_dict[channel](payload)
 
 
-@when('the simulation is able to transmit intermediate results')
+@when('the simulation is able to transmit intermediate and final results')
 def interm_results(context):
     context.interm_results_count = 0
 
-    def interm_res_count(_):
+    def interm_res_count(_, _1):
         context.interm_results_count += 1
-    context.simulation.redis_connection.publish_intermediate_results = interm_res_count
+    context.simulation.kafka_connection.publish = interm_res_count
 
 
-@when('the simulation is able to transmit final results')
-def final_results(context):
-    context.final_results_count = 0
-
-    def final_res_count(_):
-        context.final_results_count += 1
-    context.simulation.redis_connection.publish_results = final_res_count
-
-
-@when('the redis_connection is enabled')
+@when('the kafka_connection is enabled')
 def transmit_zipped_results(context):
-    context.simulation.redis_connection.is_enabled = lambda: True
+    context.simulation.kafka_connection.is_enabled = lambda: True
 
 
-@then('intermediate results are transmitted on every slot')
+@then('intermediate results are transmitted on every slot and final results once')
 def interm_res_report(context):
     # Add an extra result for the start of the simulation
-    assert context.interm_results_count == 12
-
-
-@then('final results are transmitted once')
-def final_res_report(context):
-    assert context.final_results_count == 1
+    assert context.interm_results_count == 13
 
 
 @then('{method} is called')
@@ -584,7 +572,6 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
     paused = False
     pause_after = duration()
     repl = False
-    no_export = True
     export_path = None
     export_subdir = None
     context.simulation = Simulation(
@@ -595,7 +582,7 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
         paused,
         pause_after,
         repl,
-        no_export,
+        context.no_export,
         export_path,
         export_subdir,
     )

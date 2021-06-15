@@ -15,26 +15,26 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import pytest
+import os
 import unittest
 from copy import deepcopy
-from unittest.mock import MagicMock, Mock
-from pendulum import DateTime, duration, today, now
-from parameterized import parameterized
 from math import isclose
-import os
-from d3a.models.area import DEFAULT_CONFIG
-from d3a.models.market.market_structures import Offer, BalancingOffer, Bid, Trade
+from unittest.mock import MagicMock, Mock
+from uuid import uuid4
 
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.predefined_load import DefinedLoadStrategy
+import pytest
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.exceptions import D3ADeviceException
+from parameterized import parameterized
+from pendulum import DateTime, duration, today, now
+
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import d3a_path
-from uuid import uuid4
-
+from d3a.models.area import DEFAULT_CONFIG
+from d3a.models.market.market_structures import Offer, BalancingOffer, Bid, Trade
+from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 
 TIME = today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
@@ -164,6 +164,9 @@ class FakeMarket:
         offer.id = 'id'
         return offer
 
+    def accept_offer(self, **kwargs):
+        return Trade("", "", "", "", "")
+
 
 class TestLoadHoursStrategyInput(unittest.TestCase):
 
@@ -221,7 +224,9 @@ def market_test2():
 
 @pytest.fixture
 def load_hours_strategy_test(called):
-    strategy = LoadHoursStrategy(avg_power_W=620, hrs_per_day=4, hrs_of_day=[8, 9, 10, 12])
+    strategy = LoadHoursStrategy(
+        avg_power_W=620, hrs_per_day=4, hrs_of_day=[8, 9, 10, 12],
+        initial_buying_rate=10)
     strategy.accept_offer = called
     return strategy
 
@@ -242,7 +247,9 @@ def load_hours_strategy_test2(load_hours_strategy_test, area_test2):
 
 @pytest.fixture
 def load_hours_strategy_test4():
-    strategy = LoadHoursStrategy(avg_power_W=620, hrs_per_day=4, hrs_of_day=[8, 9, 10, 12])
+    strategy = LoadHoursStrategy(
+        avg_power_W=620, hrs_per_day=4, hrs_of_day=[8, 9, 10, 12],
+        initial_buying_rate=10)
     strategy.accept_offer = Mock()
     return strategy
 
@@ -285,6 +292,59 @@ def test_active_markets(load_hours_strategy_test1):
     load_hours_strategy_test1.event_activate()
     assert load_hours_strategy_test1.active_markets == \
         load_hours_strategy_test1.area.all_markets
+
+
+def test_event_tick_updates_rates(load_hours_strategy_test1, market_test1):
+    """The event_tick method invokes bids' rates updates correctly."""
+    load_hours_strategy_test1.state.can_buy_more_energy = Mock()
+    load_hours_strategy_test1.bid_update.update = Mock()
+    load_hours_strategy_test1.event_activate()
+
+    number_of_markets = len(load_hours_strategy_test1.area.all_markets)
+    # Test for all available market types (one-sided and two-sided markets)
+    available_market_types = (1, 2, 3)
+    # Bids' rates should be updated both when the load can buy energy and when it cannot do it
+    for can_buy_energy in (True, False):
+        load_hours_strategy_test1.state.can_buy_more_energy.return_value = can_buy_energy
+        for market_type_id in available_market_types:
+            ConstSettings.IAASettings.MARKET_TYPE = market_type_id
+            load_hours_strategy_test1.bid_update.update.reset_mock()
+            load_hours_strategy_test1.event_tick()
+            if market_type_id == 1:
+                # Bids' rates are not updated in one-sided markets
+                load_hours_strategy_test1.bid_update.update.assert_not_called()
+            else:
+                # Bids' rates are updated once for each market slot in two-sided markets
+                assert load_hours_strategy_test1.bid_update.update.call_count == number_of_markets
+
+
+def test_event_tick_one_sided_market_no_energy_required(load_hours_strategy_test1, market_test1):
+    """
+    The load does not make offers on tick events in one-sided markets when it cannot buy energy.
+    """
+    load_hours_strategy_test1.state.can_buy_more_energy = Mock(return_value=False)
+    load_hours_strategy_test1.accept_offer = Mock()
+    load_hours_strategy_test1.state.decrement_energy_requirement = Mock()
+
+    load_hours_strategy_test1.event_activate()
+    load_hours_strategy_test1.event_tick()
+    load_hours_strategy_test1.accept_offer.assert_not_called()
+    load_hours_strategy_test1.state.decrement_energy_requirement.assert_not_called()
+
+
+def test_event_tick_one_sided_market_energy_required(load_hours_strategy_test1, market_test1):
+    """The load makes offers on tick events in one-sided markets when it can buy energy."""
+    load_hours_strategy_test1.state.can_buy_more_energy = Mock(return_value=True)
+    load_hours_strategy_test1.accept_offer = Mock()
+    load_hours_strategy_test1.state.decrement_energy_requirement = Mock()
+
+    load_hours_strategy_test1.event_activate()
+    assert load_hours_strategy_test1.hrs_per_day == {0: 4}
+    load_hours_strategy_test1.event_tick()
+    load_hours_strategy_test1.accept_offer.assert_called()
+    load_hours_strategy_test1.state.decrement_energy_requirement.assert_called()
+    # The amount of operating hours has decreased
+    assert load_hours_strategy_test1.hrs_per_day == {0: 3.25}
 
 
 def test_event_tick(load_hours_strategy_test1, market_test1):
@@ -497,12 +557,22 @@ def test_predefined_load_strategy_rejects_incorrect_rate_parameters(use_mmr, ini
                             energy_rate_increase_per_update=-1)
 
 
-def test_load_hour_strategy_increases_rate_when_fit_to_limit_is_false():
+def test_load_hour_strategy_increases_rate_when_fit_to_limit_is_false(market_test1):
     load = LoadHoursStrategy(avg_power_W=100, initial_buying_rate=0, final_buying_rate=30,
                              fit_to_limit=False, energy_rate_increase_per_update=10,
                              update_interval=5)
     load.area = FakeArea()
+    load.owner = load.area
     load.event_activate()
+    assert load.state._energy_requirement_Wh[TIME] == 25.0
+    offer = Offer('id', now(), 1, (MIN_BUY_ENERGY/500), 'A', market_test1)
+    load._one_sided_market_event_tick(market_test1, offer)
+    assert load.bid_update.get_updated_rate(TIME) == 0
+    assert load.state._energy_requirement_Wh[TIME] == 25.0
+    load.event_tick()
+    assert load.bid_update.get_updated_rate(TIME) == 10
+    load._one_sided_market_event_tick(market_test1, offer)
+    assert load.state._energy_requirement_Wh[TIME] == 0
     assert all([rate == -10 for rate in load.bid_update.energy_rate_change_per_update.values()])
 
 

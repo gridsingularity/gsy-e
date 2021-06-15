@@ -16,21 +16,23 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
+
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a.models.strategy.external_strategies.load import (
+    LoadForecastExternalStrategy, LoadHoursExternalStrategy, LoadProfileExternalStrategy)
+from d3a.models.strategy.external_strategies.pv import (
+    PVExternalStrategy, PVForecastExternalStrategy, PVPredefinedExternalStrategy,
+    PVUserProfileExternalStrategy)
+from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
+from d3a.models.strategy.finite_power_plant import FinitePowerPlant
+from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
+from d3a.models.strategy.predefined_load import DefinedLoadStrategy
+from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
-from d3a.models.strategy.predefined_load import DefinedLoadStrategy
-from d3a.models.strategy.finite_power_plant import FinitePowerPlant
-from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy, \
-    LoadProfileExternalStrategy, LoadForecastExternalStrategy
-from d3a.models.strategy.external_strategies.pv import PVExternalStrategy, \
-    PVPredefinedExternalStrategy, PVUserProfileExternalStrategy, PVForecastExternalStrategy
-from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
-from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 
 external_strategies_mapping = {
     LoadHoursStrategy: LoadHoursExternalStrategy,
@@ -125,11 +127,3 @@ class LoadHours(Leaf):
 
 class FiniteDieselGenerator(Leaf):
     strategy_type = FinitePowerPlant
-
-
-class Light(Leaf):
-    strategy_type = LoadHoursStrategy
-
-
-class TV(Leaf):
-    strategy_type = LoadHoursStrategy

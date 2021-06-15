@@ -23,7 +23,6 @@ from uuid import uuid4
 from cached_property import cached_property
 from d3a_interface.area_validator import validate_area
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.utils import key_in_dict_and_not_none
 from pendulum import DateTime, duration, today
 from slugify import slugify
 
@@ -36,6 +35,8 @@ from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.events import Events
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.redis_external_market_connection import RedisMarketExternalConnection
+from d3a.models.myco_matcher import MycoMatcher
+from d3a_interface.utils import key_in_dict_and_not_none
 from d3a.models.area.stats import AreaStats
 from d3a.models.area.throughput_parameters import ThroughputParameters
 from d3a.models.config import SimulationConfig
@@ -142,6 +143,7 @@ class Area:
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available and self.strategy is None else None
         self.should_update_child_strategies = False
+        self.bid_offer_matcher = MycoMatcher()
         self.external_connection_available = external_connection_available
 
     @property
@@ -173,6 +175,7 @@ class Area:
             self.strategy.restore_state(saved_state)
 
     def area_reconfigure_event(self, **kwargs):
+        """Reconfigure the device properties at runtime using the provided arguments."""
         if self.strategy is not None:
             self.strategy.area_reconfigure_event(**kwargs)
             return True
@@ -386,13 +389,17 @@ class Area:
     def tick(self):
         self._consume_commands_from_aggregator()
 
-        if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
-                ConstSettings.IAASettings.MARKET_TYPE == 3:
+        if ConstSettings.IAASettings.MARKET_TYPE == 2:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                 self.dispatcher.publish_market_clearing()
             else:
                 for market in self.all_markets:
-                    market.match_offers_bids()
+                    bid_offer_pairs = self.bid_offer_matcher.calculate_recommendation(
+                        *market.open_bids_and_offers, self.now)
+                    while bid_offer_pairs:
+                        bid_offer_pairs = self.bid_offer_matcher.calculate_recommendation(
+                            *market.open_bids_and_offers, self.now)
+                        market.match_recommendation(bid_offer_pairs)
 
         self.events.update_events(self.now)
 

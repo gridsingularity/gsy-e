@@ -22,18 +22,17 @@ from typing import Union  # noqa
 
 from d3a_interface.constants_limits import ConstSettings
 
-from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade, MarketException
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.events.event_structures import MarketEvent
-from d3a.models.market import lock_market_action
+from d3a.models.market import lock_market_action, validate_authentic_bid_offer_pair
 from d3a.models.market.market_structures import Bid, Trade, TradeBidOfferInfo
 from d3a.models.market.one_sided import OneSidedMarket
 
 log = getLogger(__name__)
 
 
-class TwoSidedPayAsBid(OneSidedMarket):
+class TwoSidedMarket(OneSidedMarket):
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
                  grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
@@ -209,32 +208,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
         self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
         return trade
 
-    def _perform_pay_as_bid_matching(self):
-        # Pay as bid first
-        # There are 2 simplistic approaches to the problem
-        # 1. Match the cheapest offer with the most expensive bid. This will favor the sellers
-        # 2. Match the cheapest offer with the cheapest bid. This will favor the buyers,
-        #    since the most affordable offers will be allocated for the most aggressive buyers.
-
-        # Sorted bids in descending order
-        sorted_bids = self.sorting(self.bids, True)
-
-        # Sorted offers in descending order
-        sorted_offers = self.sorting(self.offers, True)
-
-        already_selected_bids = set()
-        offer_bid_pairs = []
-        for offer in sorted_offers:
-            for bid in sorted_bids:
-                if bid.id not in already_selected_bids and \
-                        (offer.energy_rate - bid.energy_rate) <= \
-                        FLOATING_POINT_TOLERANCE and offer.seller != bid.buyer:
-                    already_selected_bids.add(bid.id)
-                    offer_bid_pairs.append(tuple((bid, offer)))
-                    break
-        return offer_bid_pairs
-
     def accept_bid_offer_pair(self, bid, offer, clearing_rate, trade_bid_info, selected_energy):
+        validate_authentic_bid_offer_pair(bid, offer, clearing_rate, selected_energy)
         already_tracked = bid.buyer == offer.seller
         trade = self.accept_offer(offer_or_id=offer,
                                   buyer=bid.buyer,
@@ -259,18 +234,48 @@ class TwoSidedPayAsBid(OneSidedMarket):
         return bid_trade, trade
 
     def match_offers_bids(self):
-        while len(self._perform_pay_as_bid_matching()) > 0:
-            for bid, offer in self._perform_pay_as_bid_matching():
-                selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
-                original_bid_rate = bid.original_bid_price / bid.energy
-                matched_rate = bid.energy_rate
+        pass
 
-                trade_bid_info = TradeBidOfferInfo(
-                    original_bid_rate=original_bid_rate,
-                    propagated_bid_rate=bid.price/bid.energy,
-                    original_offer_rate=offer.original_offer_price/offer.energy,
-                    propagated_offer_rate=offer.price/offer.energy,
-                    trade_rate=original_bid_rate)
+    def match_recommendation(self, recommended_list):
+        if recommended_list is None:
+            return
+        for index, recommended_pair in enumerate(recommended_list):
 
-                self.accept_bid_offer_pair(bid, offer, matched_rate,
-                                           trade_bid_info, selected_energy)
+            selected_energy = recommended_pair.selected_energy
+            bid = recommended_pair.bid
+            offer = recommended_pair.offer
+            original_bid_rate = \
+                bid.original_bid_price / bid.energy
+
+            trade_bid_info = TradeBidOfferInfo(
+                original_bid_rate=original_bid_rate,
+                propagated_bid_rate=bid.price/bid.energy,
+                original_offer_rate=offer.original_offer_price/offer.energy,
+                propagated_offer_rate=offer.price/offer.energy,
+                trade_rate=original_bid_rate)
+
+            bid_trade, trade = self.accept_bid_offer_pair(
+                bid, offer, recommended_pair.trade_rate, trade_bid_info, selected_energy
+            )
+
+            if trade.residual is not None or bid_trade.residual is not None:
+                recommended_list = self._replace_offers_bids_with_residual_in_matching_list(
+                    recommended_list, index+1, trade, bid_trade
+                )
+
+    @classmethod
+    def _replace_offers_bids_with_residual_in_matching_list(
+            cls, matchings, start_index, offer_trade, bid_trade
+    ):
+        def _convert_match_to_residual(match):
+            if match.offer.id == offer_trade.offer.id:
+                assert offer_trade.residual is not None
+                match = match._replace(offer=offer_trade.residual)
+            if match.bid.id == bid_trade.offer.id:
+                assert bid_trade.residual is not None
+                match = match._replace(bid=bid_trade.residual)
+            return match
+
+        matchings[start_index:] = [_convert_match_to_residual(match)
+                                   for match in matchings[start_index:]]
+        return matchings

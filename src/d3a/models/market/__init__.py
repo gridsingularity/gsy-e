@@ -124,6 +124,10 @@ class Market:
     def _is_constant_fees(self):
         return isinstance(self.fee_class, ConstantGridFees)
 
+    @property
+    def open_bids_and_offers(self):
+        return self.bids, self.offers
+
     def add_listener(self, listener):
         self.notification_listeners.append(listener)
 
@@ -257,3 +261,10 @@ class Market:
             "offers": [o.serializable_dict() for o in self.offer_history],
             "trades": [t.serializable_dict() for t in self.trades]
         }
+
+
+def validate_authentic_bid_offer_pair(bid, offer, clearing_rate, selected_energy):
+    assert bid.energy >= selected_energy
+    assert offer.energy >= selected_energy
+    assert (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= clearing_rate
+    assert (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= offer.energy_rate
