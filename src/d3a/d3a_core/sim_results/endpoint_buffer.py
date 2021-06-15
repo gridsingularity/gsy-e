@@ -150,6 +150,8 @@ class SimulationEndpointBuffer:
         if hasattr(area.current_market, 'const_fee_rate'):
             core_stats_dict['const_fee_rate'] = area.current_market.const_fee_rate
             core_stats_dict['feed_in_tariff'] = FEED_IN_TARIFF
+            core_stats_dict['market_maker_rate'] = \
+                ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
         if area.strategy is None:
             core_stats_dict['area_throughput'] = {
                 'baseline_peak_energy_import_kWh': area.throughput.baseline_peak_energy_import_kWh,
