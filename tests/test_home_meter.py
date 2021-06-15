@@ -14,10 +14,16 @@ You should have received a copy of the GNU General Public License along with thi
 not, see <http://www.gnu.org/licenses/>.
 """
 import unittest
+from collections import OrderedDict
 from unittest.mock import Mock, patch
+from unittest.mock import call
+from unittest.mock import create_autospec
 
+from d3a.models.market import Market
+from d3a.models.state import HomeMeterState
 from d3a.models.strategy.home_meter import HomeMeterStrategy
 from d3a_interface.device_validator import HomeMeterValidator
+from pendulum import datetime
 from pendulum import duration
 
 
@@ -29,7 +35,8 @@ class HomeMeterStrategyTest(unittest.TestCase):
             initial_selling_rate=30, final_selling_rate=5, home_meter_profile="some_path.csv")
         self.area_mock = Mock()
         self.strategy.area = self.area_mock
-        self.strategy.owner = Mock(name="owner")
+        self.strategy.owner = Mock()
+        self.strategy.validator = Mock()
 
     @patch.object(HomeMeterValidator, "validate")
     def test_init(self, validate_mock):
@@ -91,6 +98,8 @@ class HomeMeterStrategyTest(unittest.TestCase):
         assert call_args.kwargs["fit_to_limit"] is True
         assert call_args.kwargs["update_interval"] == duration(minutes=1)
 
+        self.strategy.validator.validate_price.assert_called()
+
     def test_event_activate_price_without_market_maker_rate(self):
         """If the market maker rate is not used, bid/offer updaters' methods are not called."""
         self.strategy.use_market_maker_rate = False
@@ -101,3 +110,49 @@ class HomeMeterStrategyTest(unittest.TestCase):
         # Expect not to send outgoing command messages to strategy.bid_update
         self.strategy.bid_update.set_parameters.assert_not_called()
         self.strategy.offer_update.set_parameters.assert_not_called()
+
+    @staticmethod
+    def _create_market_mocks(num_of_markets=3):
+        market_mocks = [create_autospec(Market) for i in range(num_of_markets)]
+        slot_time = datetime(2021, 6, 15, 0, 0, 0)
+        for market_mock in market_mocks:
+            market_mock.time_slot = slot_time
+            slot_time += duration(minutes=15)
+
+        return market_mocks
+
+    @patch("d3a.models.strategy.home_meter.read_arbitrary_profile")
+    def test_event_activate_energy(self, read_arbitrary_profile_mock):
+        """event_activate_energy calls the expected state interface methods."""
+        # NOTE: the datetimes should be the same that are used by the market time slots
+        slot_times = [
+            datetime(2021, 6, 15, 0, 0, 0),
+            datetime(2021, 6, 15, 0, 15, 0),
+            datetime(2021, 6, 15, 0, 30, 0)
+        ]
+        read_arbitrary_profile_mock.return_value = OrderedDict([
+            (slot_times[0], 1),
+            (slot_times[1], -0.5),
+            (slot_times[2], -0.1)
+        ])
+        # We want to iterate over some area markets, so we create mocks for them
+        market_mocks = self._create_market_mocks(3)
+        self.strategy.area.all_markets = market_mocks
+        self.strategy.state = create_autospec(HomeMeterState)
+        self.strategy.event_activate_energy()
+
+        assert self.strategy.state.set_desired_energy.call_count == 3  # One call for each slot
+        self.strategy.state.set_desired_energy.assert_has_calls([
+            call(1 * 1000, slot_times[0], overwrite=False),
+            call(0, slot_times[1], overwrite=False),
+            call(0, slot_times[2], overwrite=False)])
+
+        assert self.strategy.state.set_available_energy.call_count == 3
+        self.strategy.state.set_available_energy.assert_has_calls([
+            call(0, slot_times[0], True),
+            call(0.5, slot_times[1], True),
+            call(0.1, slot_times[2], True)])
+
+        assert self.strategy.state.update_total_demanded_energy.call_count == 3
+        self.strategy.state.update_total_demanded_energy.assert_has_calls([
+            call(slot_time) for slot_time in slot_times])

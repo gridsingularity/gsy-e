@@ -440,6 +440,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
                 raise InconsistentEnergyException(
                     "The home meter can't both produce and consume energy at the same time.")
 
+            # NOTE: set_desired_energy accepts energy in Wh (not kWh) so we multiply * 1000
             self.state.set_desired_energy(consumed_energy * 1000, slot_time, overwrite=False)
             self.state.set_available_energy(produced_energy, slot_time, reconfigure)
             self.state.update_total_demanded_energy(slot_time)
