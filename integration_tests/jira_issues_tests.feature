@@ -69,7 +69,8 @@ Feature: Jira Issues Tests
   Scenario: D3ASIM-962, Device Statistics are calculated and returned correctly
     Given we have a scenario named jira/d3asim_962
     And d3a is installed
-    When we run a multi-day d3a simulation with jira.d3asim_962 [2019-01-01, 48, 60, 60]
+    When export is needed
+    And we run a multi-day d3a simulation with jira.d3asim_962 [2019-01-01, 48, 60, 60]
     Then the device statistics are correct
 
   @slow
@@ -130,13 +131,15 @@ Feature: Jira Issues Tests
   Scenario: D3ASIM-1862: DSO doesnt pay the grid fee of the Grid
     Given we have a scenario named jira/d3asim_1862
     And d3a is installed
-    When we run the simulation with setup file jira.d3asim_1862 and parameters [3, 15, 15, 1]
+    When export is needed
+    And we run the simulation with setup file jira.d3asim_1862 and parameters [3, 15, 15, 1]
     Then the DSO doesnt pay the grid fee of the Grid, but House 1
 
 Scenario: D3ASIM-2034: DSO doesnt pay the grid fee of the Grid
     Given we have a scenario named jira/d3asim_2034
     And d3a is installed
-    When we run the simulation with setup file jira.d3asim_2034 and parameters [3, 60, 60, 1]
+    When export is needed
+    And we run the simulation with setup file jira.d3asim_2034 and parameters [3, 60, 60, 1]
     Then the DSO doesnt pay the grid fee of the Grid, but Community
 
   Scenario: D3ASIM-1896: Storage decreases bid rate until final buying rate
