@@ -15,17 +15,21 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a_interface.constants_limits import ConstSettings, DATE_TIME_UI_FORMAT, GlobalConfig
-from d3a_interface.sim_results.all_results import ResultsHandler
+import logging
 
-from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a_interface.constants_limits import ConstSettings, DATE_TIME_UI_FORMAT, GlobalConfig
+from d3a_interface.results_validator import results_validator
+from d3a_interface.sim_results.all_results import ResultsHandler
+from d3a_interface.utils import get_json_dict_memory_allocation_size
+
 from d3a.d3a_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
-from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
+from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.storage import StorageStrategy
 
 _NO_VALUE = {
     'min': None,
@@ -60,6 +64,18 @@ class SimulationEndpointBuffer:
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or \
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
             self.offer_bid_trade_hr = OfferBidTradeGraphStats()
+
+    def prepare_results_for_publish(self):
+        result_report = self.generate_result_report()
+        results_validator(result_report)
+
+        message_size = get_json_dict_memory_allocation_size(result_report)
+        if message_size > 64000:
+            logging.error(f"Do not publish message bigger than 64 MB, current message size "
+                          f"{message_size / 1000.0} MB.")
+            return None
+        logging.debug(f"Publishing {message_size} KB of data via Redis.")
+        return result_report
 
     @staticmethod
     def _structure_results_from_area_object(target_area):
@@ -149,7 +165,7 @@ class SimulationEndpointBuffer:
                 area.strategy.state.get_energy_production_forecast_kWh(
                     self.current_market_time_slot, 0.0)
             core_stats_dict['available_energy_kWh'] = \
-                area.strategy.state.get_available_energy_kWh(self.current_market_time_slot, 0.0)
+                area.strategy.state.get_available_energy_kWh(self.current_market_time_slot)
             if area.parent.current_market is not None:
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())

@@ -127,4 +127,3 @@ Feature: GridFee integration tests
      And d3a uses an two-sided-pay-as-bid market
      When we run the simulation with setup file grid_fees.no_trades_high_fees and parameters [24, 60, 60, 1]
      Then no trades are performed in all markets
-

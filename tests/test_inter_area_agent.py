@@ -26,8 +26,8 @@ from d3a.constants import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade, Bid
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
-from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedPayAsBidAgent
-from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import BidInfo
+from d3a.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
+from d3a.models.strategy.area_agents.two_sided_engine import BidInfo
 from d3a_interface.constants_limits import ConstSettings
 from d3a.models.market.market_structures import MarketClearingState
 from d3a.models.market import GridFee
@@ -314,9 +314,9 @@ def iaa_bid():
                                         buyer_origin='id3')])
     owner = FakeArea('owner')
 
-    iaa = TwoSidedPayAsBidAgent(owner=owner,
-                                higher_market=higher_market,
-                                lower_market=lower_market)
+    iaa = TwoSidedAgent(owner=owner,
+                        higher_market=higher_market,
+                        lower_market=lower_market)
     iaa.event_tick()
     iaa.owner.current_tick = 14
     iaa.event_tick()
@@ -359,9 +359,9 @@ def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
                                transfer_fees=GridFee(grid_fee_percentage=iaa_fee,
                                                      grid_fee_const=0),
                                name="FakeMarket")
-    iaa = TwoSidedPayAsBidAgent(owner=FakeArea('owner'),
-                                higher_market=higher_market,
-                                lower_market=lower_market)
+    iaa = TwoSidedAgent(owner=FakeArea('owner'),
+                        higher_market=higher_market,
+                        lower_market=lower_market)
     iaa.event_tick()
     iaa.owner.current_tick = 14
     iaa.event_tick()
@@ -381,9 +381,9 @@ def test_iaa_forwards_offers_according_to_constantfee(iaa_fee_const):
     higher_market = FakeMarket([], [Bid('id2', pendulum.now(), 35, 3, 'child', 35)],
                                transfer_fees=GridFee(grid_fee_percentage=0,
                                                      grid_fee_const=iaa_fee_const))
-    iaa = TwoSidedPayAsBidAgent(owner=FakeArea('owner'),
-                                higher_market=higher_market,
-                                lower_market=lower_market)
+    iaa = TwoSidedAgent(owner=FakeArea('owner'),
+                        higher_market=higher_market,
+                        lower_market=lower_market)
     iaa.event_tick()
     iaa.owner.current_tick = 14
     iaa.event_tick()
@@ -495,8 +495,8 @@ def iaa_double_sided():
     higher_market = FakeMarket([], [], transfer_fees=GridFee(grid_fee_percentage=0.01,
                                                              grid_fee_const=0))
     owner = FakeArea('owner')
-    iaa = TwoSidedPayAsBidAgent(owner=owner, lower_market=lower_market,
-                                higher_market=higher_market)
+    iaa = TwoSidedAgent(owner=owner, lower_market=lower_market,
+                        higher_market=higher_market)
     iaa.event_tick()
     iaa.owner.current_tick += 2
     iaa.event_tick()

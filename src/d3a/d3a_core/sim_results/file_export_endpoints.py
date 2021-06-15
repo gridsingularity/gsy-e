@@ -65,7 +65,8 @@ class FileExportEndpoints:
                 self.clearing[area.slug][market.time_slot] = {}
             self.cumulative_offers[area.slug][market.time_slot] = market.state.cumulative_offers
             self.cumulative_bids[area.slug][market.time_slot] = market.state.cumulative_bids
-            self.clearing[area.slug][market.time_slot] = market.state.clearing
+            self.clearing[area.slug][market.time_slot] = \
+                area.bid_offer_matcher.match_algorithm.state.clearing
 
     def update_plot_stats(self, area):
         self._get_stats_from_market_data(self.plot_stats, area, False)
@@ -170,7 +171,7 @@ class ExportLeafData(ExportData):
             desired = self.area.strategy.state.get_desired_energy_Wh(slot) / 1000
             return [desired, self._traded(market) + desired]
         elif isinstance(self.area.strategy, PVStrategy):
-            not_sold = self.area.strategy.state.get_available_energy_kWh(slot, 0.0)
+            not_sold = self.area.strategy.state.get_available_energy_kWh(slot)
             produced = self.area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
             return [produced, not_sold]
         return []

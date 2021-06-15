@@ -210,6 +210,7 @@ class StorageStrategy(BidEnabledStrategy):
         )
 
     def area_reconfigure_event(self, **kwargs):
+        """Reconfigure the device properties at runtime using the provided arguments."""
         self._area_reconfigure_prices(**kwargs)
         self._update_profiles_with_default_values()
 
@@ -343,6 +344,10 @@ class StorageStrategy(BidEnabledStrategy):
             raise ValueError("energy_rate_change_per_update should be a non-negative value.")
 
     def event_tick(self):
+        """Post bids or update existing bid prices on market tick.
+
+        This method is triggered by the TICK event.
+        """
         self.state.clamp_energy_to_buy_kWh(self.future_markets_time_slots)
 
         for market in self.area.all_markets:
@@ -513,8 +518,7 @@ class StorageStrategy(BidEnabledStrategy):
             return
         if self.state.has_battery_reached_max_power(-FLOATING_POINT_TOLERANCE, market.time_slot):
             return
-        max_affordable_offer_rate = min(self.bid_update.get_updated_rate(market.time_slot),
-                                        self.bid_update.final_rate[market.time_slot])
+        max_affordable_offer_rate = self.bid_update.get_updated_rate(market.time_slot)
         # Check if storage has free capacity
         if self.state.free_storage(market.time_slot) <= 0.0:
             return

@@ -79,12 +79,10 @@ Feature: Run integration tests
   Scenario: Simulation publishes intermediate and final results
      Given d3a is installed
      When a simulation is created for scenario default_2a
-     When the redis_connection is enabled
-     And the simulation is able to transmit intermediate results
-     And the simulation is able to transmit final results
+     When the kafka_connection is enabled
+     And the simulation is able to transmit intermediate and final results
      And the configured simulation is running
-     Then intermediate results are transmitted on every slot
-     And final results are transmitted once
+     Then intermediate results are transmitted on every slot and final results once
 
   Scenario: Run integration tests with settings file
      Given we have a scenario named default_2a
@@ -123,5 +121,6 @@ Feature: Run integration tests
   Scenario: Uploaded one-day-profile gets duplicated when running the simulations for multiple days
     Given we have a scenario named strategy_tests.user_profile_load_csv
     And d3a is installed
-    When we run the simulation with setup file strategy_tests.user_profile_load_csv and parameters [48, 60, 60, 1]
+    When export is needed
+    And we run the simulation with setup file strategy_tests.user_profile_load_csv and parameters [48, 60, 60, 1]
     Then the load profile should be identical on each day

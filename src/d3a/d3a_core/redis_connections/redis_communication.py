@@ -19,7 +19,6 @@ import os
 import json
 import traceback
 import time
-from zlib import compress
 from logging import getLogger
 from redis import StrictRedis
 from redis.exceptions import ConnectionError
@@ -28,7 +27,7 @@ from rq.exceptions import NoSuchJobError
 
 from d3a_interface.results_validator import results_validator  # NOQA
 from d3a_interface.constants_limits import HeartBeat
-from d3a_interface.utils import RepeatingTimer, get_json_dict_memory_allocation_size
+from d3a_interface.utils import RepeatingTimer
 from d3a_interface.exceptions import D3AException
 
 
@@ -168,33 +167,6 @@ class RedisSimulationCommunication:
             raise D3AException(f"Redis job {self._simulation_id} "
                                f"cannot be found in the Redis job queue. "
                                f"get_current_job failed. Job will de killed.")
-
-    def publish_results(self, endpoint_buffer):
-        if not self.is_enabled():
-            return
-        result_report = endpoint_buffer.generate_result_report()
-        results_validator(result_report)
-
-        results = json.dumps(result_report)
-        message_size = get_json_dict_memory_allocation_size(result_report)
-        if message_size > 64000:
-            log.error(f"Do not publish message bigger than 64 MB, current message size "
-                      f"{message_size / 1000.0} MB.")
-            return
-        log.debug(f"Publishing {message_size} KB of data via Redis.")
-
-        results = results.encode('utf-8')
-        results = compress(results)
-
-        self._handle_redis_job_metadata()
-        self.redis_db.publish(self.result_channel, results)
-
-    def publish_intermediate_results(self, endpoint_buffer):
-        # Should have a different format in the future, hence the code duplication
-        self.publish_results(endpoint_buffer)
-
-    def is_enabled(self):
-        return hasattr(self, 'pubsub')
 
     def publish_json(self, channel, data):
         self.redis_db.publish(channel, json.dumps(data))

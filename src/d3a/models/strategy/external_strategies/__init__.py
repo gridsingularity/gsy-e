@@ -150,10 +150,10 @@ class ExternalMixin:
             raise ValueError("transaction_id not in payload or None")
 
     def area_reconfigure_event(self, *args, **kwargs):
+        """Reconfigure the device properties at runtime using the provided arguments."""
         if key_in_dict_and_not_none(kwargs, 'allow_external_connection'):
             self._use_template_strategy = not kwargs['allow_external_connection']
-        if self.should_use_default_strategy:
-            super().area_reconfigure_event(*args, **kwargs)
+        super().area_reconfigure_event(*args, **kwargs)
 
     def _register(self, payload):
         self._connected = register_area(self.redis, self.channel_prefix, self.connected,

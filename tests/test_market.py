@@ -25,6 +25,7 @@ from uuid import uuid4
 
 from d3a.constants import TIME_ZONE
 from d3a.events.event_structures import MarketEvent
+from d3a.models.myco_matcher.pay_as_bid import PayAsBidMatcher
 
 from hypothesis import strategies as st
 from hypothesis.control import assume
@@ -33,8 +34,8 @@ from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rul
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade, InvalidBalancingTradeException, InvalidBid, \
     BidNotFound, DeviceNotInRegistryError
-from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
-from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
+from d3a.models.market.two_sided import TwoSidedMarket
+from d3a.models.myco_matcher.pay_as_clear import PayAsClearMatcher
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.market_structures import Bid, Offer, Trade, TradeBidOfferInfo
 from d3a.models.market.balancing import BalancingMarket
@@ -53,7 +54,7 @@ device_registry_dict = {
 transfer_fees = GridFee(grid_fee_percentage=0, grid_fee_const=0)
 
 
-class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
+class FakeTwoSidedPayAsBid(TwoSidedMarket):
     def __init__(self, bids=[], m_id=123, time_slot=now()):
         super().__init__(bc=MagicMock(),
                          grid_fees=transfer_fees, time_slot=time_slot)
@@ -123,33 +124,39 @@ def teardown_function():
 
 @pytest.yield_fixture
 def market():
-    return TwoSidedPayAsBid(time_slot=now())
+    return TwoSidedMarket(time_slot=now())
 
 
-def test_double_sided_performs_pay_as_bid_matching(market):
+@pytest.yield_fixture
+def market_matcher():
+    return PayAsBidMatcher()
+
+
+def test_double_sided_performs_pay_as_bid_matching(market, market_matcher):
     market.offers = {"offer1": Offer('id', now(), 2, 2, 'other', 2)}
 
     market.bids = {"bid1": Bid('bid_id', now(), 9, 10, 'B', 'S')}
-    matched = list(market._perform_pay_as_bid_matching())
+    matched = list(market_matcher.calculate_match_recommendation(
+        market.bids, market.offers))
     assert len(matched) == 0
-    market.bids = {"bid1": Bid('bid_id', now(), 10, 10, 'B', 'S')}
-    matched = list(market._perform_pay_as_bid_matching())
+    market.bids = {"bid1": Bid('bid_id', now(), 11, 10, 'B', 'S')}
+    matched = list(market_matcher.calculate_match_recommendation(
+        market.bids, market.offers))
     assert len(matched) == 1
 
-    bid, offer = matched[0]
-    assert bid == list(market.bids.values())[0]
-    assert offer == list(market.offers.values())[0]
+    assert matched[0].bid == list(market.bids.values())[0]
+    assert matched[0].offer == list(market.offers.values())[0]
 
     market.bids = {"bid1": Bid('bid_id1', now(), 11, 10, 'B', 'S'),
                    "bid2": Bid('bid_id2', now(), 9, 10, 'B', 'S'),
                    "bid3": Bid('bid_id3', now(), 12, 10, 'B', 'S')}
-    matched = list(market._perform_pay_as_bid_matching())
+    matched = list(market_matcher.calculate_match_recommendation(
+        market.bids, market.offers))
     assert len(matched) == 1
-    bid, offer = matched[0]
-    assert bid.id == 'bid_id3'
-    assert bid.price == 12
-    assert bid.energy == 10
-    assert offer == list(market.offers.values())[0]
+    assert matched[0].bid.id == 'bid_id3'
+    assert matched[0].bid.price == 12
+    assert matched[0].bid.energy == 10
+    assert matched[0].offer == list(market.offers.values())[0]
 
 
 def test_device_registry(market=BalancingMarket()):
@@ -172,7 +179,7 @@ def test_market_offer(market, offer):
     assert len(e_offer.id) == 36
 
 
-def test_market_bid(market: TwoSidedPayAsBid):
+def test_market_bid(market: TwoSidedMarket):
     bid = market.bid(1, 2, 'bidder', 'bidder')
     assert market.bids[bid.id] == bid
     assert bid.price == 1
@@ -181,7 +188,7 @@ def test_market_bid(market: TwoSidedPayAsBid):
     assert len(bid.id) == 36
 
 
-def test_market_bid_accepts_bid_id(market: TwoSidedPayAsBid):
+def test_market_bid_accepts_bid_id(market: TwoSidedMarket):
     bid = market.bid(1, 2, 'bidder', 'bidder', bid_id='123')
     assert market.bids['123'] == bid
     assert bid.id == '123'
@@ -203,13 +210,13 @@ def test_market_offer_invalid(market: OneSidedMarket):
         market.offer(10, -1, 'someone', 'someone')
 
 
-def test_market_bid_invalid(market: TwoSidedPayAsBid):
+def test_market_bid_invalid(market: TwoSidedMarket):
     with pytest.raises(InvalidBid):
         market.bid(10, -1, 'someone',  'someone')
 
 
 @pytest.mark.parametrize("market, offer", [
-    (TwoSidedPayAsBid(), "offer"),
+    (TwoSidedMarket(), "offer"),
     (BalancingMarket(), "balancing_offer")
 ])
 def test_market_offer_readonly(market, offer):
@@ -219,7 +226,7 @@ def test_market_offer_readonly(market, offer):
 
 
 @pytest.mark.parametrize("market, offer", [
-    (TwoSidedPayAsBid(bc=MagicMock(), time_slot=now()), "offer"),
+    (TwoSidedMarket(bc=MagicMock(), time_slot=now()), "offer"),
     (BalancingMarket(bc=MagicMock(), time_slot=now()), "balancing_offer")
 ])
 def test_market_offer_delete(market, offer):
@@ -247,7 +254,7 @@ def test_market_offer_delete_readonly(market):
         market.delete_offer("no such offer")
 
 
-def test_market_bid_delete(market: TwoSidedPayAsBid):
+def test_market_bid_delete(market: TwoSidedMarket):
     bid = market.bid(20, 10, 'someone', 'someone')
     assert bid.id in market.bids
 
@@ -255,7 +262,7 @@ def test_market_bid_delete(market: TwoSidedPayAsBid):
     assert bid.id not in market.bids
 
 
-def test_market_bid_delete_id(market: TwoSidedPayAsBid):
+def test_market_bid_delete_id(market: TwoSidedMarket):
     bid = market.bid(20, 10, 'someone', 'someone')
     assert bid.id in market.bids
 
@@ -263,7 +270,7 @@ def test_market_bid_delete_id(market: TwoSidedPayAsBid):
     assert bid.id not in market.bids
 
 
-def test_market_bid_delete_missing(market: TwoSidedPayAsBid):
+def test_market_bid_delete_missing(market: TwoSidedMarket):
     with pytest.raises(BidNotFound):
         market.delete_bid("no such offer")
 
@@ -303,7 +310,7 @@ def test_balancing_market_negative_offer_trade(market=BalancingMarket(
     assert trade.buyer == 'B'
 
 
-def test_market_bid_trade(market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
+def test_market_bid_trade(market=TwoSidedMarket(bc=MagicMock(), time_slot=now())):
     bid = market.bid(20, 10, 'A', 'A', original_bid_price=20)
     trade_offer_info = TradeBidOfferInfo(2, 2, 0.5, 0.5, 2)
     trade = market.accept_bid(bid, energy=10, seller='B', trade_offer_info=trade_offer_info)
@@ -359,7 +366,7 @@ def test_market_trade_not_found(market, offer, accept_offer):
 
 
 def test_market_trade_bid_not_found(
-        market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
+        market=TwoSidedMarket(bc=MagicMock(), time_slot=now())):
     bid = market.bid(20, 10, 'A', 'A')
     trade_offer_info = TradeBidOfferInfo(2, 2, 1, 1, 2)
     assert market.accept_bid(bid, 10, 'B', trade_offer_info=trade_offer_info)
@@ -396,7 +403,7 @@ def test_market_trade_partial(market, offer, accept_offer):
     assert new_offer.id != e_offer.id
 
 
-def test_market_trade_bid_partial(market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
+def test_market_trade_bid_partial(market=TwoSidedMarket(bc=MagicMock(), time_slot=now())):
     bid = market.bid(20, 20, 'A', 'A', original_bid_price=20)
     trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
     trade = market.accept_bid(bid, energy=5, seller='B', trade_offer_info=trade_offer_info)
@@ -417,7 +424,7 @@ def test_market_trade_bid_partial(market=TwoSidedPayAsBid(bc=MagicMock(), time_s
 
 
 def test_market_accept_bid_emits_bid_split_on_partial_bid(
-        called, market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
+        called, market=TwoSidedMarket(bc=MagicMock(), time_slot=now())):
     market.add_listener(called)
     bid = market.bid(20, 20, 'A', 'A')
     trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
@@ -435,7 +442,7 @@ def test_market_accept_bid_emits_bid_split_on_partial_bid(
 @pytest.mark.parametrize('market_method', ('_update_accumulated_trade_price_energy',
                                            '_update_min_max_avg_trade_prices'))
 def test_market_accept_bid_always_updates_trade_stats(
-        called, market_method, market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
+        called, market_method, market=TwoSidedMarket(bc=MagicMock(), time_slot=now())):
     setattr(market, market_method, called)
 
     bid = market.bid(20, 20, 'A', 'A')
@@ -465,7 +472,7 @@ def test_market_trade_partial_invalid(market, offer, accept_offer, energy, excep
 
 @pytest.mark.parametrize('energy', (0, 21, 100, -20))
 def test_market_trade_partial_bid_invalid(
-        energy, market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
+        energy, market=TwoSidedMarket(bc=MagicMock(), time_slot=now())):
     bid = market.bid(20, 20, 'A', 'A')
     trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
     with pytest.raises(InvalidTrade):
@@ -662,7 +669,7 @@ def test_market_accept_offer_yields_partial_trade(market, offer, accept_offer):
 
 
 def test_market_accept_bid_yields_partial_bid_trade(
-        market=TwoSidedPayAsBid(bc=MagicMock(), time_slot=now())):
+        market=TwoSidedMarket(bc=MagicMock(), time_slot=now())):
     bid = market.bid(2.0, 4, 'buyer', 'buyer')
     trade_offer_info = TradeBidOfferInfo(2, 2, 1, 1, 2)
     trade = market.accept_bid(bid, energy=1, seller='seller', trade_offer_info=trade_offer_info)
@@ -671,7 +678,7 @@ def test_market_accept_bid_yields_partial_bid_trade(
 
 @pytest.yield_fixture
 def pac_market():
-    return TwoSidedPayAsClear(time_slot=now())
+    return PayAsClearMatcher()
 
 
 @pytest.mark.parametrize("offer, bid, mcp_rate, mcp_energy", [
@@ -706,7 +713,9 @@ def test_double_sided_market_performs_pay_as_clear_matching(pac_market, offer, b
                        "bid6": Bid('bid_id6', now(), bid[5], 1, 'B', 'S'),
                        "bid7": Bid('bid_id7', now(), bid[6], 1, 'B', 'S')}
 
-    matched_rate, matched_energy = pac_market._perform_pay_as_clear_matching()
+    matched_rate, matched_energy = pac_market.get_clearing_point(
+        pac_market.bids, pac_market.offers, now()
+    )
     assert matched_rate == mcp_rate
     assert matched_energy == mcp_energy
 
@@ -722,46 +731,13 @@ def test_double_sided_pay_as_clear_market_works_with_floats(pac_market):
                     "bid2": Bid('bid_id2', now(), 2.2, 1, 'B', 'S'),
                     "bid3": Bid('bid_id3', now(), 1.1, 1, 'B', 'S')}
 
-    matched = pac_market._perform_pay_as_clear_matching()[0]
+    matched = pac_market.get_clearing_point(pac_market.bids, pac_market.offers, now())[0]
     assert matched == 2.2
 
 
 @pytest.yield_fixture
 def pab_market():
     return FakeTwoSidedPayAsBid()
-
-
-def test_double_sided_pay_as_bid_market_match_offer_bids(pab_market):
-    test_seller_origin_id = str(uuid4())
-    test_buyer_origin_id = str(uuid4())
-
-    pab_market.calls_offers = []
-    pab_market.calls_bids = []
-    offer = Offer('offer1', now(), 2, 2, 'other', 2, seller_origin_id=test_seller_origin_id)
-    pab_market.offers = {"offer1": offer}
-
-    source_bid = Bid('bid_id3', now(), 12, 10, 'B', original_bid_price=12,
-                     buyer_origin_id=test_buyer_origin_id)
-    pab_market.bids = {"bid_id": Bid('bid_id', now(), 10, 10, 'B',
-                                     buyer_origin_id=test_buyer_origin_id),
-                       "bid_id1": Bid('bid_id1', now(), 11, 10, 'B',
-                                      buyer_origin_id=test_buyer_origin_id),
-                       "bid_id2": Bid('bid_id2', now(), 9, 10, 'B',
-                                      buyer_origin_id=test_buyer_origin_id),
-                       "bid_id3": source_bid}
-
-    pab_market.match_offers_bids()
-    assert len(pab_market.calls_offers) == 1
-    offer = pab_market.calls_offers[0]
-    assert offer.id == offer.id
-    assert offer.energy == offer.energy
-    assert offer.price == offer.price
-
-    assert len(pab_market.calls_bids) == 1
-    bid = pab_market.calls_bids[0]
-    assert bid.id == source_bid.id
-    assert bid.energy == source_bid.energy
-    assert bid.price == source_bid.price
 
 
 class MarketStateMachine(RuleBasedStateMachine):

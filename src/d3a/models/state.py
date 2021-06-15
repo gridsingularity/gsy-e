@@ -54,11 +54,8 @@ class PVState:
             return self._energy_production_forecast_kWh.get(time_slot, default_value)
         return self._energy_production_forecast_kWh[time_slot]
 
-    def get_available_energy_kWh(self, time_slot, default_value=None):
-        if default_value is not None:
-            available_energy = self._available_energy_kWh.get(time_slot, default_value)
-        else:
-            available_energy = self._available_energy_kWh.get(time_slot)
+    def get_available_energy_kWh(self, time_slot, default_value=0.0):
+        available_energy = self._available_energy_kWh.get(time_slot, default_value)
 
         assert available_energy >= -FLOATING_POINT_TOLERANCE
         return available_energy
@@ -76,7 +73,7 @@ class PVState:
         self._available_energy_kWh[time_slot] = energy_kWh
         assert self._energy_production_forecast_kWh[time_slot] >= 0.0
 
-    def delete_past_state(self, current_market_time_slot):
+    def delete_past_state_values(self, current_market_time_slot):
         to_delete = []
         for market_slot in self._available_energy_kWh.keys():
             if market_slot < current_market_time_slot:
@@ -101,9 +98,11 @@ class PVState:
 
 class LoadState:
     def __init__(self):
+        # Energy that the load wants to consume (given by the profile or live energy requirements)
         self._desired_energy_Wh = {}
-        self._total_energy_demanded_Wh = 0
+        # Energy that the load needs to consume. It's reduced when new energy is bought
         self._energy_requirement_Wh = {}
+        self._total_energy_demanded_Wh = 0
 
     def get_energy_requirement_Wh(self, time_slot, default_value=0.0):
         if default_value is None:
@@ -130,10 +129,9 @@ class LoadState:
         else:
             return offer_energy_Wh
 
-    def calculate_energy_to_bid(self, time_slot):
-        return self._energy_requirement_Wh[time_slot]
-
-    def decrement_energy_requirement(self, purchased_energy_Wh, time_slot, area_name):
+    def decrement_energy_requirement(
+            self, purchased_energy_Wh: float, time_slot: DateTime, area_name: str) -> None:
+        """Decrease the energy required by the device in a specific market slot."""
         self._energy_requirement_Wh[time_slot] -= purchased_energy_Wh
         assert self._energy_requirement_Wh[time_slot] >= -FLOATING_POINT_TOLERANCE, \
             f"Energy requirement for load {area_name} fell below zero " \

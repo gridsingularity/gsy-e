@@ -25,7 +25,6 @@ import sys
 import datetime
 
 from pendulum import now, duration
-from ptpython.repl import embed
 from time import sleep, time, mktime
 from numpy import random
 from importlib import import_module
@@ -48,6 +47,7 @@ from d3a_interface.utils import format_datetime, str_to_pendulum_datetime
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
+from d3a_interface.kafka_communication.kafka_producer import kafka_connection_factory
 from d3a.d3a_core.singletons import external_global_statistics
 from d3a.blockchain.constants import ENABLE_SUBSTRATE
 import d3a.constants
@@ -93,7 +93,7 @@ class Simulation:
         self.progress_info = SimulationProgressInfo()
         self.simulation_config = simulation_config
         self.use_repl = repl
-        self.export_on_finish = not no_export
+        self.export_results_on_finish = not no_export
         self.export_path = export_path
 
         self.sim_status = "initializing"
@@ -110,6 +110,7 @@ class Simulation:
         self.is_stopped = False
 
         self.live_events = LiveEvents(self.simulation_config)
+        self.kafka_connection = kafka_connection_factory()
         self.redis_connection = RedisSimulationCommunication(self, redis_job_id, self.live_events)
         self._simulation_id = redis_job_id
         self._started_from_cli = redis_job_id is None
@@ -169,11 +170,10 @@ class Simulation:
 
         self.endpoint_buffer = SimulationEndpointBuffer(
             redis_job_id, self.initial_params,
-            self.area, self.should_export_results)
-        if self.should_export_results:
-            self.file_stats_endpoint = FileExportEndpoints()
+            self.area, self.export_results_on_finish)
 
-        if self.export_on_finish and self.should_export_results:
+        if self.export_results_on_finish:
+            self.file_stats_endpoint = FileExportEndpoints()
             self.export = ExportAndPlot(self.area, self.export_path, self.export_subdir,
                                         self.file_stats_endpoint, self.endpoint_buffer)
         self._update_and_send_results()
@@ -250,25 +250,27 @@ class Simulation:
         area.stats.kpi.update(
             endpoint_buffer.results_handler.all_ui_results["kpi"].get(area.uuid, {}))
 
-    def _update_and_send_results(self, is_final=False):
+    def _update_and_send_results(self):
         self.endpoint_buffer.update_stats(
             self.area, self.status, self.progress_info, self.current_state)
+
         self.update_area_stats(self.area, self.endpoint_buffer)
-        if self.export_on_finish and self.should_export_results and \
-                self.area.current_market is not None and d3a.constants.D3A_TEST_RUN:
-            self.export.raw_data_to_json(
-                self.area.current_market.time_slot_str,
-                self.endpoint_buffer.flattened_area_core_stats_dict
-            )
-        if self.should_export_results:
+
+        if self.export_results_on_finish:
+            if self.area.current_market is not None and d3a.constants.D3A_TEST_RUN:
+                # for integration tests:
+                self.export.raw_data_to_json(
+                    self.area.current_market.time_slot_str,
+                    self.endpoint_buffer.flattened_area_core_stats_dict
+                )
+
             self.file_stats_endpoint(self.area)
-            return
-        if is_final or self.is_stopped:
-            self.redis_connection.publish_results(self.endpoint_buffer)
-        else:
-            self.redis_connection.publish_intermediate_results(
-                self.endpoint_buffer
-            )
+
+        elif self.should_send_results_to_broker:
+            results = self.endpoint_buffer.prepare_results_for_publish()
+            if results is None:
+                return
+            self.kafka_connection.publish(results, self._simulation_id)
 
     def _update_progress_info(self, slot_no, slot_count):
         run_duration = (
@@ -376,7 +378,7 @@ class Simulation:
                 self.handle_slowdown_and_realtime(tick_no)
                 self.tick_time_counter = time()
 
-            if self.export_on_finish and self.should_export_results:
+            if self.export_results_on_finish:
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
 
             if self.is_stopped:
@@ -398,23 +400,17 @@ class Simulation:
                 " ({} paused)".format(paused_duration) if paused_duration else "",
                 config.sim_duration / (self.progress_info.elapsed_time - paused_duration)
             )
-        self._update_and_send_results(is_final=True)
-        if self.export_on_finish and self.should_export_results:
+        self._update_and_send_results()
+        if self.export_results_on_finish:
             log.info("Exporting simulation data.")
             self.export.data_to_csv(self.area, False)
             self.export.area_tree_summary_to_json(self.endpoint_buffer.area_result_dict)
-            if GlobalConfig.POWER_FLOW:
-                self.export.export(export_plots=self.should_export_results,
-                                   power_flow=self.power_flow)
-            else:
-                self.export.export(self.should_export_results)
-
-        if self.use_repl:
-            self._start_repl()
+            self.export.export(power_flow=self.power_flow if GlobalConfig.POWER_FLOW else None)
 
     @property
-    def should_export_results(self):
-        return not self.redis_connection.is_enabled()
+    def should_send_results_to_broker(self):
+        """Flag that decides whether to send results to the d3a-web"""
+        return not self._started_from_cli and self.kafka_connection.is_enabled()
 
     def handle_slowdown_and_realtime(self, tick_no):
         if d3a.constants.RUN_IN_REALTIME:
@@ -460,8 +456,6 @@ class Simulation:
 
                 if cmd == 'r':
                     self.reset()
-                elif cmd == 'R':
-                    self._start_repl()
                 elif cmd == 'i':
                     self._info()
                 elif cmd == 'p':
@@ -525,13 +519,6 @@ class Simulation:
             "  Completed: %(percent).1f%%",
             info
         )
-
-    def _start_repl(self):
-        log.debug(
-            "An interactive REPL has been started. The root Area is available as "
-            "`root_area`.")
-        log.debug("Ctrl-D to quit.")
-        embed({'root_area': self.area})
 
     @property
     def status(self):
