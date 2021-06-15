@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
+from dataclasses import replace
 from logging import getLogger
 from math import isclose
 from typing import Union  # noqa
@@ -184,7 +185,7 @@ class TwoSidedMarket(OneSidedMarket):
             pass
 
         fee_price, trade_price = self.determine_bid_price(trade_offer_info, energy)
-        bid = bid._replace(price=trade_price)
+        bid = replace(bid, price=trade_price)
 
         # Do not adapt grid fees when creating the bid_trade_info structure, to mimic
         # the behavior of the forwarded bids which use the source market fee.
@@ -270,10 +271,10 @@ class TwoSidedMarket(OneSidedMarket):
         def _convert_match_to_residual(match):
             if match.offer.id == offer_trade.offer.id:
                 assert offer_trade.residual is not None
-                match = match._replace(offer=offer_trade.residual)
+                match = replace(match, offer=offer_trade.residual)
             if match.bid.id == bid_trade.offer.id:
                 assert bid_trade.residual is not None
-                match = match._replace(bid=bid_trade.residual)
+                match = replace(match, bid=bid_trade.residual)
             return match
 
         matchings[start_index:] = [_convert_match_to_residual(match)
