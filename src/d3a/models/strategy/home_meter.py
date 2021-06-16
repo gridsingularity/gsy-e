@@ -168,6 +168,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
         This method is triggered by the ACTIVATE event.
         """
+        self.profile = self._read_raw_profile_data(self.home_meter_profile)
         self._simulation_start_timestamp = self.area.now
         self._set_energy_forecast_for_future_markets(reconfigure=True)
 
