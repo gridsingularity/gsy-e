@@ -107,14 +107,14 @@ def test_offer_bid_market_clearing_rate_files(context):
 def one_on_one_matching_at_clearing_rate_at_bid_rate(context):
     assert all(isclose(clearing, 30.0)
                for clearing in
-               list(bid_offer_matcher.match_algorithm.state.clearing.values()))
+               bid_offer_matcher.match_algorithm.state.clearing.values())
 
 
 @then('clearing rate is the bid rate of last matched bid')
 def clearing_rate_at_last_matched_bid_rate(context):
     assert all(isclose(clearing, 15.0)
                for clearing in
-               list(bid_offer_matcher.match_algorithm.state.clearing.values()))
+               bid_offer_matcher.match_algorithm.state.clearing.values())
 
 
 @then('clearing rate is equal to the bid_rate')
