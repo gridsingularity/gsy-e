@@ -19,7 +19,7 @@ class MycoMatcher:
         elif is_external_matching_enabled():
             self.match_algorithm = ExternalMatcher()
         else:
-            raise WrongMarketTypeException(f"Wrong market type setting flag "
+            raise WrongMarketTypeException("Wrong market type setting flag "
                                            f"{ConstSettings.IAASettings.MARKET_TYPE}")
 
     def calculate_recommendation(self, bids, offers, current_time):
