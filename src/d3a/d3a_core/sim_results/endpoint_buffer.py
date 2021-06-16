@@ -147,8 +147,10 @@ class SimulationEndpointBuffer:
                 core_stats_dict['trades'].append(trade.serializable_dict())
         if hasattr(area.current_market, 'market_fee'):
             core_stats_dict['market_fee'] = area.current_market.market_fee
-        if hasattr(area.current_market, 'const_fee_rate'):
-            core_stats_dict['const_fee_rate'] = area.current_market.const_fee_rate
+        if hasattr(area.current_market, 'const_fee_rate') is not None and \
+                area.current_market is not None:
+            core_stats_dict['const_fee_rate'] = area.current_market.const_fee_rate \
+                if area.current_market.const_fee_rate is not None else 0.
             core_stats_dict['feed_in_tariff'] = FEED_IN_TARIFF
             core_stats_dict['market_maker_rate'] = \
                 ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
