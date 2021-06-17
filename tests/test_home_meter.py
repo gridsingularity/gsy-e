@@ -14,32 +14,38 @@ You should have received a copy of the GNU General Public License along with thi
 not, see <http://www.gnu.org/licenses/>.
 """
 import unittest
+import uuid
 from collections import OrderedDict
 from unittest.mock import Mock, patch
 from unittest.mock import call
 from unittest.mock import create_autospec
 
-from d3a.models.market import Market
+from d3a_interface.device_validator import DeviceValidator
+from d3a_interface.device_validator import HomeMeterValidator
+from d3a_interface.exceptions import D3AException
+from pendulum import datetime, duration
+
+from d3a.models.area import Area
+from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.state import HomeMeterState
 from d3a.models.strategy.home_meter import HomeMeterStrategy
-from d3a_interface.device_validator import HomeMeterValidator
-from pendulum import datetime
-from pendulum import duration
 
 
+# pylint: disable=protected-access
 class HomeMeterStrategyTest(unittest.TestCase):
-
-    @classmethod
+    """Tests for the HomeMeterStrategy behaviour."""
     def setUp(self) -> None:
+        """Instantiate the strategy used throughout the tests"""
         self.strategy = HomeMeterStrategy(
             initial_selling_rate=30, final_selling_rate=5, home_meter_profile="some_path.csv")
-        self.area_mock = Mock()
+        self.area_mock = create_autospec(Area)
         self.strategy.area = self.area_mock
         self.strategy.owner = Mock()
-        self.strategy.validator = Mock()
+        self.strategy.validator = create_autospec(DeviceValidator)
 
+    @staticmethod
     @patch.object(HomeMeterValidator, "validate")
-    def test_init(self, validate_mock):
+    def test_init(validate_mock):
         """Test the side-effects of the init function of the home meter strategy."""
         strategy = HomeMeterStrategy(
             initial_selling_rate=30, final_selling_rate=5, home_meter_profile="some_path.csv",
@@ -76,9 +82,8 @@ class HomeMeterStrategyTest(unittest.TestCase):
         self.strategy.owner.get_path_to_root_fees.return_value = 1
         self.strategy.bid_update.set_parameters = Mock()
         self.strategy.offer_update.set_parameters = Mock()
-        self.strategy.event_activate_price()
 
-        # Expect to send outgoing command messages to strategy.bid_update
+        self.strategy.event_activate_price()
         self.strategy.bid_update.set_parameters.assert_called_once()
         call_args = self.strategy.bid_update.set_parameters.call_args
         assert set(call_args.kwargs["initial_rate_profile_buffer"].values()) == {0}
@@ -88,7 +93,6 @@ class HomeMeterStrategyTest(unittest.TestCase):
         assert call_args.kwargs["fit_to_limit"] is True
         assert call_args.kwargs["update_interval"] == duration(minutes=1)
 
-        # Expect to send outgoing command messages to strategy.offer_update
         self.strategy.offer_update.set_parameters.assert_called_once()
         call_args = self.strategy.offer_update.set_parameters.call_args
         # The initial selling rate is the difference between the market maker rate and the fees
@@ -105,54 +109,126 @@ class HomeMeterStrategyTest(unittest.TestCase):
         self.strategy.use_market_maker_rate = False
         self.strategy.bid_update.set_parameters = Mock()
         self.strategy.offer_update.set_parameters = Mock()
-        self.strategy.event_activate_price()
 
-        # Expect not to send outgoing command messages to strategy.bid_update
+        self.strategy.event_activate_price()
         self.strategy.bid_update.set_parameters.assert_not_called()
         self.strategy.offer_update.set_parameters.assert_not_called()
 
-    @staticmethod
-    def _create_market_mocks(num_of_markets=3):
-        market_mocks = [create_autospec(Market) for i in range(num_of_markets)]
-        slot_time = datetime(2021, 6, 15, 0, 0, 0)
-        for market_mock in market_mocks:
-            market_mock.time_slot = slot_time
-            slot_time += duration(minutes=15)
-
-        return market_mocks
-
     @patch("d3a.models.strategy.home_meter.read_arbitrary_profile")
-    def test_event_activate_energy(self, read_arbitrary_profile_mock):
-        """event_activate_energy calls the expected state interface methods."""
-        # NOTE: the datetimes should be the same that are used by the market time slots
-        slot_times = [
-            datetime(2021, 6, 15, 0, 0, 0),
-            datetime(2021, 6, 15, 0, 15, 0),
-            datetime(2021, 6, 15, 0, 30, 0)
-        ]
-        read_arbitrary_profile_mock.return_value = OrderedDict([
-            (slot_times[0], 1),
-            (slot_times[1], -0.5),
-            (slot_times[2], -0.1)
-        ])
+    def test_set_energy_forecast_for_future_markets(self, read_arbitrary_profile_mock):
+        """The consumption/production expectations for the upcoming market slots are correctly set.
+
+        This method is private, but we test it to avoid duplication and because of its complexity.
+        """
+        read_arbitrary_profile_mock.return_value = self._create_profile_mock()
         # We want to iterate over some area markets, so we create mocks for them
         market_mocks = self._create_market_mocks(3)
         self.strategy.area.all_markets = market_mocks
         self.strategy.state = create_autospec(HomeMeterState)
-        self.strategy.event_activate_energy()
+
+        self.strategy._set_energy_forecast_for_future_markets(reconfigure=True)
 
         assert self.strategy.state.set_desired_energy.call_count == 3  # One call for each slot
         self.strategy.state.set_desired_energy.assert_has_calls([
-            call(1 * 1000, slot_times[0], overwrite=False),
-            call(0, slot_times[1], overwrite=False),
-            call(0, slot_times[2], overwrite=False)])
+            call(1 * 1000, market_mocks[0].time_slot, overwrite=False),
+            call(0, market_mocks[1].time_slot, overwrite=False),
+            call(0, market_mocks[2].time_slot, overwrite=False)])
 
         assert self.strategy.state.set_available_energy.call_count == 3
         self.strategy.state.set_available_energy.assert_has_calls([
-            call(0, slot_times[0], True),
-            call(0.5, slot_times[1], True),
-            call(0.1, slot_times[2], True)])
+            call(0, market_mocks[0].time_slot, True),
+            call(0.5, market_mocks[1].time_slot, True),
+            call(0.1, market_mocks[2].time_slot, True)])
 
         assert self.strategy.state.update_total_demanded_energy.call_count == 3
         self.strategy.state.update_total_demanded_energy.assert_has_calls([
-            call(slot_time) for slot_time in slot_times])
+            call(market_slot.time_slot) for market_slot in market_mocks])
+
+    @patch("d3a.models.strategy.home_meter.read_arbitrary_profile")
+    def test_set_energy_forecast_for_future_markets_no_profile(self, read_arbitrary_profile_mock):
+        """Consumption/production expectations can't be set without an energy profile."""
+        read_arbitrary_profile_mock.return_value = None
+        with self.assertRaises(D3AException):
+            self.strategy._set_energy_forecast_for_future_markets(reconfigure=True)
+
+    @patch("d3a.models.strategy.home_meter.read_arbitrary_profile")
+    def test_event_activate_energy(self, read_arbitrary_profile_mock):
+        """event_activate_energy calls the expected state interface methods."""
+        read_arbitrary_profile_mock.return_value = self._create_profile_mock()
+        self.strategy._set_energy_forecast_for_future_markets = Mock()
+
+        self.strategy.event_activate_energy()
+        self.strategy._set_energy_forecast_for_future_markets.assert_called_once_with(
+            reconfigure=True)
+
+    @patch("d3a.models.strategy.BidEnabledStrategy.event_market_cycle")
+    def test_event_market_cycle(self, super_method_mock):
+        """event_market_cycle calls the expected interfaces."""
+        self.strategy.bid_update.update_and_populate_price_settings = Mock()
+        self.strategy.offer_update.update_and_populate_price_settings = Mock()
+        self.strategy.bid_update.reset = Mock()
+        self.strategy.offer_update.reset = Mock()
+        self.strategy.state.delete_past_state_values = Mock()
+        self.strategy.bid_update.delete_past_state_values = Mock()
+        self.strategy.offer_update.delete_past_state_values = Mock()
+        self.strategy._set_energy_forecast_for_future_markets = Mock()
+        self.strategy._post_offer = Mock()
+        market_mocks = self._create_market_mocks(3)
+        self.strategy.area.all_markets = market_mocks
+
+        self.strategy.event_market_cycle()
+        super_method_mock.assert_called_once()
+        self.strategy.bid_update.update_and_populate_price_settings.assert_called_with(
+            self.area_mock)
+        self.strategy.offer_update.update_and_populate_price_settings.assert_called_with(
+            self.area_mock)
+        self.strategy.bid_update.reset.assert_called_with(self.strategy)
+        self.strategy.offer_update.reset.assert_called_with(self.strategy)
+
+        # We just assert calls to private methods, because we have separate unittests for them
+        self.strategy._set_energy_forecast_for_future_markets.assert_called_once_with(
+            reconfigure=False)
+        assert self.strategy._post_offer.call_count == 3
+
+        self.strategy.state.delete_past_state_values.assert_called_once_with(
+            self.area_mock.current_market.time_slot)
+        self.strategy.bid_update.delete_past_state_values.assert_called_once_with(
+            self.area_mock.current_market.time_slot)
+        self.strategy.offer_update.delete_past_state_values.assert_called_once_with(
+            self.area_mock.current_market.time_slot)
+
+    def test_post_offer(self):
+        """Offers are generated and sent to the offers class to be posted.
+
+        This method is private, but we test it to avoid duplication and because of its complexity.
+        """
+        self.strategy.state.get_available_energy_kWh = Mock(return_value=12)
+        market_mock = self._create_market_mocks(1)[0]
+        offer_mock = Mock()
+        market_mock.offer = Mock(return_value=offer_mock)
+        self.strategy.offer_update.initial_rate = {market_mock.time_slot: 11}
+        self.strategy.offers.post = Mock()
+
+        self.strategy._post_offer(market_mock)
+        self.strategy.offers.post.assert_called_once_with(offer_mock, market_mock.id)
+
+    @staticmethod
+    def _create_profile_mock():
+        # NOTE: the datetimes should be the same that will be used by the market slots
+        slot_times = [
+            datetime(2021, 6, 15, 0, 0, 0),
+            datetime(2021, 6, 15, 0, 15, 0),
+            datetime(2021, 6, 15, 0, 30, 0)]
+
+        return OrderedDict([(slot_times[0], 1), (slot_times[1], -0.5), (slot_times[2], -0.1)])
+
+    @staticmethod
+    def _create_market_mocks(num_of_markets=3):
+        market_mocks = [create_autospec(OneSidedMarket) for i in range(num_of_markets)]
+        slot_time = datetime(2021, 6, 15, 0, 0, 0)
+        for market_mock in market_mocks:
+            market_mock.time_slot = slot_time
+            market_mock.id = uuid.uuid4()
+            slot_time += duration(minutes=15)
+
+        return market_mocks
