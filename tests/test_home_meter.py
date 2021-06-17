@@ -197,6 +197,14 @@ class HomeMeterStrategyTest(unittest.TestCase):
         self.strategy.offer_update.delete_past_state_values.assert_called_once_with(
             self.area_mock.current_market.time_slot)
 
+    @patch("d3a_interface.constants_limits.ConstSettings.IAASettings")
+    def test_event_offer_two_sided_market(self, iaa_settings_mock):
+        """The device does not automatically react to offers in two-sided markets."""
+        iaa_settings_mock.MARKET_TYPE = 2
+        self.strategy.event_offer(market_id="some_market_id", offer="some_offer")
+        # Make sure that the method is returning immediately and not executing further logic
+        self.strategy.area.get_future_market_from_id.assert_not_called()
+
     def test_post_offer(self):
         """Offers are generated and sent to the offers class to be posted.
 
