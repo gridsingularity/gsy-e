@@ -91,7 +91,7 @@ class ConsumptionState(StateInterface):
         return state
 
     def restore_state(self, state_dict: Dict):
-        super().restore_state()
+        super().restore_state(state_dict)
 
         self._desired_energy_Wh.update(convert_str_to_pendulum_in_dict(
             state_dict["desired_energy_Wh"]))
@@ -171,7 +171,7 @@ class ProductionState(StateInterface):
         return state
 
     def restore_state(self, state_dict: Dict):
-        super().restore_state()
+        super().restore_state(state_dict)
 
         self._available_energy_kWh.update(
             convert_str_to_pendulum_in_dict(state_dict["available_energy_kWh"]))
