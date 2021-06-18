@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from enum import Enum
 # Need to import required settings from d3a-interface in order to be available in d3a,
 # thus avoiding accessing the d3a-interface constants.
 from d3a_interface.constants_limits import TIME_FORMAT, DATE_FORMAT, GlobalConfig # NOQA
@@ -46,8 +45,3 @@ IS_CANARY_NETWORK = GlobalConfig.IS_CANARY_NETWORK
 CN_PROFILE_EXPANSION_DAYS = 7
 
 RUN_IN_REALTIME = False
-
-
-class BidOfferMatchAlgoEnum(Enum):
-    PAY_AS_BID = 1
-    PAY_AS_CLEAR = 2

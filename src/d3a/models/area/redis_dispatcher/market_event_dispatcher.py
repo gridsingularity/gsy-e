@@ -59,7 +59,7 @@ class AreaRedisMarketEventDispatcher(RedisEventDispatcherBase):
         for key in ["offer", "trade", "new_offer", "existing_offer",
                     "bid", "new_bid", "existing_bid", "bid_trade"]:
             if key in kwargs:
-                kwargs[key] = kwargs[key].to_JSON_string()
+                kwargs[key] = kwargs[key].to_json_string()
         send_data = {"event_type": event_type.value, "kwargs": kwargs}
         self.redis.publish(dispatch_channel, json.dumps(send_data))
 

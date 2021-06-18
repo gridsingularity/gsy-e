@@ -276,7 +276,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
             if acceptable_offer and \
                     self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE and \
                     self._offer_rate_can_be_accepted(acceptable_offer, market):
-
                 energy_Wh = self.state.calculate_energy_to_accept(
                     acceptable_offer.energy * 1000.0, time_slot)
                 self.accept_offer(market, acceptable_offer, energy=energy_Wh / 1000.0,

@@ -191,7 +191,7 @@ class StorageExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer", "status": "ready",
-                 "offer": offer.to_JSON_string(replace_existing=replace_existing),
+                 "offer": offer.to_json_string(replace_existing=replace_existing),
                  "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling offer create on area {self.device.name}: "
@@ -330,7 +330,7 @@ class StorageExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 bid_response_channel, {
                     "command": "bid", "status": "ready",
-                    "bid": bid.to_JSON_string(replace_existing=replace_existing),
+                    "bid": bid.to_json_string(replace_existing=replace_existing),
                     "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling bid create on area {self.device.name}: "
@@ -502,7 +502,7 @@ class StorageExternalMixin(ExternalMixin):
                         "command": "update_offer",
                         "area_uuid": self.device.uuid,
                         "status": "ready",
-                        "offer": offer.to_JSON_string(),
+                        "offer": offer.to_json_string(),
                         "transaction_id": arguments.get("transaction_id", None),
                     }
                 except MarketException:
@@ -536,7 +536,7 @@ class StorageExternalMixin(ExternalMixin):
                     "command": "offer",
                     "area_uuid": self.device.uuid,
                     "status": "ready",
-                    "offer": offer.to_JSON_string(replace_existing=replace_existing),
+                    "offer": offer.to_json_string(replace_existing=replace_existing),
                     "transaction_id": arguments.get("transaction_id", None),
                 }
             except Exception:
@@ -572,7 +572,7 @@ class StorageExternalMixin(ExternalMixin):
                                             existing_bid_energy)
                 return {
                     "command": "update_bid", "status": "ready",
-                    "bid": updated_bid.to_JSON_string(),
+                    "bid": updated_bid.to_json_string(),
                     "area_uuid": self.device.uuid,
                     "transaction_id": arguments.get("transaction_id", None)}
             else:
@@ -605,7 +605,7 @@ class StorageExternalMixin(ExternalMixin):
             self.state.clamp_energy_to_buy_kWh([self.next_market.time_slot])
             return {
                 "command": "bid", "status": "ready",
-                "bid": bid.to_JSON_string(replace_existing=replace_existing),
+                "bid": bid.to_json_string(replace_existing=replace_existing),
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id", None)}
         except Exception:

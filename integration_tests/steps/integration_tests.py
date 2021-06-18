@@ -24,6 +24,8 @@ import glob
 import traceback
 from math import isclose
 from copy import deepcopy
+
+from d3a_interface.enums import BidOfferMatchAlgoEnum
 from pendulum import duration, today, from_format
 from behave import given, when, then
 from deepdiff import DeepDiff
@@ -36,7 +38,7 @@ from d3a_interface.utils import convert_W_to_Wh, convert_W_to_kWh, convert_kW_to
 from d3a.models.config import SimulationConfig
 from d3a.d3a_core.simulation import Simulation
 from d3a.d3a_core.util import d3a_path
-from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE, BidOfferMatchAlgoEnum
+from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
 from d3a import constants
 
 
