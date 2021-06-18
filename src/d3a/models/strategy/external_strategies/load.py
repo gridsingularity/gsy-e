@@ -175,7 +175,7 @@ class LoadExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 bid_response_channel, {
                     "command": "bid", "status": "ready",
-                    "bid": bid.to_JSON_string(replace_existing=replace_existing),
+                    "bid": bid.to_json_string(replace_existing=replace_existing),
                     "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling bid create on area {self.device.name}: "
@@ -279,7 +279,7 @@ class LoadExternalMixin(ExternalMixin):
                                             existing_bid_energy)
                 return {
                     "command": "update_bid", "status": "ready",
-                    "bid": updated_bid.to_JSON_string(),
+                    "bid": updated_bid.to_json_string(),
                     "area_uuid": self.device.uuid,
                     "transaction_id": arguments.get("transaction_id", None)}
             else:
@@ -314,7 +314,7 @@ class LoadExternalMixin(ExternalMixin):
                 replace_existing=replace_existing)
             return {
                 "command": "bid", "status": "ready",
-                "bid": bid.to_JSON_string(replace_existing=replace_existing),
+                "bid": bid.to_json_string(replace_existing=replace_existing),
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id", None)}
         except Exception as e:
