@@ -44,9 +44,12 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         self._set_market_maker_rate()
 
     def _set_market_maker_rate(self):
-        if self.energy_rate_profile is not None:
+        if self.energy_rate_profile is not None and isinstance(self.energy_rate_profile, dict):
             GlobalConfig.market_maker_rate = \
                 read_and_convert_identity_profile_to_float(self.energy_rate_profile)
+        elif self.energy_rate_profile is not None and isinstance(self.energy_rate_profile, str):
+            GlobalConfig.market_maker_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                                    self.energy_rate_profile)
         elif isinstance(self.energy_rate, (int, float)):
             GlobalConfig.market_maker_rate = self.energy_rate
         elif isinstance(self.energy_rate, (str, dict)):
@@ -57,17 +60,27 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
                 ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
 
     def event_activate(self, **kwargs):
-        if self.energy_rate_profile is not None:
+        if self.energy_rate_profile is not None and isinstance(self.energy_rate_profile, dict):
             self.energy_rate = read_and_convert_identity_profile_to_float(self.energy_rate_profile)
+            del self.energy_rate_profile
+        elif self.energy_rate_profile is not None and isinstance(self.energy_rate_profile, str):
+            self.energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                      self.energy_rate_profile)
             del self.energy_rate_profile
         else:
             self.energy_rate = self.area.config.market_maker_rate if self.energy_rate is None \
                 else read_arbitrary_profile(InputProfileTypes.IDENTITY, self.energy_rate)
 
-        if self.buying_rate_profile is not None:
+        if self.buying_rate_profile is not None and \
+                isinstance(self.buying_rate_profile, (float, dict)):
             self.energy_buy_rate = \
                 read_and_convert_identity_profile_to_float(self.buying_rate_profile)
             del self.buying_rate_profile
+        elif self.buying_rate_profile is not None and isinstance(self.buying_rate_profile, str):
+            self.energy_buy_rate = \
+                read_arbitrary_profile(InputProfileTypes.IDENTITY, self.buying_rate_profile)
+            del self.buying_rate_profile
+
         else:
             self.energy_buy_rate = self.area.config.market_maker_rate \
                 if self.energy_buy_rate is None \
