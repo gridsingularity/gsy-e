@@ -232,7 +232,7 @@ class HomeMeterStrategyTest(unittest.TestCase):
 
     @staticmethod
     def _create_market_mocks(num_of_markets=3):
-        market_mocks = [create_autospec(OneSidedMarket) for i in range(num_of_markets)]
+        market_mocks = [create_autospec(OneSidedMarket) for _ in range(num_of_markets)]
         slot_time = datetime(2021, 6, 15, 0, 0, 0)
         for market_mock in market_mocks:
             market_mock.time_slot = slot_time

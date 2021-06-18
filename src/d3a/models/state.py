@@ -98,8 +98,6 @@ class ConsumptionState(StateInterface):
         self._total_energy_demanded_Wh = state_dict["total_energy_demanded_Wh"]
 
     def get_energy_requirement_Wh(self, time_slot, default_value=0.0):
-        if default_value is None:
-            return self._energy_requirement_Wh[time_slot]
         return self._energy_requirement_Wh.get(time_slot, default_value)
 
     def set_desired_energy(self, energy, time_slot, overwrite=False):

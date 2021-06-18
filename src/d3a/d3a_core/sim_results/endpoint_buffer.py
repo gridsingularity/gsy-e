@@ -175,15 +175,15 @@ class SimulationEndpointBuffer:
             core_stats_dict["available_energy_kWh"] = (
                 area.strategy.state.get_available_energy_kWh(self.current_market_time_slot))
             if area.parent.current_market is not None:
-                for t in area.strategy.trades[area.parent.current_market]:
-                    core_stats_dict["trades"].append(t.serializable_dict())
+                for trade in area.strategy.trades[area.parent.current_market]:
+                    core_stats_dict["trades"].append(trade.serializable_dict())
 
         elif isinstance(area.strategy, StorageStrategy):
             core_stats_dict["soc_history_%"] = (
                 area.strategy.state.charge_history.get(self.current_market_time_slot, 0))
             if area.parent.current_market is not None:
-                for t in area.strategy.trades[area.parent.current_market]:
-                    core_stats_dict["trades"].append(t.serializable_dict())
+                for trade in area.strategy.trades[area.parent.current_market]:
+                    core_stats_dict["trades"].append(trade.serializable_dict())
 
         elif isinstance(area.strategy, LoadHoursStrategy):
             core_stats_dict["load_profile_kWh"] = (
@@ -195,21 +195,21 @@ class SimulationEndpointBuffer:
                     self.current_market_time_slot) / 1000.0)
 
             if area.parent.current_market is not None:
-                for t in area.strategy.trades[area.parent.current_market]:
-                    core_stats_dict["trades"].append(t.serializable_dict())
+                for trade in area.strategy.trades[area.parent.current_market]:
+                    core_stats_dict["trades"].append(trade.serializable_dict())
 
         elif type(area.strategy) == FinitePowerPlant:
             core_stats_dict["production_kWh"] = area.strategy.energy_per_slot_kWh
             if area.parent.current_market is not None:
-                for t in area.strategy.trades[area.parent.current_market]:
-                    core_stats_dict["trades"].append(t.serializable_dict())
+                for trade in area.strategy.trades[area.parent.current_market]:
+                    core_stats_dict["trades"].append(trade.serializable_dict())
 
         elif type(area.strategy) in [InfiniteBusStrategy, MarketMakerStrategy, CommercialStrategy]:
             if area.parent.current_market is not None:
                 core_stats_dict["energy_rate"] = (
                     area.strategy.energy_rate.get(area.parent.current_market.time_slot, None))
-                for t in area.strategy.trades[area.parent.current_market]:
-                    core_stats_dict["trades"].append(t.serializable_dict())
+                for trade in area.strategy.trades[area.parent.current_market]:
+                    core_stats_dict["trades"].append(trade.serializable_dict())
 
         self.flattened_area_core_stats_dict[area.uuid] = core_stats_dict
 

@@ -119,7 +119,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
     def _init_price_update(self):
         """Initialize the bid and offer updaters."""
-
         self.bid_update = TemplateStrategyBidUpdater(
             initial_rate=self.initial_buying_rate,
             final_rate=self.final_buying_rate,
