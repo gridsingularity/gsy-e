@@ -240,24 +240,9 @@ class HomeMeterState(ConsumptionState, ProductionState):
     def __init__(self):
         super().__init__()
 
-    def _validate_state(self):
-        production_market_slots = {
-            slot for slot, energy in self._available_energy_kWh.items() if energy}
-        consumption_market_slots = {
-            slot for slot, energy in self._energy_requirement_Wh.items() if energy}
-
-        overlapping_market_slots = production_market_slots & consumption_market_slots
-        if overlapping_market_slots:
-            raise UnexpectedStateException(
-                f"{self} reported both produced and consumed energy at market slots: "
-                f"{overlapping_market_slots}.")
-
     @property
     def market_slots(self):
         """Return the market slots that have either available or required energy."""
-        # Energy can either be produced OR consumed, not both, so we can't have duplicates.
-        self._validate_state()
-
         return self._available_energy_kWh.keys() | self._energy_requirement_Wh.keys()
 
     def delete_past_state_values(self, current_market_time_slot: DateTime):
