@@ -487,7 +487,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
             rate_change = None if fit_to_limit else find_object_of_same_weekday_and_time(
                 energy_rate_change_per_update, time_slot)
 
-            self.validator.validate_price(
+            self.validator.validate_rate(
                 initial_buying_rate=initial_rate[time_slot],
                 energy_rate_increase_per_update=rate_change,
                 final_buying_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
@@ -499,7 +499,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
             rate_change = None if fit_to_limit else find_object_of_same_weekday_and_time(
                 energy_rate_change_per_update, time_slot)
 
-            self.validator.validate_price(
+            self.validator.validate_rate(
                 initial_selling_rate=initial_rate[time_slot],
                 final_selling_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
                 energy_rate_decrease_per_update=rate_change,

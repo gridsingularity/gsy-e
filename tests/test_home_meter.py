@@ -102,7 +102,7 @@ class HomeMeterStrategyTest(unittest.TestCase):
         assert call_args.kwargs["fit_to_limit"] is True
         assert call_args.kwargs["update_interval"] == duration(minutes=1)
 
-        self.strategy.validator.validate_price.assert_called()
+        self.strategy.validator.validate_rate.assert_called()
 
     def test_event_activate_price_without_market_maker_rate(self):
         """If the market maker rate is not used, bid/offer updaters' methods are not called."""
