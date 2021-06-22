@@ -135,64 +135,66 @@ class SimulationEndpointBuffer:
             self.flattened_area_core_stats_dict[area.uuid] = {}
         if self.current_market_time_slot_str == "":
             return
-        core_stats_dict = {'bids': [], 'offers': [], 'trades': [], 'market_fee': 0.0}
-        if hasattr(area.current_market, 'offer_history'):
+        core_stats_dict = {"bids": [], "offers": [], "trades": [], "market_fee": 0.0}
+        if hasattr(area.current_market, "offer_history"):
             for offer in area.current_market.offer_history:
-                core_stats_dict['offers'].append(offer.serializable_dict())
-        if hasattr(area.current_market, 'bid_history'):
+                core_stats_dict["offers"].append(offer.serializable_dict())
+        if hasattr(area.current_market, "bid_history"):
             for bid in area.current_market.bid_history:
-                core_stats_dict['bids'].append(bid.serializable_dict())
-        if hasattr(area.current_market, 'trades'):
+                core_stats_dict["bids"].append(bid.serializable_dict())
+        if hasattr(area.current_market, "trades"):
             for trade in area.current_market.trades:
-                core_stats_dict['trades'].append(trade.serializable_dict())
-        if hasattr(area.current_market, 'market_fee'):
-            core_stats_dict['market_fee'] = area.current_market.market_fee
-        if hasattr(area.current_market, 'const_fee_rate') is not None and \
-                area.current_market is not None:
-            core_stats_dict['const_fee_rate'] = area.current_market.const_fee_rate \
-                if area.current_market.const_fee_rate is not None else 0.
-            core_stats_dict['feed_in_tariff'] = FEED_IN_TARIFF
-            core_stats_dict['market_maker_rate'] = \
-                ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+                core_stats_dict["trades"].append(trade.serializable_dict())
+        if hasattr(area.current_market, "market_fee"):
+            core_stats_dict["market_fee"] = area.current_market.market_fee
+        if (getattr(area.current_market, "const_fee_rate", None) is not None and
+                area.current_market is not None):
+            core_stats_dict["const_fee_rate"] = (area.current_market.const_fee_rate
+                                                 if area.current_market.const_fee_rate is not None
+                                                 else 0.)
+            core_stats_dict["feed_in_tariff"] = FEED_IN_TARIFF
+            core_stats_dict["market_maker_rate"] = (ConstSettings.GeneralSettings.
+                                                    DEFAULT_MARKET_MAKER_RATE)
         if area.strategy is None:
-            core_stats_dict['area_throughput'] = {
-                'baseline_peak_energy_import_kWh': area.throughput.baseline_peak_energy_import_kWh,
-                'baseline_peak_energy_export_kWh': area.throughput.baseline_peak_energy_export_kWh,
-                'import_capacity_kWh': area.throughput.import_capacity_kWh,
-                'export_capacity_kWh': area.throughput.export_capacity_kWh,
-                'imported_energy_kWh': area.stats.imported_traded_energy_kwh.get(
+            core_stats_dict["area_throughput"] = {
+                "baseline_peak_energy_import_kWh": area.throughput.baseline_peak_energy_import_kWh,
+                "baseline_peak_energy_export_kWh": area.throughput.baseline_peak_energy_export_kWh,
+                "import_capacity_kWh": area.throughput.import_capacity_kWh,
+                "export_capacity_kWh": area.throughput.export_capacity_kWh,
+                "imported_energy_kWh": area.stats.imported_traded_energy_kwh.get(
                     area.current_market.time_slot, 0.) if area.current_market is not None else 0.,
-                'exported_energy_kWh': area.stats.exported_traded_energy_kwh.get(
+                "exported_energy_kWh": area.stats.exported_traded_energy_kwh.get(
                     area.current_market.time_slot, 0.) if area.current_market is not None else 0.,
             }
-            core_stats_dict['grid_fee_constant'] = area.current_market.const_fee_rate \
-                if area.current_market is not None else 0.
+            core_stats_dict["grid_fee_constant"] = (area.current_market.const_fee_rate
+                                                    if area.current_market is not None
+                                                    else 0.)
 
         if isinstance(area.strategy, PVStrategy):
-            core_stats_dict['pv_production_kWh'] = \
+            core_stats_dict['pv_production_kWh'] = (
                 area.strategy.state.get_energy_production_forecast_kWh(
-                    self.current_market_time_slot, 0.0)
-            core_stats_dict['available_energy_kWh'] = \
-                area.strategy.state.get_available_energy_kWh(self.current_market_time_slot)
+                    self.current_market_time_slot, 0.0))
+            core_stats_dict['available_energy_kWh'] = (
+                area.strategy.state.get_available_energy_kWh(self.current_market_time_slot))
             if area.parent.current_market is not None:
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
 
         elif isinstance(area.strategy, StorageStrategy):
-            core_stats_dict['soc_history_%'] = \
-                area.strategy.state.charge_history.get(self.current_market_time_slot, 0)
+            core_stats_dict['soc_history_%'] = (
+                area.strategy.state.charge_history.get(self.current_market_time_slot, 0))
             if area.parent.current_market is not None:
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
 
         elif isinstance(area.strategy, LoadHoursStrategy):
-            core_stats_dict['load_profile_kWh'] = \
-                area.strategy.state.get_desired_energy_Wh(self.current_market_time_slot) / 1000.0
-            core_stats_dict['total_energy_demanded_wh'] = \
-                area.strategy.state.total_energy_demanded_Wh
-            core_stats_dict['energy_requirement_kWh'] = \
-                area.strategy.state.get_energy_requirement_Wh(
-                    self.current_market_time_slot) / 1000.0
+            core_stats_dict['load_profile_kWh'] = (area.strategy.state.get_desired_energy_Wh(
+                self.current_market_time_slot) / 1000.0)
+            core_stats_dict['total_energy_demanded_wh'] = (area.strategy.state.
+                                                           total_energy_demanded_Wh)
+            core_stats_dict['energy_requirement_kWh'] = (
+                    area.strategy.state.get_energy_requirement_Wh(self.current_market_time_slot) /
+                    1000.0)
 
             if area.parent.current_market is not None:
                 for t in area.strategy.trades[area.parent.current_market]:
@@ -206,8 +208,8 @@ class SimulationEndpointBuffer:
 
         elif type(area.strategy) in [InfiniteBusStrategy, MarketMakerStrategy, CommercialStrategy]:
             if area.parent.current_market is not None:
-                core_stats_dict['energy_rate'] = \
-                    area.strategy.energy_rate.get(area.parent.current_market.time_slot, None)
+                core_stats_dict['energy_rate'] = (
+                    area.strategy.energy_rate.get(area.parent.current_market.time_slot, None))
                 for t in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict['trades'].append(t.serializable_dict())
 
