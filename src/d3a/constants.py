@@ -47,9 +47,4 @@ CN_PROFILE_EXPANSION_DAYS = 7
 RUN_IN_REALTIME = False
 
 
-class BidOfferMatchAlgoEnum(Enum):
-    PAY_AS_BID = 1
-    PAY_AS_CLEAR = 2
-
-
 FEED_IN_TARIFF = 12
