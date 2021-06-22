@@ -23,7 +23,10 @@ jobs:
         pip install tox
         tox -e $TOXENV --verbose
 
-    - name: Coveralls GitHub Action
-      uses: coverallsapp/github-action@v1.1.2
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Run Coveralls coverage checks
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        pip install coveralls
+        coveralls --service=github
+
