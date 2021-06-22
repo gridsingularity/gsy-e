@@ -180,8 +180,6 @@ class HomeMeterStrategy(BidEnabledStrategy):
         self._reset_rates_and_update_prices()
         self._set_energy_forecast_for_future_markets(reconfigure=False)
 
-        # TODO: should we always do both bids and offers, or should we first check the +/- of the
-        #  profile?
         # Create bids/offers for the expected energy consumption/production in future markets
         for market in self.area.all_markets:
             self._post_offer(market)
@@ -534,17 +532,13 @@ class HomeMeterStrategy(BidEnabledStrategy):
         """
         if not self.state.can_buy_more_energy(market.time_slot):
             return
+        if not offer and not market.offers:
+            return
+        if offer.id not in market.offers:
+            return
 
         try:
-            if offer is None:
-                if not market.offers:
-                    return
-                acceptable_offer = self._find_acceptable_offer(market)
-            else:
-                if offer.id not in market.offers:
-                    return
-                acceptable_offer = offer
-
+            acceptable_offer = offer if offer else self._find_acceptable_offer(market)
             time_slot = market.time_slot
             if acceptable_offer and self._offer_rate_can_be_accepted(acceptable_offer, market):
                 # If the device can still buy more energy
