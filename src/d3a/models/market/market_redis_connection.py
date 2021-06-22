@@ -3,11 +3,13 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from uuid import uuid4
 
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator, \
-    BlockingCommunicator
+from d3a.d3a_core.redis_connections.redis_area_market_communicator import (
+    ResettableCommunicator, BlockingCommunicator)
 from d3a.events import MarketEvent
-from d3a.models.market.market_structures import offer_from_JSON_string, bid_from_JSON_string
+from d3a.models.market.market_structures import (
+    offer_or_bid_from_json_string, trade_from_json_string)
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT, MAX_WORKER_THREADS
+from d3a_interface.utils import key_in_dict_and_not_none
 
 
 class MarketRedisEventPublisher:
@@ -36,7 +38,7 @@ class MarketRedisEventPublisher:
         for key in ["offer", "trade", "new_offer", "existing_offer",
                     "bid", "new_bid", "existing_bid", "bid_trade"]:
             if key in kwargs:
-                kwargs[key] = kwargs[key].to_JSON_string()
+                kwargs[key] = kwargs[key].to_json_string()
         send_data = {"event_type": event_type.value, "kwargs": kwargs,
                      "transaction_uuid": str(uuid4())}
 
@@ -123,14 +125,19 @@ class MarketRedisEventSubscriber:
 
     @classmethod
     def sanitize_parameters(cls, data_dict, current_time):
-        if "offer_or_id" in data_dict and data_dict["offer_or_id"] is not None:
-            if isinstance(data_dict["offer_or_id"], str):
-                data_dict["offer_or_id"] = \
-                    offer_from_JSON_string(data_dict["offer_or_id"], current_time)
-        if "offer" in data_dict and data_dict["offer"] is not None:
-            if isinstance(data_dict["offer"], str):
-                data_dict["offer"] = \
-                    offer_from_JSON_string(data_dict["offer"], current_time)
+        if (key_in_dict_and_not_none(data_dict, "offer_or_id")
+                and isinstance(data_dict["offer_or_id"], str)):
+            data_dict["offer_or_id"] = (
+                offer_or_bid_from_json_string(data_dict["offer_or_id"], current_time))
+        if key_in_dict_and_not_none(data_dict, "offer") and isinstance(data_dict["offer"], str):
+            data_dict["offer"] = (
+                offer_or_bid_from_json_string(data_dict["offer"], current_time))
+        if key_in_dict_and_not_none(data_dict, "bid") and isinstance(data_dict["bid"], str):
+            data_dict["bid"] = (
+                offer_or_bid_from_json_string(data_dict["bid"]))
+        if key_in_dict_and_not_none(data_dict, "trade") and isinstance(data_dict["trade"], str):
+            data_dict["trade"] = (
+                trade_from_json_string(data_dict["trade"], current_time))
 
         return data_dict
 
@@ -144,7 +151,7 @@ class MarketRedisEventSubscriber:
         try:
             trade = self.market.accept_offer(**arguments)
             self.publish(self._accept_offer_response_channel,
-                         {"status": "ready", "trade": trade.to_JSON_string(),
+                         {"status": "ready", "trade": trade.to_json_string(),
                           "transaction_uuid": transaction_uuid})
         except Exception as e:
             logging.error(f"Error when handling accept_offer on market {self.market.name}: "
@@ -164,7 +171,7 @@ class MarketRedisEventSubscriber:
         try:
             offer = self.market.offer(**arguments)
             self.publish(self._offer_response_channel,
-                         {"status": "ready", "offer": offer.to_JSON_string(),
+                         {"status": "ready", "offer": offer.to_json_string(),
                           "transaction_uuid": transaction_uuid})
         except Exception as e:
             logging.error(f"Error when handling offer on market {self.market.name}: "
@@ -246,10 +253,10 @@ class TwoSidedMarketRedisEventSubscriber(MarketRedisEventSubscriber):
         data_dict = super().sanitize_parameters(data_dict)
         if "bid_or_id" in data_dict and data_dict["bid_or_id"] is not None:
             if isinstance(data_dict["bid_or_id"], str):
-                data_dict["bid_or_id"] = bid_from_JSON_string(data_dict["bid_or_id"])
+                data_dict["bid_or_id"] = offer_or_bid_from_json_string(data_dict["bid_or_id"])
         if "bid" in data_dict and data_dict["bid"] is not None:
             if isinstance(data_dict["bid"], str):
-                data_dict["bid"] = bid_from_JSON_string(data_dict["bid"])
+                data_dict["bid"] = offer_or_bid_from_json_string(data_dict["bid"])
 
         return data_dict
 
@@ -263,7 +270,7 @@ class TwoSidedMarketRedisEventSubscriber(MarketRedisEventSubscriber):
         try:
             trade = self.market.accept_bid(**arguments)
             self.publish(self._accept_bid_response_channel,
-                         {"status": "ready", "trade": trade.to_JSON_string(),
+                         {"status": "ready", "trade": trade.to_json_string(),
                           "transaction_uuid": transaction_uuid})
         except Exception as e:
             logging.error(f"Error when handling accept_bid on market {self.market.name}: "
@@ -283,7 +290,7 @@ class TwoSidedMarketRedisEventSubscriber(MarketRedisEventSubscriber):
         try:
             bid = self.market.bid(**arguments)
             self.publish(self._bid_response_channel,
-                         {"status": "ready", "bid": bid.to_JSON_string(),
+                         {"status": "ready", "bid": bid.to_json_string(),
                           "transaction_uuid": transaction_uuid})
         except Exception as e:
             logging.error(f"Error when handling bid create on market {self.market.name}: "

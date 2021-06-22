@@ -122,12 +122,12 @@ def teardown_function():
     ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def market():
     return TwoSidedMarket(time_slot=now())
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def market_matcher():
     return PayAsBidMatcher()
 
@@ -676,7 +676,7 @@ def test_market_accept_bid_yields_partial_bid_trade(
     assert trade.offer.id == bid.id and trade.offer.energy == 1
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def pac_market():
     return PayAsClearMatcher()
 
@@ -735,7 +735,7 @@ def test_double_sided_pay_as_clear_market_works_with_floats(pac_market):
     assert matched == 2.2
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def pab_market():
     return FakeTwoSidedPayAsBid()
 

@@ -33,8 +33,9 @@ from d3a.events import EventMixin
 from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
-from d3a.models.market.market_structures import Offer, Bid, trade_from_JSON_string, \
-    offer_from_JSON_string
+from d3a.models.market.market_structures import (
+    Offer, Bid, trade_from_json_string,
+    offer_or_bid_from_json_string)
 from d3a_interface.constants_limits import ConstSettings
 
 log = getLogger(__name__)
@@ -335,7 +336,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         if isinstance(data, str):
             data = json.loads(data)
         if data["status"] == "ready":
-            self.offer_buffer = offer_from_JSON_string(data["offer"])
+            self.offer_buffer = offer_or_bid_from_json_string(data["offer"])
             self.event_response_uuids.append(data["transaction_uuid"])
         else:
             raise D3ARedisException(
@@ -362,7 +363,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             if not isinstance(market_or_id, str):
                 market_or_id = market_or_id.id
-            data = {"offer_or_id": offer.to_JSON_string(),
+            data = {"offer_or_id": offer.to_json_string(),
                     "buyer": buyer,
                     "energy": energy,
                     "trade_rate": trade_rate,
@@ -393,7 +394,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         if isinstance(data, str):
             data = json.loads(data)
         if data["status"] == "ready":
-            self.trade_buffer = trade_from_JSON_string(data["trade"])
+            self.trade_buffer = trade_from_json_string(data["trade"])
             self.event_response_uuids.append(data["transaction_uuid"])
         else:
             raise D3ARedisException(
@@ -421,7 +422,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     def delete_offer(self, market_or_id, offer):
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-            data = {"offer_or_id": offer.to_JSON_string()}
+            data = {"offer_or_id": offer.to_json_string()}
             self._send_events_to_market("DELETE_OFFER", market_or_id, data,
                                         self._delete_offer_response)
         else:

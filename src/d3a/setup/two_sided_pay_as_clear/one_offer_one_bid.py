@@ -15,16 +15,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from d3a.models.area import Area
 from d3a.models.strategy.pv import PVStrategy
-import d3a.constants
 
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.enums import BidOfferMatchAlgoEnum
 
 
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-        d3a.constants.BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+        BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
 
     area = Area(
         'Grid',

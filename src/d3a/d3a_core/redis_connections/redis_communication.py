@@ -15,10 +15,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import os
 import json
-import traceback
+import os
 import time
+import traceback
 from logging import getLogger
 from redis import StrictRedis
 from redis.exceptions import ConnectionError
@@ -78,23 +78,24 @@ class RedisSimulationCommunication:
         if response_params is None:
             response_params = {}
         response_channel = f'{simulation_id}/response/{command_type}'
+
+        response_json = {
+            "command": str(command_type),
+            "simulation_id": str(self._simulation_id),
+            "transaction_id": response["transaction_id"],
+        }
         if is_successful:
-            self.publish_json(
-                response_channel,
+            response_json.update(
                 {
-                    "command": str(command_type), "status": "success",
-                    "simulation_id": str(self._simulation_id),
-                    "transaction_id": response["transaction_id"],
-                    **response_params
+                    "status": "success", **response_params
                 })
         else:
-            self.publish_json(
-                response_channel,
+            response_json.update(
                 {
-                    "command": str(command_type), "status": "error",
-                    "simulation_id": str(self._simulation_id),
-                    "error_message": f"Error when handling simulation {command_type}.",
-                    "transaction_id": response["transaction_id"]})
+                    "status": "error",
+                    "error_message": f"Error when handling simulation {command_type}."
+                })
+        self.publish_json(response_channel, response_json)
 
     def _stop_callback(self, payload):
         response = json.loads(payload["data"])
@@ -158,7 +159,7 @@ class RedisSimulationCommunication:
         try:
             job = get_current_job()
             job.refresh()
-            if "terminated" in job.meta and job.meta["terminated"]:
+            if job.meta.get("terminated"):
                 log.error(f"Redis job {self._simulation_id} received a stop message via the "
                           f"job.terminated metadata by d3a-web. Stopping the simulation.")
                 self._simulation.stop()
