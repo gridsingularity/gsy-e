@@ -38,7 +38,6 @@ from d3a.models.strategy.update_frequency import (
 log = getLogger(__name__)
 
 
-# pylint: disable=invalid-name
 class HomeMeterStrategy(BidEnabledStrategy):
     """Class defining a strategy for Home Meter devices."""
 
