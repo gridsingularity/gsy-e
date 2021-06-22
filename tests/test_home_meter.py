@@ -34,6 +34,15 @@ from d3a.models.strategy.home_meter import HomeMeterStrategy
 # pylint: disable=protected-access
 class HomeMeterStrategyTest(unittest.TestCase):
     """Tests for the HomeMeterStrategy behaviour."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        """Instantiate slot times that will be shared by energy profiles and market slots mocks."""
+        cls.slot_times = [
+            datetime(2021, 6, 15, 0, 0, 0),
+            datetime(2021, 6, 15, 0, 15, 0),
+            datetime(2021, 6, 15, 0, 30, 0)]
+
     def setUp(self) -> None:
         """Instantiate the strategy used throughout the tests"""
         self.strategy = HomeMeterStrategy(
@@ -220,20 +229,13 @@ class HomeMeterStrategyTest(unittest.TestCase):
         self.strategy._post_offer(market_mock)
         self.strategy.offers.post.assert_called_once_with(offer_mock, market_mock.id)
 
-    @staticmethod
-    def _create_profile_mock():
-        # NOTE: the datetimes should be the same that will be used by the market slots
-        slot_times = [
-            datetime(2021, 6, 15, 0, 0, 0),
-            datetime(2021, 6, 15, 0, 15, 0),
-            datetime(2021, 6, 15, 0, 30, 0)]
+    def _create_profile_mock(self):
+        return OrderedDict([
+            (self.slot_times[0], 1), (self.slot_times[1], -0.5), (self.slot_times[2], -0.1)])
 
-        return OrderedDict([(slot_times[0], 1), (slot_times[1], -0.5), (slot_times[2], -0.1)])
-
-    @staticmethod
-    def _create_market_mocks(num_of_markets=3):
+    def _create_market_mocks(self, num_of_markets=3):
         market_mocks = [create_autospec(OneSidedMarket) for _ in range(num_of_markets)]
-        slot_time = datetime(2021, 6, 15, 0, 0, 0)
+        slot_time = self.slot_times[0]
         for market_mock in market_mocks:
             market_mock.time_slot = slot_time
             market_mock.id = uuid.uuid4()
