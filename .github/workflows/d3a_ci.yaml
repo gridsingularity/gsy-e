@@ -22,3 +22,11 @@ jobs:
         export LD_LIBRARY_PATH=$HOME/solc/usr/lib:$LD_LIBRARY_PATH
         pip install tox
         tox -e $TOXENV --verbose
+
+    - name: Run Coveralls coverage checks
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        pip install coveralls
+        coveralls --service=github
+
