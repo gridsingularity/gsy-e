@@ -24,8 +24,8 @@ from typing import Union, List, Dict  # noqa
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a_interface.constants_limits import ConstSettings
 
-from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade, MarketException, \
-    InvalidBidOfferPair
+from d3a.d3a_core.exceptions import (BidNotFound, InvalidBid, InvalidTrade, MarketException,
+                                     InvalidBidOfferPair)
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market import lock_market_action

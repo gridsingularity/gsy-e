@@ -178,28 +178,36 @@ class Area:
             self.strategy.area_reconfigure_event(**kwargs)
             return True
 
-        grid_fee_constant = kwargs["grid_fee_constant"] \
-            if key_in_dict_and_not_none(kwargs, "grid_fee_constant") \
-            else self.grid_fee_constant
-        grid_fee_percentage = kwargs["grid_fee_percentage"] \
-            if key_in_dict_and_not_none(kwargs, "grid_fee_percentage") \
-            else self.grid_fee_percentage
+        grid_fee_constant = (
+            kwargs["grid_fee_constant"]
+            if key_in_dict_and_not_none(kwargs, "grid_fee_constant")
+            else self.grid_fee_constant)
+        grid_fee_percentage = (
+            kwargs["grid_fee_percentage"]
+            if key_in_dict_and_not_none(kwargs, "grid_fee_percentage")
+            else self.grid_fee_percentage)
 
-        baseline_peak_energy_import_kWh = kwargs["baseline_peak_energy_import_kWh"] \
-            if key_in_dict_and_not_none(kwargs, "baseline_peak_energy_import_kWh") \
-            else self.throughput.baseline_peak_energy_import_kWh
+        baseline_peak_energy_import_kWh = (
+            kwargs["baseline_peak_energy_import_kWh"]
+            if key_in_dict_and_not_none(
+                kwargs, "baseline_peak_energy_import_kWh")
+            else self.throughput.baseline_peak_energy_import_kWh)
 
-        baseline_peak_energy_export_kWh = kwargs["baseline_peak_energy_export_kWh"] \
-            if key_in_dict_and_not_none(kwargs, "baseline_peak_energy_export_kWh") \
-            else self.throughput.baseline_peak_energy_export_kWh
+        baseline_peak_energy_export_kWh = (
+            kwargs["baseline_peak_energy_export_kWh"]
+            if key_in_dict_and_not_none(
+                kwargs, "baseline_peak_energy_export_kWh")
+            else self.throughput.baseline_peak_energy_export_kWh)
 
-        import_capacity_kVA = kwargs["import_capacity_kVA"] \
-            if key_in_dict_and_not_none(kwargs, "import_capacity_kVA") \
-            else self.throughput.import_capacity_kVA
+        import_capacity_kVA = (
+            kwargs["import_capacity_kVA"]
+            if key_in_dict_and_not_none(kwargs, "import_capacity_kVA")
+            else self.throughput.import_capacity_kVA)
 
-        export_capacity_kVA = kwargs["export_capacity_kVA"] \
-            if key_in_dict_and_not_none(kwargs, "export_capacity_kVA") \
-            else self.throughput.import_capacity_kVA
+        export_capacity_kVA = (
+            kwargs["export_capacity_kVA"]
+            if key_in_dict_and_not_none(kwargs, "export_capacity_kVA")
+            else self.throughput.import_capacity_kVA)
 
         try:
             validate_area(grid_fee_constant=grid_fee_constant,

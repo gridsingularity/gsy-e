@@ -31,9 +31,10 @@ from hypothesis import strategies as st
 from hypothesis.control import assume
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rule
 
-from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
-    OfferNotFoundException, InvalidTrade, InvalidBalancingTradeException, InvalidBid, \
-    BidNotFound, DeviceNotInRegistryError, InvalidBidOfferPair
+from d3a.d3a_core.exceptions import (InvalidOffer, MarketReadOnlyException,
+                                     OfferNotFoundException, InvalidTrade,
+                                     InvalidBalancingTradeException, InvalidBid,
+                                     BidNotFound, DeviceNotInRegistryError, InvalidBidOfferPair)
 from d3a.models.market.two_sided import TwoSidedMarket
 from d3a.models.myco_matcher.pay_as_clear import PayAsClearMatcher
 from d3a.models.market.one_sided import OneSidedMarket
@@ -148,13 +149,13 @@ class TestTwoSidedMarket:
             market.validate_requirements_satisfied(offer, bid)
         bid.buyer_id = "bid_id2"
         market.validate_requirements_satisfied(offer, bid)  # Should not raise any exceptions
-        bid.requirements.append({"energy_type": "Blue"},)
+        bid.requirements.append({"energy_type": ["Blue", ]},)
         with pytest.raises(InvalidBidOfferPair):
             # should raise an exception as energy_type of offer needs to be in [Blue, ]
             market.validate_requirements_satisfied(offer, bid)
 
         # Adding another requirement that is satisfied, should not raise an exception
-        bid.requirements.append({"energy_type": "Green"},)
+        bid.requirements.append({"energy_type": ["Green", ]},)
 
     @pytest.mark.parametrize(
         "bid_energy, offer_energy, clearing_rate, selected_energy", [
