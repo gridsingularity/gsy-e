@@ -19,21 +19,31 @@ import uuid
 from dataclasses import replace
 from logging import getLogger
 from math import isclose
-from typing import Union  # noqa
+from typing import Union, List, Dict  # noqa
 
+from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a_interface.constants_limits import ConstSettings
 
-from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade, MarketException
+from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade, MarketException, \
+    InvalidBidOfferPair
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.events.event_structures import MarketEvent
-from d3a.models.market import lock_market_action, validate_authentic_bid_offer_pair
-from d3a.models.market.market_structures import Bid, Trade, TradeBidOfferInfo
+from d3a.models.market import lock_market_action
+from d3a.models.market.market_structures import Bid, Trade, TradeBidOfferInfo, Offer
 from d3a.models.market.one_sided import OneSidedMarket
 
 log = getLogger(__name__)
 
 
 class TwoSidedMarket(OneSidedMarket):
+    """Extends One sided market class and adds support for bidding functionality.
+
+    A market type that allows producers to place energy offers to the markets
+    (exactly the same way as on the one-sided market case), but also allows the consumers
+    to place energy bids on their respective markets.
+    Contrary to the one sided market, where the offers are selected directly by the consumers,
+     the offers and bids are matched by the inter area agents.
+    """
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
                  grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
@@ -66,7 +76,8 @@ class TwoSidedMarket(OneSidedMarket):
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, buyer_origin,
             bid_id: str = None, original_bid_price=None, adapt_price_with_fees=True,
-            add_to_history=True, buyer_origin_id=None, buyer_id=None) -> Bid:
+            add_to_history=True, buyer_origin_id=None, buyer_id=None,
+            attributes: dict = None, requirements: List[Dict] = None) -> Bid:
         if energy <= 0:
             raise InvalidBid()
 
@@ -81,7 +92,8 @@ class TwoSidedMarket(OneSidedMarket):
 
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   self.now, price, energy, buyer, original_bid_price, buyer_origin,
-                  buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
+                  buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
+                  attributes=attributes, requirements=requirements)
 
         self.bids[bid.id] = bid
         if add_to_history is True:
@@ -113,7 +125,9 @@ class TwoSidedMarket(OneSidedMarket):
                                 buyer_origin_id=original_bid.buyer_origin_id,
                                 buyer_id=original_bid.buyer_id,
                                 adapt_price_with_fees=False,
-                                add_to_history=False)
+                                add_to_history=False,
+                                attributes=original_bid.attributes,
+                                requirements=original_bid.requirements)
 
         residual_price = (1 - energy / original_bid.energy) * original_bid.price
         residual_energy = original_bid.energy - energy
@@ -129,7 +143,9 @@ class TwoSidedMarket(OneSidedMarket):
                                 buyer_origin_id=original_bid.buyer_origin_id,
                                 buyer_id=original_bid.buyer_id,
                                 adapt_price_with_fees=False,
-                                add_to_history=True)
+                                add_to_history=True,
+                                attributes=original_bid.attributes,
+                                requirements=original_bid.requirements)
 
         log.debug(f"[BID][SPLIT][{self.time_slot_str}, {self.name}] "
                   f"({short_offer_bid_log_str(original_bid)} into "
@@ -210,7 +226,7 @@ class TwoSidedMarket(OneSidedMarket):
         return trade
 
     def accept_bid_offer_pair(self, bid, offer, clearing_rate, trade_bid_info, selected_energy):
-        validate_authentic_bid_offer_pair(bid, offer, clearing_rate, selected_energy)
+        self.validate_authentic_bid_offer_pair(bid, offer, clearing_rate, selected_energy)
         already_tracked = bid.buyer == offer.seller
         trade = self.accept_offer(offer_or_id=offer,
                                   buyer=bid.buyer,
@@ -233,9 +249,6 @@ class TwoSidedMarket(OneSidedMarket):
                                     seller_origin_id=offer.seller_origin_id,
                                     seller_id=offer.seller_id)
         return bid_trade, trade
-
-    def match_offers_bids(self):
-        pass
 
     def match_recommendation(self, recommended_list):
         if recommended_list is None:
@@ -264,9 +277,60 @@ class TwoSidedMarket(OneSidedMarket):
                     recommended_list, index+1, trade, bid_trade
                 )
 
+    @staticmethod
+    def validate_requirements_satisfied(obj1: Union[Offer, Bid], obj2: Union[Offer, Bid]) -> None:
+        """Validate if both trade parties satisfy each other's requirements.
+
+        :raises:
+            InvalidBidOfferPair: Bid offer pair failed the validation
+        """
+        def _validate_requirements_satisfied(_obj1: Union[Offer, Bid], _obj2: Union[Offer, Bid]):
+            if _obj1.requirements:
+                for requirement in _obj1.requirements:
+                    is_satisfied = True
+                    for key, value in requirement.items():
+                        if (key == "preferred_trading_partner" and
+                                not ((hasattr(_obj2, "buyer_origin_id") and
+                                      _obj2.buyer_origin_id in value) or
+                                     (hasattr(_obj2, "buyer_id") and
+                                      _obj2.buyer_id in value))):
+                            """value is a list of area ids"""
+                            is_satisfied = False
+                            continue
+                        if (key == "energy_type" and
+                                _obj2.attributes and
+                                _obj2.attributes.get("energy_type") not in value):
+                            """value is a list of accepted energy types"""
+                            is_satisfied = False
+                            continue
+
+                        if is_satisfied:
+                            """Requirement dict is satisfied."""
+                            return
+                    # If no requirement dict is satisfied
+                    raise InvalidBidOfferPair
+
+        _validate_requirements_satisfied(obj1, obj2)
+        _validate_requirements_satisfied(obj2, obj1)
+
+    @classmethod
+    def validate_authentic_bid_offer_pair(
+            cls, bid: Bid, offer: Offer, clearing_rate: float, selected_energy: float) -> None:
+        """Basic validation function for bid against an offer.
+
+        :raises:
+            InvalidBidOfferPair: Bid offer pair failed the validation
+        """
+        if not (bid.energy >= selected_energy and
+                offer.energy >= selected_energy and
+                (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= clearing_rate and
+                (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= offer.energy_rate):
+            raise InvalidBidOfferPair
+        cls.validate_requirements_satisfied(bid, offer)
+
     @classmethod
     def _replace_offers_bids_with_residual_in_matching_list(
-            cls, matchings, start_index, offer_trade, bid_trade
+            cls, matches, start_index, offer_trade, bid_trade
     ):
         def _convert_match_to_residual(match):
             if match.offer.id == offer_trade.offer.id:
@@ -277,6 +341,6 @@ class TwoSidedMarket(OneSidedMarket):
                 match = replace(match, bid=bid_trade.residual)
             return match
 
-        matchings[start_index:] = [_convert_match_to_residual(match)
-                                   for match in matchings[start_index:]]
-        return matchings
+        matches[start_index:] = [_convert_match_to_residual(match)
+                                 for match in matches[start_index:]]
+        return matches

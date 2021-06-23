@@ -9,19 +9,32 @@ from d3a_interface.enums import BidOfferMatchAlgoEnum
 
 
 class MycoMatcher:
-    def init(self):
-        if ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == \
-                BidOfferMatchAlgoEnum.PAY_AS_BID.value:
-            self.match_algorithm = PayAsBidMatcher()
-        elif ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == \
-                BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value:
-            self.match_algorithm = PayAsClearMatcher()
-        elif is_external_matching_enabled():
-            self.match_algorithm = ExternalMatcher()
-        else:
-            raise WrongMarketTypeException("Wrong market type setting flag "
-                                           f"{ConstSettings.IAASettings.MARKET_TYPE}")
+    def __init__(self):
+        self.match_algorithm = None
+
+    def reconfigure(self):
+        """Reconfigure the myco matcher properties at runtime."""
+        self.match_algorithm = self.get_matcher_algorithm()
 
     def calculate_recommendation(self, bids, offers, current_time):
         return self.match_algorithm.calculate_match_recommendation(
             bids, offers, current_time)
+
+    @staticmethod
+    def get_matcher_algorithm():
+        """Return a myco matcher instance based on the global BidOffer match type.
+
+        :raises:
+            WrongMarketTypeException
+        """
+        if (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+                BidOfferMatchAlgoEnum.PAY_AS_BID.value):
+            return PayAsBidMatcher()
+        elif (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+                BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value):
+            return PayAsClearMatcher()
+        elif is_external_matching_enabled():
+            return ExternalMatcher()
+        else:
+            raise WrongMarketTypeException("Wrong market type setting flag "
+                                           f"{ConstSettings.IAASettings.MARKET_TYPE}")

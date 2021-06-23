@@ -33,7 +33,7 @@ from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rul
 
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade, InvalidBalancingTradeException, InvalidBid, \
-    BidNotFound, DeviceNotInRegistryError
+    BidNotFound, DeviceNotInRegistryError, InvalidBidOfferPair
 from d3a.models.market.two_sided import TwoSidedMarket
 from d3a.models.myco_matcher.pay_as_clear import PayAsClearMatcher
 from d3a.models.market.one_sided import OneSidedMarket
@@ -130,6 +130,45 @@ def market():
 @pytest.fixture
 def market_matcher():
     return PayAsBidMatcher()
+
+
+class TestTwoSidedMarket:
+    """Class Responsible for testing two sided market's functionality.
+
+    TODO: bring all related two sided market tests from this module into this class.
+    """
+    def test_double_sided_validate_requirements_satisfied(self, market):
+        offer = Offer("id", now(), 2, 2, 'other', 2,
+                      requirements=[{"preferred_trading_partner": ["bid_id2", ]}],
+                      attributes={"energy_type": "Green"})
+        bid = Bid("bid_id", now(), 9, 10, 'B', 9,
+                  buyer_id="bid_id", requirements=[], attributes={})
+        with pytest.raises(InvalidBidOfferPair):
+            # should raise an exception as buyer_id is not in preferred_trading_partner
+            market.validate_requirements_satisfied(offer, bid)
+        bid.buyer_id = "bid_id2"
+        market.validate_requirements_satisfied(offer, bid)  # Should not raise any exceptions
+        bid.requirements.append({"energy_type": "Blue"},)
+        with pytest.raises(InvalidBidOfferPair):
+            # should raise an exception as energy_type of offer needs to be in [Blue, ]
+            market.validate_requirements_satisfied(offer, bid)
+
+        # Adding another requirement that is satisfied, should not raise an exception
+        bid.requirements.append({"energy_type": "Green"},)
+
+    @pytest.mark.parametrize(
+        "bid_energy, offer_energy, clearing_rate, selected_energy", [
+            (2, 3, 2, 2.5),
+            (3, 2, 2, 2.5),
+            (2, 2, 2/2 + 1, 2),
+            (2, 2.5, 2, 2),
+        ])
+    def test_validate_authentic_bid_offer_pair_raises_exception(
+            self, market, bid_energy, offer_energy, clearing_rate, selected_energy):
+        offer = Offer("id", now(), 2, offer_energy, "other", 2)
+        bid = Bid("bid_id", now(), 2, bid_energy, "B", 8)
+        with pytest.raises(InvalidBidOfferPair):
+            market.validate_authentic_bid_offer_pair(bid, offer, clearing_rate, selected_energy)
 
 
 def test_double_sided_performs_pay_as_bid_matching(market, market_matcher):

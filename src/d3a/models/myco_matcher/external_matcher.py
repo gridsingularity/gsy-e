@@ -4,7 +4,6 @@ import logging
 import d3a.constants
 from d3a.d3a_core.exceptions import InvalidBidOfferPair
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
-from d3a.models.market import validate_authentic_bid_offer_pair
 from d3a.models.market.market_structures import (
     BidOfferMatch, offer_or_bid_from_json_string)
 
@@ -12,6 +11,7 @@ from d3a.models.myco_matcher.base_matcher import BaseMatcher
 
 
 class ExternalMatcher(BaseMatcher):
+    """Class responsible for external bids / offers matching."""
     def __init__(self):
         super().__init__()
         self.simulation_id = d3a.constants.COLLABORATION_ID
@@ -19,7 +19,7 @@ class ExternalMatcher(BaseMatcher):
         self.channel_prefix = f"external-myco/{self.simulation_id}/"
         self._setup_redis_connection()
         self.area_uuid_markets_mapping = {}
-        self.markets_mapping = {}
+        self.markets_mapping = {}  # Dict[market_id: market] mapping
         self.recommendations = []
 
     def _setup_redis_connection(self):
@@ -35,24 +35,32 @@ class ExternalMatcher(BaseMatcher):
         published data are of the following format
         market_offers_bids_list_mapping = {"market_id" : {"bids": [], "offers": [] }, }
         """
-        # TODO: message can contain filters
-        data = {"event": "offers_bids_response"}
+        response_data = {"event": "offers_bids_response"}
+        data = json.loads(message.get("data"))
+        filters = data.get("filters", {})
+        # IDs of markets the client is interested in
+        market_ids_in_interest = filters.get("markets", None)
         market_offers_bids_list_mapping = {}
         for area_uuid, markets in self.area_uuid_markets_mapping.items():
+            if market_ids_in_interest and area_uuid not in market_ids_in_interest:
+                # Client is uninterested in the market -> skip
+                continue
             for market in markets:
+                # Cache the market (needed while matching)
                 self.markets_mapping[market.id] = market
+
                 market_offers_bids_list_mapping[market.id] = {"bids": [], "offers": []}
                 bids, offers = market.open_bids_and_offers
                 market_offers_bids_list_mapping[market.id]["bids"].extend(
                     list(bid.serializable_dict() for bid in bids.values()))
                 market_offers_bids_list_mapping[market.id]["offers"].extend(
                     list(offer.serializable_dict() for offer in offers.values()))
-        data.update({
-            "market_offers_bids_list_mapping": market_offers_bids_list_mapping,
+        response_data.update({
+            "orders": market_offers_bids_list_mapping,
         })
 
         channel = f"{self.channel_prefix}response/offers-bids/"
-        self.myco_ext_conn.publish_json(channel, data)
+        self.myco_ext_conn.publish_json(channel, response_data)
 
     def match_recommendations(self, message):
         """Receive trade recommendations and match them in the relevant market.
@@ -75,7 +83,7 @@ class ExternalMatcher(BaseMatcher):
                                                   record.get("bid").get("time"))
 
             try:
-                validate_authentic_bid_offer_pair(
+                market.validate_authentic_bid_offer_pair(
                     bid,
                     offer,
                     record.get("trade_rate"),
@@ -100,6 +108,7 @@ class ExternalMatcher(BaseMatcher):
                 response_dict["message"] = "Validation Error"
                 logging.exception(f"Bid offer pair validation failed with error {ex}")
                 break
+
         if response_dict["status"] == "success":
             for market_id, records in validated_records.items():
                 market = self.markets_mapping.get(market_id)
@@ -110,7 +119,12 @@ class ExternalMatcher(BaseMatcher):
         self.myco_ext_conn.publish_json(channel, response_dict)
 
     def get_simulation_id(self, message):
-        """Publish the simulation id to the Myco client."""
+        """Publish the simulation id to the redis myco client.
+
+        At the moment the id of the simulations run by the cli is set as ""
+        however, this function guarantees that the myco is aware of the running collaboration id
+        regardless of the value set in d3a.
+        """
 
         channel = "external-myco/get-simulation-id/response"
         self.myco_ext_conn.publish_json(channel, {"simulation_id": self.simulation_id})
@@ -138,3 +152,7 @@ class ExternalMatcher(BaseMatcher):
 
     def calculate_match_recommendation(self, bids, offers, current_time=None):
         pass
+
+    def update_area_uuid_markets_mapping(self, area_uuid_markets_mapping: dict) -> None:
+        """Interface for updating the area_uuid_markets_mapping mapping."""
+        self.area_uuid_markets_mapping.update(area_uuid_markets_mapping)

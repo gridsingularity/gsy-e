@@ -164,7 +164,7 @@ class Simulation:
             log.info("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
-        bid_offer_matcher.init()
+        bid_offer_matcher.reconfigure()
         external_global_statistics(self.area, self.simulation_config.ticks_per_slot)
 
         self.endpoint_buffer = SimulationEndpointBuffer(

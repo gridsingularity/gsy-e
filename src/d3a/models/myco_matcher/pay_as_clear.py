@@ -139,9 +139,6 @@ class PayAsClearMatcher(BaseMatcher):
             self._smooth_discrete_point_curve(cumulative_bids, max_rate, False)
         return max_rate
 
-    def match_offers_bids(self):
-        pass
-
     @classmethod
     def _create_bid_offer_matchings(cls, clearing, offer_list, bid_list):
         clearing_rate, clearing_energy = clearing

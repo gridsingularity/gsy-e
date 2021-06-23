@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from typing import Union  # noqa
+from typing import Union, Dict, List  # noqa
 from logging import getLogger
 from pendulum import DateTime
 from math import isclose
@@ -32,7 +32,11 @@ log = getLogger(__name__)
 
 
 class OneSidedMarket(Market):
+    """Class responsible for dealing with one sided markets.
 
+    The default market type that D3A simulation uses.
+    Only devices that supply energy (producers) are able to place offers on the markets.
+    """
     def __init__(self, time_slot=None, bc=None, notification_listener=None,
                  readonly=False, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
                  grid_fees=None, name=None, in_sim_duration=True):
@@ -77,7 +81,7 @@ class OneSidedMarket(Market):
     def offer(self, price: float, energy: float, seller: str, seller_origin,
               offer_id=None, original_offer_price=None, dispatch_event=True,
               adapt_price_with_fees=True, add_to_history=True, seller_origin_id=None,
-              seller_id=None) -> Offer:
+              seller_id=None, attributes: dict = None, requirements: List[Dict] = None) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
@@ -95,7 +99,7 @@ class OneSidedMarket(Market):
             offer_id = self.bc_interface.create_new_offer(energy, price, seller)
         offer = Offer(offer_id, self.now, price, energy, seller, original_offer_price,
                       seller_origin=seller_origin, seller_origin_id=seller_origin_id,
-                      seller_id=seller_id)
+                      seller_id=seller_id, attributes=attributes, requirements=requirements)
 
         self.offers[offer.id] = offer
         if add_to_history is True:
@@ -155,7 +159,9 @@ class OneSidedMarket(Market):
                                     seller_origin_id=original_offer.seller_origin_id,
                                     seller_id=original_offer.seller_id,
                                     adapt_price_with_fees=False,
-                                    add_to_history=False)
+                                    add_to_history=False,
+                                    attributes=original_offer.attributes,
+                                    requirements=original_offer.requirements)
 
         residual_price = (1 - energy / original_offer.energy) * original_offer.price
         residual_energy = original_offer.energy - energy
@@ -172,7 +178,9 @@ class OneSidedMarket(Market):
                                     seller_origin_id=original_offer.seller_origin_id,
                                     seller_id=original_offer.seller_id,
                                     adapt_price_with_fees=False,
-                                    add_to_history=True)
+                                    add_to_history=True,
+                                    attributes=original_offer.attributes,
+                                    requirements=original_offer.requirements)
 
         log.debug(f"[OFFER][SPLIT][{self.time_slot_str}, {self.name}] "
                   f"({short_offer_bid_log_str(original_offer)} into "
