@@ -2,7 +2,7 @@
 Grid Singularity D3A
 ====================================
 .. image:: https://coveralls.io/repos/github/fievelk/d3a/badge.svg?branch=master
-:target: https://coveralls.io/github/fievelk/d3a?branch=master
+   :target: https://coveralls.io/github/fievelk/d3a?branch=master
 
 The Grid Singularity Energy Exchange Engine (D3A) is developed by `Grid Singularity <https://gridsingularity.com/>`__ as an interface (`d3a.io <https://www.d3a.io/>`__) and open source codebase (see `Licensing <https://gridsingularity.github.io/d3a/licensing/>`__ to model, simulate, optimize and (coming soon) download and deploy interconnected, grid-aware energy marketplaces.
 Grid Singularity has been proclaimed the `World Tech Pioneer by the World Economic Forum <https://www.weforum.org/organizations/grid-singularity-gmbh-gsy-gmbh>`__ and is also known as a co-founder of the `Energy Web Foundation <https://www.energyweb.org/>`__ that gathers leading energy corporations globally co-developing a shared blockchain-based platform.
