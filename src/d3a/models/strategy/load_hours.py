@@ -483,3 +483,56 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def my_test(self):
         print('ok')
 
+    def some_function_1(self):
+        print("hello")
+        print("hi")
+        print("hola")
+        for _ in range(200):
+            print('ciao')
+
+    def some_function_2(self):
+        print("hello")
+        print("hi")
+        print("hola")
+        for _ in range(200):
+            print('ciao')
+
+
+    def some_function_3(self):
+        print("hello")
+        print("hi")
+        print("hola")
+        for _ in range(200):
+            print('ciao')
+
+
+    def some_function_4(self):
+        print("hello")
+        print("hi")
+        print("hola")
+        for _ in range(200):
+            print('ciao')
+
+
+    def some_function_5(self):
+        print("hello")
+        print("hi")
+        print("hola")
+        for _ in range(200):
+            print('ciao')
+
+
+    def some_function_6(self):
+        print("hello")
+        print("hi")
+        print("hola")
+        for _ in range(200):
+            print('ciao')
+
+
+    def some_function_7(self):
+        print("hello")
+        print("hi")
+        print("hola")
+        for _ in range(200):
+            print('ciao')
