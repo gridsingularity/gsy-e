@@ -77,7 +77,7 @@ class TwoSidedMarket(OneSidedMarket):
     def bid(self, price: float, energy: float, buyer: str, buyer_origin,
             bid_id: str = None, original_bid_price=None, adapt_price_with_fees=True,
             add_to_history=True, buyer_origin_id=None, buyer_id=None,
-            attributes: dict = None, requirements: List[Dict] = None) -> Bid:
+            attributes: Dict = None, requirements: List[Dict] = None) -> Bid:
         if energy <= 0:
             raise InvalidBid()
 

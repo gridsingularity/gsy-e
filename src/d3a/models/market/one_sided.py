@@ -81,7 +81,7 @@ class OneSidedMarket(Market):
     def offer(self, price: float, energy: float, seller: str, seller_origin,
               offer_id=None, original_offer_price=None, dispatch_event=True,
               adapt_price_with_fees=True, add_to_history=True, seller_origin_id=None,
-              seller_id=None, attributes: dict = None, requirements: List[Dict] = None) -> Offer:
+              seller_id=None, attributes: Dict = None, requirements: List[Dict] = None) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:

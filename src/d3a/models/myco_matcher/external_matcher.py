@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Dict
 
 import d3a.constants
 from d3a.d3a_core.exceptions import InvalidBidOfferPair
@@ -153,6 +154,6 @@ class ExternalMatcher(BaseMatcher):
     def calculate_match_recommendation(self, bids, offers, current_time=None):
         pass
 
-    def update_area_uuid_markets_mapping(self, area_uuid_markets_mapping: dict) -> None:
+    def update_area_uuid_markets_mapping(self, area_uuid_markets_mapping: Dict) -> None:
         """Interface for updating the area_uuid_markets_mapping mapping."""
         self.area_uuid_markets_mapping.update(area_uuid_markets_mapping)

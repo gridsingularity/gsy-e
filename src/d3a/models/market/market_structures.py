@@ -136,7 +136,7 @@ class Bid:
     energy_rate: float = None
     buyer_origin_id: str = None
     buyer_id: str = None
-    attributes: dict = None
+    attributes: Dict = None
     requirements: List[Dict] = None
 
     def __post_init__(self):

@@ -52,14 +52,14 @@ class BalancingMarket(OneSidedMarket):
     def offer(self, price: float, energy: float, seller: str, offer_id=None,
               original_offer_price=None, dispatch_event=True, seller_origin=None,
               adapt_price_with_fees=True, seller_origin_id=None,
-              attributes: dict = None, requirements: List[Dict] = None):
+              attributes: Dict = None, requirements: List[Dict] = None):
         assert False
 
     def balancing_offer(self, price: float, energy: float, seller: str,
                         original_offer_price=None, offer_id=None, from_agent: bool = False,
                         adapt_price_with_fees: bool = False, dispatch_event=True,
-                        seller_origin=None, attributes: dict = None,
-                        requirements: dict = None) -> BalancingOffer:
+                        seller_origin=None, attributes: Dict = None,
+                        requirements: List[Dict] = None) -> BalancingOffer:
         if seller not in DeviceRegistry.REGISTRY.keys() and not from_agent:
             raise DeviceNotInRegistryError(f"Device {seller} "
                                            f"not in registry ({DeviceRegistry.REGISTRY}).")
