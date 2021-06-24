@@ -293,7 +293,11 @@ class TwoSidedMarket(OneSidedMarket):
                                 not ((hasattr(_obj2, "buyer_origin_id") and
                                       _obj2.buyer_origin_id in value) or
                                      (hasattr(_obj2, "buyer_id") and
-                                      _obj2.buyer_id in value))):
+                                      _obj2.buyer_id in value) or
+                                     (hasattr(_obj2, "seller_origin_id") and
+                                      _obj2.seller_origin_id in value) or
+                                     (hasattr(_obj2, "seller_id") and
+                                      _obj2.seller_id in value))):
                             """value is a list of area ids"""
                             is_satisfied = False
                             continue
