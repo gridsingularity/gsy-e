@@ -13,10 +13,10 @@ class LiveEventException(D3AException):
 
 
 class CreateAreaEvent:
-    def __init__(self, parent_uuid, area_represenation, config):
+    def __init__(self, parent_uuid, area_representation, config):
         self.config = config
         self.parent_uuid = parent_uuid
-        self.area_representation = area_represenation
+        self.area_representation = area_representation
         self.created_area = area_from_dict(self.area_representation, self.config)
 
     def apply(self, area):
