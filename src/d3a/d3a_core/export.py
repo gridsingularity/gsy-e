@@ -329,12 +329,8 @@ class ExportAndPlot:
         PlotlyGraph.plot_device_profile(device_dict, device_name, output_file, device_strategy)
 
     def plot_energy_profile(self, area: Area, subdir: str):
-        """
-        Wrapper for _plot_energy_profile
-        """
-
-        energy_profile = \
-            self.endpoint_buffer.results_handler.trade_profile_plot_results
+        """Plot the energy profile of areas (not devices)."""
+        energy_profile = self.endpoint_buffer.results_handler.trade_profile_plot_results
 
         new_subdir = os.path.join(subdir, area.slug)
         self._plot_energy_profile(new_subdir, area.name, energy_profile)

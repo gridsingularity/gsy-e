@@ -1,13 +1,19 @@
 import unittest
-from pendulum import duration
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
-from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
+from pathlib import Path
+from unittest.mock import Mock
+
+from d3a.d3a_core.live_events import CreateAreaEvent, UpdateAreaEvent
+from d3a.d3a_core.live_events import LiveEvents
+from d3a.d3a_core.util import d3a_path
 from d3a.models.area import Area
 from d3a.models.config import SimulationConfig
-from d3a.d3a_core.live_events import LiveEvents
+from d3a.models.strategy.home_meter import HomeMeterStrategy
+from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
+from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.storage import StorageStrategy
+from pendulum import duration
 
 
 class TestLiveEvents(unittest.TestCase):
@@ -39,14 +45,23 @@ class TestLiveEvents(unittest.TestCase):
             fit_to_limit=False, energy_rate_increase_per_update=5,
             energy_rate_decrease_per_update=8, update_interval=9
         )
+        self.home_meter_profile = Path(d3a_path) / "resources/home_meter_profile.csv"
+        self.strategy_home_meter = HomeMeterStrategy(
+            initial_selling_rate=30, final_selling_rate=5,
+            home_meter_profile=self.home_meter_profile)
+
         self.area1 = Area("load", None, None, self.strategy_load,
                           self.config, None, grid_fee_percentage=0)
         self.area2 = Area("pv", None, None, self.strategy_pv,
                           self.config, None, grid_fee_percentage=0)
         self.area3 = Area("storage", None, None, self.strategy_battery,
                           self.config, None, grid_fee_percentage=0)
+        self.area_home_meter = Area(
+            "home meter", None, None, self.strategy_home_meter, self.config, None,
+            grid_fee_percentage=0)
         self.area_house1 = Area("House 1", children=[self.area1, self.area2], config=self.config)
-        self.area_house2 = Area("House 2", children=[self.area3], config=self.config)
+        self.area_house2 = Area(
+            "House 2", children=[self.area3, self.area_home_meter], config=self.config)
         self.area_grid = Area("Grid", children=[self.area_house1, self.area_house2],
                               config=self.config)
 
@@ -62,8 +77,47 @@ class TestLiveEvents(unittest.TestCase):
         self.live_events.handle_all_events(self.area_grid)
 
         new_load = [c for c in self.area_house1.children if c.name == "new_load"][0]
-        assert type(new_load.strategy) == LoadHoursStrategy
+        assert isinstance(new_load.strategy, LoadHoursStrategy)
         assert new_load.strategy.avg_power_W == 234
+
+    def test_create_area_event(self):
+        """The CreateAreaEvent tries to create an area when the passed area is valid."""
+        event_dict = {
+            "eventType": "create_area",
+            "parent_uuid": self.area_house1.uuid,
+            "area_representation": {
+                "type": "LoadHours", "name": "new_load", "avg_power_W": 234}
+        }
+
+        event = CreateAreaEvent(
+            parent_uuid=event_dict["parent_uuid"],
+            area_representation=event_dict["area_representation"],
+            config=self.config)
+
+        assert event.apply(self.area_house1) is True
+
+        # If we pass the wrong parent UUID, the CreateAreaEvent gracefully fails and returns False
+        event = CreateAreaEvent(
+            parent_uuid="some wrong UUID",
+            area_representation=event_dict["area_representation"],
+            config=self.config)
+
+        assert event.apply(self.area_house1) is False
+
+    def test_create_area_event_fails(self):
+        """The CreateAreaEvent is not instantiated when trying to create an invalid area."""
+        event_dict = {
+            "eventType": "create_area",
+            "parent_uuid": self.area_house1.uuid,
+            "area_representation": {
+                "type": "Wrong Device", "name": "wrong", "some_attribute": 24}
+        }
+
+        with self.assertRaises(ValueError):
+            CreateAreaEvent(
+                parent_uuid=event_dict["parent_uuid"],
+                area_representation=event_dict["area_representation"],
+                config=self.config)
 
     def test_delete_area_event_is_deleting_an_area(self):
         event_dict = {
@@ -76,6 +130,32 @@ class TestLiveEvents(unittest.TestCase):
 
         assert len(self.area_house1.children) == 1
         assert all(c.uuid != self.area1.uuid for c in self.area_house1.children)
+
+    def test_update_area_event(self):
+        """The UpdateAreaEvent tries to update an area when the passed area is valid."""
+        event_dict = {
+            "eventType": "update_area",
+            "area_uuid": self.area1.uuid,
+            "area_representation": {
+                "avg_power_W": 234, "hrs_per_day": 6, "hrs_of_day": [0, 1, 2, 3, 4, 5, 6, 7],
+                "energy_rate_increase_per_update": 3, "update_interval": 9,
+                "initial_buying_rate": 12
+            }
+        }
+        event = UpdateAreaEvent(
+            area_uuid=self.area1.uuid,
+            area_params=event_dict["area_representation"])
+
+        self.area1.area_reconfigure_event = Mock()
+        assert self.area1.area_reconfigure_event.is_called_once()
+        assert event.apply(self.area1) is True
+
+        # If we pass the wrong parent UUID, the CreateAreaEvent gracefully fails and returns False
+        event = UpdateAreaEvent(
+            area_uuid="Some wrong UUID",
+            area_params=event_dict["area_representation"])
+
+        assert event.apply(self.area_house1) is False
 
     def test_update_area_event_is_updating_the_parameters_of_a_load(self):
         event_dict = {
@@ -98,6 +178,27 @@ class TestLiveEvents(unittest.TestCase):
         assert set(self.area1.strategy.bid_update.energy_rate_change_per_update.values()) == {-3}
         assert self.area1.strategy.bid_update.update_interval.minutes == 9
         assert set(self.area1.strategy.bid_update.initial_rate.values()) == {12}
+
+    def test_update_area_event_is_updating_the_parameters_of_a_home_meter(self):
+        """The Home Meter parameters are updated when an update area event is triggered."""
+        event_dict = {
+            "eventType": "update_area",
+            "area_uuid": self.area_home_meter.uuid,
+            "area_representation": {
+                "initial_selling_rate": 25, "final_selling_rate": 15,
+                "initial_buying_rate": 15, "final_buying_rate": 30,
+                "update_interval": 10
+            }
+        }
+        self.area_grid.activate()
+        self.live_events.add_event(event_dict)
+        self.live_events.handle_all_events(self.area_grid)
+
+        strategy = self.area_home_meter.strategy
+        assert set(strategy.offer_update.energy_rate_change_per_update.values()) == {10}
+        assert set(strategy.bid_update.energy_rate_change_per_update.values()) == {-15}
+        assert strategy.bid_update.update_interval.minutes == 10
+        assert strategy.offer_update.update_interval.minutes == 10
 
     def test_update_area_event_is_updating_the_parameters_of_a_pv(self):
         event_dict = {
