@@ -298,21 +298,27 @@ class TwoSidedMarket(OneSidedMarket):
                                       _obj2.seller_origin_id in value) or
                                      (hasattr(_obj2, "seller_id") and
                                       _obj2.seller_id in value))):
-                            """value is a list of area ids"""
+                            assert isinstance(value, list)
                             is_satisfied = False
                             continue
                         if (key == "energy_type" and
-                                _obj2.attributes and
-                                _obj2.attributes.get("energy_type") not in value):
-                            """value is a list of accepted energy types"""
+                                (not _obj2.attributes or
+                                 _obj2.attributes.get("energy_type") not in value)):
+                            assert isinstance(value, list)
+                            is_satisfied = False
+                            continue
+                        if (key == "hashed_identity" and
+                                (not _obj2.attributes or
+                                 _obj2.attributes.get("hashed_identity") != value)):
+                            assert isinstance(value, str)
                             is_satisfied = False
                             continue
 
                         if is_satisfied:
                             """Requirement dict is satisfied."""
                             return
-                    # If no requirement dict is satisfied
-                    raise InvalidBidOfferPair
+                # If no requirement dict is satisfied
+                raise InvalidBidOfferPair
 
         _validate_requirements_satisfied(obj1, obj2)
         _validate_requirements_satisfied(obj2, obj1)

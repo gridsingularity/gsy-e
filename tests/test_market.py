@@ -149,13 +149,25 @@ class TestTwoSidedMarket:
             market.validate_requirements_satisfied(offer, bid)
         bid.buyer_id = "bid_id2"
         market.validate_requirements_satisfied(offer, bid)  # Should not raise any exceptions
-        bid.requirements.append({"energy_type": ["Blue", ]},)
+        bid.requirements.append({"energy_type": ["Grey", ]},)
         with pytest.raises(InvalidBidOfferPair):
-            # should raise an exception as energy_type of offer needs to be in [Blue, ]
+            # should raise an exception as energy_type of offer needs to be in [Grey, ]
             market.validate_requirements_satisfied(offer, bid)
 
         # Adding another requirement that is satisfied, should not raise an exception
         bid.requirements.append({"energy_type": ["Green", ]},)
+        market.validate_requirements_satisfied(offer, bid)
+
+        offer.requirements.append({"hashed_identity": "AreaX"})
+        # Above is an unsatisfied requirement but it will pass anw as
+        # there are other satisfied requirement
+        market.validate_requirements_satisfied(offer, bid)
+        offer.requirements = [{"hashed_identity": "AreaX"}]
+        with pytest.raises(InvalidBidOfferPair):
+            # should raise an exception as hashed_identity requirement of offer isn't satisfied
+            market.validate_requirements_satisfied(offer, bid)
+        bid.attributes["hashed_identity"] = "AreaX"
+        market.validate_requirements_satisfied(offer, bid)
 
     @pytest.mark.parametrize(
         "bid_energy, offer_energy, clearing_rate, selected_energy", [
