@@ -22,8 +22,7 @@ from typing import Dict
 import d3a.constants
 import pytz
 from d3a.d3a_core.util import should_read_profile_from_db
-from d3a_interface.constants_limits import GlobalConfig
-from d3a_interface.constants_limits import TIME_ZONE
+from d3a_interface.constants_limits import GlobalConfig, TIME_ZONE
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import generate_market_slot_list
 from pendulum import DateTime

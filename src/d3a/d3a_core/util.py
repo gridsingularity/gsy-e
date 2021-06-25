@@ -33,6 +33,7 @@ from d3a import setup as d3a_setup
 from d3a.constants import DATE_FORMAT, DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit
+from d3a_interface.enums import BidOfferMatchAlgoEnum
 from d3a_interface.exceptions import D3AException
 from d3a_interface.utils import iterate_over_all_modules, str_to_pendulum_datetime, \
     format_datetime, find_object_of_same_weekday_and_time
@@ -534,3 +535,11 @@ class ExternalTickCounter:
 
 def should_read_profile_from_db(profile_uuid):
     return profile_uuid is not None and d3a.constants.CONNECT_TO_PROFILES_DB
+
+
+def is_external_matching_enabled():
+    """Checks if the bid offer match type is set to external
+    Returns True if both are matched
+    """
+    return (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+            BidOfferMatchAlgoEnum.EXTERNAL.value)

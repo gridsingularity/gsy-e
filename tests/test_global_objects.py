@@ -22,7 +22,7 @@ from d3a.models.area import Area
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
-from d3a.d3a_core.global_objects import ExternalConnectionGlobalStatistics
+from d3a.d3a_core.global_stats import ExternalConnectionGlobalStatistics
 from d3a.models.config import SimulationConfig
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import \

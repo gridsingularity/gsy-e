@@ -24,7 +24,8 @@ import d3a.constants
 from cached_property import cached_property
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
-from d3a.d3a_core.util import TaggedLogWrapper
+from d3a.d3a_core.myco_singleton import bid_offer_matcher
+from d3a.d3a_core.util import TaggedLogWrapper, is_external_matching_enabled
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.events import Events
@@ -35,7 +36,6 @@ from d3a.models.area.throughput_parameters import ThroughputParameters
 from d3a.models.config import SimulationConfig
 from d3a.models.market.blockchain_interface import (
     NonBlockchainInterface, SubstrateBlockchainInterface)
-from d3a.models.myco_matcher import MycoMatcher
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
 from d3a_interface.area_validator import validate_area
@@ -142,7 +142,6 @@ class Area:
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available and self.strategy is None else None
         self.should_update_child_strategies = False
-        self.bid_offer_matcher = MycoMatcher()
         self.external_connection_available = external_connection_available
 
     @property
@@ -392,13 +391,17 @@ class Area:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                 self.dispatcher.publish_market_clearing()
             else:
-                for market in self.all_markets:
-                    bid_offer_pairs = self.bid_offer_matcher.calculate_recommendation(
-                        *market.open_bids_and_offers, self.now)
-                    while bid_offer_pairs:
-                        bid_offer_pairs = self.bid_offer_matcher.calculate_recommendation(
+                if is_external_matching_enabled():
+                    bid_offer_matcher.match_algorithm.area_uuid_markets_mapping.\
+                        update({self.uuid: self.all_markets})
+                else:
+                    for market in self.all_markets:
+                        bid_offer_pairs = bid_offer_matcher.calculate_recommendation(
                             *market.open_bids_and_offers, self.now)
-                        market.match_recommendation(bid_offer_pairs)
+                        while bid_offer_pairs:
+                            bid_offer_pairs = bid_offer_matcher.calculate_recommendation(
+                                *market.open_bids_and_offers, self.now)
+                            market.match_recommendation(bid_offer_pairs)
 
         self.events.update_events(self.now)
 

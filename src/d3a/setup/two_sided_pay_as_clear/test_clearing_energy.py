@@ -20,14 +20,14 @@ from d3a.models.area import Area
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a_interface.constants_limits import ConstSettings
-import d3a.constants
+from d3a_interface.enums import BidOfferMatchAlgoEnum
 
 
 def get_setup(config):
     ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS = True
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-        d3a.constants.BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+        BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
     ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
     ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT = 1
     ConstSettings.IAASettings.MIN_OFFER_AGE = 0

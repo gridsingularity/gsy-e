@@ -23,7 +23,7 @@ from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import key_in_dict_and_not_none
 import d3a.constants
-from d3a.d3a_core.singletons import global_objects
+from d3a.d3a_core.global_objects_singleton import global_objects
 
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))

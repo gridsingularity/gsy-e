@@ -24,6 +24,8 @@ import glob
 import traceback
 from math import isclose
 from copy import deepcopy
+
+from d3a_interface.enums import BidOfferMatchAlgoEnum
 from pendulum import duration, today, from_format
 from behave import given, when, then
 from deepdiff import DeepDiff
@@ -36,7 +38,7 @@ from d3a_interface.utils import convert_W_to_Wh, convert_W_to_kWh, convert_kW_to
 from d3a.models.config import SimulationConfig
 from d3a.d3a_core.simulation import Simulation
 from d3a.d3a_core.util import d3a_path
-from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE, BidOfferMatchAlgoEnum
+from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
 from d3a import constants
 
 
@@ -478,7 +480,7 @@ def create_sim_object(context, scenario):
                                          external_connection_enabled=False)
 
     context.simulation = Simulation(
-        scenario, simulation_config, None, 0, False, duration(), False, False, None, None,
+        scenario, simulation_config, None, 0, False, duration(), False, True, None, None,
         "1234", False
     )
 
@@ -572,7 +574,6 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
     paused = False
     pause_after = duration()
     repl = False
-    no_export = True
     export_path = None
     export_subdir = None
     context.simulation = Simulation(
@@ -583,7 +584,7 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
         paused,
         pause_after,
         repl,
-        no_export,
+        context.no_export,
         export_path,
         export_subdir,
     )

@@ -15,22 +15,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import pytest
+from d3a.d3a_core.user_profile_handler import ProfilesHandler
+from d3a.d3a_core.global_stats import ExternalConnectionGlobalStatistics
 
 
-class Called:
-    def __init__(self):
-        self.calls = []
-
-    def __call__(self, *args, **kwargs):
-        self.calls.append(
-            (
-                tuple(repr(a) for a in args),
-                {k: repr(v) for k, v in kwargs.items()}
-            )
-        )
+class GlobalObjects:
+    profiles_handler = ProfilesHandler()
+    external_global_stats = ExternalConnectionGlobalStatistics()
 
 
-@pytest.fixture
-def called():
-    yield Called()
+global_objects = GlobalObjects()

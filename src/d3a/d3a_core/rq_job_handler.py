@@ -10,6 +10,7 @@ from d3a.d3a_core.simulation import run_simulation
 from d3a.d3a_core.util import available_simulation_scenarios, update_advanced_settings
 from d3a.models.config import SimulationConfig
 from d3a_interface.constants_limits import GlobalConfig, ConstSettings
+from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 from d3a_interface.settings_validators import validate_global_settings
 from pendulum import duration, instance
 
@@ -85,16 +86,23 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
 
         spot_market_type = settings.get('spot_market_type', None)
         if spot_market_type is not None:
-            if spot_market_type == 1:
-                ConstSettings.IAASettings.MARKET_TYPE = spot_market_type
-            if spot_market_type == 2:
-                ConstSettings.IAASettings.MARKET_TYPE = spot_market_type
+            if spot_market_type == SpotMarketTypeEnum.ONE_SIDED.value:
+                ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
+            if spot_market_type == SpotMarketTypeEnum.TWO_SIDED_PAY_AS_BID.value:
+                ConstSettings.IAASettings.MARKET_TYPE = (
+                    SpotMarketTypeEnum.TWO_SIDED_PAY_AS_BID.value)
+                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = (
+                    BidOfferMatchAlgoEnum.PAY_AS_BID.value)
+            if spot_market_type == SpotMarketTypeEnum.TWO_SIDED_PAY_AS_CLEAR.value:
+                ConstSettings.IAASettings.MARKET_TYPE = (
+                    SpotMarketTypeEnum.TWO_SIDED_PAY_AS_BID.value)
                 ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-                    d3a.constants.BidOfferMatchAlgoEnum.PAY_AS_BID.value
-            if spot_market_type == 3:
-                ConstSettings.IAASettings.MARKET_TYPE = 2
+                    BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+            if spot_market_type == SpotMarketTypeEnum.TWO_SIDED_EXTERNAL.value:
+                ConstSettings.IAASettings.MARKET_TYPE = (
+                    SpotMarketTypeEnum.TWO_SIDED_PAY_AS_BID.value)
                 ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-                    d3a.constants.BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+                    BidOfferMatchAlgoEnum.EXTERNAL.value
 
         if scenario is None:
             scenario_name = "default_2a"

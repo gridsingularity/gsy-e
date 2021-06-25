@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from typing import Union
 
 from d3a.d3a_core.exceptions import D3AException
-from d3a.d3a_core.singletons import global_objects
+from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.d3a_core.util import should_read_profile_from_db
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a_interface.constants_limits import ConstSettings

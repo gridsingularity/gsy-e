@@ -19,7 +19,7 @@ import logging
 
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import MarketException
-from d3a.d3a_core.singletons import global_objects
+from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.models.strategy import BaseStrategy, INF_ENERGY
 from d3a_interface.device_validator import validate_commercial_producer
 from d3a_interface.read_user_profile import InputProfileTypes

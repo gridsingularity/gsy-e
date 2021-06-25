@@ -14,7 +14,7 @@ from d3a.models.market.market_structures import Trade, Offer, Bid
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import DATE_TIME_FORMAT
-from d3a.d3a_core.singletons import global_objects
+from d3a.d3a_core.global_objects_singleton import global_objects
 
 d3a.models.strategy.external_strategies.ResettableCommunicator = MagicMock
 

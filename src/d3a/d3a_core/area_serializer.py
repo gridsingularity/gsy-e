@@ -150,7 +150,7 @@ def area_from_dict(description, config):
             area.display_type = description["display_type"]
         return area
     except (json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
-        raise ValueError("Input is not a valid area description (%s)" % str(error))
+        raise ValueError("Input is not a valid area description (%s)" % str(error)) from error
 
 
 def area_from_string(string, config):

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from d3a.d3a_core.singletons import global_objects
+from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.d3a_core.util import write_default_to_dict
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.read_user_profile import InputProfileTypes
