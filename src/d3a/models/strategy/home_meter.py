@@ -538,9 +538,9 @@ class HomeMeterStrategy(BidEnabledStrategy):
         """
         if not self.state.can_buy_more_energy(market.time_slot):
             return
-        if not offer or not market.offers:
+        if not offer and not market.offers:
             return
-        if offer.id not in market.offers:
+        if offer and offer.id not in market.offers:
             return
 
         try:
