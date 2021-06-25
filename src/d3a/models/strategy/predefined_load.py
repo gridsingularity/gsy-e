@@ -19,7 +19,7 @@ from typing import Union
 
 from d3a.d3a_core.exceptions import D3AException
 from d3a.d3a_core.global_objects_singleton import global_objects
-from d3a.d3a_core.util import should_read_profile_from_db
+from d3a.d3a_core.util import should_read_profile_from_db, validate_profile_or_uuid_input
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.read_user_profile import InputProfileTypes
@@ -80,6 +80,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                          balancing_energy_ratio=balancing_energy_ratio,
                          use_market_maker_rate=use_market_maker_rate)
 
+        validate_profile_or_uuid_input(self.area, daily_load_profile, daily_load_profile_uuid)
         self.profile_uuid = daily_load_profile_uuid
         self.load_profile = None
 

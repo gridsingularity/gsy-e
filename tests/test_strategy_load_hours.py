@@ -536,27 +536,6 @@ def test_load_constructor_rejects_incorrect_rate_parameters():
                           energy_rate_increase_per_update=-1)
 
 
-@parameterized.expand([
-    [True, 40, ], [False, 40, ]
-])
-def test_predefined_load_strategy_rejects_incorrect_rate_parameters(use_mmr, initial_buying_rate):
-    user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
-    load = DefinedLoadStrategy(
-        daily_load_profile=user_profile_path,
-        initial_buying_rate=initial_buying_rate,
-        use_market_maker_rate=use_mmr)
-    load.area = FakeArea()
-    load.owner = load.area
-    with pytest.raises(D3ADeviceException):
-        load.event_activate()
-    with pytest.raises(D3ADeviceException):
-        DefinedLoadStrategy(daily_load_profile=user_profile_path, fit_to_limit=True,
-                            energy_rate_increase_per_update=1)
-    with pytest.raises(D3ADeviceException):
-        DefinedLoadStrategy(daily_load_profile=user_profile_path, fit_to_limit=False,
-                            energy_rate_increase_per_update=-1)
-
-
 def test_load_hour_strategy_increases_rate_when_fit_to_limit_is_false(market_test1):
     load = LoadHoursStrategy(avg_power_W=100, initial_buying_rate=0, final_buying_rate=30,
                              fit_to_limit=False, energy_rate_increase_per_update=10,

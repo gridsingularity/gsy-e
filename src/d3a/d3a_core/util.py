@@ -543,3 +543,14 @@ def is_external_matching_enabled():
     """
     return (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
             BidOfferMatchAlgoEnum.EXTERNAL.value)
+
+
+class StrategyProfileConfigurationException(Exception):
+    """Exception raised when neither a profile nor a profile_uuid are provided for a strategy."""
+    pass
+
+
+def validate_profile_or_uuid_input(area_uuid, profile, profile_uuid):
+    if not profile and not profile_uuid:
+        raise StrategyProfileConfigurationException(
+            f"Neither a profile nor a profile_uuid are provided for area with uuid {area_uuid}.")

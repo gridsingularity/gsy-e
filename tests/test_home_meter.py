@@ -16,12 +16,9 @@ not, see <http://www.gnu.org/licenses/>.
 import unittest
 import uuid
 from collections import OrderedDict
-from unittest.mock import Mock, patch
-from unittest.mock import call
-from unittest.mock import create_autospec
+from unittest.mock import Mock, patch, call, create_autospec
 
-from d3a_interface.device_validator import DeviceValidator
-from d3a_interface.device_validator import HomeMeterValidator
+from d3a_interface.device_validator import DeviceValidator, HomeMeterValidator
 from d3a_interface.exceptions import D3AException
 from pendulum import datetime, duration
 
@@ -29,6 +26,7 @@ from d3a.models.area import Area
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.state import HomeMeterState
 from d3a.models.strategy.home_meter import HomeMeterStrategy
+from d3a.d3a_core.util import StrategyProfileConfigurationException
 
 
 # pylint: disable=protected-access
@@ -242,3 +240,7 @@ class HomeMeterStrategyTest(unittest.TestCase):
             slot_time += duration(minutes=15)
 
         return market_mocks
+
+    def test_strategy_raises_strategy_profile_configuration_exception(self):
+        with self.assertRaises(StrategyProfileConfigurationException):
+            HomeMeterStrategy(home_meter_profile=None, home_meter_profile_uuid=None)
