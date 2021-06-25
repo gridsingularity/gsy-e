@@ -47,12 +47,12 @@ class MarketMakerStrategy(CommercialStrategy):
 
         self._grid_connected = grid_connected
 
-        self._read_or_rotate_rate_profiles()
+        self._read_or_rotate_profiles()
 
     def event_activate_price(self):
         pass
 
-    def _read_or_rotate_rate_profiles(self):
+    def _read_or_rotate_profiles(self, reconfigure=False):
         if self.energy_rate_input is None and \
                 self.energy_rate_profile is None and \
                 self.energy_rate_profile_uuid is None:

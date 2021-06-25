@@ -88,7 +88,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         else:
             self._load_profile_input = daily_load_profile
 
-    def _read_or_rotate_rate_profiles(self, reconfigure=False):
+    def _read_or_rotate_profiles(self, reconfigure=False):
         input_profile = self._load_profile_input \
             if reconfigure or not self.load_profile else self.load_profile
         self.load_profile = \
@@ -101,22 +101,15 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         Runs on activate event.
         :return: None
         """
-        self._read_or_rotate_rate_profiles()
+        self._read_or_rotate_profiles()
         super().event_activate_energy()
-
-    def _event_activate_energy(self):
-        """
-        Reads the power profile data and calculates the required energy
-        for each slot.
-        """
-        self._read_or_rotate_rate_profiles()
 
     def _update_energy_requirement_future_markets(self):
         """
         Update required energy values for each market slot.
         :return: None
         """
-        self._read_or_rotate_rate_profiles()
+        self._read_or_rotate_profiles()
 
         for market in self.area.all_markets:
             slot_time = market.time_slot
@@ -146,4 +139,4 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         self._area_reconfigure_prices(**kwargs)
         if key_in_dict_and_not_none(kwargs, 'daily_load_profile'):
             self._load_profile_input = kwargs['daily_load_profile']
-            self._read_or_rotate_rate_profiles(reconfigure=True)
+            self._read_or_rotate_profiles(reconfigure=True)

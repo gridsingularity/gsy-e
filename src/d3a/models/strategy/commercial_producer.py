@@ -38,9 +38,9 @@ class CommercialStrategy(BaseStrategy):
         self.energy_per_slot_kWh = INF_ENERGY
 
     def event_activate(self, **kwargs):
-        self._read_or_rotate_rate_profiles()
+        self._read_or_rotate_profiles()
 
-    def _read_or_rotate_rate_profiles(self):
+    def _read_or_rotate_profiles(self, reconfigure=False):
         if self.energy_rate_input is None:
             self.energy_rate = self.area.config.market_maker_rate
         else:
@@ -60,7 +60,7 @@ class CommercialStrategy(BaseStrategy):
             self._offer_balancing_energy(market)
 
     def event_market_cycle(self):
-        self._read_or_rotate_rate_profiles()
+        self._read_or_rotate_profiles()
         if not self.area.last_past_market:
             # Post new offers only on first time_slot:
             self.place_initial_offers()

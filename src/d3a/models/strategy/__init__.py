@@ -231,7 +231,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     parameters = None
 
-    def _read_or_rotate_rate_profiles(self):
+    def _read_or_rotate_profiles(self, reconfigure=False):
         pass
 
     def energy_traded(self, market_id):

@@ -74,7 +74,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             GlobalConfig.market_maker_rate = \
                 ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
 
-    def _read_or_rotate_rate_profiles(self):
+    def _read_or_rotate_profiles(self, reconfigure=False):
         if self.energy_buy_rate_input is None and \
                 self.buying_rate_profile is None and \
                 self.buying_rate_profile_uuid is None:

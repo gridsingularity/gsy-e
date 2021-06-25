@@ -175,7 +175,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         else:
             self._power_profile_input = power_profile
 
-    def _read_or_rotate_rate_profiles(self, reconfigure=False):
+    def _read_or_rotate_profiles(self, reconfigure=False):
         input_profile = self._power_profile_input \
             if reconfigure or not self.power_profile else self.power_profile
         self.power_profile = \
@@ -188,14 +188,14 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         Reads profile data from the power profile. Handles csv files and dicts.
         :return: key value pairs of time to energy in kWh
         """
-        self._read_or_rotate_rate_profiles()
+        self._read_or_rotate_profiles()
 
     def area_reconfigure_event(self, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
         super().area_reconfigure_event(**kwargs)
         if key_in_dict_and_not_none(kwargs, 'power_profile'):
             self._power_profile_input = kwargs['power_profile']
-        self._read_or_rotate_rate_profiles(reconfigure=True)
+        self._read_or_rotate_profiles(reconfigure=True)
         self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
 
     def event_market_cycle(self):

@@ -123,13 +123,13 @@ class HomeMeterStrategyTest(unittest.TestCase):
         self.strategy.bid_update.set_parameters.assert_not_called()
         self.strategy.offer_update.set_parameters.assert_not_called()
 
-    @patch("d3a.models.strategy.home_meter.read_arbitrary_profile")
-    def test_set_energy_forecast_for_future_markets(self, read_arbitrary_profile_mock):
+    @patch("d3a.d3a_core.global_objects_singleton.global_objects.profiles_handler.rotate_profile")
+    def test_set_energy_forecast_for_future_markets(self, rotate_profile_mock):
         """The consumption/production expectations for the upcoming market slots are correctly set.
 
         This method is private, but we test it to avoid duplication and because of its complexity.
         """
-        read_arbitrary_profile_mock.return_value = self._create_profile_mock()
+        rotate_profile_mock.return_value = self._create_profile_mock()
         # We want to iterate over some area markets, so we create mocks for them
         market_mocks = self._create_market_mocks(3)
         self.strategy.area.all_markets = market_mocks
@@ -153,17 +153,17 @@ class HomeMeterStrategyTest(unittest.TestCase):
         self.strategy.state.update_total_demanded_energy.assert_has_calls([
             call(market_slot.time_slot) for market_slot in market_mocks])
 
-    @patch("d3a.models.strategy.home_meter.read_arbitrary_profile")
-    def test_set_energy_forecast_for_future_markets_no_profile(self, read_arbitrary_profile_mock):
+    @patch("d3a.d3a_core.global_objects_singleton.global_objects.profiles_handler.rotate_profile")
+    def test_set_energy_forecast_for_future_markets_no_profile(self, rotate_profile_mock):
         """Consumption/production expectations can't be set without an energy profile."""
-        read_arbitrary_profile_mock.return_value = None
+        rotate_profile_mock.return_value = None
         with self.assertRaises(D3AException):
             self.strategy._set_energy_forecast_for_future_markets(reconfigure=True)
 
-    @patch("d3a.models.strategy.home_meter.read_arbitrary_profile")
-    def test_event_activate_energy(self, read_arbitrary_profile_mock):
+    @patch("d3a.d3a_core.global_objects_singleton.global_objects.profiles_handler.rotate_profile")
+    def test_event_activate_energy(self, rotate_profile_mock):
         """event_activate_energy calls the expected state interface methods."""
-        read_arbitrary_profile_mock.return_value = self._create_profile_mock()
+        rotate_profile_mock.return_value = self._create_profile_mock()
         self.strategy._set_energy_forecast_for_future_markets = Mock()
 
         self.strategy.event_activate_energy()
