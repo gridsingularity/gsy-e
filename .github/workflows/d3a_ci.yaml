@@ -22,3 +22,9 @@ jobs:
         export LD_LIBRARY_PATH=$HOME/solc/usr/lib:$LD_LIBRARY_PATH
         pip install tox
         tox -e $TOXENV --verbose
+
+    - name: Check coverage with Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        fail_ci_if_error: true
+        verbose: true
