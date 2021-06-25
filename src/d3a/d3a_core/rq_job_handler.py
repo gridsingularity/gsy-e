@@ -87,7 +87,6 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
         config = SimulationConfig(**config_settings)
 
         spot_market_type = settings.get('spot_market_type', None)
-        spot_market_type = SpotMarketTypeEnum.TWO_SIDED_EXTERNAL.value
         if spot_market_type is not None:
             if spot_market_type == SpotMarketTypeEnum.ONE_SIDED.value:
                 ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value

@@ -27,7 +27,6 @@ class MycoMatcher:
         :raises:
             WrongMarketTypeException
         """
-        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.EXTERNAL.value
         if (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
                 BidOfferMatchAlgoEnum.PAY_AS_BID.value):
             return PayAsBidMatcher()
