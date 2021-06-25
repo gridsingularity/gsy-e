@@ -22,6 +22,7 @@ from math import isclose
 from typing import Union, List, Dict  # noqa
 
 from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.models.market.market_validators import RequirementsSatisfiedChecker
 from d3a_interface.constants_limits import ConstSettings
 
 from d3a.d3a_core.exceptions import (BidNotFound, InvalidBid, InvalidTrade, MarketException,
@@ -42,7 +43,7 @@ class TwoSidedMarket(OneSidedMarket):
     (exactly the same way as on the one-sided market case), but also allows the consumers
     to place energy bids on their respective markets.
     Contrary to the one sided market, where the offers are selected directly by the consumers,
-     the offers and bids are matched by the inter area agents.
+     the offers and bids are matched by the myco matcher.
     """
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
@@ -278,50 +279,16 @@ class TwoSidedMarket(OneSidedMarket):
                 )
 
     @staticmethod
-    def validate_requirements_satisfied(obj1: Union[Offer, Bid], obj2: Union[Offer, Bid]) -> None:
+    def validate_requirements_satisfied(offer: Offer, bid: Bid) -> None:
         """Validate if both trade parties satisfy each other's requirements.
 
         :raises:
             InvalidBidOfferPair: Bid offer pair failed the validation
         """
-        def _validate_requirements_satisfied(_obj1: Union[Offer, Bid], _obj2: Union[Offer, Bid]):
-            if _obj1.requirements:
-                for requirement in _obj1.requirements:
-                    is_satisfied = True
-                    for key, value in requirement.items():
-                        if (key == "preferred_trading_partner" and
-                                not ((hasattr(_obj2, "buyer_origin_id") and
-                                      _obj2.buyer_origin_id in value) or
-                                     (hasattr(_obj2, "buyer_id") and
-                                      _obj2.buyer_id in value) or
-                                     (hasattr(_obj2, "seller_origin_id") and
-                                      _obj2.seller_origin_id in value) or
-                                     (hasattr(_obj2, "seller_id") and
-                                      _obj2.seller_id in value))):
-                            assert isinstance(value, list)
-                            is_satisfied = False
-                            continue
-                        if (key == "energy_type" and
-                                (not _obj2.attributes or
-                                 _obj2.attributes.get("energy_type") not in value)):
-                            assert isinstance(value, list)
-                            is_satisfied = False
-                            continue
-                        if (key == "hashed_identity" and
-                                (not _obj2.attributes or
-                                 _obj2.attributes.get("hashed_identity") != value)):
-                            assert isinstance(value, str)
-                            is_satisfied = False
-                            continue
-
-                        if is_satisfied:
-                            """Requirement dict is satisfied."""
-                            return
-                # If no requirement dict is satisfied
-                raise InvalidBidOfferPair
-
-        _validate_requirements_satisfied(obj1, obj2)
-        _validate_requirements_satisfied(obj2, obj1)
+        if ((offer.requirements or bid.requirements) and
+                not RequirementsSatisfiedChecker.is_satisfied(offer, bid)):
+            # If no requirement dict is satisfied
+            raise InvalidBidOfferPair
 
     @classmethod
     def validate_authentic_bid_offer_pair(

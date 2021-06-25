@@ -107,7 +107,9 @@ class Offer:
                 self.price == other.price and
                 self.original_offer_price == other.original_offer_price and
                 self.energy == other.energy and
-                self.seller == other.seller)
+                self.seller == other.seller and
+                self.attributes == other.attributes and
+                self.requirements == other.requirements)
 
     @classmethod
     def _csv_fields(cls):
@@ -193,6 +195,18 @@ class Bid:
             "attributes": self.attributes,
             "requirements": self.requirements
         }
+
+    def __hash__(self):
+        return hash(self.id)
+
+    def __eq__(self, other):
+        return (self.id == other.id and
+                self.price == other.price and
+                self.original_bid_price == other.original_bid_price and
+                self.energy == other.energy and
+                self.buyer == other.buyer and
+                self.attributes == other.attributes and
+                self.requirements == other.requirements)
 
 
 def offer_or_bid_from_json_string(offer_or_bid, current_time=None):

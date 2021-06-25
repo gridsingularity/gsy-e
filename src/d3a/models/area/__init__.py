@@ -220,7 +220,7 @@ class Area:
                         )
 
         except Exception as ex:
-            log.error(str(ex))
+            log.error(ex)
             return
 
         self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
@@ -405,8 +405,8 @@ class Area:
                 self.dispatcher.publish_market_clearing()
             else:
                 if is_external_matching_enabled():
-                    (bid_offer_matcher.match_algorithm.update_area_uuid_markets_mapping(
-                        {self.uuid: self.all_markets}))
+                    bid_offer_matcher.match_algorithm.update_area_uuid_markets_mapping(
+                        {self.uuid: self.all_markets})
                 else:
                     for market in self.all_markets:
                         bid_offer_pairs = bid_offer_matcher.calculate_recommendation(
@@ -427,7 +427,7 @@ class Area:
             child.update_area_current_tick()
 
     def tick_and_dispatch(self):
-        """Invokes tick handler and broadcast the event to children."""
+        """Invoke tick handler and broadcast the event to children."""
         if d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP:
             self.dispatcher.broadcast_tick()
             self.tick()

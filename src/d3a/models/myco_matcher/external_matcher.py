@@ -26,38 +26,49 @@ class ExternalMatcher(BaseMatcher):
     def _setup_redis_connection(self):
         self.myco_ext_conn = ResettableCommunicator()
         self.myco_ext_conn.sub_to_multiple_channels(
-            {"external-myco/get-simulation-id": self.get_simulation_id,
+            {"external-myco/get-simulation-id": self.publish_simulation_id,
              f"{self.channel_prefix}offers-bids/": self.publish_offers_bids,
              f"{self.channel_prefix}post-recommendations/": self.match_recommendations})
 
     def publish_offers_bids(self, message):
         """Publish open offers and bids.
 
-        published data are of the following format
-        market_offers_bids_list_mapping = {"market_id" : {"bids": [], "offers": [] }, }
+        published data are of the following format:
+            {"bids_offers": {`market_id` : {"bids": [], "offers": [] }, }}
         """
         response_data = {"event": "offers_bids_response"}
         data = json.loads(message.get("data"))
         filters = data.get("filters", {})
         # IDs of markets the client is interested in
-        market_ids_in_interest = filters.get("markets", None)
+        filtered_market_ids = filters.get("markets", None)
+        filtered_offers_energy_type = filters.get("energy_type", None)
         market_offers_bids_list_mapping = {}
         for area_uuid, markets in self.area_uuid_markets_mapping.items():
-            if market_ids_in_interest and area_uuid not in market_ids_in_interest:
+            if filtered_market_ids and area_uuid not in filtered_market_ids:
                 # Client is uninterested in the market -> skip
                 continue
             for market in markets:
                 # Cache the market (needed while matching)
                 self.markets_mapping[market.id] = market
-
                 market_offers_bids_list_mapping[market.id] = {"bids": [], "offers": []}
                 bids, offers = market.open_bids_and_offers
+                bids_list = list(bid.serializable_dict() for bid in bids.values())
+
+                if filtered_offers_energy_type:
+                    offers_list = list(
+                        offer.serializable_dict() for offer in offers.values()
+                        if offer.attributes and
+                        offer.attributes.get("energy_type") == filtered_offers_energy_type)
+                else:
+                    offers_list = list(
+                        offer.serializable_dict() for offer in offers.values())
+
                 market_offers_bids_list_mapping[market.id]["bids"].extend(
-                    list(bid.serializable_dict() for bid in bids.values()))
+                    bids_list)
                 market_offers_bids_list_mapping[market.id]["offers"].extend(
-                    list(offer.serializable_dict() for offer in offers.values()))
+                    offers_list)
         response_data.update({
-            "orders": market_offers_bids_list_mapping,
+            "bids_offers": market_offers_bids_list_mapping,
         })
 
         channel = f"{self.channel_prefix}response/offers-bids/"
@@ -78,36 +89,38 @@ class ExternalMatcher(BaseMatcher):
             if market is None or market.readonly:
                 # The market is already finished or doesn't exist
                 continue
-
             bid = offer_or_bid_from_json_string(json.dumps(record.get("bid")))
             offer = offer_or_bid_from_json_string(json.dumps(record.get("offer")),
                                                   record.get("bid").get("time"))
 
             try:
-                market.validate_authentic_bid_offer_pair(
-                    bid,
-                    offer,
-                    record.get("trade_rate"),
-                    record.get("selected_energy")
-                    )
-
                 if not (offer.id in market.offers and bid.id in market.bids):
                     # Offer or Bid either don't belong to market or were already matched
                     raise InvalidBidOfferPair
 
+                # Get the original bid and offer from the market
+                market_bid = market.bids.get(bid.id)
+                market_offer = market.offers.get(offer.id)
+
+                market.validate_authentic_bid_offer_pair(
+                    market_bid,
+                    market_offer,
+                    record.get("trade_rate"),
+                    record.get("selected_energy")
+                    )
                 if record.get("market_id") not in validated_records:
                     validated_records[record.get("market_id")] = []
 
                 validated_records[record.get("market_id")].append(BidOfferMatch(
-                    bid,
+                    market_bid,
                     record.get("selected_energy"),
-                    offer,
+                    market_offer,
                     record.get("trade_rate")))
-            except InvalidBidOfferPair as ex:
+            except InvalidBidOfferPair:
                 # If validation fails or offer/bid were consumed
                 response_dict["status"] = "fail"
                 response_dict["message"] = "Validation Error"
-                logging.exception(f"Bid offer pair validation failed with error {ex}")
+                logging.exception("Bid offer pair validation failed.")
                 break
 
         if response_dict["status"] == "success":
@@ -119,7 +132,7 @@ class ExternalMatcher(BaseMatcher):
                 market.match_recommendation(records)
         self.myco_ext_conn.publish_json(channel, response_dict)
 
-    def get_simulation_id(self, message):
+    def publish_simulation_id(self, message):
         """Publish the simulation id to the redis myco client.
 
         At the moment the id of the simulations run by the cli is set as ""
