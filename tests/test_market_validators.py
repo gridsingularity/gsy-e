@@ -1,9 +1,10 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from d3a.models.market import Offer, Bid
-from d3a.models.market.market_validators import PreferredPartnersRequirement, \
-    EnergyTypeRequirement, HashedIdentityRequirement, RequirementsSatisfiedChecker
+from d3a.models.market.market_validators import (PreferredPartnersRequirement,
+                                                 EnergyTypeRequirement, HashedIdentityRequirement,
+                                                 RequirementsSatisfiedChecker)
 from pendulum import now
 
 
@@ -76,21 +77,18 @@ class TestRequirementsValidator:
         bid.requirements = [requirement]
         assert HashedIdentityRequirement.is_satisfied(offer, bid, requirement) is True
 
+    @patch("d3a.models.market.market_validators.PreferredPartnersRequirement.is_satisfied",
+           MagicMock())
+    @patch("d3a.models.market.market_validators.HashedIdentityRequirement.is_satisfied",
+           MagicMock())
     def test_requirements_validator(self, offer, bid):
-        # should pass as no bid and offer have no requirements
-        # assert RequirementsSatisfiedChecker.is_satisfied(offer, bid) is True
-
-        offer.requirements = [{"preferred_trading_partners": ["x"]}]
-        assert RequirementsSatisfiedChecker.is_satisfied(offer, bid) is False
         # Empty requirement, should be satisfied
-        offer.requirements.append({})
+        offer.requirements = [{}]
         assert RequirementsSatisfiedChecker.is_satisfied(offer, bid) is True
 
         offer.requirements = [{"preferred_trading_partners": ["x"]}]
-        PreferredPartnersRequirement.is_satisfied = MagicMock()
         RequirementsSatisfiedChecker.is_satisfied(offer, bid)
         PreferredPartnersRequirement.is_satisfied.assert_called_once()
-        HashedIdentityRequirement.is_satisfied = MagicMock()
         offer.requirements = [{"hashed_identity": "x"}]
         RequirementsSatisfiedChecker.is_satisfied(offer, bid)
         # Should not be called as the offer doesn't support hashed_identity requirement
