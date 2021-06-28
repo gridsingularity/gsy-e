@@ -49,7 +49,6 @@ class ProfileDBConnectionHandler:
         profile_type = Required(int)  # values of InputProfileTypes
 
     def __init__(self):
-        # self._profile_uuid_type_mapping = {}
         self._user_profiles = {}
         self._buffered_times = []
         self._profile_uuids = None

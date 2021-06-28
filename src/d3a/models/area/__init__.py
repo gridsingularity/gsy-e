@@ -473,10 +473,6 @@ class Area:
             seconds=self.config.tick_length.seconds * self.current_tick
         )
 
-    # @property
-    # def next_market_slot(self):
-    #     return self.now.add(seconds=self.config.slot_length.seconds)
-
     @property
     def all_markets(self):
         return [m for m in self._markets.markets.values() if m.in_sim_duration]
