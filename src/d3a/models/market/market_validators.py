@@ -64,7 +64,12 @@ class HashedIdentityRequirement(Requirement):
 
 # Supported offers/bids requirements
 # To add a new requirement create a class extending the Requirement abstract class and add it below
-SUPPORTED_REQUIREMENTS_MAPPING = {
+
+SUPPORTED_OFFER_REQUIREMENTS = {
+    "preferred_trading_partners": PreferredPartnersRequirement
+}
+
+SUPPORTED_BID_REQUIREMENTS = {
     "preferred_trading_partners": PreferredPartnersRequirement,
     "energy_type": EnergyTypeRequirement,
     "hashed_identity": HashedIdentityRequirement
@@ -85,13 +90,15 @@ class RequirementsSatisfiedChecker:
         bid_requirement_satisfied = True if not bid_requirements else False
 
         for requirement in offer_requirements:
-            if all(SUPPORTED_REQUIREMENTS_MAPPING[key].is_satisfied(offer, bid, requirement)
+            if all(key in SUPPORTED_OFFER_REQUIREMENTS
+                   and SUPPORTED_OFFER_REQUIREMENTS[key].is_satisfied(offer, bid, requirement)
                     for key in requirement):
                 offer_requirement_satisfied = True
                 break
 
         for requirement in bid_requirements:
-            if all(SUPPORTED_REQUIREMENTS_MAPPING[key].is_satisfied(offer, bid, requirement)
+            if all(key in SUPPORTED_BID_REQUIREMENTS
+                   and SUPPORTED_BID_REQUIREMENTS[key].is_satisfied(offer, bid, requirement)
                    for key in requirement):
                 bid_requirement_satisfied = True
                 break

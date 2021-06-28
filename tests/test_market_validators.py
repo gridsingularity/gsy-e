@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import pytest
 from d3a.models.market import Offer, Bid
 from d3a.models.market.market_validators import PreferredPartnersRequirement, \
@@ -79,11 +81,21 @@ class TestRequirementsValidator:
         # assert RequirementsSatisfiedChecker.is_satisfied(offer, bid) is True
 
         offer.requirements = [{"preferred_trading_partners": ["x"]}]
-        # assert RequirementsSatisfiedChecker.is_satisfied(offer, bid) is False
+        assert RequirementsSatisfiedChecker.is_satisfied(offer, bid) is False
         # Empty requirement, should be satisfied
         offer.requirements.append({})
         assert RequirementsSatisfiedChecker.is_satisfied(offer, bid) is True
 
         offer.requirements = [{"preferred_trading_partners": ["x"]}]
-        bid.buyer_origin_id = "x"
-        assert RequirementsSatisfiedChecker.is_satisfied(offer, bid) is True
+        PreferredPartnersRequirement.is_satisfied = MagicMock()
+        RequirementsSatisfiedChecker.is_satisfied(offer, bid)
+        PreferredPartnersRequirement.is_satisfied.assert_called_once()
+        HashedIdentityRequirement.is_satisfied = MagicMock()
+        offer.requirements = [{"hashed_identity": "x"}]
+        RequirementsSatisfiedChecker.is_satisfied(offer, bid)
+        # Should not be called as the offer doesn't support hashed_identity requirement
+        assert not HashedIdentityRequirement.is_satisfied.called
+        bid.requirements = [{"hashed_identity": "x"}]
+        HashedIdentityRequirement.is_satisfied = MagicMock()
+        RequirementsSatisfiedChecker.is_satisfied(offer, bid)
+        HashedIdentityRequirement.is_satisfied.assert_called_once()
