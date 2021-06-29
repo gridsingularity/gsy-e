@@ -41,8 +41,8 @@ class TestMycoExternalMatcher(unittest.TestCase):
         self.matcher.myco_ext_conn.sub_to_multiple_channels.assert_called_once_with(
             {
                 "external-myco/get-simulation-id": self.matcher.publish_simulation_id,
-                f"{self.matcher.channel_prefix}offers-bids/": self.matcher.publish_offers_bids,
-                f"{self.matcher.channel_prefix}post-recommendations/":
+                f"{self.channel_prefix}offers-bids/": self.matcher.publish_offers_bids,
+                f"{self.channel_prefix}post-recommendations/":
                     self.matcher.match_recommendations
             }
         )

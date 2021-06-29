@@ -82,12 +82,12 @@ class RequirementsSatisfiedChecker:
     @classmethod
     def is_satisfied(cls, offer: Offer, bid: Bid) -> bool:
         """Receive offer and bid and validate that at least 1 requirement is satisfied."""
-        offer_requirements = getattr(offer, "requirements") or []
-        bid_requirements = getattr(bid, "requirements") or []
+        offer_requirements = offer.requirements or []
+        bid_requirements = bid.requirements or []
 
         # If a bid of offer has no requirements, consider it as satisfied.
-        offer_requirement_satisfied = True if not offer_requirements else False
-        bid_requirement_satisfied = True if not bid_requirements else False
+        offer_requirement_satisfied = not offer_requirements
+        bid_requirement_satisfied = not bid_requirements
 
         for requirement in offer_requirements:
             if all(key in SUPPORTED_OFFER_REQUIREMENTS
