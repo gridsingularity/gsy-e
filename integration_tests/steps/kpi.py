@@ -36,6 +36,7 @@ def test_export_of_kpi_result(context, kpi, expected_kpis):
                                           "aggregated_results", "kpi.json"))
     with open(sim_data_csv[0], "r") as sf:
         kpi_data = json.load(sf)
+    print(f"kpi_data: {kpi_data}")
     expected_kpis = ast.literal_eval(expected_kpis)
     for area, value in expected_kpis.items():
         area_uuid = name_uuid_map[area]
@@ -66,4 +67,7 @@ def test_export_of_kpi_result(context, kpi, expected_kpis):
                            float(value), abs_tol=1e-03)
         elif kpi == "total_self_consumption_wh":
             assert isclose(kpi_data[area_uuid]['total_self_consumption_wh'],
+                           float(value), abs_tol=1e-03)
+        elif kpi == "saving_percentage":
+            assert isclose(kpi_data[area_uuid]["saving_percentage"],
                            float(value), abs_tol=1e-03)
