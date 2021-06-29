@@ -35,7 +35,7 @@ class OfferNotFoundException(MarketException):
     pass
 
 
-class BidNotFound(MarketException):
+class BidNotFoundException(MarketException):
     pass
 
 

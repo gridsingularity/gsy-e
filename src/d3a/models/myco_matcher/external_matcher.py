@@ -3,7 +3,8 @@ import logging
 from typing import Dict, List
 
 import d3a.constants
-from d3a.d3a_core.exceptions import InvalidBidOfferPair
+from d3a.d3a_core.exceptions import InvalidBidOfferPair, OfferNotFoundException, \
+    BidNotFoundException
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
 from d3a.models.market import Market
 from d3a.models.market.market_structures import BidOfferMatch
@@ -77,7 +78,11 @@ class ExternalMatcher(BaseMatcher):
                 if market.readonly:
                     # The market has just finished
                     continue
-                market.match_recommendation(records)
+                try:
+                    market.match_recommendation(records)
+                except (OfferNotFoundException, BidNotFoundException):
+                    # If the offer or bid have just been consumed
+                    continue
         except InvalidBidOfferPair:
             response_data["status"] = "fail"
             response_data["message"] = "Validation Error"

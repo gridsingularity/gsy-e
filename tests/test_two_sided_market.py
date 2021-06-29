@@ -2,7 +2,8 @@ from math import isclose
 from unittest.mock import MagicMock
 
 import pytest
-from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidBidOfferPair, InvalidTrade
+from d3a.d3a_core.exceptions import (
+    BidNotFoundException, InvalidBid, InvalidBidOfferPair, InvalidTrade)
 from d3a.events import MarketEvent
 from d3a.models.market import Bid, Offer
 from d3a.models.market.market_structures import TradeBidOfferInfo
@@ -147,7 +148,7 @@ class TestTwoSidedMarket:
         assert bid.id not in market.bids
 
     def test_market_bid_delete_missing(self, market: TwoSidedMarket):
-        with pytest.raises(BidNotFound):
+        with pytest.raises(BidNotFoundException):
             market.delete_bid("no such offer")
 
     def test_double_sided_pay_as_clear_market_works_with_floats(self, pac_market):
@@ -183,7 +184,7 @@ class TestTwoSidedMarket:
         trade_offer_info = TradeBidOfferInfo(2, 2, 1, 1, 2)
         assert market.accept_bid(bid, 10, "B", trade_offer_info=trade_offer_info)
 
-        with pytest.raises(BidNotFound):
+        with pytest.raises(BidNotFoundException):
             market.accept_bid(bid, 10, "B", trade_offer_info=trade_offer_info)
 
     def test_market_trade_bid_partial(

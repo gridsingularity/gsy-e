@@ -25,8 +25,9 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.models.market.market_validators import RequirementsSatisfiedChecker
 from d3a_interface.constants_limits import ConstSettings
 
-from d3a.d3a_core.exceptions import (BidNotFound, InvalidBid, InvalidTrade, MarketException,
-                                     InvalidBidOfferPair)
+from d3a.d3a_core.exceptions import (
+    BidNotFoundException, InvalidBid, InvalidTrade, MarketException,
+    InvalidBidOfferPair)
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market import lock_market_action
@@ -108,7 +109,7 @@ class TwoSidedMarket(OneSidedMarket):
             bid_or_id = bid_or_id.id
         bid = self.bids.pop(bid_or_id, None)
         if not bid:
-            raise BidNotFound(bid_or_id)
+            raise BidNotFoundException(bid_or_id)
         log.debug(f"[BID][DEL][{self.time_slot_str}] {bid}")
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
@@ -172,7 +173,7 @@ class TwoSidedMarket(OneSidedMarket):
                    seller_origin_id=None, seller_id=None):
         market_bid = self.bids.pop(bid.id, None)
         if market_bid is None:
-            raise BidNotFound("During accept bid: " + str(bid))
+            raise BidNotFoundException("During accept bid: " + str(bid))
 
         buyer = market_bid.buyer if buyer is None else buyer
 
@@ -196,7 +197,8 @@ class TwoSidedMarket(OneSidedMarket):
             try:
                 self.bids.pop(accepted_bid.id)
             except KeyError:
-                raise BidNotFound(f"Bid {accepted_bid.id} not found in self.bids ({self.name}).")
+                raise BidNotFoundException(
+                    f"Bid {accepted_bid.id} not found in self.bids ({self.name}).")
         else:
             # full bid trade, nothing further to do here
             pass
