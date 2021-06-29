@@ -303,7 +303,7 @@ class TwoSidedMarket(OneSidedMarket):
                 (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= clearing_rate and
                 (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= offer.energy_rate):
             raise InvalidBidOfferPair
-        cls.validate_requirements_satisfied(bid, offer)
+        cls.validate_requirements_satisfied(offer, bid)
 
     @classmethod
     def _replace_offers_bids_with_residual_in_matching_list(

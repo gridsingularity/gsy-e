@@ -1,11 +1,11 @@
-from unittest.mock import MagicMock, patch
-
 import pytest
-from d3a.models.market import Offer, Bid
-from d3a.models.market.market_validators import (PreferredPartnersRequirement,
-                                                 EnergyTypeRequirement, HashedIdentityRequirement,
-                                                 RequirementsSatisfiedChecker)
 from pendulum import now
+from unittest.mock import MagicMock, patch
+from d3a.models.market import Bid, Offer
+from d3a.models.market.market_validators import (
+    EnergyTypeRequirement, HashedIdentityRequirement,
+    PreferredPartnersRequirement,
+    RequirementsSatisfiedChecker)
 
 
 @pytest.fixture

@@ -341,7 +341,7 @@ class Simulation:
                 external_global_statistics.update(market_cycle=True)
                 self.area.publish_market_cycle_to_external_clients()
                 if is_external_matching_enabled():
-                    bid_offer_matcher.match_algorithm.publish_market_cycle_myco()
+                    bid_offer_matcher.match_algorithm.publish_event_market_myco()
 
             self._update_and_send_results()
             self.live_events.handle_all_events(self.area)
