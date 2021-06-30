@@ -21,10 +21,11 @@ from logging import getLogger
 from typing import Union, Dict  # NOQA
 
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.device_validator import validate_load_device_price, validate_load_device_energy
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import (
     convert_W_to_Wh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
+from d3a_interface.validators.load_validator import (
+    validate_load_device_price, validate_load_device_energy)
 from numpy import random
 from pendulum import duration
 from pendulum.datetime import DateTime

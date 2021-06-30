@@ -20,10 +20,11 @@ import traceback
 from logging import getLogger
 
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.device_validator import validate_pv_device_energy, validate_pv_device_price
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import (
     convert_W_to_kWh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
+from d3a_interface.validators.pv_validator import (
+    validate_pv_device_energy, validate_pv_device_price)
 from pendulum import duration, Time  # noqa
 
 from d3a import constants

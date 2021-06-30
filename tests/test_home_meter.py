@@ -20,9 +20,9 @@ from unittest.mock import Mock, patch
 from unittest.mock import call
 from unittest.mock import create_autospec
 
-from d3a_interface.device_validator import DeviceValidator
-from d3a_interface.device_validator import HomeMeterValidator
 from d3a_interface.exceptions import D3AException
+from d3a_interface.validators.device_validator import DeviceValidator
+from d3a_interface.validators.home_meter_validator import HomeMeterValidator
 from pendulum import datetime, duration
 
 from d3a.models.area import Area
