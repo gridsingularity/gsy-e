@@ -1,5 +1,4 @@
 import json
-import unittest
 import pytest
 from pendulum import now
 from unittest.mock import MagicMock, patch
@@ -14,10 +13,10 @@ d3a.models.myco_matcher.external_matcher.BlockingCommunicator = MagicMock
 d3a.models.myco_matcher.external_matcher.ResettableCommunicator = MagicMock
 
 
-class TestMycoExternalMatcher(unittest.TestCase):
+class TestMycoExternalMatcher:
 
     @classmethod
-    def setUpClass(cls):
+    def setup_class(cls):
         cls.matcher = ExternalMatcher()
         cls.market = TwoSidedMarket(time_slot=now())
         cls.matcher.markets_mapping = {cls.market.id: cls.market}
@@ -27,7 +26,7 @@ class TestMycoExternalMatcher(unittest.TestCase):
         cls.response_channel = f"{cls.channel_prefix}/response"
         cls.events_channel = f"{cls.response_channel}/events/"
 
-    def setUp(self):
+    def setup_method(self, method):
         self.matcher.myco_ext_conn.publish_json.reset_mock()
 
     def _populate_market_bids_offers(self):
@@ -75,7 +74,7 @@ class TestMycoExternalMatcher(unittest.TestCase):
         mapping_dict = {"areax": [self.market]}
         self.matcher.area_uuid_markets_mapping = {}
         self.matcher.update_area_uuid_markets_mapping({"areax": [self.market]})
-        self.assertEqual(mapping_dict, self.matcher.area_uuid_markets_mapping)
+        assert mapping_dict == self.matcher.area_uuid_markets_mapping
 
     def test_get_bids_offers(self):
         self._populate_market_bids_offers()
@@ -84,14 +83,12 @@ class TestMycoExternalMatcher(unittest.TestCase):
         expected_offers_list = list(offer.serializable_dict() for offer in offers.values())
 
         actual_bids_list, actual_offers_list = self.matcher._get_bids_offers(self.market, {})
-        self.assertEqual(
-            (expected_bids_list, expected_offers_list), (actual_bids_list, actual_offers_list))
+        assert (expected_bids_list, expected_offers_list) == (actual_bids_list, actual_offers_list)
 
         filters = {"energy_type": "Green"}
         # Offers which don't have attributes or of different energy type will be filtered out
         actual_bids_list, actual_offers_list = self.matcher._get_bids_offers(self.market, filters)
-        self.assertEqual(
-            (expected_bids_list, []), (actual_bids_list, actual_offers_list))
+        assert (expected_bids_list, []) == (actual_bids_list, actual_offers_list)
 
         list(offers.values())[0].attributes = {"energy_type": "Green"}
         actual_bids_list, actual_offers_list = self.matcher._get_bids_offers(self.market, filters)
@@ -99,8 +96,7 @@ class TestMycoExternalMatcher(unittest.TestCase):
         expected_offers_list = list(
             offer.serializable_dict() for offer in offers.values()
             if offer.attributes and offer.attributes.get("energy_type") == "Green")
-        self.assertEqual(
-            (expected_bids_list, expected_offers_list), (actual_bids_list, actual_offers_list))
+        assert (expected_bids_list, expected_offers_list) == (actual_bids_list, actual_offers_list)
 
     @patch("d3a.models.myco_matcher.external_matcher.ExternalMatcher."
            "_get_bids_offers", MagicMock(return_value=([], [])))
@@ -154,20 +150,20 @@ class TestMycoExternalMatcher(unittest.TestCase):
                 "selected_energy": 1}
         ]
         validated_records = self.matcher._get_validated_bid_offer_match_list(records)
-        self.assertTrue(isinstance(validated_records, dict))
-        self.assertTrue(self.market.id in validated_records)
-        self.assertEqual(len(validated_records[self.market.id]), 2)
+        assert isinstance(validated_records, dict)
+        assert self.market.id in validated_records
+        assert len(validated_records[self.market.id]) == 2
         # should be called once for each record
-        self.assertEqual(self.market.validate_authentic_bid_offer_pair.call_count, 2)
+        assert self.market.validate_authentic_bid_offer_pair.call_count == 2
 
         # If the market is readonly, it should be skipped
         self.market.readonly = True
         self.market.validate_authentic_bid_offer_pair.reset_mock()
         validated_records = self.matcher._get_validated_bid_offer_match_list(records)
-        self.assertTrue(isinstance(validated_records, dict))
-        self.assertFalse(self.market.id in validated_records)
+        assert isinstance(validated_records, dict)
+        assert self.market.id not in validated_records
         # should not be called
-        self.assertFalse(self.market.validate_authentic_bid_offer_pair.called)
+        assert not self.market.validate_authentic_bid_offer_pair.called
 
         # If either the bid or offer do not exist in the market, raise an exception
         self.market.readonly = False
@@ -175,7 +171,7 @@ class TestMycoExternalMatcher(unittest.TestCase):
         records[0]["bid"]["id"] = "random_id"
         with pytest.raises(InvalidBidOfferPair):
             validated_records = self.matcher._get_validated_bid_offer_match_list(records)
-            self.assertIsNone(validated_records)
+            assert validated_records is None
 
     @patch("d3a.models.myco_matcher.external_matcher.ExternalMatcher."
            "_get_validated_bid_offer_match_list", MagicMock())
