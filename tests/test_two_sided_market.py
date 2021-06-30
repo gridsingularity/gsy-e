@@ -66,7 +66,7 @@ class TestTwoSidedMarket:
         "bid_energy, offer_energy, clearing_rate, selected_energy", [
             (2, 3, 2, 2.5),
             (3, 2, 2, 2.5),
-            (2, 2, 2 / 2 + 1, 2),
+            (2, 2, 2, 2),
             (2, 2.5, 2, 2),
         ])
     def test_validate_authentic_bid_offer_pair_raises_exception(

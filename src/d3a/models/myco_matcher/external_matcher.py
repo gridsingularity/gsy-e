@@ -43,17 +43,17 @@ class ExternalMatcher(BaseMatcher):
         data = json.loads(message.get("data"))
         filters = data.get("filters", {})
         # IDs of markets (Areas) the client is interested in
-        filtered_area_ids = filters.get("markets", None)
+        filtered_market_ids = filters.get("markets", None)
         market_offers_bids_list_mapping = {}
-        for area_id, market_slots in self.area_uuid_markets_mapping.items():
-            if filtered_area_ids and area_id not in filtered_area_ids:
+        for area_id, markets in self.area_uuid_markets_mapping.items():
+            if filtered_market_ids and area_id not in filtered_market_ids:
                 # Client is uninterested in this Area -> skip
                 continue
-            for market_slot in market_slots:
+            for market in markets:
                 # Cache the market (needed while matching)
-                self.markets_mapping[market_slot.id] = market_slot
-                bids_list, offers_list = self._get_bids_offers(market_slot, filters)
-                market_offers_bids_list_mapping[market_slot.id] = {
+                self.markets_mapping[market.id] = market
+                bids_list, offers_list = self._get_bids_offers(market, filters)
+                market_offers_bids_list_mapping[market.id] = {
                     "bids": bids_list, "offers": offers_list}
         response_data.update({
             "bids_offers": market_offers_bids_list_mapping,

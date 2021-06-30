@@ -42,9 +42,8 @@ class EnergyTypeRequirement(Requirement):
             f"Invalid requirement {requirement}"
         offer_energy_type = (
                 offer.attributes or {}).get("energy_type", None)
-        if bid_required_energy_types and offer_energy_type not in bid_required_energy_types:
-            return False
-        return True
+        # bid_required_energy_types is None or it is defined & includes offer_energy_type -> true
+        return not bid_required_energy_types or offer_energy_type in bid_required_energy_types
 
 
 class HashedIdentityRequirement(Requirement):
@@ -57,9 +56,9 @@ class HashedIdentityRequirement(Requirement):
             f"Invalid requirement {requirement}"
         offer_hashed_identity = (
                 offer.attributes or {}).get("hashed_identity", None)
-        if bid_required_hashed_identity and offer_hashed_identity != bid_required_hashed_identity:
-            return False
-        return True
+        # bid_required_hashed_identity is None or it is defined & != offer_hashed_identity -> true
+        return (not bid_required_hashed_identity or
+                offer_hashed_identity == bid_required_hashed_identity)
 
 
 # Supported offers/bids requirements
