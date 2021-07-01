@@ -15,19 +15,19 @@ class Requirement(ABC):
         """Check whether a requirement is satisfied."""
 
 
-class PreferredPartnersRequirement(Requirement):
-    """Check if preferred_trading_partners requirement is satisfied for both bid and offer."""
+class TradingPartnersRequirement(Requirement):
+    """Check if trading_partners requirement is satisfied for both bid and offer."""
 
     @classmethod
     def is_satisfied(cls, offer: Offer, bid: Bid, requirement: Dict) -> bool:
-        preferred_trading_partners = requirement.get("preferred_trading_partners", [])
-        assert isinstance(preferred_trading_partners, list),\
+        trading_partners = requirement.get("trading_partners", [])
+        assert isinstance(trading_partners, list),\
             f"Invalid requirement {requirement}"
-        if preferred_trading_partners and not (
-                bid.buyer_id in preferred_trading_partners or
-                bid.buyer_origin_id in preferred_trading_partners or
-                offer.seller_id in preferred_trading_partners or
-                offer.seller_origin_id in preferred_trading_partners):
+        if trading_partners and not (
+                bid.buyer_id in trading_partners or
+                bid.buyer_origin_id in trading_partners or
+                offer.seller_id in trading_partners or
+                offer.seller_origin_id in trading_partners):
             return False
         return True
 
@@ -46,32 +46,16 @@ class EnergyTypeRequirement(Requirement):
         return not bid_required_energy_types or offer_energy_type in bid_required_energy_types
 
 
-class HashedIdentityRequirement(Requirement):
-    """Check if hashed_identity requirement of bid is satisfied."""
-
-    @classmethod
-    def is_satisfied(cls, offer: Offer, bid: Bid, requirement: Dict) -> bool:
-        bid_required_hashed_identity = requirement.get("hashed_identity", "")
-        assert isinstance(bid_required_hashed_identity, str), \
-            f"Invalid requirement {requirement}"
-        offer_hashed_identity = (
-                offer.attributes or {}).get("hashed_identity", None)
-        # bid_required_hashed_identity is None or it is defined & != offer_hashed_identity -> true
-        return (not bid_required_hashed_identity or
-                offer_hashed_identity == bid_required_hashed_identity)
-
-
 # Supported offers/bids requirements
 # To add a new requirement create a class extending the Requirement abstract class and add it below
 
 SUPPORTED_OFFER_REQUIREMENTS = {
-    "preferred_trading_partners": PreferredPartnersRequirement
+    "trading_partners": TradingPartnersRequirement
 }
 
 SUPPORTED_BID_REQUIREMENTS = {
-    "preferred_trading_partners": PreferredPartnersRequirement,
+    "trading_partners": TradingPartnersRequirement,
     "energy_type": EnergyTypeRequirement,
-    "hashed_identity": HashedIdentityRequirement
 }
 
 

@@ -3,8 +3,8 @@ from pendulum import now
 from unittest.mock import MagicMock, patch
 from d3a.models.market import Bid, Offer
 from d3a.models.market.market_validators import (
-    EnergyTypeRequirement, HashedIdentityRequirement,
-    PreferredPartnersRequirement,
+    EnergyTypeRequirement,
+    TradingPartnersRequirement,
     RequirementsSatisfiedChecker)
 
 
@@ -21,36 +21,36 @@ def bid():
 class TestRequirementsValidator:
     """Test all bid/offer requirements validators."""
 
-    def test_preferred_partners_requirement(self, offer, bid):
+    def test_trading_partners_requirement(self, offer, bid):
         requirement = {}
-        # Should be True as there are no preferred_trading_partners requirement
-        assert PreferredPartnersRequirement.is_satisfied(offer, bid, requirement) is True
+        # Should be True as there are no trading_partners requirement
+        assert TradingPartnersRequirement.is_satisfied(offer, bid, requirement) is True
 
         # Test offer requirement
         bid.buyer_id = "buyer"
-        requirement = {"preferred_trading_partners": ["buyer1"]}
+        requirement = {"trading_partners": ["buyer1"]}
         offer.requirements = [requirement]
-        assert PreferredPartnersRequirement.is_satisfied(offer, bid, requirement) is False
-        requirement = {"preferred_trading_partners": ["buyer"]}
+        assert TradingPartnersRequirement.is_satisfied(offer, bid, requirement) is False
+        requirement = {"trading_partners": ["buyer"]}
         offer.requirements = [requirement]
-        assert PreferredPartnersRequirement.is_satisfied(offer, bid, requirement) is True
+        assert TradingPartnersRequirement.is_satisfied(offer, bid, requirement) is True
         bid.buyer_id = "buyer1"
         bid.buyer_origin_id = "buyer"
         # still should pass
-        assert PreferredPartnersRequirement.is_satisfied(offer, bid, requirement) is True
+        assert TradingPartnersRequirement.is_satisfied(offer, bid, requirement) is True
 
         # Test bid requirement
         offer.seller_id = "seller"
-        requirement = {"preferred_trading_partners": ["seller1"]}
+        requirement = {"trading_partners": ["seller1"]}
         bid.requirements = [requirement]
-        assert PreferredPartnersRequirement.is_satisfied(offer, bid, requirement) is False
-        requirement = {"preferred_trading_partners": ["seller"]}
+        assert TradingPartnersRequirement.is_satisfied(offer, bid, requirement) is False
+        requirement = {"trading_partners": ["seller"]}
         bid.requirements = [requirement]
-        assert PreferredPartnersRequirement.is_satisfied(offer, bid, requirement) is True
+        assert TradingPartnersRequirement.is_satisfied(offer, bid, requirement) is True
         offer.seller_id = "seller1"
         offer.seller_origin_id = "seller"
         # still should pass
-        assert PreferredPartnersRequirement.is_satisfied(offer, bid, requirement) is True
+        assert TradingPartnersRequirement.is_satisfied(offer, bid, requirement) is True
 
     def test_energy_type_requirement(self, offer, bid):
         requirement = {}
@@ -64,36 +64,13 @@ class TestRequirementsValidator:
         requirement = {"energy_type": ["Grey", "Green"]}
         assert EnergyTypeRequirement.is_satisfied(offer, bid, requirement) is True
 
-    def test_hashed_identity_requirement(self, offer, bid):
-        requirement = {}
-        # Should be True as there are no hashed_identity requirement
-        assert HashedIdentityRequirement.is_satisfied(offer, bid, requirement) is True
-
-        offer.attributes = {"hashed_identity": "x"}
-        requirement = {"hashed_identity": "y"}
-        bid.requirements = [requirement]
-        assert HashedIdentityRequirement.is_satisfied(offer, bid, requirement) is False
-        requirement = {"hashed_identity": "x"}
-        bid.requirements = [requirement]
-        assert HashedIdentityRequirement.is_satisfied(offer, bid, requirement) is True
-
-    @patch("d3a.models.market.market_validators.PreferredPartnersRequirement.is_satisfied",
-           MagicMock())
-    @patch("d3a.models.market.market_validators.HashedIdentityRequirement.is_satisfied",
+    @patch("d3a.models.market.market_validators.TradingPartnersRequirement.is_satisfied",
            MagicMock())
     def test_requirements_validator(self, offer, bid):
         # Empty requirement, should be satisfied
         offer.requirements = [{}]
         assert RequirementsSatisfiedChecker.is_satisfied(offer, bid) is True
 
-        offer.requirements = [{"preferred_trading_partners": ["x"]}]
+        offer.requirements = [{"trading_partners": ["x"]}]
         RequirementsSatisfiedChecker.is_satisfied(offer, bid)
-        PreferredPartnersRequirement.is_satisfied.assert_called_once()
-        offer.requirements = [{"hashed_identity": "x"}]
-        RequirementsSatisfiedChecker.is_satisfied(offer, bid)
-        # Should not be called as the offer doesn't support hashed_identity requirement
-        assert not HashedIdentityRequirement.is_satisfied.called
-        bid.requirements = [{"hashed_identity": "x"}]
-        HashedIdentityRequirement.is_satisfied = MagicMock()
-        RequirementsSatisfiedChecker.is_satisfied(offer, bid)
-        HashedIdentityRequirement.is_satisfied.assert_called_once()
+        TradingPartnersRequirement.is_satisfied.assert_called_once()

@@ -33,12 +33,12 @@ class TestTwoSidedMarket:
 
     def test_double_sided_validate_requirements_satisfied(self, market):
         offer = Offer("id", now(), 2, 2, "other", 2,
-                      requirements=[{"preferred_trading_partners": ["bid_id2"]}],
+                      requirements=[{"trading_partners": ["bid_id2"]}],
                       attributes={"energy_type": "Green"})
         bid = Bid("bid_id", now(), 9, 10, "B", 9,
                   buyer_id="bid_id", requirements=[], attributes={})
         with pytest.raises(InvalidBidOfferPair):
-            # should raise an exception as buyer_id is not in preferred_trading_partners
+            # should raise an exception as buyer_id is not in trading_partners
             market.validate_requirements_satisfied(offer, bid)
         bid.buyer_id = "bid_id2"
         market.validate_requirements_satisfied(offer, bid)  # Should not raise any exceptions
@@ -49,17 +49,6 @@ class TestTwoSidedMarket:
 
         # Adding another requirement that is satisfied, should not raise an exception
         bid.requirements.append({"energy_type": ["Green"]})
-        market.validate_requirements_satisfied(offer, bid)
-
-        offer.requirements.append({"hashed_identity": "AreaX"})
-        # Above is an unsatisfied requirement but it will pass anw as
-        # there are other satisfied requirement
-        market.validate_requirements_satisfied(offer, bid)
-        bid.requirements = [{"hashed_identity": "AreaX"}]
-        with pytest.raises(InvalidBidOfferPair):
-            # should raise an exception as hashed_identity requirement of offer isn"t satisfied
-            market.validate_requirements_satisfied(offer, bid)
-        offer.attributes["hashed_identity"] = "AreaX"
         market.validate_requirements_satisfied(offer, bid)
 
     @pytest.mark.parametrize(

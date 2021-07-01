@@ -18,7 +18,7 @@ class ExternalMatcher(BaseMatcher):
         super().__init__()
         self.simulation_id = d3a.constants.COLLABORATION_ID
         self.myco_ext_conn = None
-        self.channel_prefix = f"external-myco/{self.simulation_id}/"
+        self.channel_prefix = f"external-myco/{self.simulation_id}"
         self.response_channel = f"{self.channel_prefix}/response"
         self.events_channel = f"{self.response_channel}/events/"
         self._setup_redis_connection()
@@ -30,8 +30,8 @@ class ExternalMatcher(BaseMatcher):
         self.myco_ext_conn = ResettableCommunicator()
         self.myco_ext_conn.sub_to_multiple_channels(
             {"external-myco/get-simulation-id": self.publish_simulation_id,
-             f"{self.channel_prefix}offers-bids/": self.publish_offers_bids,
-             f"{self.channel_prefix}post-recommendations/": self.match_recommendations})
+             f"{self.channel_prefix}/offers-bids/": self.publish_offers_bids,
+             f"{self.channel_prefix}/post-recommendations/": self.match_recommendations})
 
     def publish_offers_bids(self, message):
         """Publish open offers and bids.
