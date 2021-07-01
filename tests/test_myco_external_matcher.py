@@ -23,7 +23,7 @@ class TestMycoExternalMatcher:
         cls.redis_connection = d3a.models.myco_matcher.external_matcher.ResettableCommunicator
         assert cls.matcher.simulation_id == d3a.constants.COLLABORATION_ID
         cls.channel_prefix = f"external-myco/{d3a.constants.COLLABORATION_ID}/"
-        cls.response_channel = f"{cls.channel_prefix}/response"
+        cls.response_channel = f"{cls.channel_prefix}response"
         cls.events_channel = f"{cls.response_channel}/events/"
 
     def setup_method(self, method):
