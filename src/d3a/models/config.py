@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import ast
 import json
+
 from pendulum import duration, Duration, DateTime, today
 
 from d3a_interface.constants_limits import ConstSettings

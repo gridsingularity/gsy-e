@@ -26,6 +26,7 @@ import inspect
 import os
 
 from click.types import ParamType
+from d3a_interface.enums import BidOfferMatchAlgoEnum
 from pendulum import duration, from_format
 from rex import rex
 from functools import wraps
@@ -532,3 +533,11 @@ class ExternalTickCounter:
 
     def is_it_time_for_external_tick(self, current_tick_in_slot) -> bool:
         return current_tick_in_slot % self._dispatch_tick_frequency == 0
+
+
+def is_external_matching_enabled():
+    """Checks if the bid offer match type is set to external
+    Returns True if both are matched
+    """
+    return (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+            BidOfferMatchAlgoEnum.EXTERNAL.value)

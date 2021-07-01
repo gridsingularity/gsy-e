@@ -24,7 +24,7 @@ from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.d3a_core.util import d3a_path
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a_interface.constants_limits import ConstSettings
-import d3a.constants
+from d3a_interface.enums import BidOfferMatchAlgoEnum
 
 """
 This setup file reenacts a case where the assert "Accepted bids were not enough to satisfy the
@@ -66,7 +66,7 @@ house3_load_dict = {
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-        d3a.constants.BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+        BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
     area = Area(
             'Grid',
             [
