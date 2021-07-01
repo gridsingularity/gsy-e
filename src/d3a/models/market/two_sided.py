@@ -281,14 +281,16 @@ class TwoSidedMarket(OneSidedMarket):
                 )
 
     @staticmethod
-    def validate_requirements_satisfied(offer: Offer, bid: Bid) -> None:
+    def validate_requirements_satisfied(
+            bid: Bid, offer: Offer, clearing_rate: float, selected_energy: float) -> None:
         """Validate if both trade parties satisfy each other's requirements.
 
         :raises:
             InvalidBidOfferPair: Bid offer pair failed the validation
         """
         if ((offer.requirements or bid.requirements) and
-                not RequirementsSatisfiedChecker.is_satisfied(offer, bid)):
+                not RequirementsSatisfiedChecker.is_satisfied(
+                    offer, bid, clearing_rate, selected_energy)):
             # If no requirement dict is satisfied
             raise InvalidBidOfferPair(
                 f"OFFER: {offer} & BID: {bid} requirements failed the validation.")
@@ -306,7 +308,7 @@ class TwoSidedMarket(OneSidedMarket):
                 (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= clearing_rate and
                 (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= offer.energy_rate):
             raise InvalidBidOfferPair
-        cls.validate_requirements_satisfied(offer, bid)
+        cls.validate_requirements_satisfied(bid, offer, clearing_rate, selected_energy)
 
     @classmethod
     def _replace_offers_bids_with_residual_in_matching_list(

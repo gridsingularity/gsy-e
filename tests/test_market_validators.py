@@ -5,7 +5,7 @@ from d3a.models.market import Bid, Offer
 from d3a.models.market.market_validators import (
     EnergyTypeRequirement,
     TradingPartnersRequirement,
-    RequirementsSatisfiedChecker)
+    RequirementsSatisfiedChecker, SelectedEnergyRequirement, ClearingRateRequirement)
 
 
 @pytest.fixture
@@ -22,10 +22,10 @@ class TestRequirementsValidator:
     """Test all bid/offer requirements validators."""
 
     def test_trading_partners_requirement(self, offer, bid):
-        requirement = {}
-        # Should be True as there are no trading_partners requirement
-        assert TradingPartnersRequirement.is_satisfied(offer, bid, requirement) is True
-
+        requirement = {"trading_partners": "buyer1"}
+        with pytest.raises(AssertionError):
+            # trading partners is not of type list
+            TradingPartnersRequirement.is_satisfied(offer, bid, requirement)
         # Test offer requirement
         bid.buyer_id = "buyer"
         requirement = {"trading_partners": ["buyer1"]}
@@ -53,16 +53,56 @@ class TestRequirementsValidator:
         assert TradingPartnersRequirement.is_satisfied(offer, bid, requirement) is True
 
     def test_energy_type_requirement(self, offer, bid):
-        requirement = {}
-        # Should be True as there are no energy_type requirement
-        assert EnergyTypeRequirement.is_satisfied(offer, bid, requirement) is True
-
+        requirement = {"energy_type": "Green"}
+        with pytest.raises(AssertionError):
+            # energy type is not of type list
+            EnergyTypeRequirement.is_satisfied(offer, bid, requirement)
         offer.attributes = {"energy_type": "Green"}
         requirement = {"energy_type": ["Grey"]}
         bid.requirements = [requirement]
         assert EnergyTypeRequirement.is_satisfied(offer, bid, requirement) is False
         requirement = {"energy_type": ["Grey", "Green"]}
         assert EnergyTypeRequirement.is_satisfied(offer, bid, requirement) is True
+
+    def test_selected_energy_requirement(self, offer, bid):
+        requirement = {"energy": "1"}
+        with pytest.raises(AssertionError):
+            # energy is not of type float
+            SelectedEnergyRequirement.is_satisfied(
+                offer, bid, requirement, selected_energy=2)
+        requirement = {"energy": 1}
+        with pytest.raises(AssertionError):
+            # selected energy is not passed
+            SelectedEnergyRequirement.is_satisfied(
+                offer, bid, requirement)
+        requirement = {"energy": 10}
+        bid.requirements = [requirement]
+        assert SelectedEnergyRequirement.is_satisfied(
+            offer, bid, requirement, selected_energy=12) is False
+        requirement = {"energy": 10}
+        bid.requirements = [requirement]
+        assert SelectedEnergyRequirement.is_satisfied(
+            offer, bid, requirement, selected_energy=9) is True
+
+    def test_clearing_rate_requirement(self, offer, bid):
+        requirement = {"price": "1"}
+        with pytest.raises(AssertionError):
+            # price is not of type float
+            ClearingRateRequirement.is_satisfied(
+                offer, bid, requirement, clearing_rate=2)
+        requirement = {"price": 1}
+        with pytest.raises(AssertionError):
+            # selected price is not passed
+            ClearingRateRequirement.is_satisfied(
+                offer, bid, requirement)
+        requirement = {"price": 10}
+        bid.requirements = [requirement]
+        assert ClearingRateRequirement.is_satisfied(
+            offer, bid, requirement, clearing_rate=12) is False
+        requirement = {"price": 10}
+        bid.requirements = [requirement]
+        assert ClearingRateRequirement.is_satisfied(
+            offer, bid, requirement, clearing_rate=9) is True
 
     @patch("d3a.models.market.market_validators.TradingPartnersRequirement.is_satisfied",
            MagicMock())

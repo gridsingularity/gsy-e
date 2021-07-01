@@ -25,7 +25,9 @@ class Requirement(ABC):
 
     @classmethod
     @abstractmethod
-    def is_satisfied(cls, offer: Offer, bid: Bid, requirement: Dict) -> bool:
+    def is_satisfied(
+            cls, offer: Offer, bid: Bid, requirement: Dict,
+            clearing_rate: float = None, selected_energy: float = None) -> bool:
         """Check whether a requirement is satisfied."""
 
 
@@ -33,8 +35,9 @@ class TradingPartnersRequirement(Requirement):
     """Check if trading_partners requirement is satisfied for both bid and offer."""
 
     @classmethod
-    def is_satisfied(cls, offer: Offer, bid: Bid, requirement: Dict) -> bool:
-        trading_partners = requirement.get("trading_partners", [])
+    def is_satisfied(cls, offer: Offer, bid: Bid, requirement: Dict,
+                     clearing_rate: float = None, selected_energy: float = None) -> bool:
+        trading_partners = requirement.get("trading_partners")
         assert isinstance(trading_partners, list),\
             f"Invalid data type for trading partner {requirement}"
         if trading_partners and not (
@@ -50,14 +53,45 @@ class EnergyTypeRequirement(Requirement):
     """Check if energy_type requirement of bid is satisfied."""
 
     @classmethod
-    def is_satisfied(cls, offer: Offer, bid: Bid, requirement: Dict) -> bool:
-        bid_required_energy_types = requirement.get("energy_type", [])
+    def is_satisfied(cls, offer: Offer, bid: Bid, requirement: Dict,
+                     clearing_rate: float = None, selected_energy: float = None) -> bool:
+        bid_required_energy_types = requirement.get("energy_type")
         assert isinstance(bid_required_energy_types, list), \
             f"Invalid data type for energy_type {requirement}"
         offer_energy_type = (
                 offer.attributes or {}).get("energy_type", None)
         # bid_required_energy_types is None or it is defined & includes offer_energy_type -> true
         return not bid_required_energy_types or offer_energy_type in bid_required_energy_types
+
+
+class SelectedEnergyRequirement(Requirement):
+    """Check if energy (selected energy) requirement of bid is satisfied."""
+
+    @classmethod
+    def is_satisfied(cls, offer: Offer, bid: Bid, requirement: Dict,
+                     clearing_rate: float = None, selected_energy: float = None) -> bool:
+        bid_required_energy = requirement.get("energy")
+        assert isinstance(bid_required_energy, (int, float)), \
+            f"Invalid data type for energy {requirement}"
+        assert isinstance(selected_energy, (int, float)), \
+            f"Invalid data type for selected_energy {selected_energy}"
+        # bid_required_energy is None or it is defined & equals selected_energy -> true
+        return not bid_required_energy or bid_required_energy >= selected_energy
+
+
+class ClearingRateRequirement(Requirement):
+    """Check if price (clearing rate) requirement of bid is satisfied."""
+
+    @classmethod
+    def is_satisfied(cls, offer: Offer, bid: Bid, requirement: Dict,
+                     clearing_rate: float = None, selected_energy: float = None) -> bool:
+        bid_required_price = requirement.get("price")
+        assert isinstance(bid_required_price, (int, float)), \
+            f"Invalid data type for energy {requirement}"
+        assert isinstance(clearing_rate, (int, float)), \
+            f"Invalid data type for clearing_rate {clearing_rate}"
+        # bid_required_energy is None or it is defined & equals selected_energy -> true
+        return not bid_required_price or bid_required_price >= clearing_rate
 
 
 # Supported offers/bids requirements
@@ -70,6 +104,8 @@ SUPPORTED_OFFER_REQUIREMENTS = {
 SUPPORTED_BID_REQUIREMENTS = {
     "trading_partners": TradingPartnersRequirement,
     "energy_type": EnergyTypeRequirement,
+    "energy": SelectedEnergyRequirement,
+    "price": ClearingRateRequirement
 }
 
 
@@ -77,7 +113,9 @@ class RequirementsSatisfiedChecker:
     """Check if a list of bid/offer requirements are satisfied."""
 
     @classmethod
-    def is_satisfied(cls, offer: Offer, bid: Bid) -> bool:
+    def is_satisfied(
+            cls, offer: Offer, bid: Bid,
+            clearing_rate: float = None, selected_energy: float = None) -> bool:
         """Receive offer and bid and validate that at least 1 requirement is satisfied."""
         offer_requirements = offer.requirements or []
         bid_requirements = bid.requirements or []
@@ -88,14 +126,16 @@ class RequirementsSatisfiedChecker:
 
         for requirement in offer_requirements:
             if all(key in SUPPORTED_OFFER_REQUIREMENTS
-                   and SUPPORTED_OFFER_REQUIREMENTS[key].is_satisfied(offer, bid, requirement)
+                   and SUPPORTED_OFFER_REQUIREMENTS[key].is_satisfied(
+                        offer, bid, requirement, clearing_rate, selected_energy)
                     for key in requirement):
                 offer_requirement_satisfied = True
                 break
 
         for requirement in bid_requirements:
             if all(key in SUPPORTED_BID_REQUIREMENTS
-                   and SUPPORTED_BID_REQUIREMENTS[key].is_satisfied(offer, bid, requirement)
+                   and SUPPORTED_BID_REQUIREMENTS[key].is_satisfied(
+                        offer, bid, requirement, clearing_rate, selected_energy)
                    for key in requirement):
                 bid_requirement_satisfied = True
                 break
