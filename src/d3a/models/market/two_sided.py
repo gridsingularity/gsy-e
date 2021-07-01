@@ -282,7 +282,8 @@ class TwoSidedMarket(OneSidedMarket):
 
     @staticmethod
     def validate_requirements_satisfied(
-            bid: Bid, offer: Offer, clearing_rate: float, selected_energy: float) -> None:
+            offer: Offer, bid: Bid, clearing_rate: float = None,
+            selected_energy: float = None) -> None:
         """Validate if both trade parties satisfy each other's requirements.
 
         :raises:
