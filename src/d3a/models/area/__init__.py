@@ -394,8 +394,8 @@ class Area:
         """Tick event handler.
 
         invokes aggregator commands consumer, publishes market clearing, updates events,
-         updates cached market's bids and offers in case of myco matching and matches
-         bid offer pairs otherwise.
+        updates cached market's bids and offers in case of myco matching and matches
+        bid offer pairs otherwise.
         """
         self._consume_commands_from_aggregator()
 

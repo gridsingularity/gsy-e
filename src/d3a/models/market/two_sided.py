@@ -44,7 +44,7 @@ class TwoSidedMarket(OneSidedMarket):
     (exactly the same way as on the one-sided market case), but also allows the consumers
     to place energy bids on their respective markets.
     Contrary to the one sided market, where the offers are selected directly by the consumers,
-     the offers and bids are matched by the myco matcher.
+    the offers and bids are being matched via some matching algorithm.
     """
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
@@ -290,7 +290,8 @@ class TwoSidedMarket(OneSidedMarket):
         if ((offer.requirements or bid.requirements) and
                 not RequirementsSatisfiedChecker.is_satisfied(offer, bid)):
             # If no requirement dict is satisfied
-            raise InvalidBidOfferPair
+            raise InvalidBidOfferPair(
+                f"OFFER: {offer} & BID: {bid} requirements failed the validation.")
 
     @classmethod
     def validate_authentic_bid_offer_pair(

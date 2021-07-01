@@ -381,10 +381,10 @@ class StorageExternalMixin(ExternalMixin):
                 market_info["device_bill"] = self.device.stats.aggregated_stats["bills"] \
                     if "bills" in self.device.stats.aggregated_stats else None
                 market_info["area_uuid"] = self.device.uuid
-                market_info["last_market_maker_rate"] = \
-                    get_market_maker_rate_from_config(self.area.current_market)
-                market_info["last_market_stats"] = \
-                    self.market_area.stats.get_price_stats_current_market()
+                market_info["last_market_maker_rate"] = (
+                    get_market_maker_rate_from_config(self.area.current_market))
+                market_info["last_market_stats"] = (
+                    self.market_area.stats.get_price_stats_current_market())
                 self.redis.publish_json(market_event_channel, market_info)
             self._delete_past_state()
         else:
