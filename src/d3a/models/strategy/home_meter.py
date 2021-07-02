@@ -534,7 +534,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
             return
         if not offer and not market.offers:
             return
-        if offer.id not in market.offers:
+        if offer and offer.id not in market.offers:
             return
 
         try:
