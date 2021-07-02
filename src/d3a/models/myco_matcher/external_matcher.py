@@ -3,8 +3,9 @@ import logging
 from typing import Dict, List
 
 import d3a.constants
-from d3a.d3a_core.exceptions import InvalidBidOfferPair, OfferNotFoundException, \
-    BidNotFoundException
+from d3a.d3a_core.exceptions import (
+    InvalidBidOfferPairException, OfferNotFoundException,
+    BidNotFoundException, MycoValidationException)
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
 from d3a.models.market import Market
 from d3a.models.market.market_structures import BidOfferMatch
@@ -75,19 +76,16 @@ class ExternalMatcher(BaseMatcher):
             validated_records = self._get_validated_bid_offer_match_list(recommendations)
             for market_id, records in validated_records.items():
                 market = self.markets_mapping.get(market_id)
-                if market.readonly:
-                    # The market has just finished
-                    continue
                 try:
                     market.match_recommendation(records)
                 except (OfferNotFoundException, BidNotFoundException):
                     # If the offer or bid have just been consumed
                     continue
-        except InvalidBidOfferPair:
+        except Exception as ex:
             response_data["status"] = "fail"
             response_data["message"] = "Validation Error"
-        except Exception:
-            logging.exception("Bid offer pair matching failed.")
+            if not isinstance(ex, MycoValidationException):
+                logging.exception("Bid offer pair matching failed.")
 
         self.myco_ext_conn.publish_json(channel, response_data)
 
@@ -146,17 +144,13 @@ class ExternalMatcher(BaseMatcher):
 
     def _get_validated_bid_offer_match_list(
             self, recommendations: List[Dict]) -> Dict[str, List[BidOfferMatch]]:
-        """Return a dict of market_id as key and list of BidOfferMatch objs as value.
-
-        :raises:
-            InvalidBidOfferPair: Bid offer pair failed the validation
-        """
+        """Return a dict of market_id as key and list of BidOfferMatch objs as value."""
         validated_records = {}
         for record in recommendations:
             market = self.markets_mapping.get(record.get("market_id"), None)
             if market is None or market.readonly:
                 # The market is already finished or doesn't exist
-                continue
+                raise MycoValidationException
 
             # Get the original bid and offer from the market
             market_bid = market.bids.get(record.get("bid").get("id"), None)
@@ -164,14 +158,16 @@ class ExternalMatcher(BaseMatcher):
 
             if not (market_bid and market_offer):
                 # Offer or Bid either don't belong to market or were already matched
-                raise InvalidBidOfferPair
-
-            market.validate_authentic_bid_offer_pair(
-                market_bid,
-                market_offer,
-                record.get("trade_rate"),
-                record.get("selected_energy")
-            )
+                continue
+            try:
+                market.validate_authentic_bid_offer_pair(
+                    market_bid,
+                    market_offer,
+                    record.get("trade_rate"),
+                    record.get("selected_energy")
+                )
+            except InvalidBidOfferPairException:
+                continue
             if record.get("market_id") not in validated_records:
                 validated_records[record.get("market_id")] = []
 

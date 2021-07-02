@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from d3a.d3a_core.exceptions import (
-    BidNotFoundException, InvalidBid, InvalidBidOfferPair, InvalidTrade)
+    BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade)
 from d3a.events import MarketEvent
 from d3a.models.market import Bid, Offer
 from d3a.models.market.market_structures import TradeBidOfferInfo
@@ -37,13 +37,13 @@ class TestTwoSidedMarket:
                       attributes={"energy_type": "Green"})
         bid = Bid("bid_id", now(), 9, 10, "B", 9,
                   buyer_id="bid_id", requirements=[], attributes={})
-        with pytest.raises(InvalidBidOfferPair):
+        with pytest.raises(InvalidBidOfferPairException):
             # should raise an exception as buyer_id is not in trading_partners
             market.validate_requirements_satisfied(offer, bid)
         bid.buyer_id = "bid_id2"
         market.validate_requirements_satisfied(offer, bid)  # Should not raise any exceptions
         bid.requirements.append({"energy_type": ["Grey"]})
-        with pytest.raises(InvalidBidOfferPair):
+        with pytest.raises(InvalidBidOfferPairException):
             # should raise an exception as energy_type of offer needs to be in [Grey, ]
             market.validate_requirements_satisfied(offer, bid)
 
@@ -63,7 +63,7 @@ class TestTwoSidedMarket:
         offer = Offer("id", now(), 2, offer_energy, "other", 2)
         bid = Bid("bid_id", now(), 2, bid_energy, "B", 8)
         TwoSidedMarket.validate_requirements_satisfied = MagicMock()
-        with pytest.raises(InvalidBidOfferPair):
+        with pytest.raises(InvalidBidOfferPairException):
             market.validate_authentic_bid_offer_pair(bid, offer, clearing_rate, selected_energy)
             TwoSidedMarket.validate_requirements_satisfied.assert_not_called()
 

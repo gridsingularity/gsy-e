@@ -1,10 +1,11 @@
 import json
+
 import pytest
 from pendulum import now
 from unittest.mock import MagicMock, patch
 
 import d3a.models.market.market_redis_connection
-from d3a.d3a_core.exceptions import InvalidBidOfferPair
+from d3a.d3a_core.exceptions import InvalidBidOfferPairException, MycoValidationException
 from d3a.models.market import Offer, Bid
 from d3a.models.market.two_sided import TwoSidedMarket
 from d3a.models.myco_matcher import ExternalMatcher
@@ -156,22 +157,14 @@ class TestMycoExternalMatcher:
         # should be called once for each record
         assert self.market.validate_authentic_bid_offer_pair.call_count == 2
 
-        # If the market is readonly, it should be skipped
+        # If the market is readonly, it should raise an exception
         self.market.readonly = True
         self.market.validate_authentic_bid_offer_pair.reset_mock()
-        validated_records = self.matcher._get_validated_bid_offer_match_list(records)
-        assert isinstance(validated_records, dict)
-        assert self.market.id not in validated_records
-        # should not be called
-        assert not self.market.validate_authentic_bid_offer_pair.called
-
-        # If either the bid or offer do not exist in the market, raise an exception
-        self.market.readonly = False
-        self.market.validate_authentic_bid_offer_pair.reset_mock()
-        records[0]["bid"]["id"] = "random_id"
-        with pytest.raises(InvalidBidOfferPair):
+        with pytest.raises(MycoValidationException):
             validated_records = self.matcher._get_validated_bid_offer_match_list(records)
             assert validated_records is None
+            # should not be called
+            assert not self.market.validate_authentic_bid_offer_pair.called
 
     @patch("d3a.models.myco_matcher.external_matcher.ExternalMatcher."
            "_get_validated_bid_offer_match_list", MagicMock())
@@ -185,7 +178,7 @@ class TestMycoExternalMatcher:
             channel, expected_data)
 
         self.matcher.myco_ext_conn.publish_json.reset_mock()
-        self.matcher._get_validated_bid_offer_match_list.side_effect = InvalidBidOfferPair
+        self.matcher._get_validated_bid_offer_match_list.side_effect = InvalidBidOfferPairException
         self.matcher.match_recommendations(payload)
         expected_data = {"event": "match", "status": "fail", "message": "Validation Error"}
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(

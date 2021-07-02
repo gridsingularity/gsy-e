@@ -27,7 +27,7 @@ from d3a_interface.constants_limits import ConstSettings
 
 from d3a.d3a_core.exceptions import (
     BidNotFoundException, InvalidBid, InvalidTrade, MarketException,
-    InvalidBidOfferPair)
+    InvalidBidOfferPairException)
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market import lock_market_action
@@ -287,13 +287,13 @@ class TwoSidedMarket(OneSidedMarket):
         """Validate if both trade parties satisfy each other's requirements.
 
         :raises:
-            InvalidBidOfferPair: Bid offer pair failed the validation
+            InvalidBidOfferPairException: Bid offer pair failed the validation
         """
         if ((offer.requirements or bid.requirements) and
                 not RequirementsSatisfiedChecker.is_satisfied(
                     offer, bid, clearing_rate, selected_energy)):
             # If no requirement dict is satisfied
-            raise InvalidBidOfferPair(
+            raise InvalidBidOfferPairException(
                 f"OFFER: {offer} & BID: {bid} requirements failed the validation.")
 
     @classmethod
@@ -302,13 +302,13 @@ class TwoSidedMarket(OneSidedMarket):
         """Basic validation function for bid against an offer.
 
         :raises:
-            InvalidBidOfferPair: Bid offer pair failed the validation
+            InvalidBidOfferPairException: Bid offer pair failed the validation
         """
         if not (bid.energy >= selected_energy and
                 offer.energy >= selected_energy and
                 (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= clearing_rate and
                 (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= offer.energy_rate):
-            raise InvalidBidOfferPair
+            raise InvalidBidOfferPairException
         cls.validate_requirements_satisfied(bid, offer, clearing_rate, selected_energy)
 
     @classmethod
