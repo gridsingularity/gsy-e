@@ -20,16 +20,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.models.area import Area
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-import d3a.constants
 
 from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.enums import BidOfferMatchAlgoEnum
 
 
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-        d3a.constants.BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+        BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
     ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT = 1
     ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS = False
 

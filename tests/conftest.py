@@ -31,6 +31,6 @@ class Called:
         )
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def called():
     yield Called()

@@ -276,7 +276,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
             if acceptable_offer and \
                     self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE and \
                     self._offer_rate_can_be_accepted(acceptable_offer, market):
-
                 energy_Wh = self.state.calculate_energy_to_accept(
                     acceptable_offer.energy * 1000.0, time_slot)
                 self.accept_offer(market, acceptable_offer, energy=energy_Wh / 1000.0,
@@ -356,6 +355,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self._demand_balancing_offer(market)
 
     def event_bid_traded(self, *, market_id, bid_trade):
+        """Register the bid traded by the device and its effects. Extends the superclass method.
+
+        This method is triggered by the MarketEvent.BID_TRADED event.
+        """
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
         market = self.area.get_future_market_from_id(market_id)
 
