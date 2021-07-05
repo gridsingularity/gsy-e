@@ -25,9 +25,9 @@ class ExternalMatcher(BaseMatcher):
     def _setup_redis_connection(self):
         self.myco_ext_conn = ResettableCommunicator()
         self.myco_ext_conn.sub_to_multiple_channels(
-            {"external-myco/get_simulation_id": self.get_simulation_id,
-             f"{self.channel_prefix}offers_bids/": self.publish_offers_bids,
-             f"{self.channel_prefix}post_recommendations/": self.match_recommendations})
+            {"external-myco/get-simulation-id": self.get_simulation_id,
+             f"{self.channel_prefix}offers-bids/": self.publish_offers_bids,
+             f"{self.channel_prefix}post-recommendations/": self.match_recommendations})
 
     def publish_offers_bids(self, message):
         """Publish open offers and bids.
@@ -51,7 +51,7 @@ class ExternalMatcher(BaseMatcher):
             "market_offers_bids_list_mapping": market_offers_bids_list_mapping,
         })
 
-        channel = f"{self.channel_prefix}response/offers_bids/"
+        channel = f"{self.channel_prefix}response/offers-bids/"
         self.myco_ext_conn.publish_json(channel, data)
 
     def match_recommendations(self, message):
@@ -59,7 +59,7 @@ class ExternalMatcher(BaseMatcher):
 
         Matching in bulk, any pair that fails validation will cancel the operation
         """
-        channel = f"{self.channel_prefix}response/matched_recommendations/"
+        channel = f"{self.channel_prefix}response/matched-recommendations/"
         response_dict = {"event": "match", "status": "success"}
         data = json.loads(message.get("data"))
         recommendations = data.get("recommended_matches", [])
@@ -112,7 +112,7 @@ class ExternalMatcher(BaseMatcher):
     def get_simulation_id(self, message):
         """Publish the simulation id to the Myco client."""
 
-        channel = "external-myco/get_simulation_id/response"
+        channel = "external-myco/get-simulation-id/response"
         self.myco_ext_conn.publish_json(channel, {"simulation_id": self.simulation_id})
 
     def publish_event_tick_myco(self):

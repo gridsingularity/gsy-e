@@ -111,35 +111,33 @@ class ExportAndPlot:
         file_name = ("%s.csv" % slug).replace(' ', '_')
         return directory.joinpath(file_name).as_posix()
 
-    def export(self, export_plots=True, power_flow=None):
-        """Wrapping function, executes all export and plotting functions"""
-        if export_plots:
-            self.plot_dir = os.path.join(self.directory, 'plot')
-            if power_flow is not None:
-                power_flow.export_power_flow_results(self.plot_dir)
+    def export(self, power_flow=None):
+        self.plot_dir = os.path.join(self.directory, 'plot')
+        if power_flow is not None:
+            power_flow.export_power_flow_results(self.plot_dir)
 
-            if not os.path.exists(self.plot_dir):
-                os.makedirs(self.plot_dir)
+        if not os.path.exists(self.plot_dir):
+            os.makedirs(self.plot_dir)
 
-            self.export_json_data(self.directory)
+        self.export_json_data(self.directory)
 
-            self.plot_energy_profile(self.area, self.plot_dir)
-            self.plot_all_unmatched_loads()
-            self.plot_avg_trade_price(self.area, self.plot_dir)
-            self.plot_ess_soc_history(self.area, self.plot_dir)
-            self.plot_ess_energy_trace(self.area, self.plot_dir)
-            if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
-                self.plot_stock_info_per_area_per_market_slot(self.area, self.plot_dir)
-            if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
-                self.plot_device_stats(self.area, [])
-            if ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
-                self.plot_energy_trade_profile_hr(self.area, self.plot_dir)
-            if ConstSettings.IAASettings.MARKET_TYPE == 2 and \
-                    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == \
-                    BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value and \
-                    ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS is True:
-                self.plot_supply_demand_curve(self.area, self.plot_dir)
-            self.move_root_plot_folder()
+        self.plot_energy_profile(self.area, self.plot_dir)
+        self.plot_all_unmatched_loads()
+        self.plot_avg_trade_price(self.area, self.plot_dir)
+        self.plot_ess_soc_history(self.area, self.plot_dir)
+        self.plot_ess_energy_trace(self.area, self.plot_dir)
+        if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
+            self.plot_stock_info_per_area_per_market_slot(self.area, self.plot_dir)
+        if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
+            self.plot_device_stats(self.area, [])
+        if ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
+            self.plot_energy_trade_profile_hr(self.area, self.plot_dir)
+        if ConstSettings.IAASettings.MARKET_TYPE == 2 and \
+                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == \
+                BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value and \
+                ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS is True:
+            self.plot_supply_demand_curve(self.area, self.plot_dir)
+        self.move_root_plot_folder()
 
     def data_to_csv(self, area, is_first):
         self._export_area_with_children(area, self.directory, is_first)
@@ -331,12 +329,8 @@ class ExportAndPlot:
         PlotlyGraph.plot_device_profile(device_dict, device_name, output_file, device_strategy)
 
     def plot_energy_profile(self, area: Area, subdir: str):
-        """
-        Wrapper for _plot_energy_profile
-        """
-
-        energy_profile = \
-            self.endpoint_buffer.results_handler.trade_profile_plot_results
+        """Plot the energy profile of areas (not devices)."""
+        energy_profile = self.endpoint_buffer.results_handler.trade_profile_plot_results
 
         new_subdir = os.path.join(subdir, area.slug)
         self._plot_energy_profile(new_subdir, area.name, energy_profile)

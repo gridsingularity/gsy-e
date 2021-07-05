@@ -121,5 +121,6 @@ Feature: Run integration tests
   Scenario: Uploaded one-day-profile gets duplicated when running the simulations for multiple days
     Given we have a scenario named strategy_tests.user_profile_load_csv
     And d3a is installed
-    When we run the simulation with setup file strategy_tests.user_profile_load_csv and parameters [48, 60, 60, 1]
+    When export is needed
+    And we run the simulation with setup file strategy_tests.user_profile_load_csv and parameters [48, 60, 60, 1]
     Then the load profile should be identical on each day

@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 import os
 
 
-d3a_interface_branch = os.environ.get("BRANCH", "feature/D3ASIM-3447")
+d3a_interface_branch = os.environ.get("BRANCH", "master")
 
 try:
     with open('requirements/dev.txt') as req:
@@ -19,7 +19,7 @@ with open("README.rst", "r") as readme:
     README = readme.read()
 
 # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
-VERSION = '0.12.0'
+VERSION = '1.0.0'
 
 setup(
     name="d3a",
