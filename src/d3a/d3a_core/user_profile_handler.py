@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 from datetime import datetime
 from typing import Dict
+import uuid
 
 import d3a.constants
 import pytz
@@ -37,15 +38,15 @@ class ProfileDBConnectionHandler:
     """
     _db = Database()
 
-    class ProfileTimeSeries(_db.Entity):
-        profile_uuid = Required(str)
+    class Profile_Database_ProfileTimeSeries(_db.Entity):
+        profile_uuid = Required(uuid.UUID)
         time = Required(datetime)
         value = Required(float)
 
-    class ConfigurationAreaProfileUuids(_db.Entity):
-        configuration_uuid = Required(str)
-        area_uuid = Required(str)
-        profile_uuid = Required(str)
+    class Profile_Database_ConfigurationAreaProfileUuids(_db.Entity):
+        configuration_uuid = Required(uuid.UUID)
+        area_uuid = Required(uuid.UUID)
+        profile_uuid = Required(uuid.UUID)
         profile_type = Required(int)  # values of InputProfileTypes
 
     def __init__(self):
@@ -63,11 +64,11 @@ class ProfileDBConnectionHandler:
 
         """
         self._db.bind(provider='postgres',
-                      user=os.environ.get("PROFILE_DB_USER", "d3a_profiles"),
-                      password=os.environ.get("PROFILE_DB_PASSWORD", ""),
+                      user=os.environ.get("PROFILE_DB_USER", "d3a_web"),
+                      password=os.environ.get("PROFILE_DB_PASSWORD", "d3a_web"),
                       host=os.environ.get("PROFILE_DB_HOST", "localhost"),
                       port=os.environ.get("PROFILE_DB_PORT", "5432"),
-                      database=os.environ.get("PROFILE_DB_NAME", "d3a_profiles"))
+                      database=os.environ.get("PROFILE_DB_NAME", "d3a_web"))
 
         self._db.generate_mapping(check_tables=True)
 
@@ -83,9 +84,11 @@ class ProfileDBConnectionHandler:
         Returns: A pony orm selection of the queried data
 
         """
-        selection = select(datapoint for datapoint in self.ProfileTimeSeries
-                           if datapoint.profile_uuid in self._profile_uuids
-                           and datapoint.time >= start_time and datapoint.time <= end_time)
+        selection = select(
+            datapoint for datapoint in self.Profile_Database_ProfileTimeSeries
+            if datapoint.profile_uuid in self._profile_uuids
+            and datapoint.time >= start_time and datapoint.time <= end_time
+        )
 
         return selection
 
@@ -95,8 +98,8 @@ class ProfileDBConnectionHandler:
         self._profile_uuids"""
         profile_selection = select(
             datapoint.profile_uuid
-            for datapoint in self.ConfigurationAreaProfileUuids
-            if datapoint.configuration_uuid == d3a.constants.CONFIGURATION_ID)
+            for datapoint in self.Profile_Database_ConfigurationAreaProfileUuids
+            if str(datapoint.configuration_uuid) == d3a.constants.CONFIGURATION_ID)
 
         self._profile_uuids = list(profile_selection)
 
@@ -111,7 +114,6 @@ class ProfileDBConnectionHandler:
         start_time, end_time = self._get_start_end_time(current_timestamp)
         query_ret_val = self._get_profiles_from_db(self.convert_pendulum_to_datetime(start_time),
                                                    self.convert_pendulum_to_datetime(end_time))
-
         for profile_uuid in self._profile_uuids:
             self._user_profiles[profile_uuid] = \
                 {instance(data_point.time, TIME_ZONE): data_point.value
@@ -165,7 +167,7 @@ class ProfileDBConnectionHandler:
             user profile for dictionary
 
         """
-        return self._user_profiles[profile_uuid]
+        return self._user_profiles[uuid.UUID(profile_uuid)]
 
 
 class ProfilesHandler:
