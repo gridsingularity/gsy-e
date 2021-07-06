@@ -16,12 +16,9 @@ not, see <http://www.gnu.org/licenses/>.
 import unittest
 import uuid
 from collections import OrderedDict
-from unittest.mock import Mock, patch
-from unittest.mock import call
-from unittest.mock import create_autospec
+from unittest.mock import call, create_autospec, patch, Mock
 
 from d3a_interface.exceptions import D3AException
-# from d3a_interface.validators.base_validator import BaseValidator
 from d3a_interface.validators.home_meter_validator import HomeMeterValidator
 from pendulum import datetime, duration
 
