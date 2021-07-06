@@ -21,7 +21,7 @@ from unittest.mock import call
 from unittest.mock import create_autospec
 
 from d3a_interface.exceptions import D3AException
-from d3a_interface.validators.device_validator import DeviceValidator
+# from d3a_interface.validators.base_validator import BaseValidator
 from d3a_interface.validators.home_meter_validator import HomeMeterValidator
 from pendulum import datetime, duration
 
@@ -50,7 +50,7 @@ class HomeMeterStrategyTest(unittest.TestCase):
         self.area_mock = create_autospec(Area)
         self.strategy.area = self.area_mock
         self.strategy.owner = Mock()
-        self.strategy.validator = create_autospec(DeviceValidator)
+        self.strategy.validator = create_autospec(HomeMeterValidator)
 
     @staticmethod
     @patch.object(HomeMeterValidator, "validate")

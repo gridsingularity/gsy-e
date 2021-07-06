@@ -24,8 +24,7 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import (
     convert_W_to_Wh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
-from d3a_interface.validators.load_validator import (
-    validate_load_device_price, validate_load_device_energy)
+from d3a_interface.validators.load_validator import LoadValidator
 from numpy import random
 from pendulum import duration
 from pendulum.datetime import DateTime
@@ -77,8 +76,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         as per utility's trading rate
         """
 
-        validate_load_device_energy(avg_power_W=avg_power_W, hrs_per_day=hrs_per_day,
-                                    hrs_of_day=hrs_of_day)
+        LoadValidator.validate_energy(
+            avg_power_W=avg_power_W, hrs_per_day=hrs_per_day, hrs_of_day=hrs_of_day)
         self.state = LoadState()
         self.avg_power_W = avg_power_W
 
@@ -105,8 +104,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.use_market_maker_rate = use_market_maker_rate
         self.fit_to_limit = fit_to_limit
 
-        validate_load_device_price(fit_to_limit=fit_to_limit,
-                                   energy_rate_increase_per_update=energy_rate_increase_per_update)
+        LoadValidator.validate_rate(
+            fit_to_limit=fit_to_limit,
+            energy_rate_increase_per_update=energy_rate_increase_per_update)
 
         if update_interval is None:
             update_interval = \
@@ -131,7 +131,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         for time_slot in initial_rate.keys():
             rate_change = None if fit_to_limit else \
                 find_object_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
-            validate_load_device_price(
+            LoadValidator.validate_rate(
                 initial_buying_rate=initial_rate[time_slot],
                 energy_rate_increase_per_update=rate_change,
                 final_buying_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
