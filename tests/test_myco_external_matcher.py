@@ -1,8 +1,8 @@
 import json
+from unittest.mock import MagicMock, patch
 
 import pytest
 from pendulum import now
-from unittest.mock import MagicMock, patch
 
 import d3a.models.market.market_redis_connection
 from d3a.d3a_core.exceptions import InvalidBidOfferPairException, MycoValidationException
@@ -151,9 +151,10 @@ class TestMycoExternalMatcher:
                 "selected_energy": 1}
         ]
         validated_records = self.matcher._get_validated_bid_offer_match_list(records)
-        assert isinstance(validated_records, dict)
-        assert self.market.id in validated_records
-        assert len(validated_records[self.market.id]) == 2
+        assert isinstance(validated_records, list)
+        assert any(record["market_id"] == self.market.id for record in validated_records)
+        assert len(list(filter(
+            lambda record: record["market_id"] == self.market.id, validated_records))) == 2
         # should be called once for each record
         assert self.market.validate_authentic_bid_offer_pair.call_count == 2
 

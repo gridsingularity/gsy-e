@@ -2,18 +2,17 @@ import json
 import logging
 from typing import Dict, List
 
+from d3a_interface.dataclasses import BidOfferMatch
+
 import d3a.constants
 from d3a.d3a_core.exceptions import (
     InvalidBidOfferPairException, OfferNotFoundException,
     BidNotFoundException, MycoValidationException)
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
 from d3a.models.market import Market
-from d3a.models.market.market_structures import BidOfferMatch
-
-from d3a.models.myco_matcher.base_matcher import BaseMatcher
 
 
-class ExternalMatcher(BaseMatcher):
+class ExternalMatcher:
     """Class responsible for external bids / offers matching."""
     def __init__(self):
         super().__init__()
@@ -25,7 +24,6 @@ class ExternalMatcher(BaseMatcher):
         self._setup_redis_connection()
         self.area_uuid_markets_mapping = {}
         self.markets_mapping = {}  # Dict[market_id: market] mapping
-        self.recommendations = []
 
     def _setup_redis_connection(self):
         self.myco_ext_conn = ResettableCommunicator()
@@ -74,10 +72,10 @@ class ExternalMatcher(BaseMatcher):
         recommendations = data.get("recommended_matches", [])
         try:
             validated_records = self._get_validated_bid_offer_match_list(recommendations)
-            for market_id, records in validated_records.items():
-                market = self.markets_mapping.get(market_id)
+            for record in validated_records:
+                market = self.markets_mapping.get(record["market_id"])
                 try:
-                    market.match_recommendation(records)
+                    market.match_recommendations([record])
                 except (OfferNotFoundException, BidNotFoundException):
                     # If the offer or bid have just been consumed
                     continue
@@ -118,9 +116,6 @@ class ExternalMatcher(BaseMatcher):
         data = {"event": "finish"}
         self.myco_ext_conn.publish_json(self.events_channel, data)
 
-    def calculate_match_recommendation(self, bids, offers, current_time=None):
-        pass
-
     def update_area_uuid_markets_mapping(self, area_uuid_markets_mapping: Dict) -> None:
         """Interface for updating the area_uuid_markets_mapping mapping."""
         self.area_uuid_markets_mapping.update(area_uuid_markets_mapping)
@@ -143,9 +138,9 @@ class ExternalMatcher(BaseMatcher):
         return bids_list, offers_list
 
     def _get_validated_bid_offer_match_list(
-            self, recommendations: List[Dict]) -> Dict[str, List[BidOfferMatch]]:
-        """Return a dict of market_id as key and list of BidOfferMatch objs as value."""
-        validated_records = {}
+            self, recommendations: List[Dict]) -> List[BidOfferMatch.serializable_dict]:
+        """Return a validated list of BidOfferMatch instances."""
+        validated_records = []
         for record in recommendations:
             market = self.markets_mapping.get(record.get("market_id"), None)
             if market is None or market.readonly:
@@ -168,12 +163,12 @@ class ExternalMatcher(BaseMatcher):
                 )
             except InvalidBidOfferPairException:
                 continue
-            if record.get("market_id") not in validated_records:
-                validated_records[record.get("market_id")] = []
 
-            validated_records[record.get("market_id")].append(BidOfferMatch(
-                market_bid,
-                record.get("selected_energy"),
-                market_offer,
-                record.get("trade_rate")))
+            validated_records.append(BidOfferMatch(
+                market_id=record.get("market_id"),
+                bid=market_bid.serializable_dict(),
+                selected_energy=record.get("selected_energy"),
+                offer=market_offer.serializable_dict(),
+                trade_rate=record.get("trade_rate"),
+                ).serializable_dict())
         return validated_records

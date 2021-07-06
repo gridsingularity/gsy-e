@@ -378,13 +378,13 @@ def storage_strategy_test6(area_test6, market_test6, called):
 
 
 def test_if_trades_are_handled_correctly(storage_strategy_test6, market_test6):
-    storage_strategy_test6.area.get_future_market_from_id = \
-        lambda _id: market_test6 if _id == market_test6.id else None
+    storage_strategy_test6.area.get_future_market_from_id = (
+        lambda _id: market_test6 if _id == market_test6.id else None)
     storage_strategy_test6.state.add_default_values_to_state_profiles(
         storage_strategy_test6.future_markets_time_slots)
     storage_strategy_test6.event_trade(market_id=market_test6.id, trade=market_test6.trade)
-    assert market_test6.trade.offer in \
-        storage_strategy_test6.offers.sold[market_test6.id]
+    assert (market_test6.trade.offer in
+            storage_strategy_test6.offers.sold[market_test6.id])
     assert market_test6.trade.offer not in storage_strategy_test6.offers.open
 
 

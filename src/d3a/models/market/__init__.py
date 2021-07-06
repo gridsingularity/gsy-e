@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import uuid
 from logging import getLogger
-from typing import Dict, List  # noqa
+from typing import Dict, List, Union  # noqa
 
 from numpy.random import random
 from collections import namedtuple
@@ -187,18 +187,11 @@ class Market:
         )
 
     @staticmethod
-    def sorting(obj, reverse_order=False):
-        if reverse_order:
-            # Sorted bids in descending order
-            return list(reversed(sorted(
-                obj.values(),
-                key=lambda b: b.energy_rate)))
-
-        else:
-            # Sorted bids in ascending order
-            return list(sorted(
-                obj.values(),
-                key=lambda b: b.energy_rate))
+    def sorting(offers_bids: Dict, reverse_order=False) -> List[Union[Bid, Offer]]:
+        """Sort a list of bids or offers by a energy_rate attribute."""
+        return list(sorted(offers_bids.values(),
+                           key=lambda obj: obj.energy_rate,
+                           reverse=reverse_order))
 
     @property
     def avg_offer_price(self):

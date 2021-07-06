@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import datetime
 from dataclasses import dataclass, field, asdict
-from typing import Dict, List  # noqa
+from typing import Dict, List, Union  # noqa
 from copy import deepcopy
 import json
 from pendulum import DateTime, parse
@@ -250,7 +250,7 @@ class Trade:
     offer: Offer
     seller: str
     buyer: str
-    residual: Offer or Bid = None
+    residual: Union[Offer, Bid] = None
     already_tracked: bool = False
     offer_bid_trade_info: TradeBidOfferInfo = None
     seller_origin: str = None
@@ -346,7 +346,7 @@ class BalancingTrade:
     offer: Offer
     seller: str
     buyer: str
-    residual: Offer or Bid = None
+    residual: Union[Offer, Bid] = None
     offer_bid_trade_info: str = None
     seller_origin: float = None
     buyer_origin: str = None
@@ -387,14 +387,6 @@ class MarketClearingState:
     @classmethod
     def _csv_fields(cls):
         return "time", "rate [ct./kWh]"
-
-
-@dataclass
-class BidOfferMatch:
-    bid: Bid
-    selected_energy: float
-    offer: Offer
-    trade_rate: float
 
 
 def parse_event_and_parameters_from_json_string(payload):
