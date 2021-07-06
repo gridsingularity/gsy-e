@@ -23,6 +23,7 @@ from d3a_interface.sim_results.all_results import ResultsHandler
 from d3a_interface.utils import get_json_dict_memory_allocation_size
 
 from d3a.d3a_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
+from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.home_meter import HomeMeterStrategy
@@ -137,28 +138,21 @@ class SimulationEndpointBuffer:
         if self.current_market_time_slot_str == "":
             return
         core_stats_dict = {"bids": [], "offers": [], "trades": [], "market_fee": 0.0}
-        if hasattr(area.current_market, "offer_history"):
+        if area.current_market is not None:
             for offer in area.current_market.offer_history:
                 core_stats_dict["offers"].append(offer.serializable_dict())
-        if hasattr(area.current_market, "bid_history"):
             for bid in area.current_market.bid_history:
                 core_stats_dict["bids"].append(bid.serializable_dict())
-        if hasattr(area.current_market, "trades"):
             for trade in area.current_market.trades:
                 core_stats_dict["trades"].append(trade.serializable_dict())
-        if hasattr(area.current_market, "market_fee"):
             core_stats_dict["market_fee"] = area.current_market.market_fee
-        if (getattr(area.current_market, "const_fee_rate", None) is not None and
-                area.current_market is not None):
             core_stats_dict["const_fee_rate"] = (area.current_market.const_fee_rate
                                                  if area.current_market.const_fee_rate is not None
                                                  else 0.)
             core_stats_dict["feed_in_tariff"] = FEED_IN_TARIFF
-            if isinstance(GlobalConfig.market_maker_rate, int):
-                core_stats_dict["market_maker_rate"] = GlobalConfig.market_maker_rate
-            elif isinstance(GlobalConfig.market_maker_rate, dict):
-                core_stats_dict["market_maker_rate"] = \
-                    GlobalConfig.market_maker_rate[area.current_market.time_slot]
+            core_stats_dict["market_maker_rate"] = get_market_maker_rate_from_config(
+                area.current_market)
+
         if area.strategy is None:
             core_stats_dict["area_throughput"] = {
                 "baseline_peak_energy_import_kWh": area.throughput.baseline_peak_energy_import_kWh,
