@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Dict, Union
 
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.device_validator import HomeMeterValidator
+from d3a_interface.validators.home_meter_validator import HomeMeterValidator
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import find_object_of_same_weekday_and_time
 from numpy import random
@@ -534,7 +534,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
             return
         if not offer and not market.offers:
             return
-        if offer.id not in market.offers:
+        if offer and offer.id not in market.offers:
             return
 
         try:
