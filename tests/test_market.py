@@ -230,7 +230,6 @@ def test_market_offer_readonly(market, offer):
     (BalancingMarket(bc=MagicMock(), time_slot=now()), "balancing_offer")
 ])
 def test_market_offer_delete(market, offer):
-    print(f"market: {market.bc_interface}")
     offer = getattr(market, offer)(20, 10, 'someone', 'someone')
     market.delete_offer(offer)
 

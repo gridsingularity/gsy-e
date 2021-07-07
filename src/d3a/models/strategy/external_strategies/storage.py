@@ -19,7 +19,6 @@ import json
 import logging
 from typing import List, Dict
 
-from d3a.d3a_core.exceptions import MarketException
 from d3a.models.strategy.external_strategies import IncomingRequest, default_market_info
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
@@ -461,53 +460,6 @@ class StorageExternalMixin(ExternalMixin):
                 "error_message": f"Error when listing offers on area {self.device.name}.",
                 "transaction_id": arguments.get("transaction_id", None)}
 
-    def _update_offer_aggregator(self, arguments):
-        assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
-        if arguments['price'] < 0.0:
-            return {
-                "command": "update_offer", "status": "error",
-                "area_uuid": self.device.uuid,
-                "error_message": "Update offer is only possible with positive price.",
-                "transaction_id": arguments.get("transaction_id", None)}
-
-        with self.lock:
-            offer_arguments = {k: v
-                               for k, v in arguments.items()
-                               if k not in ["transaction_id", "type"]}
-
-            open_offers = self.offers.open
-            if len(open_offers) == 0:
-                return {
-                    "command": "update_offer", "status": "error",
-                    "area_uuid": self.device.uuid,
-                    "error_message": "Update offer is only possible if the old offer exist",
-                    "transaction_id": arguments.get("transaction_id", None)}
-
-            for offer, iterated_market_id in open_offers.items():
-                iterated_market = self.area.get_future_market_from_id(iterated_market_id)
-                if iterated_market is None:
-                    continue
-                try:
-                    iterated_market.delete_offer(offer.id)
-                    offer_arguments['energy'] = offer.energy
-                    offer_arguments['price'] = \
-                        (offer_arguments['price'] / offer_arguments['energy']) * offer.energy
-                    offer_arguments["seller"] = offer.seller
-                    offer_arguments["seller_origin"] = offer.seller_origin
-                    offer_arguments["seller_id"] = offer.seller_id
-                    offer_arguments["seller_origin_id"] = offer.seller_origin_id
-                    new_offer = iterated_market.offer(**offer_arguments)
-                    self.offers.replace(offer, new_offer, iterated_market.id)
-                    return {
-                        "command": "update_offer",
-                        "area_uuid": self.device.uuid,
-                        "status": "ready",
-                        "offer": offer.to_json_string(),
-                        "transaction_id": arguments.get("transaction_id", None),
-                    }
-                except MarketException:
-                    continue
-
     def _offer_aggregator(self, arguments):
         required_args = {'price', 'energy', 'type', 'transaction_id'}
         allowed_args = required_args.union({'replace_existing'})
@@ -545,41 +497,6 @@ class StorageExternalMixin(ExternalMixin):
                     "area_uuid": self.device.uuid,
                     "error_message": f"Error when handling offer create "
                                      f"on area {self.device.name} with arguments {arguments}.",
-                    "transaction_id": arguments.get("transaction_id", None)}
-
-    def _update_bid_aggregator(self, arguments):
-        assert set(arguments.keys()) == {'price', 'energy', 'type', 'transaction_id'}
-        bid_rate = arguments["price"] / arguments["energy"]
-        if bid_rate < 0.0:
-            return {
-                "command": "update_bid", "status": "error",
-                "area_uuid": self.device.uuid,
-                "error_message": "Updated bid needs to have a positive price.",
-                "transaction_id": arguments.get("transaction_id", None)}
-        with self.lock:
-            existing_bids = list(self.get_posted_bids(self.next_market))
-            existing_bid_energy = sum([bid.energy for bid in existing_bids])
-
-            for bid in existing_bids:
-                assert bid.buyer == self.owner.name
-                if bid.id in self.next_market.bids.keys():
-                    bid = self.next_market.bids[bid.id]
-                self.next_market.delete_bid(bid.id)
-
-                self.remove_bid_from_pending(self.next_market.id, bid.id)
-            if len(existing_bids) > 0:
-                updated_bid = self.post_bid(self.next_market, bid_rate * existing_bid_energy,
-                                            existing_bid_energy)
-                return {
-                    "command": "update_bid", "status": "ready",
-                    "bid": updated_bid.to_json_string(),
-                    "area_uuid": self.device.uuid,
-                    "transaction_id": arguments.get("transaction_id", None)}
-            else:
-                return {
-                    "command": "update_bid", "status": "error",
-                    "area_uuid": self.device.uuid,
-                    "error_message": "Updated bid would only work if the old exist in market.",
                     "transaction_id": arguments.get("transaction_id", None)}
 
     def _bid_aggregator(self, arguments):
