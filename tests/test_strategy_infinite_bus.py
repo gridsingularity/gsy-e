@@ -333,3 +333,66 @@ def testing_event_market_cycle_posting_bids(bus_test4, area_test4):
     assert bus_test4._bids[area_test4.test_market.id][-1].energy == sys.maxsize
     assert bus_test4._bids[area_test4.test_market.id][-1].price == 25 * sys.maxsize
     ConstSettings.IAASettings.MARKET_TYPE = 1
+
+
+"""TEST5"""
+
+
+@pytest.fixture()
+def area_test5():
+    return FakeArea(0)
+
+
+@pytest.fixture()
+def bus_test5(area_test5):
+    c = InfiniteBusStrategy(energy_rate_profile="src/d3a/resources/SAM_SF_Summer.csv")
+    c.area = area_test5
+    c.owner = area_test5
+    return c
+
+
+def test_global_market_maker_rate_profile(bus_test5, area_test5):
+    assert isinstance(GlobalConfig.market_maker_rate, dict)
+
+
+"""TEST6"""
+
+
+@pytest.fixture()
+def area_test6():
+    return FakeArea(0)
+
+
+@pytest.fixture()
+def bus_test6(area_test6):
+    c = InfiniteBusStrategy(energy_rate_profile="src/d3a/resources/SAM_SF_Summer.csv")
+    c.area = area_test6
+    c.owner = area_test6
+    return c
+
+
+def test_infinite_bus_selling_rate_set_as_profile(bus_test6, area_test6):
+    bus_test6.event_activate()
+    assert isinstance(bus_test6.energy_rate, dict)
+
+
+"""TEST7"""
+
+
+@pytest.fixture()
+def area_test7():
+    return FakeArea(0)
+
+
+@pytest.fixture()
+def bus_test7(area_test7):
+    c = InfiniteBusStrategy(
+        energy_rate_profile="/Users/muhammad.faizan/d3a/src/d3a/resources/LOAD_DATA_1.csv")
+    c.area = area_test7
+    c.owner = area_test7
+    return c
+
+
+def test_infinite_bus_buying_rate_set_as_profile(bus_test7, area_test7):
+    bus_test7.event_activate()
+    assert isinstance(bus_test7.energy_buy_rate, dict)
