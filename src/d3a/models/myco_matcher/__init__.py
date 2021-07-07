@@ -12,8 +12,8 @@ class MycoMatcher:
     def __init__(self):
         self.match_algorithm = None
 
-    def reconfigure(self):
-        """Reconfigure the myco matcher properties at runtime."""
+    def activate(self):
+        """Method to be called upon the activation of MycoMatcher."""
         self.match_algorithm = self.get_matcher_algorithm()
 
     def calculate_recommendation(self, bids, offers, current_time):

@@ -35,7 +35,7 @@ class StorageExternalMixin(ExternalMixin):
 
     @property
     def filtered_bids_next_market(self) -> List[Dict]:
-        """Get a representation of each of the device"s bids from the next market."""
+        """Get a representation of each of the device's bids from the next market."""
 
         return [
             {"id": bid.id, 'price': bid.price, 'energy': bid.energy}
@@ -463,7 +463,7 @@ class StorageExternalMixin(ExternalMixin):
                 "area_uuid": self.device.uuid,
                 "error_message": f"Error when listing offers on area {self.device.name}.",
                 "transaction_id": arguments.get("transaction_id", None)}
-    
+
     def _offer_aggregator(self, arguments):
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
