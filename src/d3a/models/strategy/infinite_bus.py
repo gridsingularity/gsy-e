@@ -18,8 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
-    read_and_convert_identity_profile_to_float
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy import BidEnabledStrategy, INF_ENERGY
 from d3a.d3a_core.exceptions import MarketException
@@ -44,47 +43,38 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         self._set_market_maker_rate()
 
     def _set_market_maker_rate(self):
-        if self.energy_rate_profile is not None and isinstance(self.energy_rate_profile, dict):
-            GlobalConfig.market_maker_rate = \
-                read_and_convert_identity_profile_to_float(self.energy_rate_profile)
-        elif self.energy_rate_profile is not None and isinstance(self.energy_rate_profile, str):
-            GlobalConfig.market_maker_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                    self.energy_rate_profile)
-        elif isinstance(self.energy_rate, (int, float)):
+        if self.energy_rate_profile is not None:
+            GlobalConfig.market_maker_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, self.energy_rate_profile)
+        elif self.energy_rate is not None:
             GlobalConfig.market_maker_rate = self.energy_rate
-        elif isinstance(self.energy_rate, (str, dict)):
-            GlobalConfig.market_maker_rate = \
-                read_arbitrary_profile(InputProfileTypes.IDENTITY, self.energy_rate)
         else:
-            GlobalConfig.market_maker_rate = \
-                ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+            GlobalConfig.market_maker_rate = (
+                ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE)
 
     def _populate_selling_rate(self):
         if self.energy_rate_profile is not None:
-            if isinstance(self.energy_rate_profile, dict):
-                self.energy_rate = read_and_convert_identity_profile_to_float(
-                    self.energy_rate_profile)
-            elif isinstance(self.energy_rate_profile, str):
-                self.energy_rate = read_arbitrary_profile(
-                    InputProfileTypes.IDENTITY, self.energy_rate_profile)
+            self.energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                      self.energy_rate_profile)
+            # TODO: to be checked via deleting in case increased memory is observed during runtime
             del self.energy_rate_profile
+        elif self.energy_rate is not None:
+            self.energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                      self.energy_rate)
         else:
-            self.energy_rate = self.area.config.market_maker_rate if self.energy_rate is None \
-                else read_arbitrary_profile(InputProfileTypes.IDENTITY, self.energy_rate)
+            self.energy_rate = self.area.config.market_maker_rate
 
     def _populate_buying_rate(self):
         if self.buying_rate_profile is not None:
-            if isinstance(self.buying_rate_profile, dict):
-                self.energy_buy_rate = read_and_convert_identity_profile_to_float(
-                    self.buying_rate_profile)
-            elif isinstance(self.buying_rate_profile, str):
-                self.energy_buy_rate = read_arbitrary_profile(
-                    InputProfileTypes.IDENTITY, self.buying_rate_profile)
+            self.energy_buy_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, self.buying_rate_profile)
+            # TODO: to be checked via deleting in case increased memory is observed during runtime
             del self.buying_rate_profile
+        elif self.energy_buy_rate is not None:
+            self.energy_buy_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, self.energy_buy_rate)
         else:
-            self.energy_buy_rate = self.area.config.market_maker_rate \
-                if self.energy_buy_rate is None \
-                else read_arbitrary_profile(InputProfileTypes.IDENTITY, self.energy_buy_rate)
+            self.energy_buy_rate = self.area.config.market_maker_rate
 
     def event_activate(self, **kwargs):
         self._populate_selling_rate()
@@ -113,8 +103,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
 
     def event_market_cycle(self):
         super().event_market_cycle()
-        if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
-           ConstSettings.IAASettings.MARKET_TYPE == 3:
+        if ConstSettings.IAASettings.MARKET_TYPE == 2:
             for market in self.area.all_markets:
                 try:
                     buy_rate = find_object_of_same_weekday_and_time(self.energy_buy_rate,

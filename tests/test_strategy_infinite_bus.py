@@ -379,7 +379,7 @@ def test_infinite_bus_selling_rate_set_as_profile(bus_test6):
 @pytest.fixture()
 def bus_test7(area_test1):
     c = InfiniteBusStrategy(
-        energy_rate_profile="src/d3a/resources/LOAD_DATA_1.csv")
+        buying_rate_profile="src/d3a/resources/LOAD_DATA_1.csv")
     c.area = area_test1
     c.owner = area_test1
     return c
@@ -390,4 +390,4 @@ def test_infinite_bus_buying_rate_set_as_profile(bus_test7):
     assert isinstance(bus_test7.energy_buy_rate, dict)
     assert len(bus_test7.energy_buy_rate) == 96
     assert list(bus_test7.energy_buy_rate.values())[0] == 10
-    assert list(bus_test7.energy_buy_rate.values())[-1] == 10
+    assert list(bus_test7.energy_buy_rate.values())[15] == 15
