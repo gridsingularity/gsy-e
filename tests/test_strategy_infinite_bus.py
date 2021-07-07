@@ -387,7 +387,7 @@ def area_test7():
 @pytest.fixture()
 def bus_test7(area_test7):
     c = InfiniteBusStrategy(
-        energy_rate_profile="/Users/muhammad.faizan/d3a/src/d3a/resources/LOAD_DATA_1.csv")
+        energy_rate_profile="src/d3a/resources/LOAD_DATA_1.csv")
     c.area = area_test7
     c.owner = area_test7
     return c
