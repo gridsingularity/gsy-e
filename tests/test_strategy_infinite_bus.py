@@ -347,11 +347,14 @@ def bus_test5(area_test1):
     return c
 
 
-def test_global_market_maker_rate_profile(bus_test5):
+def test_global_market_maker_rate_profile_and_infinite_bus_selling_rate_profile(bus_test5):
     assert isinstance(GlobalConfig.market_maker_rate, dict)
     assert len(GlobalConfig.market_maker_rate) == 96
     assert list(GlobalConfig.market_maker_rate.values())[0] == 516.0
     assert list(GlobalConfig.market_maker_rate.values())[-1] == 595.0
+    bus_test5.event_activate()
+    assert list(bus_test5.energy_rate.values())[0] == 516.0
+    assert list(bus_test5.energy_rate.values())[-1] == 595.0
 
 
 """TEST6"""
@@ -359,25 +362,6 @@ def test_global_market_maker_rate_profile(bus_test5):
 
 @pytest.fixture()
 def bus_test6(area_test1):
-    c = InfiniteBusStrategy(energy_rate_profile="src/d3a/resources/SAM_SF_Summer.csv")
-    c.area = area_test1
-    c.owner = area_test1
-    return c
-
-
-def test_infinite_bus_selling_rate_set_as_profile(bus_test6):
-    bus_test6.event_activate()
-    assert isinstance(bus_test6.energy_rate, dict)
-    assert len(bus_test6.energy_rate) == 96
-    assert list(bus_test6.energy_rate.values())[0] == 516.0
-    assert list(bus_test6.energy_rate.values())[-1] == 595.0
-
-
-"""TEST7"""
-
-
-@pytest.fixture()
-def bus_test7(area_test1):
     c = InfiniteBusStrategy(
         buying_rate_profile="src/d3a/resources/LOAD_DATA_1.csv")
     c.area = area_test1
@@ -385,9 +369,9 @@ def bus_test7(area_test1):
     return c
 
 
-def test_infinite_bus_buying_rate_set_as_profile(bus_test7):
-    bus_test7.event_activate()
-    assert isinstance(bus_test7.energy_buy_rate, dict)
-    assert len(bus_test7.energy_buy_rate) == 96
-    assert list(bus_test7.energy_buy_rate.values())[0] == 10
-    assert list(bus_test7.energy_buy_rate.values())[15] == 15
+def test_infinite_bus_buying_rate_set_as_profile(bus_test6):
+    bus_test6.event_activate()
+    assert isinstance(bus_test6.energy_buy_rate, dict)
+    assert len(bus_test6.energy_buy_rate) == 96
+    assert list(bus_test6.energy_buy_rate.values())[0] == 10
+    assert list(bus_test6.energy_buy_rate.values())[15] == 15

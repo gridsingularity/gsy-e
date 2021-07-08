@@ -63,7 +63,6 @@ class CommercialStrategy(BaseStrategy):
 
     def offer_energy(self, market):
         energy_rate = find_object_of_same_weekday_and_time(self.energy_rate, market.time_slot)
-        print(f"offer_energy: {energy_rate}")
         try:
             offer = market.offer(
                 self.energy_per_slot_kWh * energy_rate,
