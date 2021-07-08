@@ -1,2 +1,2 @@
 -r base.txt
-substrate-interface==0.11.15
+substrate-interface==0.11.16

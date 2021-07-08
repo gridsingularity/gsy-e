@@ -28,6 +28,50 @@ if platform.python_implementation() != "PyPy" and \
 DEFAULT_SUBSTRATE_URL = "wss://charlie-node.dev.gridsingularity.com/"
 TEMPLATE_NODE_ADDRESS_TYPE = 42
 
+custom_type_registry = {
+    "runtime_id": 2000,
+    "types": {
+        "Address": "MultiAddress",
+        "LookupSource": "MultiAddress",
+        "Keys": {
+            "type": "struct",
+            "type_mapping": [
+                ["grandpa", "AccountId"],
+                ["babe", "AccountId"],
+                ["im_online", "AccountId"],
+                ["authority_discovery", "AccountId"],
+                ["parachains", "AccountId"],
+                ["Bid",
+                    [
+                        ["uuid", "u32"],
+                        ["max_energy", "u32"],
+                        ["market_uuid", "Option<Vec<u8>>"],
+                        ["asset_uuid", "Option<Vec<u8>>"],
+                        ["time_slot", "Vec<u8>"]
+                    ]
+                 ],
+                ["Offer",
+                    [
+                        ["uuid", "u32"],
+                        ["max_energy", "u32"],
+                        ["market_uuid", "Option<Vec<u8>>"],
+                        ["asset_uuid", "Option<Vec<u8>>"],
+                        ["energy_type", "Vec<u8>"],
+                        ["time_slot", "Vec<u8>"]
+                    ]
+                 ],
+                ["Match",
+                    [
+                        ["ids", "u32"],
+                        ["price", "u32"],
+                        ["energy", "u32"]
+                    ]
+                 ]
+            ]
+        }
+    }
+}
+
 
 class BlockChainInterface:
 
@@ -35,5 +79,7 @@ class BlockChainInterface:
         self.substrate = SubstrateInterface(
             url=DEFAULT_SUBSTRATE_URL,
             address_type=TEMPLATE_NODE_ADDRESS_TYPE,
-            type_registry_preset='canvas'
+            type_registry_preset='substrate-node-template',
+            type_registry=custom_type_registry,
+            use_remote_preset=False
         )

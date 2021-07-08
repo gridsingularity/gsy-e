@@ -45,7 +45,7 @@ rq==1.8.1                 # via -r requirements/base.txt
 scalecodec==0.10.54       # via substrate-interface
 six==1.15.0               # via -r requirements/base.txt, d3a-interface, jsonschema, pip-tools, plotly, python-dateutil, python-rex, retrying, tox, virtualenv, websocket-client
 sortedcontainers==2.4.0   # via -r requirements/base.txt
-substrate-interface==0.11.15  # via -r requirements/blockchain.in
+substrate-interface==0.11.16  # via -r requirements/blockchain.in
 toml==0.10.2              # via -r requirements/base.txt, d3a-interface, tox
 tox==3.20.1               # via -r requirements/base.txt, d3a-interface
 unidecode==0.4.21         # via -r requirements/base.txt, awesome-slugify
