@@ -16,27 +16,28 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import traceback
-from typing import Union
 from collections import namedtuple
 from enum import Enum
 from logging import getLogger
+from typing import Union
 
-from pendulum import duration
-
+from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.device_validator import validate_storage_device
+from d3a_interface.validators import StorageValidator
+from pendulum import duration
+
+from d3a import constants
 from d3a import limit_float_precision
 from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
 from d3a.models.state import StorageState, ESSEnergyOrigin, EnergyOrigin
 from d3a.models.strategy import BidEnabledStrategy
-from d3a.models.strategy.update_frequency import TemplateStrategyOfferUpdater, \
-    TemplateStrategyBidUpdater
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a import constants
+from d3a.models.strategy.update_frequency import (
+    TemplateStrategyOfferUpdater,
+    TemplateStrategyBidUpdater)
 
 log = getLogger(__name__)
 
@@ -84,14 +85,15 @@ class StorageStrategy(BidEnabledStrategy):
             min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
         self.initial_soc = initial_soc
 
-        validate_storage_device(initial_soc=initial_soc, min_allowed_soc=min_allowed_soc,
-                                battery_capacity_kWh=battery_capacity_kWh,
-                                max_abs_battery_power_kW=max_abs_battery_power_kW,
-                                loss_per_hour=loss_per_hour,
-                                loss_function=loss_function,
-                                fit_to_limit=fit_to_limit,
-                                energy_rate_increase_per_update=energy_rate_increase_per_update,
-                                energy_rate_decrease_per_update=energy_rate_decrease_per_update)
+        StorageValidator.validate(
+            initial_soc=initial_soc, min_allowed_soc=min_allowed_soc,
+            battery_capacity_kWh=battery_capacity_kWh,
+            max_abs_battery_power_kW=max_abs_battery_power_kW,
+            loss_per_hour=loss_per_hour,
+            loss_function=loss_function,
+            fit_to_limit=fit_to_limit,
+            energy_rate_increase_per_update=energy_rate_increase_per_update,
+            energy_rate_decrease_per_update=energy_rate_decrease_per_update)
 
         if isinstance(update_interval, int):
             update_interval = duration(minutes=update_interval)
@@ -106,7 +108,7 @@ class StorageStrategy(BidEnabledStrategy):
                 energy_rate_change_per_update=energy_rate_decrease_per_update,
                 update_interval=update_interval)
         for time_slot in self.offer_update.initial_rate_profile_buffer.keys():
-            validate_storage_device(
+            StorageValidator.validate(
                 initial_selling_rate=self.offer_update.initial_rate_profile_buffer[time_slot],
                 final_selling_rate=find_object_of_same_weekday_and_time(
                     self.offer_update.final_rate_profile_buffer, time_slot))
@@ -120,7 +122,7 @@ class StorageStrategy(BidEnabledStrategy):
                 rate_limit_object=min
             )
         for time_slot in self.bid_update.initial_rate_profile_buffer.keys():
-            validate_storage_device(
+            StorageValidator.validate(
                 initial_buying_rate=self.bid_update.initial_rate_profile_buffer[time_slot],
                 final_buying_rate=find_object_of_same_weekday_and_time(
                     self.bid_update.final_rate_profile_buffer, time_slot))
@@ -225,15 +227,16 @@ class StorageStrategy(BidEnabledStrategy):
                 find_object_of_same_weekday_and_time(energy_rate_increase_per_update, time_slot)
             offer_rate_change = None if offer_fit_to_limit else \
                 find_object_of_same_weekday_and_time(energy_rate_decrease_per_update, time_slot)
-            validate_storage_device(initial_selling_rate=initial_selling_rate[time_slot],
-                                    final_selling_rate=find_object_of_same_weekday_and_time(
-                                        final_selling_rate, time_slot),
-                                    initial_buying_rate=find_object_of_same_weekday_and_time(
-                                        initial_buying_rate, time_slot),
-                                    final_buying_rate=find_object_of_same_weekday_and_time(
-                                        final_buying_rate, time_slot),
-                                    energy_rate_increase_per_update=bid_rate_change,
-                                    energy_rate_decrease_per_update=offer_rate_change)
+            StorageValidator.validate(
+                initial_selling_rate=initial_selling_rate[time_slot],
+                final_selling_rate=find_object_of_same_weekday_and_time(
+                    final_selling_rate, time_slot),
+                initial_buying_rate=find_object_of_same_weekday_and_time(
+                    initial_buying_rate, time_slot),
+                final_buying_rate=find_object_of_same_weekday_and_time(
+                    final_buying_rate, time_slot),
+                energy_rate_increase_per_update=bid_rate_change,
+                energy_rate_decrease_per_update=offer_rate_change)
 
     def event_on_disabled_area(self):
         self.state.calculate_soc_for_time_slot(self.area.next_market.time_slot)
