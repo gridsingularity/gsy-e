@@ -48,9 +48,6 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
                 InputProfileTypes.IDENTITY, self.energy_rate_profile)
         elif self.energy_rate is not None:
             GlobalConfig.market_maker_rate = self.energy_rate
-        else:
-            GlobalConfig.market_maker_rate = (
-                ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE)
 
     def _populate_selling_rate(self):
         if self.energy_rate_profile is not None:
