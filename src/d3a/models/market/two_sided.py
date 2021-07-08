@@ -33,6 +33,7 @@ from d3a.events.event_structures import MarketEvent
 from d3a.models.market import lock_market_action
 from d3a.models.market.market_structures import Bid, Trade, TradeBidOfferInfo, Offer
 from d3a.models.market.one_sided import OneSidedMarket
+from d3a_interface.dataclasses import BidOfferMatch
 
 log = getLogger(__name__)
 
@@ -253,7 +254,7 @@ class TwoSidedMarket(OneSidedMarket):
                                     seller_id=offer.seller_id)
         return bid_trade, trade
 
-    def match_recommendations(self, recommended_list: List[Dict]):
+    def match_recommendations(self, recommended_list: List[BidOfferMatch.serializable_dict]):
         """Match a list of bid/offer pairs, create trades and residual offers/bids."""
         if recommended_list is None:
             return

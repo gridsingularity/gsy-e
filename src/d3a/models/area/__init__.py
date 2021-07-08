@@ -417,14 +417,15 @@ class Area:
             return
         # If the external matching is not enabled, get and match bid offer pairs
         for market in self.all_markets:
-            bid_offer_pairs = True
-            while bid_offer_pairs:
+            while True:
                 bids, offers = market.open_bids_and_offers
                 data = {
                     market.id: {"bids": [bid.serializable_dict() for bid in bids.values()],
                                 "offers": [offer.serializable_dict() for offer in offers.values()],
                                 "current_time": self.now}}
                 bid_offer_pairs = bid_offer_matcher.get_matches_recommendations(data)
+                if not bid_offer_pairs:
+                    return
                 market.match_recommendations(bid_offer_pairs)
 
     def update_area_current_tick(self):
