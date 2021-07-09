@@ -40,17 +40,17 @@ class TestTwoSidedMarket:
                   buyer_id="bid_id", requirements=[], attributes={})
         with pytest.raises(InvalidBidOfferPairException):
             # should raise an exception as buyer_id is not in trading_partners
-            market.validate_requirements_satisfied(offer, bid)
+            market._validate_requirements_satisfied(bid, offer)
         bid.buyer_id = "bid_id2"
-        market.validate_requirements_satisfied(offer, bid)  # Should not raise any exceptions
+        market._validate_requirements_satisfied(bid, offer)  # Should not raise any exceptions
         bid.requirements.append({"energy_type": ["Grey"]})
         with pytest.raises(InvalidBidOfferPairException):
             # should raise an exception as energy_type of offer needs to be in [Grey, ]
-            market.validate_requirements_satisfied(offer, bid)
+            market._validate_requirements_satisfied(bid, offer)
 
         # Adding another requirement that is satisfied, should not raise an exception
         bid.requirements.append({"energy_type": ["Green"]})
-        market.validate_requirements_satisfied(offer, bid)
+        market._validate_requirements_satisfied(bid, offer)
 
     @pytest.mark.parametrize(
         "bid_energy, offer_energy, clearing_rate, selected_energy", [
@@ -63,10 +63,10 @@ class TestTwoSidedMarket:
             self, market, bid_energy, offer_energy, clearing_rate, selected_energy):
         offer = Offer("id", now(), 2, offer_energy, "other", 2)
         bid = Bid("bid_id", now(), 2, bid_energy, "B", 8)
-        TwoSidedMarket.validate_requirements_satisfied = MagicMock()
+        TwoSidedMarket._validate_requirements_satisfied = MagicMock()
         with pytest.raises(InvalidBidOfferPairException):
-            market.validate_authentic_bid_offer_pair(bid, offer, clearing_rate, selected_energy)
-            TwoSidedMarket.validate_requirements_satisfied.assert_not_called()
+            market.validate_bid_offer_match(bid, offer, clearing_rate, selected_energy)
+            TwoSidedMarket._validate_requirements_satisfied.assert_not_called()
 
     def test_double_sided_performs_pay_as_bid_matching(
             self, market: TwoSidedMarket, market_matcher):

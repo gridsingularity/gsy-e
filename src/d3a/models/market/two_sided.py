@@ -230,7 +230,7 @@ class TwoSidedMarket(OneSidedMarket):
         return trade
 
     def accept_bid_offer_pair(self, bid, offer, clearing_rate, trade_bid_info, selected_energy):
-        self.validate_authentic_bid_offer_pair(bid, offer, clearing_rate, selected_energy)
+        self.validate_bid_offer_match(bid, offer, clearing_rate, selected_energy)
         already_tracked = bid.buyer == offer.seller
         trade = self.accept_offer(offer_or_id=offer,
                                   buyer=bid.buyer,
@@ -254,11 +254,11 @@ class TwoSidedMarket(OneSidedMarket):
                                     seller_id=offer.seller_id)
         return bid_trade, trade
 
-    def match_recommendations(self, recommended_list: List[BidOfferMatch.serializable_dict]):
+    def match_recommendations(self, recommendations: List[BidOfferMatch.serializable_dict]):
         """Match a list of bid/offer pairs, create trades and residual offers/bids."""
-        if recommended_list is None:
+        if recommendations is None:
             return
-        for index, recommended_pair in enumerate(recommended_list):
+        for index, recommended_pair in enumerate(recommendations):
             selected_energy = recommended_pair["selected_energy"]
             bid = self.bids.get(recommended_pair["bid"]["id"])
             offer = self.offers.get(recommended_pair["offer"]["id"])
@@ -277,13 +277,13 @@ class TwoSidedMarket(OneSidedMarket):
             )
 
             if trade.residual is not None or bid_trade.residual is not None:
-                recommended_list = self._replace_offers_bids_with_residual_in_matching_list(
-                    recommended_list, index+1, trade, bid_trade
+                recommendations = self._replace_offers_bids_with_residual_in_matching_list(
+                    recommendations, index+1, trade, bid_trade
                 )
 
     @staticmethod
-    def validate_requirements_satisfied(
-            offer: Offer, bid: Bid, clearing_rate: float = None,
+    def _validate_requirements_satisfied(
+            bid: Bid, offer: Offer, clearing_rate: float = None,
             selected_energy: float = None) -> None:
         """Validate if both trade parties satisfy each other's requirements.
 
@@ -292,17 +292,18 @@ class TwoSidedMarket(OneSidedMarket):
         """
         if ((offer.requirements or bid.requirements) and
                 not RequirementsSatisfiedChecker.is_satisfied(
-                    offer, bid, clearing_rate, selected_energy)):
+                    offer=offer, bid=bid, clearing_rate=clearing_rate,
+                    selected_energy=selected_energy)):
             # If no requirement dict is satisfied
             raise InvalidBidOfferPairException(
                 f"OFFER: {offer} & BID: {bid} requirements failed the validation.")
 
     @classmethod
-    def validate_authentic_bid_offer_pair(
+    def validate_bid_offer_match(
             cls, bid: Bid, offer: Offer, clearing_rate: float, selected_energy: float) -> None:
         """Basic validation function for bid against an offer.
 
-        :raises:
+        Raises:
             InvalidBidOfferPairException: Bid offer pair failed the validation
         """
         if not (bid.energy >= selected_energy and
@@ -310,7 +311,8 @@ class TwoSidedMarket(OneSidedMarket):
                 (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= clearing_rate and
                 (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= offer.energy_rate):
             raise InvalidBidOfferPairException
-        cls.validate_requirements_satisfied(bid, offer, clearing_rate, selected_energy)
+        cls._validate_requirements_satisfied(
+            bid=bid, offer=offer, clearing_rate=clearing_rate, selected_energy=selected_energy)
 
     @classmethod
     def _replace_offers_bids_with_residual_in_matching_list(

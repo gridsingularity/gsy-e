@@ -132,7 +132,7 @@ class TestMycoExternalMatcher:
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
 
-    @patch("d3a.models.market.two_sided.TwoSidedMarket.validate_authentic_bid_offer_pair",
+    @patch("d3a.models.market.two_sided.TwoSidedMarket.validate_bid_offer_match",
            MagicMock())
     def test_get_validated_bid_offer_match_list(self):
         self._populate_market_bids_offers()
@@ -156,16 +156,16 @@ class TestMycoExternalMatcher:
         assert len(list(filter(
             lambda record: record["market_id"] == self.market.id, validated_records))) == 2
         # should be called once for each record
-        assert self.market.validate_authentic_bid_offer_pair.call_count == 2
+        assert self.market.validate_bid_offer_match.call_count == 2
 
         # If the market is readonly, it should raise an exception
         self.market.readonly = True
-        self.market.validate_authentic_bid_offer_pair.reset_mock()
+        self.market.validate_bid_offer_match.reset_mock()
         with pytest.raises(MycoValidationException):
             validated_records = self.matcher._get_validated_bid_offer_match_list(records)
             assert validated_records is None
             # should not be called
-            assert not self.market.validate_authentic_bid_offer_pair.called
+            assert not self.market.validate_bid_offer_match.called
 
     @patch("d3a.models.myco_matcher.external_matcher.ExternalMatcher."
            "_get_validated_bid_offer_match_list", MagicMock())

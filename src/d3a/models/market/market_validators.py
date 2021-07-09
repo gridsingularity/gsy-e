@@ -21,7 +21,7 @@ from d3a.models.market import Offer, Bid
 
 
 class Requirement(ABC):
-    """Define an offer/bid requirement with is_satisfied interface."""
+    """Interface for offer and bid requirements."""
 
     @classmethod
     @abstractmethod

@@ -1,5 +1,6 @@
 import json
 import logging
+from enum import Enum
 from typing import Dict, List
 
 from d3a_interface.dataclasses import BidOfferMatch
@@ -12,15 +13,23 @@ from d3a.d3a_core.redis_connections.redis_area_market_communicator import Resett
 from d3a.models.market import Market
 
 
+class ExternalMatcherEventsEnum(Enum):
+    OFFERS_BIDS_RESPONSE = "offers_bids_response"
+    MATCH = "match"
+    TICK = "tick"
+    MARKET = "market"
+    FINISH = "finish"
+
+
 class ExternalMatcher:
     """Class responsible for external bids / offers matching."""
     def __init__(self):
         super().__init__()
         self.simulation_id = d3a.constants.COLLABORATION_ID
         self.myco_ext_conn = None
-        self.channel_prefix = f"external-myco/{self.simulation_id}"
-        self.response_channel = f"{self.channel_prefix}/response"
-        self.events_channel = f"{self.response_channel}/events/"
+        self._channel_prefix = f"external-myco/{self.simulation_id}"
+        self._response_channel = f"{self._channel_prefix}/response"
+        self._events_channel = f"{self._response_channel}/events/"
         self._setup_redis_connection()
         self.area_uuid_markets_mapping = {}
         self.markets_mapping = {}  # Dict[market_id: market] mapping
@@ -29,23 +38,23 @@ class ExternalMatcher:
         self.myco_ext_conn = ResettableCommunicator()
         self.myco_ext_conn.sub_to_multiple_channels(
             {"external-myco/get-simulation-id": self.publish_simulation_id,
-             f"{self.channel_prefix}/offers-bids/": self.publish_offers_bids,
-             f"{self.channel_prefix}/post-recommendations/": self.match_recommendations})
+             f"{self._channel_prefix}/offers-bids/": self.publish_offers_bids,
+             f"{self._channel_prefix}/post-recommendations/": self.match_recommendations})
 
     def publish_offers_bids(self, message):
         """Publish open offers and bids.
 
-        published data are of the following format:
-            {"bids_offers": {`market_id` : {"bids": [], "offers": [] }, }}
+        Published data are of the following format:
+            {"bids_offers": {`market_id` : {"bids": [], "offers": [] }, filters: {}}}
         """
-        response_data = {"event": "offers_bids_response"}
+        response_data = {"event": ExternalMatcherEventsEnum.OFFERS_BIDS_RESPONSE.value}
         data = json.loads(message.get("data"))
         filters = data.get("filters", {})
         # IDs of markets (Areas) the client is interested in
-        filtered_market_ids = filters.get("markets", None)
+        filtered_areas_uuids = filters.get("markets")
         market_offers_bids_list_mapping = {}
-        for area_id, markets in self.area_uuid_markets_mapping.items():
-            if filtered_market_ids and area_id not in filtered_market_ids:
+        for area_uuid, markets in self.area_uuid_markets_mapping.items():
+            if filtered_areas_uuids and area_uuid not in filtered_areas_uuids:
                 # Client is uninterested in this Area -> skip
                 continue
             for market in markets:
@@ -58,7 +67,7 @@ class ExternalMatcher:
             "bids_offers": market_offers_bids_list_mapping,
         })
 
-        channel = f"{self.response_channel}/offers-bids/"
+        channel = f"{self._response_channel}/offers-bids/"
         self.myco_ext_conn.publish_json(channel, response_data)
 
     def match_recommendations(self, message):
@@ -66,8 +75,8 @@ class ExternalMatcher:
 
         Matching in bulk, any pair that fails validation will cancel the operation
         """
-        channel = f"{self.response_channel}/matched-recommendations/"
-        response_data = {"event": "match", "status": "success"}
+        channel = f"{self._response_channel}/matched-recommendations/"
+        response_data = {"event": ExternalMatcherEventsEnum.MATCH.value, "status": "success"}
         data = json.loads(message.get("data"))
         recommendations = data.get("recommended_matches", [])
         try:
@@ -77,7 +86,7 @@ class ExternalMatcher:
                 try:
                     market.match_recommendations([record])
                 except (OfferNotFoundException, BidNotFoundException):
-                    # If the offer or bid have just been consumed
+                    # If the offer or bid have already been matched or deleted.
                     continue
         except Exception as ex:
             response_data["status"] = "fail"
@@ -101,20 +110,20 @@ class ExternalMatcher:
     def publish_event_tick_myco(self):
         """Publish the tick event to the Myco client."""
 
-        data = {"event": "tick"}
-        self.myco_ext_conn.publish_json(self.events_channel, data)
+        data = {"event": ExternalMatcherEventsEnum.TICK.value}
+        self.myco_ext_conn.publish_json(self._events_channel, data)
 
     def publish_event_market_myco(self):
         """Publish the market event to the Myco client."""
 
-        data = {"event": "market"}
-        self.myco_ext_conn.publish_json(self.events_channel, data)
+        data = {"event": ExternalMatcherEventsEnum.MARKET.value}
+        self.myco_ext_conn.publish_json(self._events_channel, data)
 
     def publish_event_finish_myco(self):
         """Publish the finish event to the Myco client."""
 
-        data = {"event": "finish"}
-        self.myco_ext_conn.publish_json(self.events_channel, data)
+        data = {"event": ExternalMatcherEventsEnum.FINISH.value}
+        self.myco_ext_conn.publish_json(self._events_channel, data)
 
     def update_area_uuid_markets_mapping(self, area_uuid_markets_mapping: Dict) -> None:
         """Interface for updating the area_uuid_markets_mapping mapping."""
@@ -155,7 +164,7 @@ class ExternalMatcher:
                 # Offer or Bid either don't belong to market or were already matched
                 continue
             try:
-                market.validate_authentic_bid_offer_pair(
+                market.validate_bid_offer_match(
                     market_bid,
                     market_offer,
                     record.get("trade_rate"),
