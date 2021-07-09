@@ -404,19 +404,29 @@ class Area:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                 self.dispatcher.publish_market_clearing()
             else:
-                if is_external_matching_enabled():
-                    bid_offer_matcher.match_algorithm.update_area_uuid_markets_mapping(
-                        {self.uuid: self.all_markets})
-                else:
-                    for market in self.all_markets:
-                        bid_offer_pairs = bid_offer_matcher.calculate_recommendation(
-                            *market.open_bids_and_offers, self.now)
-                        while bid_offer_pairs:
-                            bid_offer_pairs = bid_offer_matcher.calculate_recommendation(
-                                *market.open_bids_and_offers, self.now)
-                            market.match_recommendation(bid_offer_pairs)
+                self._match_bids_offers()
 
         self.events.update_events(self.now)
+
+    def _match_bids_offers(self) -> None:
+        """Match bids and offers for all markets."""
+        if is_external_matching_enabled():
+            # Update the open offer bids cache that the myco client will request
+            bid_offer_matcher.match_algorithm.update_area_uuid_markets_mapping(
+                {self.uuid: self.all_markets})
+            return
+        # If the external matching is not enabled, get and match bid offer pairs
+        for market in self.all_markets:
+            while True:
+                bids, offers = market.open_bids_and_offers
+                data = {
+                    market.id: {"bids": [bid.serializable_dict() for bid in bids.values()],
+                                "offers": [offer.serializable_dict() for offer in offers.values()],
+                                "current_time": self.now}}
+                bid_offer_pairs = bid_offer_matcher.get_matches_recommendations(data)
+                if not bid_offer_pairs:
+                    return
+                market.match_recommendations(bid_offer_pairs)
 
     def update_area_current_tick(self):
         self.current_tick += 1

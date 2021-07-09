@@ -1,14 +1,16 @@
+from d3a_interface.enums import BidOfferMatchAlgoEnum
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.matching_algorithms import (
+    PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
+)
+from d3a.d3a_core.exceptions import WrongMarketTypeException
 from d3a.d3a_core.util import is_external_matching_enabled
 from d3a.models.myco_matcher.external_matcher import ExternalMatcher
-from d3a_interface.constants_limits import ConstSettings
-
-from d3a.models.myco_matcher.pay_as_bid import PayAsBidMatcher
-from d3a.models.myco_matcher.pay_as_clear import PayAsClearMatcher
-from d3a.d3a_core.exceptions import WrongMarketTypeException
-from d3a_interface.enums import BidOfferMatchAlgoEnum
 
 
 class MycoMatcher:
+    """Interface for market matching, set the matching algorithm and expose recommendations."""
+
     def __init__(self):
         self.match_algorithm = None
 
@@ -16,9 +18,9 @@ class MycoMatcher:
         """Method to be called upon the activation of MycoMatcher."""
         self.match_algorithm = self.get_matcher_algorithm()
 
-    def calculate_recommendation(self, bids, offers, current_time):
-        return self.match_algorithm.calculate_match_recommendation(
-            bids, offers, current_time)
+    def get_matches_recommendations(self, data):
+        """Wrapper for matching algorithm's matches recommendations."""
+        return self.match_algorithm.get_matches_recommendations(data)
 
     @staticmethod
     def get_matcher_algorithm():
@@ -29,12 +31,11 @@ class MycoMatcher:
         """
         if (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
                 BidOfferMatchAlgoEnum.PAY_AS_BID.value):
-            return PayAsBidMatcher()
-        elif (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+            return PayAsBidMatchingAlgorithm()
+        if (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
                 BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value):
-            return PayAsClearMatcher()
-        elif is_external_matching_enabled():
+            return PayAsClearMatchingAlgorithm()
+        if is_external_matching_enabled():
             return ExternalMatcher()
-        else:
-            raise WrongMarketTypeException("Wrong market type setting flag "
-                                           f"{ConstSettings.IAASettings.MARKET_TYPE}")
+        raise WrongMarketTypeException("Wrong market type setting flag "
+                                       f"{ConstSettings.IAASettings.MARKET_TYPE}")

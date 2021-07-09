@@ -1,16 +1,17 @@
+import pytest
+from pendulum import now
 from math import isclose
 from unittest.mock import MagicMock
-
-import pytest
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.matching_algorithms import (
+    PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
+)
 from d3a.d3a_core.exceptions import (
     BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade)
 from d3a.events import MarketEvent
 from d3a.models.market import Bid, Offer
 from d3a.models.market.market_structures import TradeBidOfferInfo
 from d3a.models.market.two_sided import TwoSidedMarket
-from d3a.models.myco_matcher import PayAsBidMatcher, PayAsClearMatcher
-from d3a_interface.constants_limits import ConstSettings
-from pendulum import now
 
 
 @pytest.fixture
@@ -20,12 +21,12 @@ def market():
 
 @pytest.fixture
 def pac_market():
-    return PayAsClearMatcher()
+    return PayAsClearMatchingAlgorithm()
 
 
 @pytest.fixture
 def market_matcher():
-    return PayAsBidMatcher()
+    return PayAsBidMatchingAlgorithm()
 
 
 class TestTwoSidedMarket:
@@ -39,17 +40,17 @@ class TestTwoSidedMarket:
                   buyer_id="bid_id", requirements=[], attributes={})
         with pytest.raises(InvalidBidOfferPairException):
             # should raise an exception as buyer_id is not in trading_partners
-            market.validate_requirements_satisfied(offer, bid)
+            market._validate_requirements_satisfied(bid, offer)
         bid.buyer_id = "bid_id2"
-        market.validate_requirements_satisfied(offer, bid)  # Should not raise any exceptions
+        market._validate_requirements_satisfied(bid, offer)  # Should not raise any exceptions
         bid.requirements.append({"energy_type": ["Grey"]})
         with pytest.raises(InvalidBidOfferPairException):
             # should raise an exception as energy_type of offer needs to be in [Grey, ]
-            market.validate_requirements_satisfied(offer, bid)
+            market._validate_requirements_satisfied(bid, offer)
 
         # Adding another requirement that is satisfied, should not raise an exception
         bid.requirements.append({"energy_type": ["Green"]})
-        market.validate_requirements_satisfied(offer, bid)
+        market._validate_requirements_satisfied(bid, offer)
 
     @pytest.mark.parametrize(
         "bid_energy, offer_energy, clearing_rate, selected_energy", [
@@ -62,37 +63,40 @@ class TestTwoSidedMarket:
             self, market, bid_energy, offer_energy, clearing_rate, selected_energy):
         offer = Offer("id", now(), 2, offer_energy, "other", 2)
         bid = Bid("bid_id", now(), 2, bid_energy, "B", 8)
-        TwoSidedMarket.validate_requirements_satisfied = MagicMock()
+        TwoSidedMarket._validate_requirements_satisfied = MagicMock()
         with pytest.raises(InvalidBidOfferPairException):
-            market.validate_authentic_bid_offer_pair(bid, offer, clearing_rate, selected_energy)
-            TwoSidedMarket.validate_requirements_satisfied.assert_not_called()
+            market.validate_bid_offer_match(bid, offer, clearing_rate, selected_energy)
+            TwoSidedMarket._validate_requirements_satisfied.assert_not_called()
 
     def test_double_sided_performs_pay_as_bid_matching(
             self, market: TwoSidedMarket, market_matcher):
         market.offers = {"offer1": Offer("id", now(), 2, 2, "other", 2)}
 
         market.bids = {"bid1": Bid("bid_id", now(), 9, 10, "B", "S")}
-        matched = list(market_matcher.calculate_match_recommendation(
-            market.bids, market.offers))
+        matched = market_matcher.get_matches_recommendations(
+            {market.id: {"bids": [bid.serializable_dict() for bid in market.bids.values()],
+             "offers": [offer.serializable_dict() for offer in market.offers.values()]}})
         assert len(matched) == 0
         market.bids = {"bid1": Bid("bid_id", now(), 11, 10, "B", "S")}
-        matched = list(market_matcher.calculate_match_recommendation(
-            market.bids, market.offers))
+        matched = market_matcher.get_matches_recommendations(
+            {market.id: {"bids": [bid.serializable_dict() for bid in market.bids.values()],
+             "offers": [offer.serializable_dict() for offer in market.offers.values()]}})
         assert len(matched) == 1
 
-        assert matched[0].bid == list(market.bids.values())[0]
-        assert matched[0].offer == list(market.offers.values())[0]
+        assert matched[0]["bid"] == list(market.bids.values())[0].serializable_dict()
+        assert matched[0]["offer"] == list(market.offers.values())[0].serializable_dict()
 
         market.bids = {"bid1": Bid("bid_id1", now(), 11, 10, "B", "S"),
                        "bid2": Bid("bid_id2", now(), 9, 10, "B", "S"),
                        "bid3": Bid("bid_id3", now(), 12, 10, "B", "S")}
-        matched = list(market_matcher.calculate_match_recommendation(
-            market.bids, market.offers))
+        matched = market_matcher.get_matches_recommendations(
+            {market.id: {"bids": [bid.serializable_dict() for bid in market.bids.values()],
+             "offers": [offer.serializable_dict() for offer in market.offers.values()]}})
         assert len(matched) == 1
-        assert matched[0].bid.id == "bid_id3"
-        assert matched[0].bid.price == 12
-        assert matched[0].bid.energy == 10
-        assert matched[0].offer == list(market.offers.values())[0]
+        assert matched[0]["bid"]["id"] == "bid_id3"
+        assert matched[0]["bid"]["energy_rate"] == 1.2
+        assert matched[0]["bid"]["energy"] == 10
+        assert matched[0]["offer"] == list(market.offers.values())[0].serializable_dict()
 
     def test_market_bid(self, market: TwoSidedMarket):
         bid = market.bid(1, 2, "bidder", "bidder")
@@ -142,16 +146,17 @@ class TestTwoSidedMarket:
 
     def test_double_sided_pay_as_clear_market_works_with_floats(self, pac_market):
         ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
-        pac_market.offers = {"offer1": Offer("id1", now(), 1.1, 1, "other"),
-                             "offer2": Offer("id2", now(), 2.2, 1, "other"),
-                             "offer3": Offer("id3", now(), 3.3, 1, "other")}
+        offers = [
+            Offer("id1", now(), 1.1, 1, "other").serializable_dict(),
+            Offer("id2", now(), 2.2, 1, "other").serializable_dict(),
+            Offer("id3", now(), 3.3, 1, "other").serializable_dict()]
 
-        pac_market.bids = {
-            "bid1": Bid("bid_id1", now(), 3.3, 1, "B", "S"),
-            "bid2": Bid("bid_id2", now(), 2.2, 1, "B", "S"),
-            "bid3": Bid("bid_id3", now(), 1.1, 1, "B", "S")}
+        bids = [
+            Bid("bid_id1", now(), 3.3, 1, "B", "S").serializable_dict(),
+            Bid("bid_id2", now(), 2.2, 1, "B", "S").serializable_dict(),
+            Bid("bid_id3", now(), 1.1, 1, "B", "S").serializable_dict()]
 
-        matched = pac_market.get_clearing_point(pac_market.bids, pac_market.offers, now())[0]
+        matched = pac_market.get_clearing_point(bids, offers, now())[0]
         assert matched == 2.2
 
     def test_market_bid_trade(self, market=TwoSidedMarket(bc=MagicMock(), time_slot=now())):
@@ -255,24 +260,24 @@ class TestTwoSidedMarket:
     def test_double_sided_market_performs_pay_as_clear_matching(
             self, pac_market, offer, bid, mcp_rate, mcp_energy, algorithm):
         ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = algorithm
-        pac_market.offers = {"offer1": Offer("id1", now(), offer[0], 1, "other"),
-                             "offer2": Offer("id2", now(), offer[1], 1, "other"),
-                             "offer3": Offer("id3", now(), offer[2], 1, "other"),
-                             "offer4": Offer("id4", now(), offer[3], 1, "other"),
-                             "offer5": Offer("id5", now(), offer[4], 1, "other"),
-                             "offer6": Offer("id6", now(), offer[5], 1, "other"),
-                             "offer7": Offer("id7", now(), offer[6], 1, "other")}
+        offers = [Offer("id1", now(), offer[0], 1, "other").serializable_dict(),
+                  Offer("id2", now(), offer[1], 1, "other").serializable_dict(),
+                  Offer("id3", now(), offer[2], 1, "other").serializable_dict(),
+                  Offer("id4", now(), offer[3], 1, "other").serializable_dict(),
+                  Offer("id5", now(), offer[4], 1, "other").serializable_dict(),
+                  Offer("id6", now(), offer[5], 1, "other").serializable_dict(),
+                  Offer("id7", now(), offer[6], 1, "other").serializable_dict()]
 
-        pac_market.bids = {"bid1": Bid("bid_id1", now(), bid[0], 1, "B", "S"),
-                           "bid2": Bid("bid_id2", now(), bid[1], 1, "B", "S"),
-                           "bid3": Bid("bid_id3", now(), bid[2], 1, "B", "S"),
-                           "bid4": Bid("bid_id4", now(), bid[3], 1, "B", "S"),
-                           "bid5": Bid("bid_id5", now(), bid[4], 1, "B", "S"),
-                           "bid6": Bid("bid_id6", now(), bid[5], 1, "B", "S"),
-                           "bid7": Bid("bid_id7", now(), bid[6], 1, "B", "S")}
+        bids = [Bid("bid_id1", now(), bid[0], 1, "B", "S").serializable_dict(),
+                Bid("bid_id2", now(), bid[1], 1, "B", "S").serializable_dict(),
+                Bid("bid_id3", now(), bid[2], 1, "B", "S").serializable_dict(),
+                Bid("bid_id4", now(), bid[3], 1, "B", "S").serializable_dict(),
+                Bid("bid_id5", now(), bid[4], 1, "B", "S").serializable_dict(),
+                Bid("bid_id6", now(), bid[5], 1, "B", "S").serializable_dict(),
+                Bid("bid_id7", now(), bid[6], 1, "B", "S").serializable_dict()]
 
         matched_rate, matched_energy = pac_market.get_clearing_point(
-            pac_market.bids, pac_market.offers, now()
+            bids, offers, now()
         )
         assert matched_rate == mcp_rate
         assert matched_energy == mcp_energy

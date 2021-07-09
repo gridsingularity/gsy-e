@@ -1,8 +1,8 @@
 import json
+from unittest.mock import MagicMock, patch
 
 import pytest
 from pendulum import now
-from unittest.mock import MagicMock, patch
 
 import d3a.models.market.market_redis_connection
 from d3a.d3a_core.exceptions import InvalidBidOfferPairException, MycoValidationException
@@ -132,7 +132,7 @@ class TestMycoExternalMatcher:
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
 
-    @patch("d3a.models.market.two_sided.TwoSidedMarket.validate_authentic_bid_offer_pair",
+    @patch("d3a.models.market.two_sided.TwoSidedMarket.validate_bid_offer_match",
            MagicMock())
     def test_get_validated_bid_offer_match_list(self):
         self._populate_market_bids_offers()
@@ -151,20 +151,21 @@ class TestMycoExternalMatcher:
                 "selected_energy": 1}
         ]
         validated_records = self.matcher._get_validated_bid_offer_match_list(records)
-        assert isinstance(validated_records, dict)
-        assert self.market.id in validated_records
-        assert len(validated_records[self.market.id]) == 2
+        assert isinstance(validated_records, list)
+        assert any(record["market_id"] == self.market.id for record in validated_records)
+        assert len(list(filter(
+            lambda record: record["market_id"] == self.market.id, validated_records))) == 2
         # should be called once for each record
-        assert self.market.validate_authentic_bid_offer_pair.call_count == 2
+        assert self.market.validate_bid_offer_match.call_count == 2
 
         # If the market is readonly, it should raise an exception
         self.market.readonly = True
-        self.market.validate_authentic_bid_offer_pair.reset_mock()
+        self.market.validate_bid_offer_match.reset_mock()
         with pytest.raises(MycoValidationException):
             validated_records = self.matcher._get_validated_bid_offer_match_list(records)
             assert validated_records is None
             # should not be called
-            assert not self.market.validate_authentic_bid_offer_pair.called
+            assert not self.market.validate_bid_offer_match.called
 
     @patch("d3a.models.myco_matcher.external_matcher.ExternalMatcher."
            "_get_validated_bid_offer_match_list", MagicMock())

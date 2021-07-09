@@ -137,7 +137,7 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
                       seller="trade_seller", buyer="trade_buyer")
         self.market.accept_offer = MagicMock(return_value=trade)
         self.subscriber._accept_offer(payload)
-        sleep(0.01)
+        sleep(0.1)
         self.subscriber.market.accept_offer.assert_called_once_with(
             offer_or_id=offer, buyer="mykonos", energy=12
         )
