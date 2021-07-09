@@ -144,6 +144,11 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.event_activate_energy()
 
     def event_market_cycle(self):
+        if self.use_market_maker_rate:
+            self._area_reconfigure_prices(
+                final_buying_rate=get_market_maker_rate_from_config(
+                    self.area.next_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
+
         super().event_market_cycle()
         self.add_entry_in_hrs_per_day()
         self.bid_update.update_and_populate_price_settings(self.area)
