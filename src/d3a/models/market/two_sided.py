@@ -27,7 +27,7 @@ from d3a_interface.constants_limits import ConstSettings
 
 from d3a.d3a_core.exceptions import (
     BidNotFoundException, InvalidBid, InvalidTrade, MarketException,
-    InvalidBidOfferPairException)
+    InvalidBidOfferPairException, OfferNotFoundException)
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market import lock_market_action
@@ -254,25 +254,32 @@ class TwoSidedMarket(OneSidedMarket):
                                     seller_id=offer.seller_id)
         return bid_trade, trade
 
-    def match_recommendations(self, recommendations: List[BidOfferMatch.serializable_dict]):
+    def match_recommendations(
+            self, recommendations: List[BidOfferMatch.serializable_dict]) -> None:
         """Match a list of bid/offer pairs, create trades and residual offers/bids."""
         if recommendations is None:
             return
         for index, recommended_pair in enumerate(recommendations):
             selected_energy = recommended_pair["selected_energy"]
-            bid = self.bids.get(recommended_pair["bid"]["id"])
-            offer = self.offers.get(recommended_pair["offer"]["id"])
-            original_bid_rate = bid.original_bid_price / bid.energy
+            market_offer = self.offers.get(recommended_pair["offer"]["id"])
+            market_bid = self.bids.get(recommended_pair["bid"]["id"])
 
+            if not market_offer:
+                raise OfferNotFoundException
+            if not market_bid:
+                raise BidNotFoundException
+
+            original_bid_rate = market_bid.original_bid_price / market_bid.energy
             trade_bid_info = TradeBidOfferInfo(
                 original_bid_rate=original_bid_rate,
-                propagated_bid_rate=bid.price/bid.energy,
-                original_offer_rate=offer.original_offer_price/offer.energy,
-                propagated_offer_rate=offer.price/offer.energy,
+                propagated_bid_rate=market_bid.price/market_bid.energy,
+                original_offer_rate=market_offer.original_offer_price/market_offer.energy,
+                propagated_offer_rate=market_offer.price/market_offer.energy,
                 trade_rate=original_bid_rate)
 
             bid_trade, trade = self.accept_bid_offer_pair(
-                bid, offer, recommended_pair["trade_rate"], trade_bid_info, selected_energy
+                market_bid, market_offer, recommended_pair["trade_rate"],
+                trade_bid_info, selected_energy
             )
 
             if trade.residual is not None or bid_trade.residual is not None:
