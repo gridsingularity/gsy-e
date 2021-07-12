@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
-from typing import Union, Dict, List  # noqa
+from typing import Union, Dict, List, Optional  # noqa
 from pendulum import DateTime
 from logging import getLogger
 
@@ -49,10 +49,11 @@ class BalancingMarket(OneSidedMarket):
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name, in_sim_duration=in_sim_duration)
 
-    def offer(self, price: float, energy: float, seller: str, offer_id=None,
-              original_offer_price=None, dispatch_event=True, seller_origin=None,
-              adapt_price_with_fees=True, seller_origin_id=None,
-              attributes: Dict = None, requirements: List[Dict] = None):
+    def offer(self, price: float, energy: float, seller: str, offer_id: Optional[str] = None,
+              original_offer_price: Optional[float] = None, dispatch_event: bool = True,
+              seller_origin: Optional[str] = None,
+              adapt_price_with_fees: bool = True, seller_origin_id: Optional[str] = None,
+              attributes: Optional[Dict] = None, requirements: Optional[List[Dict]] = None):
         assert False
 
     def balancing_offer(self, price: float, energy: float, seller: str,

@@ -384,8 +384,7 @@ class Area:
              consume_all_area_commands(self.uuid,
                                        self.redis_ext_conn.trigger_aggregator_commands))
         elif (self.strategy
-              and hasattr(self.strategy, "is_aggregator_controlled")
-              and self.strategy.is_aggregator_controlled):
+              and getattr(self.strategy, "is_aggregator_controlled", False)):
             (self.strategy.redis.aggregator.
              consume_all_area_commands(self.uuid,
                                        self.strategy.trigger_aggregator_commands))

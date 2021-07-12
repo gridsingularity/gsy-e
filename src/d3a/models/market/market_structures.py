@@ -108,6 +108,7 @@ class Offer:
                 self.original_offer_price == other.original_offer_price and
                 self.energy == other.energy and
                 self.seller == other.seller and
+                self.seller_origin_id == other.seller_origin_id and
                 self.attributes == other.attributes and
                 self.requirements == other.requirements)
 
@@ -205,6 +206,7 @@ class Bid:
                 self.original_bid_price == other.original_bid_price and
                 self.energy == other.energy and
                 self.buyer == other.buyer and
+                self.buyer_origin_id == other.buyer_origin_id and
                 self.attributes == other.attributes and
                 self.requirements == other.requirements)
 

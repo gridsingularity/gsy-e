@@ -113,7 +113,7 @@ class ExternalMatcher:
         data = {"event": ExternalMatcherEventsEnum.TICK.value}
         self.myco_ext_conn.publish_json(self._events_channel, data)
 
-    def publish_event_market_myco(self):
+    def publish_event_market_cycle_myco(self):
         """Publish the market event to the Myco client."""
 
         data = {"event": ExternalMatcherEventsEnum.MARKET.value}

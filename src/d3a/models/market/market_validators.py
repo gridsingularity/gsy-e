@@ -76,7 +76,7 @@ class SelectedEnergyRequirement(Requirement):
         assert isinstance(selected_energy, (int, float)), \
             f"Invalid data type for selected_energy {selected_energy}"
         # bid_required_energy is None or it is defined & equals selected_energy -> true
-        return not bid_required_energy or bid_required_energy >= selected_energy
+        return bid_required_energy >= selected_energy
 
 
 class ClearingRateRequirement(Requirement):
@@ -91,7 +91,7 @@ class ClearingRateRequirement(Requirement):
         assert isinstance(clearing_rate, (int, float)), \
             f"Invalid data type for clearing_rate {clearing_rate}"
         # bid_required_energy is None or it is defined & equals selected_energy -> true
-        return not bid_required_price or bid_required_price >= clearing_rate
+        return bid_required_price >= clearing_rate
 
 
 # Supported offers/bids requirements

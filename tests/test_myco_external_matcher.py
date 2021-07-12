@@ -59,9 +59,9 @@ class TestMycoExternalMatcher:
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             self.events_channel, data)
 
-    def test_publish_event_market_myco(self):
+    def test_publish_event_market_cycle_myco(self):
         data = {"event": "market"}
-        self.matcher.publish_event_market_myco()
+        self.matcher.publish_event_market_cycle_myco()
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             self.events_channel, data)
 

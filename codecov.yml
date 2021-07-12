@@ -7,4 +7,4 @@ coverage:
 
 comment:
   layout: "diff"
-  behavior: new
+  behavior: default
