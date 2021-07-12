@@ -31,8 +31,8 @@ TEMPLATE_NODE_ADDRESS_TYPE = 42
 custom_type_registry = {
     "runtime_id": 2000,
     "types": {
-        "Address": "MultiAddress",
-        "LookupSource": "MultiAddress",
+        "Address": "MultiAddress<AccountId, ()>",
+        "LookupSource": "MultiAddress<AccountId, ()>",
         "Keys": {
             "type": "struct",
             "type_mapping": [
@@ -40,33 +40,36 @@ custom_type_registry = {
                 ["babe", "AccountId"],
                 ["im_online", "AccountId"],
                 ["authority_discovery", "AccountId"],
-                ["parachains", "AccountId"],
-                ["Bid",
-                    [
-                        ["uuid", "u32"],
-                        ["max_energy", "u32"],
-                        ["market_uuid", "Option<Vec<u8>>"],
-                        ["asset_uuid", "Option<Vec<u8>>"],
-                        ["time_slot", "Vec<u8>"]
-                    ]
-                 ],
-                ["Offer",
-                    [
-                        ["uuid", "u32"],
-                        ["max_energy", "u32"],
-                        ["market_uuid", "Option<Vec<u8>>"],
-                        ["asset_uuid", "Option<Vec<u8>>"],
-                        ["energy_type", "Vec<u8>"],
-                        ["time_slot", "Vec<u8>"]
-                    ]
-                 ],
-                ["Match",
-                    [
-                        ["ids", "u32"],
-                        ["price", "u32"],
-                        ["energy", "u32"]
-                    ]
-                 ]
+                ["parachains", "AccountId"]
+            ]
+        },
+        "Bid": {
+            "type": "struct",
+            "type_mapping": [
+                ["uuid", "u32"],
+                ["max_energy", "u32"],
+                ["market_uuid", "Option<Vec<u8>>"],
+                ["asset_uuid", "Option<Vec<u8>>"],
+                ["time_slot", "Vec<u8>"]
+            ]
+        },
+        "Offer": {
+            "type": "struct",
+            "type_mapping": [
+                ["uuid", "u32"],
+                ["max_energy", "u32"],
+                ["market_uuid", "Option<Vec<u8>>"],
+                ["asset_uuid", "Option<Vec<u8>>"],
+                ["energy_type", "Vec<u8>"],
+                ["time_slot", "Vec<u8>"]
+            ]
+        },
+        "Match": {
+            "type": "struct",
+            "type_mapping": [
+                ["ids", "u32"],
+                ["price", "u32"],
+                ["energy", "u32"]
             ]
         }
     }
