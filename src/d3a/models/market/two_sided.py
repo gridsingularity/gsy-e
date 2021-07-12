@@ -262,8 +262,7 @@ class TwoSidedMarket(OneSidedMarket):
             selected_energy = recommended_pair["selected_energy"]
             bid = self.bids.get(recommended_pair["bid"]["id"])
             offer = self.offers.get(recommended_pair["offer"]["id"])
-            original_bid_rate = \
-                bid.original_bid_price / bid.energy
+            original_bid_rate = bid.original_bid_price / bid.energy
 
             trade_bid_info = TradeBidOfferInfo(
                 original_bid_rate=original_bid_rate,

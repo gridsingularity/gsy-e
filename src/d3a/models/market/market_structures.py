@@ -347,7 +347,7 @@ class BalancingTrade:
     seller: str
     buyer: str
     residual: Union[Offer, Bid] = None
-    offer_bid_trade_info: str = None
+    offer_bid_trade_info: TradeBidOfferInfo = None
     seller_origin: float = None
     buyer_origin: str = None
     fee_price: float = None
