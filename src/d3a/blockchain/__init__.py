@@ -31,8 +31,8 @@ TEMPLATE_NODE_ADDRESS_TYPE = 42
 custom_type_registry = {
     "runtime_id": 2000,
     "types": {
-        "Address": "MultiAddress<AccountId, ()>",
-        "LookupSource": "MultiAddress<AccountId, ()>",
+        "Address": "MultiAddress",
+        "LookupSource": "MultiAddress",
         "Keys": {
             "type": "struct",
             "type_mapping": [
