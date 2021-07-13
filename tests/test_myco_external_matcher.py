@@ -24,8 +24,7 @@ class TestMycoExternalMatcher:
         cls.redis_connection = d3a.models.myco_matcher.external_matcher.ResettableCommunicator
         assert cls.matcher.simulation_id == d3a.constants.COLLABORATION_ID
         cls.channel_prefix = f"external-myco/{d3a.constants.COLLABORATION_ID}/"
-        cls.response_channel = f"{cls.channel_prefix}response"
-        cls.events_channel = f"{cls.response_channel}/events/"
+        cls.events_channel = f"{cls.channel_prefix}events/"
 
     def setup_method(self, method):
         self.matcher.myco_ext_conn.publish_json.reset_mock()
@@ -40,15 +39,15 @@ class TestMycoExternalMatcher:
     def test_subscribes_to_redis_channels(self):
         self.matcher.myco_ext_conn.sub_to_multiple_channels.assert_called_once_with(
             {
-                "external-myco/get-simulation-id": self.matcher.publish_simulation_id,
+                "external-myco/simulation-id/": self.matcher.publish_simulation_id,
                 f"{self.channel_prefix}offers-bids/": self.matcher.publish_offers_bids,
-                f"{self.channel_prefix}post-recommendations/":
+                f"{self.channel_prefix}recommendations/":
                     self.matcher.match_recommendations
             }
         )
 
     def test_publish_simulation_id(self):
-        channel = "external-myco/get-simulation-id/response"
+        channel = "external-myco/simulation-id/response/"
         self.matcher.publish_simulation_id({})
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, {"simulation_id": self.matcher.simulation_id})
@@ -102,7 +101,7 @@ class TestMycoExternalMatcher:
     @patch("d3a.models.myco_matcher.external_matcher.ExternalMatcher."
            "_get_bids_offers", MagicMock(return_value=([], [])))
     def test_publish_offers_bids(self):
-        channel = f"{self.response_channel}/offers-bids/"
+        channel = f"{self.channel_prefix}offers-bids/response/"
         payload = {
             "data": json.dumps({
                 "filters": {}
@@ -170,7 +169,7 @@ class TestMycoExternalMatcher:
     @patch("d3a.models.myco_matcher.external_matcher.ExternalMatcher."
            "_get_validated_bid_offer_match_list", MagicMock())
     def test_match_recommendations(self):
-        channel = f"{self.response_channel}/matched-recommendations/"
+        channel = f"{self.channel_prefix}recommendations/response/"
         expected_data = {"event": "match", "status": "success"}
         payload = {"data": json.dumps({})}
         # Empty recommendations list should pass

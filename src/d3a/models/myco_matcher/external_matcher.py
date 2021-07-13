@@ -28,8 +28,7 @@ class ExternalMatcher:
         self.simulation_id = d3a.constants.COLLABORATION_ID
         self.myco_ext_conn = None
         self._channel_prefix = f"external-myco/{self.simulation_id}"
-        self._response_channel = f"{self._channel_prefix}/response"
-        self._events_channel = f"{self._response_channel}/events/"
+        self._events_channel = f"{self._channel_prefix}/events/"
         self._setup_redis_connection()
         self.area_uuid_markets_mapping = {}
         self.markets_mapping = {}  # Dict[market_id: market] mapping
@@ -37,9 +36,9 @@ class ExternalMatcher:
     def _setup_redis_connection(self):
         self.myco_ext_conn = ResettableCommunicator()
         self.myco_ext_conn.sub_to_multiple_channels(
-            {"external-myco/get-simulation-id": self.publish_simulation_id,
+            {"external-myco/simulation-id/": self.publish_simulation_id,
              f"{self._channel_prefix}/offers-bids/": self.publish_offers_bids,
-             f"{self._channel_prefix}/post-recommendations/": self.match_recommendations})
+             f"{self._channel_prefix}/recommendations/": self.match_recommendations})
 
     def publish_offers_bids(self, message):
         """Publish open offers and bids.
@@ -67,7 +66,7 @@ class ExternalMatcher:
             "bids_offers": market_offers_bids_list_mapping,
         })
 
-        channel = f"{self._response_channel}/offers-bids/"
+        channel = f"{self._channel_prefix}/offers-bids/response/"
         self.myco_ext_conn.publish_json(channel, response_data)
 
     def match_recommendations(self, message):
@@ -75,7 +74,7 @@ class ExternalMatcher:
 
         Matching in bulk, any pair that fails validation will cancel the operation
         """
-        channel = f"{self._response_channel}/matched-recommendations/"
+        channel = f"{self._channel_prefix}/recommendations/response/"
         response_data = {"event": ExternalMatcherEventsEnum.MATCH.value, "status": "success"}
         data = json.loads(message.get("data"))
         recommendations = data.get("recommended_matches", [])
@@ -104,7 +103,7 @@ class ExternalMatcher:
         regardless of the value set in d3a.
         """
 
-        channel = "external-myco/get-simulation-id/response"
+        channel = "external-myco/simulation-id/response/"
         self.myco_ext_conn.publish_json(channel, {"simulation_id": self.simulation_id})
 
     def publish_event_tick_myco(self):
