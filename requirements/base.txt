@@ -8,7 +8,6 @@
 appdirs==1.4.4            # via d3a-interface, virtualenv
 attrs==20.3.0             # via -r requirements/base.in, d3a-interface, jsonschema
 awesome-slugify==1.6.5    # via -r requirements/base.in
-base58==2.1.0             # via -r requirements/base.in
 cached-property==1.5.2    # via -r requirements/base.in
 certifi==2020.12.5        # via d3a-interface, requests
 chardet==3.0.4            # via d3a-interface, requests
@@ -18,6 +17,8 @@ colorlog==4.7.2           # via -r requirements/base.in
 distlib==0.3.1            # via d3a-interface, virtualenv
 filelock==3.0.12          # via d3a-interface, tox, virtualenv
 idna==2.10                # via d3a-interface, requests
+importlib-metadata==2.1.1  # via d3a-interface
+importlib-resources==5.2.0  # via d3a-interface
 jsonschema==3.2.0         # via d3a-interface
 kafka-python==2.0.2       # via d3a-interface
 numpy==1.21.0             # via -r requirements/base.in
@@ -35,7 +36,7 @@ pytz==2021.1              # via -r requirements/base.in
 pytzdata==2020.1          # via d3a-interface, pendulum
 redis==3.5.3              # via -r requirements/base.in, d3a-interface, rq
 regex==2021.7.6           # via awesome-slugify
-requests==2.25.0          # via d3a-interface
+requests==2.25.1          # via d3a-interface
 rq==1.9.0                 # via -r requirements/base.in
 six==1.15.0               # via d3a-interface, jsonschema, pip-tools, plotly, python-dateutil, python-rex, tox, virtualenv
 sortedcontainers==2.4.0   # via -r requirements/base.in
@@ -46,6 +47,7 @@ unidecode==0.4.21         # via awesome-slugify
 urllib3==1.26.4           # via -r requirements/base.in, d3a-interface, requests
 virtualenv==20.2.2        # via d3a-interface, tox
 websockets==8.1           # via d3a-interface
+zipp==3.5.0               # via d3a-interface, importlib-metadata, importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip

@@ -8,7 +8,6 @@
 appdirs==1.4.4            # via -r requirements/dev.txt, d3a-interface, virtualenv
 attrs==20.3.0             # via -r requirements/dev.txt, d3a-interface, hypothesis, jsonschema, pytest
 awesome-slugify==1.6.5    # via -r requirements/dev.txt
-base58==2.1.0             # via -r requirements/dev.txt
 bcrypt==3.2.0             # via -r requirements/dev.txt, paramiko
 behave==1.2.6             # via -r requirements/tests.in
 cached-property==1.5.2    # via -r requirements/dev.txt
@@ -31,6 +30,8 @@ flake8==3.7.9             # via -r requirements/tests.in, flake8-tuple
 hypothesis==4.38.0        # via -r requirements/tests.in
 identify==2.2.6           # via -r requirements/dev.txt, pre-commit
 idna==2.10                # via -r requirements/dev.txt, d3a-interface, requests
+importlib-metadata==2.1.1  # via -r requirements/dev.txt, d3a-interface
+importlib-resources==5.2.0  # via -r requirements/dev.txt, d3a-interface
 iniconfig==1.1.1          # via pytest
 isort==5.8.0              # via -r requirements/tests.in
 jsonschema==3.2.0         # via -r requirements/dev.txt, d3a-interface
@@ -66,7 +67,7 @@ pyyaml==5.4.1             # via -r requirements/dev.txt, pre-commit
 redis==3.5.3              # via -r requirements/dev.txt, d3a-interface, rq
 regex==2021.7.6           # via -r requirements/dev.txt, awesome-slugify
 requests-mock==1.9.2      # via -r requirements/tests.in
-requests==2.25.0          # via -r requirements/dev.txt, d3a-interface, requests-mock
+requests==2.25.1          # via -r requirements/dev.txt, d3a-interface, requests-mock
 rq==1.9.0                 # via -r requirements/dev.txt
 six==1.15.0               # via -r requirements/dev.txt, bcrypt, behave, d3a-interface, fabric3, flake8-tuple, jsonschema, parse-type, pip-tools, plotly, pynacl, python-dateutil, python-rex, requests-mock, tox, virtualenv
 sortedcontainers==2.4.0   # via -r requirements/dev.txt
@@ -77,6 +78,7 @@ unidecode==0.4.21         # via -r requirements/dev.txt, awesome-slugify
 urllib3==1.26.4           # via -r requirements/dev.txt, d3a-interface, requests
 virtualenv==20.2.2        # via -r requirements/dev.txt, d3a-interface, pre-commit, tox
 websockets==8.1           # via -r requirements/dev.txt, d3a-interface
+zipp==3.5.0               # via -r requirements/dev.txt, d3a-interface, importlib-metadata, importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
