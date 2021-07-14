@@ -17,7 +17,7 @@ class ExternalMatcherEventsEnum(Enum):
     OFFERS_BIDS_RESPONSE = "offers_bids_response"
     MATCH = "match"
     TICK = "tick"
-    MARKET = "market"
+    MARKET = "market_cycle"
     FINISH = "finish"
 
 
