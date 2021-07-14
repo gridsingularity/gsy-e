@@ -4,56 +4,57 @@
 #
 #    pip-compile --max-rounds=100 --no-emit-index-url requirements/blockchain.in
 #
+-e git+https://github.com/gridsingularity/d3a-blockchain@master#egg=d3a_blockchain  # via -r requirements/blockchain.in
 -e git+https://github.com/gridsingularity/d3a-interface@master#egg=d3a_interface  # via -r requirements/base.txt
-appdirs==1.4.4            # via -r requirements/base.txt, d3a-interface, virtualenv
+appdirs==1.4.4            # via -r requirements/base.txt, d3a-blockchain, d3a-interface, virtualenv
 attrs==20.3.0             # via -r requirements/base.txt, d3a-interface, jsonschema
 awesome-slugify==1.6.5    # via -r requirements/base.txt
-base58==2.1.0             # via -r requirements/base.txt, scalecodec, substrate-interface
+base58==2.1.0             # via -r requirements/base.txt, d3a-blockchain, scalecodec, substrate-interface
 cached-property==1.5.2    # via -r requirements/base.txt
-certifi==2020.12.5        # via -r requirements/base.txt, d3a-interface, requests, substrate-interface
-chardet==3.0.4            # via -r requirements/base.txt, d3a-interface, requests
+certifi==2020.12.5        # via -r requirements/base.txt, d3a-blockchain, d3a-interface, requests, substrate-interface
+chardet==3.0.4            # via -r requirements/base.txt, d3a-blockchain, d3a-interface, requests
 click-default-group==1.2.2  # via -r requirements/base.txt
-click==7.1.2              # via -r requirements/base.txt, click-default-group, d3a-interface, pip-tools, rq
+click==7.1.2              # via -r requirements/base.txt, click-default-group, d3a-blockchain, d3a-interface, pip-tools, rq
 colorlog==4.7.2           # via -r requirements/base.txt
-distlib==0.3.1            # via -r requirements/base.txt, d3a-interface, virtualenv
-filelock==3.0.12          # via -r requirements/base.txt, d3a-interface, tox, virtualenv
-idna==2.10                # via -r requirements/base.txt, d3a-interface, requests, substrate-interface
+distlib==0.3.1            # via -r requirements/base.txt, d3a-blockchain, d3a-interface, virtualenv
+filelock==3.0.12          # via -r requirements/base.txt, d3a-blockchain, d3a-interface, tox, virtualenv
+idna==2.10                # via -r requirements/base.txt, d3a-blockchain, d3a-interface, requests, substrate-interface
 jsonschema==3.2.0         # via -r requirements/base.txt, d3a-interface
 kafka-python==2.0.2       # via -r requirements/base.txt, d3a-interface
-more-itertools==8.7.0     # via scalecodec
-numpy==1.20.3             # via -r requirements/base.txt
-packaging==20.7           # via -r requirements/base.txt, d3a-interface, tox
+more-itertools==8.7.0     # via d3a-blockchain, scalecodec
+numpy==1.21.0             # via -r requirements/base.txt
+packaging==20.7           # via -r requirements/base.txt, d3a-blockchain, d3a-interface, tox
 pendulum==2.1.2           # via -r requirements/base.txt, d3a-interface
-pip-tools==5.4.0          # via -r requirements/base.txt, d3a-interface
-plotly==4.14.3            # via -r requirements/base.txt
-pluggy==0.13.1            # via -r requirements/base.txt, d3a-interface, tox
-py-bip39-bindings==0.1.6  # via substrate-interface
-py-ed25519-bindings==0.1.2  # via substrate-interface
-py-sr25519-bindings==0.1.2  # via substrate-interface
-py==1.9.0                 # via -r requirements/base.txt, d3a-interface, tox
-pyparsing==2.4.7          # via -r requirements/base.txt, d3a-interface, packaging
+pip-tools==5.4.0          # via -r requirements/base.txt, d3a-blockchain, d3a-interface
+plotly==5.1.0             # via -r requirements/base.txt
+pluggy==0.13.1            # via -r requirements/base.txt, d3a-blockchain, d3a-interface, tox
+py-bip39-bindings==0.1.6  # via d3a-blockchain, substrate-interface
+py-ed25519-bindings==0.1.2  # via d3a-blockchain, substrate-interface
+py-sr25519-bindings==0.1.2  # via d3a-blockchain, substrate-interface
+py==1.9.0                 # via -r requirements/base.txt, d3a-blockchain, d3a-interface, tox
+pyparsing==2.4.7          # via -r requirements/base.txt, d3a-blockchain, d3a-interface, packaging
 pyrsistent==0.17.3        # via -r requirements/base.txt, d3a-interface, jsonschema
 python-dateutil==2.8.1    # via -r requirements/base.txt, d3a-interface, pendulum
 python-rex==0.4           # via -r requirements/base.txt
 pytz==2021.1              # via -r requirements/base.txt
 pytzdata==2020.1          # via -r requirements/base.txt, d3a-interface, pendulum
 redis==3.5.3              # via -r requirements/base.txt, d3a-interface, rq
-regex==2021.4.4           # via -r requirements/base.txt, awesome-slugify
-requests==2.25.0          # via -r requirements/base.txt, d3a-interface, scalecodec, substrate-interface
-retrying==1.3.3           # via -r requirements/base.txt, plotly
-rq==1.8.1                 # via -r requirements/base.txt
-scalecodec==0.10.54       # via substrate-interface
-six==1.15.0               # via -r requirements/base.txt, d3a-interface, jsonschema, pip-tools, plotly, python-dateutil, python-rex, retrying, tox, virtualenv, websocket-client
+regex==2021.7.6           # via -r requirements/base.txt, awesome-slugify
+requests==2.25.0          # via -r requirements/base.txt, d3a-blockchain, d3a-interface, scalecodec, substrate-interface
+rq==1.9.0                 # via -r requirements/base.txt
+scalecodec==0.11.16       # via d3a-blockchain, substrate-interface
+six==1.15.0               # via -r requirements/base.txt, d3a-blockchain, d3a-interface, jsonschema, pip-tools, plotly, python-dateutil, python-rex, tox, virtualenv, websocket-client
 sortedcontainers==2.4.0   # via -r requirements/base.txt
-substrate-interface==0.11.16  # via -r requirements/blockchain.in
-toml==0.10.2              # via -r requirements/base.txt, d3a-interface, tox
-tox==3.20.1               # via -r requirements/base.txt, d3a-interface
+substrate-interface==0.11.16  # via d3a-blockchain
+tenacity==8.0.1           # via -r requirements/base.txt, plotly
+toml==0.10.2              # via -r requirements/base.txt, d3a-blockchain, d3a-interface, tox
+tox==3.20.1               # via -r requirements/base.txt, d3a-blockchain, d3a-interface
 unidecode==0.4.21         # via -r requirements/base.txt, awesome-slugify
-urllib3==1.26.4           # via -r requirements/base.txt, d3a-interface, requests
-virtualenv==20.2.2        # via -r requirements/base.txt, d3a-interface, tox
-websocket-client==0.57.0  # via substrate-interface
+urllib3==1.26.4           # via -r requirements/base.txt, d3a-blockchain, d3a-interface, requests
+virtualenv==20.2.2        # via -r requirements/base.txt, d3a-blockchain, d3a-interface, tox
+websocket-client==0.57.0  # via d3a-blockchain, substrate-interface
 websockets==8.1           # via -r requirements/base.txt, d3a-interface
-xxhash==2.0.0             # via substrate-interface
+xxhash==2.0.0             # via d3a-blockchain, substrate-interface
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip

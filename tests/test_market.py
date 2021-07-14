@@ -39,7 +39,7 @@ from d3a.models.myco_matcher.pay_as_clear import PayAsClearMatcher
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.market_structures import Bid, Offer, Trade, TradeBidOfferInfo
 from d3a.models.market.balancing import BalancingMarket
-from d3a.models.market.blockchain_interface import NonBlockchainInterface
+from d3a.d3a_core.blockchain_interface import NonBlockchainInterface
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
 from d3a.models.market import GridFee
