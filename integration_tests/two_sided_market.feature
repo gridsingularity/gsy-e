@@ -47,7 +47,7 @@ Feature: Two sided market tests
   Scenario: LoadHoursStrategy buys energy in the min rate range provided by the user as dict profile
     Given we have a scenario named two_sided_market/user_min_rate_profile_load_dict
     And d3a is installed
-    When we run the simulation with setup file two_sided_market.user_min_rate_profile_load_dict and parameters [48, 1500, 1000, 4]
+    When we run the simulation with setup file two_sided_market.user_min_rate_profile_load_dict and parameters [24, 60, 60, 4]
     Then LoadHoursStrategy buys energy with rates equal to the initial buying rate profile
 
   Scenario: LoadHoursStrategy buys energy in the min energy rate

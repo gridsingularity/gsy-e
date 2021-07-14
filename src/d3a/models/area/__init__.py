@@ -424,7 +424,7 @@ class Area:
                                 "current_time": self.now}}
                 bid_offer_pairs = bid_offer_matcher.get_matches_recommendations(data)
                 if not bid_offer_pairs:
-                    return
+                    break
                 market.match_recommendations(bid_offer_pairs)
 
     def update_area_current_tick(self):
