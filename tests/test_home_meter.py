@@ -18,15 +18,15 @@ import uuid
 from collections import OrderedDict
 from unittest.mock import Mock, patch, call, create_autospec
 
-from d3a_interface.device_validator import DeviceValidator, HomeMeterValidator
 from d3a_interface.exceptions import D3AException
+from d3a_interface.validators.home_meter_validator import HomeMeterValidator
 from pendulum import datetime, duration
 
+from d3a.d3a_core.util import StrategyProfileConfigurationException
 from d3a.models.area import Area
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.state import HomeMeterState
 from d3a.models.strategy.home_meter import HomeMeterStrategy
-from d3a.d3a_core.util import StrategyProfileConfigurationException
 
 
 # pylint: disable=protected-access
@@ -48,7 +48,7 @@ class HomeMeterStrategyTest(unittest.TestCase):
         self.area_mock = create_autospec(Area)
         self.strategy.area = self.area_mock
         self.strategy.owner = Mock()
-        self.strategy.validator = create_autospec(DeviceValidator)
+        self.strategy.validator = create_autospec(HomeMeterValidator)
 
     @staticmethod
     @patch.object(HomeMeterValidator, "validate")

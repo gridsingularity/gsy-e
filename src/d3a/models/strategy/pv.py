@@ -20,10 +20,10 @@ import traceback
 from logging import getLogger
 
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.device_validator import validate_pv_device_energy, validate_pv_device_price
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import (
     convert_W_to_kWh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
+from d3a_interface.validators import PVValidator
 from pendulum import duration, Time  # noqa
 
 from d3a import constants
@@ -62,7 +62,7 @@ class PVStrategy(BaseStrategy):
         :param max_panel_power_W:
         """
         super().__init__()
-        validate_pv_device_energy(panel_count=panel_count, max_panel_power_W=max_panel_power_W)
+        PVValidator.validate_energy(panel_count=panel_count, max_panel_power_W=max_panel_power_W)
 
         self.panel_count = panel_count
         self.max_panel_power_W = max_panel_power_W
@@ -86,8 +86,9 @@ class PVStrategy(BaseStrategy):
         if isinstance(update_interval, int):
             update_interval = duration(minutes=update_interval)
 
-        validate_pv_device_price(fit_to_limit=fit_to_limit,
-                                 energy_rate_decrease_per_update=energy_rate_decrease_per_update)
+        PVValidator.validate_rate(
+            fit_to_limit=fit_to_limit,
+            energy_rate_decrease_per_update=energy_rate_decrease_per_update)
 
         self.offer_update = TemplateStrategyOfferUpdater(initial_selling_rate, final_selling_rate,
                                                          fit_to_limit,
@@ -164,7 +165,7 @@ class PVStrategy(BaseStrategy):
                 continue
             rate_change = None if fit_to_limit else \
                 find_object_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
-            validate_pv_device_price(
+            PVValidator.validate_rate(
                 initial_selling_rate=initial_rate[time_slot],
                 final_selling_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
                 energy_rate_decrease_per_update=rate_change,

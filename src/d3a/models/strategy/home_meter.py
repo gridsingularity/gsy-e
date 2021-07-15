@@ -16,6 +16,13 @@ from logging import getLogger
 from pathlib import Path
 from typing import Dict, Union
 
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.utils import find_object_of_same_weekday_and_time
+from d3a_interface.validators.home_meter_validator import HomeMeterValidator
+from numpy import random
+from pendulum import duration
+
 from d3a import constants
 from d3a.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
 from d3a.d3a_core.exceptions import D3AException, MarketException
@@ -28,12 +35,6 @@ from d3a.models.state import HomeMeterState
 from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.strategy.update_frequency import (
     TemplateStrategyBidUpdater, TemplateStrategyOfferUpdater)
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.device_validator import HomeMeterValidator
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.utils import find_object_of_same_weekday_and_time
-from numpy import random
-from pendulum import duration
 
 log = getLogger(__name__)
 

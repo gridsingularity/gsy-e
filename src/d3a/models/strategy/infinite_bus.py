@@ -15,16 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.read_user_profile import convert_identity_profile_to_float
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
+from d3a_interface.utils import find_object_of_same_weekday_and_time
+
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.d3a_core.util import should_read_profile_from_db
 from d3a.models.strategy import BidEnabledStrategy, INF_ENERGY
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
-    read_and_convert_identity_profile_to_float, convert_identity_profile_to_float
-from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict, \
-    find_object_of_same_weekday_and_time
 
 
 class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
@@ -63,16 +64,10 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
 
     def _set_global_market_maker_rate(self):
         if self.energy_rate_profile is not None:
-            GlobalConfig.market_maker_rate = \
-                read_and_convert_identity_profile_to_float(self.energy_rate_profile)
-        elif isinstance(self.energy_rate, (int, float)):
+            GlobalConfig.market_maker_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, self.energy_rate_profile)
+        elif self.energy_rate is not None:
             GlobalConfig.market_maker_rate = self.energy_rate
-        elif isinstance(self.energy_rate, (str, dict)):
-            GlobalConfig.market_maker_rate = \
-                read_arbitrary_profile(InputProfileTypes.IDENTITY, self.energy_rate)
-        else:
-            GlobalConfig.market_maker_rate = \
-                ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
 
     def _read_or_rotate_profiles(self, reconfigure=False):
         if self.energy_buy_rate_input is None and \
@@ -102,6 +97,34 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
 
         self._set_global_market_maker_rate()
 
+    def _populate_selling_rate(self):
+        if self.energy_rate_profile is not None:
+            self.energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                      self.energy_rate_profile)
+            # TODO: to be checked via deleting in case increased memory is observed during runtime
+            del self.energy_rate_profile
+        elif self.energy_rate is not None:
+            self.energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                      self.energy_rate)
+        else:
+            self.energy_rate = self.area.config.market_maker_rate
+
+    def _populate_buying_rate(self):
+        if self.buying_rate_profile is not None:
+            self.energy_buy_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, self.buying_rate_profile)
+            # TODO: to be checked via deleting in case increased memory is observed during runtime
+            del self.buying_rate_profile
+        elif self.energy_buy_rate is not None:
+            self.energy_buy_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, self.energy_buy_rate)
+        else:
+            self.energy_buy_rate = self.area.config.market_maker_rate
+
+    def event_activate(self, **kwargs):
+        self._populate_selling_rate()
+        self._populate_buying_rate()
+
     def buy_energy(self, market):
         for offer in market.sorted_offers:
             if offer.seller == self.owner.name:
@@ -125,8 +148,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
 
     def event_market_cycle(self):
         super().event_market_cycle()
-        if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
-           ConstSettings.IAASettings.MARKET_TYPE == 3:
+        if ConstSettings.IAASettings.MARKET_TYPE == 2:
             for market in self.area.all_markets:
                 try:
                     buy_rate = find_object_of_same_weekday_and_time(self.energy_buy_rate,

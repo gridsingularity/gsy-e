@@ -15,14 +15,16 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from d3a_interface.constants_limits import GlobalConfig, ConstSettings
+from d3a_interface.read_user_profile import InputProfileTypes, \
+    convert_identity_profile_to_float
+from d3a_interface.read_user_profile import read_and_convert_identity_profile_to_float
+from d3a_interface.utils import key_in_dict_and_not_none
+from d3a_interface.validators import MarketMakerValidator
+
 from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.d3a_core.util import should_read_profile_from_db
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a_interface.constants_limits import GlobalConfig, ConstSettings
-from d3a_interface.device_validator import validate_market_maker
-from d3a_interface.read_user_profile import InputProfileTypes, \
-    read_and_convert_identity_profile_to_float, convert_identity_profile_to_float
-from d3a_interface.utils import key_in_dict_and_not_none
 
 
 class MarketMakerStrategy(CommercialStrategy):
@@ -32,7 +34,7 @@ class MarketMakerStrategy(CommercialStrategy):
     def __init__(self, energy_rate_profile=None, energy_rate=None, grid_connected=True,
                  energy_rate_profile_uuid=None):
         super().__init__()
-        validate_market_maker(grid_connected=grid_connected)
+        MarketMakerValidator.validate(grid_connected=grid_connected)
 
         self.energy_rate = None
 

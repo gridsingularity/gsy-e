@@ -310,30 +310,72 @@ def testing_event_market_cycle_post_offers(bus_test3, area_test3):
 
 
 @pytest.fixture()
-def area_test4():
-    return FakeArea(0)
-
-
-@pytest.fixture()
-def bus_test4(area_test4):
+def bus_test4(area_test1):
     c = InfiniteBusStrategy(energy_sell_rate=30, energy_buy_rate=25)
-    c.area = area_test4
-    c.owner = area_test4
+    c.area = area_test1
+    c.owner = area_test1
     return c
 
 
-def testing_event_tick_buy_energy(bus_test4, area_test4):
+def testing_event_tick_buy_energy(bus_test4, area_test1):
     bus_test4.event_activate()
     bus_test4.event_tick()
-    assert len(area_test4.test_market.traded_offers) == 1
-    assert area_test4.test_market.traded_offers[-1].offer.energy == 1
+    assert len(area_test1.test_market.traded_offers) == 1
+    assert area_test1.test_market.traded_offers[-1].offer.energy == 1
 
 
-def testing_event_market_cycle_posting_bids(bus_test4, area_test4):
+def testing_event_market_cycle_posting_bids(bus_test4, area_test1):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     bus_test4.event_activate()
     bus_test4.event_market_cycle()
     assert len(bus_test4._bids) == 1
-    assert bus_test4._bids[area_test4.test_market.id][-1].energy == sys.maxsize
-    assert bus_test4._bids[area_test4.test_market.id][-1].price == float(25 * sys.maxsize)
+    assert bus_test4._bids[area_test1.test_market.id][-1].energy == sys.maxsize
+    assert bus_test4._bids[area_test1.test_market.id][-1].price == 25 * sys.maxsize
     ConstSettings.IAASettings.MARKET_TYPE = 1
+
+
+def test_global_market_maker_rate_single_value(bus_test4):
+    assert isinstance(GlobalConfig.market_maker_rate, int)
+    assert (GlobalConfig.market_maker_rate ==
+            ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE)
+
+
+"""TEST5"""
+
+
+@pytest.fixture()
+def bus_test5(area_test1):
+    c = InfiniteBusStrategy(energy_rate_profile="src/d3a/resources/SAM_SF_Summer.csv")
+    c.area = area_test1
+    c.owner = area_test1
+    return c
+
+
+def test_global_market_maker_rate_profile_and_infinite_bus_selling_rate_profile(bus_test5):
+    assert isinstance(GlobalConfig.market_maker_rate, dict)
+    assert len(GlobalConfig.market_maker_rate) == 96
+    assert list(GlobalConfig.market_maker_rate.values())[0] == 516.0
+    assert list(GlobalConfig.market_maker_rate.values())[-1] == 595.0
+    bus_test5.event_activate()
+    assert list(bus_test5.energy_rate.values())[0] == 516.0
+    assert list(bus_test5.energy_rate.values())[-1] == 595.0
+
+
+"""TEST6"""
+
+
+@pytest.fixture()
+def bus_test6(area_test1):
+    c = InfiniteBusStrategy(
+        buying_rate_profile="src/d3a/resources/LOAD_DATA_1.csv")
+    c.area = area_test1
+    c.owner = area_test1
+    return c
+
+
+def test_infinite_bus_buying_rate_set_as_profile(bus_test6):
+    bus_test6.event_activate()
+    assert isinstance(bus_test6.energy_buy_rate, dict)
+    assert len(bus_test6.energy_buy_rate) == 96
+    assert list(bus_test6.energy_buy_rate.values())[0] == 10
+    assert list(bus_test6.energy_buy_rate.values())[15] == 15

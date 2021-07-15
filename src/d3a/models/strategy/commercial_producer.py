@@ -17,21 +17,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 
+from d3a_interface.read_user_profile import InputProfileTypes
+from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
+from d3a_interface.utils import find_object_of_same_weekday_and_time
+from d3a_interface.validators import CommercialProducerValidator
+
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.models.strategy import BaseStrategy, INF_ENERGY
-from d3a_interface.device_validator import validate_commercial_producer
-from d3a_interface.read_user_profile import InputProfileTypes
-from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
-from d3a_interface.utils import find_object_of_same_weekday_and_time
 
 
 class CommercialStrategy(BaseStrategy):
     parameters = ("energy_rate",)
 
     def __init__(self, energy_rate=None):
-        validate_commercial_producer(energy_rate=energy_rate)
+        CommercialProducerValidator.validate(energy_rate=energy_rate)
         super().__init__()
         self.energy_rate_input = energy_rate
         self.energy_rate = None
