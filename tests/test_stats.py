@@ -62,6 +62,8 @@ class FakeMarket:
         self.time_slot_str = self.time_slot.format(constants.DATE_TIME_FORMAT) \
             if self.time_slot is not None \
             else None
+        self.offer_history = []
+        self.bid_history = []
 
 
 class FakeOffer:
