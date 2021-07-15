@@ -322,8 +322,19 @@ class TwoSidedMarket(OneSidedMarket):
 
     @classmethod
     def _replace_offers_bids_with_residual_in_matching_list(
-            cls, matches: List[Dict], start_index, offer_trade: Trade, bid_trade: Trade
+            cls, matches: List[Dict], start_index: int, offer_trade: Trade, bid_trade: Trade
     ):
+        """
+        If a trade resulted in a residual offer/bid, upcoming matching list needs to be replaced
+         with residual offer/bid
+        :param matches: Recommended list of offer/bid matches
+        :param start_index: Current index of matching
+        :param offer_trade: Trade info of the successful offer
+        :param bid_trade: Trade info of the successful bid
+        :return: The updated matching offer/bid pair list with existing offer/bid
+        replaced with corresponding residual offer/bid
+        """
+
         def _convert_match_to_residual(match):
             if match["offer"]["id"] == offer_trade.offer.id:
                 assert offer_trade.residual is not None
