@@ -15,7 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 from abc import ABC, abstractmethod
-from typing import Dict
+from typing import Dict, Optional
 
 from d3a.models.market import Offer, Bid
 
@@ -36,7 +36,8 @@ class TradingPartnersRequirement(Requirement):
 
     @classmethod
     def is_satisfied(cls, offer: Offer, bid: Bid, requirement: Dict,
-                     clearing_rate: float = None, selected_energy: float = None) -> bool:
+                     clearing_rate: Optional[float] = None,
+                     selected_energy: Optional[float] = None) -> bool:
         trading_partners = requirement.get("trading_partners")
         assert isinstance(trading_partners, list),\
             f"Invalid data type for trading partner {requirement}"
@@ -54,7 +55,8 @@ class EnergyTypeRequirement(Requirement):
 
     @classmethod
     def is_satisfied(cls, offer: Offer, bid: Bid, requirement: Dict,
-                     clearing_rate: float = None, selected_energy: float = None) -> bool:
+                     clearing_rate: Optional[float] = None,
+                     selected_energy: Optional[float] = None) -> bool:
         bid_required_energy_types = requirement.get("energy_type")
         assert isinstance(bid_required_energy_types, list), \
             f"Invalid data type for energy_type {requirement}"
@@ -69,7 +71,8 @@ class SelectedEnergyRequirement(Requirement):
 
     @classmethod
     def is_satisfied(cls, offer: Offer, bid: Bid, requirement: Dict,
-                     clearing_rate: float = None, selected_energy: float = None) -> bool:
+                     clearing_rate: Optional[float] = None,
+                     selected_energy: Optional[float] = None) -> bool:
         bid_required_energy = requirement.get("energy")
         assert isinstance(bid_required_energy, (int, float)), \
             f"Invalid data type for energy {requirement}"
@@ -84,7 +87,8 @@ class ClearingRateRequirement(Requirement):
 
     @classmethod
     def is_satisfied(cls, offer: Offer, bid: Bid, requirement: Dict,
-                     clearing_rate: float = None, selected_energy: float = None) -> bool:
+                     clearing_rate: Optional[float] = None,
+                     selected_energy: Optional[float] = None) -> bool:
         bid_required_price = requirement.get("price")
         assert isinstance(bid_required_price, (int, float)), \
             f"Invalid data type for energy {requirement}"
@@ -115,7 +119,8 @@ class RequirementsSatisfiedChecker:
     @classmethod
     def is_satisfied(
             cls, offer: Offer, bid: Bid,
-            clearing_rate: float = None, selected_energy: float = None) -> bool:
+            clearing_rate: Optional[float] = None,
+            selected_energy: Optional[float] = None) -> bool:
         """Receive offer and bid and validate that at least 1 requirement is satisfied."""
         offer_requirements = offer.requirements or []
         bid_requirements = bid.requirements or []

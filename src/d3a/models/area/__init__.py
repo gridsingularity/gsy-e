@@ -392,7 +392,7 @@ class Area:
     def tick(self):
         """Tick event handler.
 
-        invokes aggregator commands consumer, publishes market clearing, updates events,
+        Invoke aggregator commands consumer, publishes market clearing, updates events,
         updates cached market's bids and offers in case of myco matching and matches
         bid offer pairs otherwise.
         """
@@ -486,7 +486,7 @@ class Area:
     @property
     def now(self) -> DateTime:
         """
-        Return the "current time" as a `DateTime` object.
+        Return the "current time" as a "DateTime" object.
         Can be overridden in subclasses to change the meaning of "now".
 
         In this default implementation "current time" is defined by the number of ticks that
