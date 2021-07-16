@@ -22,6 +22,7 @@ from logging import getLogger
 from typing import Union
 
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.enums import SpotMarketTypeEnum
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
 from d3a_interface.validators import StorageValidator
@@ -354,8 +355,7 @@ class StorageStrategy(BidEnabledStrategy):
         self.state.clamp_energy_to_buy_kWh(self.future_markets_time_slots)
 
         for market in self.area.all_markets:
-            if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
-                    ConstSettings.IAASettings.MARKET_TYPE == 3:
+            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
                 self.state.clamp_energy_to_buy_kWh(self.future_markets_time_slots)
                 if self.are_bids_posted(market.id):
                     self.bid_update.update(market, self)

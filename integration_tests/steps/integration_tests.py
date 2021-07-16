@@ -220,6 +220,9 @@ def one_sided_market(context, market_type):
     elif market_type == "two-sided-pay-as-clear":
         ConstSettings.IAASettings.MARKET_TYPE = 2
         ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+    elif market_type == "two-sided-external":
+        ConstSettings.IAASettings.MARKET_TYPE = 2
+        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.EXTERNAL.value
 
 
 @given('d3a dispatches events from top to bottom')

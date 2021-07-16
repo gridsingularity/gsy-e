@@ -121,6 +121,8 @@ Feature: Jira Issues Tests
     When we run the simulation with setup file json_file and parameters [24, 30, 30, 1]
     Then all load demands in setup was fulfilled on every market slot
 
+  # TODO: re-enable in context of bug/D3ASIM-3534
+  @disabled
   Scenario: D3ASIM-1690: No unmatched load
     Given we have a scenario named two_sided_pay_as_clear/jira_d3asim_1690
     And d3a is installed
@@ -154,6 +156,8 @@ Scenario: D3ASIM-2034: DSO doesnt pay the grid fee of the Grid
     When we run the simulation with setup file jira.d3asim_2244 and parameters [24, 15, 15, 1]
     Then cumulative grid trades correctly reports the external trade
 
+  # TODO: re-enable in context of bug/D3ASIM-3534
+  @disabled
   Scenario Outline: D3ASIM-2948: min/max/avg trade rate is correctly reflected irrespective of market type
      Given we have a scenario named jira/d3asim_2948
      And d3a is installed

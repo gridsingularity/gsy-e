@@ -302,7 +302,7 @@ def test_event_tick_updates_rates(load_hours_strategy_test1, market_test1):
 
     number_of_markets = len(load_hours_strategy_test1.area.all_markets)
     # Test for all available market types (one-sided and two-sided markets)
-    available_market_types = (1, 2, 3)
+    available_market_types = (1, 2)
     # Bids' rates should be updated both when the load can buy energy and when it cannot do it
     for can_buy_energy in (True, False):
         load_hours_strategy_test1.state.can_buy_more_energy.return_value = can_buy_energy
