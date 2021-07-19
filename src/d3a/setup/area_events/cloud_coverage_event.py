@@ -38,7 +38,7 @@ def get_setup(config):
                 'House 2',
                 event_list=[ConfigEvents(12, {'cloud_coverage': 2})],
                 children=[
-                    Area('H2 PV', strategy=PVPredefinedStrategy(),
+                    Area('H2 PV', strategy=PVPredefinedStrategy(max_panel_power_W=250),
                          ),
 
                 ]

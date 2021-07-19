@@ -33,7 +33,8 @@ def get_setup(config):
             Area(
                 'House 1',
                 [
-                    Area('H1 PV', strategy=PVPredefinedStrategy(cloud_coverage=0,
+                    Area('H1 PV', strategy=PVPredefinedStrategy(max_panel_power_W=250,
+                                                                cloud_coverage=0,
                                                                 use_market_maker_rate=True)
                          ),
                     Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=100,

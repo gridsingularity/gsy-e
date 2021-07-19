@@ -38,7 +38,8 @@ def get_setup(config):
                                                                        hrs_of_day=list(
                                                                            range(7, 20)))
                          ),
-                    Area('H1 PV', strategy=PVPredefinedStrategy(panel_count=1,
+                    Area('H1 PV', strategy=PVPredefinedStrategy(max_panel_power_W=250,
+                                                                panel_count=1,
                                                                 cloud_coverage=2)
                          ),
                 ]
