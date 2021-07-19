@@ -189,9 +189,16 @@ class Market:
     @staticmethod
     def sorting(offers_bids: Dict, reverse_order=False) -> List[Union[Bid, Offer]]:
         """Sort a list of bids or offers by their energy_rate attribute."""
-        return sorted(offers_bids.values(),
-                      key=lambda obj: obj.energy_rate,
-                      reverse=reverse_order)
+        if reverse_order:
+            # Sorted bids in descending order
+            return list(reversed(sorted(
+                offers_bids.values(),
+                key=lambda obj: obj.energy_rate)))
+        else:
+
+            return sorted(offers_bids.values(),
+                          key=lambda obj: obj.energy_rate,
+                          reverse=reverse_order)
 
     @property
     def avg_offer_price(self):
