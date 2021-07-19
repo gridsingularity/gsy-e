@@ -19,7 +19,7 @@ from collections import namedtuple
 from typing import Dict  # NOQA
 from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent  # NOQA
 from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
-from d3a.d3a_core.exceptions import BidNotFound, MarketException
+from d3a.d3a_core.exceptions import BidNotFoundException, MarketException
 from d3a.models.market.market_structures import Bid
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.constants import FLOATING_POINT_TOLERANCE
@@ -106,7 +106,7 @@ class TwoSidedEngine(IAAEngine):
     def delete_forwarded_bids(self, bid_info):
         try:
             self.markets.target.delete_bid(bid_info.target_bid)
-        except BidNotFound:
+        except BidNotFoundException:
             self.owner.log.trace(f"Bid {bid_info.target_bid.id} not "
                                  f"found in the target market.")
         self._delete_forwarded_bid_entries(bid_info.source_bid)

@@ -18,9 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import uuid
 from logging import getLogger
-from typing import Dict, List  # noqa
+from typing import Dict, List, Union  # noqa
 
-from d3a.d3a_core.exceptions import InvalidBidOfferPair
 from numpy.random import random
 from collections import namedtuple
 from pendulum import DateTime
@@ -188,18 +187,18 @@ class Market:
         )
 
     @staticmethod
-    def sorting(obj, reverse_order=False):
+    def sorting(offers_bids: Dict, reverse_order=False) -> List[Union[Bid, Offer]]:
+        """Sort a list of bids or offers by their energy_rate attribute."""
         if reverse_order:
             # Sorted bids in descending order
             return list(reversed(sorted(
-                obj.values(),
-                key=lambda b: b.energy_rate)))
-
+                offers_bids.values(),
+                key=lambda obj: obj.energy_rate)))
         else:
-            # Sorted bids in ascending order
-            return list(sorted(
-                obj.values(),
-                key=lambda b: b.energy_rate))
+
+            return sorted(offers_bids.values(),
+                          key=lambda obj: obj.energy_rate,
+                          reverse=reverse_order)
 
     @property
     def avg_offer_price(self):
@@ -263,11 +262,3 @@ class Market:
             "offers": [o.serializable_dict() for o in self.offer_history],
             "trades": [t.serializable_dict() for t in self.trades]
         }
-
-
-def validate_authentic_bid_offer_pair(bid, offer, clearing_rate, selected_energy):
-    if not (bid.energy >= selected_energy and
-            offer.energy >= selected_energy and
-            (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= clearing_rate and
-            (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= offer.energy_rate):
-        raise InvalidBidOfferPair

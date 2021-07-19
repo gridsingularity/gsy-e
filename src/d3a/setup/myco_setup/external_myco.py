@@ -1,18 +1,15 @@
 from d3a.models.area import Area
+from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
-from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.enums import BidOfferMatchAlgoEnum
 
 
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.IAASettings.MIN_BID_AGE = 0
-    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-        BidOfferMatchAlgoEnum.EXTERNAL.value
-    ConstSettings.IAASettings.MIN_OFFER_AGE = 0
+    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = (
+        BidOfferMatchAlgoEnum.EXTERNAL.value)
     area = Area(
         "Grid",
         [
@@ -36,14 +33,14 @@ def get_setup(config):
             Area(
                 "House 2",
                 [
-                    Area("load", strategy=LoadHoursExternalStrategy(
+                    Area("load", strategy=LoadHoursStrategy(
                         avg_power_W=200, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
                         final_buying_rate=35)
                          ),
-                    Area("pv", strategy=PVExternalStrategy(panel_count=4)
+                    Area("pv", strategy=PVStrategy(panel_count=4)
                          ),
 
-                ], external_connection_available=True,
+                ],
             ),
             Area("Cell Tower", strategy=LoadHoursStrategy(avg_power_W=100,
                                                           hrs_per_day=24,

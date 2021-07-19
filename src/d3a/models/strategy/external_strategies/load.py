@@ -131,10 +131,12 @@ class LoadExternalMixin(ExternalMixin):
 
     def _bid(self, payload):
         transaction_id = self._get_transaction_id(payload)
-        required_args = {'price', 'energy', 'transaction_id'}
-        allowed_args = required_args.union({'replace_existing'})
+        required_args = {"price", "energy", "transaction_id"}
+        allowed_args = required_args.union({"replace_existing",
+                                            "attributes",
+                                            "requirements"})
 
-        bid_response_channel = f'{self.channel_prefix}/response/bid'
+        bid_response_channel = f"{self.channel_prefix}/response/bid"
         if not check_for_connected_and_reply(self.redis, bid_response_channel, self.connected):
             return
         try:
@@ -256,8 +258,10 @@ class LoadExternalMixin(ExternalMixin):
             super().event_offer(market_id=market_id, offer=offer)
 
     def _bid_aggregator(self, arguments):
-        required_args = {'price', 'energy', 'type', 'transaction_id'}
-        allowed_args = required_args.union({'replace_existing'})
+        required_args = {"price", "energy", "type", "transaction_id"}
+        allowed_args = required_args.union({"replace_existing",
+                                            "attributes",
+                                            "requirements"})
 
         try:
             # Check that all required arguments have been provided
@@ -265,7 +269,7 @@ class LoadExternalMixin(ExternalMixin):
             # Check that every provided argument is allowed
             assert all(arg in allowed_args for arg in arguments.keys())
 
-            replace_existing = arguments.get('replace_existing', True)
+            replace_existing = arguments.get("replace_existing", True)
             assert self.can_bid_be_posted(
                 arguments["energy"],
                 arguments["price"],
