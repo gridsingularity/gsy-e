@@ -112,14 +112,14 @@ class TwoSidedEngine(IAAEngine):
         self._delete_forwarded_bid_entries(bid_info.source_bid)
 
     def event_bid_traded(self, *, bid_trade):
-        bid_info = self.forwarded_bids.get(bid_trade.offer.id)
+        bid_info = self.forwarded_bids.get(bid_trade.offer_bid.id)
         if not bid_info:
             return
 
-        if bid_trade.offer.id == bid_info.target_bid.id:
+        if bid_trade.offer_bid.id == bid_info.target_bid.id:
             # Bid was traded in target market, buy in source
             market_bid = self.markets.source.bids[bid_info.source_bid.id]
-            assert bid_trade.offer.energy <= market_bid.energy, \
+            assert bid_trade.offer_bid.energy <= market_bid.energy, \
                 "Traded bid on target market has more energy than the market bid."
 
             source_rate = bid_info.source_bid.energy_rate
@@ -127,7 +127,7 @@ class TwoSidedEngine(IAAEngine):
             assert abs(source_rate) + FLOATING_POINT_TOLERANCE >= abs(target_rate), \
                 f"bid: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
-            trade_rate = (bid_trade.offer.price/bid_trade.offer.energy)
+            trade_rate = (bid_trade.offer_bid.price/bid_trade.offer_bid.energy)
 
             if bid_trade.offer_bid_trade_info is not None:
                 # Adapt trade_offer_info received by the trade to include source market grid fees,
@@ -145,7 +145,7 @@ class TwoSidedEngine(IAAEngine):
                 )
             self.markets.source.accept_bid(
                 bid=market_bid,
-                energy=bid_trade.offer.energy,
+                energy=bid_trade.offer_bid.energy,
                 seller=self.owner.name,
                 already_tracked=False,
                 trade_rate=trade_rate,
@@ -157,7 +157,7 @@ class TwoSidedEngine(IAAEngine):
             self.delete_forwarded_bids(bid_info)
             self.bid_age.pop(bid_info.source_bid.id, None)
 
-        elif bid_trade.offer.id == bid_info.source_bid.id:
+        elif bid_trade.offer_bid.id == bid_info.source_bid.id:
             # Bid was traded in the source market by someone else
             self.delete_forwarded_bids(bid_info)
             self.bid_age.pop(bid_info.source_bid.id, None)

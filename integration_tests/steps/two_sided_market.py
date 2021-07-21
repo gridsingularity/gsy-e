@@ -156,7 +156,7 @@ def energy_origin(context, producer, consumer):
 @then('trades are matched only on the Grid market')
 def trades_matched_on_grid(context):
     # Assert that all grid trades contain Offer objects, bid trades are not tracked
-    assert all(isinstance(trade.offer, Offer)
+    assert all(isinstance(trade.offer_bid, Offer)
                for market in context.simulation.area.past_markets
                for trade in market.trades)
 
@@ -164,18 +164,18 @@ def trades_matched_on_grid(context):
     house1 = next(c for c in context.simulation.area.children if c.name == "House 1")
     load = next(c for c in house1.children if c.name == "H1 General Load")
     load_energy_per_day = load.strategy.energy_per_slot_Wh / 1000 * 24
-    house1_consumed_energy = sum(trade.offer.energy
+    house1_consumed_energy = sum(trade.offer_bid.energy
                                  for market in house1.past_markets
                                  for trade in market.trades)
     assert isclose(house1_consumed_energy, load_energy_per_day, rel_tol=1e-3)
 
     # Assert that all House 2 trades contain Offer objects
     house2 = next(c for c in context.simulation.area.children if c.name == "House 2")
-    assert all(isinstance(trade.offer, Offer)
+    assert all(isinstance(trade.offer_bid, Offer)
                for market in house2.past_markets
                for trade in market.trades)
 
-    house2_consumed_energy = sum(trade.offer.energy
+    house2_consumed_energy = sum(trade.offer_bid.energy
                                  for market in house2.past_markets
                                  for trade in market.trades)
     assert isclose(house2_consumed_energy, load_energy_per_day, rel_tol=1e-3)
@@ -184,7 +184,7 @@ def trades_matched_on_grid(context):
 @then('trades are matched only on the House 1 market')
 def trades_matched_on_house1(context):
     # Assert that all grid trades contain Offer objects, bid trades are not tracked
-    assert all(isinstance(trade.offer, Offer)
+    assert all(isinstance(trade.offer_bid, Offer)
                for market in context.simulation.area.past_markets
                for trade in market.trades)
 
@@ -192,18 +192,18 @@ def trades_matched_on_house1(context):
     house1 = next(c for c in context.simulation.area.children if c.name == "House 1")
     load = next(c for c in house1.children if c.name == "H1 General Load")
     load_energy_per_day = load.strategy.energy_per_slot_Wh / 1000 * 24
-    assert all(isinstance(trade.offer, Offer)
+    assert all(isinstance(trade.offer_bid, Offer)
                for market in house1.past_markets
                for trade in market.trades)
 
-    house1_consumed_energy = sum(trade.offer.energy
+    house1_consumed_energy = sum(trade.offer_bid.energy
                                  for market in house1.past_markets
                                  for trade in market.trades)
     assert isclose(house1_consumed_energy, load_energy_per_day, rel_tol=1e-3)
 
     # Assert that all House 2 trades contain Offer objects
     house2 = next(c for c in context.simulation.area.children if c.name == "House 2")
-    assert all(isinstance(trade.offer, Offer)
+    assert all(isinstance(trade.offer_bid, Offer)
                for market in house2.past_markets
                for trade in market.trades)
 
@@ -211,7 +211,7 @@ def trades_matched_on_house1(context):
 @then('trades are matched only on the House 2 market')
 def trades_matched_on_house2(context):
     # Assert that all grid trades contain Bid objects
-    assert all(isinstance(trade.offer, Bid)
+    assert all(isinstance(trade.offer_bid, Bid)
                for market in context.simulation.area.past_markets
                for trade in market.trades)
 
@@ -219,16 +219,16 @@ def trades_matched_on_house2(context):
     house1 = next(c for c in context.simulation.area.children if c.name == "House 1")
     load = next(c for c in house1.children if c.name == "H1 General Load")
     load_energy_per_day = load.strategy.energy_per_slot_Wh / 1000 * 24
-    assert all(isinstance(trade.offer, Bid)
+    assert all(isinstance(trade.offer_bid, Bid)
                for market in house1.past_markets
                for trade in market.trades)
 
     # Assert that all House 2 trades contain Offer objects
     house2 = next(c for c in context.simulation.area.children if c.name == "House 2")
-    assert all(isinstance(trade.offer, Offer)
+    assert all(isinstance(trade.offer_bid, Offer)
                for market in house2.past_markets
                for trade in market.trades)
-    house2_consumed_energy = sum(trade.offer.energy
+    house2_consumed_energy = sum(trade.offer_bid.energy
                                  for market in house2.past_markets
                                  for trade in market.trades)
     assert isclose(house2_consumed_energy, load_energy_per_day, rel_tol=1e-3)

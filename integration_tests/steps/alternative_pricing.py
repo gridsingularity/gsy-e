@@ -23,7 +23,7 @@ from d3a import limit_float_precision
 def get_trade_rates_house1(context):
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     return [
-        (market, trade.offer.price / trade.offer.energy)
+        (market, trade.offer_bid.price / trade.offer_bid.energy)
         for market in house1.past_markets
         for trade in market.trades
     ]

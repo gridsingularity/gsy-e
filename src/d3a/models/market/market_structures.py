@@ -249,7 +249,7 @@ def trade_bid_info_from_json_string(info_string):
 class Trade:
     id: str
     time: datetime
-    offer: Offer
+    offer_bid: Union[Offer, Bid]
     seller: str
     buyer: str
     residual: Union[Offer, Bid] = None
@@ -266,9 +266,9 @@ class Trade:
     def __str__(self):
         return (
             "{{{s.id!s:.6s}}} [origin: {s.seller_origin} -> {s.buyer_origin}] "
-            "[{s.seller} -> {s.buyer}] {s.offer.energy} kWh @ {s.offer.price} {rate} "
-            "{s.offer.id} [fee: {s.fee_price} cts.]".
-            format(s=self, rate=round(self.offer.energy_rate, 8))
+            "[{s.seller} -> {s.buyer}] {s.offer_bid.energy} kWh @ {s.offer_bid.price} {rate} "
+            "{s.offer_bid.id} [fee: {s.fee_price} cts.]".
+            format(s=self, rate=round(self.offer_bid.energy_rate, 8))
         )
 
     @classmethod
@@ -277,15 +277,15 @@ class Trade:
                 tuple(cls.__dataclass_fields__.keys())[3:5])
 
     def _to_csv(self):
-        rate = round(self.offer.energy_rate, 4)
+        rate = round(self.offer_bid.energy_rate, 4)
         return (tuple(asdict(self).values())[1:2] +
-                (rate, self.offer.energy) +
+                (rate, self.offer_bid.energy) +
                 tuple(asdict(self).values())[3:5])
 
     def to_json_string(self):
         # __dict__ instead of asdict to not recursively deserialize objects
         trade_dict = deepcopy(self.__dict__)
-        trade_dict["offer"] = trade_dict["offer"].to_json_string()
+        trade_dict["offer_bid"] = trade_dict["offer_bid"].to_json_string()
         if key_in_dict_and_not_none(trade_dict, "residual"):
             trade_dict["residual"] = trade_dict["residual"].to_json_string()
         if key_in_dict_and_not_none(trade_dict, "offer_bid_trade_info"):
@@ -296,13 +296,13 @@ class Trade:
     def serializable_dict(self):
         return {
             "type": "Trade",
-            "match_type": "Offer" if isinstance(self.offer, Offer) else "Bid",
+            "match_type": "Offer" if isinstance(self.offer_bid, Offer) else "Bid",
             "id": self.id,
-            "offer_bid_id": self.offer.id,
+            "offer_bid_id": self.offer_bid.id,
             "residual_id": self.residual.id if self.residual is not None else None,
-            "energy": self.offer.energy,
-            "energy_rate": self.offer.energy_rate,
-            "price": self.offer.energy * self.offer.energy_rate,
+            "energy": self.offer_bid.energy,
+            "energy_rate": self.offer_bid.energy_rate,
+            "price": self.offer_bid.energy * self.offer_bid.energy_rate,
             "buyer": self.buyer,
             "buyer_origin": self.buyer_origin,
             "seller_origin": self.seller_origin,
@@ -316,9 +316,9 @@ class Trade:
         }
 
 
-def trade_from_json_string(trade_string, current_time):
+def trade_from_json_string(trade_string, current_time=None):
     trade_dict = json.loads(trade_string)
-    trade_dict["offer"] = offer_or_bid_from_json_string(trade_dict["offer"], current_time)
+    trade_dict["offer_bid"] = offer_or_bid_from_json_string(trade_dict["offer_bid"], current_time)
     if key_in_dict_and_not_none(trade_dict, "residual"):
         trade_dict["residual"] = offer_or_bid_from_json_string(trade_dict["residual"],
                                                                current_time)
@@ -345,7 +345,7 @@ class BalancingOffer(Offer):
 class BalancingTrade:
     id: str
     time: datetime
-    offer: Offer
+    offer_bid: Union[Offer, Bid]
     seller: str
     buyer: str
     residual: Union[Offer, Bid] = None
@@ -364,8 +364,8 @@ class BalancingTrade:
     def __str__(self):
         return (
             "{{{s.id!s:.6s}}} [{s.seller} -> {s.buyer}] "
-            "{s.offer.energy} kWh @ {s.offer.price} {rate} {s.offer.id}".
-            format(s=self, rate=self.offer.energy_rate)
+            "{s.offer_bid.energy} kWh @ {s.offer_bid.price} {rate} {s.offer_bid.id}".
+            format(s=self, rate=self.offer_bid.energy_rate)
         )
 
     @classmethod
@@ -374,9 +374,9 @@ class BalancingTrade:
                 tuple(cls.__dataclass_fields__.keys())[3:5])
 
     def _to_csv(self):
-        rate = round(self.offer.energy_rate, 4)
+        rate = round(self.offer_bid.energy_rate, 4)
         return (tuple(asdict(self).values())[1:2] +
-                (rate, self.offer.energy) +
+                (rate, self.offer_bid.energy) +
                 tuple(asdict(self).values())[3:5])
 
 

@@ -26,7 +26,7 @@ from d3a.d3a_core.util import make_iaa_name
 @then('all trades are equal to market_clearing_rate')
 def test_traded_energy_rate(context):
     def has_one_of_clearing_rates(trade, market):
-        return any(isclose((trade.offer.price / trade.offer.energy), clearing_rate)
+        return any(isclose((trade.offer_bid.price / trade.offer_bid.energy), clearing_rate)
                    for clearing_rate in market.state.clearing.values())
 
     for child in context.simulation.area.children:
@@ -70,9 +70,9 @@ def test_cumulative_offer_bid_energy(context):
                     # Device-to-device trading, no bid tracked
                     continue
                 if trade.buyer in child_names:
-                    cumulative_traded_bid_energy += trade.offer.energy
+                    cumulative_traded_bid_energy += trade.offer_bid.energy
                 if trade.seller in child_names:
-                    cumulative_traded_offer_energy += trade.offer.energy
+                    cumulative_traded_offer_energy += trade.offer_bid.energy
             residual = (cumulative_traded_offer_energy - cumulative_traded_bid_energy)
             assert isclose(residual, 0)
 
@@ -81,7 +81,7 @@ def test_cumulative_offer_bid_energy(context):
 def test_finite_traded_energy(context):
     grid = context.simulation.area
     # Validate that all trades have less than 100 kWh of energy
-    assert all(trade.offer.energy < 100
+    assert all(trade.offer_bid.energy < 100
                for area in grid.children
                for market in area.past_markets
                for trade in market.trades)

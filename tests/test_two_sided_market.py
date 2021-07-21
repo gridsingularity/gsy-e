@@ -166,8 +166,8 @@ class TestTwoSidedMarket:
         assert trade
         assert trade.id == market.trades[0].id
         assert trade.id
-        assert trade.offer.price == bid.price
-        assert trade.offer.energy == bid.energy
+        assert trade.offer_bid.price == bid.price
+        assert trade.offer_bid.energy == bid.energy
         assert trade.seller == "B"
         assert trade.buyer == "A"
         assert not trade.residual
@@ -189,9 +189,9 @@ class TestTwoSidedMarket:
         assert trade
         assert trade.id == market.trades[0].id
         assert trade.id
-        assert trade.offer is not bid
-        assert trade.offer.energy == 5
-        assert trade.offer.price == 5
+        assert trade.offer_bid is not bid
+        assert trade.offer_bid.energy == 5
+        assert trade.offer_bid.price == 5
         assert trade.seller == "B"
         assert trade.buyer == "A"
         assert trade.residual
@@ -242,7 +242,7 @@ class TestTwoSidedMarket:
         trade_offer_info = TradeBidOfferInfo(2, 2, 1, 1, 2)
         trade = market.accept_bid(bid, energy=1, seller="seller",
                                   trade_offer_info=trade_offer_info)
-        assert trade.offer.id == bid.id and trade.offer.energy == 1
+        assert trade.offer_bid.id == bid.id and trade.offer_bid.energy == 1
 
     @pytest.mark.parametrize("offer, bid, mcp_rate, mcp_energy", [
         ([1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 5, 6, 7], 4, 4),

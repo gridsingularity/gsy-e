@@ -479,7 +479,7 @@ def test_balancing_offers_are_created_if_device_in_registry(
     balancing_fixture.event_trade(market_id=area_test2.current_market.id,
                                   trade=Trade(id='id',
                                               time=area_test2.now,
-                                              offer=selected_offer,
+                                              offer_bid=selected_offer,
                                               seller='B',
                                               buyer='FakeArea'))
     assert len(area_test2.test_balancing_market.created_balancing_offers) == 2

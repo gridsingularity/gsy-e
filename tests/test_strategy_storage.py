@@ -373,7 +373,7 @@ def storage_strategy_test6(area_test6, market_test6, called):
     s.owner = area_test6
     s.area = area_test6
     s.accept_offer = called
-    s.offers.post(market_test6.trade.offer, market_test6.id)
+    s.offers.post(market_test6.trade.offer_bid, market_test6.id)
     return s
 
 
@@ -383,9 +383,9 @@ def test_if_trades_are_handled_correctly(storage_strategy_test6, market_test6):
     storage_strategy_test6.state.add_default_values_to_state_profiles(
         storage_strategy_test6.future_markets_time_slots)
     storage_strategy_test6.event_trade(market_id=market_test6.id, trade=market_test6.trade)
-    assert (market_test6.trade.offer in
+    assert (market_test6.trade.offer_bid in
             storage_strategy_test6.offers.sold[market_test6.id])
-    assert market_test6.trade.offer not in storage_strategy_test6.offers.open
+    assert market_test6.trade.offer_bid not in storage_strategy_test6.offers.open
 
 
 """TEST7"""
@@ -710,9 +710,9 @@ def test_storage_event_trade(storage_strategy_test11, market_test13):
         storage_strategy_test11.future_markets_time_slots)
     storage_strategy_test11.event_trade(market_id=market_test13.id, trade=market_test13.trade)
     assert storage_strategy_test11.state.pledged_sell_kWh[market_test13.time_slot] == \
-        market_test13.trade.offer.energy
+        market_test13.trade.offer_bid.energy
     assert storage_strategy_test11.state.offered_sell_kWh[
-               market_test13.time_slot] == -market_test13.trade.offer.energy
+               market_test13.time_slot] == -market_test13.trade.offer_bid.energy
 
 
 def test_balancing_offers_are_not_created_if_device_not_in_registry(

@@ -243,12 +243,12 @@ class BalancingMarket(OneSidedMarket):
         self._notify_listeners(MarketEvent.BALANCING_OFFER_DELETED, offer=offer)
 
     def _update_accumulated_trade_price_energy(self, trade):
-        if trade.offer.energy > 0:
-            self.accumulated_supply_balancing_trade_price += trade.offer.price
-            self.accumulated_supply_balancing_trade_energy += trade.offer.energy
-        elif trade.offer.energy < 0:
-            self.accumulated_demand_balancing_trade_price += trade.offer.price
-            self.accumulated_demand_balancing_trade_energy += abs(trade.offer.energy)
+        if trade.offer_bid.energy > 0:
+            self.accumulated_supply_balancing_trade_price += trade.offer_bid.price
+            self.accumulated_supply_balancing_trade_energy += trade.offer_bid.energy
+        elif trade.offer_bid.energy < 0:
+            self.accumulated_demand_balancing_trade_price += trade.offer_bid.price
+            self.accumulated_demand_balancing_trade_energy += abs(trade.offer_bid.energy)
 
     @property
     def avg_supply_balancing_trade_rate(self):

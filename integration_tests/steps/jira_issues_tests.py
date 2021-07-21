@@ -43,7 +43,7 @@ def average_trade_rate_constant(context):
 
     for area in areas:
         trade_rates = [
-            trade.offer.price / trade.offer.energy
+            trade.offer_bid.price / trade.offer_bid.energy
             for market in area.past_markets
             for trade in market.trades
         ]
@@ -108,7 +108,8 @@ def step_impl(context):
         if trade.buyer == "H1 Storage1"
     ]
 
-    assert all([trade.offer.price / trade.offer.energy < 16.99 for trade in storage_trades])
+    assert all(
+        [trade.offer_bid.price / trade.offer_bid.energy < 16.99 for trade in storage_trades])
 
 
 @then('on every market slot there should be matching trades on grid and house markets')
@@ -133,7 +134,7 @@ def pv_produces_same_amount_of_energy_day(context):
         same_time_markets = [market for market in house2.past_markets
                              if market.time_slot.hour == timeslot.hour and
                              market.time_slot.minute == timeslot.minute]
-        same_time_markets_energy = [sum(trade.offer.energy
+        same_time_markets_energy = [sum(trade.offer_bid.energy
                                         for trade in market.trades
                                         if trade.seller == "H2 PV")
                                     for market in same_time_markets]
@@ -147,7 +148,7 @@ def _assert_sum_of_energy_is_same_for_same_time(area, load_name):
         same_time_markets = [market for market in area.past_markets
                              if market.time_slot.hour == timeslot.hour and
                              market.time_slot.minute == timeslot.minute]
-        same_time_markets_energy = [sum(trade.offer.energy
+        same_time_markets_energy = [sum(trade.offer_bid.energy
                                         for trade in market.trades
                                         if trade.buyer == load_name)
                                     for market in same_time_markets]
@@ -166,7 +167,7 @@ def loads_consume_same_amount_of_energy_day(context):
 
 def _assert_hours_of_day(area, device):
     for market in area.past_markets:
-        total_energy = sum(trade.offer.energy
+        total_energy = sum(trade.offer_bid.energy
                            for trade in market.trades if trade.buyer == device.name)
         if market.time_slot.hour not in device.strategy.hrs_of_day:
             assert isclose(total_energy, 0.0)
@@ -203,15 +204,17 @@ def trades_on_all_markets_max_load_rate(context):
         assert len(market.trades) == 1
         assert all(t.seller == "Commercial Energy Producer" for t in market.trades)
         assert all(t.buyer == "IAA House 1" for t in market.trades)
-        assert all(isclose(t.offer.price / t.offer.energy, max_rate[market.time_slot])
-                   for t in market.trades)
+        assert all(
+            isclose(trade.offer_bid.price / trade.offer_bid.energy, max_rate[market.time_slot])
+            for trade in market.trades)
 
     for market in house1.past_markets:
         assert len(market.trades) == 1
         assert all(t.seller == "IAA House 1" for t in market.trades)
         assert all(t.buyer == "H1 General Load" for t in market.trades)
-        assert all(isclose(t.offer.price / t.offer.energy, max_rate[market.time_slot])
-                   for t in market.trades)
+        assert all(
+            isclose(trade.offer_bid.price / trade.offer_bid.energy, max_rate[market.time_slot])
+            for trade in market.trades)
 
 
 @then('the Load of House 1 should only buy energy from IAA between 5:00 and 8:00')
@@ -225,7 +228,7 @@ def house1_load_only_from_iaa(context):
             continue
 
         assert len(market.trades) == 1
-        assert market.trades[0].offer.seller == \
+        assert market.trades[0].offer_bid.seller == \
             ConstSettings.GeneralSettings.ALT_PRICING_MARKET_MAKER_NAME
 
 
@@ -299,7 +302,7 @@ def storage_decreases_bid_rate(context):
     for market in context.simulation.area.past_markets:
         assert len(market.trades) == 1
         trade = market.trades[0]
-        trade_rate = trade.offer.price / trade.offer.energy
+        trade_rate = trade.offer_bid.price / trade.offer_bid.energy
         assert isclose(trade_rate, 15)
 
 

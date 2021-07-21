@@ -197,10 +197,10 @@ class Offers:
     def on_trade(self, market_id, trade):
         try:
             if trade.seller == self.strategy.owner.name:
-                if trade.offer.id in self.split and trade.offer in self.posted:
+                if trade.offer_bid.id in self.split and trade.offer_bid in self.posted:
                     # remove from posted as it is traded already
-                    self.remove(self.split[trade.offer.id])
-                self.sold_offer(trade.offer, market_id)
+                    self.remove(self.split[trade.offer_bid.id])
+                self.sold_offer(trade.offer_bid, market_id)
         except AttributeError:
             raise SimulationException("Trade event before strategy was initialized.")
 
@@ -354,7 +354,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         trade = self._accept_offer(market_or_id, offer, buyer, energy, trade_rate, already_tracked,
                                    trade_bid_info, buyer_origin, buyer_origin_id, buyer_id)
 
-        self.offers.bought_offer(trade.offer, market_or_id)
+        self.offers.bought_offer(trade.offer_bid, market_or_id)
         return trade
 
     def _accept_offer(self, market_or_id, offer, buyer, energy, trade_rate, already_tracked,
@@ -458,9 +458,9 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         self.event_responses = []
 
     def assert_if_trade_offer_price_is_too_low(self, market_id, trade):
-        if isinstance(trade.offer, Offer) and trade.offer.seller == self.owner.name:
-            offer = [o for o in self.offers.sold[market_id] if o.id == trade.offer.id][0]
-            assert trade.offer.energy_rate >= \
+        if isinstance(trade.offer_bid, Offer) and trade.offer_bid.seller == self.owner.name:
+            offer = [o for o in self.offers.sold[market_id] if o.id == trade.offer_bid.id][0]
+            assert trade.offer_bid.energy_rate >= \
                 offer.energy_rate - FLOATING_POINT_TOLERANCE
 
     def can_offer_be_posted(
@@ -687,7 +687,7 @@ class BidEnabledStrategy(BaseStrategy):
             "Invalid state, cannot receive a bid if single sided market is globally configured."
 
         if bid_trade.buyer == self.owner.name:
-            self.add_bid_to_bought(bid_trade.offer, market_id)
+            self.add_bid_to_bought(bid_trade.offer_bid, market_id)
 
     def event_market_cycle(self):
         if not constants.D3A_TEST_RUN:
@@ -696,6 +696,6 @@ class BidEnabledStrategy(BaseStrategy):
             super().event_market_cycle()
 
     def assert_if_trade_bid_price_is_too_high(self, market, trade):
-        if isinstance(trade.offer, Bid) and trade.offer.buyer == self.owner.name:
-            bid = [b for b in self.get_posted_bids(market) if b.id == trade.offer.id][0]
-            assert trade.offer.energy_rate <= bid.energy_rate + FLOATING_POINT_TOLERANCE
+        if isinstance(trade.offer_bid, Bid) and trade.offer_bid.buyer == self.owner.name:
+            bid = [b for b in self.get_posted_bids(market) if b.id == trade.offer_bid.id][0]
+            assert trade.offer_bid.energy_rate <= bid.energy_rate + FLOATING_POINT_TOLERANCE

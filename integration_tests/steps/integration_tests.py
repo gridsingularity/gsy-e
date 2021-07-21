@@ -888,7 +888,7 @@ def test_finite_plant_energy_rate(context, plant_name):
             assert trade.buyer is not finite.name
             if trade.seller == finite.name:
                 trades_sold.append(trade)
-        assert all([isclose(trade.offer.price / trade.offer.energy,
+        assert all([isclose(trade.offer_bid.price / trade.offer_bid.energy,
                             finite.strategy.energy_rate[market.time_slot], rel_tol=1e-02)
                     for trade in trades_sold])
         assert len(trades_sold) > 0
@@ -905,12 +905,12 @@ def test_infinite_plant_energy_rate(context, plant_name):
     for market in grid.past_markets:
         for trade in market.trades:
             assert trade.buyer is not finite.name
-            trade.offer.next_market = market
+            trade.offer_bid.next_market = market
             if trade.seller == finite.name:
                 trades_sold.append(trade)
 
-    assert all([isclose(trade.offer.price / trade.offer.energy,
-                        market_maker_rate[trade.offer.next_market.time_slot])
+    assert all([isclose(trade.offer_bid.price / trade.offer_bid.energy,
+                        market_maker_rate[trade.offer_bid.next_market.time_slot])
                 for trade in trades_sold])
     assert len(trades_sold) > 0
 
@@ -927,7 +927,7 @@ def test_finite_plant_max_power(context, plant_name):
             assert trade.buyer is not finite.name
             if trade.seller == finite.name:
                 trades_sold.append(trade)
-        assert sum([trade.offer.energy for trade in trades_sold]) <= \
+        assert sum([trade.offer_bid.energy for trade in trades_sold]) <= \
             convert_kW_to_kWh(finite.strategy.max_available_power_kW[market.time_slot],
                               finite.config.slot_length)
 
@@ -972,9 +972,10 @@ def assert_trade_rates(context, market_name, trade_rate, grid_fee_rate=0):
 
     assert any(len(market.trades) > 0 for market in markets)
     for market in markets:
-        for t in market.trades:
-            assert isclose(t.offer.price / t.offer.energy, float(trade_rate))
-            assert isclose(t.fee_price / t.offer.energy, float(grid_fee_rate), rel_tol=1e-05)
+        for trade in market.trades:
+            assert isclose(trade.offer_bid.price / trade.offer_bid.energy, float(trade_rate))
+            assert isclose(trade.fee_price / trade.offer_bid.energy, float(grid_fee_rate),
+                           rel_tol=1e-05)
 
 
 @then('trades on {market_name} clear with {house_1_rate} or {house_2_rate} cents/kWh')
@@ -1063,11 +1064,11 @@ def pv_selling_rate_minus_fees(context):
     for market in grid.past_markets:
         for trade in market.trades:
             assert trade.buyer is not pv.name
-            trade.offer.next_market = market
+            trade.offer_bid.next_market = market
             if trade.seller == pv.name:
                 trades_sold.append(trade)
 
-    assert all([isclose(trade.offer.price / trade.offer.energy,
+    assert all([isclose(trade.offer_bid.price / trade.offer_bid.energy,
                         market_maker_rate - fees_path_to_root)
                 for trade in trades_sold])
 
@@ -1085,11 +1086,11 @@ def load_buying_rate_plus_fees(context):
     for market in grid.past_markets:
         for trade in market.trades:
             assert trade.seller is not load.name
-            trade.offer.next_market = market
+            trade.offer_bid.next_market = market
             if trade.buyer == load.name:
                 trades_bought.append(trade)
 
-    assert all([isclose(trade.offer.price / trade.offer.energy,
+    assert all([isclose(trade.offer_bid.price / trade.offer_bid.energy,
                         market_maker_rate + fees_path_to_root)
                 for trade in trades_bought])
 

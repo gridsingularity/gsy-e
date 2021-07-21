@@ -336,10 +336,10 @@ class TwoSidedMarket(OneSidedMarket):
         """
 
         def _convert_match_to_residual(match):
-            if match["offer"]["id"] == offer_trade.offer.id:
+            if match["offer"]["id"] == offer_trade.offer_bid.id:
                 assert offer_trade.residual is not None
                 match["offer"] = offer_trade.residual.serializable_dict()
-            if match["bid"]["id"] == bid_trade.offer.id:
+            if match["bid"]["id"] == bid_trade.offer_bid.id:
                 assert bid_trade.residual is not None
                 match["bid"] = bid_trade.residual.serializable_dict()
             return match
