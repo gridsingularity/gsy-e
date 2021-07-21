@@ -1,4 +1,6 @@
+import pendulum
 import pytest
+from d3a_interface.dataclasses import BidOfferMatch
 from pendulum import now
 from math import isclose
 from unittest.mock import MagicMock
@@ -10,7 +12,7 @@ from d3a.d3a_core.exceptions import (
     BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade)
 from d3a.events import MarketEvent
 from d3a.models.market import Bid, Offer
-from d3a.models.market.market_structures import TradeBidOfferInfo
+from d3a.models.market.market_structures import TradeBidOfferInfo, Trade
 from d3a.models.market.two_sided import TwoSidedMarket
 
 
@@ -281,3 +283,27 @@ class TestTwoSidedMarket:
         )
         assert matched_rate == mcp_rate
         assert matched_energy == mcp_energy
+
+    def test_matching_list_gets_updated_with_residual_offers(self):
+        matches = [
+            BidOfferMatch(
+                offer=Offer("offer_id", pendulum.now(), 1, 1, "S").serializable_dict(),
+                selected_energy=1,
+                bid=Bid("bid_id", pendulum.now(), 1, 1, "B").serializable_dict(), trade_rate=1,
+                market_id="").serializable_dict(),
+            BidOfferMatch(
+                offer=Offer("offer_id2", pendulum.now(), 2, 2, "S").serializable_dict(),
+                selected_energy=2,
+                bid=Bid("bid_id2", pendulum.now(), 2, 2, "B").serializable_dict(), trade_rate=1,
+                market_id="").serializable_dict()
+        ]
+        offer_trade = Trade("trade", 1, Offer("offer_id", pendulum.now(), 1, 1, "S"), "S", "B",
+                            residual=Offer("residual_offer", pendulum.now(), 0.5, 0.5, "S"))
+        bid_trade = Trade("bid_trade", 1, Bid("bid_id2", pendulum.now(), 1, 1, "S"), "S", "B",
+                          residual=Bid("residual_bid_2", pendulum.now(), 1, 1, "S"))
+        matches = TwoSidedMarket._replace_offers_bids_with_residual_in_recommendations_list(
+            matches, offer_trade, bid_trade
+        )
+        assert len(matches) == 2
+        assert matches[0]["offer"]["id"] == "residual_offer"
+        assert matches[1]["bid"]["id"] == "residual_bid_2"

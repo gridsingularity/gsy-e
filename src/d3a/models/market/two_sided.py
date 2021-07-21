@@ -257,9 +257,9 @@ class TwoSidedMarket(OneSidedMarket):
     def match_recommendations(
             self, recommendations: List[BidOfferMatch.serializable_dict]) -> None:
         """Match a list of bid/offer pairs, create trades and residual offers/bids."""
-        if recommendations is None:
-            return
-        for index, recommended_pair in enumerate(recommendations):
+
+        while recommendations:
+            recommended_pair = recommendations.pop()
             selected_energy = recommended_pair["selected_energy"]
             market_offer = self.offers.get(recommended_pair["offer"]["id"])
             market_bid = self.bids.get(recommended_pair["bid"]["id"])
@@ -272,19 +272,18 @@ class TwoSidedMarket(OneSidedMarket):
             original_bid_rate = market_bid.original_bid_price / market_bid.energy
             trade_bid_info = TradeBidOfferInfo(
                 original_bid_rate=original_bid_rate,
-                propagated_bid_rate=market_bid.price/market_bid.energy,
-                original_offer_rate=market_offer.original_offer_price/market_offer.energy,
-                propagated_offer_rate=market_offer.price/market_offer.energy,
+                propagated_bid_rate=market_bid.price / market_bid.energy,
+                original_offer_rate=market_offer.original_offer_price / market_offer.energy,
+                propagated_offer_rate=market_offer.price / market_offer.energy,
                 trade_rate=original_bid_rate)
 
-            bid_trade, trade = self.accept_bid_offer_pair(
+            bid_trade, offer_trade = self.accept_bid_offer_pair(
                 market_bid, market_offer, recommended_pair["trade_rate"],
                 trade_bid_info, selected_energy
             )
-
-            if trade.residual is not None or bid_trade.residual is not None:
-                recommendations = self._replace_offers_bids_with_residual_in_matching_list(
-                    recommendations, index+1, trade, bid_trade
+            if offer_trade.residual is not None or bid_trade.residual is not None:
+                recommendations = self._replace_offers_bids_with_residual_in_recommendations_list(
+                    recommendations, offer_trade, bid_trade
                 )
 
     @staticmethod
@@ -321,29 +320,26 @@ class TwoSidedMarket(OneSidedMarket):
             bid=bid, offer=offer, clearing_rate=clearing_rate, selected_energy=selected_energy)
 
     @classmethod
-    def _replace_offers_bids_with_residual_in_matching_list(
-            cls, matches: List[Dict], start_index: int, offer_trade: Trade, bid_trade: Trade
-    ):
+    def _replace_offers_bids_with_residual_in_recommendations_list(
+            cls, recommendations: List[Dict], offer_trade: Trade, bid_trade: Trade
+    ) -> List[BidOfferMatch.serializable_dict]:
         """
-        If a trade resulted in a residual offer/bid, upcoming matching list needs to be replaced
-         with residual offer/bid
-        :param matches: Recommended list of offer/bid matches
-        :param start_index: Current index of matching
+        If a trade resulted in a residual offer/bid, upcoming matching list with same offer/bid
+        needs to be replaced with residual offer/bid.
+        :param recommendations: Recommended list of offer/bid matches
         :param offer_trade: Trade info of the successful offer
         :param bid_trade: Trade info of the successful bid
         :return: The updated matching offer/bid pair list with existing offer/bid
         replaced with corresponding residual offer/bid
         """
 
-        def _convert_match_to_residual(match):
-            if match["offer"]["id"] == offer_trade.offer.id:
-                assert offer_trade.residual is not None
-                match["offer"] = offer_trade.residual.serializable_dict()
-            if match["bid"]["id"] == bid_trade.offer.id:
-                assert bid_trade.residual is not None
-                match["bid"] = bid_trade.residual.serializable_dict()
-            return match
+        def replace_recommendations_with_residuals(recommendation):
+            if recommendation["offer"]["id"] == offer_trade.offer.id:
+                recommendation["offer"] = offer_trade.residual.serializable_dict()
+            if recommendation["bid"]["id"] == bid_trade.offer.id:
+                recommendation["bid"] = bid_trade.residual.serializable_dict()
+            return recommendation
 
-        matches[start_index:] = [_convert_match_to_residual(match)
-                                 for match in matches[start_index:]]
-        return matches
+        recommendations = [replace_recommendations_with_residuals(recommendation)
+                           for recommendation in recommendations]
+        return recommendations
