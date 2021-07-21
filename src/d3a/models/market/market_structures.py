@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import datetime
 from dataclasses import dataclass, field, asdict
-from typing import Dict  # noqa
+from typing import Dict, List, Union  # noqa
 from copy import deepcopy
 import json
 from pendulum import DateTime, parse
@@ -48,6 +48,8 @@ class Offer:
     seller_origin_id: str = None
     seller_id: str = None
     energy_rate: float = field(init=False)
+    attributes: Dict = None
+    requirements: List[Dict] = None
 
     def __post_init__(self):
         self.id = str(self.id)
@@ -92,18 +94,23 @@ class Offer:
             "seller_origin": self.seller_origin,
             "seller_origin_id": self.seller_origin_id,
             "seller_id": self.seller_id,
-            "time": datetime_to_string_incl_seconds(self.time)
+            "time": datetime_to_string_incl_seconds(self.time),
+            "attributes": self.attributes,
+            "requirements": self.requirements
         }
 
     def __hash__(self):
         return hash(self.id)
 
     def __eq__(self, other):
-        return self.id == other.id and \
-            self.price == other.price and \
-            self.original_offer_price == other.original_offer_price and \
-            self.energy == other.energy and \
-            self.seller == other.seller
+        return (self.id == other.id and
+                self.price == other.price and
+                self.original_offer_price == other.original_offer_price and
+                self.energy == other.energy and
+                self.seller == other.seller and
+                self.seller_origin_id == other.seller_origin_id and
+                self.attributes == other.attributes and
+                self.requirements == other.requirements)
 
     @classmethod
     def _csv_fields(cls):
@@ -117,7 +124,7 @@ class Offer:
 def copy_offer(offer):
     return Offer(offer.id, offer.time, offer.price, offer.energy, offer.seller,
                  offer.original_offer_price, offer.seller_origin, offer.seller_origin_id,
-                 offer.seller_id)
+                 offer.seller_id, attributes=offer.attributes, requirements=offer.requirements)
 
 
 @dataclass
@@ -132,6 +139,8 @@ class Bid:
     energy_rate: float = None
     buyer_origin_id: str = None
     buyer_id: str = None
+    attributes: Dict = None
+    requirements: List[Dict] = None
 
     def __post_init__(self):
         self.id = str(self.id)
@@ -183,8 +192,23 @@ class Bid:
             "buyer_origin_id": self.buyer_origin_id,
             "buyer_id": self.buyer_id,
             "buyer": self.buyer,
-            "time": datetime_to_string_incl_seconds(self.time)
+            "time": datetime_to_string_incl_seconds(self.time),
+            "attributes": self.attributes,
+            "requirements": self.requirements
         }
+
+    def __hash__(self):
+        return hash(self.id)
+
+    def __eq__(self, other):
+        return (self.id == other.id and
+                self.price == other.price and
+                self.original_bid_price == other.original_bid_price and
+                self.energy == other.energy and
+                self.buyer == other.buyer and
+                self.buyer_origin_id == other.buyer_origin_id and
+                self.attributes == other.attributes and
+                self.requirements == other.requirements)
 
 
 def offer_or_bid_from_json_string(offer_or_bid, current_time=None):
@@ -228,10 +252,10 @@ class Trade:
     offer: Offer
     seller: str
     buyer: str
-    residual: Offer or Bid = None
+    residual: Union[Offer, Bid] = None
     already_tracked: bool = False
     offer_bid_trade_info: TradeBidOfferInfo = None
-    seller_origin: float = None
+    seller_origin: str = None
     buyer_origin: str = None
     fee_price: float = None
     seller_origin_id: str = None
@@ -324,8 +348,8 @@ class BalancingTrade:
     offer: Offer
     seller: str
     buyer: str
-    residual: Offer or Bid = None
-    offer_bid_trade_info: str = None
+    residual: Union[Offer, Bid] = None
+    offer_bid_trade_info: TradeBidOfferInfo = None
     seller_origin: float = None
     buyer_origin: str = None
     fee_price: float = None
@@ -365,14 +389,6 @@ class MarketClearingState:
     @classmethod
     def _csv_fields(cls):
         return "time", "rate [ct./kWh]"
-
-
-@dataclass
-class BidOfferMatch:
-    bid: Bid
-    selected_energy: float
-    offer: Offer
-    trade_rate: float
 
 
 def parse_event_and_parameters_from_json_string(payload):

@@ -38,7 +38,7 @@ class StorageExternalMixin(ExternalMixin):
         """Get a representation of each of the device's bids from the next market."""
 
         return [
-            {'id': bid.id, 'price': bid.price, 'energy': bid.energy}
+            {"id": bid.id, 'price': bid.price, 'energy': bid.energy}
             for _, bid in self.next_market.get_bids().items()
             if bid.buyer == self.device.name]
 
@@ -131,10 +131,12 @@ class StorageExternalMixin(ExternalMixin):
 
     def _offer(self, payload):
         transaction_id = self._get_transaction_id(payload)
-        required_args = {'price', 'energy', 'transaction_id'}
-        allowed_args = required_args.union({'replace_existing'})
+        required_args = {"price", "energy", "transaction_id"}
+        allowed_args = required_args.union({"replace_existing",
+                                            "attributes",
+                                            "requirements"})
 
-        offer_response_channel = f'{self.channel_prefix}/response/offer'
+        offer_response_channel = f"{self.channel_prefix}/response/offer"
         if not check_for_connected_and_reply(self.redis, offer_response_channel,
                                              self.connected):
             return
@@ -162,23 +164,23 @@ class StorageExternalMixin(ExternalMixin):
     def can_offer_be_posted(self, time_slot, **offer_arguments):
         """Check that the energy being offered is <= than the energy available to be sold."""
 
-        replace_existing = offer_arguments.get('replace_existing', True)
+        replace_existing = offer_arguments.get("replace_existing", True)
         if replace_existing:
             # Do not consider previously offered energy, since those offers would be deleted
             return (
-                offer_arguments['energy'] <=
+                offer_arguments["energy"] <=
                 self.state.energy_to_sell_dict[time_slot] +
                 self.state.offered_sell_kWh[time_slot])
         else:
             return (
-                offer_arguments['energy'] <=
+                offer_arguments["energy"] <=
                 self.state.energy_to_sell_dict[time_slot])
 
     def _offer_impl(self, arguments, response_channel):
         try:
             offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
 
-            replace_existing = offer_arguments.pop('replace_existing', True)
+            replace_existing = offer_arguments.pop("replace_existing", True)
             assert self.can_offer_be_posted(self.next_market.time_slot, **arguments)
             offer = self.post_offer(
                 self.next_market, replace_existing=replace_existing, **offer_arguments)
@@ -204,7 +206,7 @@ class StorageExternalMixin(ExternalMixin):
 
     def _list_bids(self, payload):
         self._get_transaction_id(payload)
-        list_bids_response_channel = f'{self.channel_prefix}/response/list_bids'
+        list_bids_response_channel = f"{self.channel_prefix}/response/list_bids"
         if not check_for_connected_and_reply(self.redis, list_bids_response_channel,
                                              self.connected):
             return
@@ -230,7 +232,7 @@ class StorageExternalMixin(ExternalMixin):
 
     def _delete_bid(self, payload):
         transaction_id = self._get_transaction_id(payload)
-        delete_bid_response_channel = f'{self.channel_prefix}/response/delete_bid'
+        delete_bid_response_channel = f"{self.channel_prefix}/response/delete_bid"
         if not check_for_connected_and_reply(self.redis,
                                              delete_bid_response_channel, self.connected):
             return
@@ -275,10 +277,12 @@ class StorageExternalMixin(ExternalMixin):
 
     def _bid(self, payload):
         transaction_id = self._get_transaction_id(payload)
-        required_args = {'price', 'energy', 'transaction_id'}
-        allowed_args = required_args.union({'replace_existing'})
+        required_args = {"price", "energy", "transaction_id"}
+        allowed_args = required_args.union({"replace_existing",
+                                            "attributes",
+                                            "requirements"})
 
-        bid_response_channel = f'{self.channel_prefix}/response/bid'
+        bid_response_channel = f"{self.channel_prefix}/response/bid"
         if not check_for_connected_and_reply(self.redis, bid_response_channel, self.connected):
             return
         try:
@@ -304,19 +308,19 @@ class StorageExternalMixin(ExternalMixin):
     def can_bid_be_posted(self, time_slot, **bid_arguments):
         """Check that the energy being bid is <= than the energy available to be bought."""
 
-        replace_existing = bid_arguments.get('replace_existing', True)
+        replace_existing = bid_arguments.get("replace_existing", True)
         if replace_existing:
             # Do not consider previously bid energy, since those bids would be deleted
             return (
-                bid_arguments['energy'] <=
+                bid_arguments["energy"] <=
                 self.state.energy_to_buy_dict[time_slot] +
                 self.state.offered_buy_kWh[time_slot])
         else:
-            return bid_arguments['energy'] <= self.state.energy_to_buy_dict[time_slot]
+            return bid_arguments["energy"] <= self.state.energy_to_buy_dict[time_slot]
 
     def _bid_impl(self, arguments, bid_response_channel):
         try:
-            replace_existing = arguments.get('replace_existing', True)
+            replace_existing = arguments.get("replace_existing", True)
             assert self.can_bid_be_posted(self.next_market.time_slot, **arguments)
             bid = self.post_bid(
                 self.next_market,
@@ -344,14 +348,14 @@ class StorageExternalMixin(ExternalMixin):
     @property
     def _device_info_dict(self):
         return {
-            'energy_to_sell': self.state.energy_to_sell_dict[self.next_market.time_slot],
-            'energy_active_in_bids': self.state.offered_sell_kWh[self.next_market.time_slot],
-            'energy_to_buy': self.state.energy_to_buy_dict[self.next_market.time_slot],
-            'energy_active_in_offers': self.state.offered_buy_kWh[self.next_market.time_slot],
-            'free_storage': self.state.free_storage(self.next_market.time_slot),
-            'used_storage': self.state.used_storage,
-            'energy_traded': self.energy_traded(self.next_market.id),
-            'total_cost': self.energy_traded_costs(self.next_market.id),
+            "energy_to_sell": self.state.energy_to_sell_dict[self.next_market.time_slot],
+            "energy_active_in_bids": self.state.offered_sell_kWh[self.next_market.time_slot],
+            "energy_to_buy": self.state.energy_to_buy_dict[self.next_market.time_slot],
+            "energy_active_in_offers": self.state.offered_buy_kWh[self.next_market.time_slot],
+            "free_storage": self.state.free_storage(self.next_market.time_slot),
+            "used_storage": self.state.used_storage,
+            "energy_traded": self.energy_traded(self.next_market.id),
+            "total_cost": self.energy_traded_costs(self.next_market.id),
         }
 
     def event_market_cycle(self):
@@ -371,15 +375,15 @@ class StorageExternalMixin(ExternalMixin):
                 market_info = self.next_market.info
                 if self.is_aggregator_controlled:
                     market_info.update(default_market_info)
-                market_info['device_info'] = self._device_info_dict
+                market_info["device_info"] = self._device_info_dict
                 market_info["event"] = "market"
-                market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
+                market_info["device_bill"] = self.device.stats.aggregated_stats["bills"] \
                     if "bills" in self.device.stats.aggregated_stats else None
                 market_info["area_uuid"] = self.device.uuid
-                market_info["last_market_maker_rate"] = \
-                    get_market_maker_rate_from_config(self.area.current_market)
-                market_info['last_market_stats'] = \
-                    self.market_area.stats.get_price_stats_current_market()
+                market_info["last_market_maker_rate"] = (
+                    get_market_maker_rate_from_config(self.area.current_market))
+                market_info["last_market_stats"] = (
+                    self.market_area.stats.get_price_stats_current_market())
                 self.redis.publish_json(market_event_channel, market_info)
             self._delete_past_state()
         else:
@@ -461,8 +465,10 @@ class StorageExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id", None)}
 
     def _offer_aggregator(self, arguments):
-        required_args = {'price', 'energy', 'type', 'transaction_id'}
-        allowed_args = required_args.union({'replace_existing'})
+        required_args = {"price", "energy", "type", "transaction_id"}
+        allowed_args = required_args.union({"replace_existing",
+                                            "attributes",
+                                            "requirements"})
 
         # Check that all required arguments have been provided
         assert all(arg in arguments.keys() for arg in required_args)
@@ -472,10 +478,10 @@ class StorageExternalMixin(ExternalMixin):
         with self.lock:
             try:
                 offer_arguments = {
-                    k: v for k, v in arguments.items() if k not in ['transaction_id', 'type']}
+                    k: v for k, v in arguments.items() if k not in ["transaction_id", "type"]}
                 assert self.can_offer_be_posted(self.next_market.time_slot, **offer_arguments)
 
-                replace_existing = offer_arguments.pop('replace_existing', True)
+                replace_existing = offer_arguments.pop("replace_existing", True)
 
                 offer = self.post_offer(
                     self.next_market, replace_existing=replace_existing, **offer_arguments)
@@ -499,9 +505,11 @@ class StorageExternalMixin(ExternalMixin):
                                      f"on area {self.device.name} with arguments {arguments}.",
                     "transaction_id": arguments.get("transaction_id", None)}
 
-    def _bid_aggregator(self, arguments):
-        required_args = {'price', 'energy', 'type', 'transaction_id'}
-        allowed_args = required_args.union({'replace_existing'})
+    def _bid_aggregator(self, arguments: Dict):
+        required_args = {"price", "energy", "type", "transaction_id"}
+        allowed_args = required_args.union({"replace_existing",
+                                            "attributes",
+                                            "requirements"})
 
         try:
             # Check that all required arguments have been provided
@@ -511,7 +519,7 @@ class StorageExternalMixin(ExternalMixin):
 
             assert self.can_bid_be_posted(self.next_market.time_slot, **arguments)
 
-            replace_existing = arguments.get('replace_existing', True)
+            replace_existing = arguments.get("replace_existing", True)
             bid = self.post_bid(
                 self.next_market,
                 arguments["price"],
