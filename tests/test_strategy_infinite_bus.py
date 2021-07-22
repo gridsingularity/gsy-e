@@ -15,20 +15,33 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import pytest
+import os
 import sys
-import pendulum
 from uuid import uuid4
 
-from d3a.models.market.market_structures import Offer, Trade, BalancingOffer, Bid
-from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
-from d3a.models.area import DEFAULT_CONFIG
-from d3a.d3a_core.device_registry import DeviceRegistry
+import pendulum
+import pytest
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a.constants import TIME_ZONE
 from d3a_interface.utils import find_object_of_same_weekday_and_time
 
+from d3a.constants import TIME_ZONE
+from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.d3a_core.util import d3a_path
+from d3a.models.area import DEFAULT_CONFIG
+from d3a.models.market.market_structures import Offer, Trade, BalancingOffer, Bid
+from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
+
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
+
+
+@pytest.fixture(scope="function", autouse=True)
+def auto_fixture():
+    ConstSettings.IAASettings.MARKET_TYPE = 1
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
+    GlobalConfig.sim_duration = pendulum.duration(days=1)
+    GlobalConfig.slot_length = pendulum.duration(minutes=15)
+    yield
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
 
 
 class FakeArea:
@@ -341,7 +354,8 @@ def test_global_market_maker_rate_single_value(bus_test4):
 
 @pytest.fixture()
 def bus_test5(area_test1):
-    c = InfiniteBusStrategy(energy_rate_profile="src/d3a/resources/SAM_SF_Summer.csv")
+    c = InfiniteBusStrategy(
+        energy_rate_profile=os.path.join(d3a_path, "resources", "SAM_SF_Summer.csv"))
     c.area = area_test1
     c.owner = area_test1
     return c
@@ -363,7 +377,7 @@ def test_global_market_maker_rate_profile_and_infinite_bus_selling_rate_profile(
 @pytest.fixture()
 def bus_test6(area_test1):
     c = InfiniteBusStrategy(
-        buying_rate_profile="src/d3a/resources/LOAD_DATA_1.csv")
+        buying_rate_profile=os.path.join(d3a_path, "resources", "LOAD_DATA_1.csv"))
     c.area = area_test1
     c.owner = area_test1
     return c

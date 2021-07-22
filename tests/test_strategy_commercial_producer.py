@@ -159,6 +159,7 @@ def test_event_market_cycle_does_not_create_balancing_offer_if_not_in_registry(
 
 def test_event_market_cycle_creates_balancing_offer_on_last_market_if_in_registry(
         commercial_test1, area_test1):
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     DeviceRegistry.REGISTRY = {"FakeArea": (40, 50)}
     commercial_test1.event_activate()
     commercial_test1.event_market_cycle()

@@ -45,6 +45,14 @@ device_registry_dict = {
 }
 
 
+@pytest.fixture(scope="function", autouse=True)
+def device_registry_auto_fixture():
+    DeviceRegistry.REGISTRY = device_registry_dict
+    ConstSettings.IAASettings.MARKET_TYPE = 1
+    yield
+    DeviceRegistry.REGISTRY = {}
+
+
 @pytest.fixture
 def market():
     return TwoSidedMarket(time_slot=now())
@@ -60,7 +68,6 @@ def test_device_registry(market=BalancingMarket()):
     (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "balancing_offer")
 ])
 def test_market_offer(market, offer):
-    DeviceRegistry.REGISTRY = device_registry_dict
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     e_offer = getattr(market, offer)(10, 20, "someone", "someone")
     assert market.offers[e_offer.id] == e_offer

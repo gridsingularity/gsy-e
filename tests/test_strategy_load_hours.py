@@ -41,6 +41,13 @@ TIME = today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 MIN_BUY_ENERGY = 50  # wh
 
 
+@pytest.fixture(scope="function", autouse=True)
+def auto_fixture():
+    GlobalConfig.sim_duration = duration(days=1)
+    GlobalConfig.slot_length = duration(minutes=15)
+    yield
+
+
 def teardown_function():
     ConstSettings.IAASettings.MARKET_TYPE = 1
 

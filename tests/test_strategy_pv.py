@@ -22,7 +22,7 @@ from typing import Dict  # NOQA
 from uuid import uuid4
 
 import pendulum
-from pendulum import DateTime
+from pendulum import DateTime, duration
 from parameterized import parameterized
 
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
@@ -39,6 +39,14 @@ from d3a.d3a_core.util import d3a_path
 
 ENERGY_FORECAST = {}  # type: Dict[DateTime, float]
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
+
+
+@pytest.fixture(scope="function", autouse=True)
+def auto_fixture():
+    GlobalConfig.sim_duration = duration(days=1)
+    GlobalConfig.slot_length = duration(minutes=15)
+    yield
+    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
 
 
 class FakeArea:
@@ -318,7 +326,6 @@ def pv_test66(area_test66):
 
 
 def testing_produced_energy_forecast_real_data(pv_test66):
-
     pv_test66.event_activate()
     # prepare whole day of energy_production_forecast_kWh:
     for time_slot in generate_market_slot_list():
