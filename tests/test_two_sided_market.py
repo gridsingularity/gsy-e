@@ -61,13 +61,13 @@ class TestTwoSidedMarket:
             (2, 2, 2, 2),
             (2, 2.5, 2, 2),
         ])
-    def test_validate_authentic_bid_offer_pair_raises_exception(
+    def test_validate_bid_offer_match_raises_exception(
             self, market, bid_energy, offer_energy, clearing_rate, selected_energy):
         offer = Offer("id", now(), 2, offer_energy, "other", 2)
         bid = Bid("bid_id", now(), 2, bid_energy, "B", 8)
         TwoSidedMarket._validate_requirements_satisfied = MagicMock()
         with pytest.raises(InvalidBidOfferPairException):
-            market.validate_bid_offer_match(bid, offer, clearing_rate, selected_energy)
+            market.validate_bid_offer_match([bid], [offer], clearing_rate, selected_energy)
             TwoSidedMarket._validate_requirements_satisfied.assert_not_called()
 
     def test_double_sided_performs_pay_as_bid_matching(
@@ -85,8 +85,10 @@ class TestTwoSidedMarket:
              "offers": [offer.serializable_dict() for offer in market.offers.values()]}})
         assert len(matched) == 1
 
-        assert matched[0]["bid"] == list(market.bids.values())[0].serializable_dict()
-        assert matched[0]["offer"] == list(market.offers.values())[0].serializable_dict()
+        assert len(matched[0]["bids"]) == 1
+        assert len(matched[0]["offers"]) == 1
+        assert matched[0]["bids"][0] == list(market.bids.values())[0].serializable_dict()
+        assert matched[0]["offers"][0] == list(market.offers.values())[0].serializable_dict()
 
         market.bids = {"bid1": Bid("bid_id1", now(), 11, 10, "B", "S"),
                        "bid2": Bid("bid_id2", now(), 9, 10, "B", "S"),
@@ -95,10 +97,10 @@ class TestTwoSidedMarket:
             {market.id: {"bids": [bid.serializable_dict() for bid in market.bids.values()],
              "offers": [offer.serializable_dict() for offer in market.offers.values()]}})
         assert len(matched) == 1
-        assert matched[0]["bid"]["id"] == "bid_id3"
-        assert matched[0]["bid"]["energy_rate"] == 1.2
-        assert matched[0]["bid"]["energy"] == 10
-        assert matched[0]["offer"] == list(market.offers.values())[0].serializable_dict()
+        assert matched[0]["bids"][0]["id"] == "bid_id3"
+        assert matched[0]["bids"][0]["energy_rate"] == 1.2
+        assert matched[0]["bids"][0]["energy"] == 10
+        assert matched[0]["offers"][0] == list(market.offers.values())[0].serializable_dict()
 
     def test_market_bid(self, market: TwoSidedMarket):
         bid = market.bid(1, 2, "bidder", "bidder")
@@ -287,14 +289,14 @@ class TestTwoSidedMarket:
     def test_matching_list_gets_updated_with_residual_offers(self):
         matches = [
             BidOfferMatch(
-                offer=Offer("offer_id", pendulum.now(), 1, 1, "S").serializable_dict(),
+                offers=[Offer("offer_id", pendulum.now(), 1, 1, "S").serializable_dict()],
                 selected_energy=1,
-                bid=Bid("bid_id", pendulum.now(), 1, 1, "B").serializable_dict(), trade_rate=1,
+                bids=[Bid("bid_id", pendulum.now(), 1, 1, "B").serializable_dict()], trade_rate=1,
                 market_id="").serializable_dict(),
             BidOfferMatch(
-                offer=Offer("offer_id2", pendulum.now(), 2, 2, "S").serializable_dict(),
+                offers=[Offer("offer_id2", pendulum.now(), 2, 2, "S").serializable_dict()],
                 selected_energy=2,
-                bid=Bid("bid_id2", pendulum.now(), 2, 2, "B").serializable_dict(), trade_rate=1,
+                bids=[Bid("bid_id2", pendulum.now(), 2, 2, "B").serializable_dict()], trade_rate=1,
                 market_id="").serializable_dict()
         ]
         offer_trade = Trade("trade", 1, Offer("offer_id", pendulum.now(), 1, 1, "S"), "S", "B",
@@ -305,5 +307,5 @@ class TestTwoSidedMarket:
             matches, offer_trade, bid_trade
         )
         assert len(matches) == 2
-        assert matches[0]["offer"]["id"] == "residual_offer"
-        assert matches[1]["bid"]["id"] == "residual_bid_2"
+        assert matches[0]["offers"][0]["id"] == "residual_offer"
+        assert matches[1]["bids"][0]["id"] == "residual_bid_2"
