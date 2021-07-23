@@ -43,8 +43,8 @@ def setup_function():
 @pytest.fixture(scope="function", autouse=True)
 def auto_fixture():
     yield
-    GlobalConfig.sim_duration = duration(days=1)
-    GlobalConfig.slot_length = duration(minutes=15)
+    GlobalConfig.sim_duration = duration(days=GlobalConfig.DURATION_D)
+    GlobalConfig.slot_length = duration(minutes=GlobalConfig.SLOT_LENGTH_M)
 
 
 ENERGY_FORECAST = {}  # type: Dict[datetime, float]

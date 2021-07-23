@@ -47,7 +47,7 @@ DeviceRegistry.REGISTRY = {
 @pytest.fixture(scope="function", autouse=True)
 def auto_fixture():
     yield
-    GlobalConfig.market_count = 1
+    GlobalConfig.market_count = GlobalConfig.MARKET_COUNT
     GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
     ConstSettings.IAASettings.MARKET_TYPE = 1
 

@@ -21,6 +21,12 @@ from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
+from d3a_interface.constants_limits import ConstSettings
+from hypothesis import strategies as st
+from hypothesis.control import assume
+from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rule
+from pendulum import DateTime, now
+
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import (DeviceNotInRegistryError, InvalidBalancingTradeException,
@@ -32,11 +38,6 @@ from d3a.models.market.balancing import BalancingMarket
 from d3a.models.market.blockchain_interface import NonBlockchainInterface
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.two_sided import TwoSidedMarket
-from d3a_interface.constants_limits import ConstSettings
-from hypothesis import strategies as st
-from hypothesis.control import assume
-from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rule
-from pendulum import DateTime, now
 
 device_registry_dict = {
     "A": {"balancing rates": (33, 35)},

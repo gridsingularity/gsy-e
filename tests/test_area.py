@@ -70,7 +70,7 @@ class TestAreaClass(unittest.TestCase):
         self.stats = AreaStats(self.area._markets, self.area)
 
     def tearDown(self):
-        GlobalConfig.market_count = 1
+        GlobalConfig.market_count = GlobalConfig.MARKET_COUNT
         constants.D3A_TEST_RUN = False
 
     def test_respective_area_grid_fee_is_applied(self):

@@ -32,9 +32,9 @@ from d3a.models.config import SimulationConfig
 class SimulationTest(unittest.TestCase):
 
     def tearDown(self) -> None:
-        GlobalConfig.sim_duration = duration(days=1)
-        GlobalConfig.slot_length = duration(minutes=15)
-        GlobalConfig.tick_length = duration(seconds=15)
+        GlobalConfig.sim_duration = duration(days=GlobalConfig.DURATION_D)
+        GlobalConfig.slot_length = duration(minutes=GlobalConfig.SLOT_LENGTH_M)
+        GlobalConfig.tick_length = duration(seconds=GlobalConfig.TICK_LENGTH_S)
 
     @staticmethod
     def test_results_are_sent_via_kafka_if_not_started_from_cli():

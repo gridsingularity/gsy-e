@@ -67,7 +67,7 @@ class TestLiveEvents(unittest.TestCase):
                               config=self.config)
 
     def tearDown(self) -> None:
-        GlobalConfig.sim_duration = duration(days=1)
+        GlobalConfig.sim_duration = duration(days=GlobalConfig.DURATION_D)
 
     def test_create_area_event_is_creating_a_new_area(self):
         event_dict = {
