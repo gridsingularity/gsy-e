@@ -41,7 +41,7 @@ def setup_function():
 
 
 @pytest.fixture(scope="function", autouse=True)
-def alternative_pricing_auto_fixture():
+def auto_fixture():
     yield
     GlobalConfig.sim_duration = duration(days=1)
     GlobalConfig.slot_length = duration(minutes=15)
