@@ -35,6 +35,12 @@ def setup_function():
     change_global_config(**DEFAULT_CONFIG.__dict__)
 
 
+@pytest.fixture(scope="function", autouse=True)
+def auto_fixture():
+    yield
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
+
+
 class FakeArea:
     def __init__(self, count):
         self.current_tick = 2

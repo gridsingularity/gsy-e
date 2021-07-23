@@ -30,6 +30,12 @@ from d3a import constants
 from d3a.models.area.throughput_parameters import ThroughputParameters
 
 
+@pytest.fixture(scope="function", autouse=True)
+def auto_fixture():
+    yield
+    constants.D3A_TEST_RUN = False
+
+
 class FakeArea:
     def __init__(self, name, children=[], past_markets=[]):
         self.name = name

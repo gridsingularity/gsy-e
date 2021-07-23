@@ -29,6 +29,7 @@ def alternative_pricing_auto_fixture():
     yield
     ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = False
     ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = 0
+    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 def test_validate_all_setup_scenarios_are_available():

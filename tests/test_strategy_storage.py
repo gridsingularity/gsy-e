@@ -21,7 +21,6 @@ from logging import getLogger
 from math import isclose
 from uuid import uuid4
 
-import pendulum
 import pytest
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.exceptions import D3ADeviceException
@@ -151,9 +150,6 @@ class FakeMarket:
         ]
         return offers[self.count]
 
-    def get_bids(self):
-        return deepcopy(self.bids)
-
     @property
     def time_slot(self):
         return DateTime.now(tz=TIME_ZONE).start_of('day')
@@ -181,11 +177,6 @@ class FakeMarket:
 
     def bid(self, price, energy, buyer, market=None, original_bid_price=None,
             buyer_origin=None, buyer_origin_id=None, buyer_id=None):
-        bid = Bid("bid_id", pendulum.now(), price, energy, buyer, buyer_origin=buyer_origin,
-                  buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
-        return bid
-
-    def delete_bid(self, *args):
         pass
 
 

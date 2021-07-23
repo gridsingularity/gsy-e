@@ -18,17 +18,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from unittest.mock import MagicMock
 
-from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
-from d3a.d3a_core.simulation import Simulation
-from d3a.models.config import SimulationConfig
-from d3a_interface.constants_limits import TIME_ZONE
+from d3a_interface.constants_limits import TIME_ZONE, GlobalConfig
 from d3a_interface.kafka_communication.kafka_producer import (DisabledKafkaConnection,
                                                               KafkaConnection)
 from d3a_interface.sim_results.all_results import ResultsHandler
 from pendulum import duration, today
 
+from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
+from d3a.d3a_core.simulation import Simulation
+from d3a.models.config import SimulationConfig
+
 
 class SimulationTest(unittest.TestCase):
+
+    def tearDown(self) -> None:
+        GlobalConfig.sim_duration = duration(days=1)
+        GlobalConfig.slot_length = duration(minutes=15)
+        GlobalConfig.tick_length = duration(seconds=15)
 
     @staticmethod
     def test_results_are_sent_via_kafka_if_not_started_from_cli():

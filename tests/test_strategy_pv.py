@@ -43,10 +43,10 @@ TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 @pytest.fixture(scope="function", autouse=True)
 def auto_fixture():
-    GlobalConfig.sim_duration = duration(days=1)
-    GlobalConfig.slot_length = duration(minutes=15)
     yield
     GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+    GlobalConfig.sim_duration = duration(days=1)
+    GlobalConfig.slot_length = duration(minutes=15)
 
 
 class FakeArea:

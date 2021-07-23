@@ -36,12 +36,10 @@ TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 @pytest.fixture(scope="function", autouse=True)
 def auto_fixture():
-    ConstSettings.IAASettings.MARKET_TYPE = 1
-    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
-    GlobalConfig.sim_duration = pendulum.duration(days=1)
-    GlobalConfig.slot_length = pendulum.duration(minutes=15)
     yield
+    ConstSettings.IAASettings.MARKET_TYPE = 1
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
+    DeviceRegistry.REGISTRY = {}
 
 
 class FakeArea:
@@ -194,6 +192,7 @@ def test_event_market_cycle_does_not_create_balancing_offer_if_not_in_registry(
 def test_event_market_cycle_creates_balancing_offer_on_last_market_if_in_registry(
         bus_test1, area_test1):
     DeviceRegistry.REGISTRY = {"FakeArea": (40, 50)}
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     bus_test1.event_activate()
     bus_test1.event_market_cycle()
     assert len(area_test1.test_balancing_market.created_balancing_offers) == 1
@@ -202,8 +201,6 @@ def test_event_market_cycle_creates_balancing_offer_on_last_market_if_in_registr
         sys.maxsize
     assert area_test1.test_balancing_market_2.created_balancing_offers[0].price == \
         sys.maxsize * 50
-
-    DeviceRegistry.REGISTRY = {}
 
 
 """TEST2"""
@@ -340,7 +337,6 @@ def testing_event_market_cycle_posting_bids(bus_test4, area_test1):
     assert len(bus_test4._bids) == 1
     assert bus_test4._bids[area_test1.test_market.id][-1].energy == sys.maxsize
     assert bus_test4._bids[area_test1.test_market.id][-1].price == 25 * sys.maxsize
-    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 def test_global_market_maker_rate_single_value(bus_test4):
