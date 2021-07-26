@@ -71,7 +71,7 @@ class TestAreaClass(unittest.TestCase):
 
     def tearDown(self):
         GlobalConfig.market_count = GlobalConfig.MARKET_COUNT
-        constants.D3A_TEST_RUN = False
+        constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 
     def test_respective_area_grid_fee_is_applied(self):
         self.config.grid_fee_type = 2
@@ -93,7 +93,7 @@ class TestAreaClass(unittest.TestCase):
             assert len(self.area.all_markets) == i
 
     def test_delete_past_markets_instead_of_last(self):
-        constants.D3A_TEST_RUN = False
+        constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
         self.area = Area(name="Street", children=[Area(name="House")],
                          config=self.config, grid_fee_percentage=5)
         self.area.config.market_count = 1
@@ -114,7 +114,7 @@ class TestAreaClass(unittest.TestCase):
         assert list(self.area.past_markets)[-1].time_slot == today(tz=TIME_ZONE).add(hours=1)
 
     def test_keep_past_markets(self):
-        constants.D3A_TEST_RUN = True
+        constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
         self.area = Area(name="Street", children=[Area(name="House")],
                          config=self.config, grid_fee_percentage=5)
         self.area.config.market_count = 1

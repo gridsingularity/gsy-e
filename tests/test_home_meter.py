@@ -40,11 +40,11 @@ class HomeMeterStrategyTest(unittest.TestCase):
             datetime(2021, 6, 15, 0, 0, 0),
             datetime(2021, 6, 15, 0, 15, 0),
             datetime(2021, 6, 15, 0, 30, 0)]
-        constants.D3A_TEST_RUN = False
+        constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 
     @classmethod
     def tearDownClass(cls) -> None:
-        constants.D3A_TEST_RUN = True
+        constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
 
     def setUp(self) -> None:
         """Instantiate the strategy used throughout the tests"""
