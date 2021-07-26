@@ -257,7 +257,7 @@ class TwoSidedMarket(OneSidedMarket):
         """Match a list of bid/offer pairs, create trades and residual offers/bids."""
 
         while recommendations:
-            recommended_pair = recommendations.pop()
+            recommended_pair = recommendations.pop(0)
             selected_energy = recommended_pair["selected_energy"]
             clearing_rate = recommended_pair["trade_rate"]
             market_offers = [
