@@ -60,7 +60,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         # This is done to support the UI which handles the Infinite Bus only as a Market Maker.
         # If one plans to allow multiple Infinite Bus devices in the grid, this should be
         # amended.
-        self._set_global_market_maker_rate()
+        self._read_or_rotate_profiles()
 
     def _set_global_market_maker_rate(self):
         if self.energy_rate_profile is not None:
@@ -73,8 +73,10 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         if self.energy_buy_rate_input is None and \
                 self.buying_rate_profile is None and \
                 self.buying_rate_profile_uuid is None:
-            self.energy_buy_rate = self.area.config.market_maker_rate
+            self.energy_buy_rate = GlobalConfig.market_maker_rate
         else:
+            if self.energy_buy_rate_input is None and self.energy_buy_rate is None:
+                self.energy_buy_rate_input = self.buying_rate_profile
             self.energy_buy_rate = \
                 convert_identity_profile_to_float(
                     global_objects.profiles_handler.rotate_profile(
@@ -86,8 +88,10 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         if self.energy_rate_input is None and \
                 self.energy_rate_profile is None and \
                 self.energy_rate_profile_uuid is None:
-            self.energy_rate = self.area.config.market_maker_rate
+            self.energy_rate = GlobalConfig.market_maker_rate
         else:
+            if self.energy_rate_input is None and self.energy_rate is None:
+                self.energy_rate_input = self.energy_rate_profile
             self.energy_rate = \
                 convert_identity_profile_to_float(
                     global_objects.profiles_handler.rotate_profile(
