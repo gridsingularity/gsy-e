@@ -152,9 +152,9 @@ class ExternalMatcher:
 
             # Get the original bid and offer from the market
             market_bids = [
-                market.bids.get(bid.get("id"), None) for bid in recommendation.get("bids")]
+                market.bids.get(bid.get("id")) for bid in recommendation.get("bids")]
             market_offers = [
-                market.offers.get(offer.get("id"), None) for offer in recommendation.get("offers")]
+                market.offers.get(offer.get("id")) for offer in recommendation.get("offers")]
 
             if not (all(market_bids) and all(market_offers)):
                 # Offers or Bids either don't belong to market or were already matched

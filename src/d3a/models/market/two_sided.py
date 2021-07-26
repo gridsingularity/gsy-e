@@ -15,25 +15,23 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import itertools
 import uuid
 from dataclasses import replace
 from logging import getLogger
 from math import isclose
-import itertools
-from typing import Union, List, Dict  # noqa
+from typing import Dict, List, Union  # noqa
 
 from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a.models.market.market_validators import RequirementsSatisfiedChecker
-from d3a_interface.constants_limits import ConstSettings
-
-from d3a.d3a_core.exceptions import (
-    BidNotFoundException, InvalidBid, InvalidTrade, MarketException,
-    InvalidBidOfferPairException)
+from d3a.d3a_core.exceptions import (BidNotFoundException, InvalidBid,
+                                     InvalidBidOfferPairException, InvalidTrade, MarketException)
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market import lock_market_action
-from d3a.models.market.market_structures import Bid, Trade, TradeBidOfferInfo, Offer
+from d3a.models.market.market_structures import Bid, Offer, Trade, TradeBidOfferInfo
+from d3a.models.market.market_validators import RequirementsSatisfiedChecker
 from d3a.models.market.one_sided import OneSidedMarket
+from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.dataclasses import BidOfferMatch
 
 log = getLogger(__name__)
@@ -266,10 +264,10 @@ class TwoSidedMarket(OneSidedMarket):
                 self.offers.get(offer["id"]) for offer in recommended_pair["offers"]]
             market_bids = [self.bids.get(bid["id"]) for bid in recommended_pair["bids"]]
 
-            if not all(list(market_offers)):
+            if not all(market_offers):
                 # If not all received offers exist in the market, skip the current recommendation
                 continue
-            if not all(list(market_bids)):
+            if not all(market_bids):
                 # If not all received bids exist in the market, skip the current recommendation
                 continue
 
@@ -337,7 +335,7 @@ class TwoSidedMarket(OneSidedMarket):
         """
         bids_total_energy = sum([bid.energy for bid in bids])
         offers_total_energy = sum([offer.energy for offer in offers])
-        # All combinations of bids and offers
+        # All combinations of bids and offers [(bid, offer), (bid, offer)...]
         # Example List1: [A, B], List2: [C, D] -> combinations: [(A, C), (A, D), (B, C), (B, D)]
         bids_offers_combinations = itertools.product(bids, offers)
         if not (
