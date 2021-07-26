@@ -223,7 +223,7 @@ def get_setup(config):
 
                 ], grid_fee_constant=4, external_connection_available=True),
 
-            Area('Market maker and FiT', strategy=InfiniteBusStrategy(energy_buy_rate=21, energy_sell_rate=22)),
+            Area('Market Maker', strategy=InfiniteBusStrategy(energy_buy_rate=21, energy_sell_rate=22)),
         ],
         config=config, grid_fee_constant=4, external_connection_available=True
     )
