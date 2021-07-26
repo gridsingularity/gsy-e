@@ -73,6 +73,46 @@ class ProfileDBConnectionHandler:
         self._db.generate_mapping(check_tables=True)
 
     @db_session
+    def get_first_week_from_profile(self, profile_uuid, current_timestamp) -> dict:
+        """ Performs query to database and get the first week from a profile with the specified
+            profile uuid. Current timestamp is used in order to rebase the start of the profile
+            to the requested time from the simulation (e.g. if a profile contains values from
+            before the simulation, the timestamps of these values will be moved to sync with
+            the current_timestamp)
+
+        Args:
+            profile_uuid (UUID): uuid of the profile that we request the weekly data
+            current_timestamp (datetime): timestamp that the profile timestamps will be moved to
+
+        Returns: A dict with the timestamps of the adapted weekly profile as keys, and the profile
+                 values as dict values.
+
+        """
+        first_datapoint_time = select(
+            datapoint for datapoint in self.Profile_Database_ProfileTimeSeries
+            if str(datapoint.profile_uuid) == profile_uuid
+        ).order_by(lambda d: d.time).limit(1)[0].time
+
+        from pendulum import duration
+
+        datapoints = select(
+            datapoint for datapoint in self.Profile_Database_ProfileTimeSeries
+            if str(datapoint.profile_uuid) == profile_uuid
+            and datapoint.time >= first_datapoint_time
+            and datapoint.time <= first_datapoint_time + duration(days=7)
+        )
+
+        datapoint_dict = {instance(datapoint.time, TIME_ZONE).set(
+            year=current_timestamp.year,
+            month=current_timestamp.month,
+            day=current_timestamp.day
+        ): datapoint.value for datapoint in datapoints}
+
+        self._buffered_times = list(datapoint_dict.keys())
+
+        return datapoint_dict
+
+    @db_session
     def _get_profiles_from_db(self, start_time: datetime, end_time: datetime) -> Query:
         """ Performs query to database and get chunks of profiles for all profiles that correspond
         to this simulation (that are buffered in self._profile_uuid_type_mapping)
@@ -177,6 +217,8 @@ class ProfilesHandler:
     def __init__(self):
         self.db = None
         self._current_timestamp = GlobalConfig.start_date
+        self._start_date = GlobalConfig.start_date
+        self._duration = GlobalConfig.sim_duration
 
     def activate(self):
         """Connect to DB, update current timestamp and get the first chunk of data from the DB"""
@@ -222,8 +264,10 @@ class ProfilesHandler:
                                           profile, current_timestamp=self.current_timestamp)
         elif self.time_to_rotate_profile(profile):
             if should_read_profile_from_db(profile_uuid):
-                db_profile = \
-                    self.db.get_profile_from_db_buffer(profile_uuid)
+                db_profile = self.db.get_profile_from_db_buffer(profile_uuid)
+                if not db_profile:
+                    db_profile = self.db.get_first_week_from_profile(
+                        profile_uuid, self.current_timestamp)
                 return read_arbitrary_profile(profile_type,
                                               db_profile,
                                               current_timestamp=min(db_profile.keys()))

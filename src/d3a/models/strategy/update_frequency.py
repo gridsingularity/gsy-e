@@ -57,16 +57,15 @@ class UpdateFrequencyMixin:
         """ Creates a new chunk of profiles if the current_timestamp is not in the profile buffers
         """
         # TODO: this needs to be implemented to except profile UUIDs and DB connection
-        self.initial_rate_profile_buffer = \
-            global_objects.profiles_handler.rotate_profile(InputProfileTypes.IDENTITY,
-                                                           self.initial_rate_input)
-        self.final_rate_profile_buffer =\
-            global_objects.profiles_handler.rotate_profile(InputProfileTypes.IDENTITY,
-                                                           self.final_rate_input)
+        self.initial_rate_profile_buffer = global_objects.profiles_handler.rotate_profile(
+            InputProfileTypes.IDENTITY, self.initial_rate_input)
+        self.final_rate_profile_buffer = global_objects.profiles_handler.rotate_profile(
+            InputProfileTypes.IDENTITY, self.final_rate_input)
         if self.fit_to_limit is False:
-            self.energy_rate_change_per_update_profile_buffer = \
+            self.energy_rate_change_per_update_profile_buffer = (
                 global_objects.profiles_handler.rotate_profile(
                     InputProfileTypes.IDENTITY, self.energy_rate_change_per_update_input)
+            )
 
     def delete_past_state_values(self, current_market_time_slot):
         to_delete = []
@@ -83,15 +82,14 @@ class UpdateFrequencyMixin:
         for market in area.all_markets:
             time_slot = market.time_slot
             if self.fit_to_limit is False:
-                self.energy_rate_change_per_update[time_slot] = \
+                self.energy_rate_change_per_update[time_slot] = (
                     find_object_of_same_weekday_and_time(
                         self.energy_rate_change_per_update_profile_buffer, time_slot)
-            self.initial_rate[time_slot] = \
-                find_object_of_same_weekday_and_time(self.initial_rate_profile_buffer,
-                                                     time_slot)
-            self.final_rate[time_slot] = \
-                find_object_of_same_weekday_and_time(self.final_rate_profile_buffer,
-                                                     time_slot)
+                )
+            self.initial_rate[time_slot] = find_object_of_same_weekday_and_time(
+                self.initial_rate_profile_buffer, time_slot)
+            self.final_rate[time_slot] = find_object_of_same_weekday_and_time(
+                self.final_rate_profile_buffer, time_slot)
             self._set_or_update_energy_rate_change_per_update(market.time_slot)
             write_default_to_dict(self.update_counter, market.time_slot, 0)
 
