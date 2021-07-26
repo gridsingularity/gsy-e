@@ -76,7 +76,7 @@ class TwoSidedMarket(OneSidedMarket):
         return self.bids
 
     @lock_market_action
-    def bid(self, price: float, energy: float, buyer: str, buyer_origin,
+    def bid(self, price: float, energy: float, buyer: str, buyer_origin: str,
             bid_id: str = None, original_bid_price=None, adapt_price_with_fees=True,
             add_to_history=True, buyer_origin_id=None, buyer_id=None,
             attributes: Dict = None, requirements: List[Dict] = None) -> Bid:

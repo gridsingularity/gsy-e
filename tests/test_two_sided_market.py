@@ -3,13 +3,13 @@ import pytest
 from d3a_interface.dataclasses import BidOfferMatch
 from pendulum import now
 from math import isclose
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.matching_algorithms import (
     PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
 )
 from d3a.d3a_core.exceptions import (
-    BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade)
+    BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade, MarketException)
 from d3a.events import MarketEvent
 from d3a.models.market import Bid, Offer
 from d3a.models.market.market_structures import TradeBidOfferInfo, Trade
@@ -33,6 +33,89 @@ def market_matcher():
 
 class TestTwoSidedMarket:
     """Class Responsible for testing two sided market"s functionality."""
+
+    def test_two_sided_market_repr(self, market):
+        """Test the __repr__ value of TwoSidedMarket."""
+        assert market.__repr__() == (
+            "<TwoSidedPayAsBid{} bids: {} (E: {} kWh V:{}) "
+            "offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>".format(
+                " {}".format(market.time_slot_str),
+                len(market.bids),
+                sum(b.energy for b in market.bids.values()),
+                sum(b.price for b in market.bids.values()),
+                len(market.offers),
+                sum(o.energy for o in market.offers.values()),
+                sum(o.price for o in market.offers.values()),
+                len(market.trades),
+                market.accumulated_trade_energy,
+                market.accumulated_trade_price
+            )
+        )
+
+    def test_get_bids(self, market):
+        """Test the get_bids() method of TwoSidedMarket."""
+        market.bids = {
+            "bid1": Bid("bid1", now(), 9, 10, "B", 9,
+                        buyer_id="bid_id"),
+            "bid2": Bid("bid2", now(), 9, 10, "B", 9,
+                        buyer_id="bid_id"),
+            "bid3": Bid("bid3", now(), 9, 10, "B", 9,
+                        buyer_id="bid_id")
+        }
+        assert market.get_bids() == market.bids
+
+    def test_get_offers(self, market):
+        """Test the get_offers() method of TwoSidedMarket."""
+        market.offers = {
+            "offer1": Offer("offer1", now(), 2, 2, "other", 2,),
+            "offer2": Offer("offer2", now(), 2, 2, "other", 2,),
+            "offer3": Offer("offer3", now(), 2, 2, "other", 2,)
+        }
+        assert market.get_offers() == market.offers
+
+    @patch("d3a.models.market.two_sided.TwoSidedMarket._update_new_bid_price_with_fee",
+           MagicMock(return_value=5))
+    def test_bid(self, market):
+        """Test the bid() method of TwoSidedMarket."""
+        # if energy < 0
+        assert len(market.bids) == 0
+        with pytest.raises(InvalidBid):
+            market.bid(5, -2, "buyer", "buyer_origin")
+            assert len(market.bids) == 0
+        # if price < 0
+        with pytest.raises(MarketException) as exception:
+            market.bid(-5, -2, "buyer", "buyer_origin")
+            assert exception.value == "Negative price after taxes, bid cannot be posted."
+            assert len(market.bids) == 0
+
+        bid = market.bid(5, 2, "buyer", "buyer_origin", bid_id="my_bid")
+        assert len(market.bids) == 1
+        assert "my_bid" in market.bids
+        assert bid.energy == 2
+        assert bid.price == 5
+        assert bid in market.bid_history
+        assert market._update_new_bid_price_with_fee.called
+
+    def test_delete_bid(self, market):
+        """Test the delete_bid method of TwoSidedMarket."""
+        bid1 = Bid("bid1", now(), 9, 10, "B", 9,
+                   buyer_id="bid_id")
+        bid2 = Bid("bid2", now(), 9, 10, "B", 9,
+                   buyer_id="bid_id")
+        market.bids = {
+            "bid1": bid1,
+            "bid2": bid2,
+        }
+        market.delete_bid("bid1")
+        assert "bid1" not in market.bids
+        assert len(market.bids) == 1
+        market.delete_bid(bid2)
+        assert len(market.bids) == 0
+        with pytest.raises(BidNotFoundException):
+            market.delete_bid(bid2)
+
+    def test_match_recommendations(self, market):
+        pass
 
     def test_double_sided_validate_requirements_satisfied(self, market):
         offer = Offer("id", now(), 2, 2, "other", 2,
