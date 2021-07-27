@@ -343,10 +343,10 @@ class TwoSidedMarket(OneSidedMarket):
                 offers_total_energy >= selected_energy
                 and all(
                     (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= clearing_rate for bid in bids)
-                # and all(
-                #     combination[0].energy_rate +
-                #     FLOATING_POINT_TOLERANCE >= combination[1].energy_rate
-                #     for combination in bids_offers_combinations)
+                and all(
+                    combination[0].energy_rate +
+                    FLOATING_POINT_TOLERANCE >= combination[1].energy_rate
+                    for combination in bids_offers_combinations)
         ):
             raise InvalidBidOfferPairException
         for combination in bids_offers_combinations:
