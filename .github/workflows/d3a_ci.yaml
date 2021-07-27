@@ -16,7 +16,7 @@ jobs:
     - name: Install dependencies
       env:
         TOXENV: ci
-        BRANCH: feature/D3ASIM-3532
+        BRANCH: master
       run: |
         export SOLC_BINARY=$HOME/solc/usr/bin/solc
         export LD_LIBRARY_PATH=$HOME/solc/usr/lib:$LD_LIBRARY_PATH
