@@ -32,7 +32,7 @@ from d3a_interface.utils import generate_market_slot_list
 from d3a.d3a_core.util import d3a_path, change_global_config
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.models.area import DEFAULT_CONFIG
-from d3a.models.market.market_structures import Offer, Trade
+from d3a.models.market.market_structures import Offer
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 
 
@@ -212,18 +212,6 @@ def pv_test4(area_test3, called):
               seller='FakeArea'): area_test3.test_market.id
     }
     return p
-
-
-def testing_event_trade(area_test3, pv_test4):
-    pv_test4.state._available_energy_kWh[area_test3.test_market.time_slot] = 1
-    pv_test4.event_trade(market_id=area_test3.test_market.id,
-                         trade=Trade(id='id', time='time',
-                                     offer_bid=Offer(id='id', time=pendulum.now(), price=20,
-                                                     energy=1, seller='FakeArea'),
-                                     seller=area_test3.name, buyer='buyer'
-                                     )
-                         )
-    assert len(pv_test4.offers.open) == 0
 
 
 """TEST 5"""

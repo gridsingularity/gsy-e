@@ -300,13 +300,13 @@ class Trade:
     def serializable_dict(self):
         return {
             "type": "Trade",
-            "match_type": "Offer" if isinstance(self.offer_bid, Offer) else "Bid",
+            "match_type": type(self.offer_bid).__name__,
             "id": self.id,
             "offer_bid_id": self.offer_bid.id,
             "residual_id": self.residual.id if self.residual is not None else None,
             "energy": self.offer_bid.energy,
             "energy_rate": self.offer_bid.energy_rate,
-            "price": self.offer_bid.energy * self.offer_bid.energy_rate,
+            "price": self.offer_bid.price,
             "buyer": self.buyer,
             "buyer_origin": self.buyer_origin,
             "seller_origin": self.seller_origin,
