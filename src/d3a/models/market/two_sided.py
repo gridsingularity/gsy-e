@@ -290,7 +290,7 @@ class TwoSidedMarket(OneSidedMarket):
 
                 bid_trade, offer_trade = self.accept_bid_offer_pair(
                     market_bid, market_offer, clearing_rate,
-                    trade_bid_info, selected_energy)
+                    trade_bid_info, min(selected_energy, market_offer.energy, market_bid.energy))
                 if offer_trade.residual:
                     market_offer = offer_trade.residual
                 else:
@@ -343,10 +343,10 @@ class TwoSidedMarket(OneSidedMarket):
                 offers_total_energy >= selected_energy
                 and all(
                     (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= clearing_rate for bid in bids)
-                and all(
-                    combination[0].energy_rate +
-                    FLOATING_POINT_TOLERANCE >= combination[1].energy_rate
-                    for combination in bids_offers_combinations)
+                # and all(
+                #     combination[0].energy_rate +
+                #     FLOATING_POINT_TOLERANCE >= combination[1].energy_rate
+                #     for combination in bids_offers_combinations)
         ):
             raise InvalidBidOfferPairException
         for combination in bids_offers_combinations:
