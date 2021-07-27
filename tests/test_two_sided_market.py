@@ -148,10 +148,10 @@ class TestTwoSidedMarket:
             self, market, bid_energy, offer_energy, clearing_rate, selected_energy):
         offer = Offer("id", now(), 2, offer_energy, "other", 2)
         bid = Bid("bid_id", now(), 2, bid_energy, "B", 8)
-        TwoSidedMarket._validate_requirements_satisfied = MagicMock()
+        market._validate_requirements_satisfied = MagicMock()
         with pytest.raises(InvalidBidOfferPairException):
             market.validate_bid_offer_match([bid], [offer], clearing_rate, selected_energy)
-            TwoSidedMarket._validate_requirements_satisfied.assert_not_called()
+            market._validate_requirements_satisfied.assert_not_called()
 
     def test_double_sided_performs_pay_as_bid_matching(
             self, market: TwoSidedMarket, market_matcher):

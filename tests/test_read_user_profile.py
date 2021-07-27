@@ -1,9 +1,11 @@
-import unittest
 import pathlib
-import d3a.constants
+import unittest
+
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.read_user_profile import copy_profile_to_multiple_days, \
     _read_from_different_sources_todict, time_str
+
+import d3a.constants
 from d3a.d3a_core.util import d3a_path
 
 

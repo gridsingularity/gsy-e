@@ -15,26 +15,26 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import pytest
 import logging
-from pendulum import Duration, DateTime, now
+from copy import deepcopy
 from logging import getLogger
 from math import isclose
-from copy import deepcopy
 from uuid import uuid4
 
-from d3a_interface.constants_limits import ConstSettings
+import pytest
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.exceptions import D3ADeviceException
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from pendulum import Duration, DateTime, now
 
-from d3a.d3a_core.util import change_global_config
-from d3a.constants import TIME_ZONE
-from d3a.models.market.market_structures import Offer, Trade, BalancingOffer, Bid
-from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.state import EnergyOrigin, ESSEnergyOrigin
-from d3a.models.config import SimulationConfig
 from d3a.constants import TIME_FORMAT, FLOATING_POINT_TOLERANCE
+from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.d3a_core.util import change_global_config
+from d3a.models.config import SimulationConfig
+from d3a.models.market.market_structures import Offer, Trade, BalancingOffer, Bid
+from d3a.models.state import EnergyOrigin, ESSEnergyOrigin
+from d3a.models.strategy.storage import StorageStrategy
 
 DeviceRegistry.REGISTRY = {
     "A": (23, 25),
@@ -42,6 +42,14 @@ DeviceRegistry.REGISTRY = {
     "seller": (23, 25),
     "FakeArea": (23, 25),
 }
+
+
+@pytest.fixture(scope="function", autouse=True)
+def auto_fixture():
+    yield
+    GlobalConfig.market_count = GlobalConfig.MARKET_COUNT
+    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 class FakeArea:
@@ -168,7 +176,7 @@ class FakeMarket:
         return offer
 
     def bid(self, price, energy, buyer, market=None, original_bid_price=None,
-            buyer_origin=None):
+            buyer_origin=None, buyer_origin_id=None, buyer_id=None):
         pass
 
 
