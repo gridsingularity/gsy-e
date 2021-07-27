@@ -85,7 +85,7 @@ class FakeMarket:
 
     @property
     def sorted_offers(self):
-        return list(sorted(self.offers.values(), key=lambda b: b.price / b.energy))
+        return list(sorted(self.offers.values(), key=lambda b: b.energy_rate))
 
     def get_bids(self):
         return self.bids
@@ -120,9 +120,9 @@ class FakeMarket:
         self.calls_bids.append(bid)
         self.calls_bids_price.append(bid.price)
         if trade_rate is None:
-            trade_rate = bid.price / bid.energy
+            trade_rate = bid.energy_rate
         else:
-            assert trade_rate <= (bid.price / bid.energy)
+            assert trade_rate <= bid.energy_rate
 
         market_bid = [b for b in self._bids if b.id == bid.id][0]
         if energy < market_bid.energy:
@@ -438,12 +438,12 @@ def test_iaa_event_bid_split_and_trade_correctly_populate_forwarded_bid_entries(
         original_bid = low_to_high_engine.markets.target._bids[0]
         accepted_bid = replace(original_bid,
                                price=(original_bid.energy - residual_energy) * (
-                                           original_bid.price / original_bid.energy),
+                                           original_bid.energy_rate),
                                energy=original_bid.energy - residual_energy)
 
         residual_bid = replace(
             original_bid, id=residual_id,
-            price=residual_energy * (original_bid.price / original_bid.energy),
+            price=residual_energy * original_bid.energy_rate,
             energy=residual_energy)
 
         low_to_high_engine.event_bid_split(market_id=low_to_high_engine.markets.target,

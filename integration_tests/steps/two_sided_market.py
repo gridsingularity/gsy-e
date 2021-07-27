@@ -134,7 +134,7 @@ def cep_offer_residual_offer_rate(context):
     for market in house.past_markets:
         if len(market.trades) > 0:
             for id, offer in market.offers.items():
-                assert isclose((offer.price / offer.energy),
+                assert isclose(offer.energy_rate,
                                cep.strategy.energy_rate[market.time_slot])
 
 

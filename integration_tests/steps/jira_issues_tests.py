@@ -43,7 +43,7 @@ def average_trade_rate_constant(context):
 
     for area in areas:
         trade_rates = [
-            trade.offer_bid.price / trade.offer_bid.energy
+            trade.offer_bid.energy_rate
             for market in area.past_markets
             for trade in market.trades
         ]
@@ -109,7 +109,7 @@ def step_impl(context):
     ]
 
     assert all(
-        [trade.offer_bid.price / trade.offer_bid.energy < 16.99 for trade in storage_trades])
+        [trade.offer_bid.energy_rate < 16.99 for trade in storage_trades])
 
 
 @then('on every market slot there should be matching trades on grid and house markets')
@@ -205,7 +205,7 @@ def trades_on_all_markets_max_load_rate(context):
         assert all(t.seller == "Commercial Energy Producer" for t in market.trades)
         assert all(t.buyer == "IAA House 1" for t in market.trades)
         assert all(
-            isclose(trade.offer_bid.price / trade.offer_bid.energy, max_rate[market.time_slot])
+            isclose(trade.offer_bid.energy_rate, max_rate[market.time_slot])
             for trade in market.trades)
 
     for market in house1.past_markets:
@@ -213,7 +213,7 @@ def trades_on_all_markets_max_load_rate(context):
         assert all(t.seller == "IAA House 1" for t in market.trades)
         assert all(t.buyer == "H1 General Load" for t in market.trades)
         assert all(
-            isclose(trade.offer_bid.price / trade.offer_bid.energy, max_rate[market.time_slot])
+            isclose(trade.offer_bid.energy_rate, max_rate[market.time_slot])
             for trade in market.trades)
 
 
@@ -302,7 +302,7 @@ def storage_decreases_bid_rate(context):
     for market in context.simulation.area.past_markets:
         assert len(market.trades) == 1
         trade = market.trades[0]
-        trade_rate = trade.offer_bid.price / trade.offer_bid.energy
+        trade_rate = trade.offer_bid.energy_rate
         assert isclose(trade_rate, 15)
 
 

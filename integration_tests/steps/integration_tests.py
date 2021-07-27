@@ -888,7 +888,7 @@ def test_finite_plant_energy_rate(context, plant_name):
             assert trade.buyer is not finite.name
             if trade.seller == finite.name:
                 trades_sold.append(trade)
-        assert all([isclose(trade.offer_bid.price / trade.offer_bid.energy,
+        assert all([isclose(trade.offer_bid.energy_rate,
                             finite.strategy.energy_rate[market.time_slot], rel_tol=1e-02)
                     for trade in trades_sold])
         assert len(trades_sold) > 0
@@ -909,7 +909,7 @@ def test_infinite_plant_energy_rate(context, plant_name):
             if trade.seller == finite.name:
                 trades_sold.append(trade)
 
-    assert all([isclose(trade.offer_bid.price / trade.offer_bid.energy,
+    assert all([isclose(trade.offer_bid.energy_rate,
                         market_maker_rate[trade.offer_bid.next_market.time_slot])
                 for trade in trades_sold])
     assert len(trades_sold) > 0
@@ -973,7 +973,7 @@ def assert_trade_rates(context, market_name, trade_rate, grid_fee_rate=0):
     assert any(len(market.trades) > 0 for market in markets)
     for market in markets:
         for trade in market.trades:
-            assert isclose(trade.offer_bid.price / trade.offer_bid.energy, float(trade_rate))
+            assert isclose(trade.offer_bid.energy_rate, float(trade_rate))
             assert isclose(trade.fee_price / trade.offer_bid.energy, float(grid_fee_rate),
                            rel_tol=1e-05)
 
@@ -983,8 +983,8 @@ def assert_trade_rates_bottom_to_top(context, market_name, house_1_rate, house_2
     markets = _filter_markets_by_market_name(context, market_name)
     for market in markets:
         for t in market.trades:
-            assert isclose(t.offer.price / t.offer.energy, float(house_1_rate)) or \
-                   isclose(t.offer.price / t.offer.energy, float(house_2_rate))
+            assert isclose(t.offer.energy_rate, float(house_1_rate)) or \
+                   isclose(t.offer.energy_rate, float(house_2_rate))
 
 
 @then('trades on the {market_name} market clear using a rate of either {trade_rate1} or '
@@ -993,8 +993,8 @@ def assert_multiple_trade_rates_any(context, market_name, trade_rate1, trade_rat
     markets = _filter_markets_by_market_name(context, market_name)
     for market in markets:
         for t in market.trades:
-            assert isclose(t.offer.price / t.offer.energy, float(trade_rate1)) or \
-                   isclose(t.offer.price / t.offer.energy, float(trade_rate2))
+            assert isclose(t.offer.energy_rate, float(trade_rate1)) or \
+                   isclose(t.offer.energy_rate, float(trade_rate2))
 
 
 @then('the unmatched loads are identical no matter if the past markets are kept')
@@ -1068,7 +1068,7 @@ def pv_selling_rate_minus_fees(context):
             if trade.seller == pv.name:
                 trades_sold.append(trade)
 
-    assert all([isclose(trade.offer_bid.price / trade.offer_bid.energy,
+    assert all([isclose(trade.offer_bid.energy_rate,
                         market_maker_rate - fees_path_to_root)
                 for trade in trades_sold])
 
@@ -1090,7 +1090,7 @@ def load_buying_rate_plus_fees(context):
             if trade.buyer == load.name:
                 trades_bought.append(trade)
 
-    assert all([isclose(trade.offer_bid.price / trade.offer_bid.energy,
+    assert all([isclose(trade.offer_bid.energy,
                         market_maker_rate + fees_path_to_root)
                 for trade in trades_bought])
 

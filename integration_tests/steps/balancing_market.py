@@ -119,13 +119,13 @@ def follow_device_registry_energy_rate(context, device_name):
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
 
-    assert all((trade.offer_bid.price / trade.offer_bid.energy) - negative_energy_rate
+    assert all((trade.offer_bid.energy_rate) - negative_energy_rate
                < FLOATING_POINT_TOLERANCE
                for ii, device in enumerate([house1, house2, context.simulation.area])
                for market in device.past_balancing_markets
                for trade in market.trades if trade.offer_bid.energy < 0)
 
-    assert all((trade.offer_bid.price / trade.offer_bid.energy) - positive_energy_rate
+    assert all(trade.offer_bid.energy_rate - positive_energy_rate
                < FLOATING_POINT_TOLERANCE
                for ii, device in enumerate([house1, house2, context.simulation.area])
                for market in device.past_balancing_markets
@@ -169,13 +169,13 @@ def follow_device_registry_energy_rate_or(context, device1, device2):
     house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
 
     assert all(
-        int(round(trade.offer_bid.price / trade.offer_bid.energy, 2)) in negative_energy_rate
+        int(round(trade.offer_bid.energy_rate, 2)) in negative_energy_rate
         for device in [house1, house2, context.simulation.area]
         for market in device.past_balancing_markets
         for trade in market.trades if trade.offer_bid.energy < 0)
 
     assert all(
-        int(round(trade.offer_bid.price / trade.offer_bid.energy, 2)) in positive_energy_rate
+        int(round(trade.offer_bid.energy_rate, 2)) in positive_energy_rate
         for device in [house1, house2, context.simulation.area]
         for market in device.past_balancing_markets
         for trade in market.trades if trade.offer_bid.energy > 0)

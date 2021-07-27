@@ -566,7 +566,7 @@ class StorageStrategy(BidEnabledStrategy):
                 for market in self.area.all_markets:
                     if len(market.sorted_offers) > 0 and \
                        market.sorted_offers[0].energy_rate > max_rate:
-                        max_rate = market.sorted_offers[0].price / market.sorted_offers[0].energy
+                        max_rate = market.sorted_offers[0].energy_rate
                         most_expensive_market = market
             except IndexError:
                 try:

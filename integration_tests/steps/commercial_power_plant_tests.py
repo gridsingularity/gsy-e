@@ -26,7 +26,7 @@ def trades_follow_strategy_mmr(context, energy_rate):
     load = [child for child in grid.children if child.name == "Load"][0]
     for market in load.past_markets:
         for trade in market.trades:
-            assert isclose(trade.offer_bid.price / trade.offer_bid.energy, float(energy_rate))
+            assert isclose(trade.offer_bid.energy_rate, float(energy_rate))
 
 
 @then('no trades are performed')

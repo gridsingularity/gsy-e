@@ -26,7 +26,7 @@ from d3a.d3a_core.util import make_iaa_name
 @then('all trades are equal to market_clearing_rate')
 def test_traded_energy_rate(context):
     def has_one_of_clearing_rates(trade, market):
-        return any(isclose((trade.offer_bid.price / trade.offer_bid.energy), clearing_rate)
+        return any(isclose(trade.offer_bid.energy_rate, clearing_rate)
                    for clearing_rate in market.state.clearing.values())
 
     for child in context.simulation.area.children:

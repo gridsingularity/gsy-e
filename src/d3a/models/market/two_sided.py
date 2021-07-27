@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
-from dataclasses import replace
 from logging import getLogger
 from math import isclose
 from typing import Union, List, Dict  # noqa
@@ -205,7 +204,7 @@ class TwoSidedMarket(OneSidedMarket):
             pass
 
         fee_price, trade_price = self.determine_bid_price(trade_offer_info, energy)
-        bid = replace(bid, price=trade_price)
+        bid.update_price(trade_price)
 
         # Do not adapt grid fees when creating the bid_trade_info structure, to mimic
         # the behavior of the forwarded bids which use the source market fee.

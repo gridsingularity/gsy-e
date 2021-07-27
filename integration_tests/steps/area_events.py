@@ -194,7 +194,7 @@ def load_consumes_variable_energy_with_rate_between(context, energy, rate, start
             market.trades[0].buyer == "Grid Load"
         assert isclose(market.trades[0].offer_bid.energy, energy)
         assert isclose(
-            market.trades[0].offer_bid.price / market.trades[0].offer_bid.energy, rate)
+            market.trades[0].offer_bid.energy_rate, rate)
 
 
 @then('load does not consume energy between {start_time}:00 and {end_time}:00')

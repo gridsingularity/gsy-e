@@ -38,12 +38,12 @@ def storages_pv_final_selling_rate(context):
             if trade.buyer == storage1.name:
                 # Storage 1 should buy energy offers with rate more than the PV min sell rate
                 assert round(
-                    trade.offer_bid.price / trade.offer_bid.energy, DEFAULT_PRECISION) >= \
+                    trade.offer_bid.energy_rate, DEFAULT_PRECISION) >= \
                     pv.strategy.offer_update.final_rate[market.time_slot]
 
     for market in house2.past_markets:
         assert all(trade.seller == pv.name for trade in market.trades)
-        assert all(round(trade.offer_bid.price / trade.offer_bid.energy, DEFAULT_PRECISION) >=
+        assert all(round(trade.offer_bid.energy_rate, DEFAULT_PRECISION) >=
                    pv.strategy.offer_update.final_rate[market.time_slot]
                    for trade in market.trades)
 
@@ -64,10 +64,10 @@ def pv_price_decrease(context):
     if pv.strategy.offer_update.fit_to_limit is False:
         for market in house.past_markets:
             for id, offer in market.offers.items():
-                assert any([isclose(offer.price / offer.energy, rate) for rate in rate_list])
+                assert any([isclose(offer.energy_rate, rate) for rate in rate_list])
             for trade in market.trades:
                 if trade.seller == pv.name:
-                    assert any([isclose(trade.offer_bid.price / trade.offer_bid.energy,
+                    assert any([isclose(trade.offer_bid.energy_rate,
                                 rate) for rate in rate_list])
 
     else:

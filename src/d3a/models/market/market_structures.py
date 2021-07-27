@@ -147,6 +147,10 @@ class Bid:
         if self.energy_rate is None:
             self.energy_rate = self.price / self.energy
 
+    def update_price(self, price):
+        self.price = price
+        self.energy_rate = self.price / self.energy
+
     def __repr__(self):
         return (
             "<Bid {{{s.id!s:.6s}}} [{s.buyer}] "

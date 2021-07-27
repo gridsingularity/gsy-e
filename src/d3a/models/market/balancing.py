@@ -158,7 +158,7 @@ class BalancingMarket(OneSidedMarket):
         if offer is None:
             raise OfferNotFoundException()
 
-        if (offer.energy > 0 and energy < 0) or (offer.energy < 0 and energy > 0):
+        if (offer.energy > 0 > energy) or (offer.energy < 0 < energy):
             raise InvalidBalancingTradeException("BalancingOffer and energy "
                                                  "are not compatible")
         if energy is None:
@@ -179,7 +179,7 @@ class BalancingMarket(OneSidedMarket):
                 raise InvalidBalancingTradeException("Energy can not be zero.")
             elif abs(energy) < abs(offer.energy):
                 # partial energy is requested
-                assert trade_rate + FLOATING_POINT_TOLERANCE >= (offer.price / offer.energy)
+                assert trade_rate + FLOATING_POINT_TOLERANCE >= offer.energy_rate
 
                 original_offer = offer
 
