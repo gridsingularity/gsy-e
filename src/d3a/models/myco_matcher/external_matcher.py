@@ -13,7 +13,7 @@ from d3a.models.market import Market
 
 
 class ExternalMatcherEventsEnum(Enum):
-    MATCHING_DATA_RESPONSE = "matching_data_response"
+    OFFERS_BIDS_RESPONSE = "offers_bids_response"
     MATCH = "match"
     TICK = "tick"
     MARKET = "market_cycle"
@@ -36,16 +36,16 @@ class ExternalMatcher:
         self.myco_ext_conn = ResettableCommunicator()
         self.myco_ext_conn.sub_to_multiple_channels(
             {"external-myco/simulation-id/": self.publish_simulation_id,
-             f"{self._channel_prefix}/matching-data/": self.publish_matching_data,
+             f"{self._channel_prefix}/offers-bids/": self.publish_offers_bids,
              f"{self._channel_prefix}/recommendations/": self.match_recommendations})
 
-    def publish_matching_data(self, message):
+    def publish_offers_bids(self, message):
         """Publish open offers and bids.
 
         Published data are of the following format:
-            {"matching_data": {"market_id" : {"bids": [], "offers": [] }, filters: {}}}
+            {"bids_offers": {"market_id" : {"bids": [], "offers": [] }, filters: {}}}
         """
-        response_data = {"event": ExternalMatcherEventsEnum.MATCHING_DATA_RESPONSE.value}
+        response_data = {"event": ExternalMatcherEventsEnum.OFFERS_BIDS_RESPONSE.value}
         data = json.loads(message.get("data"))
         filters = data.get("filters", {})
         # IDs of markets (Areas) the client is interested in
@@ -62,10 +62,10 @@ class ExternalMatcher:
                 market_offers_bids_list_mapping[market.id] = {
                     "bids": bids_list, "offers": offers_list}
         response_data.update({
-            "matching_data": market_offers_bids_list_mapping,
+            "bids_offers": market_offers_bids_list_mapping,
         })
 
-        channel = f"{self._channel_prefix}/matching-data/response/"
+        channel = f"{self._channel_prefix}/offers-bids/response/"
         self.myco_ext_conn.publish_json(channel, response_data)
 
     def match_recommendations(self, message):

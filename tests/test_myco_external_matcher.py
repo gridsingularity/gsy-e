@@ -40,7 +40,7 @@ class TestMycoExternalMatcher:
         self.matcher.myco_ext_conn.sub_to_multiple_channels.assert_called_once_with(
             {
                 "external-myco/simulation-id/": self.matcher.publish_simulation_id,
-                f"{self.channel_prefix}matching-data/": self.matcher.publish_matching_data,
+                f"{self.channel_prefix}offers-bids/": self.matcher.publish_offers_bids,
                 f"{self.channel_prefix}recommendations/":
                     self.matcher.match_recommendations
             }
@@ -100,19 +100,19 @@ class TestMycoExternalMatcher:
 
     @patch("d3a.models.myco_matcher.external_matcher.ExternalMatcher."
            "_get_bids_offers", MagicMock(return_value=([], [])))
-    def test_publish_matching_data(self):
-        channel = f"{self.channel_prefix}matching-data/response/"
+    def test_publish_offers_bids(self):
+        channel = f"{self.channel_prefix}offers-bids/response/"
         payload = {
             "data": json.dumps({
                 "filters": {}
             })
         }
         expected_data = {
-            "event": "matching_data_response",
-            "matching_data": {self.market.id: {"bids": [], "offers": []}}
+            "event": "offers_bids_response",
+            "bids_offers": {self.market.id: {"bids": [], "offers": []}}
         }
         self.matcher.update_area_uuid_markets_mapping({"area1": [self.market]})
-        self.matcher.publish_matching_data(payload)
+        self.matcher.publish_offers_bids(payload)
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
         self.matcher.myco_ext_conn.publish_json.reset_mock()
@@ -124,10 +124,10 @@ class TestMycoExternalMatcher:
             })
         }
         expected_data = {
-            "event": "matching_data_response",
-            "matching_data": {}
+            "event": "offers_bids_response",
+            "bids_offers": {}
         }
-        self.matcher.publish_matching_data(payload)
+        self.matcher.publish_offers_bids(payload)
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
 
