@@ -38,7 +38,8 @@ EXTERNAL_CONNECTION_WEB = False
 
 SIMULATION_PAUSE_TIMEOUT = 600
 
-# Controls whether the past markets are still being kept in the simulation memory for the duration
+# Controls whether the past markets and the strategy state (bids / offers that are buffered in the
+# strategy classes) are still being kept in the simulation memory for the duration
 # of the simulation. Helpful in the unit / integration tests, since some of these rely on the
 # markets remaining in-memory until the end of the simulation run.
 # Is also needed for the raw JSON files and the plots when running in CLI mode.
