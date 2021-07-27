@@ -19,7 +19,6 @@ import logging
 import json
 from threading import Lock
 from collections import deque, namedtuple
-from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import key_in_dict_and_not_none
 import d3a.constants
@@ -267,8 +266,8 @@ class ExternalMixin:
             return
 
         if ConstSettings.IAASettings.MARKET_TYPE != 1 and \
-                ((trade.buyer == self.device.name and isinstance(trade.offer_bid, Offer)) or
-                 (trade.seller == self.device.name and isinstance(trade.offer_bid, Bid))):
+                ((trade.buyer == self.device.name and trade.is_offer_trade) or
+                 (trade.seller == self.device.name and trade.is_bid_trade)):
             # Do not track a 2-sided market trade that is originating from an Offer to a
             # consumer (which should have posted a bid). This occurs when the clearing
             # took place on the area market of the device, thus causing 2 trades, one for
@@ -292,16 +291,14 @@ class ExternalMixin:
                                    "buyer": trade.buyer
                                    if trade.buyer_id == self.device.uuid else "anonymous",
                                    "bid_id": trade.offer_bid.id
-                                   if isinstance(trade.offer_bid, Bid) else "None",
+                                   if trade.is_bid_trade else "None",
                                    "offer_id": trade.offer_bid.id
-                                   if isinstance(trade.offer_bid, Offer) else 'None',
+                                   if trade.is_offer_trade else "None",
                                    "residual_bid_id": trade.residual.id
-                                   if trade.residual is not None and isinstance(trade.residual,
-                                                                                Bid)
+                                   if trade.residual is not None and trade.is_bid_trade
                                    else "None",
                                    "residual_offer_id": trade.residual.id
-                                   if trade.residual is not None and isinstance(trade.residual,
-                                                                                Offer)
+                                   if trade.residual is not None and trade.is_offer_trade
                                    else "None"}
 
             external_global_statistics.update()

@@ -135,6 +135,10 @@ class FakeTrade:
         self.seller = "FakeSeller"
 
     @property
+    def is_offer_trade(self):
+        return True
+
+    @property
     def buyer(self):
         return "FakeBuyer"
 

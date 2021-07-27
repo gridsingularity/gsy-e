@@ -34,7 +34,7 @@ from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, Market
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
 from d3a.models.market.market_structures import (
-    Offer, Bid, trade_from_json_string,
+    Offer, trade_from_json_string,
     offer_or_bid_from_json_string)
 from d3a_interface.constants_limits import ConstSettings
 
@@ -458,7 +458,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         self.event_responses = []
 
     def assert_if_trade_offer_price_is_too_low(self, market_id, trade):
-        if isinstance(trade.offer_bid, Offer) and trade.offer_bid.seller == self.owner.name:
+        if trade.is_offer_trade and trade.offer_bid.seller == self.owner.name:
             offer = [o for o in self.offers.sold[market_id] if o.id == trade.offer_bid.id][0]
             assert trade.offer_bid.energy_rate >= \
                 offer.energy_rate - FLOATING_POINT_TOLERANCE
@@ -696,6 +696,6 @@ class BidEnabledStrategy(BaseStrategy):
             super().event_market_cycle()
 
     def assert_if_trade_bid_price_is_too_high(self, market, trade):
-        if isinstance(trade.offer_bid, Bid) and trade.offer_bid.buyer == self.owner.name:
+        if trade.is_bid_trade and trade.offer_bid.buyer == self.owner.name:
             bid = [b for b in self.get_posted_bids(market) if b.id == trade.offer_bid.id][0]
             assert trade.offer_bid.energy_rate <= bid.energy_rate + FLOATING_POINT_TOLERANCE

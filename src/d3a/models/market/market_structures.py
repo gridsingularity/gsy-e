@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import datetime
 from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Union  # noqa
+from typing import Dict, List, Union, Tuple  # noqa
 from copy import deepcopy
 import json
 from pendulum import DateTime, parse
@@ -55,20 +55,20 @@ class Offer:
         self.id = str(self.id)
         self.energy_rate = self.price / self.energy
 
-    def update_price(self, price):
+    def update_price(self, price) -> None:
         self.price = price
         self.energy_rate = self.price / self.energy
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return ("<Offer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller} {rate}'>"
                 .format(s=self, rate=self.energy_rate))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return ("{{{s.id!s:.6s}}} [origin: {s.seller_origin}] "
                 "[{s.seller}]: {s.energy} kWh @ {s.price} @ {rate}"
                 .format(s=self, rate=self.energy_rate))
 
-    def to_json_string(self, **kwargs):
+    def to_json_string(self, **kwargs) -> str:
         """Convert the Offer object into its JSON representation.
 
         Args:
@@ -83,7 +83,7 @@ class Offer:
 
         return json.dumps(offer_dict, default=my_converter)
 
-    def serializable_dict(self):
+    def serializable_dict(self) -> Dict:
         return {
             "type": "Offer",
             "id": self.id,
@@ -99,10 +99,10 @@ class Offer:
             "requirements": self.requirements
         }
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.id)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return (self.id == other.id and
                 self.price == other.price and
                 self.original_offer_price == other.original_offer_price and
@@ -114,14 +114,14 @@ class Offer:
 
     @classmethod
     def _csv_fields(cls):
-        return 'rate [ct./kWh]', 'energy [kWh]', 'price [ct.]', 'seller'
+        return "rate [ct./kWh]", "energy [kWh]", "price [ct.]", "seller"
 
-    def _to_csv(self):
+    def _to_csv(self) -> Tuple:
         rate = round(self.energy_rate, 4)
         return rate, self.energy, self.price, self.seller
 
 
-def copy_offer(offer):
+def copy_offer(offer) -> Offer:
     return Offer(offer.id, offer.time, offer.price, offer.energy, offer.seller,
                  offer.original_offer_price, offer.seller_origin, offer.seller_origin_id,
                  offer.seller_id, attributes=offer.attributes, requirements=offer.requirements)
@@ -147,31 +147,31 @@ class Bid:
         if self.energy_rate is None:
             self.energy_rate = self.price / self.energy
 
-    def update_price(self, price):
+    def update_price(self, price) -> None:
         self.price = price
         self.energy_rate = self.price / self.energy
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             "<Bid {{{s.id!s:.6s}}} [{s.buyer}] "
             "{s.energy} kWh @ {s.price} {rate}>".format(s=self, rate=self.energy_rate)
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             "{{{s.id!s:.6s}}} [origin: {s.buyer_origin}] [{s.buyer}] "
             "{s.energy} kWh @ {s.price} {rate}".format(s=self, rate=self.energy_rate)
         )
 
     @classmethod
-    def _csv_fields(cls):
+    def _csv_fields(cls) -> Tuple:
         return "rate [ct./kWh]", "energy [kWh]", "price [ct.]", "buyer"
 
-    def _to_csv(self):
+    def _to_csv(self) -> Tuple:
         rate = round(self.energy_rate, 4)
         return rate, self.energy, self.price, self.buyer
 
-    def to_json_string(self, **kwargs):
+    def to_json_string(self, **kwargs) -> str:
         """Convert the Bid object to its JSON representation. Additional elements can be added.
 
         Args:
@@ -185,7 +185,7 @@ class Bid:
 
         return json.dumps(bid_dict, default=my_converter)
 
-    def serializable_dict(self):
+    def serializable_dict(self) -> Dict:
         return {
             "type": "Bid",
             "id": self.id,
@@ -201,10 +201,10 @@ class Bid:
             "requirements": self.requirements
         }
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.id)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return (self.id == other.id and
                 self.price == other.price and
                 self.original_bid_price == other.original_bid_price and
@@ -215,7 +215,7 @@ class Bid:
                 self.requirements == other.requirements)
 
 
-def offer_or_bid_from_json_string(offer_or_bid, current_time=None):
+def offer_or_bid_from_json_string(offer_or_bid, current_time=None) -> Union[Offer, Bid]:
     offer_bid_dict = json.loads(offer_or_bid)
     object_type = offer_bid_dict.pop("type")
     if "price" not in offer_bid_dict:
@@ -236,15 +236,15 @@ class TradeBidOfferInfo:
     propagated_offer_rate: float
     trade_rate: float
 
-    def to_json_string(self):
+    def to_json_string(self) -> str:
         return json.dumps(asdict(self), default=my_converter)
 
     @classmethod
-    def len(cls):
+    def len(cls) -> int:
         return cls.len()
 
 
-def trade_bid_info_from_json_string(info_string):
+def trade_bid_info_from_json_string(info_string) -> TradeBidOfferInfo:
     info_dict = json.loads(info_string)
     return TradeBidOfferInfo(**info_dict)
 
@@ -267,7 +267,7 @@ class Trade:
     seller_id: str = None
     buyer_id: str = None
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             "{{{s.id!s:.6s}}} [origin: {s.seller_origin} -> {s.buyer_origin}] "
             "[{s.seller} -> {s.buyer}] {s.offer_bid.energy} kWh @ {s.offer_bid.price} {rate} "
@@ -276,17 +276,17 @@ class Trade:
         )
 
     @classmethod
-    def _csv_fields(cls):
+    def _csv_fields(cls) -> Tuple:
         return (tuple(cls.__dataclass_fields__.keys())[1:2] + ("rate [ct./kWh]", "energy [kWh]") +
                 tuple(cls.__dataclass_fields__.keys())[3:5])
 
-    def _to_csv(self):
+    def _to_csv(self) -> Tuple:
         rate = round(self.offer_bid.energy_rate, 4)
         return (tuple(asdict(self).values())[1:2] +
                 (rate, self.offer_bid.energy) +
                 tuple(asdict(self).values())[3:5])
 
-    def to_json_string(self):
+    def to_json_string(self) -> str:
         # __dict__ instead of asdict to not recursively deserialize objects
         trade_dict = deepcopy(self.__dict__)
         trade_dict["offer_bid"] = trade_dict["offer_bid"].to_json_string()
@@ -297,7 +297,17 @@ class Trade:
                 trade_dict["offer_bid_trade_info"].to_json_string())
         return json.dumps(trade_dict, default=my_converter)
 
-    def serializable_dict(self):
+    @property
+    def is_bid_trade(self) -> bool:
+        """Check if the instance is a bid trade."""
+        return isinstance(self.offer_bid, Bid)
+
+    @property
+    def is_offer_trade(self) -> bool:
+        """Check if the instance is an offer trade."""
+        return isinstance(self.offer_bid, Offer)
+
+    def serializable_dict(self) -> Dict:
         return {
             "type": "Trade",
             "match_type": type(self.offer_bid).__name__,
@@ -320,7 +330,7 @@ class Trade:
         }
 
 
-def trade_from_json_string(trade_string, current_time=None):
+def trade_from_json_string(trade_string, current_time=None) -> Trade:
     trade_dict = json.loads(trade_string)
     trade_dict["offer_bid"] = offer_or_bid_from_json_string(trade_dict["offer_bid"], current_time)
     if key_in_dict_and_not_none(trade_dict, "residual"):
@@ -335,11 +345,11 @@ def trade_from_json_string(trade_string, current_time=None):
 
 class BalancingOffer(Offer):
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<BalancingOffer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller} {rate}'>"\
             .format(s=self, rate=self.energy_rate)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "<BalancingOffer{{{s.id!s:.6s}}} [{s.seller}]: " \
                "{s.energy} kWh @ {s.price} @ {rate}>".format(s=self,
                                                              rate=self.energy_rate)
@@ -365,7 +375,7 @@ class BalancingTrade:
     def __post_init__(self):
         self.id = str(self.id)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             "{{{s.id!s:.6s}}} [{s.seller} -> {s.buyer}] "
             "{s.offer_bid.energy} kWh @ {s.offer_bid.price} {rate} {s.offer_bid.id}".
@@ -373,11 +383,11 @@ class BalancingTrade:
         )
 
     @classmethod
-    def _csv_fields(cls):
+    def _csv_fields(cls) -> Tuple:
         return (tuple(cls.__dataclass_fields__.keys())[1:2] + ("rate [ct./kWh]", "energy [kWh]") +
                 tuple(cls.__dataclass_fields__.keys())[3:5])
 
-    def _to_csv(self):
+    def _to_csv(self) -> Tuple:
         rate = round(self.offer_bid.energy_rate, 4)
         return (tuple(asdict(self).values())[1:2] +
                 (rate, self.offer_bid.energy) +
@@ -391,11 +401,11 @@ class MarketClearingState:
     clearing: dict = field(default_factory=dict)
 
     @classmethod
-    def _csv_fields(cls):
+    def _csv_fields(cls) -> Tuple:
         return "time", "rate [ct./kWh]"
 
 
-def parse_event_and_parameters_from_json_string(payload):
+def parse_event_and_parameters_from_json_string(payload) -> Tuple:
     data = json.loads(payload["data"])
     kwargs = data["kwargs"]
     for key in ["offer", "existing_offer", "new_offer"]:
