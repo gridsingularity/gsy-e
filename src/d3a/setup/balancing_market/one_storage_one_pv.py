@@ -46,7 +46,9 @@ def get_setup(config):
                 'House 2',
                 [
                     Area('H2 PV',
-                         strategy=PVStrategy(4, 0)
+                         strategy=PVStrategy(capacity_kW=0.16,
+                                             panel_count=4,
+                                             initial_selling_rate=0)
                          ),
 
                 ]

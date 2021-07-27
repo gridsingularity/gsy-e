@@ -34,7 +34,9 @@ def get_setup(config):
                                                                            range(24)),
                                                                        final_buying_rate=35)
                          ),
-                    Area('H1 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
+                    Area('H1 PV', strategy=PVStrategy(capacity_kW=0.16,
+                                                      panel_count=4,
+                                                      initial_selling_rate=30,
                                                       final_selling_rate=5)
                          ),
 

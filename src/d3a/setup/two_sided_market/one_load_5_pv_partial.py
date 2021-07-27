@@ -61,19 +61,19 @@ def get_setup(config):
                 'House 2',
                 [
                     Area('H2 PV1',
-                         strategy=PVStrategy(1)
+                         strategy=PVStrategy(capacity_kW=0.16)
                          ),
                     Area('H2 PV2',
-                         strategy=PVStrategy(1)
+                         strategy=PVStrategy(capacity_kW=0.16)
                          ),
                     Area('H2 PV3',
-                         strategy=PVStrategy(1)
+                         strategy=PVStrategy(capacity_kW=0.16)
                          ),
                     Area('H2 PV4',
-                         strategy=PVStrategy(1)
+                         strategy=PVStrategy(capacity_kW=0.16)
                          ),
                     Area('H2 PV5',
-                         strategy=PVStrategy(1)
+                         strategy=PVStrategy(capacity_kW=0.16)
                          ),
                 ]
             ),

@@ -131,7 +131,7 @@ def get_setup(config):
                                                                            range(12, 16)),
                                                                        final_buying_rate=35),
                          ),
-                    Area('H2 PV', strategy=PVStrategy(4),
+                    Area('H2 PV', strategy=PVStrategy(capacity_kW=0.16, panel_count=4),
                          ),
 
                 ]

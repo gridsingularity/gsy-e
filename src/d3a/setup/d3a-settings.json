@@ -165,7 +165,7 @@
         0,
         4
       ],
-      "MAX_CAPACITY_KW": 0.16,
+      "MAX_CAPACITY_KW": 5,
       "PV_PENALTY_RATE": 0
     },
     "HomeMeterSettings": {
