@@ -33,7 +33,7 @@ def get_setup(config):
                                                                            range(7, 20)))
                          ),
                     Area('H1 PV', strategy=PVStrategy(panel_count=1,
-                                                      max_panel_power_W=200)
+                                                      capacity_kW=0.2)
                          ),
                 ]
             ),

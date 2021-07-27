@@ -21,7 +21,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 
 
 def get_setup(config):
-    config.update_config_parameters(max_panel_power_W=400)
+    config.update_config_parameters(capacity_kW=0.4)
     area = Area(
         'Grid',
         [

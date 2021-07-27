@@ -54,7 +54,7 @@ def get_setup(config):
                                                                        final_buying_rate=35)
                          ),
                     Area('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
-                                                      final_selling_rate=5, max_panel_power_W=100)
+                                                      final_selling_rate=5, capacity_kW=0.1)
                          ),
 
                 ],

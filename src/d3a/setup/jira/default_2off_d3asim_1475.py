@@ -22,7 +22,7 @@ def get_setup(config):
                                                             name='Office1X-PV',
                                                             strategy=PVStrategy(
                                                                     panel_count=50,
-                                                                    max_panel_power_W=200,
+                                                                    capacity_kW=0.2,
                                                                     initial_selling_rate=25,
                                                                     final_selling_rate=15)
                                                             ),
@@ -63,7 +63,7 @@ def get_setup(config):
                                                             name='Office2X-PV',
                                                             strategy=PVStrategy(
                                                                     panel_count=50,
-                                                                    max_panel_power_W=200,
+                                                                    capacity_kW=0.2,
                                                                     initial_selling_rate=25,
                                                                     final_selling_rate=5)
                                                             ),

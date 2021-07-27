@@ -53,7 +53,7 @@ def get_setup(config):
                             name='H2 PV',
                             strategy=PVStrategy(
                                 panel_count=10,
-                                max_panel_power_W=50,
+                                capacity_kW=0.050,
                                 use_market_maker_rate=True),
                             )
                     ],

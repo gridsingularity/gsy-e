@@ -48,7 +48,7 @@ def get_setup(config):
                                  ),
 
                             Area('H1 PV', strategy=PVStrategy(panel_count=3,
-                                                              max_panel_power_W=250,  # to test
+                                                              capacity_kW=0.25,  # to test
                                                               initial_selling_rate=30,
                                                               final_selling_rate=0)
                                  ),
@@ -68,7 +68,7 @@ def get_setup(config):
                                  ),
 
                             Area('H2 PV', strategy=PVStrategy(panel_count=4,
-                                                              max_panel_power_W=250,
+                                                              capacity_kW=0.25,
                                                               initial_selling_rate=30,
                                                               final_selling_rate=0)
                                  ),

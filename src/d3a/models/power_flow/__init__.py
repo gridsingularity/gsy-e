@@ -55,7 +55,7 @@ class PowerFlowBase(ABC):
         elif isinstance(area.strategy, PVStrategy):
             area.pv_device = \
                 self.add_generation_device(area,
-                                           convert_unit_to_kilo(area.strategy.max_panel_power_W))
+                                           convert_unit_to_kilo(area.strategy.capacity_kW))
         elif isinstance(area.strategy, FinitePowerPlant):
             area.power_plant = \
                 self.add_generation_device(area, area.strategy.max_available_power_kW)

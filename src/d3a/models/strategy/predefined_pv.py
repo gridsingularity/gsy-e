@@ -22,7 +22,7 @@ from d3a.d3a_core.util import d3a_path
 from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.utils import convert_W_to_kWh
+from d3a_interface.utils import convert_kW_to_kWh
 from d3a_interface.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
 from pendulum import duration
 
@@ -38,7 +38,7 @@ class PVPredefinedStrategy(PVStrategy):
     """
     parameters = ("panel_count", "initial_selling_rate", "final_selling_rate", "cloud_coverage",
                   "fit_to_limit", "update_interval", "energy_rate_decrease_per_update",
-                  "use_market_maker_rate")
+                  "use_market_maker_rate", "capacity_kW")
 
     def __init__(
             self, panel_count: int = 1,
@@ -49,7 +49,7 @@ class PVPredefinedStrategy(PVStrategy):
             update_interval=None,
             energy_rate_decrease_per_update=None,
             use_market_maker_rate: bool = False,
-            max_panel_power_W: float = None,
+            capacity_kW: float = None,
             ):
         """
         Constructor of PVPredefinedStrategy
@@ -65,7 +65,7 @@ class PVPredefinedStrategy(PVStrategy):
         :param fit_to_limit: Linear curve following initial_selling_rate & final_selling_rate
         :param update_interval: Interval after which PV will update its offer
         :param energy_rate_decrease_per_update: Slope of PV Offer change per update
-        :param max_panel_power_W: power rating of the predefined profiles
+        :param capacity_kW: power rating of the predefined profiles
         """
 
         if update_interval is None:
@@ -78,7 +78,7 @@ class PVPredefinedStrategy(PVStrategy):
                          fit_to_limit=fit_to_limit,
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
-                         max_panel_power_W=max_panel_power_W,
+                         capacity_kW=capacity_kW,
                          use_market_maker_rate=use_market_maker_rate
                          )
         self.cloud_coverage = cloud_coverage
@@ -131,8 +131,8 @@ class PVPredefinedStrategy(PVStrategy):
             InputProfileTypes.IDENTITY, str(profile_path))
 
         self.energy_profile = {
-            time_slot: convert_W_to_kWh(weight * self.max_panel_power_W,
-                                        self.area.config.slot_length)
+            time_slot: convert_kW_to_kWh(weight * self.capacity_kW,
+                                         self.area.config.slot_length)
             for time_slot, weight in power_weight_profile.items()}
 
     def area_reconfigure_event(self, **kwargs):
@@ -146,9 +146,9 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
     """
         Strategy responsible for reading a profile in the form of a dict of values.
     """
-    parameters = ('power_profile', 'panel_count', 'initial_selling_rate', 'final_selling_rate',
-                  'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
-                  'use_market_maker_rate')
+    parameters = ("power_profile", "panel_count", "initial_selling_rate", "final_selling_rate",
+                  "fit_to_limit", "update_interval", "energy_rate_decrease_per_update",
+                  "use_market_maker_rate")
 
     def __init__(
             self, power_profile, panel_count: int = 1,

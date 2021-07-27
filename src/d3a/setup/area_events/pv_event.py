@@ -31,7 +31,7 @@ def get_setup(config):
                     Area('H2 PV', strategy=PVStrategy(panel_count=1,
                                                       initial_selling_rate=80),
                          event_list=[StrategyEvents(12, {'panel_count': 5,
-                                                         'max_panel_power_W': 320})])
+                                                         'capacity_kW': 0.32})])
                 ]
             ),
             Area('Grid Load', strategy=LoadHoursStrategy(avg_power_W=10000,

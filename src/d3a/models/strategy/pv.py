@@ -22,7 +22,7 @@ from logging import getLogger
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import (
-    convert_W_to_kWh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
+    convert_kW_to_kWh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
 from d3a_interface.validators import PVValidator
 from pendulum import duration, Time  # noqa
 
@@ -38,9 +38,9 @@ log = getLogger(__name__)
 
 class PVStrategy(BaseStrategy):
 
-    parameters = ('panel_count', 'initial_selling_rate', 'final_selling_rate',
-                  'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
-                  'max_panel_power_W', 'use_market_maker_rate')
+    parameters = ("panel_count", "initial_selling_rate", "final_selling_rate",
+                  "fit_to_limit", "update_interval", "energy_rate_decrease_per_update",
+                  "capacity_kW", "use_market_maker_rate")
 
     def __init__(self, panel_count: int = 1,
                  initial_selling_rate:
@@ -50,7 +50,7 @@ class PVStrategy(BaseStrategy):
                  fit_to_limit: bool = True,
                  update_interval=None,
                  energy_rate_decrease_per_update=None,
-                 max_panel_power_W: float = None,
+                 capacity_kW: float = None,
                  use_market_maker_rate: bool = False):
         """
         :param panel_count: Number of solar panels for this PV plant
@@ -59,13 +59,13 @@ class PVStrategy(BaseStrategy):
         :param fit_to_limit: Linear curve following initial_selling_rate & initial_selling_rate
         :param update_interval: Interval after which PV will update its offer
         :param energy_rate_decrease_per_update: Slope of PV Offer change per update
-        :param max_panel_power_W:
+        :param capacity_kW: power rating of the predefined profiles
         """
         super().__init__()
-        PVValidator.validate_energy(panel_count=panel_count, max_panel_power_W=max_panel_power_W)
+        PVValidator.validate_energy(panel_count=panel_count, capacity_kW=capacity_kW)
 
         self.panel_count = panel_count
-        self.max_panel_power_W = max_panel_power_W
+        self.capacity_kW = capacity_kW
         self.state = PVState()
 
         self._init_price_update(update_interval, initial_selling_rate, final_selling_rate,
@@ -102,8 +102,8 @@ class PVStrategy(BaseStrategy):
 
         if key_in_dict_and_not_none(kwargs, 'panel_count'):
             self.panel_count = kwargs['panel_count']
-        if key_in_dict_and_not_none(kwargs, 'max_panel_power_W'):
-            self.max_panel_power_W = kwargs['max_panel_power_W']
+        if key_in_dict_and_not_none(kwargs, 'capacity_kW'):
+            self.capacity_kW = kwargs['capacity_kW']
 
         self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
 
@@ -186,8 +186,8 @@ class PVStrategy(BaseStrategy):
                              self.offer_update.fit_to_limit)
 
     def event_activate_energy(self):
-        if self.max_panel_power_W is None:
-            self.max_panel_power_W = self.area.config.max_panel_power_W
+        if self.capacity_kW is None:
+            self.capacity_kW = self.area.config.capacity_kW
         self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
 
     def event_tick(self):
@@ -221,14 +221,15 @@ class PVStrategy(BaseStrategy):
             gauss_forecast = 0
 
         else:
-            gauss_forecast = self.max_panel_power_W * math.exp(
+            gauss_forecast = self.capacity_kW * math.exp(
                 # time/5 is needed because we only have one data set per 5 minutes
 
                 (- (((round(time_in_minutes / 5, 0)) - 147.2)
                     / 38.60) ** 2
                  )
             )
-        return round(convert_W_to_kWh(gauss_forecast, self.area.config.slot_length), 4)
+
+        return round(convert_kW_to_kWh(gauss_forecast, self.area.config.slot_length), 4)
 
     def event_market_cycle(self):
         super().event_market_cycle()

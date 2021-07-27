@@ -390,7 +390,7 @@ def test_pv_constructor_rejects_incorrect_parameters():
     with pytest.raises(D3ADeviceException):
         PVStrategy(panel_count=-1)
     with pytest.raises(D3ADeviceException):
-        PVStrategy(max_panel_power_W=-100)
+        PVStrategy(capacity_kW=-100)
     with pytest.raises(D3ADeviceException):
         pv = PVStrategy(initial_selling_rate=5, final_selling_rate=15)
         pv.event_activate()
@@ -490,7 +490,7 @@ def test_initial_selling_rate(pv_strategy_test10, area_test10):
 def test_use_mmr_parameter_is_respected1(strategy_type, use_mmr, expected_rate):
     GlobalConfig.market_maker_rate = 12
     pv = strategy_type(initial_selling_rate=19, use_market_maker_rate=use_mmr,
-                       max_panel_power_W=200)
+                       capacity_kW=0.2)
     pv.area = FakeArea()
     pv.owner = pv.area
     pv.event_activate()
