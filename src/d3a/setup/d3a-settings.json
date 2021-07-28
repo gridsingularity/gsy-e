@@ -5,7 +5,7 @@
     "tick_length": "15s",
     "market_count": 1,
     "cloud_coverage": 0,
-    "start_date": "2021-07-27"
+    "start_date": "2021-07-28"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -152,7 +152,11 @@
         0,
         10000
       ],
-      "MAX_CAPACITY_KW_LIMIT": [
+      "CAPACITY_KW_LIMIT": [
+        0,
+        9223372036854775807
+      ],
+      "MAX_PANEL_OUTPUT_W_LIMIT": [
         0,
         9223372036854775807
       ],
@@ -165,7 +169,8 @@
         0,
         4
       ],
-      "MAX_CAPACITY_KW": 5,
+      "DEFAULT_CAPACITY_KW": 5,
+      "MAX_PANEL_OUTPUT_W": 160,
       "PV_PENALTY_RATE": 0
     },
     "HomeMeterSettings": {

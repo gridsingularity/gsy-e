@@ -56,7 +56,7 @@ DEFAULT_CONFIG = SimulationConfig(
     tick_length=duration(seconds=1),
     cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
     start_date=today(tz=d3a.constants.TIME_ZONE),
-    capacity_kW=ConstSettings.PVSettings.MAX_CAPACITY_KW
+    capacity_kW=ConstSettings.PVSettings.DEFAULT_CAPACITY_KW
 )
 
 

@@ -53,7 +53,7 @@ def create_config(settings={}):
         "cloud_coverage": settings.get("cloud_coverage", GlobalConfig.cloud_coverage),
         "pv_user_profile": settings.get("pv_user_profile", None),
         "capacity_kW": settings.get("capacity_kW",
-                                    ConstSettings.PVSettings.MAX_CAPACITY_KW),
+                                    ConstSettings.PVSettings.DEFAULT_CAPACITY_KW),
         "grid_fee_type": settings.get("grid_fee_type", GlobalConfig.grid_fee_type),
         "external_connection_enabled": settings.get("external_connection_enabled", False),
         "aggregator_device_mapping": None
