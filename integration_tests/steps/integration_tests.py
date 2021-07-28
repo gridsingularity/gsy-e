@@ -239,7 +239,7 @@ def dispatch_bootom_top(context):
 
 @given('the past markets are kept in memory')
 def past_markets_in_memory(context):
-    constants.D3A_TEST_RUN = True
+    constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
 
 
 @given('the minimum offer age is {min_offer_age}')
@@ -378,8 +378,7 @@ def save_reported_bills(context, bill_type):
 def past_markets_not_in_memory(context):
     # d3a has to be set to publish the full results:
     ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS = True
-
-    constants.D3A_TEST_RUN = False
+    constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 
 
 @then('we test the export functionality of {scenario}')

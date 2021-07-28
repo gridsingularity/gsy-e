@@ -164,7 +164,7 @@ class Simulation:
             log.info("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
-        bid_offer_matcher.init()
+        bid_offer_matcher.activate()
         external_global_statistics(self.area, self.simulation_config.ticks_per_slot)
 
         self.endpoint_buffer = SimulationEndpointBuffer(
@@ -256,7 +256,8 @@ class Simulation:
         self.update_area_stats(self.area, self.endpoint_buffer)
 
         if self.export_results_on_finish:
-            if self.area.current_market is not None and d3a.constants.D3A_TEST_RUN:
+            if (self.area.current_market is not None
+                    and d3a.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE):
                 # for integration tests:
                 self.export.raw_data_to_json(
                     self.area.current_market.time_slot_str,
@@ -341,7 +342,7 @@ class Simulation:
                 external_global_statistics.update(market_cycle=True)
                 self.area.publish_market_cycle_to_external_clients()
                 if is_external_matching_enabled():
-                    bid_offer_matcher.match_algorithm.publish_market_cycle_myco()
+                    bid_offer_matcher.match_algorithm.publish_event_market_cycle_myco()
 
             self._update_and_send_results()
             self.live_events.handle_all_events(self.area)
