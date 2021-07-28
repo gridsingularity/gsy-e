@@ -16,29 +16,33 @@ def get_setup(config):
             Area(
                 "House 1",
                 [
-                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=6,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 18)),
-                                                                       final_buying_rate=35)
-                         ),
+                    Area("H1 General Load1", strategy=LoadHoursStrategy(avg_power_W=200,
+                                                                        hrs_per_day=6,
+                                                                        hrs_of_day=list(
+                                                                            range(12, 18)),
+                                                                        final_buying_rate=35)),
+                    Area("H1 General Load2", strategy=LoadHoursStrategy(
+                        avg_power_W=150,
+                        hrs_per_day=24,
+                        hrs_of_day=list(range(0, 24)),
+                        final_buying_rate=40)),
                     Area("H1 Storage1", strategy=StorageStrategy(initial_soc=100,
-                                                                 battery_capacity_kWh=20)
-                         ),
+                                                                 battery_capacity_kWh=20)),
                     Area("H1 Storage2", strategy=StorageStrategy(initial_soc=100,
-                                                                 battery_capacity_kWh=20)
-                         ),
+                                                                 battery_capacity_kWh=20)),
+                    Area("H1 PV1", strategy=PVStrategy(panel_count=4)),
+                    Area("H1 PV2", strategy=PVStrategy(panel_count=4)),
                 ],
             ),
             Area(
                 "House 2",
                 [
-                    Area("load", strategy=LoadHoursStrategy(
+                    Area("H2 General Load1", strategy=LoadHoursStrategy(
                         avg_power_W=200, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
-                        final_buying_rate=35)
-                         ),
-                    Area("pv", strategy=PVStrategy(panel_count=4)
-                         ),
+                        final_buying_rate=35)),
+                    Area("H2 Storage1", strategy=StorageStrategy(initial_soc=100,
+                                                                 battery_capacity_kWh=20)),
+                    Area("H2 PV", strategy=PVStrategy(panel_count=4)),
 
                 ],
             ),
