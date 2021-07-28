@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from d3a_interface.enums import SpotMarketTypeEnum
 from pendulum import DateTime # noqa
 from typing import Dict  # noqa
 
@@ -94,9 +95,9 @@ class AreaMarkets:
     @staticmethod
     def select_market_class(is_spot_market):
         if is_spot_market:
-            if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                 return OneSidedMarket
-            elif ConstSettings.IAASettings.MARKET_TYPE == 2:
+            elif ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
                 return TwoSidedMarket
         else:
             return BalancingMarket

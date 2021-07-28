@@ -21,6 +21,8 @@ Feature: Two sided pay_as_clear market tests
      When we run the simulation with setup file two_sided_pay_as_clear.default_2a and parameters [24, 60, 60, 1]
      Then all traded energy have finite value
 
+  # TODO: re-enable in context of bug/D3ASIM-3534
+  @disabled
   Scenario: Test offers, bids and market-clearing-rate are exported
      Given we have a scenario named two_sided_pay_as_clear/default_2a
      And d3a is installed

@@ -60,6 +60,8 @@ Feature: Jira Issues Tests
      Then the Load of House 1 should only buy energy from IAA between 5:00 and 8:00
      And the Commercial Producer should never sell energy
 
+  # TODO: re-enable in context of bug/D3ASIM-3534
+  @disabled
   Scenario: D3ASIM-891, bids are reported correctly in csv export files
      Given we have a scenario named two_sided_pay_as_clear.default_2a
      And d3a is installed

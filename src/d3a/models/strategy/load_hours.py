@@ -153,7 +153,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         super().event_market_cycle()
         self.add_entry_in_hrs_per_day()
         self.bid_update.update_and_populate_price_settings(self.area)
-        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             self.bid_update.reset(self)
         self._calculate_active_markets()
         self._update_energy_requirement_future_markets()
@@ -341,7 +341,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                                          final_rate=final_rate)
 
     def _post_first_bid(self):
-        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             return
         for market in self.active_markets:
             if (
