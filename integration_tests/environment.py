@@ -72,7 +72,7 @@ def before_scenario(context, scenario):
     context.resource_manager = contextlib.ExitStack()
     ConstSettings.IAASettings.MIN_OFFER_AGE = 0
     ConstSettings.IAASettings.MIN_BID_AGE = 0
-    constants.D3A_TEST_RUN = True
+    constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
     context.no_export = True
     context.raise_exception_when_running_sim = True
     if os.environ.get("DISPATCH_EVENTS_BOTTOM_TO_TOP") == "False":
@@ -91,6 +91,6 @@ def after_scenario(context, scenario):
 def before_all(context):
     context.default_const_settings = constsettings_to_dict()
     context.config.setup_logging()
-    constants.D3A_TEST_RUN = True
+    constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
     if os.environ.get("DISPATCH_EVENTS_BOTTOM_TO_TOP") == "False":
         d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = False

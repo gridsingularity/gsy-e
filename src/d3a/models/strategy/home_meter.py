@@ -466,7 +466,8 @@ class HomeMeterStrategy(BidEnabledStrategy):
         return None
 
     def _delete_past_state(self):
-        if constants.D3A_TEST_RUN is True or self.area.current_market is None:
+        if (constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True or
+                self.area.current_market is None):
             return
 
         # Delete past energy requirements and availability

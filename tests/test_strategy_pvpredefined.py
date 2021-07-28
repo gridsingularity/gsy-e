@@ -41,6 +41,13 @@ def setup_function():
     change_global_config(**DEFAULT_CONFIG.__dict__)
 
 
+@pytest.fixture(scope="function", autouse=True)
+def auto_fixture():
+    yield
+    GlobalConfig.sim_duration = duration(days=GlobalConfig.DURATION_D)
+    GlobalConfig.slot_length = duration(minutes=GlobalConfig.SLOT_LENGTH_M)
+
+
 ENERGY_FORECAST = {}  # type: Dict[datetime, float]
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 

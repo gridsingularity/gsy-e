@@ -23,8 +23,8 @@ from uuid import uuid4
 import pendulum
 import pytest
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.utils import find_object_of_same_weekday_and_time
 
-from d3a import constants
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import d3a_path
@@ -41,6 +41,9 @@ def auto_fixture():
     GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
     yield
     GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+    ConstSettings.IAASettings.MARKET_TYPE = 1
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
+    DeviceRegistry.REGISTRY = {}
 
 
 class FakeArea:
@@ -201,6 +204,7 @@ def test_event_market_cycle_does_not_create_balancing_offer_if_not_in_registry(
 def test_event_market_cycle_creates_balancing_offer_on_last_market_if_in_registry(
         bus_test1, area_test1):
     DeviceRegistry.REGISTRY = {"FakeArea": (40, 50)}
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     bus_test1.event_activate()
     bus_test1.event_market_cycle()
     assert len(area_test1.test_balancing_market.created_balancing_offers) == 1
@@ -209,8 +213,6 @@ def test_event_market_cycle_creates_balancing_offer_on_last_market_if_in_registr
         sys.maxsize
     assert area_test1.test_balancing_market_2.created_balancing_offers[0].price == \
         sys.maxsize * 50
-
-    DeviceRegistry.REGISTRY = {}
 
 
 """TEST2"""
@@ -347,7 +349,6 @@ def testing_event_market_cycle_posting_bids(bus_test4, area_test1):
     assert len(bus_test4._bids) == 1
     assert bus_test4._bids[area_test1.test_market.id][-1].energy == sys.maxsize
     assert isclose(bus_test4._bids[area_test1.test_market.id][-1].price, 25 * sys.maxsize)
-    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 def test_global_market_maker_rate_single_value(bus_test4):
@@ -363,7 +364,7 @@ def test_global_market_maker_rate_single_value(bus_test4):
 @pytest.fixture()
 def bus_test5(area_test1):
     c = InfiniteBusStrategy(
-        energy_rate_profile=os.path.join(d3a_path, "resources/SAM_SF_Summer.csv"))
+        energy_rate_profile=os.path.join(d3a_path, "resources", "SAM_SF_Summer.csv"))
     c.area = area_test1
     c.owner = area_test1
     return c
@@ -385,7 +386,7 @@ def test_global_market_maker_rate_profile_and_infinite_bus_selling_rate_profile(
 @pytest.fixture()
 def bus_test6(area_test1):
     c = InfiniteBusStrategy(
-        buying_rate_profile=os.path.join(d3a_path, "resources/LOAD_DATA_1.csv"))
+        buying_rate_profile=os.path.join(d3a_path, "resources", "LOAD_DATA_1.csv"))
     c.area = area_test1
     c.owner = area_test1
     return c

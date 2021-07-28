@@ -162,52 +162,6 @@ class NonBlockingConsole:
         return False
 
 
-class ContractJoiner(object):
-    def __init__(self):
-        self.have_pragma = None
-        self.seen = None
-
-    def join(self, contract_file_path):
-        self.have_pragma = False
-        self.seen = set()
-
-        old_cwd = os.getcwd()
-        try:
-            os.chdir(os.path.dirname(contract_file_path))
-            with open(contract_file_path) as contract_file:
-                return "\n".join(self._join(contract_file))
-        finally:
-            os.chdir(old_cwd)
-
-    def _join(self, contract_file):
-
-        out = []
-        if contract_file.name in self.seen:
-            return []
-
-        self.seen.add(contract_file.name)
-        log.trace('Reading contract file "%s"', contract_file.name)
-
-        for line in contract_file:
-            line = line.strip('\r\n')
-            stripped_line = line.strip()
-            if stripped_line.startswith('pragma'):
-                if not self.have_pragma:
-                    self.have_pragma = True
-                    out.append(line)
-            elif stripped_line.startswith('import'):
-                match = IMPORT_RE(stripped_line)
-                if match:
-                    next_file = match.get('contract')
-                    if next_file and os.path.exists(next_file):
-                        with open(next_file) as next_contract:
-                            out.extend(self._join(next_contract))
-
-            else:
-                out.append(line)
-        return out
-
-
 def make_iaa_name(owner):
     return f"IAA {owner.name}"
 
@@ -235,25 +189,6 @@ def format_interval(interval, show_day=True):
     else:
         template = "{i.hours:02d}:{i.minutes:02d}:{i.remaining_seconds:02d}"
     return template.format(i=interval)
-
-
-def get_contract_path(contract_name):
-    if contract_name.endswith(".sol"):
-        contract_name = contract_name[:-4]
-    contract_path = os.path.join(
-        d3a.get_project_root(),
-        'blockchain',
-        'contracts',
-        "{}.sol".format(contract_name)
-    )
-    return os.path.realpath(contract_path)
-
-
-def get_cached_joined_contract_source(contract_name):
-    contract_path = get_contract_path(contract_name)
-    if contract_path not in _CONTRACT_CACHE:
-        _CONTRACT_CACHE[contract_path] = ContractJoiner().join(contract_path)
-    return _CONTRACT_CACHE[contract_path]
 
 
 d3a_modules_path = d3a_setup.__path__ \

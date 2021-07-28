@@ -2,6 +2,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock
 
+from d3a_interface.constants_limits import GlobalConfig
+from pendulum import duration
+
 from d3a.d3a_core.live_events import CreateAreaEvent, UpdateAreaEvent
 from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.util import d3a_path
@@ -13,13 +16,11 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
-from pendulum import duration
 
 
 class TestLiveEvents(unittest.TestCase):
 
     def setUp(self):
-
         self.config = SimulationConfig(
             sim_duration=duration(hours=12),
             slot_length=duration(minutes=15),
@@ -64,6 +65,9 @@ class TestLiveEvents(unittest.TestCase):
             "House 2", children=[self.area3, self.area_home_meter], config=self.config)
         self.area_grid = Area("Grid", children=[self.area_house1, self.area_house2],
                               config=self.config)
+
+    def tearDown(self) -> None:
+        GlobalConfig.sim_duration = duration(days=GlobalConfig.DURATION_D)
 
     def test_create_area_event_is_creating_a_new_area(self):
         event_dict = {
