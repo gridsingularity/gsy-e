@@ -16,13 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import datetime
-from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Union, Tuple  # noqa
-from copy import deepcopy
 import json
-from pendulum import DateTime, parse
+from copy import deepcopy
+from dataclasses import asdict, dataclass, field
+from typing import Dict, List, Tuple, Union  # noqa
+
 from d3a.events import MarketEvent
 from d3a_interface.utils import datetime_to_string_incl_seconds, key_in_dict_and_not_none
+from pendulum import DateTime, parse
 
 
 @dataclass
@@ -34,30 +35,77 @@ class Clearing:
 def my_converter(o):
     if isinstance(o, DateTime):
         return o.isoformat()
+    return None
 
 
-@dataclass
-class Offer:
-    id: str
-    time: datetime
-    price: float
-    energy: float
-    seller: str
-    original_offer_price: float = None
-    seller_origin: str = None
-    seller_origin_id: str = None
-    seller_id: str = None
-    energy_rate: float = field(init=False)
-    attributes: Dict = None
-    requirements: List[Dict] = None
-
-    def __post_init__(self):
-        self.id = str(self.id)
+class BaseBidOffer:
+    """Base class defining shared functionality of Bid and Offer market structures."""
+    def __init__(self, id: str, time: datetime, price: float, energy: float,
+                 attributes: Dict = None, requirements: List[Dict] = None):
+        self.id = str(id)
+        self.time = time
+        self.price = price
+        self.energy = energy
         self.energy_rate = self.price / self.energy
+        self.attributes = attributes
+        self.requirements = requirements
 
-    def update_price(self, price) -> None:
+    def update_price(self, price: float) -> None:
         self.price = price
         self.energy_rate = self.price / self.energy
+
+    def update_energy(self, energy: float) -> None:
+        self.energy = energy
+        self.energy_rate = self.price / self.energy
+
+    def to_json_string(self, **kwargs) -> str:
+        """Convert the Offer or Bid object into its JSON representation.
+
+        Args:
+            **kwargs: additional key-value pairs to be added to the JSON representation.
+        """
+        obj_dict = deepcopy(self.__dict__)
+        if kwargs:
+            obj_dict = {**obj_dict, **kwargs}
+
+        obj_dict["type"] = self.__class__.__name__
+
+        return json.dumps(obj_dict, default=my_converter)
+
+    def _to_csv(self) -> Tuple:
+        rate = round(self.energy_rate, 4)
+        return (rate, self.energy, self.price,
+                self.seller if isinstance(self, Offer) else self.buyer)
+
+    def serializable_dict(self) -> Dict:
+        return {
+            "type": self.__class__.__name__,
+            "id": self.id,
+            "energy": self.energy,
+            "energy_rate": self.energy_rate,
+            "time": datetime_to_string_incl_seconds(self.time),
+            "attributes": self.attributes,
+            "requirements": self.requirements
+        }
+
+
+class Offer(BaseBidOffer):
+    def __init__(self, id: str, time: datetime, price: float,
+                 energy: float, seller: str, original_offer_price: float = None,
+                 seller_origin: str = None, seller_origin_id: str = None,
+                 seller_id: str = None,
+                 attributes: Dict = None,
+                 requirements: List[Dict] = None):
+        super().__init__(id=id, time=time, price=price, energy=energy,
+                         attributes=attributes, requirements=requirements)
+        self.seller = seller
+        self.original_offer_price = original_offer_price
+        self.seller_origin = seller_origin
+        self.seller_origin_id = seller_origin_id
+        self.seller_id = seller_id
+
+    def __hash__(self) -> int:
+        return hash(self.id)
 
     def __repr__(self) -> str:
         return ("<Offer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller} {rate}'>"
@@ -68,39 +116,14 @@ class Offer:
                 "[{s.seller}]: {s.energy} kWh @ {s.price} @ {rate}"
                 .format(s=self, rate=self.energy_rate))
 
-    def to_json_string(self, **kwargs) -> str:
-        """Convert the Offer object into its JSON representation.
-
-        Args:
-            **kwargs: additional key-value pairs to be added to the JSON representation.
-        """
-        offer_dict = deepcopy(asdict(self))
-        if kwargs:
-            offer_dict = {**offer_dict, **kwargs}
-
-        offer_dict["type"] = "Offer"
-        offer_dict.pop('energy_rate', None)
-
-        return json.dumps(offer_dict, default=my_converter)
-
     def serializable_dict(self) -> Dict:
-        return {
-            "type": "Offer",
-            "id": self.id,
-            "energy": self.energy,
-            "energy_rate": self.energy_rate,
-            "original_offer_price": self.original_offer_price,
-            "seller": self.seller,
-            "seller_origin": self.seller_origin,
-            "seller_origin_id": self.seller_origin_id,
-            "seller_id": self.seller_id,
-            "time": datetime_to_string_incl_seconds(self.time),
-            "attributes": self.attributes,
-            "requirements": self.requirements
-        }
-
-    def __hash__(self) -> int:
-        return hash(self.id)
+        return {**super().serializable_dict(),
+                "original_offer_price": self.original_offer_price,
+                "seller": self.seller,
+                "seller_origin": self.seller_origin,
+                "seller_origin_id": self.seller_origin_id,
+                "seller_id": self.seller_id,
+                }
 
     def __eq__(self, other) -> bool:
         return (self.id == other.id and
@@ -116,10 +139,6 @@ class Offer:
     def _csv_fields(cls):
         return "rate [ct./kWh]", "energy [kWh]", "price [ct.]", "seller"
 
-    def _to_csv(self) -> Tuple:
-        rate = round(self.energy_rate, 4)
-        return rate, self.energy, self.price, self.seller
-
 
 def copy_offer(offer) -> Offer:
     return Offer(offer.id, offer.time, offer.price, offer.energy, offer.seller,
@@ -127,29 +146,26 @@ def copy_offer(offer) -> Offer:
                  offer.seller_id, attributes=offer.attributes, requirements=offer.requirements)
 
 
-@dataclass
-class Bid:
-    id: str
-    time: datetime
-    price: float
-    energy: float
-    buyer: str
-    original_bid_price: float = None
-    buyer_origin: str = None
-    energy_rate: float = None
-    buyer_origin_id: str = None
-    buyer_id: str = None
-    attributes: Dict = None
-    requirements: List[Dict] = None
+class Bid(BaseBidOffer):
+    def __init__(self, id: str, time: datetime, price: float,
+                 energy: float, buyer: str,
+                 original_bid_price: float = None,
+                 buyer_origin: str = None,
+                 buyer_origin_id: str = None,
+                 buyer_id: str = None,
+                 attributes: Dict = None,
+                 requirements: List[Dict] = None
+                 ):
+        super().__init__(id=id, time=time, price=price, energy=energy,
+                         attributes=attributes, requirements=requirements)
+        self.buyer = buyer
+        self.original_bid_price = original_bid_price
+        self.buyer_origin = buyer_origin
+        self.buyer_origin_id = buyer_origin_id
+        self.buyer_id = buyer_id
 
-    def __post_init__(self):
-        self.id = str(self.id)
-        if self.energy_rate is None:
-            self.energy_rate = self.price / self.energy
-
-    def update_price(self, price) -> None:
-        self.price = price
-        self.energy_rate = self.price / self.energy
+    def __hash__(self) -> int:
+        return hash(self.id)
 
     def __repr__(self) -> str:
         return (
@@ -163,46 +179,18 @@ class Bid:
             "{s.energy} kWh @ {s.price} {rate}".format(s=self, rate=self.energy_rate)
         )
 
-    @classmethod
-    def _csv_fields(cls) -> Tuple:
-        return "rate [ct./kWh]", "energy [kWh]", "price [ct.]", "buyer"
-
-    def _to_csv(self) -> Tuple:
-        rate = round(self.energy_rate, 4)
-        return rate, self.energy, self.price, self.buyer
-
-    def to_json_string(self, **kwargs) -> str:
-        """Convert the Bid object to its JSON representation. Additional elements can be added.
-
-        Args:
-            **kwargs: additional key-value pairs to be added to the JSON representation.
-        """
-        bid_dict = deepcopy(asdict(self))
-        if kwargs:
-            bid_dict = {**bid_dict, **kwargs}
-
-        bid_dict["type"] = "Bid"
-
-        return json.dumps(bid_dict, default=my_converter)
-
     def serializable_dict(self) -> Dict:
-        return {
-            "type": "Bid",
-            "id": self.id,
-            "energy": self.energy,
-            "energy_rate": self.energy_rate,
-            "original_bid_price": self.original_bid_price,
-            "buyer_origin": self.buyer_origin,
-            "buyer_origin_id": self.buyer_origin_id,
-            "buyer_id": self.buyer_id,
-            "buyer": self.buyer,
-            "time": datetime_to_string_incl_seconds(self.time),
-            "attributes": self.attributes,
-            "requirements": self.requirements
-        }
+        return {**super().serializable_dict(),
+                "original_bid_price": self.original_bid_price,
+                "buyer_origin": self.buyer_origin,
+                "buyer_origin_id": self.buyer_origin_id,
+                "buyer_id": self.buyer_id,
+                "buyer": self.buyer,
+                }
 
-    def __hash__(self) -> int:
-        return hash(self.id)
+    @classmethod
+    def _csv_fields(cls):
+        return "rate [ct./kWh]", "energy [kWh]", "price [ct.]", "buyer"
 
     def __eq__(self, other) -> bool:
         return (self.id == other.id and
@@ -218,13 +206,13 @@ class Bid:
 def offer_or_bid_from_json_string(offer_or_bid, current_time=None) -> Union[Offer, Bid]:
     offer_bid_dict = json.loads(offer_or_bid)
     object_type = offer_bid_dict.pop("type")
-    if "price" not in offer_bid_dict:
-        offer_bid_dict["price"] = offer_bid_dict["energy_rate"] * offer_bid_dict["energy"]
+
+    offer_bid_dict.pop("energy_rate", None)
+
     if object_type == "Offer":
-        offer_bid_dict.pop('energy_rate', None)
-        offer_bid_dict['time'] = current_time
+        offer_bid_dict["time"] = current_time
         return Offer(**offer_bid_dict)
-    elif object_type == "Bid":
+    if object_type == "Bid":
         return Bid(**offer_bid_dict)
 
 

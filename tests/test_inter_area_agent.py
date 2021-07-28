@@ -15,8 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from dataclasses import replace
-
 import pytest
 from copy import deepcopy
 import pendulum
@@ -436,15 +434,16 @@ def test_iaa_event_bid_split_and_trade_correctly_populate_forwarded_bid_entries(
         residual_energy = 0.2
         residual_id = "resid"
         original_bid = low_to_high_engine.markets.target._bids[0]
-        accepted_bid = replace(original_bid,
-                               price=(original_bid.energy - residual_energy) * (
-                                           original_bid.energy_rate),
-                               energy=original_bid.energy - residual_energy)
 
-        residual_bid = replace(
-            original_bid, id=residual_id,
-            price=residual_energy * original_bid.energy_rate,
-            energy=residual_energy)
+        accepted_bid = deepcopy(original_bid)
+        accepted_bid.update_price((original_bid.energy - residual_energy) * (
+                                           original_bid.energy_rate))
+        accepted_bid.update_energy(original_bid.energy - residual_energy)
+
+        residual_bid = deepcopy(original_bid)
+        residual_bid.id = residual_id
+        residual_bid.update_price(residual_energy * original_bid.energy_rate)
+        residual_bid.update_energy(residual_energy)
 
         low_to_high_engine.event_bid_split(market_id=low_to_high_engine.markets.target,
                                            original_bid=original_bid,
