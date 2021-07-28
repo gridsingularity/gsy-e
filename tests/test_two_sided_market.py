@@ -403,7 +403,7 @@ class TestTwoSidedMarketMatchRecommendations:
         recommendations = [
             BidOfferMatch(
                 bids=[bid.serializable_dict()], offers=[offer.serializable_dict()],
-                trade_rate=0.5, selected_energy=1, market_id=market.id).serializable_dict()
+                trade_rate=2, selected_energy=1, market_id=market.id).serializable_dict()
         ]
         # The sent offer isn't in market offers, should be skipped
         market.match_recommendations(recommendations)
@@ -432,7 +432,7 @@ class TestTwoSidedMarketMatchRecommendations:
         recommendations = [
             BidOfferMatch(
                 bids=[bid.serializable_dict()], offers=[offer.serializable_dict()],
-                trade_rate=0.5, selected_energy=1, market_id=market.id).serializable_dict()
+                trade_rate=2, selected_energy=1, market_id=market.id).serializable_dict()
         ]
         market.match_recommendations(recommendations)
         assert len(market.trades) == 1
@@ -450,7 +450,7 @@ class TestTwoSidedMarketMatchRecommendations:
             BidOfferMatch(
                 bids=[bid.serializable_dict()],
                 offers=[offer.serializable_dict() for offer in market.offers.values()],
-                trade_rate=0.5, selected_energy=1, market_id=market.id).serializable_dict()
+                trade_rate=2, selected_energy=1, market_id=market.id).serializable_dict()
         ]
         market.match_recommendations(recommendations)
         assert len(market.trades) == 2
@@ -468,7 +468,7 @@ class TestTwoSidedMarketMatchRecommendations:
             BidOfferMatch(
                 bids=[bid.serializable_dict() for bid in market.bids.values()],
                 offers=[offer.serializable_dict() for offer in market.offers.values()],
-                trade_rate=0.5, selected_energy=1, market_id=market.id).serializable_dict()
+                trade_rate=1, selected_energy=1, market_id=market.id).serializable_dict()
         ]
         market.match_recommendations(recommendations)
         assert len(market.trades) == 2

@@ -283,9 +283,9 @@ class TwoSidedMarket(OneSidedMarket):
                 original_bid_rate = market_bid.original_bid_price / market_bid.energy
                 trade_bid_info = TradeBidOfferInfo(
                     original_bid_rate=original_bid_rate,
-                    propagated_bid_rate=market_bid.price / market_bid.energy,
+                    propagated_bid_rate=market_bid.energy_rate,
                     original_offer_rate=market_offer.original_offer_price / market_offer.energy,
-                    propagated_offer_rate=market_offer.price / market_offer.energy,
+                    propagated_offer_rate=market_offer.energy_rate,
                     trade_rate=original_bid_rate)
 
                 bid_trade, offer_trade = self.accept_bid_offer_pair(
@@ -344,10 +344,8 @@ class TwoSidedMarket(OneSidedMarket):
                 and all(
                     (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= clearing_rate for bid in bids)
                 and all(
-                    combination[0].energy_rate +
-                    FLOATING_POINT_TOLERANCE >= combination[1].energy_rate
-                    for combination in bids_offers_combinations)
-        ):
+                    (offer.energy_rate <= clearing_rate + FLOATING_POINT_TOLERANCE
+                        for offer in offers))):
             raise InvalidBidOfferPairException
         for combination in bids_offers_combinations:
             cls._validate_requirements_satisfied(
