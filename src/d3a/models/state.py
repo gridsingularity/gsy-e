@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections import namedtuple
 from enum import Enum
 from math import isclose
@@ -46,7 +46,7 @@ StorageSettings = ConstSettings.StorageSettings
 # - If a device has no state, maybe it doesn't need its own appliance class either
 
 
-class StateInterface(metaclass=ABCMeta):
+class StateInterface(ABC):
     """Interface containing methods that need to be defined by each State class."""
 
     @abstractmethod
@@ -56,17 +56,33 @@ class StateInterface(metaclass=ABCMeta):
 
     @abstractmethod
     def restore_state(self, state_dict: Dict):
-        pass
+        """Update the state of the device using the provided dictionary."""
 
     @abstractmethod
     def delete_past_state_values(self, time_slot):
-        pass
+        """Delete the state of the device before the given time slot."""
 
     def __str__(self):
         return self.__class__.__name__
 
 
-class ConsumptionState(StateInterface):
+class ProsumptionInterface(StateInterface, ABC):
+    """Interface with common methods/variables shared by consumption and production devices."""
+
+    def __init__(self):
+        # Actual energy consumed/produced by the device at specific market slots
+        self._real_energy: Dict[DateTime, float] = {}
+
+    def set_real_energy_kWh(self, energy_kWh: float, time_slot: DateTime) -> None:
+        """Set the actual energy consumed/produced by the device in the given market slot."""
+        self._real_energy[time_slot] = energy_kWh
+
+    def get_real_energy_kWh(self, time_slot: DateTime) -> float:
+        """Get the actual energy consumed/produced by the device in the given market slot."""
+        return self._real_energy.get(time_slot, 0.0)
+
+
+class ConsumptionState(ProsumptionInterface):
     """State for devices that can consume energy."""
 
     def __init__(self):
@@ -146,7 +162,7 @@ class ConsumptionState(StateInterface):
         return self._desired_energy_Wh.get(time_slot, default_value)
 
 
-class ProductionState(StateInterface):
+class ProductionState(ProsumptionInterface):
     """State for devices that can produce energy."""
 
     def __init__(self):
@@ -262,7 +278,7 @@ class HomeMeterState(ConsumptionState, ProductionState):
         """Return the energy produced/consumed by the device at a specific market slot (in kWh).
 
         NOTE: The returned energy can either be negative (production) or positive (consumption).
-        Therefore, this method is only used to plot graphs: do not use it in strategy computations.
+        Therefore, pay attention when using its return values for strategy computations.
         """
         # We want the production energy to be a negative number (that's standard practice)
         produced_energy_kWh = -(abs(self.get_energy_production_forecast_kWh(time_slot, 0.0)))
@@ -511,7 +527,7 @@ class StorageState(StateInterface):
 
     def market_cycle(self, past_time_slot, current_time_slot, all_future_time_slots):
         """
-        Simulate actual Energy flow by removing pledged storage and added bought energy to the
+        Simulate actual Energy flow by removing pledged storage and adding bought energy to the
         used_storage
         """
         self.add_default_values_to_state_profiles(all_future_time_slots)

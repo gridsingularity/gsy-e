@@ -23,6 +23,10 @@ from d3a_interface.constants_limits import DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT
 DEFAULT_PRECISION = 8
 FLOATING_POINT_TOLERANCE = 0.00001
 
+# Maximum percentage deviation between the forecast energy and the actual energy.
+# Used to simulate the actual consumed/produced energy in simulations.
+MAX_ENERGY_DEVIATION_PERCENT = 50
+
 REDIS_PUBLISH_RESPONSE_TIMEOUT = 1
 MAX_WORKER_THREADS = 10
 
