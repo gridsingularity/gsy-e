@@ -23,8 +23,8 @@ from uuid import uuid4
 import pendulum
 import pytest
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.utils import find_object_of_same_weekday_and_time
 
+from d3a import constants
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import d3a_path
