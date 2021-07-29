@@ -1,3 +1,36 @@
+##Version 1.0.0
+The following features were implemented :
+
+* Our new user interface (UI), found at [Grid Singularity map](https://map.gridsingularity.com/singularity-map) will replace the old one at [d3a.io](https://www.d3a.io/). This new UI is intended to make creating and running simulations much **easier** for users who might be new to thinking about their energy use and **simulating** their own energy community..
+* Additional features in the map include a **search bar**, which facilitates searching for an address or town on the map. After running the simulation, highlighted results displayed directly above each home and community in the map.
+* There are standard (template) homes and profiles that can be used by users who do not have information about actual energy consumption and/or production, generated from loadprofilegenerator.de and energydatamap.com
+* We provide additional information on the [Canary Test Network](canary-network.md) for live data simulations, which is the next step in building an energy community
+* Animated color visuals in the map view assist analysis, with a color assigned to each home and community on the [map](https://map.gridsingularity.com/singularity-map) when the simulation is running: **green** for net exports, **blue** for neutral, and **red** for net imports
+* We also provide **Map 3D** view, where users can view their simulations and homes in 3-Dimensions
+* Side navigation bar summarizes the contents of a users’ energy community to additionally aid optimal energy community configuration
+* Home meter asset, a new asset type which can be configured directly in the codebase simulation file to allow users to upload **smart meter** net consumption and production profiles
+
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/5_nbtxR-SYM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+##Version 0.12.0
+The following features were implemented :
+
+* [Market slot](markets.md) length realtime: This can be set to simulations and collaborations. It slows down the running pace with a constant value (speed can go from the fasted as possible up until real-time.
+* Public library is updated: New [loads](model-load.md) and [PVs](model-pv.md) profiles were added to the public library. A total of **24** loads, representing various types of households was generated using loadprofilegenerator.de. PV production profiles were taken from energydatamap.com for different cities. These new loads and PVs have profiles of a full year (2021).
+* Users can now download the **registry** page as a JSON file, to facilitate the connection with the API to a collaboration/Canary Network.
+
+##Version 0.11.0
+The following features were implemented : 
+
+* Time Resolution setting for graphs: Users can choose to **view data** in the graphs in 2 hour, 1 hour, or 15 minutes time resolution. This allows for **faster** loading of the graphs as the simulation run time is extended. Users can change the time resolution for the Energy Trade Profile, Energy Pricing, and Asset Profile graphs.
+* Add a Library as an [Event](events.md): Users can add **grid components** from the Library into their simulation while it is running.
+* [Canary Network](canary-network.md) Enhancements: Canary Networks are automatically restarted in the event of a software deploy or other system disruption. Users can view previous weeks of Canary Network data and [download the results](data-download.md). Canary Network simulations can run for weeks at a time and store all data for future analysis and research.
+* Users can trade through the Grid Singularity [Asset](assets-api.md) and [Grid Operator](grid-operator-api.md) APIs through a cloud web service. This feature allows users to **automate** their trading algorithms and connect to the API from the cloud instead of hosting and monitoring on a local computer.
+
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/b2LGxgnEAcM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 ##Version 0.10.0
 The following features were implemented : 
 
