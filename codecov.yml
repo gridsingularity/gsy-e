@@ -4,6 +4,9 @@ coverage:
       default:
         target: auto  # Compare coverage to the previous base commit (PR base or parent commit)
         informational: false  # If true, status will always pass
+ignore:
+  - "d3a/setup"
+
 
 comment:
   layout: "diff"
