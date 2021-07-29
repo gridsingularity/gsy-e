@@ -19,6 +19,7 @@ from logging import getLogger
 from typing import List  # noqa
 from uuid import uuid4
 
+from d3a_interface.dataclasses import MarketClearingState
 import d3a.constants
 from cached_property import cached_property
 from d3a.d3a_core.device_registry import DeviceRegistry
@@ -143,6 +144,7 @@ class Area:
             if external_connection_available and self.strategy is None else None
         self.should_update_child_strategies = False
         self.external_connection_available = external_connection_available
+        self.state = MarketClearingState()
 
     @property
     def name(self):
@@ -425,6 +427,12 @@ class Area:
                 bid_offer_pairs = bid_offer_matcher.get_matches_recommendations(data)
                 if not bid_offer_pairs:
                     break
+                if hasattr(bid_offer_matcher.match_algorithm, "state"):
+                    self.state.cumulative_offers[self.now] = (bid_offer_matcher.match_algorithm.
+                                                              state.cumulative_offers)
+                    self.state.cumulative_bids[self.now] = (bid_offer_matcher.match_algorithm.
+                                                            state.cumulative_bids)
+
                 market.match_recommendations(bid_offer_pairs)
 
     def update_area_current_tick(self):

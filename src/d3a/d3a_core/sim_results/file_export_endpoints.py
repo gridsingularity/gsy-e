@@ -15,11 +15,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.d3a_core.singletons import bid_offer_matcher
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.enums import BidOfferMatchAlgoEnum
 
 
 class FileExportEndpoints:
@@ -52,7 +52,9 @@ class FileExportEndpoints:
                 out_dict[area.slug][label].append(row[ii])
 
     def _populate_plots_stats_for_supply_demand_curve(self, area):
-        if ConstSettings.IAASettings.MARKET_TYPE == 3:
+        if (ConstSettings.IAASettings.MARKET_TYPE == 2 and
+                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+                BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value):
             if len(area.past_markets) == 0:
                 return
             market = area.past_markets[-1]
@@ -64,10 +66,9 @@ class FileExportEndpoints:
                 self.cumulative_offers[area.slug][market.time_slot] = {}
                 self.cumulative_bids[area.slug][market.time_slot] = {}
                 self.clearing[area.slug][market.time_slot] = {}
-            self.cumulative_offers[area.slug][market.time_slot] = market.state.cumulative_offers
-            self.cumulative_bids[area.slug][market.time_slot] = market.state.cumulative_bids
-            self.clearing[area.slug][market.time_slot] = \
-                bid_offer_matcher.match_algorithm.state.clearing
+            self.cumulative_offers[area.slug][market.time_slot] = area.state.cumulative_offers
+            self.cumulative_bids[area.slug][market.time_slot] = area.state.cumulative_bids
+            self.clearing[area.slug][market.time_slot] = area.state.clearing
 
     def update_plot_stats(self, area):
         self._get_stats_from_market_data(self.plot_stats, area, False)
