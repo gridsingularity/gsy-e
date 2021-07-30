@@ -59,7 +59,7 @@ class StateInterface(ABC):
         """Update the state of the device using the provided dictionary."""
 
     @abstractmethod
-    def delete_past_state_values(self, time_slot):
+    def delete_past_state_values(self, current_time_slot):
         """Delete the state of the device before the given time slot."""
 
     def __str__(self):
@@ -146,7 +146,7 @@ class ConsumptionState(ProsumptionInterface):
             f"Energy requirement for device {area_name} fell below zero "
             f"({self._energy_requirement_Wh[time_slot]}).")
 
-    def delete_past_state_values(self, current_time_slot):
+    def delete_past_state_values(self, current_time_slot: DateTime):
         """Delete data regarding energy consumption for past market slots."""
         to_delete = []
         for market_slot in self._energy_requirement_Wh.keys():
@@ -212,11 +212,11 @@ class ProductionState(ProsumptionInterface):
             f"Available energy for device {area_name} fell below zero "
             f"({self._available_energy_kWh[time_slot]}).")
 
-    def delete_past_state_values(self, current_market_time_slot):
+    def delete_past_state_values(self, current_time_slot: DateTime):
         """Delete data regarding energy production for past market slots."""
         to_delete = []
         for market_slot in self._available_energy_kWh.keys():
-            if market_slot < current_market_time_slot:
+            if market_slot < current_time_slot:
                 to_delete.append(market_slot)
 
         for market_slot in to_delete:
@@ -261,11 +261,11 @@ class HomeMeterState(ConsumptionState, ProductionState):
         """Return the market slots that have either available or required energy."""
         return self._available_energy_kWh.keys() | self._energy_requirement_Wh.keys()
 
-    def delete_past_state_values(self, current_market_time_slot: DateTime):
+    def delete_past_state_values(self, current_time_slot: DateTime):
         """Delete data regarding energy requirements and availability for past market slots."""
         to_delete = []
         for market_slot in self.market_slots:
-            if market_slot < current_market_time_slot:
+            if market_slot < current_time_slot:
                 to_delete.append(market_slot)
 
         for market_slot in to_delete:
@@ -525,7 +525,7 @@ class StorageState(StateInterface):
                                    ESSEnergyOrigin.LOCAL: 0.,
                                    ESSEnergyOrigin.EXTERNAL: 0.})
 
-    def market_cycle(self, past_time_slot, current_time_slot, all_future_time_slots):
+    def market_cycle(self, past_time_slot, current_time_slot: DateTime, all_future_time_slots):
         """
         Simulate actual Energy flow by removing pledged storage and adding bought energy to the
         used_storage
@@ -543,7 +543,7 @@ class StorageState(StateInterface):
             for energy_type in self._used_storage_share:
                 self.time_series_ess_share[past_time_slot][energy_type.origin] += energy_type.value
 
-    def delete_past_state_values(self, current_time_slot):
+    def delete_past_state_values(self, current_time_slot: DateTime):
         to_delete = []
         for market_slot in self.pledged_sell_kWh.keys():
             if market_slot < current_time_slot:
