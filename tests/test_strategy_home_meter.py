@@ -184,6 +184,7 @@ class HomeMeterStrategyTest(unittest.TestCase):
         self.strategy.bid_update.delete_past_state_values = Mock()
         self.strategy.offer_update.delete_past_state_values = Mock()
         self.strategy._set_energy_forecast_for_future_markets = Mock()
+        self.strategy.set_real_energy_of_last_market = Mock()
         self.strategy._post_offer = Mock()
         market_mocks = self._create_market_mocks(3)
         self.strategy.area.all_markets = market_mocks
@@ -201,6 +202,7 @@ class HomeMeterStrategyTest(unittest.TestCase):
         self.strategy._set_energy_forecast_for_future_markets.assert_called_once_with(
             reconfigure=False)
         assert self.strategy._post_offer.call_count == 3
+        self.strategy.set_real_energy_of_last_market.assert_called_once()
 
         self.strategy.state.delete_past_state_values.assert_called_once_with(
             self.area_mock.current_market.time_slot)
@@ -208,6 +210,24 @@ class HomeMeterStrategyTest(unittest.TestCase):
             self.area_mock.current_market.time_slot)
         self.strategy.offer_update.delete_past_state_values.assert_called_once_with(
             self.area_mock.current_market.time_slot)
+
+    @patch("d3a.models.strategy.home_meter.utils")
+    def test_set_real_energy_of_last_market(self, utils_mock):
+        """The real energy of the last market is set when necessary."""
+        # If we are in the first market slot, the real energy is not set
+        self.strategy.area.current_market = None
+        self.strategy.state.set_real_energy_kWh = Mock()
+        self.strategy.set_real_energy_of_last_market()
+        self.strategy.state.set_real_energy_kWh.assert_not_called()
+
+        # When there is at least one past market, the real energy is set
+        self.strategy.state.set_real_energy_kWh.reset_mock()
+        self.strategy.area.current_market = Mock()
+        utils_mock.alter_energy.return_value = 100
+
+        self.strategy.set_real_energy_of_last_market()
+        self.strategy.state.set_real_energy_kWh.assert_called_once_with(
+            100, self.strategy.area.current_market.time_slot)
 
     @patch("d3a_interface.constants_limits.ConstSettings.IAASettings")
     def test_event_offer_two_sided_market(self, iaa_settings_mock):
