@@ -19,7 +19,7 @@ import os
 import unittest
 from copy import deepcopy
 from math import isclose
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, patch
 from uuid import uuid4
 
 import pytest
@@ -231,8 +231,8 @@ def load_hours_strategy_test(called):
     return strategy
 
 
-@pytest.fixture
-def load_hours_strategy_test1(load_hours_strategy_test, area_test1):
+@pytest.fixture(name="load_hours_strategy_test1")
+def fixture_load_hours_strategy_test1(load_hours_strategy_test, area_test1):
     load_hours_strategy_test.area = area_test1
     load_hours_strategy_test.owner = area_test1
     return load_hours_strategy_test
@@ -593,3 +593,29 @@ def test_assert_if_trade_rate_is_higher_than_bid_rate(load_hours_strategy_test3)
 
     with pytest.raises(AssertionError):
         load_hours_strategy_test3.event_trade(market_id=market_id, trade=trade)
+
+
+def test_update_state(load_hours_strategy_test1):
+    """update_state sends command to update the simulated real energy of the device."""
+    load_hours_strategy_test1.set_real_energy_of_last_market = Mock()
+    load_hours_strategy_test1.update_state()
+    load_hours_strategy_test1.set_real_energy_of_last_market.assert_called_once()
+
+
+@patch("d3a.models.strategy.load_hours.utils")
+def test_set_real_energy_of_last_market(utils_mock, load_hours_strategy_test1):
+    """The real energy of the last market is set when necessary."""
+    # If we are in the first market slot, the real energy is not set
+    load_hours_strategy_test1.area.current_market = None
+    load_hours_strategy_test1.state.set_real_energy_kWh = Mock()
+    load_hours_strategy_test1.set_real_energy_of_last_market()
+    load_hours_strategy_test1.state.set_real_energy_kWh.assert_not_called()
+
+    # When there is at least one past market, the real energy is set
+    load_hours_strategy_test1.state.set_real_energy_kWh.reset_mock()
+    load_hours_strategy_test1.area.current_market = Mock()
+    utils_mock.alter_energy.return_value = 100
+
+    load_hours_strategy_test1.set_real_energy_of_last_market()
+    load_hours_strategy_test1.state.set_real_energy_kWh.assert_called_once_with(
+        100, load_hours_strategy_test1.area.current_market.time_slot)

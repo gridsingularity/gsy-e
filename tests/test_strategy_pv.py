@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import uuid
 from typing import Dict  # NOQA
+from unittest.mock import Mock, patch
 from uuid import uuid4
 
 import pendulum
@@ -154,8 +155,8 @@ def area_test1():
     return FakeArea()
 
 
-@pytest.fixture()
-def pv_test1(area_test1):
+@pytest.fixture(name="pv_test1")
+def fixture_pv_test1(area_test1):
     p = PVStrategy()
     p.area = area_test1
     p.owner = area_test1
@@ -551,3 +552,32 @@ def test_assert_if_trade_rate_is_lower_than_offer_rate(pv_test11):
 
     with pytest.raises(AssertionError):
         pv_test11.event_trade(market_id=market_id, trade=trade)
+
+
+@pytest.fixture(name="pv_strategy")
+def fixture_pv_strategy():
+    pv_strategy = PVStrategy()
+    pv_strategy.area = Mock()
+
+    return pv_strategy
+
+
+@patch("d3a.models.strategy.pv.utils")
+def test_set_real_energy_of_last_market(utils_mock, pv_strategy):
+    """The real energy of the last market is set when necessary."""
+    # If we are in the first market slot, the real energy is not set
+    pv_strategy.area.current_market = None
+    pv_strategy.state.set_real_energy_kWh = Mock()
+    pv_strategy.state.get_energy_production_forecast_kWh = Mock(return_value=50)
+    pv_strategy.set_real_energy_of_last_market()
+
+    pv_strategy.state.set_real_energy_kWh.assert_not_called()
+
+    # When there is at least one past market, the real energy is set
+    pv_strategy.state.set_real_energy_kWh.reset_mock()
+    pv_strategy.area.current_market = Mock()
+    utils_mock.alter_energy.return_value = 100
+    pv_strategy.set_real_energy_of_last_market()
+
+    pv_strategy.state.set_real_energy_kWh.assert_called_once_with(
+        100, pv_strategy.area.current_market.time_slot)
