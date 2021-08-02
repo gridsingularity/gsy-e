@@ -36,7 +36,8 @@ def get_setup(config):
                             final_buying_rate=30.1
                         )
                          ),
-                    Area('H1 PV', strategy=PVPredefinedStrategy(panel_count=1, fit_to_limit=False,
+                    Area('H1 PV', strategy=PVPredefinedStrategy(capacity_kW=0.25,
+                                                                panel_count=1, fit_to_limit=False,
                                                                 energy_rate_decrease_per_update=4,
                                                                 cloud_coverage=2)
                          ),
