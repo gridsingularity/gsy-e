@@ -146,7 +146,6 @@ def load_consumes_less_than_between(context, energy, start_time, end_time):
             continue
         assert market.trades[0].seller == "IAA House 1" and \
             market.trades[0].buyer == "Grid Load"
-        print(energy, market.trades[0].offer.energy)
         assert market.trades[0].offer.energy <= energy
 
 

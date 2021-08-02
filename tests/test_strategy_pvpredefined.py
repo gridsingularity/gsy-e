@@ -363,7 +363,7 @@ def pv_test_cloudy(area_test7):
 def test_correct_interpolation_power_profile():
     slot_length = 20
     GlobalConfig.slot_length = duration(minutes=slot_length)
-    profile_path = pathlib.Path(d3a_path + '/resources/Solar_Curve_W_sunny.csv')
+    profile_path = pathlib.Path(d3a_path + "/resources/Solar_Curve_W_sunny.csv")
     profile = read_arbitrary_profile(InputProfileTypes.POWER, str(profile_path))
     times = list(profile)
     for ii in range(len(times)-1):
@@ -430,7 +430,7 @@ def test_profile_with_date_and_seconds_can_be_parsed():
     GlobalConfig.slot_length = duration(minutes=15)
     profile_date = datetime(year=2019, month=3, day=2)
     GlobalConfig.start_date = profile_date
-    profile_path = pathlib.Path(d3a_path + '/resources/datetime_seconds_profile.csv')
+    profile_path = pathlib.Path(d3a_path + "/resources/datetime_seconds_profile.csv")
     profile = read_arbitrary_profile(InputProfileTypes.POWER, str(profile_path))
     # After the 6th element the rest of the entries are populated with the last value
     expected_energy_values = [1.5, 1.25, 1.0, 0.75, 0.5, 0.25]
