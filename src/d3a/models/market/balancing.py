@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
-from typing import Union  # noqa
+from typing import Union, Dict, List, Optional  # noqa
 from pendulum import DateTime
 from logging import getLogger
 
@@ -49,15 +49,18 @@ class BalancingMarket(OneSidedMarket):
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name, in_sim_duration=in_sim_duration)
 
-    def offer(self, price: float, energy: float, seller: str, offer_id=None,
-              original_offer_price=None, dispatch_event=True, seller_origin=None,
-              adapt_price_with_fees=True, seller_origin_id=None):
+    def offer(self, price: float, energy: float, seller: str, offer_id: Optional[str] = None,
+              original_offer_price: Optional[float] = None, dispatch_event: bool = True,
+              seller_origin: Optional[str] = None,
+              adapt_price_with_fees: bool = True, seller_origin_id: Optional[str] = None,
+              attributes: Optional[Dict] = None, requirements: Optional[List[Dict]] = None):
         assert False
 
     def balancing_offer(self, price: float, energy: float, seller: str,
                         original_offer_price=None, offer_id=None, from_agent: bool = False,
                         adapt_price_with_fees: bool = False, dispatch_event=True,
-                        seller_origin=None) -> BalancingOffer:
+                        seller_origin=None, attributes: Dict = None,
+                        requirements: List[Dict] = None) -> BalancingOffer:
         if seller not in DeviceRegistry.REGISTRY.keys() and not from_agent:
             raise DeviceNotInRegistryError(f"Device {seller} "
                                            f"not in registry ({DeviceRegistry.REGISTRY}).")
@@ -74,8 +77,10 @@ class BalancingMarket(OneSidedMarket):
         if offer_id is None:
             offer_id = str(uuid.uuid4())
 
-        offer = BalancingOffer(offer_id, self.now, price, energy,
-                               seller, seller_origin=seller_origin)
+        offer = BalancingOffer(
+            offer_id, self.now, price, energy, seller,
+            seller_origin=seller_origin, attributes=attributes,
+            requirements=requirements)
         self.offers[offer.id] = offer
 
         self.offer_history.append(offer)
@@ -96,14 +101,16 @@ class BalancingMarket(OneSidedMarket):
                                               seller=original_offer.seller,
                                               dispatch_event=False,
                                               seller_origin=original_offer.seller_origin,
-                                              from_agent=True)
+                                              from_agent=True,
+                                              attributes=original_offer.attributes,
+                                              requirements=original_offer.requirements)
 
         residual_price = (1 - energy / original_offer.energy) * original_offer.price
         residual_energy = original_offer.energy - energy
         if orig_offer_price is None:
             orig_offer_price = self._calculate_original_prices(original_offer)
-        original_residual_price = \
-            ((original_offer.energy - energy) / original_offer.energy) * orig_offer_price
+        original_residual_price = (
+                ((original_offer.energy - energy) / original_offer.energy) * orig_offer_price)
 
         residual_offer = self.balancing_offer(price=residual_price,
                                               energy=residual_energy,
@@ -112,7 +119,9 @@ class BalancingMarket(OneSidedMarket):
                                               dispatch_event=False,
                                               seller_origin=original_offer.seller_origin,
                                               adapt_price_with_fees=False,
-                                              from_agent=True)
+                                              from_agent=True,
+                                              attributes=original_offer.attributes,
+                                              requirements=original_offer.requirements)
 
         log.debug(f"[BALANCING_OFFER][SPLIT][{self.time_slot_str}, {self.name}] "
                   f"({short_offer_bid_log_str(original_offer)} into "

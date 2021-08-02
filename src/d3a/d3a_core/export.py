@@ -87,7 +87,7 @@ class ExportAndPlot:
             self.directory = pathlib.Path(self.rootdir, subdir)
             self.zip_filename = pathlib.Path(self.rootdir, subdir + "_results")
             mkdir_from_str(str(self.directory))
-            if d3a.constants.D3A_TEST_RUN:
+            if d3a.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
                 self.raw_data_subdir = pathlib.Path(self.directory, "raw_data")
                 if not self.raw_data_subdir.exists():
                     self.raw_data_subdir.mkdir(exist_ok=True, parents=True)

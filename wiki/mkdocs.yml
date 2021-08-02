@@ -1,5 +1,5 @@
-site_name: 'Grid Singularity D3A Wiki'
-site_description: 'Wiki for the D3A by Grid Singularity'
+site_name: 'Grid Singularity Wiki'
+site_description: 'Documentation for the Grid Singularity Exchange'
 site_author: 'Grid Singularity'
 site_url: 'https://gridsingularity.github.io/d3a/d3a-documentation/'
 
@@ -78,7 +78,7 @@ theme:
     text: 'PT Sans'
     code: 'Ubuntu Mono'
   favicon: 'img/d3a-favicon.png'
-  logo: 'img/d3a-logo.png'
+  logo: 'img/New_Logo_up.png'
   feature:
     tabs: false
 
@@ -112,7 +112,7 @@ extra:
       size: 'lg'
       link: 'https://join.slack.com/t/gsycommunity/shared_invite/zt-dpfxe2gk-hKFccsrr68g982odCJlrIg'
 footer:
-  logo: 'img/d3a-logo.png'
+  logo: 'img/New_Logo2.0.png'
 
 markdown_extensions:
     - admonition

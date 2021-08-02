@@ -22,6 +22,7 @@ from d3a_interface.exceptions import D3AException
 from d3a_interface.validators.home_meter_validator import HomeMeterValidator
 from pendulum import datetime, duration
 
+from d3a import constants
 from d3a.models.area import Area
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.state import HomeMeterState
@@ -39,6 +40,11 @@ class HomeMeterStrategyTest(unittest.TestCase):
             datetime(2021, 6, 15, 0, 0, 0),
             datetime(2021, 6, 15, 0, 15, 0),
             datetime(2021, 6, 15, 0, 30, 0)]
+        constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
 
     def setUp(self) -> None:
         """Instantiate the strategy used throughout the tests"""
