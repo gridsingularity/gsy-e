@@ -13,21 +13,26 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. If not,
 see <http://www.gnu.org/licenses/>.
 """
-import random
+import numpy as np
 
-from d3a.constants import DEFAULT_PRECISION, MAX_ENERGY_DEVIATION_PERCENT
+from d3a.constants import DEFAULT_PRECISION, RELATIVE_STD_FROM_FORECAST_ENERGY
 
 
 def alter_energy(
-        energy_kWh: float, max_deviation_pct: float = MAX_ENERGY_DEVIATION_PERCENT) -> float:
+        energy_kWh: float, relative_std: float = RELATIVE_STD_FROM_FORECAST_ENERGY) -> float:
     """
-    Compute a new energy amount that differs from the given one by (at most) a max percentage.
-    """
-    deviation_pct = random.uniform(-max_deviation_pct, max_deviation_pct)
-    # NOTE: the deviation can be either positive or negative
-    deviation_kWh = round((energy_kWh * deviation_pct) / 100.0, DEFAULT_PRECISION)
-    altered_energy = energy_kWh + deviation_kWh
-    # The sign of the new energy should never be flipped compared to the original
-    assert (altered_energy > 0) == (energy_kWh > 0)
+    Compute a new energy amount, modelling its value on a normal distribution based on the old one.
 
-    return altered_energy
+    Args:
+        energy_kWh (float): the amount of energy to be altered.
+        relative_sdt (float): the percentage of original energy to be used to set the standard
+            deviation of the normal distribution.
+    """
+    std = (relative_std * energy_kWh) / 100
+    altered_energy_kWh = np.random.normal(loc=energy_kWh, scale=std)
+
+    # If the sign of the new energy flipped compared to the original, clip it to 0
+    if (altered_energy_kWh > 0) != (energy_kWh > 0):
+        return 0
+
+    return round(altered_energy_kWh, DEFAULT_PRECISION)

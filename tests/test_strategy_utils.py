@@ -12,20 +12,27 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. If not,
 see <http://www.gnu.org/licenses/>.
 """
-import pytest
+from unittest.mock import patch
 
 from d3a.models.strategy import utils
 
 
 class TestStrategyUtils:
     """Test utility functions for strategy modules."""
+    @staticmethod
+    @patch("d3a.models.strategy.utils.np.random.normal")
+    def test_alter_energy_positive_return_values(numpy_normal_mock):
+        """Test alter_energy with positive returned values."""
+        numpy_normal_mock.return_value = 100  # Avoid random behavior
+        assert utils.alter_energy(-1000, relative_std=10) == 0
+        # Return 0 when the new energy flips the sign of the original
+        assert utils.alter_energy(1000, relative_std=10) > 0
 
     @staticmethod
-    @pytest.mark.parametrize("execution_number", range(10))
-    def test_alter_energy(execution_number):  # pylint: disable=W0613
-        """The alter_energy util function always returns a value in the expected deviation range.
-
-        This test is run multiple times to make sure that the output is reliable.
-        """
-        assert 900 <= utils.alter_energy(1000, max_deviation_pct=10) <= 1100
-        assert 950 <= utils.alter_energy(1000, max_deviation_pct=5) <= 1050
+    @patch("d3a.models.strategy.utils.np.random.normal")
+    def test_alter_energy_negative_return_values(numpy_normal_mock):
+        """Test alter_energy with negative returned values."""
+        numpy_normal_mock.return_value = -100  # Avoid random behavior
+        assert utils.alter_energy(1000, relative_std=10) == 0
+        # Return 0 when the new energy flips the sign of the original
+        assert utils.alter_energy(-1000, relative_std=10) < 0
