@@ -1,9 +1,9 @@
 ##Version 1.0.0
 The following features were implemented :
 
-* Our new user interface (UI), found at [Grid Singularity map](https://map.gridsingularity.com/singularity-map) will replace the old one at [d3a.io](https://www.d3a.io/). This new UI is intended to make creating and running simulations much **easier** for users who might be new to thinking about their energy use and **simulating** their own energy community..
+* Our new user interface (UI), found at [Grid Singularity map](https://map.gridsingularity.com/singularity-map) will replace the old one at [d3a.io](https://www.d3a.io/). This new UI is intended to make creating and running simulations much **easier** for users who might be new to thinking about their energy use and **simulating** their own energy community.
 * Additional features in the map include a **search bar**, which facilitates searching for an address or town on the map. After running the simulation, highlighted results displayed directly above each home and community in the map.
-* There are standard (template) homes and profiles that can be used by users who do not have information about actual energy consumption and/or production, generated from loadprofilegenerator.de and energydatamap.com
+* There are standard (template) homes and profiles that can be used by users who do not have information about actual energy consumption and/or production, generated from [loadprofilegenerator.de](https://www.loadprofilegenerator.de/) and [energydatamap.com](https://energydatamap.com/).
 * We provide additional information on the [Canary Test Network](canary-network.md) for live data simulations, which is the next step in building an energy community
 * Animated color visuals in the map view assist analysis, with a color assigned to each home and community on the [map](https://map.gridsingularity.com/singularity-map) when the simulation is running: **green** for net exports, **blue** for neutral, and **red** for net imports
 * We also provide **Map 3D** view, where users can view their simulations and homes in 3-Dimensions
@@ -17,7 +17,7 @@ The following features were implemented :
 The following features were implemented :
 
 * [Market slot](markets.md) length realtime: This can be set to simulations and collaborations. It slows down the running pace with a constant value (speed can go from the fasted as possible up until real-time.
-* Public library is updated: New [loads](model-load.md) and [PVs](model-pv.md) profiles were added to the public library. A total of **24** loads, representing various types of households was generated using loadprofilegenerator.de. PV production profiles were taken from energydatamap.com for different cities. These new loads and PVs have profiles of a full year (2021).
+* Public library is updated: New [loads](model-load.md) and [PVs](model-pv.md) profiles were added to the public library. A total of **24** loads, representing various types of households was generated using [loadprofilegenerator.de](https://www.loadprofilegenerator.de/). PV production profiles were taken from [energydatamap.com](https://energydatamap.com/) for different cities. These new loads and PVs have profiles of a full year (2021).
 * Users can now download the **registry** page as a JSON file, to facilitate the connection with the API to a collaboration/Canary Network.
 
 ##Version 0.11.0
