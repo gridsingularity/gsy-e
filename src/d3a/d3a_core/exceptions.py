@@ -35,7 +35,7 @@ class OfferNotFoundException(MarketException):
     pass
 
 
-class BidNotFound(MarketException):
+class BidNotFoundException(MarketException):
     pass
 
 
@@ -71,5 +71,9 @@ class WrongMarketTypeException(D3AException):
     pass
 
 
-class InvalidBidOfferPair(D3AException):
+class InvalidBidOfferPairException(D3AException):
+    pass
+
+
+class MycoValidationException(D3AException):
     pass

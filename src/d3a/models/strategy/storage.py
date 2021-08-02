@@ -613,8 +613,8 @@ class StorageStrategy(BidEnabledStrategy):
                 self.buy_energy(market, offer)
 
     def _delete_past_state(self):
-        if constants.D3A_TEST_RUN is True or \
-                self.area.current_market is None:
+        if (constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True or
+                self.area.current_market is None):
             return
 
         self.offer_update.delete_past_state_values(self.area.current_market.time_slot)
