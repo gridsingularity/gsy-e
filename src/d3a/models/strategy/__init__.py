@@ -453,7 +453,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         self.offers.on_offer_split(original_offer, accepted_offer, residual_offer, market_id)
 
     def event_market_cycle(self):
-        if not constants.D3A_TEST_RUN:
+        if not constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
             self.offers.delete_past_markets_offers()
         self.event_responses = []
 
@@ -690,7 +690,7 @@ class BidEnabledStrategy(BaseStrategy):
             self.add_bid_to_bought(bid_trade.offer, market_id)
 
     def event_market_cycle(self):
-        if not constants.D3A_TEST_RUN:
+        if not constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
             self._bids = {}
             self._traded_bids = {}
             super().event_market_cycle()
