@@ -19,18 +19,20 @@ from d3a.constants import DEFAULT_PRECISION, RELATIVE_STD_FROM_FORECAST_ENERGY
 
 
 def alter_energy(
-        energy_kWh: float, relative_std: float = RELATIVE_STD_FROM_FORECAST_ENERGY) -> float:
+        energy_kWh: float, relative_std: float = RELATIVE_STD_FROM_FORECAST_ENERGY,
+        random_generator: np.random.Generator = np.random.RandomState()) -> float:
     """
     Compute a new energy amount, modelling its value on a normal distribution based on the old one.
 
     Args:
-        energy_kWh (float): the amount of energy to be altered.
-        relative_sdt (float): the percentage of original energy to be used to set the standard
-            deviation of the normal distribution.
+        energy_kWh: the amount of energy to be altered.
+        relative_sdt: the percentage of original energy to be used to set the standard deviation
+            of the normal distribution.
+        random_generator: a numpy random generator instance.
     """
     std = (relative_std * energy_kWh) / 100
-    altered_energy_kWh = np.random.normal(loc=energy_kWh, scale=std)
-
+    # Create a random number generator to avoid using np.random (that would alter the global seed)
+    altered_energy_kWh = random_generator.normal(loc=energy_kWh, scale=std)
     # If the sign of the new energy flipped compared to the original, clip it to 0
     if (altered_energy_kWh > 0) != (energy_kWh > 0):
         return 0

@@ -12,27 +12,32 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. If not,
 see <http://www.gnu.org/licenses/>.
 """
-from unittest.mock import patch
+from unittest.mock import Mock
 
 from d3a.models.strategy import utils
 
 
 class TestStrategyUtils:
     """Test utility functions for strategy modules."""
-    @staticmethod
-    @patch("d3a.models.strategy.utils.np.random.normal")
-    def test_alter_energy_positive_return_values(numpy_normal_mock):
-        """Test alter_energy with positive returned values."""
-        numpy_normal_mock.return_value = 100  # Avoid random behavior
-        assert utils.alter_energy(-1000, relative_std=10) == 0
-        # Return 0 when the new energy flips the sign of the original
-        assert utils.alter_energy(1000, relative_std=10) > 0
 
     @staticmethod
-    @patch("d3a.models.strategy.utils.np.random.normal")
-    def test_alter_energy_negative_return_values(numpy_normal_mock):
-        """Test alter_energy with negative returned values."""
-        numpy_normal_mock.return_value = -100  # Avoid random behavior
-        assert utils.alter_energy(1000, relative_std=10) == 0
+    def test_alter_energy_positive_return_values():
+        """Test alter_energy with positive returned values."""
+        random_generator_mock = Mock()
+        random_generator_mock.normal.return_value = 100  # Avoid random behavior
+        assert utils.alter_energy(
+            -1000, relative_std=10, random_generator=random_generator_mock) == 0
         # Return 0 when the new energy flips the sign of the original
-        assert utils.alter_energy(-1000, relative_std=10) < 0
+        assert utils.alter_energy(
+            1000, relative_std=10, random_generator=random_generator_mock) > 0
+
+    @staticmethod
+    def test_alter_energy_negative_return_values():
+        """Test alter_energy with negative returned values."""
+        random_generator_mock = Mock()
+        random_generator_mock.normal.return_value = -100  # Avoid random behavior
+        assert utils.alter_energy(
+            1000, relative_std=10, random_generator=random_generator_mock) == 0
+        # Return 0 when the new energy flips the sign of the original
+        assert utils.alter_energy(
+            -1000, relative_std=10, random_generator=random_generator_mock) < 0
