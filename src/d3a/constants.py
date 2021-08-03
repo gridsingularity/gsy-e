@@ -25,7 +25,7 @@ FLOATING_POINT_TOLERANCE = 0.00001
 
 # Percentual standard deviation relative to the forecast energy, used to compute the (simulated)
 # real energy produced/consumed by a device.
-RELATIVE_STD_FROM_FORECAST_ENERGY = 5
+RELATIVE_STD_FROM_FORECAST_ENERGY = 10
 
 REDIS_PUBLISH_RESPONSE_TIMEOUT = 1
 MAX_WORKER_THREADS = 10
