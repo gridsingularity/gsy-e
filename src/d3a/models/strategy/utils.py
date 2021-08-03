@@ -20,7 +20,7 @@ from d3a.constants import DEFAULT_PRECISION, RELATIVE_STD_FROM_FORECAST_ENERGY
 
 def compute_altered_energy(
         energy_kWh: float, relative_std: float = RELATIVE_STD_FROM_FORECAST_ENERGY,
-        random_generator: np.random.Generator = np.random.RandomState()) -> float:
+        random_generator: np.random.Generator = np.random.default_rng()) -> float:
     """
     Compute a new energy amount, modelling its value on a normal distribution based on the old one.
 
