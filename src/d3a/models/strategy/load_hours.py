@@ -181,7 +181,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def _set_real_energy_kWh(self, time_slot: DateTime) -> None:
         """Set the (simulated) actual energy consumed by the device in a market slot."""
-        energy_forecast_kWh = self.state.get_desired_energy_Wh(time_slot) * 1000
+        energy_forecast_kWh = self.state.get_desired_energy_Wh(time_slot) / 1000
         simulated_real_energy = utils.alter_energy(energy_forecast_kWh)
 
         self.state.set_real_energy_kWh(simulated_real_energy, time_slot)
