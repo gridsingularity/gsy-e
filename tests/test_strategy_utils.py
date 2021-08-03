@@ -22,22 +22,22 @@ class TestStrategyUtils:
 
     @staticmethod
     def test_alter_energy_positive_return_values():
-        """Test alter_energy with positive returned values."""
+        """Test compute_altered_energy with positive returned values."""
         random_generator_mock = Mock()
         random_generator_mock.normal.return_value = 100  # Avoid random behavior
-        assert utils.alter_energy(
+        assert utils.compute_altered_energy(
             -1000, relative_std=10, random_generator=random_generator_mock) == 0
         # Return 0 when the new energy flips the sign of the original
-        assert utils.alter_energy(
+        assert utils.compute_altered_energy(
             1000, relative_std=10, random_generator=random_generator_mock) > 0
 
     @staticmethod
     def test_alter_energy_negative_return_values():
-        """Test alter_energy with negative returned values."""
+        """Test compute_altered_energy with negative returned values."""
         random_generator_mock = Mock()
         random_generator_mock.normal.return_value = -100  # Avoid random behavior
-        assert utils.alter_energy(
+        assert utils.compute_altered_energy(
             1000, relative_std=10, random_generator=random_generator_mock) == 0
         # Return 0 when the new energy flips the sign of the original
-        assert utils.alter_energy(
+        assert utils.compute_altered_energy(
             -1000, relative_std=10, random_generator=random_generator_mock) < 0

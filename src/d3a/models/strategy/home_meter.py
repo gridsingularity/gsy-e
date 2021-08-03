@@ -198,7 +198,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
     def _set_real_energy_kWh(self, time_slot: DateTime) -> None:
         """Set the (simulated) actual energy of the device in a market slot."""
         energy_forecast_kWh = self.state.get_energy_at_market_slot(time_slot)
-        simulated_real_energy = utils.alter_energy(energy_forecast_kWh)
+        simulated_real_energy = utils.compute_altered_energy(energy_forecast_kWh)
         # This value can be either positive (consumption) or negative (production). This is
         # different from the other devices (PV, Load) where the value is positive regardless of
         # its direction (consumption or production)

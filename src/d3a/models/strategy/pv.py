@@ -248,7 +248,7 @@ class PVStrategy(BaseStrategy):
     def _set_real_energy_kWh(self, time_slot: DateTime) -> None:
         """Set the (simulated) actual energy produced by the device in a market slot."""
         energy_forecast_kWh = self.state.get_energy_production_forecast_kWh(time_slot)
-        simulated_real_energy = utils.alter_energy(energy_forecast_kWh)
+        simulated_real_energy = utils.compute_altered_energy(energy_forecast_kWh)
 
         self.state.set_real_energy_kWh(simulated_real_energy, time_slot)
 

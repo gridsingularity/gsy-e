@@ -614,7 +614,7 @@ def test_set_real_energy_of_last_market(utils_mock, load_hours_strategy_test1):
     # When there is at least one past market, the real energy is set
     load_hours_strategy_test1.state.set_real_energy_kWh.reset_mock()
     load_hours_strategy_test1.area.current_market = Mock()
-    utils_mock.alter_energy.return_value = 100
+    utils_mock.compute_altered_energy.return_value = 100
 
     load_hours_strategy_test1.set_real_energy_of_last_market()
     load_hours_strategy_test1.state.set_real_energy_kWh.assert_called_once_with(

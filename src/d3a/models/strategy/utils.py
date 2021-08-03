@@ -18,7 +18,7 @@ import numpy as np
 from d3a.constants import DEFAULT_PRECISION, RELATIVE_STD_FROM_FORECAST_ENERGY
 
 
-def alter_energy(
+def compute_altered_energy(
         energy_kWh: float, relative_std: float = RELATIVE_STD_FROM_FORECAST_ENERGY,
         random_generator: np.random.Generator = np.random.RandomState()) -> float:
     """

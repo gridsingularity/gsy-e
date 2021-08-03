@@ -576,7 +576,7 @@ def test_set_real_energy_of_last_market(utils_mock, pv_strategy):
     # When there is at least one past market, the real energy is set
     pv_strategy.state.set_real_energy_kWh.reset_mock()
     pv_strategy.area.current_market = Mock()
-    utils_mock.alter_energy.return_value = 100
+    utils_mock.compute_altered_energy.return_value = 100
     pv_strategy.set_real_energy_of_last_market()
 
     pv_strategy.state.set_real_energy_kWh.assert_called_once_with(
