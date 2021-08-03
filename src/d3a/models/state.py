@@ -59,7 +59,7 @@ class StateInterface(ABC):
         """Update the state of the device using the provided dictionary."""
 
     @abstractmethod
-    def delete_past_state_values(self, current_time_slot):
+    def delete_past_state_values(self, current_time_slot: DateTime):
         """Delete the state of the device before the given time slot."""
 
     def __str__(self):
