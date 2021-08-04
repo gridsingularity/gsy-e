@@ -30,6 +30,12 @@ from d3a import constants
 from d3a.models.area.throughput_parameters import ThroughputParameters
 
 
+@pytest.fixture(scope="function", autouse=True)
+def auto_fixture():
+    yield
+    constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
+
+
 class FakeArea:
     def __init__(self, name, children=[], past_markets=[]):
         self.name = name
@@ -342,7 +348,7 @@ def grid_fees():
 
 
 def test_energy_bills_accumulate_fees(grid_fees):
-    constants.D3A_TEST_RUN = True
+    constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
     epb = SimulationEndpointBuffer("1", {"seed": 0}, grid_fees, True)
     epb.current_market_time_slot_str = grid_fees.current_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid_fees)
@@ -362,7 +368,7 @@ def test_energy_bills_accumulate_fees(grid_fees):
 
 
 def test_energy_bills_use_only_last_market_if_not_keep_past_markets(grid_fees):
-    constants.D3A_TEST_RUN = False
+    constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 
     epb = SimulationEndpointBuffer("1", {"seed": 0}, grid_fees, True)
     epb.current_market_time_slot_str = grid_fees.current_market.time_slot_str
@@ -375,7 +381,7 @@ def test_energy_bills_use_only_last_market_if_not_keep_past_markets(grid_fees):
 
 
 def test_energy_bills_report_correctly_market_fees(grid_fees):
-    constants.D3A_TEST_RUN = True
+    constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
     epb = SimulationEndpointBuffer("1", {"seed": 0}, grid_fees, True)
     epb.current_market_time_slot_str = grid_fees.current_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid_fees)

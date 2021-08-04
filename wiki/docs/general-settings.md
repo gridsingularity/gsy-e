@@ -1,4 +1,4 @@
-Grid Singularity exchange engine can be used to simulate, collaborate and optimize grid-aware local energy markets (LEMs). The simulation tool is freely available through our User Interface (UI) at [d3a.io](https://www.d3a.io/) and our [backend codebase](https://github.com/gridsingularity/d3a) is open source under [GNU general public license](https://github.com/gridsingularity/d3a/blob/master/LICENSE). 
+Grid Singularity exchange engine can be used to simulate, collaborate and optimize grid-aware local energy markets (LEMs). The simulation tool is freely available through our User Interface (UI) at [map.gridsingularity](https://map.gridsingularity.com/singularity-map) and our [backend codebase](https://github.com/gridsingularity/d3a) is open source under [GNU general public license](https://github.com/gridsingularity/d3a/blob/master/LICENSE). 
 
 This section will focus on a step-by-step guide to create and simulate LEMs using our software, starting with an explanation and guide for the UI, followed by a more technical tutorial to reproduce in the backend.
 

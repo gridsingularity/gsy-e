@@ -99,7 +99,7 @@ class Offer(BaseBidOffer):
         super().__init__(id=id, time=time, price=price, energy=energy,
                          attributes=attributes, requirements=requirements)
         self.seller = seller
-        self.original_offer_price = original_offer_price
+        self.original_offer_price = original_offer_price or price
         self.seller_origin = seller_origin
         self.seller_origin_id = seller_origin_id
         self.seller_id = seller_id
@@ -159,7 +159,7 @@ class Bid(BaseBidOffer):
         super().__init__(id=id, time=time, price=price, energy=energy,
                          attributes=attributes, requirements=requirements)
         self.buyer = buyer
-        self.original_bid_price = original_bid_price
+        self.original_bid_price = original_bid_price or price
         self.buyer_origin = buyer_origin
         self.buyer_origin_id = buyer_origin_id
         self.buyer_id = buyer_id

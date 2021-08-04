@@ -55,6 +55,7 @@ class TestAreaClass(unittest.TestCase):
         self.config.ticks_per_slot = int(self.config.slot_length.seconds /
                                          self.config.tick_length.seconds)
         self.config.start_date = today(tz=TIME_ZONE)
+        GlobalConfig.sim_duration = duration(days=1)
         self.config.sim_duration = duration(days=1)
         self.config.grid_fee_type = 1
         self.config.end_date = self.config.start_date + self.config.sim_duration
@@ -69,8 +70,8 @@ class TestAreaClass(unittest.TestCase):
         self.stats = AreaStats(self.area._markets, self.area)
 
     def tearDown(self):
-        GlobalConfig.market_count = 1
-        constants.D3A_TEST_RUN = False
+        GlobalConfig.market_count = GlobalConfig.MARKET_COUNT
+        constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 
     def test_respective_area_grid_fee_is_applied(self):
         self.config.grid_fee_type = 2
@@ -92,8 +93,9 @@ class TestAreaClass(unittest.TestCase):
             assert len(self.area.all_markets) == i
 
     def test_delete_past_markets_instead_of_last(self):
+        constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
         self.area = Area(name="Street", children=[Area(name="House")],
-                         config=GlobalConfig, grid_fee_percentage=5)
+                         config=self.config, grid_fee_percentage=5)
         self.area.config.market_count = 1
         self.area.activate()
         self.area._bc = None
@@ -112,9 +114,9 @@ class TestAreaClass(unittest.TestCase):
         assert list(self.area.past_markets)[-1].time_slot == today(tz=TIME_ZONE).add(hours=1)
 
     def test_keep_past_markets(self):
-        constants.D3A_TEST_RUN = True
+        constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
         self.area = Area(name="Street", children=[Area(name="House")],
-                         config=GlobalConfig, grid_fee_percentage=5)
+                         config=self.config, grid_fee_percentage=5)
         self.area.config.market_count = 1
         self.area.activate()
         self.area._bc = None
