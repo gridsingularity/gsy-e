@@ -160,6 +160,8 @@ class MycoExternalMatcher(MycoMatcherInterface):
         """Return a validated list of BidOfferMatch instances."""
         validated_recommendations = []
         for recommendation in recommendations:
+            if not BidOfferMatch.is_valid_dict(recommended_pair):
+                raise MycoValidationException
             market = self.markets_mapping.get(recommendation.get("market_id"))
             if market is None or market.readonly:
                 # The market is already finished or doesn't exist

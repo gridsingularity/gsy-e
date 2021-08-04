@@ -258,11 +258,12 @@ class TwoSidedMarket(OneSidedMarket):
 
         while recommendations:
             recommended_pair = recommendations.pop(0)
-            selected_energy = recommended_pair["selected_energy"]
-            clearing_rate = recommended_pair["trade_rate"]
+            recommended_pair = BidOfferMatch.from_dict(recommended_pair)
+            selected_energy = recommended_pair.selected_energy
+            clearing_rate = recommended_pair.trade_rate
             market_offers = [
-                self.offers.get(offer["id"]) for offer in recommended_pair["offers"]]
-            market_bids = [self.bids.get(bid["id"]) for bid in recommended_pair["bids"]]
+                self.offers.get(offer["id"]) for offer in recommended_pair.offers]
+            market_bids = [self.bids.get(bid["id"]) for bid in recommended_pair.bids]
 
             if not all(market_offers):
                 # If not all received offers exist in the market, skip the current recommendation
