@@ -54,6 +54,8 @@ class Offer:
     def __post_init__(self):
         self.id = str(self.id)
         self.energy_rate = self.price / self.energy
+        if self.original_offer_price is None:
+            self.original_offer_price = self.price
 
     def update_price(self, price):
         self.price = price
@@ -146,6 +148,8 @@ class Bid:
         self.id = str(self.id)
         if self.energy_rate is None:
             self.energy_rate = self.price / self.energy
+        if self.original_bid_price is None:
+            self.original_bid_price = self.price
 
     def __repr__(self):
         return (
