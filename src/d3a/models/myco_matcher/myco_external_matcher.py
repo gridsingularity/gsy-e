@@ -120,19 +120,19 @@ class MycoExternalMatcher(MycoMatcherInterface):
         channel = "external-myco/simulation-id/response/"
         self.myco_ext_conn.publish_json(channel, {"simulation_id": self.simulation_id})
 
-    def event_tick(self):
+    def event_tick(self, **kwargs):
         """Publish the tick event to the Myco client."""
 
         data = {"event": ExternalMatcherEventsEnum.TICK.value}
         self.myco_ext_conn.publish_json(self._events_channel, data)
 
-    def event_market_cycle(self):
+    def event_market_cycle(self, **kwargs):
         """Publish the market event to the Myco client."""
 
         data = {"event": ExternalMatcherEventsEnum.MARKET.value}
         self.myco_ext_conn.publish_json(self._events_channel, data)
 
-    def event_finish(self):
+    def event_finish(self, **kwargs):
         """Publish the finish event to the Myco client."""
 
         data = {"event": ExternalMatcherEventsEnum.FINISH.value}
@@ -161,11 +161,16 @@ class MycoExternalMatcher(MycoMatcherInterface):
         validated_recommendations = []
         for recommendation in recommendations:
             if not BidOfferMatch.is_valid_dict(recommendation):
-                raise MycoValidationException
+                raise MycoValidationException("BidOfferMatch is not valid")
             market = self.markets_mapping.get(recommendation.get("market_id"))
-            if market is None or market.readonly:
-                # The market is already finished or doesn't exist
-                raise MycoValidationException
+            if market is None:
+                # The market doesn't exist
+                raise MycoValidationException(
+                    f"Market with id {recommendation.get('market_id')} doesn't exist.")
+            if market.readonly:
+                # The market is already finished
+                raise MycoValidationException(
+                    "Cannot match trades in a finished market.")
 
             # Get the original bid and offer from the market
             market_bids = [

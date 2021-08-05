@@ -15,11 +15,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+from abc import ABC
 from typing import Dict
 
 
-class MycoMatcherInterface:
+class MycoMatcherInterface(ABC):
     """Interface for myco matchers' public methods."""
     def __init__(self):
         self.area_uuid_markets_mapping: Dict[str, Dict] = {}
@@ -31,11 +31,14 @@ class MycoMatcherInterface:
         """Interface for updating the area_uuid_markets_mapping of Myco matchers."""
         self.area_uuid_markets_mapping.update(area_uuid_markets_mapping)
 
-    def event_tick(self) -> None:
+    def match_recommendations(self, **kwargs) -> None:
+        """Match bids/offers recommendations."""
+
+    def event_tick(self, **kwargs) -> None:
         """Handler for the tick event."""
 
-    def event_market_cycle(self) -> None:
+    def event_market_cycle(self, **kwargs) -> None:
         """Handler for the market_cycle event."""
 
-    def event_finish(self) -> None:
+    def event_finish(self, **kwargs) -> None:
         """Handler for the finish event."""

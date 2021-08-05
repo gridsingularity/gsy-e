@@ -24,7 +24,7 @@ from cached_property import cached_property
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
 from d3a.d3a_core.singletons import bid_offer_matcher
-from d3a.d3a_core.util import TaggedLogWrapper, is_external_matching_enabled
+from d3a.d3a_core.util import TaggedLogWrapper
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.events import Events
@@ -393,7 +393,7 @@ class Area:
         """Tick event handler.
 
         Invoke aggregator commands consumer, publishes market clearing, updates events,
-        updates cached myco matcher markets.
+        updates cached myco matcher markets and match trades recommendations.
         """
         self._consume_commands_from_aggregator()
 
@@ -403,6 +403,7 @@ class Area:
                 self.dispatcher.publish_market_clearing()
             else:
                 self._update_myco_matcher()
+                bid_offer_matcher.match_recommendations()
 
         self.events.update_events(self.now)
 
@@ -411,8 +412,6 @@ class Area:
         bid_offer_matcher.matcher.update_area_uuid_markets_mapping(
             area_uuid_markets_mapping={
                 self.uuid: {"markets": self.all_markets, "current_time": self.now}})
-        if not is_external_matching_enabled():
-            bid_offer_matcher.matcher.match_recommendations()
 
     def update_area_current_tick(self):
         self.current_tick += 1

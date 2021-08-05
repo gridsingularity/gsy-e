@@ -265,11 +265,8 @@ class TwoSidedMarket(OneSidedMarket):
                 self.offers.get(offer["id"]) for offer in recommended_pair.offers]
             market_bids = [self.bids.get(bid["id"]) for bid in recommended_pair.bids]
 
-            if not all(market_offers):
-                # If not all received offers exist in the market, skip the current recommendation
-                continue
-            if not all(market_bids):
-                # If not all received bids exist in the market, skip the current recommendation
+            if not all(market_offers) and all(market_bids):
+                # If not all offers bids exist in the market, skip the current recommendation
                 continue
 
             self.validate_bid_offer_match(
@@ -278,9 +275,9 @@ class TwoSidedMarket(OneSidedMarket):
 
             market_offers = iter(market_offers)
             market_bids = iter(market_bids)
-            market_offer = next(market_offers)
-            market_bid = next(market_bids)
-            while True:
+            market_offer = next(market_offers, None)
+            market_bid = next(market_bids, None)
+            while market_bid and market_offer:
                 original_bid_rate = market_bid.original_bid_price / market_bid.energy
                 trade_bid_info = TradeBidOfferInfo(
                     original_bid_rate=original_bid_rate,
@@ -304,9 +301,6 @@ class TwoSidedMarket(OneSidedMarket):
                     self._replace_offers_bids_with_residual_in_recommendations_list(
                         recommendations, offer_trade, bid_trade)
                 )
-                if not (market_bid and market_offer):
-                    # If we reach the end of the offers/bids lists, break
-                    break
 
     @staticmethod
     def _validate_requirements_satisfied(

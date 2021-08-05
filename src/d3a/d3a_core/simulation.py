@@ -40,7 +40,7 @@ from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
 from d3a.d3a_core.singletons import external_global_statistics, bid_offer_matcher
 from d3a.d3a_core.util import (
     NonBlockingConsole, validate_const_settings_for_simulation,
-    get_market_slot_time_str, is_external_matching_enabled)
+    get_market_slot_time_str)
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.models.config import SimulationConfig
 from d3a.models.power_flow.pandapower import PandaPowerFlow
@@ -371,16 +371,10 @@ class Simulation:
                         external_global_statistics.update()
 
                 self.area.tick_and_dispatch()
+                bid_offer_matcher.event_tick(
+                    is_it_time_for_external_tick=external_global_statistics.
+                    is_it_time_for_external_tick(current_tick_in_slot))
                 self.area.update_area_current_tick()
-                if (self.simulation_config.external_connection_enabled and
-                        is_external_matching_enabled()):
-                    # If External matching is enabled, limit the number of ticks dispatched.
-                    if external_global_statistics.is_it_time_for_external_tick(
-                            current_tick_in_slot):
-                        bid_offer_matcher.event_tick()
-                else:
-                    bid_offer_matcher.event_tick()
-
                 self.simulation_config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()
 

@@ -55,7 +55,7 @@ class MycoInternalMatcher(MycoMatcherInterface):
         raise WrongMarketTypeException("Wrong market type setting flag "
                                        f"{ConstSettings.IAASettings.MARKET_TYPE}")
 
-    def match_recommendations(self):
+    def match_recommendations(self, **kwargs):
         """Request trade recommendations and match them in the relevant market."""
         for area_uuid, area_data in self.area_uuid_markets_mapping.items():
             for market in area_data["markets"]:
