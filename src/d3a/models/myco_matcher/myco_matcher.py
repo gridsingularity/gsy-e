@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from typing import Dict, Optional
+from typing import Optional
 
 from d3a.d3a_core.util import is_external_matching_enabled
 from d3a.models.myco_matcher import MycoExternalMatcher, MycoInternalMatcher

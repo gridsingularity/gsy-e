@@ -62,9 +62,10 @@ class MycoInternalMatcher(MycoMatcherInterface):
                 while True:
                     bids, offers = market.open_bids_and_offers
                     data = {
-                        market.id: {"bids": [bid.serializable_dict() for bid in bids.values()],
-                                    "offers": [offer.serializable_dict() for offer in offers.values()],
-                                    "current_time": area_data["current_time"]}}
+                        market.id:
+                            {"bids": [bid.serializable_dict() for bid in bids.values()],
+                             "offers": [offer.serializable_dict() for offer in offers.values()],
+                             "current_time": area_data["current_time"]}}
                     bid_offer_pairs = self._get_matches_recommendations(data)
                     if not bid_offer_pairs:
                         break

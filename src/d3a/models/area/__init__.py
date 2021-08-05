@@ -409,7 +409,8 @@ class Area:
     def _update_myco_matcher(self) -> None:
         """Update the markets cache that the myco matcher will request"""
         bid_offer_matcher.matcher.update_area_uuid_markets_mapping(
-            area_uuid_markets_mapping={self.uuid: {"markets": self.all_markets, "current_time": self.now}})
+            area_uuid_markets_mapping={
+                self.uuid: {"markets": self.all_markets, "current_time": self.now}})
         if not is_external_matching_enabled():
             bid_offer_matcher.matcher.match_recommendations()
 
