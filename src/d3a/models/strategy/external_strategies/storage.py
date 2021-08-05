@@ -326,7 +326,8 @@ class StorageExternalMixin(ExternalMixin):
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
-                replace_existing=replace_existing)
+                replace_existing=replace_existing,
+                **arguments)
             self.state.offered_buy_kWh[self.next_market.time_slot] = \
                 self.posted_bid_energy(self.next_market.id)
             self.state.clamp_energy_to_buy_kWh([self.next_market.time_slot])

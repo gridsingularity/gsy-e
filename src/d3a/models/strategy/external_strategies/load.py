@@ -173,7 +173,9 @@ class LoadExternalMixin(ExternalMixin):
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
-                replace_existing=replace_existing)
+                replace_existing=replace_existing,
+                attributes=arguments.get("attributes"),
+                requirements=arguments.get("requirements"))
             self.redis.publish_json(
                 bid_response_channel, {
                     "command": "bid", "status": "ready",
