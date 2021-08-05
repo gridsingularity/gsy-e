@@ -367,10 +367,10 @@ class TwoSidedMarket(OneSidedMarket):
 
         def replace_recommendations_with_residuals(recommendation: Dict):
             for index, offer in enumerate(recommendation["offers"]):
-                if offer["id"] == offer_trade.offer.id:
+                if offer["id"] == offer_trade.offer_bid.id:
                     recommendation["offers"][index] = offer_trade.residual.serializable_dict()
             for index, bid in enumerate(recommendation["bids"]):
-                if bid["id"] == bid_trade.offer.id:
+                if bid["id"] == bid_trade.offer_bid.id:
                     recommendation["bids"][index] = bid_trade.residual.serializable_dict()
             return recommendation
 
