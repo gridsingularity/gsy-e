@@ -563,21 +563,21 @@ def fixture_pv_strategy():
 
 
 @patch("d3a.models.strategy.pv.utils")
-def test_set_real_energy_of_last_market(utils_mock, pv_strategy):
+def test_set_energy_measurement_of_last_market(utils_mock, pv_strategy):
     """The real energy of the last market is set when necessary."""
     # If we are in the first market slot, the real energy is not set
     pv_strategy.area.current_market = None
-    pv_strategy.state.set_real_energy_kWh = Mock()
+    pv_strategy.state.set_energy_measurement_kWh = Mock()
     pv_strategy.state.get_energy_production_forecast_kWh = Mock(return_value=50)
-    pv_strategy.set_real_energy_of_last_market()
+    pv_strategy.set_energy_measurement_of_last_market()
 
-    pv_strategy.state.set_real_energy_kWh.assert_not_called()
+    pv_strategy.state.set_energy_measurement_kWh.assert_not_called()
 
     # When there is at least one past market, the real energy is set
-    pv_strategy.state.set_real_energy_kWh.reset_mock()
+    pv_strategy.state.set_energy_measurement_kWh.reset_mock()
     pv_strategy.area.current_market = Mock()
     utils_mock.compute_altered_energy.return_value = 100
-    pv_strategy.set_real_energy_of_last_market()
+    pv_strategy.set_energy_measurement_of_last_market()
 
-    pv_strategy.state.set_real_energy_kWh.assert_called_once_with(
+    pv_strategy.state.set_energy_measurement_kWh.assert_called_once_with(
         100, pv_strategy.area.current_market.time_slot)

@@ -171,20 +171,20 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self._cycled_market.add(self.area.current_market.time_slot)
 
         # Provide energy values for the past market slot, to be used in the settlement market
-        self.set_real_energy_of_last_market()
+        self.set_energy_measurement_of_last_market()
         self._delete_past_state()
 
-    def set_real_energy_of_last_market(self):
+    def set_energy_measurement_of_last_market(self):
         """Set the (simulated) actual energy of the device in the previous market slot."""
         if self.area.current_market:
-            self._set_real_energy_kWh(self.area.current_market.time_slot)
+            self._set_energy_measurement_kWh(self.area.current_market.time_slot)
 
-    def _set_real_energy_kWh(self, time_slot: DateTime) -> None:
+    def _set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
         """Set the (simulated) actual energy consumed by the device in a market slot."""
         energy_forecast_kWh = self.state.get_desired_energy_Wh(time_slot) / 1000
-        simulated_real_energy = utils.compute_altered_energy(energy_forecast_kWh)
+        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
 
-        self.state.set_real_energy_kWh(simulated_real_energy, time_slot)
+        self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
 
     def _delete_past_state(self):
         if (constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True or

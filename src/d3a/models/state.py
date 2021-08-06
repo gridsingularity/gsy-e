@@ -71,15 +71,15 @@ class ProsumptionInterface(StateInterface, ABC):
 
     def __init__(self):
         # Actual energy consumed/produced by the device at specific market slots
-        self._real_energy_kWh: Dict[DateTime, float] = {}
+        self._energy_measurement_kWh: Dict[DateTime, float] = {}
 
-    def set_real_energy_kWh(self, energy_kWh: float, time_slot: DateTime) -> None:
+    def set_energy_measurement_kWh(self, energy_kWh: float, time_slot: DateTime) -> None:
         """Set the actual energy consumed/produced by the device in the given market slot."""
-        self._real_energy_kWh[time_slot] = energy_kWh
+        self._energy_measurement_kWh[time_slot] = energy_kWh
 
-    def get_real_energy_kWh(self, time_slot: DateTime) -> float:
+    def get_energy_measurement_kWh(self, time_slot: DateTime) -> float:
         """Get the actual energy consumed/produced by the device in the given market slot."""
-        return self._real_energy_kWh.get(time_slot, 0.0)
+        return self._energy_measurement_kWh.get(time_slot, 0.0)
 
 
 class ConsumptionState(ProsumptionInterface):

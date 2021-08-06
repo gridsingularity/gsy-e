@@ -180,7 +180,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
         self._reset_rates_and_update_prices()
         self._set_energy_forecast_for_future_markets(reconfigure=False)
-        self.set_real_energy_of_last_market()
+        self.set_energy_measurement_of_last_market()
         # Create bids/offers for the expected energy consumption/production in future markets
         for market in self.area.all_markets:
             self._post_offer(market)
@@ -190,19 +190,19 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
         self._delete_past_state()
 
-    def set_real_energy_of_last_market(self):
+    def set_energy_measurement_of_last_market(self):
         """Set the (simulated) actual energy of the device in the previous market slot."""
         if self.area.current_market:
-            self._set_real_energy_kWh(self.area.current_market.time_slot)
+            self._set_energy_measurement_kWh(self.area.current_market.time_slot)
 
-    def _set_real_energy_kWh(self, time_slot: DateTime) -> None:
+    def _set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
         """Set the (simulated) actual energy of the device in a market slot."""
         energy_forecast_kWh = self.state.get_energy_at_market_slot(time_slot)
-        simulated_real_energy = utils.compute_altered_energy(energy_forecast_kWh)
+        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
         # This value can be either positive (consumption) or negative (production). This is
         # different from the other devices (PV, Load) where the value is positive regardless of
         # its direction (consumption or production)
-        self.state.set_real_energy_kWh(simulated_real_energy, time_slot)
+        self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
 
     def event_offer(self, *, market_id, offer):
         """Automatically react to offers (trying to buy energy) in one-sided markets.
