@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import logging
 from enum import Enum
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from d3a_interface.dataclasses import BidOfferMatch
 
@@ -87,11 +87,14 @@ class MycoExternalMatcher(MycoMatcherInterface):
         channel = f"{self._channel_prefix}/offers-bids/response/"
         self.myco_ext_conn.publish_json(channel, response_data)
 
-    def match_recommendations(self, message):
+    def match_recommendations(self, message: Optional[str] = None) -> None:
         """Receive trade recommendations and match them in the relevant market.
 
         Matching in bulk, any pair that fails validation will cancel the operation
         """
+        if not message:
+            return
+
         channel = f"{self._channel_prefix}/recommendations/response/"
         response_data = {"event": ExternalMatcherEventsEnum.MATCH.value, "status": "success"}
         data = json.loads(message.get("data"))
@@ -122,7 +125,10 @@ class MycoExternalMatcher(MycoMatcherInterface):
 
     def event_tick(self, **kwargs):
         """Publish the tick event to the Myco client."""
-
+        is_it_time_for_external_tick = kwargs.pop("is_it_time_for_external_tick", False)
+        # If External matching is enabled, limit the number of ticks dispatched.
+        if is_it_time_for_external_tick:
+            return
         data = {"event": ExternalMatcherEventsEnum.TICK.value}
         self.myco_ext_conn.publish_json(self._events_channel, data)
 

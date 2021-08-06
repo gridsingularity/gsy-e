@@ -72,11 +72,11 @@ class MycoInternalMatcher(MycoMatcherInterface):
                     market.match_recommendations(bid_offer_pairs)
         self.area_uuid_markets_mapping = {}
 
-    def event_tick(self) -> None:
+    def event_tick(self, **kwargs) -> None:
         pass
 
-    def event_market_cycle(self) -> None:
+    def event_market_cycle(self, **kwargs) -> None:
         pass
 
-    def event_finish(self) -> None:
+    def event_finish(self, **kwargs) -> None:
         pass

@@ -22,10 +22,9 @@ from d3a.models.myco_matcher import MycoExternalMatcher, MycoInternalMatcher
 from d3a.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
 
 
-class MycoMatcher(MycoMatcherInterface):
+class MycoMatcher:
     """
-    Myco markets matcher, set the global matcher (Internal/External) and
-    forwards events/commands to it.
+    Myco markets matcher, set the global matcher (Internal/External) and serve as a bridge to it.
     """
 
     def __init__(self):
@@ -44,26 +43,3 @@ class MycoMatcher(MycoMatcherInterface):
             return MycoExternalMatcher()
         else:
             return MycoInternalMatcher()
-
-    def match_recommendations(self, **kwargs):
-        # If External matching is enabled, the trigger should be by a redis command.
-        if not is_external_matching_enabled():
-            self.matcher.match_recommendations(**kwargs)
-
-    def event_tick(self, **kwargs) -> None:
-        """Handler for the tick event."""
-        is_it_time_for_external_tick = kwargs.pop("is_it_time_for_external_tick", False)
-        if is_external_matching_enabled():
-            # If External matching is enabled, limit the number of ticks dispatched.
-            if is_it_time_for_external_tick:
-                self.matcher.event_tick(**kwargs)
-        else:
-            self.matcher.event_tick(**kwargs)
-
-    def event_market_cycle(self, **kwargs) -> None:
-        """Handler for the market_cycle event."""
-        self.matcher.event_market_cycle(**kwargs)
-
-    def event_finish(self, **kwargs) -> None:
-        """Handler for the finish event."""
-        self.matcher.event_finish(**kwargs)
