@@ -132,7 +132,7 @@ def load_consumes_following_cloud_profile(context, cloud_coverage, start_time, e
             continue
         assert market.trades[0].seller == "IAA House 1" and \
             market.trades[0].buyer == "Grid Load"
-        assert market.trades[0].offer.energy == profile[int(market.time_slot.hour)]
+        assert market.trades[0].offer_bid.energy == profile[int(market.time_slot.hour)]
 
 
 @then('Grid Load consumes less than {energy} kWh between {start_time}:00 and {end_time}:00')
@@ -146,7 +146,7 @@ def load_consumes_less_than_between(context, energy, start_time, end_time):
             continue
         assert market.trades[0].seller == "IAA House 1" and \
             market.trades[0].buyer == "Grid Load"
-        assert market.trades[0].offer.energy <= energy
+        assert market.trades[0].offer_bid.energy <= energy
 
 
 @then('load consumes {energy} kWh between {start_time}:00 and {end_time}:00')
@@ -161,7 +161,7 @@ def load_consumes_between(context, energy, start_time, end_time):
         assert len(market.trades) == 1
         assert market.trades[0].seller == "IAA House 1" and \
             market.trades[0].buyer == "H1 General Load"
-        assert market.trades[0].offer.energy == energy
+        assert market.trades[0].offer_bid.energy == energy
 
 
 @then('Grid Load consumes {energy} kWh between {start_time}:00 and {end_time}:00')
@@ -175,7 +175,7 @@ def grid_load_consumes_between(context, energy, start_time, end_time):
             continue
         assert market.trades[0].seller == "IAA House 1" and \
             market.trades[0].buyer == "Grid Load"
-        assert market.trades[0].offer.energy == energy
+        assert market.trades[0].offer_bid.energy == energy
 
 
 @then('load consumes {energy} kWh with {rate} ct/kWh between {start_time}:00 and {end_time}:00')
@@ -192,8 +192,9 @@ def load_consumes_variable_energy_with_rate_between(context, energy, rate, start
         assert len(market.trades) == 1
         assert market.trades[0].seller == "IAA House 1" and \
             market.trades[0].buyer == "Grid Load"
-        assert isclose(market.trades[0].offer.energy, energy)
-        assert isclose(market.trades[0].offer.price / market.trades[0].offer.energy, rate)
+        assert isclose(market.trades[0].offer_bid.energy, energy)
+        assert isclose(
+            market.trades[0].offer_bid.energy_rate, rate)
 
 
 @then('load does not consume energy between {start_time}:00 and {end_time}:00')
@@ -227,8 +228,8 @@ def both_sunny_profile(context):
         if len(h1_trades) == 0 and len(h2_trades) == 0:
             continue
         assert len(h2_trades) == 1
-        assert h1_trades[0].offer.energy == h2_trades[0].offer.energy
-        assert h1_trades[0].offer.energy == sunny[time_slot]
+        assert h1_trades[0].offer_bid.energy == h2_trades[0].offer_bid.energy
+        assert h1_trades[0].offer_bid.energy == sunny[time_slot]
 
 
 @then('House 1 PV follows the partially cloudy profile after 12:00')
@@ -243,7 +244,7 @@ def house1_partially_cloudy(context):
         if len(h1_trades) == 0:
             continue
         assert len(h1_trades) == 1
-        assert h1_trades[0].offer.energy == partial_cloud[time_slot]
+        assert h1_trades[0].offer_bid.energy == partial_cloud[time_slot]
 
 
 @then('House 2 PV follows the cloudy profile after 12:00')
@@ -258,4 +259,4 @@ def house2_cloudy(context):
         if len(h2_trades) == 0:
             continue
         assert len(h2_trades) == 1
-        assert h2_trades[0].offer.energy == cloudy[time_slot]
+        assert h2_trades[0].offer_bid.energy == cloudy[time_slot]
