@@ -7,8 +7,7 @@ from d3a_interface.dataclasses import BidOfferMatch
 
 import d3a.constants
 from d3a.d3a_core.exceptions import (
-    InvalidBidOfferPairException, OfferNotFoundException,
-    BidNotFoundException, MycoValidationException)
+    InvalidBidOfferPairException, MycoValidationException)
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
 from d3a.models.market import Market
 
@@ -79,14 +78,10 @@ class ExternalMatcher:
         data = json.loads(message.get("data"))
         recommendations = data.get("recommended_matches", [])
         try:
-            validated_records = self._get_validated_bid_offer_match_list(recommendations)
-            for record in validated_records:
-                market = self.markets_mapping.get(record["market_id"])
-                try:
-                    market.match_recommendations([record])
-                except (OfferNotFoundException, BidNotFoundException):
-                    # If the offer or bid have already been matched or deleted.
-                    continue
+            validated_recommendations = self._get_validated_recommendations(recommendations)
+            for recommendation in validated_recommendations:
+                market = self.markets_mapping.get(recommendation["market_id"])
+                market.match_recommendations([recommendation])
         except Exception as ex:
             response_data["status"] = "fail"
             response_data["message"] = "Validation Error"
@@ -134,7 +129,7 @@ class ExternalMatcher:
 
         bids, offers = market.open_bids_and_offers
         bids_list = list(bid.serializable_dict() for bid in bids.values())
-        filtered_offers_energy_type = filters.get("energy_type", None)
+        filtered_offers_energy_type = filters.get("energy_type")
         if filtered_offers_energy_type:
             offers_list = list(
                 offer.serializable_dict() for offer in offers.values()
@@ -145,38 +140,36 @@ class ExternalMatcher:
                 offer.serializable_dict() for offer in offers.values())
         return bids_list, offers_list
 
-    def _get_validated_bid_offer_match_list(
+    def _get_validated_recommendations(
             self, recommendations: List[Dict]) -> List[BidOfferMatch.serializable_dict]:
         """Return a validated list of BidOfferMatch instances."""
-        validated_records = []
-        for record in recommendations:
-            market = self.markets_mapping.get(record.get("market_id"), None)
+        validated_recommendations = []
+        for recommendation in recommendations:
+            market = self.markets_mapping.get(recommendation.get("market_id"))
             if market is None or market.readonly:
                 # The market is already finished or doesn't exist
                 raise MycoValidationException
 
             # Get the original bid and offer from the market
-            market_bid = market.bids.get(record.get("bid").get("id"), None)
-            market_offer = market.offers.get(record.get("offer").get("id"), None)
+            market_bids = [
+                market.bids.get(bid.get("id")) for bid in recommendation.get("bids")]
+            market_offers = [
+                market.offers.get(offer.get("id")) for offer in recommendation.get("offers")]
 
-            if not (market_bid and market_offer):
-                # Offer or Bid either don't belong to market or were already matched
+            if not (all(market_bids) and all(market_offers)):
+                # Offers or Bids either don't belong to market or were already matched
                 continue
             try:
                 market.validate_bid_offer_match(
-                    market_bid,
-                    market_offer,
-                    record.get("trade_rate"),
-                    record.get("selected_energy")
+                    market_bids,
+                    market_offers,
+                    recommendation.get("trade_rate"),
+                    recommendation.get("selected_energy")
                 )
             except InvalidBidOfferPairException:
                 continue
 
-            validated_records.append(BidOfferMatch(
-                market_id=record.get("market_id"),
-                bid=market_bid.serializable_dict(),
-                selected_energy=record.get("selected_energy"),
-                offer=market_offer.serializable_dict(),
-                trade_rate=record.get("trade_rate"),
-                ).serializable_dict())
-        return validated_records
+            recommendation["bids"] = [bid.serializable_dict() for bid in market_bids]
+            recommendation["offers"] = [offer.serializable_dict() for offer in market_offers]
+            validated_recommendations.append(recommendation)
+        return validated_recommendations
