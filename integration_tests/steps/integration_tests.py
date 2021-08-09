@@ -389,7 +389,7 @@ def test_export_data_csv(context, scenario):
 
 @then('the export functionality of supply/demand curve is tested')
 def test_export_supply_demand_curve(context):
-    sim_data_csv = glob.glob(os.path.join(context.export_path, "*", "plot", "mcp"))
+    sim_data_csv = glob.glob(os.path.join(context.export_path, "*", "plot", "*", "mcp"))
     if len(sim_data_csv) != 1:
         raise FileExistsError("Not found in {path}".format(path=context.export_path))
 
