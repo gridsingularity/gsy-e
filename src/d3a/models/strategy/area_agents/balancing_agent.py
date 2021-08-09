@@ -67,10 +67,10 @@ class BalancingAgent(OneSidedAgent):
                 market.time_slot != self.lower_market.time_slot:
             return
         positive_balancing_energy = \
-            trade.offer.energy * self.balancing_spot_trade_ratio + \
+            trade.offer_bid.energy * self.balancing_spot_trade_ratio + \
             self.lower_market.unmatched_energy_upward
         negative_balancing_energy = \
-            trade.offer.energy * self.balancing_spot_trade_ratio + \
+            trade.offer_bid.energy * self.balancing_spot_trade_ratio + \
             self.lower_market.unmatched_energy_downward
 
         self._trigger_balancing_trades(positive_balancing_energy, negative_balancing_energy)
@@ -82,13 +82,13 @@ class BalancingAgent(OneSidedAgent):
                 balance_trade = self._balancing_trade(offer,
                                                       positive_balancing_energy)
                 if balance_trade is not None:
-                    positive_balancing_energy -= abs(balance_trade.offer.energy)
+                    positive_balancing_energy -= abs(balance_trade.offer_bid.energy)
             elif offer.energy < FLOATING_POINT_TOLERANCE and \
                     negative_balancing_energy > FLOATING_POINT_TOLERANCE:
                 balance_trade = self._balancing_trade(offer,
                                                       -negative_balancing_energy)
                 if balance_trade is not None:
-                    negative_balancing_energy -= abs(balance_trade.offer.energy)
+                    negative_balancing_energy -= abs(balance_trade.offer_bid.energy)
 
         self.lower_market.unmatched_energy_upward = positive_balancing_energy
         self.lower_market.unmatched_energy_downward = negative_balancing_energy

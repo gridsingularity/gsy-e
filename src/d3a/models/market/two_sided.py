@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import itertools
 import uuid
-from dataclasses import replace
 from logging import getLogger
 from math import isclose
 from typing import Dict, List, Union  # noqa
@@ -204,7 +203,7 @@ class TwoSidedMarket(OneSidedMarket):
             pass
 
         fee_price, trade_price = self.determine_bid_price(trade_offer_info, energy)
-        bid = replace(bid, price=trade_price)
+        bid.update_price(trade_price)
 
         # Do not adapt grid fees when creating the bid_trade_info structure, to mimic
         # the behavior of the forwarded bids which use the source market fee.
@@ -368,10 +367,10 @@ class TwoSidedMarket(OneSidedMarket):
 
         def replace_recommendations_with_residuals(recommendation: Dict):
             for index, offer in enumerate(recommendation["offers"]):
-                if offer["id"] == offer_trade.offer.id:
+                if offer["id"] == offer_trade.offer_bid.id:
                     recommendation["offers"][index] = offer_trade.residual.serializable_dict()
             for index, bid in enumerate(recommendation["bids"]):
-                if bid["id"] == bid_trade.offer.id:
+                if bid["id"] == bid_trade.offer_bid.id:
                     recommendation["bids"][index] = bid_trade.residual.serializable_dict()
             return recommendation
 

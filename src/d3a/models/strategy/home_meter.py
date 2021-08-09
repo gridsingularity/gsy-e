@@ -234,7 +234,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
         else:
             self.assert_if_trade_offer_price_is_too_low(market_id, trade)
             self.state.decrement_available_energy(
-                trade.offer.energy, market.time_slot, self.owner.name)
+                trade.offer_bid.energy, market.time_slot, self.owner.name)
 
     def event_bid_traded(self, *, market_id, bid_trade):
         """Register the bid traded by the device. Extends the superclass method.
@@ -248,7 +248,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
         market = self.area.get_future_market_from_id(market_id)
         self.state.decrement_energy_requirement(
-            bid_trade.offer.energy * 1000, market.time_slot, self.owner.name)
+            bid_trade.offer_bid.energy * 1000, market.time_slot, self.owner.name)
 
     def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments.

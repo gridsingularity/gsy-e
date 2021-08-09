@@ -157,8 +157,8 @@ class Market:
         self._update_min_max_avg_offer_prices()
 
     def _update_accumulated_trade_price_energy(self, trade):
-        self.accumulated_trade_price += trade.offer.price
-        self.accumulated_trade_energy += trade.offer.energy
+        self.accumulated_trade_price += trade.offer_bid.price
+        self.accumulated_trade_energy += trade.offer_bid.energy
 
     def _update_min_max_avg_offer_prices(self):
         self._avg_offer_price = None
@@ -236,16 +236,16 @@ class Market:
             seconds=GlobalConfig.tick_length.seconds * self.current_tick_in_slot)
 
     def bought_energy(self, buyer):
-        return sum(trade.offer.energy for trade in self.trades if trade.buyer == buyer)
+        return sum(trade.offer_bid.energy for trade in self.trades if trade.buyer == buyer)
 
     def sold_energy(self, seller):
-        return sum(trade.offer.energy for trade in self.trades if trade.seller == seller)
+        return sum(trade.offer_bid.energy for trade in self.trades if trade.seller == seller)
 
     def total_spent(self, buyer):
-        return sum(trade.offer.price for trade in self.trades if trade.buyer == buyer)
+        return sum(trade.offer_bid.price for trade in self.trades if trade.buyer == buyer)
 
     def total_earned(self, seller):
-        return sum(trade.offer.price for trade in self.trades if trade.seller == seller)
+        return sum(trade.offer_bid.price for trade in self.trades if trade.seller == seller)
 
     @property
     def info(self):
