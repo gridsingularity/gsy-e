@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from typing import Optional
+from typing import Optional, Dict
 
 from d3a.d3a_core.util import is_external_matching_enabled
 from d3a.models.myco_matcher import MycoExternalMatcher, MycoInternalMatcher
@@ -43,3 +43,23 @@ class MycoMatcher:
             return MycoExternalMatcher()
         else:
             return MycoInternalMatcher()
+
+    def update_area_uuid_markets_mapping(self, area_uuid_markets_mapping: Dict[str, Dict]) -> None:
+        """Interface for updating the area_uuid_markets_mapping of Myco matchers."""
+        self.matcher.area_uuid_markets_mapping.update(area_uuid_markets_mapping)
+
+    def match_recommendations(self, **kwargs) -> None:
+        """Match bids/offers recommendations."""
+        self.matcher.match_recommendations(**kwargs)
+
+    def event_tick(self, **kwargs) -> None:
+        """Handler for the tick event."""
+        self.matcher.event_tick(**kwargs)
+
+    def event_market_cycle(self, **kwargs) -> None:
+        """Handler for the market_cycle event."""
+        self.matcher.event_market_cycle(**kwargs)
+
+    def event_finish(self, **kwargs) -> None:
+        """Handler for the finish event."""
+        self.matcher.event_finish(**kwargs)

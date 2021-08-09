@@ -341,7 +341,7 @@ class Simulation:
             if self.simulation_config.external_connection_enabled:
                 external_global_statistics.update(market_cycle=True)
                 self.area.publish_market_cycle_to_external_clients()
-                bid_offer_matcher.matcher.event_market_cycle()
+                bid_offer_matcher.event_market_cycle()
 
             self._update_and_send_results()
             self.live_events.handle_all_events(self.area)
@@ -372,7 +372,7 @@ class Simulation:
 
                 self.area.tick_and_dispatch()
                 self.area.update_area_current_tick()
-                bid_offer_matcher.matcher.event_tick(
+                bid_offer_matcher.event_tick(
                     is_it_time_for_external_tick=external_global_statistics.
                     is_it_time_for_external_tick(current_tick_in_slot))
                 self.simulation_config.external_redis_communicator.\
@@ -393,7 +393,7 @@ class Simulation:
         self.deactivate_areas(self.area)
         self.simulation_config.external_redis_communicator.\
             publish_aggregator_commands_responses_events()
-        bid_offer_matcher.matcher.event_finish()
+        bid_offer_matcher.event_finish()
         if not self.is_stopped:
             self._update_progress_info(slot_count - 1, slot_count)
             paused_duration = duration(seconds=self.paused_time)

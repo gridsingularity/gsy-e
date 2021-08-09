@@ -403,13 +403,13 @@ class Area:
                 self.dispatcher.publish_market_clearing()
             else:
                 self._update_myco_matcher()
-                bid_offer_matcher.matcher.match_recommendations()
+                bid_offer_matcher.match_recommendations()
 
         self.events.update_events(self.now)
 
     def _update_myco_matcher(self) -> None:
         """Update the markets cache that the myco matcher will request"""
-        bid_offer_matcher.matcher.update_area_uuid_markets_mapping(
+        bid_offer_matcher.update_area_uuid_markets_mapping(
             area_uuid_markets_mapping={
                 self.uuid: {"markets": self.all_markets, "current_time": self.now}})
 
