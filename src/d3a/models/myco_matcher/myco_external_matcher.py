@@ -125,9 +125,9 @@ class MycoExternalMatcher(MycoMatcherInterface):
 
     def event_tick(self, **kwargs):
         """Publish the tick event to the Myco client."""
-        is_it_time_for_external_tick = kwargs.pop("is_it_time_for_external_tick", False)
+        is_it_time_for_external_tick = kwargs.pop("is_it_time_for_external_tick", True)
         # If External matching is enabled, limit the number of ticks dispatched.
-        if is_it_time_for_external_tick:
+        if not is_it_time_for_external_tick:
             return
         data = {"event": ExternalMatcherEventsEnum.TICK.value}
         self.myco_ext_conn.publish_json(self._events_channel, data)
