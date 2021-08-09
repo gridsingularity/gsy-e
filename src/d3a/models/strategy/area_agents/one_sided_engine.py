@@ -137,12 +137,12 @@ class IAAEngine:
                                      f"{self.owner.name}, {self.name} {forwarded_offer}")
 
     def event_trade(self, *, trade):
-        offer_info = self.forwarded_offers.get(trade.offer.id)
+        offer_info = self.forwarded_offers.get(trade.offer_bid.id)
         if not offer_info:
             # Trade doesn't concern us
             return
 
-        if trade.offer.id == offer_info.target_offer.id:
+        if trade.offer_bid.id == offer_info.target_offer.id:
             # Offer was accepted in target market - buy in source
             source_rate = offer_info.source_offer.energy_rate
             target_rate = offer_info.target_offer.energy_rate
@@ -152,8 +152,8 @@ class IAAEngine:
             try:
                 if ConstSettings.IAASettings.MARKET_TYPE == 1:
                     # One sided market should subtract the fees
-                    trade_offer_rate = trade.offer.energy_rate - \
-                                       trade.fee_price / trade.offer.energy
+                    trade_offer_rate = trade.offer_bid.energy_rate - \
+                                       trade.fee_price / trade.offer_bid.energy
                 else:
                     # trade_offer_rate not used in two sided markets, trade_bid_info used instead
                     trade_offer_rate = None
@@ -164,7 +164,7 @@ class IAAEngine:
                 trade_source = self.owner.accept_offer(
                     market_or_id=self.markets.source,
                     offer=offer_info.source_offer,
-                    energy=trade.offer.energy,
+                    energy=trade.offer_bid.energy,
                     buyer=self.owner.name,
                     trade_rate=trade_offer_rate,
                     trade_bid_info=updated_trade_bid_info,
@@ -181,7 +181,7 @@ class IAAEngine:
             self._delete_forwarded_offer_entries(offer_info.source_offer)
             self.offer_age.pop(offer_info.source_offer.id, None)
 
-        elif trade.offer.id == offer_info.source_offer.id:
+        elif trade.offer_bid.id == offer_info.source_offer.id:
             # Offer was bought in source market by another party
             try:
                 self.owner.delete_offer(self.markets.target, offer_info.target_offer)
