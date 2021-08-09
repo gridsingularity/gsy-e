@@ -520,12 +520,14 @@ class StorageExternalMixin(ExternalMixin):
 
             assert self.can_bid_be_posted(self.next_market.time_slot, **arguments)
 
-            replace_existing = arguments.get("replace_existing", True)
+            replace_existing = arguments.pop("replace_existing", True)
             bid = self.post_bid(
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
-                replace_existing=replace_existing)
+                replace_existing=replace_existing,
+                **arguments)
+
             self.state.offered_buy_kWh[self.next_market.time_slot] = \
                 self.posted_bid_energy(self.next_market.id)
             self.state.clamp_energy_to_buy_kWh([self.next_market.time_slot])

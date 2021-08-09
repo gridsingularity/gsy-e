@@ -271,7 +271,7 @@ class LoadExternalMixin(ExternalMixin):
             # Check that every provided argument is allowed
             assert all(arg in allowed_args for arg in arguments.keys())
 
-            replace_existing = arguments.get("replace_existing", True)
+            replace_existing = arguments.pop("replace_existing", True)
             assert self.can_bid_be_posted(
                 arguments["energy"],
                 arguments["price"],
@@ -283,7 +283,8 @@ class LoadExternalMixin(ExternalMixin):
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
-                replace_existing=replace_existing)
+                replace_existing=replace_existing,
+                **arguments)
             return {
                 "command": "bid", "status": "ready",
                 "bid": bid.to_json_string(replace_existing=replace_existing),

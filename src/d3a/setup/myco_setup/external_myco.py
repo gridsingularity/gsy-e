@@ -5,6 +5,8 @@ from d3a.models.strategy.external_strategies.storage import StorageExternalStrat
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.enums import BidOfferMatchAlgoEnum
 
+from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
+
 
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
@@ -50,6 +52,10 @@ def get_setup(config):
                                                                   hrs_per_day=24,
                                                                   hrs_of_day=list(range(0, 24)),
                                                                   final_buying_rate=35)
+                 ),
+            Area("Market Maker",
+                 strategy=MarketMakerStrategy(energy_rate=30)
+
                  ),
         ],
         config=config
