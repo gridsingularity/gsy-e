@@ -19,9 +19,16 @@ from logging import getLogger
 from typing import List  # noqa
 from uuid import uuid4
 
-from d3a_interface.dataclasses import MarketClearingState
-import d3a.constants
 from cached_property import cached_property
+from pendulum import DateTime, duration, today
+from slugify import slugify
+from d3a_interface.dataclasses import MarketClearingState
+from d3a_interface.area_validator import validate_area
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.enums import SpotMarketTypeEnum
+from d3a_interface.utils import key_in_dict_and_not_none
+
+import d3a.constants
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
 from d3a.d3a_core.singletons import bid_offer_matcher
@@ -38,12 +45,6 @@ from d3a.models.market.blockchain_interface import (
     NonBlockchainInterface, SubstrateBlockchainInterface)
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
-from d3a_interface.area_validator import validate_area
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.enums import SpotMarketTypeEnum
-from d3a_interface.utils import key_in_dict_and_not_none
-from pendulum import DateTime, duration, today
-from slugify import slugify
 
 log = getLogger(__name__)
 
@@ -427,13 +428,17 @@ class Area:
                 bid_offer_pairs = bid_offer_matcher.get_matches_recommendations(data)
                 if not bid_offer_pairs:
                     break
-                if hasattr(bid_offer_matcher.match_algorithm, "state"):
-                    self.state.cumulative_offers[self.now] = (bid_offer_matcher.match_algorithm.
-                                                              state.cumulative_offers)
-                    self.state.cumulative_bids[self.now] = (bid_offer_matcher.match_algorithm.
-                                                            state.cumulative_bids)
-
+                self.copy_clearing_state_to_area_state()
                 market.match_recommendations(bid_offer_pairs)
+
+    def copy_clearing_state_to_area_state(self):
+        """Keeping copy of myco matcher's cumulative_offers/cumulative_bids to area for
+        supply/demand plot"""
+        if hasattr(bid_offer_matcher.match_algorithm, "state"):
+            self.state.cumulative_offers[self.now] = (bid_offer_matcher.match_algorithm.
+                                                      state.cumulative_offers)
+            self.state.cumulative_bids[self.now] = (bid_offer_matcher.match_algorithm.
+                                                    state.cumulative_bids)
 
     def update_area_current_tick(self):
         self.current_tick += 1

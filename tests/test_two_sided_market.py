@@ -8,15 +8,26 @@ from pendulum import now
 from math import isclose
 from unittest.mock import MagicMock, patch
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.enums import BidOfferMatchAlgoEnum
 from d3a_interface.matching_algorithms import (
     PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
 )
 from d3a.d3a_core.exceptions import (
     BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade, MarketException)
 from d3a.events import MarketEvent
+from d3a.models.area import Area
 from d3a.models.market import Bid, Offer
 from d3a.models.market.market_structures import TradeBidOfferInfo, Trade
 from d3a.models.market.two_sided import TwoSidedMarket
+from d3a.d3a_core.singletons import bid_offer_matcher
+
+
+@pytest.fixture
+def pac_area():
+    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+    bid_offer_matcher.activate()
+    return Area(name='fake_area')
 
 
 @pytest.fixture
@@ -495,3 +506,24 @@ class TestTwoSidedMarketMatchRecommendations:
         assert market.accumulated_trade_price == 2
         assert market.traded_energy["Seller"] == 2
         assert market.traded_energy["Buyer"] == -2
+
+    def test_double_sided_pay_as_clear_market_area_retain_state(self, pac_area):
+
+        offers = [
+            Offer("id1", now(), 1.1, 1, "other").serializable_dict(),
+            Offer("id2", now(), 2.2, 1, "other").serializable_dict(),
+            Offer("id3", now(), 3.3, 1, "other").serializable_dict()]
+        bids = [
+            Bid("bid_id1", now(), 3.3, 1, "B", "S").serializable_dict(),
+            Bid("bid_id2", now(), 2.2, 1, "B", "S").serializable_dict(),
+            Bid("bid_id3", now(), 1.1, 1, "B", "S").serializable_dict()]
+        current_time = pac_area.now
+        data = {str(uuid4()): {"bids": bids, "offers": offers, "current_time": current_time}}
+        bid_offer_matcher.get_matches_recommendations(data)
+
+        pac_area.copy_clearing_state_to_area_state()
+
+        assert (pac_area.state.cumulative_offers[current_time] ==
+                bid_offer_matcher.match_algorithm.state.cumulative_offers)
+        assert (pac_area.state.cumulative_bids[current_time] ==
+                bid_offer_matcher.match_algorithm.state.cumulative_bids)
