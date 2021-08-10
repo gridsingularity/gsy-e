@@ -8,26 +8,26 @@ import d3a.models.market.market_redis_connection
 from d3a.d3a_core.exceptions import InvalidBidOfferPairException, MycoValidationException
 from d3a.models.market import Offer, Bid
 from d3a.models.market.two_sided import TwoSidedMarket
-from d3a.models.myco_matcher import ExternalMatcher
+from d3a.models.myco_matcher import MycoExternalMatcher
 
-d3a.models.myco_matcher.external_matcher.BlockingCommunicator = MagicMock
-d3a.models.myco_matcher.external_matcher.ResettableCommunicator = MagicMock
+d3a.models.myco_matcher.myco_external_matcher.BlockingCommunicator = MagicMock
+d3a.models.myco_matcher.myco_external_matcher.ResettableCommunicator = MagicMock
 
 
 class TestMycoExternalMatcher:
 
     @classmethod
     def setup_class(cls):
-        cls.matcher = ExternalMatcher()
+        cls.matcher = MycoExternalMatcher()
         cls.market = TwoSidedMarket(time_slot=now())
-        cls.matcher.markets_mapping = {cls.market.id: cls.market}
-        cls.redis_connection = d3a.models.myco_matcher.external_matcher.ResettableCommunicator
+        cls.redis_connection = d3a.models.myco_matcher.myco_external_matcher.ResettableCommunicator
         assert cls.matcher.simulation_id == d3a.constants.COLLABORATION_ID
         cls.channel_prefix = f"external-myco/{d3a.constants.COLLABORATION_ID}/"
         cls.events_channel = f"{cls.channel_prefix}events/"
 
     def setup_method(self, method):
         self.matcher.myco_ext_conn.publish_json.reset_mock()
+        self.matcher.markets_mapping = {self.market.id: self.market}
 
     def _populate_market_bids_offers(self):
         self.market.offers = {"id1": Offer("id1", now(), 3, 3, "seller", 3),
@@ -52,28 +52,35 @@ class TestMycoExternalMatcher:
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, {"simulation_id": self.matcher.simulation_id})
 
-    def test_publish_event_tick_myco(self):
+    def test_event_tick(self):
         data = {"event": "tick"}
-        self.matcher.publish_event_tick_myco()
+        self.matcher.event_tick()
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             self.events_channel, data)
 
-    def test_publish_event_market_cycle_myco(self):
+        self.matcher.event_tick(is_it_time_for_external_tick=False)
+        # should still be == 1 as the above won't trigger the publish_json method
+        assert self.matcher.myco_ext_conn.publish_json.call_count == 1
+
+    def test_event_market_cycle(self):
+        assert self.matcher.markets_mapping
         data = {"event": "market_cycle"}
-        self.matcher.publish_event_market_cycle_myco()
+        self.matcher.event_market_cycle()
+        # Market cycle event should clear the markets cache
+        assert not self.matcher.markets_mapping
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             self.events_channel, data)
 
-    def test_publish_event_finish_myco(self):
+    def test_event_finish(self):
         data = {"event": "finish"}
-        self.matcher.publish_event_finish_myco()
+        self.matcher.event_finish()
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             self.events_channel, data)
 
     def test_update_area_uuid_markets_mapping(self):
-        mapping_dict = {"areax": [self.market]}
+        mapping_dict = {"areax": {"markets": [self.market]}}
         self.matcher.area_uuid_markets_mapping = {}
-        self.matcher.update_area_uuid_markets_mapping({"areax": [self.market]})
+        self.matcher.update_area_uuid_markets_mapping({"areax": {"markets": [self.market]}})
         assert mapping_dict == self.matcher.area_uuid_markets_mapping
 
     def test_get_bids_offers(self):
@@ -98,7 +105,7 @@ class TestMycoExternalMatcher:
             if offer.attributes and offer.attributes.get("energy_type") == "Green")
         assert (expected_bids_list, expected_offers_list) == (actual_bids_list, actual_offers_list)
 
-    @patch("d3a.models.myco_matcher.external_matcher.ExternalMatcher."
+    @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcher."
            "_get_bids_offers", MagicMock(return_value=([], [])))
     def test_publish_offers_bids(self):
         channel = f"{self.channel_prefix}offers-bids/response/"
@@ -111,7 +118,7 @@ class TestMycoExternalMatcher:
             "event": "offers_bids_response",
             "bids_offers": {self.market.id: {"bids": [], "offers": []}}
         }
-        self.matcher.update_area_uuid_markets_mapping({"area1": [self.market]})
+        self.matcher.update_area_uuid_markets_mapping({"area1": {"markets": [self.market]}})
         self.matcher.publish_offers_bids(payload)
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
@@ -166,7 +173,7 @@ class TestMycoExternalMatcher:
             # should not be called
             assert not self.market.validate_bid_offer_match.called
 
-    @patch("d3a.models.myco_matcher.external_matcher.ExternalMatcher."
+    @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcher."
            "_get_validated_recommendations", MagicMock())
     def test_match_recommendations(self):
         channel = f"{self.channel_prefix}recommendations/response/"
