@@ -128,7 +128,7 @@ class PVPredefinedStrategy(PVStrategy):
             raise ValueError("Energy_profile has to be in [0,1,2,4]")
 
         power_weight_profile = read_arbitrary_profile(
-            InputProfileTypes.IDENTITY, str(profile_path))
+            InputProfileTypes.IDENTITY, profile_path)
 
         self.energy_profile = {
             time_slot: convert_kW_to_kWh(weight * self.capacity_kW,

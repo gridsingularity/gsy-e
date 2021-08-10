@@ -66,8 +66,7 @@ class SimulationConfig:
         self.read_pv_user_profile(pv_user_profile)
         self.read_market_maker_rate(market_maker_rate)
 
-        capacity_kW = capacity_kW or ConstSettings.PVSettings.DEFAULT_CAPACITY_KW
-        self.capacity_kW = capacity_kW
+        self.capacity_kW = capacity_kW or ConstSettings.PVSettings.DEFAULT_CAPACITY_KW
         self.external_connection_enabled = external_connection_enabled
         self.external_redis_communicator = ExternalConnectionCommunicator(
             external_connection_enabled)
