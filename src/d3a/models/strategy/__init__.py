@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import sys
 from logging import getLogger
-from typing import List, Dict, Any, Union  # noqa
+from typing import List, Dict, Any, Union, Optional  # noqa
 from uuid import uuid4
 
 from d3a import constants
@@ -35,7 +35,7 @@ from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
 from d3a.models.market.market_structures import (
     Offer, trade_from_json_string,
-    offer_or_bid_from_json_string)
+    offer_or_bid_from_json_string, Bid)
 from d3a_interface.constants_limits import ConstSettings
 
 log = getLogger(__name__)
@@ -544,7 +544,9 @@ class BidEnabledStrategy(BaseStrategy):
             assert bid.buyer == self.owner.name
             self.remove_bid_from_pending(market.id, bid.id)
 
-    def post_bid(self, market, price, energy, replace_existing=True):
+    def post_bid(
+            self, market: Market, price: float, energy: float, replace_existing: bool = True,
+            attributes: Optional[Dict] = None, requirements: Optional[Dict] = None) -> Bid:
         if replace_existing:
             self._remove_existing_bids(market)
 
@@ -555,7 +557,9 @@ class BidEnabledStrategy(BaseStrategy):
             original_bid_price=price,
             buyer_origin=self.owner.name,
             buyer_origin_id=self.owner.uuid,
-            buyer_id=self.owner.uuid)
+            buyer_id=self.owner.uuid,
+            attributes=attributes,
+            requirements=requirements)
         self.add_bid_to_posted(market.id, bid)
         return bid
 
@@ -570,7 +574,7 @@ class BidEnabledStrategy(BaseStrategy):
 
             self.remove_bid_from_pending(market.id, bid.id)
             self.post_bid(market, bid.energy * updated_rate,
-                          bid.energy)
+                          bid.energy, attributes=bid.attributes, requirements=bid.requirements)
 
     def can_bid_be_posted(
             self, bid_energy, bid_price, required_energy_kWh, market, replace_existing=False):

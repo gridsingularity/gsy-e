@@ -93,11 +93,13 @@ class FakeMarket:
         return TIME
 
     def offer(self, price, energy, seller, original_offer_price=None,
-              seller_origin=None, seller_origin_id=None, seller_id=None):
-        offer = Offer('id', pendulum.now(), price, energy, seller, seller_origin=seller_origin,
-                      seller_origin_id=seller_origin_id, seller_id=seller_id)
+              seller_origin=None, seller_origin_id=None, seller_id=None,
+              attributes=None, requirements=None):
+        offer = Offer("id", pendulum.now(), price, energy, seller, seller_origin=seller_origin,
+                      seller_origin_id=seller_origin_id, seller_id=seller_id,
+                      attributes=attributes, requirements=requirements)
         self.created_offers.append(offer)
-        offer.id = 'id'
+        offer.id = "id"
         return offer
 
     def balancing_offer(self, price, energy, seller):
@@ -117,9 +119,11 @@ class FakeMarket:
         return trade
 
     def bid(self, price, energy, buyer, original_bid_price=None,
-            buyer_origin=None, buyer_origin_id=None, buyer_id=None):
+            buyer_origin=None, buyer_origin_id=None, buyer_id=None,
+            attributes=None, requirements=None):
         bid = Bid("bid_id", pendulum.now(), price, energy, buyer, buyer_origin=buyer_origin,
-                  buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
+                  buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
+                  attributes=attributes, requirements=requirements)
         return bid
 
 

@@ -8,7 +8,7 @@ from pendulum import now
 from math import isclose
 from unittest.mock import MagicMock, patch
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.enums import BidOfferMatchAlgoEnum
+from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 from d3a_interface.matching_algorithms import (
     PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
 )
@@ -518,12 +518,15 @@ class TestTwoSidedMarketMatchRecommendations:
             Bid("bid_id2", now(), 2.2, 1, "B", "S").serializable_dict(),
             Bid("bid_id3", now(), 1.1, 1, "B", "S").serializable_dict()]
         current_time = pac_area.now
+
         data = {str(uuid4()): {"bids": bids, "offers": offers, "current_time": current_time}}
-        bid_offer_matcher.get_matches_recommendations(data)
+        bid_offer_matcher.matcher._get_matches_recommendations(data)
 
         pac_area.copy_clearing_state_to_area_state()
 
         assert (pac_area.state.cumulative_offers[current_time] ==
-                bid_offer_matcher.match_algorithm.state.cumulative_offers)
+                bid_offer_matcher.matcher.match_algorithm.state.cumulative_offers)
         assert (pac_area.state.cumulative_bids[current_time] ==
-                bid_offer_matcher.match_algorithm.state.cumulative_bids)
+                bid_offer_matcher.matcher.match_algorithm.state.cumulative_bids)
+        ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
+        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
