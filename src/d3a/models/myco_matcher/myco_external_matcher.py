@@ -133,8 +133,9 @@ class MycoExternalMatcher(MycoMatcherInterface):
         self.myco_ext_conn.publish_json(self._events_channel, data)
 
     def event_market_cycle(self, **kwargs):
-        """Publish the market event to the Myco client."""
+        """Publish the market event to the Myco client and clear finished markets cache.."""
 
+        self.markets_mapping = {}  # clear finished markets
         data = {"event": ExternalMatcherEventsEnum.MARKET.value}
         self.myco_ext_conn.publish_json(self._events_channel, data)
 
@@ -175,6 +176,8 @@ class MycoExternalMatcher(MycoMatcherInterface):
                     f"Market with id {recommendation.get('market_id')} doesn't exist.")
             if market.readonly:
                 # The market is already finished
+                # TODO: we're clearing markets cache after each market cycle so is this check
+                # TODO: .. really relevant? (All finished markets should be deleted already)
                 raise MycoValidationException(
                     "Cannot match trades in a finished market.")
 

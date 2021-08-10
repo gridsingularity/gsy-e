@@ -20,7 +20,6 @@ class TestMycoExternalMatcher:
     def setup_class(cls):
         cls.matcher = MycoExternalMatcher()
         cls.market = TwoSidedMarket(time_slot=now())
-        cls.matcher.markets_mapping = {cls.market.id: cls.market}
         cls.redis_connection = d3a.models.myco_matcher.myco_external_matcher.ResettableCommunicator
         assert cls.matcher.simulation_id == d3a.constants.COLLABORATION_ID
         cls.channel_prefix = f"external-myco/{d3a.constants.COLLABORATION_ID}/"
@@ -28,6 +27,7 @@ class TestMycoExternalMatcher:
 
     def setup_method(self, method):
         self.matcher.myco_ext_conn.publish_json.reset_mock()
+        self.matcher.markets_mapping = {self.market.id: self.market}
 
     def _populate_market_bids_offers(self):
         self.market.offers = {"id1": Offer("id1", now(), 3, 3, "seller", 3),
@@ -63,8 +63,11 @@ class TestMycoExternalMatcher:
         assert self.matcher.myco_ext_conn.publish_json.call_count == 1
 
     def test_event_market_cycle(self):
+        assert self.matcher.markets_mapping
         data = {"event": "market_cycle"}
         self.matcher.event_market_cycle()
+        # Market cycle event should clear the markets cache
+        assert not self.matcher.markets_mapping
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             self.events_channel, data)
 
