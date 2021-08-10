@@ -53,13 +53,14 @@ class PVStrategy(BaseStrategy):
                  capacity_kW: float = None,
                  use_market_maker_rate: bool = False):
         """
-        :param panel_count: Number of solar panels for this PV plant
-        :param initial_selling_rate: Upper Threshold for PV offers
-        :param final_selling_rate: Lower Threshold for PV offers
-        :param fit_to_limit: Linear curve following initial_selling_rate & initial_selling_rate
-        :param update_interval: Interval after which PV will update its offer
-        :param energy_rate_decrease_per_update: Slope of PV Offer change per update
-        :param capacity_kW: power rating of the predefined profiles
+        Args:
+             panel_count: Number of solar panels for this PV plant
+             initial_selling_rate: Upper Threshold for PV offers
+             final_selling_rate: Lower Threshold for PV offers
+             fit_to_limit: Linear curve following initial_selling_rate & initial_selling_rate
+             update_interval: Interval after which PV will update its offer
+             energy_rate_decrease_per_update: Slope of PV Offer change per update
+             capacity_kW: power rating of the predefined profiles
         """
         super().__init__()
         PVValidator.validate_energy(panel_count=panel_count, capacity_kW=capacity_kW)

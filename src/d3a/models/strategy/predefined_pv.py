@@ -53,19 +53,20 @@ class PVPredefinedStrategy(PVStrategy):
             ):
         """
         Constructor of PVPredefinedStrategy
-        :param panel_count: Number of solar panels for this PV plant
-        :param initial_selling_rate: Upper Threshold for PV offers
-        :param final_selling_rate: Lower Threshold for PV offers
-        :param cloud_coverage: cloud conditions.
+        Args:
+            panel_count: Number of solar panels for this PV plant
+            initial_selling_rate: Upper Threshold for PV offers
+            final_selling_rate: Lower Threshold for PV offers
+            cloud_coverage: cloud conditions.
                                 0=sunny,
                                 1=partially cloudy,
                                 2=cloudy,
                                 4=use global profile
                                 None=use global cloud_coverage (default)
-        :param fit_to_limit: Linear curve following initial_selling_rate & final_selling_rate
-        :param update_interval: Interval after which PV will update its offer
-        :param energy_rate_decrease_per_update: Slope of PV Offer change per update
-        :param capacity_kW: power rating of the predefined profiles
+            fit_to_limit: Linear curve following initial_selling_rate & final_selling_rate
+            update_interval: Interval after which PV will update its offer
+            energy_rate_decrease_per_update: Slope of PV Offer change per update
+            capacity_kW: power rating of the predefined profiles
         """
 
         if update_interval is None:
@@ -161,11 +162,12 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
             use_market_maker_rate: bool = False):
         """
         Constructor of PVUserProfileStrategy
-        :param power_profile: input profile for a day. Can be either a csv file path,
-        or a dict with hourly data (Dict[int, float])
-        or a dict with arbitrary time data (Dict[str, float])
-        :param panel_count: number of solar panels for this PV plant
-        :param final_selling_rate: lower threshold for the PV sale price
+        Args:
+            power_profile: input profile for a day. Can be either a csv file path,
+                           or a dict with hourly data (Dict[int, float])
+                           or a dict with arbitrary time data (Dict[str, float])
+            panel_count: number of solar panels for this PV plant
+            final_selling_rate: lower threshold for the PV sale price
         """
         super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
