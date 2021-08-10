@@ -26,14 +26,14 @@ def get_setup(config):
     config.grid_fee_type = 1
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
     area = Area(
-        'Grid',
+        "Grid",
         [
-            Area('Neighborhood 1', [
+            Area("Neighborhood 1", [
                 Area(
-                    'House 1',
+                    "House 1",
                     [
                         Area(
-                            name='H1 General Load',
+                            name="H1 General Load",
                             strategy=LoadHoursStrategy(
                                 avg_power_W=200,
                                 hrs_per_day=24,
@@ -45,12 +45,12 @@ def get_setup(config):
                     grid_fee_constant=4
                 )
             ], grid_fee_constant=3),
-            Area('Neighborhood 2', [
+            Area("Neighborhood 2", [
                 Area(
-                    'House 2',
+                    "House 2",
                     [
                         Area(
-                            name='H2 PV',
+                            name="H2 PV",
                             strategy=PVStrategy(
                                 panel_count=10,
                                 capacity_kW=0.050,
@@ -61,7 +61,7 @@ def get_setup(config):
 
                 ),
             ], grid_fee_constant=1),
-            Area('Market Maker', strategy=MarketMakerStrategy(energy_rate=30), grid_fee_constant=0)
+            Area("Market Maker", strategy=MarketMakerStrategy(energy_rate=30), grid_fee_constant=0)
         ],
         config=config,
         grid_fee_constant=0

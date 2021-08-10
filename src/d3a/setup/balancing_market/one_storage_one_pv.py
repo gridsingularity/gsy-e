@@ -32,20 +32,20 @@ def get_setup(config):
     ConstSettings.BalancingSettings.FLEXIBLE_LOADS_SUPPORT = False
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 Storage', strategy=StorageStrategy(initial_soc=12,
+                    Area("H1 Storage", strategy=StorageStrategy(initial_soc=12,
                                                                 battery_capacity_kWh=50.0)
                          ),
                 ]
             ),
             Area(
-                'House 2',
+                "House 2",
                 [
-                    Area('H2 PV',
+                    Area("H2 PV",
                          strategy=PVStrategy(capacity_kW=0.16,
                                              panel_count=4,
                                              initial_selling_rate=0)

@@ -100,45 +100,45 @@ class PVStrategy(BaseStrategy):
         self._area_reconfigure_prices(**kwargs)
         self.offer_update.update_and_populate_price_settings(self.area)
 
-        if key_in_dict_and_not_none(kwargs, 'panel_count'):
-            self.panel_count = kwargs['panel_count']
-        if key_in_dict_and_not_none(kwargs, 'capacity_kW'):
-            self.capacity_kW = kwargs['capacity_kW']
+        if key_in_dict_and_not_none(kwargs, "panel_count"):
+            self.panel_count = kwargs["panel_count"]
+        if key_in_dict_and_not_none(kwargs, "capacity_kW"):
+            self.capacity_kW = kwargs["capacity_kW"]
 
         self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
 
     def _area_reconfigure_prices(self, **kwargs):
-        if key_in_dict_and_not_none(kwargs, 'initial_selling_rate'):
+        if key_in_dict_and_not_none(kwargs, "initial_selling_rate"):
             initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                  kwargs['initial_selling_rate'])
+                                                  kwargs["initial_selling_rate"])
         else:
             initial_rate = self.offer_update.initial_rate_profile_buffer
 
-        if key_in_dict_and_not_none(kwargs, 'final_selling_rate'):
+        if key_in_dict_and_not_none(kwargs, "final_selling_rate"):
             final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                kwargs['final_selling_rate'])
+                                                kwargs["final_selling_rate"])
         else:
             final_rate = self.offer_update.final_rate_profile_buffer
-        if key_in_dict_and_not_none(kwargs, 'energy_rate_decrease_per_update'):
+        if key_in_dict_and_not_none(kwargs, "energy_rate_decrease_per_update"):
             energy_rate_change_per_update = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                       kwargs['energy_rate_decrease_per_update'])
+                                       kwargs["energy_rate_decrease_per_update"])
         else:
             energy_rate_change_per_update = \
                 self.offer_update.energy_rate_change_per_update_profile_buffer
-        if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
-            fit_to_limit = kwargs['fit_to_limit']
+        if key_in_dict_and_not_none(kwargs, "fit_to_limit"):
+            fit_to_limit = kwargs["fit_to_limit"]
         else:
             fit_to_limit = self.offer_update.fit_to_limit
-        if key_in_dict_and_not_none(kwargs, 'update_interval'):
-            if isinstance(kwargs['update_interval'], int):
-                update_interval = duration(minutes=kwargs['update_interval'])
+        if key_in_dict_and_not_none(kwargs, "update_interval"):
+            if isinstance(kwargs["update_interval"], int):
+                update_interval = duration(minutes=kwargs["update_interval"])
             else:
-                update_interval = kwargs['update_interval']
+                update_interval = kwargs["update_interval"]
         else:
             update_interval = self.offer_update.update_interval
-        if key_in_dict_and_not_none(kwargs, 'use_market_maker_rate'):
-            self.use_market_maker_rate = kwargs['use_market_maker_rate']
+        if key_in_dict_and_not_none(kwargs, "use_market_maker_rate"):
+            self.use_market_maker_rate = kwargs["use_market_maker_rate"]
 
         try:
             self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,

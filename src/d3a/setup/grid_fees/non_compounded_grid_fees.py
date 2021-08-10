@@ -26,13 +26,13 @@ def get_setup(config):
     GlobalConfig.grid_fee_type = 2
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
     area = Area(
-        'Grid',
+        "Grid",
         [
-            Area('Neighborhood 1', [
+            Area("Neighborhood 1", [
                 Area(
-                    'House 1',
+                    "House 1",
                     [
-                        Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                        Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
                                                                            hrs_per_day=24,
                                                                            hrs_of_day=list(
                                                                                range(0, 24)),
@@ -41,11 +41,11 @@ def get_setup(config):
                              ),
                     ],
                     grid_fee_percentage=0)], grid_fee_percentage=5),
-            Area('Neighborhood 2', [
+            Area("Neighborhood 2", [
                 Area(
-                    'House 2',
+                    "House 2",
                     [
-                        Area('H2 PV', strategy=PVStrategy(panel_count=10, initial_selling_rate=10,
+                        Area("H2 PV", strategy=PVStrategy(panel_count=10, initial_selling_rate=10,
                                                           final_selling_rate=10),
                              )
 

@@ -28,17 +28,17 @@ Setup file for displaying PVPredefinedStrategy.
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=500,
+                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=500,
                                                                        hrs_per_day=12,
                                                                        hrs_of_day=list(
                                                                            range(7, 20)))
                          ),
-                    Area('H1 PV', strategy=PVPredefinedStrategy(capacity_kW=0.25,
+                    Area("H1 PV", strategy=PVPredefinedStrategy(capacity_kW=0.25,
                                                                 panel_count=1,
                                                                 cloud_coverage=2)
                          ),

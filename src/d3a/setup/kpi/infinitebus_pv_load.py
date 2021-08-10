@@ -23,20 +23,20 @@ from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
-            Area('InfiniteBus',
+            Area("InfiniteBus",
                  strategy=InfiniteBusStrategy(energy_sell_rate=30, energy_buy_rate=12)
 
                  ),
             Area(
-                'House',
+                "House",
                 [
-                    Area('Load', strategy=LoadHoursStrategy(avg_power_W=100,
+                    Area("Load", strategy=LoadHoursStrategy(avg_power_W=100,
                                                             hrs_per_day=10,
                                                             hrs_of_day=list(range(8, 19)))
                          ),
-                    Area('PV', strategy=PVPredefinedStrategy(capacity_kW=0.25,
+                    Area("PV", strategy=PVPredefinedStrategy(capacity_kW=0.25,
                                                              cloud_coverage=0)
                          ),
                 ]

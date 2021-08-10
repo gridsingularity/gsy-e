@@ -21,7 +21,7 @@ from d3a.models.strategy.pv import PVStrategy
 To validate the break even hourly profile the backend plot Energy Trade Profile Of House 1
 is required. The energy rates for the storages are displayed in this plot, and these rates
 should adhere to the break even hourly profiles that are defined in this module.
-Tip: It's interesting to see the change in results from changing the initial_pv_rate_option
+Tip: It"s interesting to see the change in results from changing the initial_pv_rate_option
 between 1(historical average prices) and 2(market maker price).
 """
 
@@ -97,24 +97,24 @@ final_selling_rate_profile_2 = {
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
                                                                        hrs_per_day=6,
                                                                        hrs_of_day=list(
                                                                            range(12, 18)),
                                                                        final_buying_rate=35),
                          ),
-                    Area('H1 Storage1',
+                    Area("H1 Storage1",
                          strategy=StorageStrategy(initial_soc=50,
                                                   final_buying_rate=final_buying_rate_profile,
                                                   final_selling_rate=final_selling_rate_profile,
                                                   max_abs_battery_power_kW=5.0),
                          ),
-                    Area('H1 Storage2',
+                    Area("H1 Storage2",
                          strategy=StorageStrategy(initial_soc=50,
                                                   final_buying_rate=final_buying_rate_profile_2,
                                                   final_selling_rate=final_selling_rate_profile_2,
@@ -123,20 +123,20 @@ def get_setup(config):
                 ]
             ),
             Area(
-                'House 2',
+                "House 2",
                 [
-                    Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                    Area("H2 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
                                                                        hrs_per_day=4,
                                                                        hrs_of_day=list(
                                                                            range(12, 16)),
                                                                        final_buying_rate=35),
                          ),
-                    Area('H2 PV', strategy=PVStrategy(capacity_kW=0.16, panel_count=4),
+                    Area("H2 PV", strategy=PVStrategy(capacity_kW=0.16, panel_count=4),
                          ),
 
                 ]
             ),
-            Area('Cell Tower', strategy=LoadHoursStrategy(avg_power_W=100,
+            Area("Cell Tower", strategy=LoadHoursStrategy(avg_power_W=100,
                                                           hrs_per_day=24,
                                                           hrs_of_day=list(range(0, 24)),
                                                           final_buying_rate=35),

@@ -32,12 +32,12 @@ def get_setup(config):
     ConstSettings.StorageSettings.FINAL_SELLING_RATE = 30
 
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 Storage',
+                    Area("H1 Storage",
                          strategy=StorageStrategy(initial_soc=50,
                                                   initial_selling_rate=30,
                                                   initial_buying_rate=0
@@ -46,9 +46,9 @@ def get_setup(config):
                 ]
             ),
             Area(
-                'House 2',
+                "House 2",
                 [
-                    Area('H2 PV',
+                    Area("H2 PV",
                          strategy=PVStrategy(panel_count=4, capacity_kW=0.16)
                          ),
 
