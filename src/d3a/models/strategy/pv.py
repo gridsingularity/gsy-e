@@ -19,19 +19,19 @@ import math
 import traceback
 from logging import getLogger
 
+from d3a import constants
+from d3a.constants import DEFAULT_PRECISION
+from d3a.d3a_core.exceptions import MarketException
+from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a.models.state import PVState
+from d3a.models.strategy import BaseStrategy
+from d3a.models.strategy.update_frequency import TemplateStrategyOfferUpdater
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import (
     convert_kW_to_kWh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
 from d3a_interface.validators import PVValidator
 from pendulum import duration, Time  # noqa
-
-from d3a import constants
-from d3a.d3a_core.exceptions import MarketException
-from d3a.d3a_core.util import get_market_maker_rate_from_config
-from d3a.models.state import PVState
-from d3a.models.strategy import BaseStrategy
-from d3a.models.strategy.update_frequency import TemplateStrategyOfferUpdater
 
 log = getLogger(__name__)
 
@@ -229,7 +229,8 @@ class PVStrategy(BaseStrategy):
                  )
             )
 
-        return round(convert_kW_to_kWh(gauss_forecast, self.area.config.slot_length), 4)
+        return round(convert_kW_to_kWh(gauss_forecast, self.area.config.slot_length),
+                     DEFAULT_PRECISION)
 
     def event_market_cycle(self):
         super().event_market_cycle()
