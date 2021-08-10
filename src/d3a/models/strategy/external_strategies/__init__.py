@@ -15,16 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import logging
 import json
-from threading import Lock
+import logging
 from collections import deque, namedtuple
-from d3a.models.market.market_structures import Offer, Bid
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.utils import key_in_dict_and_not_none
+from threading import Lock
+from typing import Dict
+
 import d3a.constants
 from d3a.d3a_core.singletons import external_global_statistics
-
+from d3a.models.market.market_structures import Offer, Bid
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.utils import key_in_dict_and_not_none, convert_str_to_pendulum_in_dict
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
 
@@ -447,10 +448,45 @@ class ExternalMixin:
                 IncomingRequest("set_energy_forecast", arguments,
                                 energy_forecast_response_channel))
 
-    def _set_energy_forecast_impl(self, arguments, response_channel):
+    def _set_energy_measurement(self, payload: Dict) -> None:
+        """Callback of 'set_energy_measurement' redis endpoint."""
+        transaction_id = self._get_transaction_id(payload)
+        energy_measurement_response_channel = \
+            f'{self.channel_prefix}/response/set_energy_measurement'
         try:
-            assert arguments["energy_forecast"] >= 0.0
-            self.energy_forecast_buffer_Wh = arguments["energy_forecast"]
+
+            arguments = json.loads(payload["data"])
+            assert set(arguments.keys()) == {'energy_measurement', 'transaction_id'}
+        except Exception as e:
+            logging.error(
+                f"Incorrect _set_energy_measurement request. "
+                f"Payload {payload}. Exception {str(e)}.")
+            self.redis.publish_json(
+                energy_measurement_response_channel,
+                {"command": "set_energy_measurement",
+                 "error": "Incorrect _set_energy_measurement request. "
+                          "Available parameters: (energy_measurement).",
+                 "transaction_id": transaction_id})
+        else:
+            self.pending_requests.append(
+                IncomingRequest("set_energy_measurement", arguments,
+                                energy_measurement_response_channel))
+
+    def _set_energy_forecast_impl(self, arguments: Dict, response_channel: str) -> None:
+        """
+        Digest command from buffer and perform set_energy_forecast
+        Args:
+            arguments: Dictionary containing 'energy_forecast' that is a dict containing a profile
+                key: time string, value: energy in kWh
+            response_channel: redis channel string where the response should be sent to
+        """
+
+        try:
+            for energy in arguments["energy_forecast"].values():
+                assert energy >= 0.0
+            self.energy_forecast_buffer.update(
+                convert_str_to_pendulum_in_dict(arguments["energy_forecast"]))
+
             self.redis.publish_json(
                 response_channel,
                 {"command": "set_energy_forecast", "status": "ready",
@@ -463,6 +499,35 @@ class ExternalMixin:
                 response_channel,
                 {"command": "set_energy_forecast", "status": "error",
                  "error_message": f"Error when handling _set_energy_forecast_impl "
+                                  f"on area {self.device.name} with arguments {arguments}.",
+                 "transaction_id": arguments.get("transaction_id", None)})
+
+    def _set_energy_measurement_impl(self, arguments: Dict, response_channel: str) -> None:
+        """
+        Digest command from buffer and perform set_energy_measurement
+        Args:
+            arguments: Dictionary containing 'energy_measurement' that is a dict containing a
+                profile with key: time string, value: energy in kWh
+            response_channel: redis channel string where the response should be sent to
+        """
+        try:
+            for energy in arguments["energy_measurement"].values():
+                assert energy >= 0.0
+            self.energy_measurement_buffer.update(
+                convert_str_to_pendulum_in_dict(arguments["energy_measurement"]))
+
+            self.redis.publish_json(
+                response_channel,
+                {"command": "set_energy_measurement", "status": "ready",
+                 "transaction_id": arguments.get("transaction_id", None)})
+        except Exception as e:
+            logging.error(f"Error when handling _set_energy_measurement_impl "
+                          f"on area {self.device.name}: "
+                          f"Exception: {str(e)}, Arguments: {arguments}")
+            self.redis.publish_json(
+                response_channel,
+                {"command": "set_energy_measurement", "status": "error",
+                 "error_message": f"Error when handling _set_energy_measurement_impl "
                                   f"on area {self.device.name} with arguments {arguments}.",
                  "transaction_id": arguments.get("transaction_id", None)})
 

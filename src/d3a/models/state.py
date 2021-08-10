@@ -200,7 +200,7 @@ class ProductionState(ProsumptionInterface):
 
         assert self._energy_production_forecast_kWh[time_slot] >= 0.0
 
-    def get_available_energy_kWh(self, time_slot, default_value=None):
+    def get_available_energy_kWh(self, time_slot, default_value=0.0):
         available_energy = self._available_energy_kWh.get(time_slot, default_value)
 
         assert available_energy >= -FLOATING_POINT_TOLERANCE

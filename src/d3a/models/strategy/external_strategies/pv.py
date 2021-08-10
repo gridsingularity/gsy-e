@@ -355,7 +355,7 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
                   'energy_rate_decrease_per_update', 'use_market_maker_rate')
 
     def __init__(
-            self, energy_forecast_Wh: float = 0, panel_count=1,
+            self, panel_count=1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
             final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
             fit_to_limit: bool = True,
@@ -365,7 +365,6 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
             use_market_maker_rate: bool = False):
         """
         Constructor of PVForecastStrategy
-        :param energy_forecast_Wh: forecast for the next market slot
         """
         super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
@@ -374,49 +373,67 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
                          use_market_maker_rate=use_market_maker_rate)
-        self.energy_forecast_buffer_Wh = energy_forecast_Wh
+        self.energy_forecast_buffer = None
+        self.energy_measurement_buffer = None
 
     @property
     def channel_dict(self):
         return {**super().channel_dict,
-                f'{self.channel_prefix}/set_energy_forecast': self._set_energy_forecast}
+                f"{self.channel_prefix}/set_energy_forecast": self._set_energy_forecast,
+                f"{self.channel_prefix}/set_energy_measurement": self._set_energy_measurement}
 
     def event_tick(self):
         """Set the energy forecast using pending requests. Extends super implementation.
 
         This method is triggered by the TICK event.
         """
-        # Need to repeat he pending request parsing in order to handle energy forecasts
+        # Need to repeat the pending request parsing in order to handle energy forecasts
         # from the MQTT subscriber (non-connected admin)
         for req in self.pending_requests:
             if req.request_type == "set_energy_forecast":
                 self._set_energy_forecast_impl(req.arguments, req.response_channel)
+            elif req.request_type == "set_energy_measurement":
+                self._set_energy_measurement_impl(req.arguments, req.response_channel)
 
         self.pending_requests = deque(
             req for req in self.pending_requests
-            if req.request_type not in "set_energy_forecast")
+            if req.request_type not in ["set_energy_forecast", "set_energy_measurement"])
 
         super().event_tick()
 
     def _incoming_commands_callback_selection(self, req):
         if req.request_type == "set_energy_forecast":
             self._set_energy_forecast_impl(req.arguments, req.response_channel)
+        elif req.request_type == "set_energy_measurement":
+            self._set_energy_measurement_impl(req.arguments, req.response_channel)
         else:
             super()._incoming_commands_callback_selection(req)
 
     def event_market_cycle(self):
-        self.produced_energy_forecast_kWh()
+        self.update_energy_forecast()
+        self.update_energy_measurement()
+        self._clear_energy_buffers()
         super().event_market_cycle()
 
+    def _clear_energy_buffers(self):
+        self.energy_forecast_buffer = {}
+        self.energy_measurement_buffer = {}
+
     def event_activate_energy(self):
-        self.produced_energy_forecast_kWh()
+        """This strategy does not need to initiate energy values as they are sent via the API."""
+        self._clear_energy_buffers()
 
-    def produced_energy_forecast_kWh(self):
-        # sets energy forecast for next_market
-        energy_forecast_kWh = self.energy_forecast_buffer_Wh / 1000
+    def update_energy_forecast(self) -> None:
+        """Set energy forecast for future market."""
+        for slot_time, energy_kWh in self.energy_forecast_buffer.items():
+            if slot_time >= self.area.next_market.time_slot:
+                self.state.set_available_energy(energy_kWh, slot_time, overwrite=True)
 
-        slot_time = self.area.next_market.time_slot
-        self.state.set_available_energy(energy_forecast_kWh, slot_time, overwrite=True)
+    def update_energy_measurement(self) -> None:
+        """Set energy measurement for past market."""
+        for slot_time, energy_kWh in self.energy_measurement_buffer.items():
+            if slot_time < self.area.next_market.time_slot:
+                self.state.set_energy_measurement_kWh(energy_kWh, slot_time)
 
     def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=False):
         """
