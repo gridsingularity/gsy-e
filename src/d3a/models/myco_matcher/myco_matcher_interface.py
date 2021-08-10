@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Dict
 
 
@@ -31,6 +31,7 @@ class MycoMatcherInterface(ABC):
         """Interface for updating the area_uuid_markets_mapping of Myco matchers."""
         self.area_uuid_markets_mapping.update(area_uuid_markets_mapping)
 
+    @abstractmethod
     def match_recommendations(self, **kwargs) -> None:
         """Match bids/offers recommendations."""
 
