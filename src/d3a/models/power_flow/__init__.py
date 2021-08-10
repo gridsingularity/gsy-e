@@ -25,7 +25,6 @@ from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy import INF_ENERGY
-from d3a.d3a_core.util import convert_unit_to_kilo
 
 
 class PowerFlowBase(ABC):
@@ -54,8 +53,7 @@ class PowerFlowBase(ABC):
             area.ess_device = self.add_storage_device(area)
         elif isinstance(area.strategy, PVStrategy):
             area.pv_device = \
-                self.add_generation_device(area,
-                                           convert_unit_to_kilo(area.strategy.capacity_kW))
+                self.add_generation_device(area, area.strategy.capacity_kW)
         elif isinstance(area.strategy, FinitePowerPlant):
             area.power_plant = \
                 self.add_generation_device(area, area.strategy.max_available_power_kW)
