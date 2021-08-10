@@ -160,7 +160,7 @@ class TestExternalMixin(unittest.TestCase):
     @parameterized.expand([
         [LoadHoursExternalStrategy(100),
          Bid("bid_id", now(), 20, 1.0, "test_area")],
-        [PVExternalStrategy(2, max_panel_power_W=0.16),
+        [PVExternalStrategy(2, capacity_kW=0.16),
          Offer("offer_id", now(), 20, 1.0, "test_area")],
         [StorageExternalStrategy(),
          Bid("bid_id", now(), 20, 1.0, "test_area")],
