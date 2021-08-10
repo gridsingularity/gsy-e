@@ -296,7 +296,7 @@ class ESSEnergyOrigin(Enum):
     UNKNOWN = 3
 
 
-EnergyOrigin = namedtuple('EnergyOrigin', ('origin', 'value'))
+EnergyOrigin = namedtuple("EnergyOrigin", ("origin", "value"))
 
 
 class StorageState(StateInterface):
@@ -517,8 +517,8 @@ class StorageState(StateInterface):
 
             write_default_to_dict(self.energy_to_buy_dict, time_slot, 0)
             write_default_to_dict(self.energy_to_sell_dict, time_slot, 0)
-            write_default_to_dict(self.offered_history, time_slot, '-')
-            write_default_to_dict(self.used_history, time_slot, '-')
+            write_default_to_dict(self.offered_history, time_slot, "-")
+            write_default_to_dict(self.used_history, time_slot, "-")
 
             write_default_to_dict(self.time_series_ess_share, time_slot,
                                   {ESSEnergyOrigin.UNKNOWN: 0.,

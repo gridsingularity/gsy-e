@@ -27,7 +27,7 @@ from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import key_in_dict_and_not_none, convert_str_to_pendulum_in_dict
 
-IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
+IncomingRequest = namedtuple("IncomingRequest", ("request_type", "arguments", "response_channel"))
 
 default_market_info = {"device_info": None,
                        "asset_bill": None,
@@ -51,7 +51,7 @@ def check_for_connected_and_reply(redis, channel_name, is_connected):
 
 
 def register_area(redis, channel_prefix, is_connected, transaction_id, area_uuid=None):
-    register_response_channel = f'{channel_prefix}/response/register_participant'
+    register_response_channel = f"{channel_prefix}/response/register_participant"
     try:
         redis.publish_json(
             register_response_channel,
@@ -70,7 +70,7 @@ def register_area(redis, channel_prefix, is_connected, transaction_id, area_uuid
 
 
 def unregister_area(redis, channel_prefix, is_connected, transaction_id):
-    unregister_response_channel = f'{channel_prefix}/response/unregister_participant'
+    unregister_response_channel = f"{channel_prefix}/response/unregister_participant"
     if not check_for_connected_and_reply(redis, unregister_response_channel,
                                          is_connected):
         return
@@ -118,9 +118,9 @@ class ExternalMixin:
     @property
     def channel_dict(self):
         return {
-            f'{self.channel_prefix}/register_participant': self._register,
-            f'{self.channel_prefix}/unregister_participant': self._unregister,
-            f'{self.channel_prefix}/device_info': self._device_info,
+            f"{self.channel_prefix}/register_participant": self._register,
+            f"{self.channel_prefix}/unregister_participant": self._unregister,
+            f"{self.channel_prefix}/device_info": self._device_info,
         }
 
     @property
@@ -152,8 +152,8 @@ class ExternalMixin:
 
     def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
-        if key_in_dict_and_not_none(kwargs, 'allow_external_connection'):
-            self._use_template_strategy = not kwargs['allow_external_connection']
+        if key_in_dict_and_not_none(kwargs, "allow_external_connection"):
+            self._use_template_strategy = not kwargs["allow_external_connection"]
         super().area_reconfigure_event(*args, **kwargs)
 
     def _register(self, payload):
@@ -171,7 +171,7 @@ class ExternalMixin:
         self.connected = self._connected
 
     def _device_info(self, payload):
-        device_info_response_channel = f'{self.channel_prefix}/response/device_info'
+        device_info_response_channel = f"{self.channel_prefix}/response/device_info"
         if not check_for_connected_and_reply(self.redis, device_info_response_channel,
                                              self.connected):
             return
@@ -235,20 +235,20 @@ class ExternalMixin:
     def _progress_info(self):
         slot_completion_percent = int((self.device.current_tick_in_slot /
                                        self.device.config.ticks_per_slot) * 100)
-        return {'slot_completion': f'{slot_completion_percent}%',
-                'market_slot': self.area.next_market.time_slot_str}
+        return {"slot_completion": f"{slot_completion_percent}%",
+                "market_slot": self.area.next_market.time_slot_str}
 
     def _dispatch_event_tick_to_external_agent(self):
         if external_global_statistics.is_it_time_for_external_tick(self.device.current_tick):
             if self.is_aggregator_controlled:
                 self.redis.aggregator.add_batch_tick_event(self.device.uuid, self._progress_info)
             elif self.connected:
-                tick_event_channel = f'{self.channel_prefix}/events/tick'
+                tick_event_channel = f"{self.channel_prefix}/events/tick"
                 current_tick_info = {
                     **self._progress_info,
-                    'event': 'tick',
-                    'area_uuid': self.device.uuid,
-                    'device_info': self._device_info_dict
+                    "event": "tick",
+                    "area_uuid": self.device.uuid,
+                    "device_info": self._device_info_dict
                 }
                 self.redis.publish_json(tick_event_channel, current_tick_info)
 
@@ -277,55 +277,55 @@ class ExternalMixin:
             return
 
         if self.is_aggregator_controlled:
-            event_response_dict = {'event': 'trade',
-                                   'asset_id': self.device.uuid,
-                                   'trade_id': trade.id,
-                                   'time': trade.time.isoformat(),
-                                   'trade_price': trade.offer.price,
-                                   'traded_energy': trade.offer.energy,
-                                   'total_fee': trade.fee_price,
-                                   'local_market_fee':
+            event_response_dict = {"event": "trade",
+                                   "asset_id": self.device.uuid,
+                                   "trade_id": trade.id,
+                                   "time": trade.time.isoformat(),
+                                   "trade_price": trade.offer.price,
+                                   "traded_energy": trade.offer.energy,
+                                   "total_fee": trade.fee_price,
+                                   "local_market_fee":
                                        self.area.current_market.fee_class.grid_fee_rate
                                        if self.area.current_market is not None else "None",
-                                   'attributes': {},
-                                   'seller': trade.seller
-                                   if trade.seller_id == self.device.uuid else 'anonymous',
-                                   'buyer': trade.buyer
-                                   if trade.buyer_id == self.device.uuid else 'anonymous',
-                                   'bid_id': trade.offer.id
-                                   if isinstance(trade.offer, Bid) else 'None',
-                                   'offer_id': trade.offer.id
-                                   if isinstance(trade.offer, Offer) else 'None',
-                                   'residual_bid_id': trade.residual.id
+                                   "attributes": {},
+                                   "seller": trade.seller
+                                   if trade.seller_id == self.device.uuid else "anonymous",
+                                   "buyer": trade.buyer
+                                   if trade.buyer_id == self.device.uuid else "anonymous",
+                                   "bid_id": trade.offer.id
+                                   if isinstance(trade.offer, Bid) else "None",
+                                   "offer_id": trade.offer.id
+                                   if isinstance(trade.offer, Offer) else "None",
+                                   "residual_bid_id": trade.residual.id
                                    if trade.residual is not None and isinstance(trade.residual,
                                                                                 Bid)
-                                   else 'None',
-                                   'residual_offer_id': trade.residual.id
+                                   else "None",
+                                   "residual_offer_id": trade.residual.id
                                    if trade.residual is not None and isinstance(trade.residual,
                                                                                 Offer)
-                                   else 'None'}
+                                   else "None"}
 
             external_global_statistics.update()
             self.redis.aggregator.add_batch_trade_event(self.device.uuid, event_response_dict)
         elif self.connected:
-            event_response_dict = {'device_info': self._device_info_dict,
-                                   'event': 'trade',
-                                   'trade_id': trade.id,
-                                   'time': trade.time.isoformat(),
-                                   'trade_price': trade.offer.price,
-                                   'traded_energy': trade.offer.energy,
-                                   'fee_price': trade.fee_price,
-                                   'area_uuid': self.device.uuid,
-                                   'seller': trade.seller
-                                   if trade.seller == self.device.name else 'anonymous',
-                                   'buyer': trade.buyer
-                                   if trade.buyer == self.device.name else 'anonymous',
-                                   'residual_id': trade.residual.id
-                                   if trade.residual is not None else 'None'}
+            event_response_dict = {"device_info": self._device_info_dict,
+                                   "event": "trade",
+                                   "trade_id": trade.id,
+                                   "time": trade.time.isoformat(),
+                                   "trade_price": trade.offer.price,
+                                   "traded_energy": trade.offer.energy,
+                                   "fee_price": trade.fee_price,
+                                   "area_uuid": self.device.uuid,
+                                   "seller": trade.seller
+                                   if trade.seller == self.device.name else "anonymous",
+                                   "buyer": trade.buyer
+                                   if trade.buyer == self.device.name else "anonymous",
+                                   "residual_id": trade.residual.id
+                                   if trade.residual is not None else "None"}
 
-            bid_offer_key = 'bid_id' if is_bid_trade else 'offer_id'
-            event_response_dict['event_type'] = 'buy' \
-                if trade.buyer == self.device.name else 'sell'
+            bid_offer_key = "bid_id" if is_bid_trade else "offer_id"
+            event_response_dict["event_type"] = "buy" \
+                if trade.buyer == self.device.name else "sell"
             event_response_dict[bid_offer_key] = trade.offer.id
 
             trade_event_channel = f"{self.channel_prefix}/events/trade"
@@ -345,7 +345,7 @@ class ExternalMixin:
         super().deactivate()
 
         if self.is_aggregator_controlled:
-            deactivate_msg = {'event': 'finish'}
+            deactivate_msg = {"event": "finish"}
             self.redis.aggregator.add_batch_finished_event(self.owner.uuid, deactivate_msg)
         elif self.connected:
             deactivate_event_channel = f"{self.channel_prefix}/events/finish"
@@ -422,17 +422,18 @@ class ExternalMixin:
                                   f"Market cycle already finished."})
         self.pending_requests = deque()
 
-    def _set_energy_forecast(self, payload):
+    def _set_energy_forecast(self, payload: Dict) -> None:
+        """Callback for set_energy_forecast redis endpoint."""
         transaction_id = self._get_transaction_id(payload)
         energy_forecast_response_channel = \
-            f'{self.channel_prefix}/response/set_energy_forecast'
+            f"{self.channel_prefix}/response/set_energy_forecast"
         # Deactivating register/connected requirement for power forecasts.
         # if not check_for_connected_and_reply(self.redis, power_forecast_response_channel,
         #                                      self.connected):
         #     return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'energy_forecast', 'transaction_id'}
+            assert set(arguments.keys()) == {"energy_forecast", "transaction_id"}
         except Exception as e:
             logging.error(
                 f"Incorrect _set_energy_forecast request. "
@@ -449,14 +450,13 @@ class ExternalMixin:
                                 energy_forecast_response_channel))
 
     def _set_energy_measurement(self, payload: Dict) -> None:
-        """Callback of 'set_energy_measurement' redis endpoint."""
+        """Callback of set_energy_measurement redis endpoint."""
         transaction_id = self._get_transaction_id(payload)
         energy_measurement_response_channel = \
-            f'{self.channel_prefix}/response/set_energy_measurement'
+            f"{self.channel_prefix}/response/set_energy_measurement"
         try:
-
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'energy_measurement', 'transaction_id'}
+            assert set(arguments.keys()) == {"energy_measurement", "transaction_id"}
         except Exception as e:
             logging.error(
                 f"Incorrect _set_energy_measurement request. "
@@ -472,18 +472,21 @@ class ExternalMixin:
                 IncomingRequest("set_energy_measurement", arguments,
                                 energy_measurement_response_channel))
 
+    @staticmethod
+    def _validate_correct_energy_profile(profile: Dict) -> None:
+        for time_str, energy in profile.items():
+            assert energy >= 0.0, f"Energy is not grater than 0 for {time_str}."
+
     def _set_energy_forecast_impl(self, arguments: Dict, response_channel: str) -> None:
         """
-        Digest command from buffer and perform set_energy_forecast
+        Digest command from buffer and perform set_energy_forecast.
         Args:
-            arguments: Dictionary containing 'energy_forecast' that is a dict containing a profile
+            arguments: Dictionary containing "energy_forecast" that is a dict containing a profile
                 key: time string, value: energy in kWh
             response_channel: redis channel string where the response should be sent to
         """
-
         try:
-            for energy in arguments["energy_forecast"].values():
-                assert energy >= 0.0
+            self._validate_correct_energy_profile(arguments["energy_forecast"])
             self.energy_forecast_buffer.update(
                 convert_str_to_pendulum_in_dict(arguments["energy_forecast"]))
 
@@ -504,15 +507,14 @@ class ExternalMixin:
 
     def _set_energy_measurement_impl(self, arguments: Dict, response_channel: str) -> None:
         """
-        Digest command from buffer and perform set_energy_measurement
+        Digest command from buffer and perform set_energy_measurement.
         Args:
-            arguments: Dictionary containing 'energy_measurement' that is a dict containing a
+            arguments: Dictionary containing "energy_measurement" that is a dict containing a
                 profile with key: time string, value: energy in kWh
             response_channel: redis channel string where the response should be sent to
         """
         try:
-            for energy in arguments["energy_measurement"].values():
-                assert energy >= 0.0
+            self._validate_correct_energy_profile(arguments["energy_measurement"])
             self.energy_measurement_buffer.update(
                 convert_str_to_pendulum_in_dict(arguments["energy_measurement"]))
 
@@ -533,17 +535,17 @@ class ExternalMixin:
 
     @property
     def market_info_dict(self):
-        return {'asset_info': self._device_info_dict,
-                'last_slot_asset_info': self.last_slot_asset_info,
-                'asset_bill': self.device.stats.aggregated_stats["bills"]
+        return {"asset_info": self._device_info_dict,
+                "last_slot_asset_info": self.last_slot_asset_info,
+                "asset_bill": self.device.stats.aggregated_stats["bills"]
                 if "bills" in self.device.stats.aggregated_stats else None
                 }
 
     @property
     def last_slot_asset_info(self):
         return {
-                'energy_traded': self.energy_traded(self.area.current_market.id)
+                "energy_traded": self.energy_traded(self.area.current_market.id)
                 if self.area.current_market else None,
-                'total_cost': self.energy_traded_costs(self.area.current_market.id)
+                "total_cost": self.energy_traded_costs(self.area.current_market.id)
                 if self.area.current_market else None,
                 }
