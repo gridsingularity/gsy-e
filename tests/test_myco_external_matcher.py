@@ -57,7 +57,9 @@ class TestMycoExternalMatcher:
         self.matcher.event_tick()
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             self.events_channel, data)
+
         self.matcher.event_tick(is_it_time_for_external_tick=False)
+        # should still be == 1 as the above won't trigger the publish_json method
         assert self.matcher.myco_ext_conn.publish_json.call_count == 1
 
     def test_event_market_cycle(self):
