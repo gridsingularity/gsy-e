@@ -44,7 +44,7 @@ def get_setup(config):
                                 fit_to_limit=True)),
                          ]),
                     Area("Community PV", strategy=PVStrategy(
-                        capacity_kW=4000, panel_count=1,
+                        capacity_kW=4, panel_count=1,
                         initial_selling_rate=8, final_selling_rate=8)),
                     Area("Community Load", strategy=LoadHoursStrategy(
                         avg_power_W=400, hrs_of_day=list(range(24)), hrs_per_day=24,
