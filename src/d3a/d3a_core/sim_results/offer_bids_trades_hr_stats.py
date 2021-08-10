@@ -53,10 +53,10 @@ class OfferBidTradeGraphStats:
         for trade in last_past_market.trades:
             self.check_and_create_color_mapping(trade.seller_origin)
             self.check_and_create_list(area, last_past_market, trade)
-            info_dict = {"rate": trade.offer.energy_rate, "tag": "trade",
+            info_dict = {"rate": trade.offer_bid.energy_rate, "tag": "trade",
                          "color": self.color_mapping[trade.seller_origin],
                          "seller_origin": trade.seller_origin, "buyer_origin": trade.buyer_origin,
-                         "energy": trade.offer.energy}
+                         "energy": trade.offer_bid.energy}
             self.state[area.name][last_past_market.time_slot][trade.time].append(info_dict)
 
         for child in area.children:

@@ -95,8 +95,8 @@ class TestExternalMixin(unittest.TestCase):
             self.area.uuid
         result = strategy.redis.aggregator.add_batch_tick_event.call_args_list[0][0][1]
         assert result == \
-            {'market_slot': GlobalConfig.start_date.format(DATE_TIME_FORMAT),
-             'slot_completion': '20%'}
+            {"market_slot": GlobalConfig.start_date.format(DATE_TIME_FORMAT),
+             "slot_completion": "20%"}
         strategy.redis.reset_mock()
         strategy.redis.aggregator.add_batch_tick_event.reset_mock()
         self.area.current_tick = 35
@@ -109,8 +109,8 @@ class TestExternalMixin(unittest.TestCase):
             self.area.uuid
         result = strategy.redis.aggregator.add_batch_tick_event.call_args_list[0][0][1]
         assert result == \
-            {'market_slot': GlobalConfig.start_date.format(DATE_TIME_FORMAT),
-             'slot_completion': '40%'}
+            {"market_slot": GlobalConfig.start_date.format(DATE_TIME_FORMAT),
+             "slot_completion": "40%"}
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
@@ -135,11 +135,11 @@ class TestExternalMixin(unittest.TestCase):
         strategy.redis.publish_json.assert_called_once()
         assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/events/tick"
         result = strategy.redis.publish_json.call_args_list[0][0][1]
-        result.pop('area_uuid')
+        result.pop("area_uuid")
         assert result == \
-            {'slot_completion': '20%',
-             'market_slot': GlobalConfig.start_date.format(DATE_TIME_FORMAT), 'event': 'tick',
-             'device_info': strategy._device_info_dict}
+            {"slot_completion": "20%",
+             "market_slot": GlobalConfig.start_date.format(DATE_TIME_FORMAT), "event": "tick",
+             "device_info": strategy._device_info_dict}
 
         strategy.redis.reset_mock()
         strategy.redis.publish_json.reset_mock()
@@ -151,21 +151,21 @@ class TestExternalMixin(unittest.TestCase):
         strategy.redis.publish_json.assert_called_once()
         assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/events/tick"
         result = strategy.redis.publish_json.call_args_list[0][0][1]
-        result.pop('area_uuid')
+        result.pop("area_uuid")
         assert result == \
-            {'slot_completion': '40%',
-             'market_slot': GlobalConfig.start_date.format(DATE_TIME_FORMAT), 'event': 'tick',
-             'device_info': strategy._device_info_dict}
+            {"slot_completion": "40%",
+             "market_slot": GlobalConfig.start_date.format(DATE_TIME_FORMAT), "event": "tick",
+             "device_info": strategy._device_info_dict}
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100),
-         Bid('bid_id', now(), 20, 1.0, 'test_area')],
-        [PVExternalStrategy(2, capacity_kW=0.16),
-         Offer('offer_id', now(), 20, 1.0, 'test_area')],
+         Bid("bid_id", now(), 20, 1.0, "test_area")],
+        [PVExternalStrategy(2, max_panel_power_W=0.16),
+         Offer("offer_id", now(), 20, 1.0, "test_area")],
         [StorageExternalStrategy(),
-         Bid('bid_id', now(), 20, 1.0, 'test_area')],
+         Bid("bid_id", now(), 20, 1.0, "test_area")],
         [StorageExternalStrategy(),
-         Offer('offer_id', now(), 20, 1.0, 'test_area')]
+         Offer("offer_id", now(), 20, 1.0, "test_area")]
     ])
     def test_dispatch_event_trade_to_external_aggregator(self, strategy, offer_bid):
         strategy._track_energy_sell_type = lambda _: None
@@ -179,13 +179,13 @@ class TestExternalMixin(unittest.TestCase):
         current_time = now()
         if isinstance(offer_bid, Bid):
             self.area.strategy.add_bid_to_posted(market.id, offer_bid)
-            trade = Trade('id', current_time, offer_bid,
-                          'parent_area', 'test_area', fee_price=0.23, seller_id=self.area.uuid,
+            trade = Trade("id", current_time, offer_bid,
+                          "parent_area", "test_area", fee_price=0.23, seller_id=self.area.uuid,
                           buyer_id=self.parent.uuid)
         else:
             self.area.strategy.offers.post(offer_bid, market.id)
-            trade = Trade('id', current_time, offer_bid,
-                          'test_area', 'parent_area', fee_price=0.23, buyer_id=self.area.uuid,
+            trade = Trade("id", current_time, offer_bid,
+                          "test_area", "parent_area", fee_price=0.23, buyer_id=self.area.uuid,
                           seller_id=self.parent.uuid)
 
         strategy.event_trade(market_id="test_market", trade=trade)
@@ -193,29 +193,29 @@ class TestExternalMixin(unittest.TestCase):
             self.area.uuid
 
         call_args = strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][1]
-        assert set(call_args.keys()) == {'attributes', 'residual_bid_id', 'asset_id', 'buyer',
-                                         'local_market_fee', 'residual_offer_id', 'total_fee',
-                                         'traded_energy', 'bid_id', 'time', 'seller',
-                                         'trade_price', 'trade_id', 'offer_id', 'event'}
-        assert call_args['trade_id'] == trade.id
-        assert call_args['asset_id'] == self.area.uuid
-        assert call_args['event'] == 'trade'
-        assert call_args['trade_price'] == 20
-        assert call_args['traded_energy'] == 1.0
-        assert call_args['total_fee'] == 0.23
-        assert call_args['time'] == current_time.isoformat()
-        assert call_args['residual_bid_id'] == 'None'
-        assert call_args['residual_offer_id'] == 'None'
+        assert set(call_args.keys()) == {"attributes", "residual_bid_id", "asset_id", "buyer",
+                                         "local_market_fee", "residual_offer_id", "total_fee",
+                                         "traded_energy", "bid_id", "time", "seller",
+                                         "trade_price", "trade_id", "offer_id", "event"}
+        assert call_args["trade_id"] == trade.id
+        assert call_args["asset_id"] == self.area.uuid
+        assert call_args["event"] == "trade"
+        assert call_args["trade_price"] == 20
+        assert call_args["traded_energy"] == 1.0
+        assert call_args["total_fee"] == 0.23
+        assert call_args["time"] == current_time.isoformat()
+        assert call_args["residual_bid_id"] == "None"
+        assert call_args["residual_offer_id"] == "None"
         if isinstance(offer_bid, Bid):
-            assert call_args['bid_id'] == trade.offer.id
-            assert call_args['offer_id'] == 'None'
-            assert call_args['seller'] == trade.seller
-            assert call_args['buyer'] == 'anonymous'
+            assert call_args["bid_id"] == trade.offer_bid.id
+            assert call_args["offer_id"] == "None"
+            assert call_args["seller"] == trade.seller
+            assert call_args["buyer"] == "anonymous"
         else:
-            assert call_args['bid_id'] == 'None'
-            assert call_args['offer_id'] == trade.offer.id
-            assert call_args['seller'] == 'anonymous'
-            assert call_args['buyer'] == trade.buyer
+            assert call_args["bid_id"] == "None"
+            assert call_args["offer_id"] == trade.offer_bid.id
+            assert call_args["seller"] == "anonymous"
+            assert call_args["buyer"] == trade.buyer
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
@@ -232,22 +232,22 @@ class TestExternalMixin(unittest.TestCase):
         strategy.state.pledged_sell_kWh = {market.time_slot: 0.0}
         strategy.state.offered_sell_kWh = {market.time_slot: 0.0}
         current_time = now()
-        trade = Trade('id', current_time, Offer('offer_id', now(), 20, 1.0, 'test_area'),
-                      'test_area', 'parent_area', fee_price=0.23)
+        trade = Trade("id", current_time, Offer("offer_id", now(), 20, 1.0, "test_area"),
+                      "test_area", "parent_area", fee_price=0.23)
         strategy.event_trade(market_id="test_market", trade=trade)
         assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/events/trade"
         call_args = strategy.redis.publish_json.call_args_list[0][0][1]
-        assert call_args['trade_id'] == trade.id
-        assert call_args['event'] == "trade"
-        assert call_args['trade_price'] == 20
-        assert call_args['traded_energy'] == 1.0
-        assert call_args['fee_price'] == 0.23
-        assert call_args['offer_id'] == trade.offer.id
-        assert call_args['residual_id'] == "None"
-        assert call_args['time'] == current_time.isoformat()
-        assert call_args['seller'] == trade.seller
-        assert call_args['buyer'] == "anonymous"
-        assert call_args['device_info'] == strategy._device_info_dict
+        assert call_args["trade_id"] == trade.id
+        assert call_args["event"] == "trade"
+        assert call_args["trade_price"] == 20
+        assert call_args["traded_energy"] == 1.0
+        assert call_args["fee_price"] == 0.23
+        assert call_args["offer_id"] == trade.offer_bid.id
+        assert call_args["residual_id"] == "None"
+        assert call_args["time"] == current_time.isoformat()
+        assert call_args["seller"] == trade.seller
+        assert call_args["buyer"] == "anonymous"
+        assert call_args["device_info"] == strategy._device_info_dict
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
@@ -265,33 +265,33 @@ class TestExternalMixin(unittest.TestCase):
         strategy.state.offered_sell_kWh = {market.time_slot: 0.0}
         current_time = now()
         if isinstance(strategy, BidEnabledStrategy):
-            bid = Bid('offer_id', now(), 20, 1.0, 'test_area')
+            bid = Bid("offer_id", now(), 20, 1.0, "test_area")
             strategy.add_bid_to_posted(market.id, bid)
-            skipped_trade = \
-                Trade('id', current_time, bid, 'test_area', 'parent_area', fee_price=0.23)
+            skipped_trade = (
+                Trade("id", current_time, bid, "test_area", "parent_area", fee_price=0.23))
 
             strategy.event_trade(market_id=market.id, trade=skipped_trade)
             call_args = strategy.redis.aggregator.add_batch_trade_event.call_args_list
             assert call_args == []
 
-            published_trade = \
-                Trade('id', current_time, bid, 'parent_area', 'test_area', fee_price=0.23)
+            published_trade = (
+                Trade("id", current_time, bid, "parent_area", "test_area", fee_price=0.23))
             strategy.event_trade(market_id=market.id, trade=published_trade)
             assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
                 self.area.uuid
         else:
-            offer = Offer('offer_id', now(), 20, 1.0, 'test_area')
+            offer = Offer("offer_id", now(), 20, 1.0, "test_area")
             strategy.offers.post(offer, market.id)
-            skipped_trade = \
-                Trade('id', current_time, offer, 'parent_area', 'test_area', fee_price=0.23)
+            skipped_trade = (
+                Trade("id", current_time, offer, "parent_area", "test_area", fee_price=0.23))
             strategy.offers.sold_offer(offer, market.id)
 
             strategy.event_trade(market_id=market.id, trade=skipped_trade)
             call_args = strategy.redis.aggregator.add_batch_trade_event.call_args_list
             assert call_args == []
 
-            published_trade =\
-                Trade('id', current_time, offer, 'test_area', 'parent_area', fee_price=0.23)
+            published_trade = (
+                Trade("id", current_time, offer, "test_area", "parent_area", fee_price=0.23))
             strategy.event_trade(market_id=market.id, trade=published_trade)
             assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
                 self.area.uuid
@@ -353,9 +353,9 @@ class TestExternalMixin(unittest.TestCase):
         strategy.connected = True
         strategy._use_template_strategy = True
         current_state = strategy.get_state()
-        assert current_state['connected'] is True
-        assert current_state['use_template_strategy'] is True
-        assert current_state['available_energy'] == 500
+        assert current_state["connected"] is True
+        assert current_state["use_template_strategy"] is True
+        assert current_state["available_energy"] == 500
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],

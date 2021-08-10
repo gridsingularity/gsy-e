@@ -5,6 +5,9 @@ coverage:
         target: auto  # Compare coverage to the previous base commit (PR base or parent commit)
         informational: false  # If true, status will always pass
 
+ignore:
+  - "setup.py"
+
 comment:
   layout: "diff"
   behavior: default

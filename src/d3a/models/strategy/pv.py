@@ -285,7 +285,7 @@ class PVStrategy(BaseStrategy):
 
         if trade.seller == self.owner.name:
             self.state.decrement_available_energy(
-                trade.offer.energy, market.time_slot, self.owner.name)
+                trade.offer_bid.energy, market.time_slot, self.owner.name)
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
