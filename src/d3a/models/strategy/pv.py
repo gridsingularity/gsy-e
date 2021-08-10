@@ -20,7 +20,6 @@ import traceback
 from logging import getLogger
 
 from d3a import constants
-from d3a.constants import DEFAULT_PRECISION
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.state import PVState
@@ -230,8 +229,7 @@ class PVStrategy(BaseStrategy):
                  )
             )
 
-        return round(convert_kW_to_kWh(gauss_forecast, self.area.config.slot_length),
-                     DEFAULT_PRECISION)
+        return round(convert_kW_to_kWh(gauss_forecast, self.area.config.slot_length), 4)
 
     def event_market_cycle(self):
         super().event_market_cycle()
