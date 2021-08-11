@@ -418,8 +418,8 @@ class Area:
                 self.uuid: {"markets": self.all_markets, "current_time": self.now}})
 
     def copy_clearing_state_to_area_state(self):
-        """Keeping copy of myco matcher's cumulative_offers/cumulative_bids to area for
-        supply/demand plot"""
+        """Keep copy of myco matcher's cumulative_offers/cumulative_bids in area state for
+        supply/demand plot."""
         if hasattr(bid_offer_matcher.matcher.match_algorithm, "state"):
             self.state.cumulative_offers[self.now] = (bid_offer_matcher.matcher.match_algorithm.
                                                       state.cumulative_offers)
