@@ -409,6 +409,8 @@ class Area:
                 bid_offer_matcher.match_recommendations()
                 self.copy_clearing_state_to_area_state()
 
+        self.events.update_events(self.now)
+
     def _update_myco_matcher(self) -> None:
         """Update the markets cache that the myco matcher will request"""
         bid_offer_matcher.update_area_uuid_markets_mapping(

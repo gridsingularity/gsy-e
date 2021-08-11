@@ -528,5 +528,8 @@ class TestTwoSidedMarketMatchRecommendations:
                 bid_offer_matcher.matcher.match_algorithm.state.cumulative_offers)
         assert (pac_area.state.cumulative_bids[current_time] ==
                 bid_offer_matcher.matcher.match_algorithm.state.cumulative_bids)
+
+    @classmethod
+    def teardown_class(cls):
         ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
         ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
