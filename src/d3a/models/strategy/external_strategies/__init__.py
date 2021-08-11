@@ -23,7 +23,6 @@ from typing import Dict
 
 import d3a.constants
 from d3a.d3a_core.singletons import external_global_statistics
-from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import key_in_dict_and_not_none, convert_str_to_pendulum_in_dict
 
@@ -265,8 +264,8 @@ class ExternalMixin:
             return
 
         if ConstSettings.IAASettings.MARKET_TYPE != 1 and \
-                ((trade.buyer == self.device.name and isinstance(trade.offer, Offer)) or
-                 (trade.seller == self.device.name and isinstance(trade.offer, Bid))):
+                ((trade.buyer == self.device.name and trade.is_offer_trade) or
+                 (trade.seller == self.device.name and trade.is_bid_trade)):
             # Do not track a 2-sided market trade that is originating from an Offer to a
             # consumer (which should have posted a bid). This occurs when the clearing
             # took place on the area market of the device, thus causing 2 trades, one for
@@ -278,8 +277,8 @@ class ExternalMixin:
                                    "asset_id": self.device.uuid,
                                    "trade_id": trade.id,
                                    "time": trade.time.isoformat(),
-                                   "trade_price": trade.offer.price,
-                                   "traded_energy": trade.offer.energy,
+                                   "trade_price": trade.offer_bid.price,
+                                   "traded_energy": trade.offer_bid.energy,
                                    "total_fee": trade.fee_price,
                                    "local_market_fee":
                                        self.area.current_market.fee_class.grid_fee_rate
@@ -289,17 +288,15 @@ class ExternalMixin:
                                    if trade.seller_id == self.device.uuid else "anonymous",
                                    "buyer": trade.buyer
                                    if trade.buyer_id == self.device.uuid else "anonymous",
-                                   "bid_id": trade.offer.id
-                                   if isinstance(trade.offer, Bid) else "None",
-                                   "offer_id": trade.offer.id
-                                   if isinstance(trade.offer, Offer) else "None",
+                                   "bid_id": trade.offer_bid.id
+                                   if trade.is_bid_trade else "None",
+                                   "offer_id": trade.offer_bid.id
+                                   if trade.is_offer_trade else "None",
                                    "residual_bid_id": trade.residual.id
-                                   if trade.residual is not None and isinstance(trade.residual,
-                                                                                Bid)
+                                   if trade.residual is not None and trade.is_bid_trade
                                    else "None",
                                    "residual_offer_id": trade.residual.id
-                                   if trade.residual is not None and isinstance(trade.residual,
-                                                                                Offer)
+                                   if trade.residual is not None and trade.is_offer_trade
                                    else "None"}
 
             external_global_statistics.update()
@@ -309,8 +306,8 @@ class ExternalMixin:
                                    "event": "trade",
                                    "trade_id": trade.id,
                                    "time": trade.time.isoformat(),
-                                   "trade_price": trade.offer.price,
-                                   "traded_energy": trade.offer.energy,
+                                   "trade_price": trade.offer_bid.price,
+                                   "traded_energy": trade.offer_bid.energy,
                                    "fee_price": trade.fee_price,
                                    "area_uuid": self.device.uuid,
                                    "seller": trade.seller
@@ -321,9 +318,9 @@ class ExternalMixin:
                                    if trade.residual is not None else "None"}
 
             bid_offer_key = "bid_id" if is_bid_trade else "offer_id"
-            event_response_dict["event_type"] = "buy" \
-                if trade.buyer == self.device.name else "sell"
-            event_response_dict[bid_offer_key] = trade.offer.id
+            event_response_dict["event_type"] = (
+                "buy" if trade.buyer == self.device.name else "sell")
+            event_response_dict[bid_offer_key] = trade.offer_bid.id
 
             trade_event_channel = f"{self.channel_prefix}/events/trade"
             self.redis.publish_json(trade_event_channel, event_response_dict)

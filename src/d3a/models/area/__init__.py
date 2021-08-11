@@ -24,7 +24,7 @@ from cached_property import cached_property
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
 from d3a.d3a_core.singletons import bid_offer_matcher
-from d3a.d3a_core.util import TaggedLogWrapper, is_external_matching_enabled
+from d3a.d3a_core.util import TaggedLogWrapper
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.events import Events
@@ -393,8 +393,7 @@ class Area:
         """Tick event handler.
 
         Invoke aggregator commands consumer, publishes market clearing, updates events,
-        updates cached market's bids and offers in case of myco matching and matches
-        bid offer pairs otherwise.
+        updates cached myco matcher markets and match trades recommendations.
         """
         self._consume_commands_from_aggregator()
 
@@ -403,29 +402,16 @@ class Area:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                 self.dispatcher.publish_market_clearing()
             else:
-                self._match_bids_offers()
+                self._update_myco_matcher()
+                bid_offer_matcher.match_recommendations()
 
         self.events.update_events(self.now)
 
-    def _match_bids_offers(self) -> None:
-        """Match bids and offers for all markets."""
-        if is_external_matching_enabled():
-            # Update the open offer bids cache that the myco client will request
-            bid_offer_matcher.match_algorithm.update_area_uuid_markets_mapping(
-                {self.uuid: self.all_markets})
-            return
-        # If the external matching is not enabled, get and match bid offer pairs
-        for market in self.all_markets:
-            while True:
-                bids, offers = market.open_bids_and_offers
-                data = {
-                    market.id: {"bids": [bid.serializable_dict() for bid in bids.values()],
-                                "offers": [offer.serializable_dict() for offer in offers.values()],
-                                "current_time": self.now}}
-                bid_offer_pairs = bid_offer_matcher.get_matches_recommendations(data)
-                if not bid_offer_pairs:
-                    break
-                market.match_recommendations(bid_offer_pairs)
+    def _update_myco_matcher(self) -> None:
+        """Update the markets cache that the myco matcher will request"""
+        bid_offer_matcher.update_area_uuid_markets_mapping(
+            area_uuid_markets_mapping={
+                self.uuid: {"markets": self.all_markets, "current_time": self.now}})
 
     def update_area_current_tick(self):
         self.current_tick += 1

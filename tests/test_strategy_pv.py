@@ -139,8 +139,12 @@ class FakeMarket:
 
 class FakeTrade:
     def __init__(self, offer):
-        self.offer = offer
+        self.offer_bid = offer
         self.seller = "FakeSeller"
+
+    @property
+    def is_offer_trade(self):
+        return True
 
     @property
     def buyer(self):
@@ -256,7 +260,7 @@ def test_same_slot_price_drop_does_not_reduce_price_below_threshold(area_test3, 
         area_test3.current_tick += 10
         pv_test3.event_tick()
     new_offer = list(pv_test3.offers.posted.keys())[-1]
-    assert new_offer.price / new_offer.energy >= ConstSettings.PVSettings.SELLING_RATE_RANGE.final
+    assert new_offer.energy_rate >= ConstSettings.PVSettings.SELLING_RATE_RANGE.final
 
 
 """TEST 4"""
@@ -277,10 +281,10 @@ def pv_test4(area_test3, called):
 def testing_event_trade(area_test3, pv_test4):
     pv_test4.state._available_energy_kWh[area_test3.test_market.time_slot] = 1
     pv_test4.event_trade(market_id=area_test3.test_market.id,
-                         trade=Trade(id='id', time='time',
-                                     offer=Offer(id='id', time=pendulum.now(), price=20,
-                                                 energy=1, seller='FakeArea'),
-                                     seller=area_test3.name, buyer='buyer'
+                         trade=Trade(id="id", time="time",
+                                     offer_bid=Offer(id="id", time=pendulum.now(), price=20,
+                                                     energy=1, seller="FakeArea"),
+                                     seller=area_test3.name, buyer="buyer"
                                      )
                          )
     assert len(pv_test4.offers.open) == 0

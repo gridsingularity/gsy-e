@@ -108,10 +108,11 @@ class FakeMarket:
                          buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
 
     def bid(self, price, energy, buyer, original_bid_price=None,
-            buyer_origin=None, buyer_origin_id=None, buyer_id=None):
+            buyer_origin=None, buyer_origin_id=None, buyer_id=None,
+            attributes=None, requirements=None):
         return Bid(123, pendulum.now(), price, energy, buyer, original_bid_price,
                    buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id,
-                   buyer_id=buyer_id)
+                   buyer_id=buyer_id, attributes=attributes, requirements=requirements)
 
 
 @pytest.fixture
@@ -299,7 +300,7 @@ def test_bid_traded_moves_bid_from_posted_to_traded(base):
     test_bid = Bid("123", pendulum.now(), 12, 23, base.owner.name, 'B')
     trade = MagicMock()
     trade.buyer = base.owner.name
-    trade.offer = test_bid
+    trade.offer_bid = test_bid
     market = FakeMarket(raises=False, id=21)
     base.area._market = market
     base._bids[market.id] = [test_bid]

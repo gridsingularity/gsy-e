@@ -93,11 +93,13 @@ class FakeMarket:
         return TIME
 
     def offer(self, price, energy, seller, original_offer_price=None,
-              seller_origin=None, seller_origin_id=None, seller_id=None):
-        offer = Offer('id', pendulum.now(), price, energy, seller, seller_origin=seller_origin,
-                      seller_origin_id=seller_origin_id, seller_id=seller_id)
+              seller_origin=None, seller_origin_id=None, seller_id=None,
+              attributes=None, requirements=None):
+        offer = Offer("id", pendulum.now(), price, energy, seller, seller_origin=seller_origin,
+                      seller_origin_id=seller_origin_id, seller_id=seller_id,
+                      attributes=attributes, requirements=requirements)
         self.created_offers.append(offer)
-        offer.id = 'id'
+        offer.id = "id"
         return offer
 
     def balancing_offer(self, price, energy, seller):
@@ -117,9 +119,11 @@ class FakeMarket:
         return trade
 
     def bid(self, price, energy, buyer, original_bid_price=None,
-            buyer_origin=None, buyer_origin_id=None, buyer_id=None):
+            buyer_origin=None, buyer_origin_id=None, buyer_id=None,
+            attributes=None, requirements=None):
         bid = Bid("bid_id", pendulum.now(), price, energy, buyer, buyer_origin=buyer_origin,
-                  buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
+                  buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
+                  attributes=attributes, requirements=requirements)
         return bid
 
 
@@ -222,12 +226,12 @@ def bus_test2(area_test2):
 def test_event_trade(area_test2, bus_test2):
     bus_test2.event_activate()
     bus_test2.event_market_cycle()
-    traded_offer = Offer(id='id', time=pendulum.now(), price=20, energy=1, seller='FakeArea',)
-    bus_test2.event_trade(market_id=area_test2.test_market.id, trade=Trade(id='id',
-                                                                           time='time',
-                                                                           offer=traded_offer,
-                                                                           seller='FakeArea',
-                                                                           buyer='buyer'
+    traded_offer = Offer(id="id", time=pendulum.now(), price=20, energy=1, seller="FakeArea",)
+    bus_test2.event_trade(market_id=area_test2.test_market.id, trade=Trade(id="id",
+                                                                           time="time",
+                                                                           offer_bid=traded_offer,
+                                                                           seller="FakeArea",
+                                                                           buyer="buyer"
                                                                            )
                           )
     assert len(area_test2.test_market.created_offers) == 1
@@ -249,12 +253,12 @@ def test_on_offer_changed(area_test2, bus_test2):
 
 
 def test_event_trade_after_offer_changed_partial_offer(area_test2, bus_test2):
-    original_offer = Offer(id='old_id', time=pendulum.now(),
-                           price=20, energy=1, seller='FakeArea')
-    accepted_offer = Offer(id='old_id', time=pendulum.now(),
-                           price=15, energy=0.75, seller='FakeArea')
-    residual_offer = Offer(id='res_id', time=pendulum.now(),
-                           price=5, energy=0.25, seller='FakeArea')
+    original_offer = Offer(id="old_id", time=pendulum.now(),
+                           price=20, energy=1, seller="FakeArea")
+    accepted_offer = Offer(id="old_id", time=pendulum.now(),
+                           price=15, energy=0.75, seller="FakeArea")
+    residual_offer = Offer(id="res_id", time=pendulum.now(),
+                           price=5, energy=0.25, seller="FakeArea")
     bus_test2.offers.post(original_offer, area_test2.test_market.id)
     bus_test2.event_offer_split(market_id=area_test2.test_market.id,
                                 original_offer=original_offer,
@@ -263,11 +267,11 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, bus_test2):
     assert original_offer.id in bus_test2.offers.split
     assert bus_test2.offers.split[original_offer.id] == accepted_offer
     bus_test2.event_trade(market_id=area_test2.test_market.id,
-                          trade=Trade(id='id',
-                                      time='time',
-                                      offer=original_offer,
-                                      seller='FakeArea',
-                                      buyer='buyer')
+                          trade=Trade(id="id",
+                                      time="time",
+                                      offer_bid=original_offer,
+                                      seller="FakeArea",
+                                      buyer="buyer")
                           )
 
     assert residual_offer in bus_test2.offers.posted
@@ -327,7 +331,7 @@ def testing_event_tick_buy_energy(bus_test4, area_test1):
     bus_test4.event_activate()
     bus_test4.event_tick()
     assert len(area_test1.test_market.traded_offers) == 1
-    assert area_test1.test_market.traded_offers[-1].offer.energy == 1
+    assert area_test1.test_market.traded_offers[-1].offer_bid.energy == 1
 
 
 def testing_event_market_cycle_posting_bids(bus_test4, area_test1):
