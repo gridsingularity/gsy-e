@@ -468,9 +468,10 @@ class ExternalMixin:
                                 energy_measurement_response_channel))
 
     @staticmethod
-    def _validate_correct_energy_profile(profile: Dict) -> None:
+    def _validate_values_positive_in_profile(profile: Dict) -> None:
+        """Validate whether all values are positive in a profile."""
         for time_str, energy in profile.items():
-            assert energy >= 0.0, f"Energy is not grater than 0 for {time_str}."
+            assert energy >= 0.0, f"Energy is not positive for time stamp {time_str}."
 
     def _set_energy_forecast_impl(self, arguments: Dict, response_channel: str) -> None:
         """
@@ -481,7 +482,7 @@ class ExternalMixin:
             response_channel: redis channel string where the response should be sent to
         """
         try:
-            self._validate_correct_energy_profile(arguments["energy_forecast"])
+            self._validate_values_positive_in_profile(arguments["energy_forecast"])
             self.energy_forecast_buffer.update(
                 convert_str_to_pendulum_in_dict(arguments["energy_forecast"]))
 
@@ -508,7 +509,7 @@ class ExternalMixin:
             response_channel: redis channel string where the response should be sent to
         """
         try:
-            self._validate_correct_energy_profile(arguments["energy_measurement"])
+            self._validate_values_positive_in_profile(arguments["energy_measurement"])
             self.energy_measurement_buffer.update(
                 convert_str_to_pendulum_in_dict(arguments["energy_measurement"]))
 
