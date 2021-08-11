@@ -375,8 +375,11 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
                          initial_buying_rate=initial_buying_rate,
                          balancing_energy_ratio=balancing_energy_ratio,
                          use_market_maker_rate=use_market_maker_rate)
-        self.energy_forecast_buffer = None
-        self.energy_measurement_buffer = None
+
+        # Buffers for energy forecast and measurement values,
+        # that have been sent by the d3a-api-client in the duration of one market slot
+        self.energy_forecast_buffer = None  # Dict[DateTime, float]
+        self.energy_measurement_buffer = None  # Dict[DateTime, float]
 
     @property
     def channel_dict(self):
