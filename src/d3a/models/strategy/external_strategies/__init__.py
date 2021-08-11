@@ -58,9 +58,8 @@ def register_area(redis, channel_prefix, is_connected, transaction_id, area_uuid
             {"command": "register", "status": "ready", "registered": True,
              "transaction_id": transaction_id, "device_uuid": area_uuid})
         return True
-    except Exception as e:
-        logging.error(f"Error when registering to area {channel_prefix}: "
-                      f"Exception: {str(e)}")
+    except Exception:
+        logging.exception(f"Error when registering to area {channel_prefix}")
         redis.publish_json(
             register_response_channel,
             {"command": "register", "status": "error", "transaction_id": transaction_id,
@@ -80,9 +79,8 @@ def unregister_area(redis, channel_prefix, is_connected, transaction_id):
             {"command": "unregister", "status": "ready", "unregistered": True,
              "transaction_id": transaction_id})
         return False
-    except Exception as e:
-        logging.error(f"Error when unregistering from area {channel_prefix}: "
-                      f"Exception: {str(e)}")
+    except Exception:
+        logging.exception(f"Error when unregistering from area {channel_prefix}")
         redis.publish_json(
             unregister_response_channel,
             {"command": "unregister", "status": "error", "transaction_id": transaction_id,
@@ -186,9 +184,8 @@ class ExternalMixin:
                 {"command": "device_info", "status": "ready",
                  "device_info": self._device_info_dict,
                  "transaction_id": arguments.get("transaction_id", None)})
-        except Exception as e:
-            logging.error(f"Error when handling device info on area {self.device.name}: "
-                          f"Exception: {str(e)}")
+        except Exception:
+            logging.exception(f"Error when handling device info on area {self.device.name}")
             self.redis.publish_json(
                 response_channel,
                 {"command": "device_info", "status": "error",
@@ -434,10 +431,9 @@ class ExternalMixin:
         try:
             arguments = json.loads(payload["data"])
             assert set(arguments.keys()) == {"energy_forecast", "transaction_id"}
-        except Exception as e:
-            logging.error(
-                f"Incorrect _set_energy_forecast request. "
-                f"Payload {payload}. Exception {str(e)}.")
+        except Exception:
+            logging.exception(
+                f"Incorrect _set_energy_forecast request: Payload {payload}")
             self.redis.publish_json(
                 energy_forecast_response_channel,
                 {"command": "set_energy_forecast",
@@ -457,10 +453,9 @@ class ExternalMixin:
         try:
             arguments = json.loads(payload["data"])
             assert set(arguments.keys()) == {"energy_measurement", "transaction_id"}
-        except Exception as e:
-            logging.error(
-                f"Incorrect _set_energy_measurement request. "
-                f"Payload {payload}. Exception {str(e)}.")
+        except Exception:
+            logging.exception(
+                f"Incorrect _set_energy_measurement request. Payload: {payload}.")
             self.redis.publish_json(
                 energy_measurement_response_channel,
                 {"command": "set_energy_measurement",
@@ -494,14 +489,13 @@ class ExternalMixin:
                 response_channel,
                 {"command": "set_energy_forecast", "status": "ready",
                  "transaction_id": arguments.get("transaction_id", None)})
-        except Exception as e:
-            logging.error(f"Error when handling _set_energy_forecast_impl "
-                          f"on area {self.device.name}: "
-                          f"Exception: {str(e)}, Arguments: {arguments}")
+        except Exception:
+            logging.exception("Error when handling _set_energy_forecast_impl "
+                              f"on area {self.device.name}. Arguments: {arguments}")
             self.redis.publish_json(
                 response_channel,
                 {"command": "set_energy_forecast", "status": "error",
-                 "error_message": f"Error when handling _set_energy_forecast_impl "
+                 "error_message": "Error when handling _set_energy_forecast_impl "
                                   f"on area {self.device.name} with arguments {arguments}.",
                  "transaction_id": arguments.get("transaction_id", None)})
 
@@ -522,10 +516,9 @@ class ExternalMixin:
                 response_channel,
                 {"command": "set_energy_measurement", "status": "ready",
                  "transaction_id": arguments.get("transaction_id", None)})
-        except Exception as e:
-            logging.error(f"Error when handling _set_energy_measurement_impl "
-                          f"on area {self.device.name}: "
-                          f"Exception: {str(e)}, Arguments: {arguments}")
+        except Exception:
+            logging.exception(f"Error when handling _set_energy_measurement_impl "
+                              f"on area {self.device.name}. Arguments: {arguments}")
             self.redis.publish_json(
                 response_channel,
                 {"command": "set_energy_measurement", "status": "error",

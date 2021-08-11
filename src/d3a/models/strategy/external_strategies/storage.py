@@ -73,9 +73,8 @@ class StorageExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "list_offers", "status": "ready", "offer_list": filtered_offers,
                  "transaction_id": arguments.get("transaction_id", None)})
-        except Exception as e:
-            logging.error(f"Error when handling list offers on area {self.device.name}: "
-                          f"Exception: {str(e)}")
+        except Exception:
+            logging.exception(f"Error when handling list offers on area {self.device.name}")
             self.redis.publish_json(
                 response_channel,
                 {"command": "list_offers", "status": "error",
@@ -93,9 +92,8 @@ class StorageExternalMixin(ExternalMixin):
             if ("offer" in arguments and arguments["offer"] is not None) and \
                     not self.offers.is_offer_posted(self.next_market.id, arguments["offer"]):
                 raise Exception("Offer_id is not associated with any posted offer.")
-        except Exception as e:
-            logging.error(f"Error when handling delete offer request. Payload {payload}. "
-                          f"Exception {str(e)}.")
+        except Exception:
+            logging.exception(f"Error when handling delete offer request. Payload {payload}")
             self.redis.publish_json(
                 delete_offer_response_channel,
                 {"command": "offer_delete",
@@ -119,9 +117,9 @@ class StorageExternalMixin(ExternalMixin):
                 {"command": "offer_delete", "status": "ready",
                  "deleted_offers": deleted_offers,
                  "transaction_id": arguments.get("transaction_id", None)})
-        except Exception as e:
-            logging.error(f"Error when handling offer delete on area {self.device.name}: "
-                          f"Exception: {str(e)}, Offer Arguments: {arguments}")
+        except Exception:
+            logging.exception(f"Error when handling offer delete on area {self.device.name}: "
+                              f"Offer Arguments: {arguments}")
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer_delete", "status": "error",
@@ -148,8 +146,8 @@ class StorageExternalMixin(ExternalMixin):
             # Check that every provided argument is allowed
             assert all(arg in allowed_args for arg in arguments.keys())
 
-        except Exception as e:
-            logging.error(f"Incorrect offer request. Payload {payload}. Exception {str(e)}.")
+        except Exception:
+            logging.exception(f"Incorrect offer request. Payload {payload}.")
             self.redis.publish_json(
                 offer_response_channel,
                 {"command": "offer",
@@ -194,9 +192,9 @@ class StorageExternalMixin(ExternalMixin):
                 {"command": "offer", "status": "ready",
                  "offer": offer.to_json_string(replace_existing=replace_existing),
                  "transaction_id": arguments.get("transaction_id", None)})
-        except Exception as e:
-            logging.error(f"Error when handling offer create on area {self.device.name}: "
-                          f"Exception: {str(e)}, Offer Arguments: {arguments}")
+        except Exception:
+            logging.exception(f"Error when handling offer create on area {self.device.name}: "
+                              f"Offer Arguments: {arguments}")
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer", "status": "error",
@@ -221,9 +219,8 @@ class StorageExternalMixin(ExternalMixin):
                     "command": "list_bids", "status": "ready",
                     "bid_list": self.filtered_bids_next_market,
                     "transaction_id": arguments.get("transaction_id", None)})
-        except Exception as e:
-            logging.error(f"Error when handling list bids on area {self.device.name}: "
-                          f"Exception: {str(e)}")
+        except Exception:
+            logging.exception(f"Error when handling list bids on area {self.device.name}")
             self.redis.publish_json(
                 response_channel,
                 {"command": "list_bids", "status": "error",
@@ -265,9 +262,9 @@ class StorageExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
                  "transaction_id": arguments.get("transaction_id", None)})
-        except Exception as e:
-            logging.error(f"Error when handling bid delete on area {self.device.name}: "
-                          f"Exception: {str(e)}, Bid Arguments: {arguments}")
+        except Exception:
+            logging.exception(f"Error when handling bid delete on area {self.device.name}: "
+                              f"Bid Arguments: {arguments}")
             self.redis.publish_json(
                 response_channel,
                 {"command": "bid_delete", "status": "error",
@@ -335,9 +332,9 @@ class StorageExternalMixin(ExternalMixin):
                     "command": "bid", "status": "ready",
                     "bid": bid.to_json_string(replace_existing=replace_existing),
                     "transaction_id": arguments.get("transaction_id", None)})
-        except Exception as e:
-            logging.error(f"Error when handling bid create on area {self.device.name}: "
-                          f"Exception: {str(e)}, Bid Arguments: {arguments}")
+        except Exception:
+            logging.exception(f"Error when handling bid create on area {self.device.name}: "
+                              f"Bid Arguments: {arguments}")
             self.redis.publish_json(
                 bid_response_channel,
                 {"command": "bid", "status": "error",
@@ -575,9 +572,8 @@ class StorageExternalMixin(ExternalMixin):
                 "bid_list": self.filtered_bids_next_market,
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id", None)}
-        except Exception as e:
-            logging.error(f"Error when handling list bids on area {self.device.name}: "
-                          f"Exception: {str(e)}")
+        except Exception:
+            logging.exception(f"Error when handling list bids on area {self.device.name}")
             return {
                 "command": "list_bids", "status": "error",
                 "area_uuid": self.device.uuid,
