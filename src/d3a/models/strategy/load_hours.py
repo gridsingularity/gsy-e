@@ -383,13 +383,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
         market = self.area.get_future_market_from_id(market_id)
 
-        if bid_trade.offer.buyer == self.owner.name:
+        if bid_trade.offer_bid.buyer == self.owner.name:
             self.state.decrement_energy_requirement(
-                bid_trade.offer.energy * 1000,
+                bid_trade.offer_bid.energy * 1000,
                 market.time_slot, self.owner.name)
             market_day = self._get_day_of_timestamp(market.time_slot)
             if self.hrs_per_day != {} and market_day in self.hrs_per_day:
-                self.hrs_per_day[market_day] -= self._operating_hours(bid_trade.offer.energy)
+                self.hrs_per_day[market_day] -= self._operating_hours(bid_trade.offer_bid.energy)
 
     def event_trade(self, *, market_id, trade):
         market = self.area.get_future_market_from_id(market_id)
@@ -424,7 +424,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
             return
         if trade.buyer != self.owner.name:
             return
-        ramp_down_energy = self.balancing_energy_ratio.supply * trade.offer.energy
+        ramp_down_energy = self.balancing_energy_ratio.supply * trade.offer_bid.energy
         ramp_down_price = DeviceRegistry.REGISTRY[self.owner.name][1] * ramp_down_energy
         self.area.get_balancing_market(market.time_slot).balancing_offer(ramp_down_price,
                                                                          ramp_down_energy,

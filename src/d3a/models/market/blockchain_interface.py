@@ -105,8 +105,8 @@ class SubstrateBlockchainInterface(BlockChainInterface):
             'trade_id': trade.id,
             'buyer': ALICE_STASH_ADDRESS,
             'seller': BOB_STASH_ADDRESS,
-            'energy': int(trade.offer.energy * ENERGY_SCALING_FACTOR),
-            'rate': int(trade.offer.energy_rate * RATE_SCALING_FACTOR)
+            'energy': int(trade.offer_bid.energy * ENERGY_SCALING_FACTOR),
+            'rate': int(trade.offer_bid.energy_rate * RATE_SCALING_FACTOR)
         }
 
         call = self.substrate.compose_call(

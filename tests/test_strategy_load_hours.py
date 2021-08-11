@@ -113,11 +113,12 @@ class FakeMarket:
         return deepcopy(self.bids)
 
     def bid(self, price: float, energy: float, buyer: str, original_bid_price=None,
-            buyer_origin=None, buyer_origin_id=None, buyer_id=None) -> Bid:
-        bid = Bid(id='bid_id', time=now(), price=price, energy=energy, buyer=buyer,
+            buyer_origin=None, buyer_origin_id=None, buyer_id=None,
+            attributes=None, requirements=None) -> Bid:
+        bid = Bid(id="bid_id", time=now(), price=price, energy=energy, buyer=buyer,
                   original_bid_price=original_bid_price,
                   buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id,
-                  buyer_id=buyer_id)
+                  buyer_id=buyer_id, attributes=attributes, requirements=requirements)
         self.bids[bid.id] = bid
         return bid
 
@@ -479,7 +480,7 @@ def test_balancing_offers_are_created_if_device_in_registry(
     balancing_fixture.event_trade(market_id=area_test2.current_market.id,
                                   trade=Trade(id='id',
                                               time=area_test2.now,
-                                              offer=selected_offer,
+                                              offer_bid=selected_offer,
                                               seller='B',
                                               buyer='FakeArea'))
     assert len(area_test2.test_balancing_market.created_balancing_offers) == 2

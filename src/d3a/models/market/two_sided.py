@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import itertools
 import uuid
-from dataclasses import replace
 from logging import getLogger
 from math import isclose
 from typing import Dict, List, Union  # noqa
@@ -204,7 +203,7 @@ class TwoSidedMarket(OneSidedMarket):
             pass
 
         fee_price, trade_price = self.determine_bid_price(trade_offer_info, energy)
-        bid = replace(bid, price=trade_price)
+        bid.update_price(trade_price)
 
         # Do not adapt grid fees when creating the bid_trade_info structure, to mimic
         # the behavior of the forwarded bids which use the source market fee.
@@ -258,17 +257,15 @@ class TwoSidedMarket(OneSidedMarket):
 
         while recommendations:
             recommended_pair = recommendations.pop(0)
-            selected_energy = recommended_pair["selected_energy"]
-            clearing_rate = recommended_pair["trade_rate"]
+            recommended_pair = BidOfferMatch.from_dict(recommended_pair)
+            selected_energy = recommended_pair.selected_energy
+            clearing_rate = recommended_pair.trade_rate
             market_offers = [
-                self.offers.get(offer["id"]) for offer in recommended_pair["offers"]]
-            market_bids = [self.bids.get(bid["id"]) for bid in recommended_pair["bids"]]
+                self.offers.get(offer["id"]) for offer in recommended_pair.offers]
+            market_bids = [self.bids.get(bid["id"]) for bid in recommended_pair.bids]
 
-            if not all(market_offers):
-                # If not all received offers exist in the market, skip the current recommendation
-                continue
-            if not all(market_bids):
-                # If not all received bids exist in the market, skip the current recommendation
+            if not all(market_offers) and all(market_bids):
+                # If not all offers bids exist in the market, skip the current recommendation
                 continue
 
             self.validate_bid_offer_match(
@@ -277,9 +274,9 @@ class TwoSidedMarket(OneSidedMarket):
 
             market_offers = iter(market_offers)
             market_bids = iter(market_bids)
-            market_offer = next(market_offers)
-            market_bid = next(market_bids)
-            while True:
+            market_offer = next(market_offers, None)
+            market_bid = next(market_bids, None)
+            while market_bid and market_offer:
                 original_bid_rate = market_bid.original_bid_price / market_bid.energy
                 trade_bid_info = TradeBidOfferInfo(
                     original_bid_rate=original_bid_rate,
@@ -303,9 +300,6 @@ class TwoSidedMarket(OneSidedMarket):
                     self._replace_offers_bids_with_residual_in_recommendations_list(
                         recommendations, offer_trade, bid_trade)
                 )
-                if not (market_bid and market_offer):
-                    # If we reach the end of the offers/bids lists, break
-                    break
 
     @staticmethod
     def _validate_requirements_satisfied(
@@ -368,10 +362,10 @@ class TwoSidedMarket(OneSidedMarket):
 
         def replace_recommendations_with_residuals(recommendation: Dict):
             for index, offer in enumerate(recommendation["offers"]):
-                if offer["id"] == offer_trade.offer.id:
+                if offer["id"] == offer_trade.offer_bid.id:
                     recommendation["offers"][index] = offer_trade.residual.serializable_dict()
             for index, bid in enumerate(recommendation["bids"]):
-                if bid["id"] == bid_trade.offer.id:
+                if bid["id"] == bid_trade.offer_bid.id:
                     recommendation["bids"][index] = bid_trade.residual.serializable_dict()
             return recommendation
 

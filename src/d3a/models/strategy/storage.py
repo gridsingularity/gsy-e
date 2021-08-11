@@ -391,8 +391,8 @@ class StorageStrategy(BidEnabledStrategy):
                 self._track_energy_bought_type(trade)
         if trade.seller == self.owner.name:
             self._track_energy_sell_type(trade)
-            self.state.pledged_sell_kWh[market.time_slot] += trade.offer.energy
-            self.state.offered_sell_kWh[market.time_slot] -= trade.offer.energy
+            self.state.pledged_sell_kWh[market.time_slot] += trade.offer_bid.energy
+            self.state.offered_sell_kWh[market.time_slot] -= trade.offer_bid.energy
 
     def _is_local(self, trade):
         for child in self.area.children:
@@ -402,7 +402,7 @@ class StorageStrategy(BidEnabledStrategy):
 
     # ESS Energy being utilized based on FIRST-IN FIRST-OUT mechanism
     def _track_energy_sell_type(self, trade):
-        energy = trade.offer.energy
+        energy = trade.offer_bid.energy
         while limit_float_precision(energy) > 0 and len(self.state.get_used_storage_share) > 0:
             first_in_energy_with_origin = self.state.get_used_storage_share[0]
             if energy >= first_in_energy_with_origin.value:
@@ -416,11 +416,11 @@ class StorageStrategy(BidEnabledStrategy):
 
     def _track_energy_bought_type(self, trade):
         if area_name_from_area_or_iaa_name(trade.seller) == self.area.name:
-            self.state.update_used_storage_share(trade.offer.energy, ESSEnergyOrigin.EXTERNAL)
+            self.state.update_used_storage_share(trade.offer_bid.energy, ESSEnergyOrigin.EXTERNAL)
         elif self._is_local(trade):
-            self.state.update_used_storage_share(trade.offer.energy, ESSEnergyOrigin.LOCAL)
+            self.state.update_used_storage_share(trade.offer_bid.energy, ESSEnergyOrigin.LOCAL)
         else:
-            self.state.update_used_storage_share(trade.offer.energy, ESSEnergyOrigin.UNKNOWN)
+            self.state.update_used_storage_share(trade.offer_bid.energy, ESSEnergyOrigin.UNKNOWN)
 
     def event_bid_traded(self, *, market_id, bid_trade):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
@@ -428,8 +428,8 @@ class StorageStrategy(BidEnabledStrategy):
 
         if bid_trade.buyer == self.owner.name:
             self._track_energy_bought_type(bid_trade)
-            self.state.pledged_buy_kWh[market.time_slot] += bid_trade.offer.energy
-            self.state.offered_buy_kWh[market.time_slot] -= bid_trade.offer.energy
+            self.state.pledged_buy_kWh[market.time_slot] += bid_trade.offer_bid.energy
+            self.state.offered_buy_kWh[market.time_slot] -= bid_trade.offer_bid.energy
 
     def event_market_cycle(self):
         super().event_market_cycle()
@@ -566,7 +566,7 @@ class StorageStrategy(BidEnabledStrategy):
                 for market in self.area.all_markets:
                     if len(market.sorted_offers) > 0 and \
                        market.sorted_offers[0].energy_rate > max_rate:
-                        max_rate = market.sorted_offers[0].price / market.sorted_offers[0].energy
+                        max_rate = market.sorted_offers[0].energy_rate
                         most_expensive_market = market
             except IndexError:
                 try:
