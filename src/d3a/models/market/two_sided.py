@@ -257,7 +257,6 @@ class TwoSidedMarket(OneSidedMarket):
             state: Dict[str, MarketClearingState] = None) -> None:
         """Match a list of bid/offer pairs, create trades and residual offers/bids."""
         if state:
-            print(f"state: {state}")
             self.state.update(state)
         while recommendations:
             recommended_pair = recommendations.pop(0)

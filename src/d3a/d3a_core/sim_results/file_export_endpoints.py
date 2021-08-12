@@ -72,7 +72,6 @@ class FileExportEndpoints:
                 time: value["cumulative_bids"] for time, value in market.state.items()}
             self.clearing[area.slug][market.time_slot] = {
                 time: value["clearing"] for time, value in market.state.items()}
-            print("_populate_plots_stats_for_supply_demand_curve")
 
     def update_plot_stats(self, area):
         self._get_stats_from_market_data(self.plot_stats, area, False)
