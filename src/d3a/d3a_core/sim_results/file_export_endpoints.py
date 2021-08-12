@@ -66,9 +66,13 @@ class FileExportEndpoints:
                 self.cumulative_offers[area.slug][market.time_slot] = {}
                 self.cumulative_bids[area.slug][market.time_slot] = {}
                 self.clearing[area.slug][market.time_slot] = {}
-            self.cumulative_offers[area.slug][market.time_slot] = area.state.cumulative_offers
-            self.cumulative_bids[area.slug][market.time_slot] = area.state.cumulative_bids
-            self.clearing[area.slug][market.time_slot] = area.state.clearing
+            self.cumulative_offers[area.slug][market.time_slot] = {
+                time: value["cumulative_offers"] for time, value in market.state.items()}
+            self.cumulative_bids[area.slug][market.time_slot] = {
+                time: value["cumulative_bids"] for time, value in market.state.items()}
+            self.clearing[area.slug][market.time_slot] = {
+                time: value["clearing"] for time, value in market.state.items()}
+            print("_populate_plots_stats_for_supply_demand_curve")
 
     def update_plot_stats(self, area):
         self._get_stats_from_market_data(self.plot_stats, area, False)

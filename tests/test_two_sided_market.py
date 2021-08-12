@@ -171,12 +171,12 @@ class TestTwoSidedMarket:
         market.offers = {"offer1": Offer("id", now(), 2, 2, "other", 2)}
 
         market.bids = {"bid1": Bid("bid_id", now(), 9, 10, "B", "S")}
-        matched = market_matcher.get_matches_recommendations(
+        matched, _ = market_matcher.get_matches_recommendations(
             {market.id: {"bids": [bid.serializable_dict() for bid in market.bids.values()],
              "offers": [offer.serializable_dict() for offer in market.offers.values()]}})
         assert len(matched) == 0
         market.bids = {"bid1": Bid("bid_id", now(), 11, 10, "B", "S")}
-        matched = market_matcher.get_matches_recommendations(
+        matched, _ = market_matcher.get_matches_recommendations(
             {market.id: {"bids": [bid.serializable_dict() for bid in market.bids.values()],
              "offers": [offer.serializable_dict() for offer in market.offers.values()]}})
         assert len(matched) == 1
@@ -189,7 +189,7 @@ class TestTwoSidedMarket:
         market.bids = {"bid1": Bid("bid_id1", now(), 11, 10, "B", "S"),
                        "bid2": Bid("bid_id2", now(), 9, 10, "B", "S"),
                        "bid3": Bid("bid_id3", now(), 12, 10, "B", "S")}
-        matched = market_matcher.get_matches_recommendations(
+        matched, _ = market_matcher.get_matches_recommendations(
             {market.id: {"bids": [bid.serializable_dict() for bid in market.bids.values()],
              "offers": [offer.serializable_dict() for offer in market.offers.values()]}})
         assert len(matched) == 1
@@ -238,8 +238,8 @@ class TestTwoSidedMarket:
             Bid("bid_id2", now(), 2.2, 1, "B", "S").serializable_dict(),
             Bid("bid_id3", now(), 1.1, 1, "B", "S").serializable_dict()]
 
-        matched = pac_market.get_clearing_point(bids, offers, now())[0]
-        assert matched == 2.2
+        matched, _, _ = pac_market.get_clearing_point(bids, offers, now())
+        assert matched[0] == 2.2
 
     def test_market_bid_trade(self, market=TwoSidedMarket(bc=MagicMock(), time_slot=now())):
         bid = market.bid(20, 10, "A", "A", original_bid_price=20)
@@ -358,11 +358,10 @@ class TestTwoSidedMarket:
                 Bid("bid_id6", now(), bid[5], 1, "B", "S").serializable_dict(),
                 Bid("bid_id7", now(), bid[6], 1, "B", "S").serializable_dict()]
 
-        matched_rate, matched_energy = pac_market.get_clearing_point(
-            bids, offers, now()
-        )
-        assert matched_rate == mcp_rate
-        assert matched_energy == mcp_energy
+        clearing, cumulative_bids, cumulative_offers = \
+            pac_market.get_clearing_point(bids, offers, now())
+        assert clearing[0] == mcp_rate
+        assert clearing[1] == mcp_energy
 
     def test_matching_list_gets_updated_with_residual_offers(self):
         matches = [
@@ -508,25 +507,3 @@ class TestTwoSidedMarketMatchRecommendations:
         assert market.accumulated_trade_price == 2
         assert market.traded_energy["Seller"] == 2
         assert market.traded_energy["Buyer"] == -2
-
-    def test_double_sided_pay_as_clear_market_area_retain_state(self, pac_area):
-
-        offers = [
-            Offer("id1", now(), 1.1, 1, "other").serializable_dict(),
-            Offer("id2", now(), 2.2, 1, "other").serializable_dict(),
-            Offer("id3", now(), 3.3, 1, "other").serializable_dict()]
-        bids = [
-            Bid("bid_id1", now(), 3.3, 1, "B", "S").serializable_dict(),
-            Bid("bid_id2", now(), 2.2, 1, "B", "S").serializable_dict(),
-            Bid("bid_id3", now(), 1.1, 1, "B", "S").serializable_dict()]
-        current_time = pac_area.now
-
-        data = {str(uuid4()): {"bids": bids, "offers": offers, "current_time": current_time}}
-        bid_offer_matcher.matcher._get_matches_recommendations(data)
-
-        pac_area.copy_clearing_state_to_area_state()
-
-        assert (pac_area.state.cumulative_offers[current_time] ==
-                bid_offer_matcher.matcher.match_algorithm.state.cumulative_offers)
-        assert (pac_area.state.cumulative_bids[current_time] ==
-                bid_offer_matcher.matcher.match_algorithm.state.cumulative_bids)

@@ -22,7 +22,6 @@ from uuid import uuid4
 from cached_property import cached_property
 from pendulum import DateTime, duration, today
 from slugify import slugify
-from d3a_interface.dataclasses import MarketClearingState
 from d3a_interface.area_validator import validate_area
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.enums import SpotMarketTypeEnum
@@ -145,7 +144,6 @@ class Area:
             if external_connection_available and self.strategy is None else None
         self.should_update_child_strategies = False
         self.external_connection_available = external_connection_available
-        self.state = MarketClearingState()
 
     @property
     def name(self):
@@ -407,7 +405,6 @@ class Area:
             else:
                 self._update_myco_matcher()
                 bid_offer_matcher.match_recommendations()
-                self.copy_clearing_state_to_area_state()
 
         self.events.update_events(self.now)
 
@@ -416,15 +413,6 @@ class Area:
         bid_offer_matcher.update_area_uuid_markets_mapping(
             area_uuid_markets_mapping={
                 self.uuid: {"markets": self.all_markets, "current_time": self.now}})
-
-    def copy_clearing_state_to_area_state(self):
-        """Keep copy of myco matcher's cumulative_offers/cumulative_bids in area state for
-        supply/demand plot."""
-        if hasattr(bid_offer_matcher.matcher.match_algorithm, "state"):
-            self.state.cumulative_offers[self.now] = (bid_offer_matcher.matcher.match_algorithm.
-                                                      state.cumulative_offers)
-            self.state.cumulative_bids[self.now] = (bid_offer_matcher.matcher.match_algorithm.
-                                                    state.cumulative_bids)
 
     def update_area_current_tick(self):
         self.current_tick += 1
