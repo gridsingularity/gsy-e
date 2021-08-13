@@ -31,7 +31,7 @@ from d3a.models.market.market_structures import Bid, Offer, Trade, TradeBidOffer
 from d3a.models.market.market_validators import RequirementsSatisfiedChecker
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.dataclasses import BidOfferMatch, MarketClearingState
+from d3a_interface.dataclasses import BidOfferMatch
 
 log = getLogger(__name__)
 
@@ -51,7 +51,6 @@ class TwoSidedMarket(OneSidedMarket):
                  grid_fees=None, name=None, in_sim_duration=True):
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name, in_sim_duration=in_sim_duration)
-        self.state = {}
 
     def __repr__(self):  # pragma: no cover
         return "<TwoSidedPayAsBid{} bids: {} (E: {} kWh V:{}) " \
@@ -253,11 +252,8 @@ class TwoSidedMarket(OneSidedMarket):
         return bid_trade, trade
 
     def match_recommendations(
-            self, recommendations: List[BidOfferMatch.serializable_dict],
-            state: Dict[str, MarketClearingState] = None) -> None:
+            self, recommendations: List[BidOfferMatch.serializable_dict]) -> None:
         """Match a list of bid/offer pairs, create trades and residual offers/bids."""
-        if state:
-            self.state.update(state)
         while recommendations:
             recommended_pair = recommendations.pop(0)
             recommended_pair = BidOfferMatch.from_dict(recommended_pair)

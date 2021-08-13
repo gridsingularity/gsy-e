@@ -52,6 +52,7 @@ class FileExportEndpoints:
                 out_dict[area.slug][label].append(row[ii])
 
     def _populate_plots_stats_for_supply_demand_curve(self, area):
+        from d3a.d3a_core.singletons import bid_offer_matcher
         if (ConstSettings.IAASettings.MARKET_TYPE == 2 and
                 ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
                 BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value):
@@ -66,12 +67,13 @@ class FileExportEndpoints:
                 self.cumulative_offers[area.slug][market.time_slot] = {}
                 self.cumulative_bids[area.slug][market.time_slot] = {}
                 self.clearing[area.slug][market.time_slot] = {}
-            self.cumulative_offers[area.slug][market.time_slot] = {
-                time: value["cumulative_offers"] for time, value in market.state.items()}
-            self.cumulative_bids[area.slug][market.time_slot] = {
-                time: value["cumulative_bids"] for time, value in market.state.items()}
-            self.clearing[area.slug][market.time_slot] = {
-                time: value["clearing"] for time, value in market.state.items()}
+                clearing_state = bid_offer_matcher.matcher.match_algorithm.state
+            self.cumulative_offers[area.slug][market.time_slot] = \
+                clearing_state.cumulative_offers.get(market.id, {})
+            self.cumulative_bids[area.slug][market.time_slot] = \
+                clearing_state.cumulative_bids.get(market.id, {})
+            self.clearing[area.slug][market.time_slot] = \
+                clearing_state.clearing.get(market.id, ())
 
     def update_plot_stats(self, area):
         self._get_stats_from_market_data(self.plot_stats, area, False)

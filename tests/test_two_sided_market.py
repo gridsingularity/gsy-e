@@ -171,12 +171,12 @@ class TestTwoSidedMarket:
         market.offers = {"offer1": Offer("id", now(), 2, 2, "other", 2)}
 
         market.bids = {"bid1": Bid("bid_id", now(), 9, 10, "B", "S")}
-        matched, _ = market_matcher.get_matches_recommendations(
+        matched = market_matcher.get_matches_recommendations(
             {market.id: {"bids": [bid.serializable_dict() for bid in market.bids.values()],
              "offers": [offer.serializable_dict() for offer in market.offers.values()]}})
         assert len(matched) == 0
         market.bids = {"bid1": Bid("bid_id", now(), 11, 10, "B", "S")}
-        matched, _ = market_matcher.get_matches_recommendations(
+        matched = market_matcher.get_matches_recommendations(
             {market.id: {"bids": [bid.serializable_dict() for bid in market.bids.values()],
              "offers": [offer.serializable_dict() for offer in market.offers.values()]}})
         assert len(matched) == 1
@@ -189,7 +189,7 @@ class TestTwoSidedMarket:
         market.bids = {"bid1": Bid("bid_id1", now(), 11, 10, "B", "S"),
                        "bid2": Bid("bid_id2", now(), 9, 10, "B", "S"),
                        "bid3": Bid("bid_id3", now(), 12, 10, "B", "S")}
-        matched, _ = market_matcher.get_matches_recommendations(
+        matched = market_matcher.get_matches_recommendations(
             {market.id: {"bids": [bid.serializable_dict() for bid in market.bids.values()],
              "offers": [offer.serializable_dict() for offer in market.offers.values()]}})
         assert len(matched) == 1

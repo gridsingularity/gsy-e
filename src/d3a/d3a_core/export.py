@@ -217,8 +217,8 @@ class ExportAndPlot:
                 for market in area.past_markets:
                     for time, clearing in (
                             bid_offer_matcher.matcher.match_algorithm.state.clearing.items()):
-                        if market.time_slot > time:
-                            row = (market.time_slot, time, clearing)
+                        if market.time_slot_str > time:
+                            row = (market.time_slot_str, time, clearing)
                             writer.writerow(row)
         except OSError:
             _log.exception("Could not export area market_clearing_rate")
@@ -585,6 +585,7 @@ class ExportAndPlot:
 
             if len(data) == 0:
                 continue
+            print(f"clearing: {clearing}")
 
             for time_slot, clearing_point in clearing.items():
                 # clearing_point[0] --> Clearing-Rate

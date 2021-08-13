@@ -37,8 +37,7 @@ class MycoInternalMatcher(MycoMatcherInterface):
 
     def _get_matches_recommendations(self, data):
         """Wrapper for matching algorithm's matches recommendations."""
-        bid_offer_pairs, state = self.match_algorithm.get_matches_recommendations(data)
-        return bid_offer_pairs, state
+        return self.match_algorithm.get_matches_recommendations(data)
 
     @staticmethod
     def get_matching_algorithm():
@@ -67,10 +66,10 @@ class MycoInternalMatcher(MycoMatcherInterface):
                             {"bids": [bid.serializable_dict() for bid in bids.values()],
                              "offers": [offer.serializable_dict() for offer in offers.values()],
                              "current_time": area_data["current_time"]}}
-                    bid_offer_pairs, state = self._get_matches_recommendations(data)
+                    bid_offer_pairs = self._get_matches_recommendations(data)
                     if not bid_offer_pairs:
                         break
-                    market.match_recommendations(bid_offer_pairs, state)
+                    market.match_recommendations(bid_offer_pairs)
         self.area_uuid_markets_mapping = {}
 
     def event_tick(self, **kwargs) -> None:
