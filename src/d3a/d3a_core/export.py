@@ -585,7 +585,6 @@ class ExportAndPlot:
 
             if len(data) == 0:
                 continue
-            print(f"clearing: {clearing}")
 
             for time_slot, clearing_point in clearing.items():
                 # clearing_point[0] --> Clearing-Rate
