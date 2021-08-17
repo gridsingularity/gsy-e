@@ -469,7 +469,8 @@ class ExternalMixin:
     def _validate_values_positive_in_profile(profile: Dict) -> None:
         """Validate whether all values are positive in a profile."""
         for time_str, energy in profile.items():
-            assert energy >= 0.0, f"Energy is not positive for time stamp {time_str}."
+            if energy < 0.0:
+                raise ValueError(f"Energy is not positive for time stamp {time_str}.")
 
     def _set_energy_forecast_impl(self, arguments: Dict, response_channel: str) -> None:
         """
