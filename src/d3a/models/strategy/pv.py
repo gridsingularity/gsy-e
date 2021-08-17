@@ -234,13 +234,13 @@ class PVStrategy(BaseStrategy):
     def event_market_cycle(self):
         super().event_market_cycle()
         # Provide energy values for the past market slot, to be used in the settlement market
-        self.set_energy_measurement_of_last_market()
+        self._set_energy_measurement_of_last_market()
         self.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
         self._set_alternative_pricing_scheme()
         self.event_market_cycle_price()
         self._delete_past_state()
 
-    def set_energy_measurement_of_last_market(self):
+    def _set_energy_measurement_of_last_market(self):
         """Set the (simulated) actual energy of the device in the previous market slot."""
         if self.area.current_market:
             self._set_energy_measurement_kWh(self.area.current_market.time_slot)

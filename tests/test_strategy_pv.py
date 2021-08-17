@@ -573,7 +573,7 @@ def test_set_energy_measurement_of_last_market(utils_mock, pv_strategy):
     pv_strategy.area.current_market = None
     pv_strategy.state.set_energy_measurement_kWh = Mock()
     pv_strategy.state.get_energy_production_forecast_kWh = Mock(return_value=50)
-    pv_strategy.set_energy_measurement_of_last_market()
+    pv_strategy._set_energy_measurement_of_last_market()
 
     pv_strategy.state.set_energy_measurement_kWh.assert_not_called()
 
@@ -581,7 +581,7 @@ def test_set_energy_measurement_of_last_market(utils_mock, pv_strategy):
     pv_strategy.state.set_energy_measurement_kWh.reset_mock()
     pv_strategy.area.current_market = Mock()
     utils_mock.compute_altered_energy.return_value = 100
-    pv_strategy.set_energy_measurement_of_last_market()
+    pv_strategy._set_energy_measurement_of_last_market()
 
     pv_strategy.state.set_energy_measurement_kWh.assert_called_once_with(
         100, pv_strategy.area.current_market.time_slot)

@@ -47,7 +47,7 @@ class LoadExternalMixin(ExternalMixin):
 
     @property
     def filtered_bids_next_market(self) -> List[Dict]:
-        """Get a representation of each of the device"s bids from the next market."""
+        """Get a representation of each of the device's bids from the next market."""
 
         return [
             {"id": bid.id, "price": bid.price, "energy": bid.energy}
