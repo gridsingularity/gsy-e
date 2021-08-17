@@ -238,7 +238,7 @@ class TestTwoSidedMarket:
             Bid("bid_id2", now(), 2.2, 1, "B", "S").serializable_dict(),
             Bid("bid_id3", now(), 1.1, 1, "B", "S").serializable_dict()]
 
-        matched, _, _ = pac_market.get_clearing_point(bids, offers, now())
+        matched = pac_market.get_clearing_point(bids, offers, now(), str(uuid4()))
         assert matched[0] == 2.2
 
     def test_market_bid_trade(self, market=TwoSidedMarket(bc=MagicMock(), time_slot=now())):
@@ -358,8 +358,7 @@ class TestTwoSidedMarket:
                 Bid("bid_id6", now(), bid[5], 1, "B", "S").serializable_dict(),
                 Bid("bid_id7", now(), bid[6], 1, "B", "S").serializable_dict()]
 
-        clearing, cumulative_bids, cumulative_offers = \
-            pac_market.get_clearing_point(bids, offers, now())
+        clearing = pac_market.get_clearing_point(bids, offers, now(), str(uuid4()))
         assert clearing[0] == mcp_rate
         assert clearing[1] == mcp_energy
 
