@@ -1,4 +1,4 @@
-If the D3A is already installed and updated on your virtual machine you can skip to step 4.
+If the Grid Singularity Exchange is already installed and updated on your virtual machine you can skip to step 4.
 
 ###Step 1: Windows environment settings (not always required, please try starting with Step 2)
 
@@ -29,11 +29,11 @@ choco install vagrant
 vagrant plugin install vagrant-disksize
 ```
 
-###Step 3: Install D3A while sharing a folder between guest and host machine via vagrant
+###Step 3: Install Grid Singularity Exchange while sharing a folder between guest and host machine via vagrant
 
 Create a new-folder that you want to share across guest and host machines.
 
-Add the Vagrantfile from D3A repository into your newly created folder.
+Add the Vagrantfile from Grid Singularity Exchange repository into your newly created folder.
 
 Open a terminal and go into your newly-created folder with: 
 
@@ -67,7 +67,7 @@ vagrant box remove ubuntu/<your-box-name> --all --force
 vagrant reload 
 ```
 
-###Step 5: Access your virtual machine terminal to run D3A:
+###Step 5: Access your virtual machine terminal to run Grid Singularity Exchange:
 
 ```
 vagrant ssh
@@ -108,7 +108,7 @@ cd /vagrant/d3a
 d3a run
 ```
 
-###Step 8: Run the D3A API client in Vagrant
+###Step 8: Run the Grid Singularity Exchange API client in Vagrant
 
 Activate the API-client environment:
 
