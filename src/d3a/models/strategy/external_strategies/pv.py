@@ -68,11 +68,12 @@ class PVExternalMixin(ExternalMixin):
                 {"command": "list_offers", "status": "ready", "offer_list": filtered_offers,
                  "transaction_id": arguments.get("transaction_id", None)})
         except Exception:
-            logging.exception(f"Error when handling list offers on area {self.device.name}")
+            error_message = f"Error when handling list offers on area {self.device.name}"
+            logging.exception(error_message)
             self.redis.publish_json(
                 response_channel,
                 {"command": "list_offers", "status": "error",
-                 "error_message": f"Error when listing offers on area {self.device.name}.",
+                 "error_message": error_message,
                  "transaction_id": arguments.get("transaction_id", None)})
 
     def _delete_offer(self, payload):
@@ -108,13 +109,13 @@ class PVExternalMixin(ExternalMixin):
                  "deleted_offers": deleted_offers,
                  "transaction_id": arguments.get("transaction_id", None)})
         except Exception:
-            logging.exception(f"Error when handling offer delete on area {self.device.name}: "
-                              f"Offer Arguments: {arguments}")
+            error_message = (f"Error when handling offer delete on area {self.device.name}: "
+                             f"Offer Arguments: {arguments}")
+            logging.exception(error_message)
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer_delete", "status": "error",
-                 "error_message": f"Error when handling offer delete "
-                                  f"on area {self.device.name} with arguments {arguments}.",
+                 "error_message": error_message,
                  "transaction_id": arguments.get("transaction_id", None)})
 
     def _offer(self, payload):
@@ -171,13 +172,13 @@ class PVExternalMixin(ExternalMixin):
                  "offer": offer.to_json_string(replace_existing=replace_existing),
                  "transaction_id": arguments.get("transaction_id", None)})
         except Exception:
-            logging.exception(f"Error when handling offer create on area {self.device.name}: "
-                              f"Offer Arguments: {arguments}")
+            error_message = (f"Error when handling offer create on area {self.device.name}: "
+                             f"Offer Arguments: {arguments}")
+            logging.exception(error_message)
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer", "status": "error",
-                 "error_message": f"Error when handling offer create "
-                                  f"on area {self.device.name} with arguments {arguments}.",
+                 "error_message": error_message,
                  "transaction_id": arguments.get("transaction_id", None)})
 
     @property

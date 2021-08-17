@@ -76,11 +76,12 @@ class LoadExternalMixin(ExternalMixin):
                     "bid_list": self.filtered_bids_next_market,
                     "transaction_id": arguments.get("transaction_id", None)})
         except Exception:
-            logging.exception(f"Error when handling list bids on area {self.device.name}")
+            error_message = f"Error when handling list bids on area {self.device.name}"
+            logging.exception(error_message)
             self.redis.publish_json(
                 response_channel,
                 {"command": "list_bids", "status": "error",
-                 "error_message": f"Error when listing bids on area {self.device.name}.",
+                 "error_message": error_message,
                  "transaction_id": arguments.get("transaction_id", None)})
 
     def _delete_bid(self, payload):
@@ -116,14 +117,14 @@ class LoadExternalMixin(ExternalMixin):
                 {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
                  "transaction_id": arguments.get("transaction_id", None)})
         except Exception:
-            logging.exception(f"Error when handling bid delete on area {self.device.name}: "
-                              f"Bid Arguments: {arguments}")
+            error_message = (f"Error when handling bid delete on area {self.device.name}: "
+                             f"Bid Arguments: {arguments}, "
+                             "Bid does not exist on the current market.")
+            logging.exception(error_message)
             self.redis.publish_json(
                 response_channel,
                 {"command": "bid_delete", "status": "error",
-                 "error_message": f"Error when handling bid delete "
-                                  f"on area {self.device.name} with arguments {arguments}. "
-                                  f"Bid does not exist on the current market.",
+                 "error_message": error_message,
                  "transaction_id": arguments.get("transaction_id", None)})
 
     def _bid(self, payload):
@@ -180,13 +181,13 @@ class LoadExternalMixin(ExternalMixin):
                     "bid": bid.to_json_string(replace_existing=replace_existing),
                     "transaction_id": arguments.get("transaction_id", None)})
         except Exception:
-            logging.exception(f"Error when handling bid create on area {self.device.name}: "
-                              f"Bid Arguments: {arguments}")
+            error_message = (f"Error when handling bid create on area {self.device.name}: "
+                             f"Bid Arguments: {arguments}")
+            logging.exception(error_message)
             self.redis.publish_json(
                 bid_response_channel,
                 {"command": "bid", "status": "error",
-                 "error_message": f"Error when handling bid create "
-                                  f"on area {self.device.name} with arguments {arguments}.",
+                 "error_message": error_message,
                  "transaction_id": arguments.get("transaction_id", None)})
 
     @property

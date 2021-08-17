@@ -184,11 +184,12 @@ class ExternalMixin:
                  "device_info": self._device_info_dict,
                  "transaction_id": arguments.get("transaction_id", None)})
         except Exception:
-            logging.exception(f"Error when handling device info on area {self.device.name}")
+            error_message = f"Error when handling device info on area {self.device.name}"
+            logging.exception(error_message)
             self.redis.publish_json(
                 response_channel,
                 {"command": "device_info", "status": "error",
-                 "error_message": f"Error when handling device info on area {self.device.name}.",
+                 "error_message": error_message,
                  "transaction_id": arguments.get("transaction_id", None)})
 
     def _device_info_aggregator(self, arguments):
@@ -488,13 +489,13 @@ class ExternalMixin:
                 {"command": "set_energy_forecast", "status": "ready",
                  "transaction_id": arguments.get("transaction_id", None)})
         except Exception:
-            logging.exception("Error when handling _set_energy_forecast_impl "
-                              f"on area {self.device.name}. Arguments: {arguments}")
+            error_message = ("Error when handling _set_energy_forecast_impl "
+                             f"on area {self.device.name}. Arguments: {arguments}")
+            logging.exception(error_message)
             self.redis.publish_json(
                 response_channel,
                 {"command": "set_energy_forecast", "status": "error",
-                 "error_message": "Error when handling _set_energy_forecast_impl "
-                                  f"on area {self.device.name} with arguments {arguments}.",
+                 "error_message": error_message,
                  "transaction_id": arguments.get("transaction_id", None)})
 
     def _set_energy_measurement_impl(self, arguments: Dict, response_channel: str) -> None:
@@ -515,13 +516,13 @@ class ExternalMixin:
                 {"command": "set_energy_measurement", "status": "ready",
                  "transaction_id": arguments.get("transaction_id", None)})
         except Exception:
-            logging.exception(f"Error when handling _set_energy_measurement_impl "
-                              f"on area {self.device.name}. Arguments: {arguments}")
+            error_message = ("Error when handling _set_energy_measurement_impl "
+                             f"on area {self.device.name}. Arguments: {arguments}")
+            logging.exception(error_message)
             self.redis.publish_json(
                 response_channel,
                 {"command": "set_energy_measurement", "status": "error",
-                 "error_message": f"Error when handling _set_energy_measurement_impl "
-                                  f"on area {self.device.name} with arguments {arguments}.",
+                 "error_message": error_message,
                  "transaction_id": arguments.get("transaction_id", None)})
 
     @property
