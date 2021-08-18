@@ -9,4 +9,5 @@ hypothesis==4.38.0
 isort
 parameterized
 pytest
+pytest-random-order
 requests-mock

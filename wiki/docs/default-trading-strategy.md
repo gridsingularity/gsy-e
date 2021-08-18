@@ -1,4 +1,4 @@
-Grid Singularity’s exchange engine (D3A) has a built-in template trading agent. The agent’s trading strategy is **deterministic**. Each consumer asset will first try to buy energy at a **low** price and, if not cleared, the price will increase **linearly** during the [market slot](markets.md#market-slots) until a user-defined maximum is reached. In turn, assets generating energy will try to sell at a **high** price first and, if not cleared, reduce their rate linearly until a user-set minimum is reached.
+Grid Singularity’s exchange engine has a built-in template trading agent. The agent’s trading strategy is **deterministic**. Each consumer asset will first try to buy energy at a **low** price and, if not cleared, the price will increase **linearly** during the [market slot](markets.md#market-slots) until a user-defined maximum is reached. In turn, assets generating energy will try to sell at a **high** price first and, if not cleared, reduce their rate linearly until a user-set minimum is reached.
 
 **Offers’** trading settings are as follows:
 

@@ -15,25 +15,36 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import itertools
 import uuid
-from dataclasses import replace
 from logging import getLogger
 from math import isclose
-from typing import Union  # noqa
+from typing import Dict, List, Union  # noqa
 
-from d3a_interface.constants_limits import ConstSettings
-
-from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade, MarketException
+from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.d3a_core.exceptions import (BidNotFoundException, InvalidBid,
+                                     InvalidBidOfferPairException, InvalidTrade, MarketException)
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.events.event_structures import MarketEvent
-from d3a.models.market import lock_market_action, validate_authentic_bid_offer_pair
-from d3a.models.market.market_structures import Bid, Trade, TradeBidOfferInfo
+from d3a.models.market import lock_market_action
+from d3a.models.market.market_structures import Bid, Offer, Trade, TradeBidOfferInfo
+from d3a.models.market.market_validators import RequirementsSatisfiedChecker
 from d3a.models.market.one_sided import OneSidedMarket
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.dataclasses import BidOfferMatch
 
 log = getLogger(__name__)
 
 
 class TwoSidedMarket(OneSidedMarket):
+    """Extends One sided market class and adds support for bidding functionality.
+
+    A market type that allows producers to place energy offers to the markets
+    (exactly the same way as on the one-sided market case), but also allows the consumers
+    to place energy bids on their respective markets.
+    Contrary to the one sided market, where the offers are selected directly by the consumers,
+    the offers and bids are being matched via some matching algorithm.
+    """
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
                  grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
@@ -64,9 +75,10 @@ class TwoSidedMarket(OneSidedMarket):
         return self.bids
 
     @lock_market_action
-    def bid(self, price: float, energy: float, buyer: str, buyer_origin,
+    def bid(self, price: float, energy: float, buyer: str, buyer_origin: str,
             bid_id: str = None, original_bid_price=None, adapt_price_with_fees=True,
-            add_to_history=True, buyer_origin_id=None, buyer_id=None) -> Bid:
+            add_to_history=True, buyer_origin_id=None, buyer_id=None,
+            attributes: Dict = None, requirements: List[Dict] = None) -> Bid:
         if energy <= 0:
             raise InvalidBid()
 
@@ -81,7 +93,8 @@ class TwoSidedMarket(OneSidedMarket):
 
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   self.now, price, energy, buyer, original_bid_price, buyer_origin,
-                  buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
+                  buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
+                  attributes=attributes, requirements=requirements)
 
         self.bids[bid.id] = bid
         if add_to_history is True:
@@ -95,7 +108,7 @@ class TwoSidedMarket(OneSidedMarket):
             bid_or_id = bid_or_id.id
         bid = self.bids.pop(bid_or_id, None)
         if not bid:
-            raise BidNotFound(bid_or_id)
+            raise BidNotFoundException(bid_or_id)
         log.debug(f"[BID][DEL][{self.time_slot_str}] {bid}")
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
@@ -113,7 +126,9 @@ class TwoSidedMarket(OneSidedMarket):
                                 buyer_origin_id=original_bid.buyer_origin_id,
                                 buyer_id=original_bid.buyer_id,
                                 adapt_price_with_fees=False,
-                                add_to_history=False)
+                                add_to_history=False,
+                                attributes=original_bid.attributes,
+                                requirements=original_bid.requirements)
 
         residual_price = (1 - energy / original_bid.energy) * original_bid.price
         residual_energy = original_bid.energy - energy
@@ -129,7 +144,9 @@ class TwoSidedMarket(OneSidedMarket):
                                 buyer_origin_id=original_bid.buyer_origin_id,
                                 buyer_id=original_bid.buyer_id,
                                 adapt_price_with_fees=False,
-                                add_to_history=True)
+                                add_to_history=True,
+                                attributes=original_bid.attributes,
+                                requirements=original_bid.requirements)
 
         log.debug(f"[BID][SPLIT][{self.time_slot_str}, {self.name}] "
                   f"({short_offer_bid_log_str(original_bid)} into "
@@ -155,7 +172,7 @@ class TwoSidedMarket(OneSidedMarket):
                    seller_origin_id=None, seller_id=None):
         market_bid = self.bids.pop(bid.id, None)
         if market_bid is None:
-            raise BidNotFound("During accept bid: " + str(bid))
+            raise BidNotFoundException("During accept bid: " + str(bid))
 
         buyer = market_bid.buyer if buyer is None else buyer
 
@@ -179,13 +196,14 @@ class TwoSidedMarket(OneSidedMarket):
             try:
                 self.bids.pop(accepted_bid.id)
             except KeyError:
-                raise BidNotFound(f"Bid {accepted_bid.id} not found in self.bids ({self.name}).")
+                raise BidNotFoundException(
+                    f"Bid {accepted_bid.id} not found in self.bids ({self.name}).")
         else:
             # full bid trade, nothing further to do here
             pass
 
         fee_price, trade_price = self.determine_bid_price(trade_offer_info, energy)
-        bid = replace(bid, price=trade_price)
+        bid.update_price(trade_price)
 
         # Do not adapt grid fees when creating the bid_trade_info structure, to mimic
         # the behavior of the forwarded bids which use the source market fee.
@@ -210,7 +228,6 @@ class TwoSidedMarket(OneSidedMarket):
         return trade
 
     def accept_bid_offer_pair(self, bid, offer, clearing_rate, trade_bid_info, selected_energy):
-        validate_authentic_bid_offer_pair(bid, offer, clearing_rate, selected_energy)
         already_tracked = bid.buyer == offer.seller
         trade = self.accept_offer(offer_or_id=offer,
                                   buyer=bid.buyer,
@@ -234,49 +251,125 @@ class TwoSidedMarket(OneSidedMarket):
                                     seller_id=offer.seller_id)
         return bid_trade, trade
 
-    def match_offers_bids(self):
-        pass
+    def match_recommendations(
+            self, recommendations: List[BidOfferMatch.serializable_dict]) -> None:
+        """Match a list of bid/offer pairs, create trades and residual offers/bids."""
 
-    def match_recommendation(self, recommended_list):
-        if recommended_list is None:
-            return
-        for index, recommended_pair in enumerate(recommended_list):
-
+        while recommendations:
+            recommended_pair = recommendations.pop(0)
+            recommended_pair = BidOfferMatch.from_dict(recommended_pair)
             selected_energy = recommended_pair.selected_energy
-            bid = recommended_pair.bid
-            offer = recommended_pair.offer
-            original_bid_rate = \
-                bid.original_bid_price / bid.energy
+            clearing_rate = recommended_pair.trade_rate
+            market_offers = [
+                self.offers.get(offer["id"]) for offer in recommended_pair.offers]
+            market_bids = [self.bids.get(bid["id"]) for bid in recommended_pair.bids]
 
-            trade_bid_info = TradeBidOfferInfo(
-                original_bid_rate=original_bid_rate,
-                propagated_bid_rate=bid.price/bid.energy,
-                original_offer_rate=offer.original_offer_price/offer.energy,
-                propagated_offer_rate=offer.price/offer.energy,
-                trade_rate=original_bid_rate)
+            if not all(market_offers) and all(market_bids):
+                # If not all offers bids exist in the market, skip the current recommendation
+                continue
 
-            bid_trade, trade = self.accept_bid_offer_pair(
-                bid, offer, recommended_pair.trade_rate, trade_bid_info, selected_energy
-            )
+            self.validate_bid_offer_match(
+                market_bids, market_offers,
+                clearing_rate, selected_energy)
 
-            if trade.residual is not None or bid_trade.residual is not None:
-                recommended_list = self._replace_offers_bids_with_residual_in_matching_list(
-                    recommended_list, index+1, trade, bid_trade
+            market_offers = iter(market_offers)
+            market_bids = iter(market_bids)
+            market_offer = next(market_offers, None)
+            market_bid = next(market_bids, None)
+            while market_bid and market_offer:
+                original_bid_rate = market_bid.original_bid_price / market_bid.energy
+                trade_bid_info = TradeBidOfferInfo(
+                    original_bid_rate=original_bid_rate,
+                    propagated_bid_rate=market_bid.energy_rate,
+                    original_offer_rate=market_offer.original_offer_price / market_offer.energy,
+                    propagated_offer_rate=market_offer.energy_rate,
+                    trade_rate=original_bid_rate)
+
+                bid_trade, offer_trade = self.accept_bid_offer_pair(
+                    market_bid, market_offer, clearing_rate,
+                    trade_bid_info, min(selected_energy, market_offer.energy, market_bid.energy))
+                if offer_trade.residual:
+                    market_offer = offer_trade.residual
+                else:
+                    market_offer = next(market_offers, None)
+                if bid_trade.residual:
+                    market_bid = bid_trade.residual
+                else:
+                    market_bid = next(market_bids, None)
+                recommendations = (
+                    self._replace_offers_bids_with_residual_in_recommendations_list(
+                        recommendations, offer_trade, bid_trade)
                 )
 
-    @classmethod
-    def _replace_offers_bids_with_residual_in_matching_list(
-            cls, matchings, start_index, offer_trade, bid_trade
-    ):
-        def _convert_match_to_residual(match):
-            if match.offer.id == offer_trade.offer.id:
-                assert offer_trade.residual is not None
-                match = replace(match, offer=offer_trade.residual)
-            if match.bid.id == bid_trade.offer.id:
-                assert bid_trade.residual is not None
-                match = replace(match, bid=bid_trade.residual)
-            return match
+    @staticmethod
+    def _validate_requirements_satisfied(
+            bid: Bid, offer: Offer, clearing_rate: float = None,
+            selected_energy: float = None) -> None:
+        """Validate if both trade parties satisfy each other's requirements.
 
-        matchings[start_index:] = [_convert_match_to_residual(match)
-                                   for match in matchings[start_index:]]
-        return matchings
+        :raises:
+            InvalidBidOfferPairException: Bid offer pair failed the validation
+        """
+        if ((offer.requirements or bid.requirements) and
+                not RequirementsSatisfiedChecker.is_satisfied(
+                    offer=offer, bid=bid, clearing_rate=clearing_rate,
+                    selected_energy=selected_energy)):
+            # If no requirement dict is satisfied
+            raise InvalidBidOfferPairException(
+                f"OFFER: {offer} & BID: {bid} requirements failed the validation.")
+
+    @classmethod
+    def validate_bid_offer_match(
+            cls, bids: List[Bid], offers: List[Offer],
+            clearing_rate: float, selected_energy: float) -> None:
+        """Basic validation function for bids against offers.
+
+        Raises:
+            InvalidBidOfferPairException: Bid offer pair failed the validation
+        """
+        bids_total_energy = sum([bid.energy for bid in bids])
+        offers_total_energy = sum([offer.energy for offer in offers])
+        # All combinations of bids and offers [(bid, offer), (bid, offer)...]
+        # Example List1: [A, B], List2: [C, D] -> combinations: [(A, C), (A, D), (B, C), (B, D)]
+        bids_offers_combinations = itertools.product(bids, offers)
+        if not (
+                bids_total_energy >= selected_energy and
+                offers_total_energy >= selected_energy
+                and all(
+                    (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= clearing_rate for bid in bids)
+                and all(
+                    (offer.energy_rate <= clearing_rate + FLOATING_POINT_TOLERANCE
+                        for offer in offers))):
+            raise InvalidBidOfferPairException
+        for combination in bids_offers_combinations:
+            cls._validate_requirements_satisfied(
+                bid=combination[0], offer=combination[1], clearing_rate=clearing_rate,
+                selected_energy=selected_energy)
+
+    @classmethod
+    def _replace_offers_bids_with_residual_in_recommendations_list(
+            cls, recommendations: List[Dict], offer_trade: Trade, bid_trade: Trade
+    ) -> List[BidOfferMatch.serializable_dict]:
+        """
+        If a trade resulted in a residual offer/bid, upcoming matching list with same offer/bid
+        needs to be replaced with residual offer/bid.
+        :param recommendations: Recommended list of offer/bid matches
+        :param offer_trade: Trade info of the successful offer
+        :param bid_trade: Trade info of the successful bid
+        :return: The updated matching offer/bid pair list with existing offer/bid
+        replaced with corresponding residual offer/bid
+        """
+
+        def replace_recommendations_with_residuals(recommendation: Dict):
+            for index, offer in enumerate(recommendation["offers"]):
+                if offer["id"] == offer_trade.offer_bid.id:
+                    recommendation["offers"][index] = offer_trade.residual.serializable_dict()
+            for index, bid in enumerate(recommendation["bids"]):
+                if bid["id"] == bid_trade.offer_bid.id:
+                    recommendation["bids"][index] = bid_trade.residual.serializable_dict()
+            return recommendation
+
+        if offer_trade.residual or bid_trade.residual:
+            recommendations = [replace_recommendations_with_residuals(recommendation)
+                               for recommendation in recommendations]
+        return recommendations

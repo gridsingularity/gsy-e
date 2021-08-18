@@ -197,7 +197,7 @@ class AreaDispatcher:
                 {self.area.name: ba})
 
     def _delete_past_agents(self, area_agent_member):
-        if not constants.D3A_TEST_RUN:
+        if not constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
             delete_agents = [pm for pm in area_agent_member.keys() if
                              self.area.current_market and pm < self.area.current_market.time_slot]
             for pm in delete_agents:

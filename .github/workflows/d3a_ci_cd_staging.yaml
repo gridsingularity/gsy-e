@@ -15,3 +15,13 @@ jobs:
         -H 'Accept: application/json' \
         https://api.github.com/repos/gridsingularity/d3a-web/actions/workflows/d3a-staging.yaml/dispatches \
         -d '{"ref":"refs/heads/staging"}'
+
+    - name: Notify slack fail
+      if: failure()
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      uses: voxmedia/github-action-slack-notify-build@v1
+      with:
+        channel: dev_cicd_errors
+        status: FAILED
+        color: danger

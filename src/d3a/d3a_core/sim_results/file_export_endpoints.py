@@ -67,7 +67,7 @@ class FileExportEndpoints:
             self.cumulative_offers[area.slug][market.time_slot] = market.state.cumulative_offers
             self.cumulative_bids[area.slug][market.time_slot] = market.state.cumulative_bids
             self.clearing[area.slug][market.time_slot] = \
-                bid_offer_matcher.match_algorithm.state.clearing
+                bid_offer_matcher.matcher.match_algorithm.state.clearing
 
     def update_plot_stats(self, area):
         self._get_stats_from_market_data(self.plot_stats, area, False)
@@ -108,8 +108,8 @@ class ExportUpperLevelData(ExportData):
                 market.min_trade_price,
                 market.max_trade_price,
                 len(market.trades),
-                sum(trade.offer.energy for trade in market.trades),
-                sum(trade.offer.price for trade in market.trades)]
+                sum(trade.offer_bid.energy for trade in market.trades),
+                sum(trade.offer_bid.price for trade in market.trades)]
 
 
 class ExportBalancingData:

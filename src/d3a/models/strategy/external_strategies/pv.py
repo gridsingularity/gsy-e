@@ -20,7 +20,6 @@ import logging
 import traceback
 from collections import deque
 
-from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
 from d3a.models.strategy.external_strategies import IncomingRequest, default_market_info
@@ -123,10 +122,12 @@ class PVExternalMixin(ExternalMixin):
 
     def _offer(self, payload):
         transaction_id = self._get_transaction_id(payload)
-        required_args = {'price', 'energy', 'transaction_id'}
-        allowed_args = required_args.union({'replace_existing'})
+        required_args = {"price", "energy", "transaction_id"}
+        allowed_args = required_args.union({"replace_existing",
+                                            "attributes",
+                                            "requirements"})
 
-        offer_response_channel = f'{self.channel_prefix}/response/offer'
+        offer_response_channel = f"{self.channel_prefix}/response/offer"
         if not check_for_connected_and_reply(self.redis, offer_response_channel,
                                              self.connected):
             return
@@ -288,56 +289,11 @@ class PVExternalMixin(ExternalMixin):
                 "error_message": f"Error when listing offers on area {self.device.name}.",
                 "transaction_id": arguments.get("transaction_id", None)}
 
-    def _update_offer_aggregator(self, arguments):
-        assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
-        if arguments['price'] < 0.0:
-            return {
-                "command": "update_offer", "status": "error",
-                "area_uuid": self.device.uuid,
-                "error_message": "Update offer is only possible with positive price.",
-                "transaction_id": arguments.get("transaction_id", None)}
-
-        with self.lock:
-            offer_arguments = {k: v
-                               for k, v in arguments.items()
-                               if k not in ["transaction_id", "type"]}
-
-            open_offers = self.offers.open
-            if len(open_offers) == 0:
-                return {
-                    "command": "update_offer", "status": "error",
-                    "area_uuid": self.device.uuid,
-                    "error_message": "Update offer is only possible if the old offer exist",
-                    "transaction_id": arguments.get("transaction_id", None)}
-
-            for offer, iterated_market_id in open_offers.items():
-                iterated_market = self.area.get_future_market_from_id(iterated_market_id)
-                if iterated_market is None:
-                    continue
-                try:
-                    iterated_market.delete_offer(offer.id)
-                    offer_arguments['energy'] = offer.energy
-                    offer_arguments['price'] = \
-                        (offer_arguments['price'] / offer_arguments['energy']) * offer.energy
-                    offer_arguments["seller"] = offer.seller
-                    offer_arguments["seller_origin"] = offer.seller_origin
-                    offer_arguments["seller_id"] = offer.seller_id
-                    offer_arguments["seller_origin_id"] = offer.seller_origin_id
-                    new_offer = iterated_market.offer(**offer_arguments)
-                    self.offers.replace(offer, new_offer, iterated_market.id)
-                    return {
-                        "command": "update_offer",
-                        "area_uuid": self.device.uuid,
-                        "status": "ready",
-                        "offer": offer.to_json_string(),
-                        "transaction_id": arguments.get("transaction_id", None),
-                    }
-                except MarketException:
-                    continue
-
     def _offer_aggregator(self, arguments):
-        required_args = {'price', 'energy', 'type', 'transaction_id'}
-        allowed_args = required_args.union({'replace_existing'})
+        required_args = {"price", "energy", "type", "transaction_id"}
+        allowed_args = required_args.union({"replace_existing",
+                                            "attributes",
+                                            "requirements"})
 
         # Check that all required arguments have been provided
         assert all(arg in arguments.keys() for arg in required_args)
@@ -345,7 +301,7 @@ class PVExternalMixin(ExternalMixin):
         assert all(arg in allowed_args for arg in arguments.keys())
 
         try:
-            replace_existing = arguments.pop('replace_existing', True)
+            replace_existing = arguments.pop("replace_existing", True)
 
             assert self.can_offer_be_posted(
                 arguments["energy"],

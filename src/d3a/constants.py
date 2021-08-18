@@ -23,6 +23,10 @@ from d3a_interface.constants_limits import DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT
 DEFAULT_PRECISION = 8
 FLOATING_POINT_TOLERANCE = 0.00001
 
+# Percentual standard deviation relative to the forecast energy, used to compute the (simulated)
+# real energy produced/consumed by a device.
+RELATIVE_STD_FROM_FORECAST_ENERGY = 10
+
 REDIS_PUBLISH_RESPONSE_TIMEOUT = 1
 MAX_WORKER_THREADS = 10
 
@@ -38,7 +42,14 @@ EXTERNAL_CONNECTION_WEB = False
 
 SIMULATION_PAUSE_TIMEOUT = 600
 
-D3A_TEST_RUN = False
+# Controls whether the past markets and the strategy state (bids / offers that are buffered in the
+# strategy classes) are still being kept in the simulation memory for the duration
+# of the simulation. Helpful in the unit / integration tests, since some of these rely on the
+# markets remaining in-memory until the end of the simulation run.
+# Is also needed for the raw JSON files and the plots when running in CLI mode.
+# Also helpful when debugging, in order for the interpreter to have access to all markets that a
+# simulation has ran through.
+RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 KAFKA_MOCK = False
 
 IS_CANARY_NETWORK = GlobalConfig.IS_CANARY_NETWORK

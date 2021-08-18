@@ -23,6 +23,7 @@ from d3a_interface.sim_results.all_results import ResultsHandler
 from d3a_interface.utils import get_json_dict_memory_allocation_size
 
 from d3a.d3a_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
+from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.home_meter import HomeMeterStrategy
@@ -135,31 +136,36 @@ class SimulationEndpointBuffer:
             self.flattened_area_core_stats_dict[area.uuid] = {}
         if self.current_market_time_slot_str == "":
             return
-        core_stats_dict = {'bids': [], 'offers': [], 'trades': [], 'market_fee': 0.0}
-        if hasattr(area.current_market, 'offer_history'):
+        core_stats_dict = {"bids": [], "offers": [], "trades": [], "market_fee": 0.0}
+        if area.current_market is not None:
             for offer in area.current_market.offer_history:
-                core_stats_dict['offers'].append(offer.serializable_dict())
-        if hasattr(area.current_market, 'bid_history'):
+                core_stats_dict["offers"].append(offer.serializable_dict())
             for bid in area.current_market.bid_history:
-                core_stats_dict['bids'].append(bid.serializable_dict())
-        if hasattr(area.current_market, 'trades'):
+                core_stats_dict["bids"].append(bid.serializable_dict())
             for trade in area.current_market.trades:
-                core_stats_dict['trades'].append(trade.serializable_dict())
-        if hasattr(area.current_market, 'market_fee'):
-            core_stats_dict['market_fee'] = area.current_market.market_fee
+                core_stats_dict["trades"].append(trade.serializable_dict())
+            core_stats_dict["market_fee"] = area.current_market.market_fee
+            core_stats_dict["const_fee_rate"] = (area.current_market.const_fee_rate
+                                                 if area.current_market.const_fee_rate is not None
+                                                 else 0.)
+            core_stats_dict["feed_in_tariff"] = GlobalConfig.FEED_IN_TARIFF
+            core_stats_dict["market_maker_rate"] = get_market_maker_rate_from_config(
+                area.current_market)
+
         if area.strategy is None:
-            core_stats_dict['area_throughput'] = {
-                'baseline_peak_energy_import_kWh': area.throughput.baseline_peak_energy_import_kWh,
-                'baseline_peak_energy_export_kWh': area.throughput.baseline_peak_energy_export_kWh,
-                'import_capacity_kWh': area.throughput.import_capacity_kWh,
-                'export_capacity_kWh': area.throughput.export_capacity_kWh,
-                'imported_energy_kWh': area.stats.imported_traded_energy_kwh.get(
+            core_stats_dict["area_throughput"] = {
+                "baseline_peak_energy_import_kWh": area.throughput.baseline_peak_energy_import_kWh,
+                "baseline_peak_energy_export_kWh": area.throughput.baseline_peak_energy_export_kWh,
+                "import_capacity_kWh": area.throughput.import_capacity_kWh,
+                "export_capacity_kWh": area.throughput.export_capacity_kWh,
+                "imported_energy_kWh": area.stats.imported_traded_energy_kwh.get(
                     area.current_market.time_slot, 0.) if area.current_market is not None else 0.,
-                'exported_energy_kWh': area.stats.exported_traded_energy_kwh.get(
+                "exported_energy_kWh": area.stats.exported_traded_energy_kwh.get(
                     area.current_market.time_slot, 0.) if area.current_market is not None else 0.,
             }
-            core_stats_dict['grid_fee_constant'] = area.current_market.const_fee_rate \
-                if area.current_market is not None else 0.
+            core_stats_dict["grid_fee_constant"] = (area.current_market.const_fee_rate
+                                                    if area.current_market is not None
+                                                    else 0.)
 
         if isinstance(area.strategy, HomeMeterStrategy):
             core_stats_dict["home_meter_profile_kWh"] = (

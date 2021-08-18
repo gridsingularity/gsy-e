@@ -20,17 +20,18 @@ import traceback
 from logging import getLogger
 
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.device_validator import validate_pv_device_energy, validate_pv_device_price
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import (
     convert_W_to_kWh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
-from pendulum import duration, Time  # noqa
+from d3a_interface.validators import PVValidator
+from pendulum import duration
+from pendulum.datetime import DateTime
 
 from d3a import constants
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.state import PVState
-from d3a.models.strategy import BaseStrategy
+from d3a.models.strategy import BaseStrategy, utils
 from d3a.models.strategy.update_frequency import TemplateStrategyOfferUpdater
 
 log = getLogger(__name__)
@@ -62,7 +63,7 @@ class PVStrategy(BaseStrategy):
         :param max_panel_power_W:
         """
         super().__init__()
-        validate_pv_device_energy(panel_count=panel_count, max_panel_power_W=max_panel_power_W)
+        PVValidator.validate_energy(panel_count=panel_count, max_panel_power_W=max_panel_power_W)
 
         self.panel_count = panel_count
         self.max_panel_power_W = max_panel_power_W
@@ -86,8 +87,9 @@ class PVStrategy(BaseStrategy):
         if isinstance(update_interval, int):
             update_interval = duration(minutes=update_interval)
 
-        validate_pv_device_price(fit_to_limit=fit_to_limit,
-                                 energy_rate_decrease_per_update=energy_rate_decrease_per_update)
+        PVValidator.validate_rate(
+            fit_to_limit=fit_to_limit,
+            energy_rate_decrease_per_update=energy_rate_decrease_per_update)
 
         self.offer_update = TemplateStrategyOfferUpdater(initial_selling_rate, final_selling_rate,
                                                          fit_to_limit,
@@ -161,7 +163,7 @@ class PVStrategy(BaseStrategy):
         for time_slot in initial_rate.keys():
             rate_change = None if fit_to_limit else \
                 find_object_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
-            validate_pv_device_price(
+            PVValidator.validate_rate(
                 initial_selling_rate=initial_rate[time_slot],
                 final_selling_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
                 energy_rate_decrease_per_update=rate_change,
@@ -231,14 +233,28 @@ class PVStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         super().event_market_cycle()
+        # Provide energy values for the past market slot, to be used in the settlement market
+        self.set_energy_measurement_of_last_market()
         self.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
         self._set_alternative_pricing_scheme()
         self.event_market_cycle_price()
         self._delete_past_state()
 
+    def set_energy_measurement_of_last_market(self):
+        """Set the (simulated) actual energy of the device in the previous market slot."""
+        if self.area.current_market:
+            self._set_energy_measurement_kWh(self.area.current_market.time_slot)
+
+    def _set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
+        """Set the (simulated) actual energy produced by the device in a market slot."""
+        energy_forecast_kWh = self.state.get_energy_production_forecast_kWh(time_slot)
+        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
+
+        self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
+
     def _delete_past_state(self):
-        if constants.D3A_TEST_RUN is True or \
-                self.area.current_market is None:
+        if (constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True or
+                self.area.current_market is None):
             return
 
         self.state.delete_past_state_values(self.area.current_market.time_slot)
@@ -281,7 +297,7 @@ class PVStrategy(BaseStrategy):
 
         if trade.seller == self.owner.name:
             self.state.decrement_available_energy(
-                trade.offer.energy, market.time_slot, self.owner.name)
+                trade.offer_bid.energy, market.time_slot, self.owner.name)
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:

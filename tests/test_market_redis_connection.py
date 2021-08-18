@@ -133,11 +133,11 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
                 "transaction_uuid": "trans_id"
             })
         }
-        trade = Trade(id="trade_id", time=now(), offer=offer,
+        trade = Trade(id="trade_id", time=now(), offer_bid=offer,
                       seller="trade_seller", buyer="trade_buyer")
         self.market.accept_offer = MagicMock(return_value=trade)
         self.subscriber._accept_offer(payload)
-        sleep(0.01)
+        sleep(0.1)
         self.subscriber.market.accept_offer.assert_called_once_with(
             offer_or_id=offer, buyer="mykonos", energy=12
         )
@@ -208,7 +208,6 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
                 "id/DELETE_BID": self.subscriber._delete_bid,
                 "id/ACCEPT_BID": self.subscriber._accept_bid,
                 "id/BID": self.subscriber._bid,
-                "id/CLEAR": self.subscriber._clear_market,
             }
         )
 
@@ -221,7 +220,7 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
                 "transaction_uuid": "trans_id"
             })
         }
-        trade = Trade(id="trade_id", time=now(), offer=bid,
+        trade = Trade(id="trade_id", time=now(), offer_bid=bid,
                       seller="trade_seller", buyer="trade_buyer")
         self.market.accept_bid = MagicMock(return_value=trade)
         self.subscriber._accept_bid(payload)
@@ -269,17 +268,5 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
         self.subscriber.market.delete_bid.assert_called_once()
         self.subscriber.redis_db.publish.assert_called_once_with(
             "id/DELETE_BID/RESPONSE",
-            json.dumps({"status": "ready", "transaction_uuid": "trans_id"})
-        )
-
-    def test_clear_market_calls_market_method_and_publishes_response(self):
-        payload = {"data": json.dumps({"transaction_uuid": "trans_id"})}
-
-        self.market.match_offers_bids = MagicMock()
-        self.subscriber._clear_market(payload)
-        sleep(.3)
-        self.subscriber.market.match_offers_bids.assert_called_once()
-        self.subscriber.redis_db.publish.assert_called_once_with(
-            "id/CLEAR/RESPONSE",
             json.dumps({"status": "ready", "transaction_uuid": "trans_id"})
         )

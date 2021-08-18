@@ -15,17 +15,24 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import traceback
 from logging import getLogger
 from typing import List  # noqa
 from uuid import uuid4
 
-import d3a.constants
 from cached_property import cached_property
+from d3a_interface.area_validator import validate_area
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.enums import SpotMarketTypeEnum
+from d3a_interface.utils import key_in_dict_and_not_none
+from pendulum import DateTime, duration, today
+from slugify import slugify
+
+import d3a.constants
+from d3a.d3a_core.blockchain_interface import blockchain_interface_factory
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
 from d3a.d3a_core.singletons import bid_offer_matcher
-from d3a.d3a_core.util import TaggedLogWrapper, is_external_matching_enabled
+from d3a.d3a_core.util import TaggedLogWrapper
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.events import Events
@@ -34,15 +41,8 @@ from d3a.models.area.redis_external_market_connection import RedisMarketExternal
 from d3a.models.area.stats import AreaStats
 from d3a.models.area.throughput_parameters import ThroughputParameters
 from d3a.models.config import SimulationConfig
-from d3a.models.market.blockchain_interface import (
-    NonBlockchainInterface, SubstrateBlockchainInterface)
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
-from d3a_interface.area_validator import validate_area
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.utils import key_in_dict_and_not_none
-from pendulum import DateTime, duration, today
-from slugify import slugify
 
 log = getLogger(__name__)
 
@@ -78,7 +78,7 @@ def check_area_name_exists_in_parent_area(parent_area, name):
 class AreaChildrenList(list):
     def __init__(self, parent_area, *args, **kwargs):
         self.parent_area = parent_area
-        super(AreaChildrenList, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _validate_before_insertion(self, item):
         if check_area_name_exists_in_parent_area(self.parent_area, item.name):
@@ -86,11 +86,11 @@ class AreaChildrenList(list):
 
     def append(self, item: "Area") -> None:
         self._validate_before_insertion(item)
-        super(AreaChildrenList, self).append(item)
+        super().append(item)
 
     def insert(self, index, item):
         self._validate_before_insertion(item)
-        super(AreaChildrenList, self).insert(index, item)
+        super().insert(index, item)
 
 
 class Area:
@@ -138,7 +138,7 @@ class Area:
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets, self)
-        log.debug(f"External connection {external_connection_available} for area {self.name}")
+        log.debug("External connection %s for area %s", external_connection_available, self.name)
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available and self.strategy is None else None
         self.should_update_child_strategies = False
@@ -178,28 +178,36 @@ class Area:
             self.strategy.area_reconfigure_event(**kwargs)
             return True
 
-        grid_fee_constant = kwargs["grid_fee_constant"] \
-            if key_in_dict_and_not_none(kwargs, 'grid_fee_constant') \
-            else self.grid_fee_constant
-        grid_fee_percentage = kwargs["grid_fee_percentage"] \
-            if key_in_dict_and_not_none(kwargs, 'grid_fee_percentage') \
-            else self.grid_fee_percentage
+        grid_fee_constant = (
+            kwargs["grid_fee_constant"]
+            if key_in_dict_and_not_none(kwargs, "grid_fee_constant")
+            else self.grid_fee_constant)
+        grid_fee_percentage = (
+            kwargs["grid_fee_percentage"]
+            if key_in_dict_and_not_none(kwargs, "grid_fee_percentage")
+            else self.grid_fee_percentage)
 
-        baseline_peak_energy_import_kWh = kwargs["baseline_peak_energy_import_kWh"] \
-            if key_in_dict_and_not_none(kwargs, 'baseline_peak_energy_import_kWh') \
-            else self.throughput.baseline_peak_energy_import_kWh
+        baseline_peak_energy_import_kWh = (
+            kwargs["baseline_peak_energy_import_kWh"]
+            if key_in_dict_and_not_none(
+                kwargs, "baseline_peak_energy_import_kWh")
+            else self.throughput.baseline_peak_energy_import_kWh)
 
-        baseline_peak_energy_export_kWh = kwargs["baseline_peak_energy_export_kWh"] \
-            if key_in_dict_and_not_none(kwargs, 'baseline_peak_energy_export_kWh') \
-            else self.throughput.baseline_peak_energy_export_kWh
+        baseline_peak_energy_export_kWh = (
+            kwargs["baseline_peak_energy_export_kWh"]
+            if key_in_dict_and_not_none(
+                kwargs, "baseline_peak_energy_export_kWh")
+            else self.throughput.baseline_peak_energy_export_kWh)
 
-        import_capacity_kVA = kwargs["import_capacity_kVA"] \
-            if key_in_dict_and_not_none(kwargs, 'import_capacity_kVA') \
-            else self.throughput.import_capacity_kVA
+        import_capacity_kVA = (
+            kwargs["import_capacity_kVA"]
+            if key_in_dict_and_not_none(kwargs, "import_capacity_kVA")
+            else self.throughput.import_capacity_kVA)
 
-        export_capacity_kVA = kwargs["export_capacity_kVA"] \
-            if key_in_dict_and_not_none(kwargs, 'export_capacity_kVA') \
-            else self.throughput.import_capacity_kVA
+        export_capacity_kVA = (
+            kwargs["export_capacity_kVA"]
+            if key_in_dict_and_not_none(kwargs, "export_capacity_kVA")
+            else self.throughput.import_capacity_kVA)
 
         try:
             validate_area(grid_fee_constant=grid_fee_constant,
@@ -211,8 +219,8 @@ class Area:
                             export_capacity_kVA=export_capacity_kVA
                         )
 
-        except Exception as e:
-            log.error(str(e))
+        except Exception as ex:
+            log.error(ex)
             return
 
         self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
@@ -225,9 +233,8 @@ class Area:
                 self.strategy.event_activate_price()
             for child in self.children:
                 child._update_descendants_strategy_prices()
-        except Exception as e:
-            log.error(f"area._update_descendants_strategy_prices failed. Exception: {e}. "
-                      f"Traceback: {traceback.format_exc()}")
+        except Exception:
+            log.exception("area._update_descendants_strategy_prices failed.")
             return
 
     def _set_grid_fees(self, grid_fee_const, grid_fee_percentage):
@@ -245,8 +252,7 @@ class Area:
         if self.parent is not None:
             grid_fee_constant = self.grid_fee_constant if self.grid_fee_constant else 0
             return grid_fee_constant + self.parent.get_path_to_root_fees()
-        else:
-            return self.grid_fee_constant if self.grid_fee_constant else 0
+        return self.grid_fee_constant if self.grid_fee_constant else 0
 
     def get_grid_fee(self):
         grid_fee_type = self.config.grid_fee_type \
@@ -260,10 +266,9 @@ class Area:
     def activate(self, bc=None, current_tick=None, simulation_id=None):
         if current_tick is not None:
             self.current_tick = current_tick
-        if bc:
-            self._bc = SubstrateBlockchainInterface(self.uuid, simulation_id)
-        else:
-            self._bc = NonBlockchainInterface(self.uuid, simulation_id)
+
+        self._bc = blockchain_interface_factory(bc, self.uuid, simulation_id)
+
         if self.strategy:
             if self.parent:
                 self.strategy.area = self.parent
@@ -283,7 +288,7 @@ class Area:
 
         if not self.strategy and self.parent is not None:
             self.log.debug("No strategy. Using inter area agent.")
-        self.log.debug('Activating area')
+        self.log.debug("Activating area")
         self.active = True
         self.dispatcher.broadcast_activate(bc=bc, current_tick=self.current_tick,
                                            simulation_id=simulation_id)
@@ -344,7 +349,7 @@ class Area:
             self.should_update_child_strategies = False
 
         # Clear `current_market` cache
-        self.__dict__.pop('current_market', None)
+        self.__dict__.pop("current_market", None)
 
         # Markets range from one slot to market_count into the future
         changed = self._markets.create_future_markets(now_value, True, self)
@@ -374,36 +379,38 @@ class Area:
 
     def _consume_commands_from_aggregator(self):
         if self.redis_ext_conn is not None and self.redis_ext_conn.is_aggregator_controlled:
-            self.redis_ext_conn.aggregator.\
-                consume_all_area_commands(self.uuid,
-                                          self.redis_ext_conn.trigger_aggregator_commands)
-        elif self.strategy is not None \
-                and hasattr(self.strategy, "is_aggregator_controlled") \
-                and self.strategy.is_aggregator_controlled:
-            self.strategy.redis.aggregator.\
-                consume_all_area_commands(self.uuid,
-                                          self.strategy.trigger_aggregator_commands)
+            (self.redis_ext_conn.aggregator.
+             consume_all_area_commands(self.uuid,
+                                       self.redis_ext_conn.trigger_aggregator_commands))
+        elif (self.strategy
+              and getattr(self.strategy, "is_aggregator_controlled", False)):
+            (self.strategy.redis.aggregator.
+             consume_all_area_commands(self.uuid,
+                                       self.strategy.trigger_aggregator_commands))
 
     def tick(self):
+        """Tick event handler.
+
+        Invoke aggregator commands consumer, publishes market clearing, updates events,
+        updates cached myco matcher markets and match trades recommendations.
+        """
         self._consume_commands_from_aggregator()
 
-        if ConstSettings.IAASettings.MARKET_TYPE == 2:
+        if (ConstSettings.IAASettings.MARKET_TYPE != SpotMarketTypeEnum.ONE_SIDED.value
+                and not self.strategy):
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                 self.dispatcher.publish_market_clearing()
             else:
-                if is_external_matching_enabled():
-                    bid_offer_matcher.match_algorithm.area_uuid_markets_mapping.\
-                        update({self.uuid: self.all_markets})
-                else:
-                    for market in self.all_markets:
-                        bid_offer_pairs = bid_offer_matcher.calculate_recommendation(
-                            *market.open_bids_and_offers, self.now)
-                        while bid_offer_pairs:
-                            bid_offer_pairs = bid_offer_matcher.calculate_recommendation(
-                                *market.open_bids_and_offers, self.now)
-                            market.match_recommendation(bid_offer_pairs)
+                self._update_myco_matcher()
+                bid_offer_matcher.match_recommendations()
 
         self.events.update_events(self.now)
+
+    def _update_myco_matcher(self) -> None:
+        """Update the markets cache that the myco matcher will request"""
+        bid_offer_matcher.update_area_uuid_markets_mapping(
+            area_uuid_markets_mapping={
+                self.uuid: {"markets": self.all_markets, "current_time": self.now}})
 
     def update_area_current_tick(self):
         self.current_tick += 1
@@ -414,6 +421,7 @@ class Area:
             child.update_area_current_tick()
 
     def tick_and_dispatch(self):
+        """Invoke tick handler and broadcast the event to children."""
         if d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP:
             self.dispatcher.broadcast_tick()
             self.tick()
@@ -463,10 +471,10 @@ class Area:
     @property
     def now(self) -> DateTime:
         """
-        Return the 'current time' as a `DateTime` object.
-        Can be overridden in subclasses to change the meaning of 'now'.
+        Return the "current time" as a "DateTime" object.
+        Can be overridden in subclasses to change the meaning of "now".
 
-        In this default implementation 'current time' is defined by the number of ticks that
+        In this default implementation "current time" is defined by the number of ticks that
         have passed.
         """
         return self.config.start_date.add(
@@ -507,7 +515,7 @@ class Area:
 
     @property
     def next_market(self):
-        """Returns the 'current' market (i.e. the one currently 'running')"""
+        """Returns the "current" market (i.e. the one currently "running")"""
         try:
             return list(self._markets.markets.values())[0]
         except IndexError:
@@ -515,7 +523,7 @@ class Area:
 
     @property
     def current_market(self):
-        """Returns the 'most recent past market' market
+        """Returns the "most recent past market" market
         (i.e. the one that has been finished last)"""
         try:
             return list(self._markets.past_markets.values())[-1]
@@ -524,7 +532,7 @@ class Area:
 
     @property
     def current_balancing_market(self):
-        """Returns the 'current' balancing market (i.e. the one currently 'running')"""
+        """Returns the "current" balancing market (i.e. the one currently "running")"""
         try:
             return list(self._markets.past_balancing_markets.values())[-1]
         except IndexError:

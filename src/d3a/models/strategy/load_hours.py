@@ -21,10 +21,10 @@ from logging import getLogger
 from typing import Union, Dict  # NOQA
 
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.device_validator import validate_load_device_price, validate_load_device_energy
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import (
     convert_W_to_Wh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
+from d3a_interface.validators.load_validator import LoadValidator
 from numpy import random
 from pendulum import duration
 from pendulum.datetime import DateTime
@@ -37,7 +37,7 @@ from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
 from d3a.models.state import LoadState
-from d3a.models.strategy import BidEnabledStrategy
+from d3a.models.strategy import BidEnabledStrategy, utils
 from d3a.models.strategy.update_frequency import TemplateStrategyBidUpdater
 
 log = getLogger(__name__)
@@ -76,8 +76,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         as per utility's trading rate
         """
 
-        validate_load_device_energy(avg_power_W=avg_power_W, hrs_per_day=hrs_per_day,
-                                    hrs_of_day=hrs_of_day)
+        LoadValidator.validate_energy(
+            avg_power_W=avg_power_W, hrs_per_day=hrs_per_day, hrs_of_day=hrs_of_day)
         self.state = LoadState()
         self.avg_power_W = avg_power_W
 
@@ -104,8 +104,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.use_market_maker_rate = use_market_maker_rate
         self.fit_to_limit = fit_to_limit
 
-        validate_load_device_price(fit_to_limit=fit_to_limit,
-                                   energy_rate_increase_per_update=energy_rate_increase_per_update)
+        LoadValidator.validate_rate(
+            fit_to_limit=fit_to_limit,
+            energy_rate_increase_per_update=energy_rate_increase_per_update)
 
         if update_interval is None:
             update_interval = \
@@ -130,7 +131,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         for time_slot in initial_rate.keys():
             rate_change = None if fit_to_limit else \
                 find_object_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
-            validate_load_device_price(
+            LoadValidator.validate_rate(
                 initial_buying_rate=initial_rate[time_slot],
                 energy_rate_increase_per_update=rate_change,
                 final_buying_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
@@ -143,6 +144,11 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.event_activate_energy()
 
     def event_market_cycle(self):
+        if self.use_market_maker_rate:
+            self._area_reconfigure_prices(
+                final_buying_rate=get_market_maker_rate_from_config(
+                    self.area.next_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
+
         super().event_market_cycle()
         self.add_entry_in_hrs_per_day()
         self.bid_update.update_and_populate_price_settings(self.area)
@@ -163,11 +169,26 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._post_first_bid()
         if self.area.current_market:
             self._cycled_market.add(self.area.current_market.time_slot)
+
+        # Provide energy values for the past market slot, to be used in the settlement market
+        self.set_energy_measurement_of_last_market()
         self._delete_past_state()
 
+    def set_energy_measurement_of_last_market(self):
+        """Set the (simulated) actual energy of the device in the previous market slot."""
+        if self.area.current_market:
+            self._set_energy_measurement_kWh(self.area.current_market.time_slot)
+
+    def _set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
+        """Set the (simulated) actual energy consumed by the device in a market slot."""
+        energy_forecast_kWh = self.state.get_desired_energy_Wh(time_slot) / 1000
+        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
+
+        self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
+
     def _delete_past_state(self):
-        if constants.D3A_TEST_RUN is True or \
-                self.area.current_market is None:
+        if (constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True or
+                self.area.current_market is None):
             return
 
         self.state.delete_past_state_values(self.area.current_market.time_slot)
@@ -362,13 +383,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
         market = self.area.get_future_market_from_id(market_id)
 
-        if bid_trade.offer.buyer == self.owner.name:
+        if bid_trade.offer_bid.buyer == self.owner.name:
             self.state.decrement_energy_requirement(
-                bid_trade.offer.energy * 1000,
+                bid_trade.offer_bid.energy * 1000,
                 market.time_slot, self.owner.name)
             market_day = self._get_day_of_timestamp(market.time_slot)
             if self.hrs_per_day != {} and market_day in self.hrs_per_day:
-                self.hrs_per_day[market_day] -= self._operating_hours(bid_trade.offer.energy)
+                self.hrs_per_day[market_day] -= self._operating_hours(bid_trade.offer_bid.energy)
 
     def event_trade(self, *, market_id, trade):
         market = self.area.get_future_market_from_id(market_id)
@@ -403,7 +424,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
             return
         if trade.buyer != self.owner.name:
             return
-        ramp_down_energy = self.balancing_energy_ratio.supply * trade.offer.energy
+        ramp_down_energy = self.balancing_energy_ratio.supply * trade.offer_bid.energy
         ramp_down_price = DeviceRegistry.REGISTRY[self.owner.name][1] * ramp_down_energy
         self.area.get_balancing_market(market.time_slot).balancing_offer(ramp_down_price,
                                                                          ramp_down_energy,
