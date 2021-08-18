@@ -19,17 +19,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import datetime
 import gc
 import os
-import platform
 import sys
 from importlib import import_module
 from logging import getLogger
 from time import sleep, time, mktime
 
 import click
-import d3a.constants
 import psutil
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.exceptions import D3AException
+from d3a_interface.kafka_communication.kafka_producer import kafka_connection_factory
+from d3a_interface.utils import format_datetime, str_to_pendulum_datetime
+from numpy import random
+from pendulum import now, duration
+
+import d3a.constants
 from d3a import setup as d3a_setup  # noqa
-from d3a.blockchain.constants import ENABLE_SUBSTRATE
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, SIMULATION_PAUSE_TIMEOUT
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.d3a_core.export import ExportAndPlot
@@ -44,16 +49,6 @@ from d3a.d3a_core.util import (
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.models.config import SimulationConfig
 from d3a.models.power_flow.pandapower import PandaPowerFlow
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.exceptions import D3AException
-from d3a_interface.kafka_communication.kafka_producer import kafka_connection_factory
-from d3a_interface.utils import format_datetime, str_to_pendulum_datetime
-from numpy import random
-from pendulum import now, duration
-
-if platform.python_implementation() != "PyPy" and \
-        ENABLE_SUBSTRATE:
-    from d3a.blockchain import BlockChainInterface
 
 log = getLogger(__name__)
 
@@ -104,7 +99,6 @@ class Simulation:
             self.export_subdir = export_subdir
 
         self.setup_module_name = setup_module_name
-        self.use_bc = enable_bc
         self.is_stopped = False
 
         self.live_events = LiveEvents(self.simulation_config)
@@ -117,7 +111,7 @@ class Simulation:
         self.paused_time = None
 
         self._load_setup_module()
-        self._init(**self.initial_params, redis_job_id=redis_job_id)
+        self._init(**self.initial_params, redis_job_id=redis_job_id, enable_bc=enable_bc)
 
         deserialize_events_to_areas(simulation_events, self.area)
 
@@ -150,7 +144,7 @@ class Simulation:
             raise SimulationException(
                 "Invalid setup module '{}'".format(self.setup_module_name)) from ex
 
-    def _init(self, slot_length_realtime, seed, paused, pause_after, redis_job_id):
+    def _init(self, slot_length_realtime, seed, paused, pause_after, redis_job_id, enable_bc):
         self.paused = paused
         self.pause_after = pause_after
         self.slot_length_realtime = slot_length_realtime
@@ -180,14 +174,12 @@ class Simulation:
         if GlobalConfig.POWER_FLOW:
             self.power_flow = PandaPowerFlow(self.area)
             self.power_flow.run_power_flow()
-        self.bc = None
-        if self.use_bc:
-            self.bc = BlockChainInterface()
+
         log.debug("Starting simulation with config %s", self.simulation_config)
 
         self._set_traversal_length()
 
-        self.area.activate(self.bc, simulation_id=redis_job_id)
+        self.area.activate(enable_bc, simulation_id=redis_job_id)
 
     @property
     def finished(self):

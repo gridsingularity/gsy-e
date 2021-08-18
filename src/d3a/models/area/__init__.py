@@ -19,8 +19,16 @@ from logging import getLogger
 from typing import List  # noqa
 from uuid import uuid4
 
-import d3a.constants
 from cached_property import cached_property
+from d3a_interface.area_validator import validate_area
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.enums import SpotMarketTypeEnum
+from d3a_interface.utils import key_in_dict_and_not_none
+from pendulum import DateTime, duration, today
+from slugify import slugify
+
+import d3a.constants
+from d3a.d3a_core.blockchain_interface import blockchain_interface_factory
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
 from d3a.d3a_core.singletons import bid_offer_matcher
@@ -33,16 +41,8 @@ from d3a.models.area.redis_external_market_connection import RedisMarketExternal
 from d3a.models.area.stats import AreaStats
 from d3a.models.area.throughput_parameters import ThroughputParameters
 from d3a.models.config import SimulationConfig
-from d3a.models.market.blockchain_interface import (
-    NonBlockchainInterface, SubstrateBlockchainInterface)
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
-from d3a_interface.area_validator import validate_area
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.enums import SpotMarketTypeEnum
-from d3a_interface.utils import key_in_dict_and_not_none
-from pendulum import DateTime, duration, today
-from slugify import slugify
 
 log = getLogger(__name__)
 
@@ -266,10 +266,9 @@ class Area:
     def activate(self, bc=None, current_tick=None, simulation_id=None):
         if current_tick is not None:
             self.current_tick = current_tick
-        if bc:
-            self._bc = SubstrateBlockchainInterface(self.uuid, simulation_id)
-        else:
-            self._bc = NonBlockchainInterface(self.uuid, simulation_id)
+
+        self._bc = blockchain_interface_factory(bc, self.uuid, simulation_id)
+
         if self.strategy:
             if self.parent:
                 self.strategy.area = self.parent

@@ -1,16 +1,17 @@
+from math import isclose
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pendulum
 import pytest
-from d3a.models.market.blockchain_interface import NonBlockchainInterface
-from d3a_interface.dataclasses import BidOfferMatch
-from pendulum import now
-from math import isclose
-from unittest.mock import MagicMock, patch
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.dataclasses import BidOfferMatch
 from d3a_interface.matching_algorithms import (
     PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
 )
+from pendulum import now
+
+from d3a.d3a_core.blockchain_interface import NonBlockchainInterface
 from d3a.d3a_core.exceptions import (
     BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade, MarketException)
 from d3a.events import MarketEvent

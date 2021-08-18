@@ -28,6 +28,7 @@ from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rul
 from pendulum import DateTime, now
 
 from d3a.constants import TIME_ZONE
+from d3a.d3a_core.blockchain_interface import NonBlockchainInterface
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import (DeviceNotInRegistryError, InvalidBalancingTradeException,
                                      InvalidOffer, InvalidTrade, MarketReadOnlyException,
@@ -35,7 +36,6 @@ from d3a.d3a_core.exceptions import (DeviceNotInRegistryError, InvalidBalancingT
 from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market.balancing import BalancingMarket
-from d3a.models.market.blockchain_interface import NonBlockchainInterface
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.two_sided import TwoSidedMarket
 
