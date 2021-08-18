@@ -37,7 +37,7 @@ from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
 from d3a.models.state import LoadState
-from d3a.models.strategy import BidEnabledStrategy
+from d3a.models.strategy import BidEnabledStrategy, utils
 from d3a.models.strategy.update_frequency import TemplateStrategyBidUpdater
 
 log = getLogger(__name__)
@@ -169,7 +169,22 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._post_first_bid()
         if self.area.current_market:
             self._cycled_market.add(self.area.current_market.time_slot)
+
+        # Provide energy values for the past market slot, to be used in the settlement market
+        self.set_energy_measurement_of_last_market()
         self._delete_past_state()
+
+    def set_energy_measurement_of_last_market(self):
+        """Set the (simulated) actual energy of the device in the previous market slot."""
+        if self.area.current_market:
+            self._set_energy_measurement_kWh(self.area.current_market.time_slot)
+
+    def _set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
+        """Set the (simulated) actual energy consumed by the device in a market slot."""
+        energy_forecast_kWh = self.state.get_desired_energy_Wh(time_slot) / 1000
+        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
+
+        self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
 
     def _delete_past_state(self):
         if (constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True or

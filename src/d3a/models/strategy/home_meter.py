@@ -22,6 +22,7 @@ from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfile
 from d3a_interface.utils import find_object_of_same_weekday_and_time
 from numpy import random
 from pendulum import duration
+from pendulum.datetime import DateTime
 
 from d3a import constants
 from d3a.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
@@ -31,7 +32,7 @@ from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
 from d3a.models.state import HomeMeterState
-from d3a.models.strategy import BidEnabledStrategy
+from d3a.models.strategy import BidEnabledStrategy, utils
 from d3a.models.strategy.update_frequency import (
     TemplateStrategyBidUpdater, TemplateStrategyOfferUpdater)
 
@@ -179,7 +180,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
         self._reset_rates_and_update_prices()
         self._set_energy_forecast_for_future_markets(reconfigure=False)
-
+        self.set_energy_measurement_of_last_market()
         # Create bids/offers for the expected energy consumption/production in future markets
         for market in self.area.all_markets:
             self._post_offer(market)
@@ -188,6 +189,20 @@ class HomeMeterStrategy(BidEnabledStrategy):
                 self._post_first_bid(market)
 
         self._delete_past_state()
+
+    def set_energy_measurement_of_last_market(self):
+        """Set the (simulated) actual energy of the device in the previous market slot."""
+        if self.area.current_market:
+            self._set_energy_measurement_kWh(self.area.current_market.time_slot)
+
+    def _set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
+        """Set the (simulated) actual energy of the device in a market slot."""
+        energy_forecast_kWh = self.state.get_energy_at_market_slot(time_slot)
+        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
+        # This value can be either positive (consumption) or negative (production). This is
+        # different from the other devices (PV, Load) where the value is positive regardless of
+        # its direction (consumption or production)
+        self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
 
     def event_offer(self, *, market_id, offer):
         """Automatically react to offers (trying to buy energy) in one-sided markets.

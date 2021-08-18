@@ -24,13 +24,14 @@ from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfile
 from d3a_interface.utils import (
     convert_W_to_kWh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
 from d3a_interface.validators import PVValidator
-from pendulum import duration, Time  # noqa
+from pendulum import duration
+from pendulum.datetime import DateTime
 
 from d3a import constants
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.state import PVState
-from d3a.models.strategy import BaseStrategy
+from d3a.models.strategy import BaseStrategy, utils
 from d3a.models.strategy.update_frequency import TemplateStrategyOfferUpdater
 
 log = getLogger(__name__)
@@ -232,10 +233,24 @@ class PVStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         super().event_market_cycle()
+        # Provide energy values for the past market slot, to be used in the settlement market
+        self.set_energy_measurement_of_last_market()
         self.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
         self._set_alternative_pricing_scheme()
         self.event_market_cycle_price()
         self._delete_past_state()
+
+    def set_energy_measurement_of_last_market(self):
+        """Set the (simulated) actual energy of the device in the previous market slot."""
+        if self.area.current_market:
+            self._set_energy_measurement_kWh(self.area.current_market.time_slot)
+
+    def _set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
+        """Set the (simulated) actual energy produced by the device in a market slot."""
+        energy_forecast_kWh = self.state.get_energy_production_forecast_kWh(time_slot)
+        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
+
+        self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
 
     def _delete_past_state(self):
         if (constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True or
