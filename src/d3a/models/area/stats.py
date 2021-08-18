@@ -105,8 +105,8 @@ class AreaStats:
 
     def min_max_avg_median_rate_current_market(self):
         out_dict = copy(default_trade_stats_dict)
-        trade_volumes = [trade.offer.energy for trade in self.current_market.trades]
-        trade_rates = [trade.offer.price/trade.offer.energy
+        trade_volumes = [trade.offer_bid.energy for trade in self.current_market.trades]
+        trade_rates = [trade.offer_bid.price/trade.offer_bid.energy
                        for trade in self.current_market.trades]
         if len(trade_rates) > 0:
             out_dict["min_trade_rate"] = limit_float_precision(min(trade_rates))
@@ -148,11 +148,11 @@ class AreaStats:
                 if child_buys_from_area(trade, self._area.name, child_names):
                     add_or_create_key(self.exported_traded_energy_kwh,
                                       self.current_market.time_slot,
-                                      trade.offer.energy)
+                                      trade.offer_bid.energy)
                 if area_sells_to_child(trade, self._area.name, child_names):
                     add_or_create_key(self.imported_traded_energy_kwh,
                                       self.current_market.time_slot,
-                                      trade.offer.energy)
+                                      trade.offer_bid.energy)
         if self.current_market.time_slot not in self.imported_traded_energy_kwh:
             self.imported_traded_energy_kwh[self.current_market.time_slot] = 0.
         if self.current_market.time_slot not in self.exported_traded_energy_kwh:

@@ -1,54 +1,61 @@
 from d3a.models.area import Area
-from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
+from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
+from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.enums import BidOfferMatchAlgoEnum
+
+from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 
 
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.IAASettings.MIN_BID_AGE = 0
-    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-        BidOfferMatchAlgoEnum.EXTERNAL.value
-    ConstSettings.IAASettings.MIN_OFFER_AGE = 0
+    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = (
+        BidOfferMatchAlgoEnum.EXTERNAL.value)
     area = Area(
         "Grid",
         [
             Area(
                 "House 1",
                 [
-                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=6,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 18)),
-                                                                       final_buying_rate=35)
-                         ),
-                    Area("H1 Storage1", strategy=StorageStrategy(initial_soc=100,
-                                                                 battery_capacity_kWh=20)
-                         ),
-                    Area("H1 Storage2", strategy=StorageStrategy(initial_soc=100,
-                                                                 battery_capacity_kWh=20)
-                         ),
+                    Area("H1 General Load1",
+                         strategy=LoadHoursExternalStrategy(avg_power_W=200,
+                                                            hrs_per_day=6,
+                                                            hrs_of_day=list(range(12, 18)),
+                                                            final_buying_rate=35)),
+                    Area("H1 General Load2",
+                         strategy=LoadHoursExternalStrategy(avg_power_W=150,
+                                                            hrs_per_day=24,
+                                                            hrs_of_day=list(range(0, 24)),
+                                                            final_buying_rate=40)),
+                    Area("H1 Storage1", strategy=StorageExternalStrategy(initial_soc=100,
+                                                                         battery_capacity_kWh=20)),
+                    Area("H1 Storage2", strategy=StorageExternalStrategy(initial_soc=100,
+                                                                         battery_capacity_kWh=20)),
+                    Area("H1 PV1", strategy=PVExternalStrategy(panel_count=4)),
+                    Area("H1 PV2", strategy=PVExternalStrategy(panel_count=4)),
                 ],
             ),
             Area(
                 "House 2",
                 [
-                    Area("load", strategy=LoadHoursExternalStrategy(
+                    Area("H2 General Load1", strategy=LoadHoursExternalStrategy(
                         avg_power_W=200, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
-                        final_buying_rate=35)
-                         ),
-                    Area("pv", strategy=PVExternalStrategy(panel_count=4)
-                         ),
+                        final_buying_rate=35)),
+                    Area("H2 Storage1", strategy=StorageExternalStrategy(initial_soc=100,
+                                                                         battery_capacity_kWh=20)),
+                    Area("H2 PV", strategy=PVExternalStrategy(panel_count=4)),
 
-                ], external_connection_available=True,
+                ],
             ),
-            Area("Cell Tower", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                          hrs_per_day=24,
-                                                          hrs_of_day=list(range(0, 24)),
-                                                          final_buying_rate=35)
+            Area("Cell Tower", strategy=LoadHoursExternalStrategy(avg_power_W=100,
+                                                                  hrs_per_day=24,
+                                                                  hrs_of_day=list(range(0, 24)),
+                                                                  final_buying_rate=35)
+                 ),
+            Area("Market Maker",
+                 strategy=MarketMakerStrategy(energy_rate=30)
+
                  ),
         ],
         config=config

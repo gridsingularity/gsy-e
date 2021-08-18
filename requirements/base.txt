@@ -21,11 +21,11 @@ importlib-metadata==2.1.1  # via d3a-interface
 importlib-resources==5.2.0  # via d3a-interface
 jsonschema==3.2.0         # via d3a-interface
 kafka-python==2.0.2       # via d3a-interface
-numpy==1.21.0             # via -r requirements/base.in
+numpy==1.21.2             # via -r requirements/base.in
 packaging==20.7           # via d3a-interface, tox
 pendulum==2.1.2           # via -r requirements/base.in, d3a-interface
 pip-tools==5.4.0          # via -r requirements/base.in, d3a-interface
-plotly==5.1.0             # via -r requirements/base.in
+plotly==5.2.1             # via -r requirements/base.in
 pluggy==0.13.1            # via d3a-interface, tox
 py==1.9.0                 # via d3a-interface, tox
 pyparsing==2.4.7          # via d3a-interface, packaging
@@ -35,7 +35,7 @@ python-rex==0.4           # via -r requirements/base.in
 pytz==2021.1              # via -r requirements/base.in
 pytzdata==2020.1          # via d3a-interface, pendulum
 redis==3.5.3              # via -r requirements/base.in, d3a-interface, rq
-regex==2021.7.6           # via awesome-slugify
+regex==2021.8.3           # via awesome-slugify
 requests==2.25.1          # via d3a-interface
 rq==1.9.0                 # via -r requirements/base.in
 six==1.15.0               # via d3a-interface, jsonschema, pip-tools, plotly, python-dateutil, python-rex, tox, virtualenv

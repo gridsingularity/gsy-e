@@ -122,10 +122,12 @@ class PVExternalMixin(ExternalMixin):
 
     def _offer(self, payload):
         transaction_id = self._get_transaction_id(payload)
-        required_args = {'price', 'energy', 'transaction_id'}
-        allowed_args = required_args.union({'replace_existing'})
+        required_args = {"price", "energy", "transaction_id"}
+        allowed_args = required_args.union({"replace_existing",
+                                            "attributes",
+                                            "requirements"})
 
-        offer_response_channel = f'{self.channel_prefix}/response/offer'
+        offer_response_channel = f"{self.channel_prefix}/response/offer"
         if not check_for_connected_and_reply(self.redis, offer_response_channel,
                                              self.connected):
             return
@@ -288,8 +290,10 @@ class PVExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id", None)}
 
     def _offer_aggregator(self, arguments):
-        required_args = {'price', 'energy', 'type', 'transaction_id'}
-        allowed_args = required_args.union({'replace_existing'})
+        required_args = {"price", "energy", "type", "transaction_id"}
+        allowed_args = required_args.union({"replace_existing",
+                                            "attributes",
+                                            "requirements"})
 
         # Check that all required arguments have been provided
         assert all(arg in arguments.keys() for arg in required_args)
@@ -297,7 +301,7 @@ class PVExternalMixin(ExternalMixin):
         assert all(arg in allowed_args for arg in arguments.keys())
 
         try:
-            replace_existing = arguments.pop('replace_existing', True)
+            replace_existing = arguments.pop("replace_existing", True)
 
             assert self.can_offer_be_posted(
                 arguments["energy"],

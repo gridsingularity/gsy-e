@@ -15,30 +15,37 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import pytest
-import uuid
 import os
+import uuid
 from typing import Dict  # NOQA
 from uuid import uuid4
 
 import pendulum
-from pendulum import DateTime
-from parameterized import parameterized
-
+import pytest
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.exceptions import D3ADeviceException
 from d3a_interface.utils import generate_market_slot_list
+from parameterized import parameterized
+from pendulum import DateTime, duration
+
+from d3a.constants import TIME_FORMAT
 from d3a.constants import TIME_ZONE
+from d3a.d3a_core.util import d3a_path
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade
-from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
-from d3a.constants import TIME_FORMAT
-from d3a.d3a_core.util import d3a_path
-
+from d3a.models.strategy.pv import PVStrategy
 
 ENERGY_FORECAST = {}  # type: Dict[DateTime, float]
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
+
+
+@pytest.fixture(scope="function", autouse=True)
+def auto_fixture():
+    yield
+    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+    GlobalConfig.sim_duration = duration(days=GlobalConfig.DURATION_D)
+    GlobalConfig.slot_length = duration(minutes=GlobalConfig.SLOT_LENGTH_M)
 
 
 class FakeArea:
@@ -131,8 +138,12 @@ class FakeMarket:
 
 class FakeTrade:
     def __init__(self, offer):
-        self.offer = offer
+        self.offer_bid = offer
         self.seller = "FakeSeller"
+
+    @property
+    def is_offer_trade(self):
+        return True
 
     @property
     def buyer(self):
@@ -248,7 +259,7 @@ def test_same_slot_price_drop_does_not_reduce_price_below_threshold(area_test3, 
         area_test3.current_tick += 10
         pv_test3.event_tick()
     new_offer = list(pv_test3.offers.posted.keys())[-1]
-    assert new_offer.price / new_offer.energy >= ConstSettings.PVSettings.SELLING_RATE_RANGE.final
+    assert new_offer.energy_rate >= ConstSettings.PVSettings.SELLING_RATE_RANGE.final
 
 
 """TEST 4"""
@@ -269,10 +280,10 @@ def pv_test4(area_test3, called):
 def testing_event_trade(area_test3, pv_test4):
     pv_test4.state._available_energy_kWh[area_test3.test_market.time_slot] = 1
     pv_test4.event_trade(market_id=area_test3.test_market.id,
-                         trade=Trade(id='id', time='time',
-                                     offer=Offer(id='id', time=pendulum.now(), price=20,
-                                                 energy=1, seller='FakeArea'),
-                                     seller=area_test3.name, buyer='buyer'
+                         trade=Trade(id="id", time="time",
+                                     offer_bid=Offer(id="id", time=pendulum.now(), price=20,
+                                                     energy=1, seller="FakeArea"),
+                                     seller=area_test3.name, buyer="buyer"
                                      )
                          )
     assert len(pv_test4.offers.open) == 0
@@ -318,7 +329,6 @@ def pv_test66(area_test66):
 
 
 def testing_produced_energy_forecast_real_data(pv_test66):
-
     pv_test66.event_activate()
     # prepare whole day of energy_production_forecast_kWh:
     for time_slot in generate_market_slot_list():

@@ -38,7 +38,14 @@ EXTERNAL_CONNECTION_WEB = False
 
 SIMULATION_PAUSE_TIMEOUT = 600
 
-D3A_TEST_RUN = False
+# Controls whether the past markets and the strategy state (bids / offers that are buffered in the
+# strategy classes) are still being kept in the simulation memory for the duration
+# of the simulation. Helpful in the unit / integration tests, since some of these rely on the
+# markets remaining in-memory until the end of the simulation run.
+# Is also needed for the raw JSON files and the plots when running in CLI mode.
+# Also helpful when debugging, in order for the interpreter to have access to all markets that a
+# simulation has ran through.
+RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 KAFKA_MOCK = False
 
 IS_CANARY_NETWORK = GlobalConfig.IS_CANARY_NETWORK

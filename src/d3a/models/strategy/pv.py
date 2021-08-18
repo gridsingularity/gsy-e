@@ -238,8 +238,8 @@ class PVStrategy(BaseStrategy):
         self._delete_past_state()
 
     def _delete_past_state(self):
-        if constants.D3A_TEST_RUN is True or \
-                self.area.current_market is None:
+        if (constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True or
+                self.area.current_market is None):
             return
 
         self.state.delete_past_state_values(self.area.current_market.time_slot)
@@ -282,7 +282,7 @@ class PVStrategy(BaseStrategy):
 
         if trade.seller == self.owner.name:
             self.state.decrement_available_energy(
-                trade.offer.energy, market.time_slot, self.owner.name)
+                trade.offer_bid.energy, market.time_slot, self.owner.name)
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
