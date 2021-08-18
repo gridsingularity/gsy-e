@@ -15,32 +15,30 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import pendulum
+import inspect
+import json
+import os
 import select
 import sys
 import termios
 import tty
-import json
-import d3a
-import inspect
-import os
-
-from click.types import ParamType
-from d3a_interface.enums import BidOfferMatchAlgoEnum
-from pendulum import duration, from_format
-from rex import rex
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 
-import d3a.constants
-from d3a import setup as d3a_setup
+import pendulum
+from click.types import ParamType
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.exceptions import D3AException
-
-from d3a.constants import DATE_FORMAT, DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit
+from d3a_interface.enums import BidOfferMatchAlgoEnum
+from d3a_interface.exceptions import D3AException
 from d3a_interface.utils import iterate_over_all_modules, str_to_pendulum_datetime, \
     format_datetime, find_object_of_same_weekday_and_time
+from pendulum import duration, from_format
+from rex import rex
+
+import d3a.constants
+from d3a import setup as d3a_setup
+from d3a.constants import DATE_FORMAT, DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 
 d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
@@ -49,8 +47,6 @@ INTERVAL_DH_RE = rex("/^(?:(?P<days>[0-9]{1,4})[d:])?(?:(?P<hours>[0-9]{1,2})[h:
 INTERVAL_HM_RE = rex("/^(?:(?P<hours>[0-9]{1,4})[h:])?(?:(?P<minutes>[0-9]{1,2})m?)?$/")
 INTERVAL_MS_RE = rex("/^(?:(?P<minutes>[0-9]{1,4})[m:])?(?:(?P<seconds>[0-9]{1,2})s?)?$/")
 IMPORT_RE = rex("/^import +[\"'](?P<contract>[^\"']+.sol)[\"'];$/")
-
-_CONTRACT_CACHE = {}
 
 TRACE = 5
 

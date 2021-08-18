@@ -17,19 +17,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from unittest.mock import MagicMock
+from uuid import uuid4
 
-import pytest
 import pendulum
+import pytest
+from d3a_interface.constants_limits import ConstSettings
 
 from d3a.constants import TIME_ZONE
+from d3a.d3a_core.blockchain_interface import NonBlockchainInterface
 from d3a.d3a_core.exceptions import MarketException
-from d3a.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
 from d3a.models.market.market_structures import Offer, Trade, Bid
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.two_sided import TwoSidedMarket
-from d3a.models.market.blockchain_interface import NonBlockchainInterface
-from d3a_interface.constants_limits import ConstSettings
-from uuid import uuid4
+from d3a.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
 
 
 def teardown_function():
