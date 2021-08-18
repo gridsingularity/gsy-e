@@ -33,7 +33,7 @@ kiwisolver==1.3.1         # via matplotlib
 matplotlib==3.4.0         # via -r requirements/pandapower.in
 networkx==2.6.2           # via pandapower
 nodeenv==1.6.0            # via -r requirements/dev.txt, pre-commit
-numpy==1.21.2             # via -r requirements/dev.txt, matplotlib, pandapower, pandas, scipy
+numpy==1.20.3             # via -r requirements/dev.txt, matplotlib, pandapower, pandas, scipy
 openpyxl==3.0.7           # via pandapower
 packaging==20.7           # via -r requirements/dev.txt, d3a-interface, pandapower, tox
 pandapower==2.7.0         # via -r requirements/pandapower.in

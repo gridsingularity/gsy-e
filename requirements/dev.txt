@@ -28,7 +28,7 @@ importlib-resources==5.2.0  # via -r requirements/base.txt, d3a-interface
 jsonschema==3.2.0         # via -r requirements/base.txt, d3a-interface
 kafka-python==2.0.2       # via -r requirements/base.txt, d3a-interface
 nodeenv==1.6.0            # via pre-commit
-numpy==1.21.2             # via -r requirements/base.txt
+numpy==1.20.3             # via -r requirements/base.txt
 packaging==20.7           # via -r requirements/base.txt, d3a-interface, tox
 paramiko==2.7.2           # via fabric3
 pendulum==2.1.2           # via -r requirements/base.txt, d3a-interface
