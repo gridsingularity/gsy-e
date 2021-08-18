@@ -1,6 +1,6 @@
 ##User Interface Results
 
-Grid Singularity’s UI (d3a.io) offers visual representations of simulation results. These are updated while the simulation is running and stored indefinitely until the user decides to delete or to rerun the simulation. The user is able to view Results for each area or asset in the grid configuration.
+Grid Singularity’s UI offers visual representations of simulation results. These are updated while the simulation is running and stored indefinitely until the user decides to delete or to rerun the simulation. The user is able to view Results for each area or asset in the grid configuration.
 
 ###Navigating the grid configuration in the UI
 

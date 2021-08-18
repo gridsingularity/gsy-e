@@ -13,26 +13,26 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. If not,
 see <http://www.gnu.org/licenses/>.
 """
-import numpy as np
+import random
 
 from d3a.constants import DEFAULT_PRECISION, RELATIVE_STD_FROM_FORECAST_ENERGY
 
 
 def compute_altered_energy(
         energy_kWh: float, relative_std: float = RELATIVE_STD_FROM_FORECAST_ENERGY,
-        random_generator: np.random.Generator = np.random.default_rng(seed=12)) -> float:
+        random_generator: random.Random = random.Random(12)) -> float:
     """
-    Compute a new energy amount, modelling its value on a normal distribution based on the old one.
+    Compute a new energy amount, modelling its value on a normal distribution of the old amount.
 
     Args:
         energy_kWh: the amount of energy to be altered.
         relative_sdt: the percentage of original energy to be used to set the standard deviation
             of the normal distribution.
-        random_generator: a numpy random generator instance.
+        random_generator: a pseudo-random number generator instance. This is used to return
+            reproducible results while not altering the global random seed.
     """
     std = (relative_std * energy_kWh) / 100
-    # Create a random number generator to avoid using np.random (that would alter the global seed)
-    altered_energy_kWh = random_generator.normal(loc=energy_kWh, scale=std)
+    altered_energy_kWh = random_generator.gauss(mu=energy_kWh, sigma=std)
     # If the sign of the new energy flipped compared to the original, clip it to 0
     if (altered_energy_kWh > 0) != (energy_kWh > 0):
         return 0
