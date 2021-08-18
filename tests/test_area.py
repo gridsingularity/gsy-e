@@ -15,26 +15,27 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from pendulum import duration, today
+import unittest
 from collections import OrderedDict
 from unittest.mock import MagicMock
-import unittest
+
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from parameterized import parameterized
+from pendulum import duration, today
+
+from d3a import constants
+from d3a.constants import TIME_ZONE
+from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.events.event_structures import AreaEvent, MarketEvent
 from d3a.models.area import Area, check_area_name_exists_in_parent_area
+from d3a.models.area.event_dispatcher import AreaDispatcher
 from d3a.models.area.events import Events
 from d3a.models.area.markets import AreaMarkets
-
-from d3a.models.strategy.storage import StorageStrategy
+from d3a.models.area.stats import AreaStats
 from d3a.models.config import SimulationConfig
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a.constants import TIME_ZONE
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.models.area.event_dispatcher import AreaDispatcher
-from d3a.models.area.stats import AreaStats
-from d3a import constants
+from d3a.models.strategy.storage import StorageStrategy
 
 
 class TestAreaClass(unittest.TestCase):
