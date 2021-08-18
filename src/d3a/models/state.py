@@ -79,7 +79,7 @@ class ProsumptionInterface(StateInterface, ABC):
 
     def get_energy_measurement_kWh(self, time_slot: DateTime) -> float:
         """Get the actual energy consumed/produced by the device in the given market slot."""
-        return self._energy_measurement_kWh.get(time_slot, 0.0)
+        return self._energy_measurement_kWh.get(time_slot, None)
 
 
 class ConsumptionState(ProsumptionInterface):
