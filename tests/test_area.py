@@ -24,7 +24,6 @@ from parameterized import parameterized
 from pendulum import duration, today
 
 from d3a import constants
-from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.events.event_structures import AreaEvent, MarketEvent
 from d3a.models.area import Area, check_area_name_exists_in_parent_area
@@ -55,7 +54,7 @@ class TestAreaClass(unittest.TestCase):
         self.config.tick_length = duration(seconds=15)
         self.config.ticks_per_slot = int(self.config.slot_length.seconds /
                                          self.config.tick_length.seconds)
-        self.config.start_date = today(tz=TIME_ZONE)
+        self.config.start_date = today(tz=constants.TIME_ZONE)
         GlobalConfig.sim_duration = duration(days=1)
         self.config.sim_duration = duration(days=1)
         self.config.grid_fee_type = 1
@@ -104,15 +103,16 @@ class TestAreaClass(unittest.TestCase):
         self.area.cycle_markets(False, False, False)
         assert len(self.area.past_markets) == 0
 
-        current_time = today(tz=TIME_ZONE).add(hours=1)
+        current_time = today(tz=constants.TIME_ZONE).add(hours=1)
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
         self.area._markets.create_future_markets(current_time, True, self.area)
-        current_time = today(tz=TIME_ZONE).add(hours=2)
+        current_time = today(tz=constants.TIME_ZONE).add(hours=2)
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
-        assert list(self.area.past_markets)[-1].time_slot == today(tz=TIME_ZONE).add(hours=1)
+        assert (list(self.area.past_markets)[-1].time_slot ==
+                today(tz=constants.TIME_ZONE).add(hours=1))
 
     def test_keep_past_markets(self):
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
@@ -125,12 +125,12 @@ class TestAreaClass(unittest.TestCase):
         self.area.cycle_markets(False, False, False)
         assert len(self.area.past_markets) == 0
 
-        current_time = today(tz=TIME_ZONE).add(hours=1)
+        current_time = today(tz=constants.TIME_ZONE).add(hours=1)
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
         self.area._markets.create_future_markets(current_time, True, self.area)
-        current_time = today(tz=TIME_ZONE).add(hours=2)
+        current_time = today(tz=constants.TIME_ZONE).add(hours=2)
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 2
 
@@ -154,7 +154,7 @@ class TestAreaClass(unittest.TestCase):
         o3.energy = 1
         o3.energy_rate = 12
         markets = OrderedDict()
-        td = today(tz=TIME_ZONE)
+        td = today(tz=constants.TIME_ZONE)
         td1 = td + self.config.slot_length
         m1.time_slot = td1
         markets[m1.time_slot] = m1

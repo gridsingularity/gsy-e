@@ -3,8 +3,7 @@ import unittest
 import uuid
 from unittest.mock import MagicMock
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.constants_limits import GlobalConfig
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from parameterized import parameterized
 from pendulum import now, Duration
 
