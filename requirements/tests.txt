@@ -38,7 +38,7 @@ jsonschema==3.2.0         # via -r requirements/dev.txt, d3a-interface
 kafka-python==2.0.2       # via -r requirements/dev.txt, d3a-interface
 mccabe==0.6.1             # via flake8
 nodeenv==1.6.0            # via -r requirements/dev.txt, pre-commit
-numpy==1.21.2             # via -r requirements/dev.txt
+numpy==1.20.3             # via -r requirements/dev.txt
 ordered-set==4.0.2        # via deepdiff
 packaging==20.7           # via -r requirements/dev.txt, d3a-interface, pytest, tox
 parameterized==0.8.1      # via -r requirements/tests.in
