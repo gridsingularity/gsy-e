@@ -250,8 +250,8 @@ class LoadState(ConsumptionState):
         return self._desired_energy_Wh[time_slot]
 
 
-class HomeMeterState(ConsumptionState, ProductionState):
-    """State for the Home Meter device"""
+class SmartMeterState(ConsumptionState, ProductionState):
+    """State for the Smart Meter device."""
 
     def __init__(self):
         super().__init__()

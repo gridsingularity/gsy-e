@@ -22,11 +22,11 @@ import pytest
 from d3a.d3a_core.area_serializer import area_to_string, area_from_string, are_all_areas_unique
 from d3a.models.area import Area
 from d3a.models.config import SimulationConfig
-from d3a.models.leaves import HomeMeter, PV, LoadHours, Storage
+from d3a.models.leaves import SmartMeter, PV, LoadHours, Storage
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
-from d3a.models.strategy.home_meter import HomeMeterStrategy
+from d3a.models.strategy.smart_meter import SmartMeterStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from pendulum import duration, instance
@@ -99,20 +99,21 @@ def test_leaf_deserialization():
              "children":[
                  {"name": "pv1", "type": "PV", "panel_count": 4, "display_type": "PV"},
                  {"name": "pv2", "type": "PV", "panel_count": 1, "display_type": "PV"},
-                 {"name": "home meter", "type": "HomeMeter", "home_meter_profile": "some_path.csv"}
+                 {"name": "smart meter", "type": "SmartMeter",
+                  "smart_meter_profile": "some_path.csv"}
              ]
            }
         ''',
         config=create_config()
     )
-    pv1, pv2, home_meter = recovered.children
+    pv1, pv2, smart_meter = recovered.children
     assert isinstance(pv1, PV)
     assert pv1.strategy.panel_count == 4
     assert pv1.display_type == "PV"
     assert isinstance(pv2, PV)
     assert pv2.strategy.panel_count == 1
     assert pv2.display_type == "PV"
-    assert isinstance(home_meter, HomeMeter)
+    assert isinstance(smart_meter, SmartMeter)
 
 
 def test_leaf_external_connection_deserialization():
@@ -151,7 +152,7 @@ def fixture_with_leaves():
     area = Area("house", [
         PV("pv1", panel_count=1, config=create_config()),
         PV("pv2", panel_count=4, config=create_config()),
-        HomeMeter("home meter", home_meter_profile="some_path.csv", config=create_config()),
+        SmartMeter("smart meter", smart_meter_profile="some_path.csv", config=create_config()),
     ])
     return area_to_string(area)
 
@@ -163,14 +164,14 @@ def test_leaf_serialization(fixture_with_leaves):
     assert description['children'][0]['panel_count'] == 1
     assert description['children'][1]['type'] == 'PV'
     assert description['children'][1]['panel_count'] == 4
-    assert description['children'][2]['type'] == 'HomeMeter'
+    assert description['children'][2]['type'] == 'SmartMeter'
 
 
 def test_roundtrip_with_leaf(fixture_with_leaves):
     recovered = area_from_string(fixture_with_leaves, create_config())
     assert isinstance(recovered.children[0].strategy, PVStrategy)
     assert isinstance(recovered.children[1].strategy, PVStrategy)
-    assert isinstance(recovered.children[2].strategy, HomeMeterStrategy)
+    assert isinstance(recovered.children[2].strategy, SmartMeterStrategy)
 
 
 def test_area_does_not_allow_duplicate_subarea_names():
