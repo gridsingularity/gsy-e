@@ -413,7 +413,7 @@ class TestExternalMixin(unittest.TestCase):
                      "energy_forecast": {now().format(DATE_TIME_FORMAT): 1}}
         payload = {"data": json.dumps(arguments)}
         assert strategy.pending_requests == deque([])
-        strategy._set_energy_forecast(payload)
+        strategy.set_energy_forecast(payload)
         strategy._get_transaction_id.assert_called_with(payload)
         assert len(strategy.pending_requests) > 0
         energy_forecast_response_channel = f"{strategy.channel_prefix}/" \
@@ -425,7 +425,7 @@ class TestExternalMixin(unittest.TestCase):
         strategy.redis.publish_json = Mock()
         strategy.pending_requests = deque([])
         payload = {"data": json.dumps({})}
-        strategy._set_energy_forecast(payload)
+        strategy.set_energy_forecast(payload)
         strategy.redis.publish_json.assert_called_with(energy_forecast_response_channel,
                                                        {"command": "set_energy_forecast",
                                                         "error": "Incorrect "
@@ -445,7 +445,7 @@ class TestExternalMixin(unittest.TestCase):
                      "energy_measurement": {now().format(DATE_TIME_FORMAT): 1}}
         payload = {"data": json.dumps(arguments)}
         assert strategy.pending_requests == deque([])
-        strategy._set_energy_measurement(payload)
+        strategy.set_energy_measurement(payload)
         strategy._get_transaction_id.assert_called_with(payload)
         assert len(strategy.pending_requests) > 0
         energy_measurement_response_channel = f"{strategy.channel_prefix}/" \
@@ -457,7 +457,7 @@ class TestExternalMixin(unittest.TestCase):
         strategy.redis.publish_json = Mock()
         strategy.pending_requests = deque([])
         payload = {"data": json.dumps({})}
-        strategy._set_energy_measurement(payload)
+        strategy.set_energy_measurement(payload)
         strategy.redis.publish_json.assert_called_with(energy_measurement_response_channel,
                                                        {"command": "set_energy_measurement",
                                                         "error": "Incorrect "
@@ -487,7 +487,7 @@ class TestExternalMixin(unittest.TestCase):
         arguments = {"transaction_id": transaction_id,
                      "energy_forecast": {now().format(DATE_TIME_FORMAT): 1}}
         response_channel = "response_channel"
-        strategy._set_energy_forecast_impl(arguments, response_channel)
+        strategy.set_energy_forecast_impl(arguments, response_channel)
         strategy._validate_values_positive_in_profile.assert_called_once_with(
             arguments["energy_forecast"])
         strategy.redis.publish_json.assert_called_once_with(response_channel,
@@ -498,7 +498,7 @@ class TestExternalMixin(unittest.TestCase):
         strategy.redis.publish_json.reset_mock()
         arguments = {"transaction_id": transaction_id,
                      "energy_forecast": {"wrong:time:format": 1}}
-        strategy._set_energy_forecast_impl(arguments, response_channel)
+        strategy.set_energy_forecast_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_forecast_impl "
                          f"on area {strategy.device.name}. Arguments: {arguments}")
         strategy.redis.publish_json.assert_called_once_with(response_channel,
@@ -519,7 +519,7 @@ class TestExternalMixin(unittest.TestCase):
         arguments = {"transaction_id": transaction_id,
                      "energy_measurement": {now().format(DATE_TIME_FORMAT): 1}}
         response_channel = "response_channel"
-        strategy._set_energy_measurement_impl(arguments, response_channel)
+        strategy.set_energy_measurement_impl(arguments, response_channel)
         strategy._validate_values_positive_in_profile.assert_called_once_with(
             arguments["energy_measurement"])
         strategy.redis.publish_json.assert_called_once_with(response_channel,
@@ -530,7 +530,7 @@ class TestExternalMixin(unittest.TestCase):
         strategy.redis.publish_json.reset_mock()
         arguments = {"transaction_id": transaction_id,
                      "energy_measurement": {"wrong:time:format": 1}}
-        strategy._set_energy_measurement_impl(arguments, response_channel)
+        strategy.set_energy_measurement_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_measurement_impl "
                          f"on area {strategy.device.name}. Arguments: {arguments}")
         strategy.redis.publish_json.assert_called_once_with(response_channel,

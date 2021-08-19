@@ -384,8 +384,8 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
     def channel_dict(self):
         """Extend channel_dict property with forecast related channels."""
         return {**super().channel_dict,
-                f"{self.channel_prefix}/set_energy_forecast": self._set_energy_forecast,
-                f"{self.channel_prefix}/set_energy_measurement": self._set_energy_measurement}
+                f"{self.channel_prefix}/set_energy_forecast": self.set_energy_forecast,
+                f"{self.channel_prefix}/set_energy_measurement": self.set_energy_measurement}
 
     def event_tick(self):
         """Set the energy forecast using pending requests. Extends super implementation.
@@ -396,9 +396,9 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
         # from the MQTT subscriber (non-connected admin)
         for req in self.pending_requests:
             if req.request_type == "set_energy_forecast":
-                self._set_energy_forecast_impl(req.arguments, req.response_channel)
+                self.set_energy_forecast_impl(req.arguments, req.response_channel)
             elif req.request_type == "set_energy_measurement":
-                self._set_energy_measurement_impl(req.arguments, req.response_channel)
+                self.set_energy_measurement_impl(req.arguments, req.response_channel)
 
         self.pending_requests = deque(
             req for req in self.pending_requests
@@ -409,9 +409,9 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
     def _incoming_commands_callback_selection(self, req):
         """Map commands to callbacks for forecast and measurement reading."""
         if req.request_type == "set_energy_forecast":
-            self._set_energy_forecast_impl(req.arguments, req.response_channel)
+            self.set_energy_forecast_impl(req.arguments, req.response_channel)
         elif req.request_type == "set_energy_measurement":
-            self._set_energy_measurement_impl(req.arguments, req.response_channel)
+            self.set_energy_measurement_impl(req.arguments, req.response_channel)
         else:
             super()._incoming_commands_callback_selection(req)
 

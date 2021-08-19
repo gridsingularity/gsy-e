@@ -417,7 +417,7 @@ class ExternalMixin:
                                   f"Market cycle already finished."})
         self.pending_requests = deque()
 
-    def _set_energy_forecast(self, payload: Dict) -> None:
+    def set_energy_forecast(self, payload: Dict) -> None:
         """Callback for set_energy_forecast redis endpoint."""
         transaction_id = self._get_transaction_id(payload)
         energy_forecast_response_channel = \
@@ -443,7 +443,7 @@ class ExternalMixin:
                 IncomingRequest("set_energy_forecast", arguments,
                                 energy_forecast_response_channel))
 
-    def _set_energy_measurement(self, payload: Dict) -> None:
+    def set_energy_measurement(self, payload: Dict) -> None:
         """Callback of set_energy_measurement redis endpoint."""
         transaction_id = self._get_transaction_id(payload)
         energy_measurement_response_channel = \
@@ -472,7 +472,7 @@ class ExternalMixin:
             if energy < 0.0:
                 raise ValueError(f"Energy is not positive for time stamp {time_str}.")
 
-    def _set_energy_forecast_impl(self, arguments: Dict, response_channel: str) -> None:
+    def set_energy_forecast_impl(self, arguments: Dict, response_channel: str) -> None:
         """
         Digest command from buffer and perform set_energy_forecast.
         Args:
@@ -499,7 +499,7 @@ class ExternalMixin:
                  "error_message": error_message,
                  "transaction_id": arguments.get("transaction_id", None)})
 
-    def _set_energy_measurement_impl(self, arguments: Dict, response_channel: str) -> None:
+    def set_energy_measurement_impl(self, arguments: Dict, response_channel: str) -> None:
         """
         Digest command from buffer and perform set_energy_measurement.
         Args:
