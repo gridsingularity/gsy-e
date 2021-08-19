@@ -55,10 +55,7 @@ class TestPVForecastExternalStrategy:
 
     @mark.parametrize("strategy", [ext_strategy_fixture(LoadForecastExternalStrategy()),
                                    ext_strategy_fixture(PVForecastExternalStrategy())])
-    def test_update_energy_forecast_measurement_is_called_on_market_cycle(self, strategy):
-        strategy.update_energy_forecast = Mock()
-        strategy.update_energy_measurement = Mock()
-        strategy._clear_energy_buffers = Mock()
+    def test_event_market_cycle_calls_energy_update_methods(self, strategy):
         strategy.event_market_cycle()
         strategy.update_energy_forecast.assert_called_once()
         strategy.update_energy_measurement.assert_called_once()
