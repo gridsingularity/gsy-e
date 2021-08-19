@@ -15,24 +15,30 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+import json
 import unittest
 import uuid
-import json
-from unittest.mock import MagicMock
-from parameterized import parameterized
-from pendulum import now, Duration
-from d3a.models.area import Area
-from d3a.models.strategy import BidEnabledStrategy
-from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
-from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
-from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
+from collections import deque
+from unittest.mock import MagicMock, Mock
+from pytest import raises
 import d3a.models.strategy.external_strategies
-from d3a.models.market.market_structures import Trade, Offer, Bid
-from d3a_interface.constants_limits import GlobalConfig
-from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import DATE_TIME_FORMAT
 from d3a.d3a_core.singletons import external_global_statistics
+from d3a.models.area import Area
+from d3a.models.market.market_structures import Trade, Offer, Bid
+from d3a.models.strategy import BidEnabledStrategy
+from d3a.models.strategy.external_strategies import IncomingRequest
+from d3a.models.strategy.external_strategies.load import (LoadHoursExternalStrategy,
+                                                          LoadForecastExternalStrategy)
+from d3a.models.strategy.external_strategies.pv import (PVExternalStrategy,
+                                                        PVForecastExternalStrategy)
+from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import GlobalConfig
+from parameterized import parameterized
+from pendulum import now, Duration
+
+from tests.test_external_strategies import ext_strategy_fixture
 
 d3a.models.strategy.external_strategies.ResettableCommunicator = MagicMock
 
@@ -395,3 +401,141 @@ class TestExternalMixin(unittest.TestCase):
         assert strategy._connected is False
         assert strategy._use_template_strategy is False
         strategy.state.restore_state.assert_called_once_with(state_dict)
+
+    @parameterized.expand([
+        [ext_strategy_fixture(LoadForecastExternalStrategy())],
+        [ext_strategy_fixture(PVForecastExternalStrategy())]
+    ])
+    def test_set_energy_forecast(self, strategy):
+        transaction_id = str(uuid.uuid4())
+        strategy._get_transaction_id = Mock(return_value=transaction_id)
+        arguments = {"transaction_id": transaction_id,
+                     "energy_forecast": {now().format(DATE_TIME_FORMAT): 1}}
+        payload = {"data": json.dumps(arguments)}
+        assert strategy.pending_requests == deque([])
+        strategy._set_energy_forecast(payload)
+        strategy._get_transaction_id.assert_called_with(payload)
+        assert len(strategy.pending_requests) > 0
+        energy_forecast_response_channel = f"{strategy.channel_prefix}/" \
+                                           "response/set_energy_forecast"
+        assert (strategy.pending_requests ==
+                deque([IncomingRequest("set_energy_forecast", arguments,
+                                       energy_forecast_response_channel)]))
+
+        strategy.redis.publish_json = Mock()
+        strategy.pending_requests = deque([])
+        payload = {"data": json.dumps({})}
+        strategy._set_energy_forecast(payload)
+        strategy.redis.publish_json.assert_called_with(energy_forecast_response_channel,
+                                                       {"command": "set_energy_forecast",
+                                                        "error": "Incorrect "
+                                                                 "_set_energy_forecast request. "
+                                                        "Available parameters: (energy_forecast).",
+                                                        "transaction_id": transaction_id})
+        assert len(strategy.pending_requests) == 0
+
+    @parameterized.expand([
+        [ext_strategy_fixture(LoadForecastExternalStrategy())],
+        [ext_strategy_fixture(PVForecastExternalStrategy())]
+    ])
+    def test_set_energy_measurement(self, strategy):
+        transaction_id = str(uuid.uuid4())
+        strategy._get_transaction_id = Mock(return_value=transaction_id)
+        arguments = {"transaction_id": transaction_id,
+                     "energy_measurement": {now().format(DATE_TIME_FORMAT): 1}}
+        payload = {"data": json.dumps(arguments)}
+        assert strategy.pending_requests == deque([])
+        strategy._set_energy_measurement(payload)
+        strategy._get_transaction_id.assert_called_with(payload)
+        assert len(strategy.pending_requests) > 0
+        energy_measurement_response_channel = f"{strategy.channel_prefix}/" \
+                                              "response/set_energy_measurement"
+        assert (strategy.pending_requests ==
+                deque([IncomingRequest("set_energy_measurement", arguments,
+                                       energy_measurement_response_channel)]))
+
+        strategy.redis.publish_json = Mock()
+        strategy.pending_requests = deque([])
+        payload = {"data": json.dumps({})}
+        strategy._set_energy_measurement(payload)
+        strategy.redis.publish_json.assert_called_with(energy_measurement_response_channel,
+                                                       {"command": "set_energy_measurement",
+                                                        "error": "Incorrect "
+                                                                 "_set_energy_measurement"
+                                                                 " request. "
+                                                        "Available parameters: "
+                                                                 "(energy_measurement).",
+                                                        "transaction_id": transaction_id})
+        assert len(strategy.pending_requests) == 0
+
+    def test_validate_values_positive_in_profile(self):
+        strategy = ext_strategy_fixture(LoadHoursExternalStrategy(100))
+        wrong_energy_profile = {"00:00": -1}
+        with raises(ValueError):
+            strategy._validate_values_positive_in_profile(wrong_energy_profile)
+        wrong_energy_profile = {"00:00": 1}
+        strategy._validate_values_positive_in_profile(wrong_energy_profile)
+
+    @parameterized.expand([
+        [ext_strategy_fixture(LoadForecastExternalStrategy())],
+        [ext_strategy_fixture(PVForecastExternalStrategy())]
+    ])
+    def test_set_energy_forecast_impl(self, strategy):
+        transaction_id = str(uuid.uuid4())
+        strategy._validate_values_positive_in_profile = Mock()
+        strategy.redis.publish_json = Mock()
+        arguments = {"transaction_id": transaction_id,
+                     "energy_forecast": {now().format(DATE_TIME_FORMAT): 1}}
+        response_channel = "response_channel"
+        strategy._set_energy_forecast_impl(arguments, response_channel)
+        strategy._validate_values_positive_in_profile.assert_called_once_with(
+            arguments["energy_forecast"])
+        strategy.redis.publish_json.assert_called_once_with(response_channel,
+                                                            {"command": "set_energy_forecast",
+                                                             "status": "ready",
+                                                             "transaction_id":
+                                                                 arguments["transaction_id"]})
+        strategy.redis.publish_json.reset_mock()
+        arguments = {"transaction_id": transaction_id,
+                     "energy_forecast": {"wrong:time:format": 1}}
+        strategy._set_energy_forecast_impl(arguments, response_channel)
+        error_message = ("Error when handling _set_energy_forecast_impl "
+                         f"on area {strategy.device.name}. Arguments: {arguments}")
+        strategy.redis.publish_json.assert_called_once_with(response_channel,
+                                                            {"command": "set_energy_forecast",
+                                                             "status": "error",
+                                                             "transaction_id":
+                                                                 arguments["transaction_id"],
+                                                             "error_message": error_message})
+
+    @parameterized.expand([
+        [ext_strategy_fixture(LoadForecastExternalStrategy())],
+        [ext_strategy_fixture(PVForecastExternalStrategy())]
+    ])
+    def test_set_energy_measurement_impl(self, strategy):
+        transaction_id = str(uuid.uuid4())
+        strategy._validate_values_positive_in_profile = Mock()
+        strategy.redis.publish_json = Mock()
+        arguments = {"transaction_id": transaction_id,
+                     "energy_measurement": {now().format(DATE_TIME_FORMAT): 1}}
+        response_channel = "response_channel"
+        strategy._set_energy_measurement_impl(arguments, response_channel)
+        strategy._validate_values_positive_in_profile.assert_called_once_with(
+            arguments["energy_measurement"])
+        strategy.redis.publish_json.assert_called_once_with(response_channel,
+                                                            {"command": "set_energy_measurement",
+                                                             "status": "ready",
+                                                             "transaction_id":
+                                                                 arguments["transaction_id"]})
+        strategy.redis.publish_json.reset_mock()
+        arguments = {"transaction_id": transaction_id,
+                     "energy_measurement": {"wrong:time:format": 1}}
+        strategy._set_energy_measurement_impl(arguments, response_channel)
+        error_message = ("Error when handling _set_energy_measurement_impl "
+                         f"on area {strategy.device.name}. Arguments: {arguments}")
+        strategy.redis.publish_json.assert_called_once_with(response_channel,
+                                                            {"command": "set_energy_measurement",
+                                                             "status": "error",
+                                                             "transaction_id":
+                                                                 arguments["transaction_id"],
+                                                             "error_message": error_message})
