@@ -327,7 +327,9 @@ class StorageExternalMixin(ExternalMixin):
                 arguments["price"],
                 arguments["energy"],
                 replace_existing=replace_existing,
-                **arguments)
+                attributes=arguments.get("attributes", None),
+                requirements=arguments.get("requirements", None)
+            )
             self.state.offered_buy_kWh[self.next_market.time_slot] = \
                 self.posted_bid_energy(self.next_market.id)
             self.state.clamp_energy_to_buy_kWh([self.next_market.time_slot])
@@ -526,7 +528,9 @@ class StorageExternalMixin(ExternalMixin):
                 arguments["price"],
                 arguments["energy"],
                 replace_existing=replace_existing,
-                **arguments)
+                attributes=arguments.get("attributes", None),
+                requirements=arguments.get("requirements", None)
+            )
 
             self.state.offered_buy_kWh[self.next_market.time_slot] = \
                 self.posted_bid_energy(self.next_market.id)

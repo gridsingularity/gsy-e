@@ -284,7 +284,9 @@ class LoadExternalMixin(ExternalMixin):
                 arguments["price"],
                 arguments["energy"],
                 replace_existing=replace_existing,
-                **arguments)
+                attributes=arguments.get("attributes", None),
+                requirements=arguments.get("requirements", None)
+            )
             return {
                 "command": "bid", "status": "ready",
                 "bid": bid.to_json_string(replace_existing=replace_existing),
