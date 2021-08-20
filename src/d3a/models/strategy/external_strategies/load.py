@@ -40,9 +40,9 @@ class LoadExternalMixin(ExternalMixin):
     @property
     def channel_dict(self):
         return {**super().channel_dict,
-                f"{self.channel_prefix}/bid": self._bid,
-                f"{self.channel_prefix}/delete_bid": self._delete_bid,
-                f"{self.channel_prefix}/list_bids": self._list_bids,
+                f"{self.channel_prefix}/bid": self.bid,
+                f"{self.channel_prefix}/delete_bid": self.delete_bid,
+                f"{self.channel_prefix}/list_bids": self.list_bids,
                 }
 
     @property
@@ -58,7 +58,7 @@ class LoadExternalMixin(ExternalMixin):
         super().event_activate(**kwargs)
         self.redis.sub_to_multiple_channels(self.channel_dict)
 
-    def _list_bids(self, payload):
+    def list_bids(self, payload):
         self._get_transaction_id(payload)
         list_bids_response_channel = f"{self.channel_prefix}/response/list_bids"
         if not check_for_connected_and_reply(self.redis, list_bids_response_channel,
@@ -84,7 +84,7 @@ class LoadExternalMixin(ExternalMixin):
                  "error_message": error_message,
                  "transaction_id": arguments.get("transaction_id", None)})
 
-    def _delete_bid(self, payload):
+    def delete_bid(self, payload):
         transaction_id = self._get_transaction_id(payload)
         delete_bid_response_channel = f"{self.channel_prefix}/response/delete_bid"
         if not check_for_connected_and_reply(self.redis,
@@ -127,7 +127,7 @@ class LoadExternalMixin(ExternalMixin):
                  "error_message": error_message,
                  "transaction_id": arguments.get("transaction_id", None)})
 
-    def _bid(self, payload):
+    def bid(self, payload):
         transaction_id = self._get_transaction_id(payload)
         required_args = {"price", "energy", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",

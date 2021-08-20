@@ -39,16 +39,16 @@ class PVExternalMixin(ExternalMixin):
     @property
     def channel_dict(self):
         return {**super().channel_dict,
-                f"{self.channel_prefix}/offer": self._offer,
-                f"{self.channel_prefix}/delete_offer": self._delete_offer,
-                f"{self.channel_prefix}/list_offers": self._list_offers,
+                f"{self.channel_prefix}/offer": self.offer,
+                f"{self.channel_prefix}/delete_offer": self.delete_offer,
+                f"{self.channel_prefix}/list_offers": self.list_offers,
                 }
 
     def event_activate(self, **kwargs):
         super().event_activate(**kwargs)
         self.redis.sub_to_multiple_channels(self.channel_dict)
 
-    def _list_offers(self, payload):
+    def list_offers(self, payload):
         self._get_transaction_id(payload)
         list_offers_response_channel = f"{self.channel_prefix}/response/list_offers"
         if not check_for_connected_and_reply(self.redis, list_offers_response_channel,
@@ -76,7 +76,7 @@ class PVExternalMixin(ExternalMixin):
                  "error_message": error_message,
                  "transaction_id": arguments.get("transaction_id", None)})
 
-    def _delete_offer(self, payload):
+    def delete_offer(self, payload):
         transaction_id = self._get_transaction_id(payload)
         delete_offer_response_channel = f"{self.channel_prefix}/response/delete_offer"
         if not check_for_connected_and_reply(self.redis, delete_offer_response_channel,
@@ -118,7 +118,7 @@ class PVExternalMixin(ExternalMixin):
                  "error_message": error_message,
                  "transaction_id": arguments.get("transaction_id", None)})
 
-    def _offer(self, payload):
+    def offer(self, payload):
         transaction_id = self._get_transaction_id(payload)
         required_args = {"price", "energy", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",

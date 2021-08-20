@@ -16,14 +16,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from unittest.mock import MagicMock, Mock
-
+import uuid
+import json
 import pytest
 from d3a.models.area import Area
-from d3a.models.strategy.external_strategies.load import LoadForecastExternalStrategy
-from d3a.models.strategy.external_strategies.pv import PVForecastExternalStrategy
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.constants_limits import GlobalConfig
+from d3a.models.strategy.external_strategies.load import (LoadForecastExternalStrategy,
+                                                          LoadHoursExternalStrategy)
+from d3a.models.strategy.external_strategies.pv import (PVForecastExternalStrategy,
+                                                        PVExternalStrategy)
+from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from pendulum import now, duration
+from collections import deque
+from d3a.models.strategy.external_strategies import IncomingRequest
 
 
 @pytest.fixture
@@ -129,3 +134,97 @@ class TestPVForecastExternalStrategy:
         ext_strategy_fixture.state.set_energy_measurement_kWh = Mock()
         ext_strategy_fixture.update_energy_measurement()
         ext_strategy_fixture.state.set_energy_measurement_kWh.assert_not_called()
+
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursExternalStrategy(100),
+                                                      StorageExternalStrategy()],
+                             indirect=True)
+    def test_receive_bid_successful(self, ext_strategy_fixture):
+        transaction_id = str(uuid.uuid4())
+        arguments = {"transaction_id": transaction_id,
+                     "price": 1,
+                     "energy": 2}
+        payload = {"data": json.dumps(arguments)}
+        assert ext_strategy_fixture.pending_requests == deque([])
+        ext_strategy_fixture.bid(payload)
+        assert len(ext_strategy_fixture.pending_requests) > 0
+        response_channel = f"{ext_strategy_fixture.channel_prefix}/response/bid"
+        assert (ext_strategy_fixture.pending_requests ==
+                deque([IncomingRequest("bid", arguments,
+                                       response_channel)]))
+
+    @pytest.mark.parametrize("ext_strategy_fixture", [PVExternalStrategy(),
+                                                      StorageExternalStrategy()],
+                             indirect=True)
+    def test_receive_offer_successful(self, ext_strategy_fixture):
+        transaction_id = str(uuid.uuid4())
+        arguments = {"transaction_id": transaction_id,
+                     "price": 1,
+                     "energy": 2}
+        payload = {"data": json.dumps(arguments)}
+        assert ext_strategy_fixture.pending_requests == deque([])
+        ext_strategy_fixture.offer(payload)
+        assert len(ext_strategy_fixture.pending_requests) > 0
+        response_channel = f"{ext_strategy_fixture.channel_prefix}/response/offer"
+        assert (ext_strategy_fixture.pending_requests ==
+                deque([IncomingRequest("offer", arguments,
+                                       response_channel)]))
+
+    @pytest.mark.parametrize("ext_strategy_fixture", [PVExternalStrategy(),
+                                                      StorageExternalStrategy()],
+                             indirect=True)
+    def test_list_offers_successful(self, ext_strategy_fixture):
+        transaction_id = str(uuid.uuid4())
+        arguments = {"transaction_id": transaction_id}
+        payload = {"data": json.dumps(arguments)}
+        assert ext_strategy_fixture.pending_requests == deque([])
+        ext_strategy_fixture.list_offers(payload)
+        assert len(ext_strategy_fixture.pending_requests) > 0
+        response_channel = f"{ext_strategy_fixture.channel_prefix}/response/list_offers"
+        assert (ext_strategy_fixture.pending_requests ==
+                deque([IncomingRequest("list_offers", arguments,
+                                       response_channel)]))
+
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursExternalStrategy(100),
+                                                      StorageExternalStrategy()],
+                             indirect=True)
+    def test_list_bids_successful(self, ext_strategy_fixture):
+        transaction_id = str(uuid.uuid4())
+        arguments = {"transaction_id": transaction_id}
+        payload = {"data": json.dumps(arguments)}
+        assert ext_strategy_fixture.pending_requests == deque([])
+        ext_strategy_fixture.list_bids(payload)
+        assert len(ext_strategy_fixture.pending_requests) > 0
+        response_channel = f"{ext_strategy_fixture.channel_prefix}/response/list_bids"
+        assert (ext_strategy_fixture.pending_requests ==
+                deque([IncomingRequest("list_bids", arguments,
+                                       response_channel)]))
+
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursExternalStrategy(100),
+                                                      StorageExternalStrategy()],
+                             indirect=True)
+    def test_delete_bid_successful(self, ext_strategy_fixture):
+        transaction_id = str(uuid.uuid4())
+        arguments = {"transaction_id": transaction_id}
+        payload = {"data": json.dumps(arguments)}
+        assert ext_strategy_fixture.pending_requests == deque([])
+        ext_strategy_fixture.delete_bid(payload)
+        assert len(ext_strategy_fixture.pending_requests) > 0
+        response_channel = f"{ext_strategy_fixture.channel_prefix}/response/delete_bid"
+        assert (ext_strategy_fixture.pending_requests ==
+                deque([IncomingRequest("delete_bid", arguments,
+                                       response_channel)]))
+
+    @pytest.mark.parametrize("ext_strategy_fixture", [PVExternalStrategy(),
+                                                      StorageExternalStrategy()],
+                             indirect=True)
+    def test_delete_offer_successful(self, ext_strategy_fixture):
+        transaction_id = str(uuid.uuid4())
+        arguments = {"transaction_id": transaction_id}
+        payload = {"data": json.dumps(arguments)}
+        assert ext_strategy_fixture.pending_requests == deque([])
+        ext_strategy_fixture.delete_offer(payload)
+        assert len(ext_strategy_fixture.pending_requests) > 0
+        response_channel = f"{ext_strategy_fixture.channel_prefix}/response/delete_offer"
+        assert (ext_strategy_fixture.pending_requests ==
+                deque([IncomingRequest("delete_offer", arguments,
+                                       response_channel)]))
