@@ -22,6 +22,7 @@ from collections import deque
 from unittest.mock import MagicMock, Mock
 
 import d3a.models.strategy.external_strategies
+import pytest
 from d3a.constants import DATE_TIME_FORMAT
 from d3a.d3a_core.singletons import external_global_statistics
 from d3a.models.area import Area
@@ -36,11 +37,30 @@ from d3a.models.strategy.external_strategies.storage import StorageExternalStrat
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.constants_limits import GlobalConfig
 from parameterized import parameterized
-from pendulum import now, Duration
-
-from tests.test_external_strategies import ext_strategy_fixture
+from pendulum import now, duration
 
 d3a.models.strategy.external_strategies.ResettableCommunicator = MagicMock
+
+
+@pytest.fixture
+def ext_strategy_fixture(request):
+    strategy = request.param
+    config = Mock()
+    config.slot_length = duration(minutes=15)
+    config.tick_length = duration(seconds=15)
+    config.ticks_per_slot = 60
+    config.start_date = GlobalConfig.start_date
+    config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
+    config.end_date = GlobalConfig.start_date + duration(days=1)
+    config.market_count = 1
+    area = Area(name="forecast_pv", config=config, strategy=strategy,
+                external_connection_available=True)
+    parent = Area(name="parent_area", children=[area], config=config)
+    parent.activate()
+    strategy.connected = True
+    market = MagicMock()
+    market.time_slot = GlobalConfig.start_date
+    return strategy
 
 
 class TestExternalMixin(unittest.TestCase):
@@ -49,7 +69,7 @@ class TestExternalMixin(unittest.TestCase):
         self.config = MagicMock()
         self.config.max_panel_power_W = 160
         self.config.ticks_per_slot = 90
-        GlobalConfig.end_date = GlobalConfig.start_date + Duration(days=1)
+        GlobalConfig.end_date = GlobalConfig.start_date + duration(days=1)
         self.area = Area(name="test_area", config=self.config, strategy=strategy,
                          external_connection_available=True)
         self.parent = Area(name="parent_area", children=[self.area])
@@ -402,159 +422,145 @@ class TestExternalMixin(unittest.TestCase):
         assert strategy._use_template_strategy is False
         strategy.state.restore_state.assert_called_once_with(state_dict)
 
-    @parameterized.expand([
-        [ext_strategy_fixture(LoadForecastExternalStrategy())],
-        [ext_strategy_fixture(PVForecastExternalStrategy())]
-    ])
-    def test_set_energy_forecast(self, strategy):
+
+class TestForecastRelatedFeatures:
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
+                                                      PVForecastExternalStrategy()], indirect=True)
+    def test_set_energy_forecast(self, ext_strategy_fixture):
         # test successful call of set_energy_forecast:
         transaction_id = str(uuid.uuid4())
         arguments = {"transaction_id": transaction_id,
                      "energy_forecast": {now().format(DATE_TIME_FORMAT): 1}}
         payload = {"data": json.dumps(arguments)}
-        assert strategy.pending_requests == deque([])
-        strategy.set_energy_forecast(payload)
-        assert len(strategy.pending_requests) > 0
-        energy_forecast_response_channel = f"{strategy.channel_prefix}/" \
+        assert ext_strategy_fixture.pending_requests == deque([])
+        ext_strategy_fixture.set_energy_forecast(payload)
+        assert len(ext_strategy_fixture.pending_requests) > 0
+        energy_forecast_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
                                            "response/set_energy_forecast"
-        assert (strategy.pending_requests ==
+        assert (ext_strategy_fixture.pending_requests ==
                 deque([IncomingRequest("set_energy_forecast", arguments,
                                        energy_forecast_response_channel)]))
 
         # test if set_energy_forecast raises error when provided with wrong payload
-        strategy.redis.publish_json = Mock()
-        strategy.pending_requests = deque([])
+        ext_strategy_fixture.redis.publish_json = Mock()
+        ext_strategy_fixture.pending_requests = deque([])
         payload = {"data": json.dumps({"transaction_id": transaction_id})}
-        strategy.set_energy_forecast(payload)
-        strategy.redis.publish_json.assert_called_with(energy_forecast_response_channel,
-                                                       {"command": "set_energy_forecast",
-                                                        "error": "Incorrect "
-                                                                 "_set_energy_forecast request. "
+        ext_strategy_fixture.set_energy_forecast(payload)
+        ext_strategy_fixture.redis.publish_json.assert_called_with(
+            energy_forecast_response_channel, {"command": "set_energy_forecast",
+                                               "error": "Incorrect _set_energy_forecast request. "
                                                         "Available parameters: (energy_forecast).",
-                                                        "transaction_id": transaction_id})
-        assert len(strategy.pending_requests) == 0
+                                               "transaction_id": transaction_id})
+        assert len(ext_strategy_fixture.pending_requests) == 0
 
-    @parameterized.expand([
-        [ext_strategy_fixture(LoadForecastExternalStrategy())],
-        [ext_strategy_fixture(PVForecastExternalStrategy())]
-    ])
-    def test_set_energy_measurement(self, strategy):
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
+                                                      PVForecastExternalStrategy()], indirect=True)
+    def test_set_energy_measurement(self, ext_strategy_fixture):
         # test successful call of set_energy_measurement:
         transaction_id = str(uuid.uuid4())
         arguments = {"transaction_id": transaction_id,
                      "energy_measurement": {now().format(DATE_TIME_FORMAT): 1}}
         payload = {"data": json.dumps(arguments)}
-        assert strategy.pending_requests == deque([])
-        strategy.set_energy_measurement(payload)
-        assert len(strategy.pending_requests) > 0
-        energy_measurement_response_channel = f"{strategy.channel_prefix}/" \
+        assert ext_strategy_fixture.pending_requests == deque([])
+        ext_strategy_fixture.set_energy_measurement(payload)
+        assert len(ext_strategy_fixture.pending_requests) > 0
+        energy_measurement_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
                                               "response/set_energy_measurement"
-        assert (strategy.pending_requests ==
+        assert (ext_strategy_fixture.pending_requests ==
                 deque([IncomingRequest("set_energy_measurement", arguments,
                                        energy_measurement_response_channel)]))
 
         # test if set_energy_measurement raises error when provided with wrong payload
-        strategy.redis.publish_json = Mock()
-        strategy.pending_requests = deque([])
+        ext_strategy_fixture.redis.publish_json = Mock()
+        ext_strategy_fixture.pending_requests = deque([])
         payload = {"data": json.dumps({"transaction_id": transaction_id})}
-        strategy.set_energy_measurement(payload)
-        strategy.redis.publish_json.assert_called_with(energy_measurement_response_channel,
-                                                       {"command": "set_energy_measurement",
-                                                        "error": "Incorrect "
-                                                                 "_set_energy_measurement"
-                                                                 " request. "
-                                                        "Available parameters: "
-                                                                 "(energy_measurement).",
-                                                        "transaction_id": transaction_id})
-        assert len(strategy.pending_requests) == 0
+        ext_strategy_fixture.set_energy_measurement(payload)
+        ext_strategy_fixture.redis.publish_json.assert_called_with(
+            energy_measurement_response_channel, {"command": "set_energy_measurement",
+                                                  "error": "Incorrect _set_energy_measurement"
+                                                           " request. "
+                                                  "Available parameters: (energy_measurement).",
+                                                  "transaction_id": transaction_id})
+        assert len(ext_strategy_fixture.pending_requests) == 0
 
-    @parameterized.expand([
-        [ext_strategy_fixture(LoadForecastExternalStrategy())],
-        [ext_strategy_fixture(PVForecastExternalStrategy())]
-    ])
-    def test_set_energy_forecast_impl(self, strategy):
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
+                                                      PVForecastExternalStrategy()], indirect=True)
+    def test_set_energy_forecast_impl(self, ext_strategy_fixture):
         # test successful call of set_energy_forecast_impl:
         transaction_id = str(uuid.uuid4())
-        strategy.redis.publish_json = Mock()
+        ext_strategy_fixture.redis.publish_json = Mock()
         arguments = {"transaction_id": transaction_id,
                      "energy_forecast": {now().format(DATE_TIME_FORMAT): 1}}
         response_channel = "response_channel"
-        strategy.set_energy_forecast_impl(arguments, response_channel)
-        strategy.redis.publish_json.assert_called_once_with(response_channel,
-                                                            {"command": "set_energy_forecast",
-                                                             "status": "ready",
-                                                             "transaction_id":
-                                                                 arguments["transaction_id"]})
+        ext_strategy_fixture.set_energy_forecast_impl(arguments, response_channel)
+        ext_strategy_fixture.redis.publish_json.assert_called_once_with(
+            response_channel, {"command": "set_energy_forecast",
+                               "status": "ready",
+                               "transaction_id": arguments["transaction_id"]})
 
         # test if error is sent when wrong time format is provided
-        strategy.redis.publish_json.reset_mock()
+        ext_strategy_fixture.redis.publish_json.reset_mock()
         arguments = {"transaction_id": transaction_id,
                      "energy_forecast": {"wrong:time:format": 1}}
-        strategy.set_energy_forecast_impl(arguments, response_channel)
+        ext_strategy_fixture.set_energy_forecast_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_forecast_impl "
-                         f"on area {strategy.device.name}. Arguments: {arguments}")
-        strategy.redis.publish_json.assert_called_once_with(response_channel,
-                                                            {"command": "set_energy_forecast",
-                                                             "status": "error",
-                                                             "transaction_id":
-                                                                 arguments["transaction_id"],
-                                                             "error_message": error_message})
+                         f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
+        ext_strategy_fixture.redis.publish_json.assert_called_once_with(
+            response_channel, {"command": "set_energy_forecast",
+                               "status": "error",
+                               "transaction_id": arguments["transaction_id"],
+                               "error_message": error_message})
 
         # test if error is sent when negative energy is provided
-        strategy.redis.publish_json.reset_mock()
+        ext_strategy_fixture.redis.publish_json.reset_mock()
         arguments = {"transaction_id": transaction_id,
                      "energy_forecast": {now().format(DATE_TIME_FORMAT): -1}}
-        strategy.set_energy_forecast_impl(arguments, response_channel)
+        ext_strategy_fixture.set_energy_forecast_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_forecast_impl "
-                         f"on area {strategy.device.name}. Arguments: {arguments}")
-        strategy.redis.publish_json.assert_called_once_with(response_channel,
-                                                            {"command": "set_energy_forecast",
-                                                             "status": "error",
-                                                             "transaction_id":
-                                                                 arguments["transaction_id"],
-                                                             "error_message": error_message})
+                         f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
+        ext_strategy_fixture.redis.publish_json.assert_called_once_with(
+            response_channel, {"command": "set_energy_forecast",
+                               "status": "error",
+                               "transaction_id": arguments["transaction_id"],
+                               "error_message": error_message})
 
-    @parameterized.expand([
-        [ext_strategy_fixture(LoadForecastExternalStrategy())],
-        [ext_strategy_fixture(PVForecastExternalStrategy())]
-    ])
-    def test_set_energy_measurement_impl(self, strategy):
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
+                                                      PVForecastExternalStrategy()], indirect=True)
+    def test_set_energy_measurement_impl(self, ext_strategy_fixture):
         # test successful call of set_energy_measurement_impl:
         transaction_id = str(uuid.uuid4())
-        strategy.redis.publish_json = Mock()
+        ext_strategy_fixture.redis.publish_json = Mock()
         arguments = {"transaction_id": transaction_id,
                      "energy_measurement": {now().format(DATE_TIME_FORMAT): 1}}
         response_channel = "response_channel"
-        strategy.set_energy_measurement_impl(arguments, response_channel)
-        strategy.redis.publish_json.assert_called_once_with(response_channel,
-                                                            {"command": "set_energy_measurement",
-                                                             "status": "ready",
-                                                             "transaction_id":
-                                                                 arguments["transaction_id"]})
+        ext_strategy_fixture.set_energy_measurement_impl(arguments, response_channel)
+        ext_strategy_fixture.redis.publish_json.assert_called_once_with(
+            response_channel, {"command": "set_energy_measurement",
+                               "status": "ready",
+                               "transaction_id": arguments["transaction_id"]})
+
         # test if error is sent when wrong time format is provided
-        strategy.redis.publish_json.reset_mock()
+        ext_strategy_fixture.redis.publish_json.reset_mock()
         arguments = {"transaction_id": transaction_id,
                      "energy_measurement": {"wrong:time:format": 1}}
-        strategy.set_energy_measurement_impl(arguments, response_channel)
+        ext_strategy_fixture.set_energy_measurement_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_measurement_impl "
-                         f"on area {strategy.device.name}. Arguments: {arguments}")
-        strategy.redis.publish_json.assert_called_once_with(response_channel,
-                                                            {"command": "set_energy_measurement",
-                                                             "status": "error",
-                                                             "transaction_id":
-                                                                 arguments["transaction_id"],
-                                                             "error_message": error_message})
+                         f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
+        ext_strategy_fixture.redis.publish_json.assert_called_once_with(
+            response_channel, {"command": "set_energy_measurement",
+                               "status": "error",
+                               "transaction_id": arguments["transaction_id"],
+                               "error_message": error_message})
 
         # test if error is sent when negative energy is provided
-        strategy.redis.publish_json.reset_mock()
+        ext_strategy_fixture.redis.publish_json.reset_mock()
         arguments = {"transaction_id": transaction_id,
                      "energy_measurement": {now().format(DATE_TIME_FORMAT): -1}}
-        strategy.set_energy_measurement_impl(arguments, response_channel)
+        ext_strategy_fixture.set_energy_measurement_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_measurement_impl "
-                         f"on area {strategy.device.name}. Arguments: {arguments}")
-        strategy.redis.publish_json.assert_called_once_with(response_channel,
-                                                            {"command": "set_energy_measurement",
-                                                             "status": "error",
-                                                             "transaction_id":
-                                                                 arguments["transaction_id"],
-                                                             "error_message": error_message})
+                         f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
+        ext_strategy_fixture.redis.publish_json.assert_called_once_with(
+            response_channel, {"command": "set_energy_measurement",
+                               "status": "error",
+                               "transaction_id": arguments["transaction_id"],
+                               "error_message": error_message})
