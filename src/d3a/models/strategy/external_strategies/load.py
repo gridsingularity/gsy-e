@@ -377,8 +377,8 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
 
         # Buffers for energy forecast and measurement values,
         # that have been sent by the d3a-api-client in the duration of one market slot
-        self.energy_forecast_buffer = None  # Dict[DateTime, float]
-        self.energy_measurement_buffer = None  # Dict[DateTime, float]
+        self.energy_forecast_buffer = {}  # Dict[DateTime, float]
+        self.energy_measurement_buffer = {}  # Dict[DateTime, float]
 
     @property
     def channel_dict(self):
