@@ -30,7 +30,7 @@ def ext_strategy_fixture(strategy):
     config = Mock()
     config.slot_length = duration(minutes=15)
     config.tick_length = duration(seconds=15)
-    config.ticks_per_slot = 90
+    config.ticks_per_slot = 60
     config.start_date = GlobalConfig.start_date
     config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
     config.end_date = GlobalConfig.start_date + duration(days=1)
@@ -39,12 +39,9 @@ def ext_strategy_fixture(strategy):
                 external_connection_available=True)
     parent = Area(name="parent_area", children=[area], config=config)
     parent.activate()
-    area.activate()
     strategy.connected = True
     market = MagicMock()
     market.time_slot = GlobalConfig.start_date
-    parent.get_future_market_from_id = lambda _: market
-    area.get_future_market_from_id = lambda _: market
     return strategy
 
 
