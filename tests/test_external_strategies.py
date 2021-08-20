@@ -17,16 +17,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from unittest.mock import MagicMock, Mock
 
+import pytest
 from d3a.models.area import Area
 from d3a.models.strategy.external_strategies.load import LoadForecastExternalStrategy
 from d3a.models.strategy.external_strategies.pv import PVForecastExternalStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.constants_limits import GlobalConfig
 from pendulum import now, duration
-from pytest import mark
 
 
-def ext_strategy_fixture(strategy):
+@pytest.fixture
+def ext_strategy_fixture(request):
+    strategy = request.param
     config = Mock()
     config.slot_length = duration(minutes=15)
     config.tick_length = duration(seconds=15)
@@ -47,76 +49,83 @@ def ext_strategy_fixture(strategy):
 
 class TestPVForecastExternalStrategy:
 
-    @mark.parametrize("strategy", [ext_strategy_fixture(LoadForecastExternalStrategy()),
-                                   ext_strategy_fixture(PVForecastExternalStrategy())])
-    def test_event_market_cycle_calls_energy_update_methods(self, strategy):
-        strategy.energy_forecast_buffer = {now(): 1}
-        strategy.energy_measurement_buffer = {now(): 1}
-        strategy.update_energy_forecast = Mock()
-        strategy.update_energy_measurement = Mock()
-        strategy.event_market_cycle()
-        strategy.update_energy_forecast.assert_called_once()
-        strategy.update_energy_measurement.assert_called_once()
-        assert strategy.energy_forecast_buffer == {}
-        assert strategy.energy_measurement_buffer == {}
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
+                                                      PVForecastExternalStrategy()], indirect=True)
+    def test_event_market_cycle_calls_energy_update_methods(self, ext_strategy_fixture):
+        ext_strategy_fixture.energy_forecast_buffer = {now(): 1}
+        ext_strategy_fixture.energy_measurement_buffer = {now(): 1}
+        ext_strategy_fixture.update_energy_forecast = Mock()
+        ext_strategy_fixture.update_energy_measurement = Mock()
+        ext_strategy_fixture.event_market_cycle()
+        ext_strategy_fixture.update_energy_forecast.assert_called_once()
+        ext_strategy_fixture.update_energy_measurement.assert_called_once()
+        assert ext_strategy_fixture.energy_forecast_buffer == {}
+        assert ext_strategy_fixture.energy_measurement_buffer == {}
 
-    def test_update_energy_forecast_calls_set_available_energy(self, strategy=ext_strategy_fixture(
-            PVForecastExternalStrategy())):
-        time = strategy.area.next_market.time_slot
+    @pytest.mark.parametrize("ext_strategy_fixture", [PVForecastExternalStrategy()],
+                             indirect=True)
+    def test_update_energy_forecast_calls_set_available_energy(self, ext_strategy_fixture):
+        time = ext_strategy_fixture.area.next_market.time_slot
         energy = 1
-        strategy.energy_forecast_buffer = {time: energy}
-        strategy.state.set_available_energy = Mock()
-        strategy.update_energy_forecast()
-        strategy.state.set_available_energy.assert_called_once_with(energy,
-                                                                    time, overwrite=True)
+        ext_strategy_fixture.energy_forecast_buffer = {time: energy}
+        ext_strategy_fixture.state.set_available_energy = Mock()
+        ext_strategy_fixture.update_energy_forecast()
+        ext_strategy_fixture.state.set_available_energy.assert_called_once_with(
+            energy, time, overwrite=True)
 
+    @pytest.mark.parametrize("ext_strategy_fixture", [PVForecastExternalStrategy()],
+                             indirect=True)
     def test_update_energy_forecast_doesnt_call_set_available_energy_for_past_markets(
-            self, strategy=ext_strategy_fixture(PVForecastExternalStrategy())):
+            self, ext_strategy_fixture):
         # do not call set_available_energy for time_slots in the past
-        strategy.state.set_available_energy = Mock()
-        time = strategy.area.next_market.time_slot.subtract(minutes=15)
-        strategy.energy_forecast_buffer = {time: 1}
-        strategy.update_energy_forecast()
-        strategy.state.set_available_energy.assert_not_called()
+        ext_strategy_fixture.state.set_available_energy = Mock()
+        time = ext_strategy_fixture.area.next_market.time_slot.subtract(minutes=15)
+        ext_strategy_fixture.energy_forecast_buffer = {time: 1}
+        ext_strategy_fixture.update_energy_forecast()
+        ext_strategy_fixture.state.set_available_energy.assert_not_called()
 
-    def test_update_energy_forecast_calls_set_desired_energy(self, strategy=ext_strategy_fixture(
-            LoadForecastExternalStrategy())):
-        time = strategy.area.next_market.time_slot
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy()],
+                             indirect=True)
+    def test_update_energy_forecast_calls_set_desired_energy(self, ext_strategy_fixture):
+        time = ext_strategy_fixture.area.next_market.time_slot
         energy = 1
-        strategy.energy_forecast_buffer = {time: energy}
-        strategy.state.set_desired_energy = Mock()
-        strategy.state.update_total_demanded_energy = Mock()
-        strategy.update_energy_forecast()
-        strategy.state.set_desired_energy.assert_called_once_with(energy * 1000,
-                                                                  time, overwrite=True)
-        strategy.state.update_total_demanded_energy.assert_called_once_with(time)
+        ext_strategy_fixture.energy_forecast_buffer = {time: energy}
+        ext_strategy_fixture.state.set_desired_energy = Mock()
+        ext_strategy_fixture.state.update_total_demanded_energy = Mock()
+        ext_strategy_fixture.update_energy_forecast()
+        ext_strategy_fixture.state.set_desired_energy.assert_called_once_with(
+            energy * 1000, time, overwrite=True)
+        ext_strategy_fixture.state.update_total_demanded_energy.assert_called_once_with(time)
 
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy()],
+                             indirect=True)
     def test_update_energy_forecast_doesnt_call_set_desired_energy_for_past_markets(
-            self, strategy=ext_strategy_fixture(LoadForecastExternalStrategy())):
-        time = strategy.area.next_market.time_slot.subtract(minutes=15)
-        strategy.energy_forecast_buffer = {time: 1}
-        strategy.state.set_desired_energy = Mock()
-        strategy.state.update_total_demanded_energy = Mock()
-        strategy.update_energy_forecast()
-        strategy.state.set_desired_energy.assert_not_called()
-        strategy.state.update_total_demanded_energy.assert_not_called()
+            self, ext_strategy_fixture):
+        time = ext_strategy_fixture.area.next_market.time_slot.subtract(minutes=15)
+        ext_strategy_fixture.energy_forecast_buffer = {time: 1}
+        ext_strategy_fixture.state.set_desired_energy = Mock()
+        ext_strategy_fixture.state.update_total_demanded_energy = Mock()
+        ext_strategy_fixture.update_energy_forecast()
+        ext_strategy_fixture.state.set_desired_energy.assert_not_called()
+        ext_strategy_fixture.state.update_total_demanded_energy.assert_not_called()
 
-    @mark.parametrize("strategy", [ext_strategy_fixture(LoadForecastExternalStrategy()),
-                                   ext_strategy_fixture(PVForecastExternalStrategy())])
-    def test_update_energy_measurement_calls_set_energy_measurement_kWh(self, strategy):
-        time = strategy.area.next_market.time_slot.subtract(minutes=15)
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
+                                                      PVForecastExternalStrategy()], indirect=True)
+    def test_update_energy_measurement_calls_set_energy_measurement_kWh(
+            self, ext_strategy_fixture):
+        time = ext_strategy_fixture.area.next_market.time_slot.subtract(minutes=15)
         energy = 1
-        strategy.energy_measurement_buffer = {time: energy}
-        strategy.state.set_energy_measurement_kWh = Mock()
-        strategy.update_energy_measurement()
-        strategy.state.set_energy_measurement_kWh.assert_called_once_with(energy, time)
+        ext_strategy_fixture.energy_measurement_buffer = {time: energy}
+        ext_strategy_fixture.state.set_energy_measurement_kWh = Mock()
+        ext_strategy_fixture.update_energy_measurement()
+        ext_strategy_fixture.state.set_energy_measurement_kWh.assert_called_once_with(energy, time)
 
-    @mark.parametrize("strategy", [ext_strategy_fixture(LoadForecastExternalStrategy()),
-                                   ext_strategy_fixture(PVForecastExternalStrategy())])
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
+                                                      PVForecastExternalStrategy()], indirect=True)
     def test_update_energy_measurement_doesnt_call_set_energy_measurement_kWh_for_future_markets(
-            self, strategy):
-        time = strategy.area.next_market.time_slot.add(minutes=15)
-        strategy.energy_measurement_buffer = {time: 1}
-        strategy.state.set_energy_measurement_kWh = Mock()
-        strategy.update_energy_measurement()
-        strategy.state.set_energy_measurement_kWh.assert_not_called()
+            self, ext_strategy_fixture):
+        time = ext_strategy_fixture.area.next_market.time_slot.add(minutes=15)
+        ext_strategy_fixture.energy_measurement_buffer = {time: 1}
+        ext_strategy_fixture.state.set_energy_measurement_kWh = Mock()
+        ext_strategy_fixture.update_energy_measurement()
+        ext_strategy_fixture.state.set_energy_measurement_kWh.assert_not_called()
