@@ -396,6 +396,10 @@ class ExternalMixin:
                 return self._list_offers_aggregator(command)
             elif command["type"] == "device_info":
                 return self._device_info_aggregator(command)
+            elif command["type"] == "set_energy_forecast":
+                return self.set_energy_forecast(command)
+            elif command["type"] == "set_energy_measurement":
+                return self.set_energy_measurement(command)
             else:
                 return {
                     "command": command["type"], "status": "error",
@@ -419,51 +423,70 @@ class ExternalMixin:
 
     def set_energy_forecast(self, payload: Dict) -> None:
         """Callback for set_energy_forecast redis endpoint."""
+        self.set_device_energy_data(payload, "set_energy_forecast", "energy_forecast")
+
+    def set_energy_measurement(self, payload: Dict) -> None:
+        """Callback for set_energy_measurement redis endpoint."""
+        self.set_device_energy_data(payload, "set_energy_measurement", "energy_measurement")
+
+    def set_device_energy_data(self, payload: Dict, command_type: str,
+                               energy_data_arg_name: str) -> None:
         transaction_id = self._get_transaction_id(payload)
-        energy_forecast_response_channel = \
-            f"{self.channel_prefix}/response/set_energy_forecast"
+        energy_data_response_channel = \
+            f"{self.channel_prefix}/response/{command_type}"
         # Deactivating register/connected requirement for power forecasts.
         # if not check_for_connected_and_reply(self.redis, power_forecast_response_channel,
         #                                      self.connected):
         #     return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {"energy_forecast", "transaction_id"}
+            assert set(arguments.keys()) == {energy_data_arg_name, "transaction_id"}
         except Exception:
             logging.exception(
-                f"Incorrect _set_energy_forecast request: Payload {payload}")
+                f"Incorrect {command_type} request: Payload {payload}")
             self.redis.publish_json(
-                energy_forecast_response_channel,
-                {"command": "set_energy_forecast",
-                 "error": "Incorrect _set_energy_forecast request. "
-                          "Available parameters: (energy_forecast).",
+                energy_data_response_channel,
+                {"command": command_type,
+                 "error": f"Incorrect {command_type} request. "
+                          f"Available parameters: ({energy_data_arg_name}).",
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
-                IncomingRequest("set_energy_forecast", arguments,
-                                energy_forecast_response_channel))
+                IncomingRequest(command_type, arguments,
+                                energy_data_response_channel))
 
-    def set_energy_measurement(self, payload: Dict) -> None:
-        """Callback of set_energy_measurement redis endpoint."""
-        transaction_id = self._get_transaction_id(payload)
-        energy_measurement_response_channel = \
-            f"{self.channel_prefix}/response/set_energy_measurement"
+    def set_energy_forecast_impl(self, arguments: Dict, response_channel: str) -> None:
+        self._set_device_energy_data_impl(arguments, response_channel, "set_energy_forecast")
+
+    def set_energy_measurement_impl(self, arguments: Dict, response_channel: str) -> None:
+        self._set_device_energy_data_impl(arguments, response_channel, "set_energy_measurement")
+
+    def _set_device_energy_data_impl(self, arguments: Dict, response_channel: str,
+                                     command_type: str) -> None:
+        """
+        Digest command from buffer and perform set_energy_forecast or set_energy_measurement.
+        Args:
+            arguments: Dictionary containing "energy_forecast/energy_measurement" that is a dict
+                containing a profile
+                key: time string, value: energy in kWh
+            response_channel: redis channel string where the response should be sent to
+        """
         try:
-            arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {"energy_measurement", "transaction_id"}
-        except Exception:
-            logging.exception(
-                f"Incorrect _set_energy_measurement request. Payload: {payload}.")
+            self._set_device_energy_data_state(command_type, arguments)
+
             self.redis.publish_json(
-                energy_measurement_response_channel,
-                {"command": "set_energy_measurement",
-                 "error": "Incorrect _set_energy_measurement request. "
-                          "Available parameters: (energy_measurement).",
-                 "transaction_id": transaction_id})
-        else:
-            self.pending_requests.append(
-                IncomingRequest("set_energy_measurement", arguments,
-                                energy_measurement_response_channel))
+                response_channel,
+                {"command": command_type, "status": "ready",
+                 "transaction_id": arguments.get("transaction_id", None)})
+        except Exception:
+            error_message = (f"Error when handling _{command_type}_impl "
+                             f"on area {self.device.name}. Arguments: {arguments}")
+            logging.exception(error_message)
+            self.redis.publish_json(
+                response_channel,
+                {"command": command_type, "status": "error",
+                 "error_message": error_message,
+                 "transaction_id": arguments.get("transaction_id", None)})
 
     @staticmethod
     def _validate_values_positive_in_profile(profile: Dict) -> None:
@@ -472,59 +495,18 @@ class ExternalMixin:
             if energy < 0.0:
                 raise ValueError(f"Energy is not positive for time stamp {time_str}.")
 
-    def set_energy_forecast_impl(self, arguments: Dict, response_channel: str) -> None:
-        """
-        Digest command from buffer and perform set_energy_forecast.
-        Args:
-            arguments: Dictionary containing "energy_forecast" that is a dict containing a profile
-                key: time string, value: energy in kWh
-            response_channel: redis channel string where the response should be sent to
-        """
-        try:
+    def _set_device_energy_data_state(self, command_type: str, arguments: Dict) -> None:
+        if command_type == "set_energy_forecast":
             self._validate_values_positive_in_profile(arguments["energy_forecast"])
             self.energy_forecast_buffer.update(
                 convert_str_to_pendulum_in_dict(arguments["energy_forecast"]))
-
-            self.redis.publish_json(
-                response_channel,
-                {"command": "set_energy_forecast", "status": "ready",
-                 "transaction_id": arguments.get("transaction_id", None)})
-        except Exception:
-            error_message = ("Error when handling _set_energy_forecast_impl "
-                             f"on area {self.device.name}. Arguments: {arguments}")
-            logging.exception(error_message)
-            self.redis.publish_json(
-                response_channel,
-                {"command": "set_energy_forecast", "status": "error",
-                 "error_message": error_message,
-                 "transaction_id": arguments.get("transaction_id", None)})
-
-    def set_energy_measurement_impl(self, arguments: Dict, response_channel: str) -> None:
-        """
-        Digest command from buffer and perform set_energy_measurement.
-        Args:
-            arguments: Dictionary containing "energy_measurement" that is a dict containing a
-                profile with key: time string, value: energy in kWh
-            response_channel: redis channel string where the response should be sent to
-        """
-        try:
+        elif command_type == "set_energy_measurement":
             self._validate_values_positive_in_profile(arguments["energy_measurement"])
             self.energy_measurement_buffer.update(
                 convert_str_to_pendulum_in_dict(arguments["energy_measurement"]))
-
-            self.redis.publish_json(
-                response_channel,
-                {"command": "set_energy_measurement", "status": "ready",
-                 "transaction_id": arguments.get("transaction_id", None)})
-        except Exception:
-            error_message = ("Error when handling _set_energy_measurement_impl "
-                             f"on area {self.device.name}. Arguments: {arguments}")
-            logging.exception(error_message)
-            self.redis.publish_json(
-                response_channel,
-                {"command": "set_energy_measurement", "status": "error",
-                 "error_message": error_message,
-                 "transaction_id": arguments.get("transaction_id", None)})
+        else:
+            assert False, f"Unsupported command {command_type}, available commands: " \
+                          f"set_energy_forecast, set_energy_measurement"
 
     @property
     def market_info_dict(self):

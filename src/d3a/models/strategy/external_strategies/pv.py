@@ -66,7 +66,7 @@ class PVExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "list_offers", "status": "ready", "offer_list": filtered_offers,
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
         except Exception:
             error_message = f"Error when handling list offers on area {self.device.name}"
             logging.exception(error_message)
@@ -107,7 +107,7 @@ class PVExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "offer_delete", "status": "ready",
                  "deleted_offers": deleted_offers,
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
         except Exception:
             error_message = (f"Error when handling offer delete on area {self.device.name}: "
                              f"Offer Arguments: {arguments}")
@@ -116,7 +116,7 @@ class PVExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "offer_delete", "status": "error",
                  "error_message": error_message,
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
 
     def offer(self, payload):
         transaction_id = self._get_transaction_id(payload)
@@ -170,7 +170,7 @@ class PVExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "offer", "status": "ready",
                  "offer": offer.to_json_string(replace_existing=replace_existing),
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
         except Exception:
             error_message = (f"Error when handling offer create on area {self.device.name}: "
                              f"Offer Arguments: {arguments}")
@@ -179,7 +179,7 @@ class PVExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "offer", "status": "error",
                  "error_message": error_message,
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
 
     @property
     def _device_info_dict(self):
@@ -262,7 +262,7 @@ class PVExternalMixin(ExternalMixin):
                 "command": "offer_delete", "status": "ready",
                 "area_uuid": self.device.uuid,
                 "deleted_offers": deleted_offers,
-                "transaction_id": arguments.get("transaction_id", None)
+                "transaction_id": arguments.get("transaction_id")
             }
         except Exception:
             return {
@@ -270,7 +270,7 @@ class PVExternalMixin(ExternalMixin):
                 "area_uuid": self.device.uuid,
                 "error_message": f"Error when handling offer delete "
                                  f"on area {self.device.name} with arguments {arguments}.",
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
 
     def _list_offers_aggregator(self, arguments):
         try:
@@ -280,13 +280,13 @@ class PVExternalMixin(ExternalMixin):
             return {
                 "command": "list_offers", "status": "ready", "offer_list": filtered_offers,
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
         except Exception:
             return {
                 "command": "list_offers", "status": "error",
                 "area_uuid": self.device.uuid,
                 "error_message": f"Error when listing offers on area {self.device.name}.",
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
 
     def _offer_aggregator(self, arguments):
         required_args = {"price", "energy", "type", "transaction_id"}
@@ -320,7 +320,7 @@ class PVExternalMixin(ExternalMixin):
                 "command": "offer",
                 "status": "ready",
                 "offer": offer.to_json_string(replace_existing=replace_existing),
-                "transaction_id": arguments.get("transaction_id", None),
+                "transaction_id": arguments.get("transaction_id"),
                 "area_uuid": self.device.uuid
             }
         except Exception:
@@ -330,7 +330,7 @@ class PVExternalMixin(ExternalMixin):
                 "error_message": f"Error when handling offer create "
                                  f"on area {self.device.name} with arguments {arguments}.",
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
 
 
 class PVExternalStrategy(PVExternalMixin, PVStrategy):

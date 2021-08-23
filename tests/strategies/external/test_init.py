@@ -451,7 +451,7 @@ class TestForecastRelatedFeatures:
                                            "response/set_energy_forecast"
         ext_strategy_fixture.redis.publish_json.assert_called_with(
             energy_forecast_response_channel, {"command": "set_energy_forecast",
-                                               "error": "Incorrect _set_energy_forecast request. "
+                                               "error": "Incorrect set_energy_forecast request. "
                                                         "Available parameters: (energy_forecast).",
                                                "transaction_id": transaction_id})
         assert len(ext_strategy_fixture.pending_requests) == 0
@@ -483,7 +483,7 @@ class TestForecastRelatedFeatures:
                                               "response/set_energy_measurement"
         ext_strategy_fixture.redis.publish_json.assert_called_with(
             energy_measurement_response_channel, {"command": "set_energy_measurement",
-                                                  "error": "Incorrect _set_energy_measurement"
+                                                  "error": "Incorrect set_energy_measurement"
                                                            " request. "
                                                   "Available parameters: (energy_measurement).",
                                                   "transaction_id": transaction_id})
