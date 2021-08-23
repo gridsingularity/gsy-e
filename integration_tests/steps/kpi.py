@@ -67,3 +67,6 @@ def test_export_of_kpi_result(context, kpi, expected_kpis):
         elif kpi == "total_self_consumption_wh":
             assert isclose(kpi_data[area_uuid]['total_self_consumption_wh'],
                            float(value), abs_tol=1e-03)
+        elif kpi == "saving_percentage":
+            assert isclose(kpi_data[area_uuid]["saving_percentage"],
+                           float(value), abs_tol=1e-03)

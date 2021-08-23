@@ -1,2 +1,3 @@
 -r base.txt
-substrate-interface==0.11.15
+
+-e git+https://github.com/gridsingularity/d3a-blockchain@master#egg=d3a_blockchain

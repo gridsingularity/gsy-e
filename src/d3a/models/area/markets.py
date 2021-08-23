@@ -76,7 +76,7 @@ class AreaMarkets:
                                .format(t=timeframe, m=past_markets[timeframe].name))
 
     def _delete_past_markets(self, past_markets):
-        if not d3a.constants.D3A_TEST_RUN:
+        if not d3a.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
             delete_markets = [pm for pm in past_markets if
                               pm not in self.markets.values()]
             for pm in delete_markets:

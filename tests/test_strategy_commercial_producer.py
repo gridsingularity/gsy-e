@@ -35,6 +35,12 @@ def setup_function():
     change_global_config(**DEFAULT_CONFIG.__dict__)
 
 
+@pytest.fixture(scope="function", autouse=True)
+def auto_fixture():
+    yield
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
+
+
 class FakeArea:
     def __init__(self, count):
         self.current_tick = 2
@@ -159,6 +165,7 @@ def test_event_market_cycle_does_not_create_balancing_offer_if_not_in_registry(
 
 def test_event_market_cycle_creates_balancing_offer_on_last_market_if_in_registry(
         commercial_test1, area_test1):
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     DeviceRegistry.REGISTRY = {"FakeArea": (40, 50)}
     commercial_test1.event_activate()
     commercial_test1.event_market_cycle()
@@ -191,13 +198,13 @@ def commercial_test2(area_test2):
 def test_event_trade(area_test2, commercial_test2):
     commercial_test2.event_activate()
     commercial_test2.event_market_cycle()
-    traded_offer = Offer(id='id', time=pendulum.now(), price=20, energy=1, seller='FakeArea',)
+    traded_offer = Offer(id="id", time=pendulum.now(), price=20, energy=1, seller="FakeArea",)
     commercial_test2.event_trade(market_id=area_test2.test_market.id,
-                                 trade=Trade(id='id',
-                                             time='time',
-                                             offer=traded_offer,
-                                             seller='FakeArea',
-                                             buyer='buyer'
+                                 trade=Trade(id="id",
+                                             time="time",
+                                             offer_bid=traded_offer,
+                                             seller="FakeArea",
+                                             buyer="buyer"
                                              )
                                  )
     assert len(area_test2.test_market.created_offers) == 1
@@ -221,12 +228,12 @@ def test_on_offer_split(area_test2, commercial_test2):
 
 
 def test_event_trade_after_offer_changed_partial_offer(area_test2, commercial_test2):
-    original_offer = Offer(id='old_id', time=pendulum.now(),
-                           price=20, energy=1, seller='FakeArea')
-    accepted_offer = Offer(id='old_id', time=pendulum.now(),
-                           price=15, energy=0.75, seller='FakeArea')
-    residual_offer = Offer(id='res_id', time=pendulum.now(),
-                           price=5, energy=0.25, seller='FakeArea')
+    original_offer = Offer(id="old_id", time=pendulum.now(),
+                           price=20, energy=1, seller="FakeArea")
+    accepted_offer = Offer(id="old_id", time=pendulum.now(),
+                           price=15, energy=0.75, seller="FakeArea")
+    residual_offer = Offer(id="res_id", time=pendulum.now(),
+                           price=5, energy=0.25, seller="FakeArea")
     commercial_test2.offers.post(original_offer, area_test2.test_market.id)
     commercial_test2.event_offer_split(market_id=area_test2.test_market.id,
                                        original_offer=original_offer,
@@ -235,11 +242,11 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, commercial_te
     assert original_offer.id in commercial_test2.offers.split
     assert commercial_test2.offers.split[original_offer.id] == accepted_offer
     commercial_test2.event_trade(market_id=area_test2.test_market.id,
-                                 trade=Trade(id='id',
-                                             time='time',
-                                             offer=original_offer,
-                                             seller='FakeArea',
-                                             buyer='buyer')
+                                 trade=Trade(id="id",
+                                             time="time",
+                                             offer_bid=original_offer,
+                                             seller="FakeArea",
+                                             buyer="buyer")
                                  )
 
     assert residual_offer in commercial_test2.offers.posted
