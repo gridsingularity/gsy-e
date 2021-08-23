@@ -8,4 +8,4 @@ Grid Singularity offers an environment to simulate, test and optimize grid fee i
 
 The following [article](https://gridsingularity.medium.com/energy-singularity-challenge-2020-testing-novel-grid-fee-models-and-intelligent-peer-to-peer-6a0d715a9063) explains how flexible grid fees may be implemented towards peak reduction. 
 
-For a video tutorial on how to set grid fees in the [Grid Singularity exchange engine](https://www.d3a.io/), please follow this [link](https://youtu.be/WhT3eJ9RdSk).
+For a video tutorial on how to set grid fees in the [Grid Singularity exchange engine](https://map.gridsingularity.com/singularity-map), please follow this [link](https://youtu.be/WhT3eJ9RdSk).

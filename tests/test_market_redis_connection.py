@@ -1,16 +1,18 @@
+import json
 import unittest
 from concurrent.futures import Future
-from unittest.mock import MagicMock
-import json
 from time import sleep
-from pendulum import now
-from deepdiff import DeepDiff
-from d3a.events import MarketEvent
+from unittest.mock import MagicMock
+
 from d3a_interface.constants_limits import ConstSettings
-from d3a.models.market.market_structures import Offer, Trade, Bid
+from deepdiff import DeepDiff
+from pendulum import now
+
+import d3a.models.market.market_redis_connection
+from d3a.events import MarketEvent
 from d3a.models.market.market_redis_connection import MarketRedisEventPublisher, \
     MarketRedisEventSubscriber, TwoSidedMarketRedisEventSubscriber
-import d3a.models.market.market_redis_connection
+from d3a.models.market.market_structures import Offer, Trade, Bid
 from d3a.models.market.one_sided import OneSidedMarket
 
 d3a.models.market.market_redis_connection.BlockingCommunicator = MagicMock

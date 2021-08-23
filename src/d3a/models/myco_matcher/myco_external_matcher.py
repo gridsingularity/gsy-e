@@ -1,7 +1,25 @@
+"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
 import json
 import logging
 from enum import Enum
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from d3a_interface.dataclasses import BidOfferMatch
 
@@ -9,7 +27,8 @@ import d3a.constants
 from d3a.d3a_core.exceptions import (
     InvalidBidOfferPairException, MycoValidationException)
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
-from d3a.models.market import Market
+from d3a.models.market.two_sided import TwoSidedMarket
+from d3a.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
 
 
 class ExternalMatcherEventsEnum(Enum):
@@ -20,7 +39,7 @@ class ExternalMatcherEventsEnum(Enum):
     FINISH = "finish"
 
 
-class ExternalMatcher:
+class MycoExternalMatcher(MycoMatcherInterface):
     """Class responsible for external bids / offers matching."""
     def __init__(self):
         super().__init__()
@@ -29,8 +48,7 @@ class ExternalMatcher:
         self._channel_prefix = f"external-myco/{self.simulation_id}"
         self._events_channel = f"{self._channel_prefix}/events/"
         self._setup_redis_connection()
-        self.area_uuid_markets_mapping = {}
-        self.markets_mapping = {}  # Dict[market_id: market] mapping
+        self.markets_mapping: Dict[str, TwoSidedMarket] = {}  # Dict[market_id: market] mapping
 
     def _setup_redis_connection(self):
         self.myco_ext_conn = ResettableCommunicator()
@@ -51,16 +69,17 @@ class ExternalMatcher:
         # IDs of markets (Areas) the client is interested in
         filtered_areas_uuids = filters.get("markets")
         market_offers_bids_list_mapping = {}
-        for area_uuid, markets in self.area_uuid_markets_mapping.items():
+        for area_uuid, area_data in self.area_uuid_markets_mapping.items():
             if filtered_areas_uuids and area_uuid not in filtered_areas_uuids:
                 # Client is uninterested in this Area -> skip
                 continue
-            for market in markets:
+            for market in area_data["markets"]:
                 # Cache the market (needed while matching)
                 self.markets_mapping[market.id] = market
                 bids_list, offers_list = self._get_bids_offers(market, filters)
                 market_offers_bids_list_mapping[market.id] = {
                     "bids": bids_list, "offers": offers_list}
+        self.area_uuid_markets_mapping = {}
         response_data.update({
             "bids_offers": market_offers_bids_list_mapping,
         })
@@ -68,11 +87,14 @@ class ExternalMatcher:
         channel = f"{self._channel_prefix}/offers-bids/response/"
         self.myco_ext_conn.publish_json(channel, response_data)
 
-    def match_recommendations(self, message):
+    def match_recommendations(self, message: Optional[str] = None) -> None:
         """Receive trade recommendations and match them in the relevant market.
 
         Matching in bulk, any pair that fails validation will cancel the operation
         """
+        if not message:
+            return
+
         channel = f"{self._channel_prefix}/recommendations/response/"
         response_data = {"event": ExternalMatcherEventsEnum.MATCH.value, "status": "success"}
         data = json.loads(message.get("data"))
@@ -101,30 +123,30 @@ class ExternalMatcher:
         channel = "external-myco/simulation-id/response/"
         self.myco_ext_conn.publish_json(channel, {"simulation_id": self.simulation_id})
 
-    def publish_event_tick_myco(self):
+    def event_tick(self, **kwargs):
         """Publish the tick event to the Myco client."""
-
+        is_it_time_for_external_tick = kwargs.pop("is_it_time_for_external_tick", True)
+        # If External matching is enabled, limit the number of ticks dispatched.
+        if not is_it_time_for_external_tick:
+            return
         data = {"event": ExternalMatcherEventsEnum.TICK.value}
         self.myco_ext_conn.publish_json(self._events_channel, data)
 
-    def publish_event_market_cycle_myco(self):
-        """Publish the market event to the Myco client."""
+    def event_market_cycle(self, **kwargs):
+        """Publish the market event to the Myco client and clear finished markets cache.."""
 
+        self.markets_mapping = {}  # clear finished markets
         data = {"event": ExternalMatcherEventsEnum.MARKET.value}
         self.myco_ext_conn.publish_json(self._events_channel, data)
 
-    def publish_event_finish_myco(self):
+    def event_finish(self, **kwargs):
         """Publish the finish event to the Myco client."""
 
         data = {"event": ExternalMatcherEventsEnum.FINISH.value}
         self.myco_ext_conn.publish_json(self._events_channel, data)
 
-    def update_area_uuid_markets_mapping(self, area_uuid_markets_mapping: Dict) -> None:
-        """Interface for updating the area_uuid_markets_mapping mapping."""
-        self.area_uuid_markets_mapping.update(area_uuid_markets_mapping)
-
     @staticmethod
-    def _get_bids_offers(market: Market, filters: Dict):
+    def _get_bids_offers(market: TwoSidedMarket, filters: Dict):
         """Get bids and offers from market, apply filters and return serializable lists."""
 
         bids, offers = market.open_bids_and_offers
@@ -145,10 +167,19 @@ class ExternalMatcher:
         """Return a validated list of BidOfferMatch instances."""
         validated_recommendations = []
         for recommendation in recommendations:
+            if not BidOfferMatch.is_valid_dict(recommendation):
+                raise MycoValidationException("BidOfferMatch is not valid")
             market = self.markets_mapping.get(recommendation.get("market_id"))
-            if market is None or market.readonly:
-                # The market is already finished or doesn't exist
-                raise MycoValidationException
+            if market is None:
+                # The market doesn't exist
+                raise MycoValidationException(
+                    f"Market with id {recommendation.get('market_id')} doesn't exist.")
+            if market.readonly:
+                # The market is already finished
+                # TODO: we're clearing markets cache after each market cycle so is this check
+                # TODO: .. really relevant? (All finished markets should be deleted already)
+                raise MycoValidationException(
+                    "Cannot match trades in a finished market.")
 
             # Get the original bid and offer from the market
             market_bids = [
