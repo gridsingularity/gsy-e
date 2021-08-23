@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import logging
-import traceback
 from collections import deque
 
 from d3a.d3a_core.util import get_market_maker_rate_from_config
@@ -40,18 +39,18 @@ class PVExternalMixin(ExternalMixin):
     @property
     def channel_dict(self):
         return {**super().channel_dict,
-                f'{self.channel_prefix}/offer': self._offer,
-                f'{self.channel_prefix}/delete_offer': self._delete_offer,
-                f'{self.channel_prefix}/list_offers': self._list_offers,
+                f"{self.channel_prefix}/offer": self.offer,
+                f"{self.channel_prefix}/delete_offer": self.delete_offer,
+                f"{self.channel_prefix}/list_offers": self.list_offers,
                 }
 
     def event_activate(self, **kwargs):
         super().event_activate(**kwargs)
         self.redis.sub_to_multiple_channels(self.channel_dict)
 
-    def _list_offers(self, payload):
+    def list_offers(self, payload):
         self._get_transaction_id(payload)
-        list_offers_response_channel = f'{self.channel_prefix}/response/list_offers'
+        list_offers_response_channel = f"{self.channel_prefix}/response/list_offers"
         if not check_for_connected_and_reply(self.redis, list_offers_response_channel,
                                              self.connected):
             return
@@ -68,18 +67,18 @@ class PVExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "list_offers", "status": "ready", "offer_list": filtered_offers,
                  "transaction_id": arguments.get("transaction_id")})
-        except Exception as e:
-            logging.error(f"Error when handling list offers on area {self.device.name}: "
-                          f"Exception: {str(e)}")
+        except Exception:
+            error_message = f"Error when handling list offers on area {self.device.name}"
+            logging.exception(error_message)
             self.redis.publish_json(
                 response_channel,
                 {"command": "list_offers", "status": "error",
-                 "error_message": f"Error when listing offers on area {self.device.name}.",
-                 "transaction_id": arguments.get("transaction_id")})
+                 "error_message": error_message,
+                 "transaction_id": arguments.get("transaction_id", None)})
 
-    def _delete_offer(self, payload):
+    def delete_offer(self, payload):
         transaction_id = self._get_transaction_id(payload)
-        delete_offer_response_channel = f'{self.channel_prefix}/response/delete_offer'
+        delete_offer_response_channel = f"{self.channel_prefix}/response/delete_offer"
         if not check_for_connected_and_reply(self.redis, delete_offer_response_channel,
                                              self.connected):
             return
@@ -88,9 +87,8 @@ class PVExternalMixin(ExternalMixin):
             if ("offer" in arguments and arguments["offer"] is not None) and \
                     not self.offers.is_offer_posted(self.next_market.id, arguments["offer"]):
                 raise Exception("Offer_id is not associated with any posted offer.")
-        except Exception as e:
-            logging.error(f"Error when handling delete offer request. Payload {payload}. "
-                          f"Exception {str(e)}.")
+        except Exception:
+            logging.exception(f"Error when handling delete offer request. Payload {payload}")
             self.redis.publish_json(
                 delete_offer_response_channel,
                 {"command": "offer_delete",
@@ -110,17 +108,17 @@ class PVExternalMixin(ExternalMixin):
                 {"command": "offer_delete", "status": "ready",
                  "deleted_offers": deleted_offers,
                  "transaction_id": arguments.get("transaction_id")})
-        except Exception as e:
-            logging.error(f"Error when handling offer delete on area {self.device.name}: "
-                          f"Exception: {str(e)}, Offer Arguments: {arguments}")
+        except Exception:
+            error_message = (f"Error when handling offer delete on area {self.device.name}: "
+                             f"Offer Arguments: {arguments}")
+            logging.exception(error_message)
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer_delete", "status": "error",
-                 "error_message": f"Error when handling offer delete "
-                                  f"on area {self.device.name} with arguments {arguments}.",
+                 "error_message": error_message,
                  "transaction_id": arguments.get("transaction_id")})
 
-    def _offer(self, payload):
+    def offer(self, payload):
         transaction_id = self._get_transaction_id(payload)
         required_args = {"price", "energy", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
@@ -139,14 +137,15 @@ class PVExternalMixin(ExternalMixin):
             # Check that every provided argument is allowed
             assert all(arg in allowed_args for arg in arguments.keys())
 
-        except Exception as e:
-            logging.error(f"Incorrect offer request. Payload {payload}. Exception {str(e)}.")
+        except Exception:
+            logging.exception(f"Incorrect offer request. Payload {payload}.")
             self.redis.publish_json(
                 offer_response_channel,
                 {"command": "offer",
                  "error": (
-                     "Incorrect offer request. "
-                     "Available parameters: ('price', 'energy', 'replace_existing')."),
+                     "Incorrect bid request. ",
+                     f"Required parameters: {required_args}"
+                     f"Available parameters: {allowed_args}."),
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
@@ -154,7 +153,7 @@ class PVExternalMixin(ExternalMixin):
 
     def _offer_impl(self, arguments, response_channel):
         try:
-            replace_existing = arguments.pop('replace_existing', True)
+            replace_existing = arguments.pop("replace_existing", True)
 
             assert self.can_offer_be_posted(
                 arguments["energy"],
@@ -163,7 +162,7 @@ class PVExternalMixin(ExternalMixin):
                 self.next_market,
                 replace_existing=replace_existing)
 
-            offer_arguments = {k: v for k, v in arguments.items() if not k == 'transaction_id'}
+            offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
             offer = self.post_offer(
                 self.next_market, replace_existing=replace_existing, **offer_arguments)
 
@@ -172,24 +171,24 @@ class PVExternalMixin(ExternalMixin):
                 {"command": "offer", "status": "ready",
                  "offer": offer.to_json_string(replace_existing=replace_existing),
                  "transaction_id": arguments.get("transaction_id")})
-        except Exception as e:
-            logging.error(f"Error when handling offer create on area {self.device.name}: "
-                          f"Exception: {str(e)}, Offer Arguments: {arguments}")
+        except Exception:
+            error_message = (f"Error when handling offer create on area {self.device.name}: "
+                             f"Offer Arguments: {arguments}")
+            logging.exception(error_message)
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer", "status": "error",
-                 "error_message": f"Error when handling offer create "
-                                  f"on area {self.device.name} with arguments {arguments}.",
+                 "error_message": error_message,
                  "transaction_id": arguments.get("transaction_id")})
 
     @property
     def _device_info_dict(self):
         return {
-            'available_energy_kWh':
+            "available_energy_kWh":
                 self.state.get_available_energy_kWh(self.next_market.time_slot),
-            'energy_active_in_offers': self.offers.open_offer_energy(self.next_market.id),
-            'energy_traded': self.energy_traded(self.next_market.id),
-            'total_cost': self.energy_traded_costs(self.next_market.id),
+            "energy_active_in_offers": self.offers.open_offer_energy(self.next_market.id),
+            "energy_traded": self.energy_traded(self.next_market.id),
+            "total_cost": self.energy_traded_costs(self.next_market.id),
         }
 
     def event_market_cycle(self):
@@ -202,14 +201,14 @@ class PVExternalMixin(ExternalMixin):
                 market_info = self.next_market.info
                 if self.is_aggregator_controlled:
                     market_info.update(default_market_info)
-                market_info['device_info'] = self._device_info_dict
+                market_info["device_info"] = self._device_info_dict
                 market_info["event"] = "market"
-                market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
+                market_info["device_bill"] = self.device.stats.aggregated_stats["bills"] \
                     if "bills" in self.device.stats.aggregated_stats else None
                 market_info["area_uuid"] = self.device.uuid
                 market_info["last_market_maker_rate"] = \
                     get_market_maker_rate_from_config(self.area.current_market)
-                market_info['last_market_stats'] = \
+                market_info["last_market_stats"] = \
                     self.market_area.stats.get_price_stats_current_market()
                 self.redis.publish_json(market_event_channel, market_info)
             self._delete_past_state()
@@ -324,8 +323,8 @@ class PVExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id"),
                 "area_uuid": self.device.uuid
             }
-        except Exception as e:
-            logging.error(f"Failed to post PV offer. Exception {str(e)}. {traceback.format_exc()}")
+        except Exception:
+            logging.exception("Failed to post PV offer.")
             return {
                 "command": "offer", "status": "error",
                 "error_message": f"Error when handling offer create "
@@ -348,14 +347,14 @@ class PVPredefinedExternalStrategy(PVExternalMixin, PVPredefinedStrategy):
 
 class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
     """
-        Strategy responsible for reading single production forecast data via hardware API
+        Strategy responsible for reading forecast and measurement production data via hardware API
     """
-    parameters = ('energy_forecast_Wh', 'panel_count', 'initial_selling_rate',
-                  'final_selling_rate', 'fit_to_limit', 'update_interval',
-                  'energy_rate_decrease_per_update', 'use_market_maker_rate')
+    parameters = ("energy_forecast_Wh", "panel_count", "initial_selling_rate",
+                  "final_selling_rate", "fit_to_limit", "update_interval",
+                  "energy_rate_decrease_per_update", "use_market_maker_rate")
 
     def __init__(
-            self, energy_forecast_Wh: float = 0, panel_count=1,
+            self, panel_count=1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
             final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
             fit_to_limit: bool = True,
@@ -365,7 +364,6 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
             use_market_maker_rate: bool = False):
         """
         Constructor of PVForecastStrategy
-        :param energy_forecast_Wh: forecast for the next market slot
         """
         super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
@@ -374,52 +372,76 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
                          use_market_maker_rate=use_market_maker_rate)
-        self.energy_forecast_buffer_Wh = energy_forecast_Wh
+
+        # Buffers for energy forecast and measurement values,
+        # that have been sent by the d3a-api-client in the duration of one market slot
+        self.energy_forecast_buffer = {}  # Dict[DateTime, float]
+        self.energy_measurement_buffer = {}  # Dict[DateTime, float]
 
     @property
     def channel_dict(self):
+        """Extend channel_dict property with forecast related channels."""
         return {**super().channel_dict,
-                f'{self.channel_prefix}/set_energy_forecast': self._set_energy_forecast}
+                f"{self.channel_prefix}/set_energy_forecast": self.set_energy_forecast,
+                f"{self.channel_prefix}/set_energy_measurement": self.set_energy_measurement}
 
     def event_tick(self):
         """Set the energy forecast using pending requests. Extends super implementation.
 
         This method is triggered by the TICK event.
         """
-        # Need to repeat he pending request parsing in order to handle energy forecasts
+        # Need to repeat the pending request parsing in order to handle energy forecasts
         # from the MQTT subscriber (non-connected admin)
         for req in self.pending_requests:
             if req.request_type == "set_energy_forecast":
-                self._set_energy_forecast_impl(req.arguments, req.response_channel)
+                self.set_energy_forecast_impl(req.arguments, req.response_channel)
+            elif req.request_type == "set_energy_measurement":
+                self.set_energy_measurement_impl(req.arguments, req.response_channel)
 
         self.pending_requests = deque(
             req for req in self.pending_requests
-            if req.request_type not in "set_energy_forecast")
+            if req.request_type not in ["set_energy_forecast", "set_energy_measurement"])
 
         super().event_tick()
 
     def _incoming_commands_callback_selection(self, req):
+        """Map commands to callbacks for forecast and measurement reading."""
         if req.request_type == "set_energy_forecast":
-            self._set_energy_forecast_impl(req.arguments, req.response_channel)
+            self.set_energy_forecast_impl(req.arguments, req.response_channel)
+        elif req.request_type == "set_energy_measurement":
+            self.set_energy_measurement_impl(req.arguments, req.response_channel)
         else:
             super()._incoming_commands_callback_selection(req)
 
     def event_market_cycle(self):
-        self.produced_energy_forecast_kWh()
+        """Update forecast and measurement in state by reading from buffers."""
+        self.update_energy_forecast()
+        self.update_energy_measurement()
+        self._clear_energy_buffers()
         super().event_market_cycle()
 
+    def _clear_energy_buffers(self):
+        """Clear forecast and measurement buffers."""
+        self.energy_forecast_buffer = {}
+        self.energy_measurement_buffer = {}
+
     def event_activate_energy(self):
-        self.produced_energy_forecast_kWh()
+        """This strategy does not need to initiate energy values as they are sent via the API."""
+        self._clear_energy_buffers()
 
-    def produced_energy_forecast_kWh(self):
-        # sets energy forecast for next_market
-        energy_forecast_kWh = self.energy_forecast_buffer_Wh / 1000
+    def update_energy_forecast(self) -> None:
+        """Set energy forecast for future markets."""
+        for slot_time, energy_kWh in self.energy_forecast_buffer.items():
+            if slot_time >= self.area.next_market.time_slot:
+                self.state.set_available_energy(energy_kWh, slot_time, overwrite=True)
 
-        slot_time = self.area.next_market.time_slot
-        self.state.set_available_energy(energy_forecast_kWh, slot_time, overwrite=True)
+    def update_energy_measurement(self) -> None:
+        """Set energy measurement for past markets."""
+        for slot_time, energy_kWh in self.energy_measurement_buffer.items():
+            if slot_time < self.area.next_market.time_slot:
+                self.state.set_energy_measurement_kWh(energy_kWh, slot_time)
 
     def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=False):
         """
         Setting produced energy for the next slot is already done by produced_energy_forecast_kWh
         """
-        pass

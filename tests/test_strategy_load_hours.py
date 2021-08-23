@@ -598,9 +598,9 @@ def test_assert_if_trade_rate_is_higher_than_bid_rate(load_hours_strategy_test3)
 
 def test_update_state(load_hours_strategy_test1):
     """update_state sends command to update the simulated real energy of the device."""
-    load_hours_strategy_test1.set_energy_measurement_of_last_market = Mock()
+    load_hours_strategy_test1._set_energy_measurement_of_last_market = Mock()
     load_hours_strategy_test1.update_state()
-    load_hours_strategy_test1.set_energy_measurement_of_last_market.assert_called_once()
+    load_hours_strategy_test1._set_energy_measurement_of_last_market.assert_called_once()
 
 
 @patch("d3a.models.strategy.load_hours.utils")
@@ -609,7 +609,7 @@ def test_set_energy_measurement_of_last_market(utils_mock, load_hours_strategy_t
     # If we are in the first market slot, the real energy is not set
     load_hours_strategy_test1.area.current_market = None
     load_hours_strategy_test1.state.set_energy_measurement_kWh = Mock()
-    load_hours_strategy_test1.set_energy_measurement_of_last_market()
+    load_hours_strategy_test1._set_energy_measurement_of_last_market()
     load_hours_strategy_test1.state.set_energy_measurement_kWh.assert_not_called()
 
     # When there is at least one past market, the real energy is set
@@ -617,6 +617,6 @@ def test_set_energy_measurement_of_last_market(utils_mock, load_hours_strategy_t
     load_hours_strategy_test1.area.current_market = Mock()
     utils_mock.compute_altered_energy.return_value = 100
 
-    load_hours_strategy_test1.set_energy_measurement_of_last_market()
+    load_hours_strategy_test1._set_energy_measurement_of_last_market()
     load_hours_strategy_test1.state.set_energy_measurement_kWh.assert_called_once_with(
         100, load_hours_strategy_test1.area.current_market.time_slot)
