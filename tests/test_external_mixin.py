@@ -1,20 +1,21 @@
+import json
 import unittest
 import uuid
-import json
 from unittest.mock import MagicMock
+
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from parameterized import parameterized
 from pendulum import now, Duration
+
+import d3a.models.strategy.external_strategies
+from d3a.constants import DATE_TIME_FORMAT
+from d3a.d3a_core.singletons import external_global_statistics
 from d3a.models.area import Area
+from d3a.models.market.market_structures import Trade, Offer, Bid
 from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
-import d3a.models.strategy.external_strategies
-from d3a.models.market.market_structures import Trade, Offer, Bid
-from d3a_interface.constants_limits import GlobalConfig
-from d3a_interface.constants_limits import ConstSettings
-from d3a.constants import DATE_TIME_FORMAT
-from d3a.d3a_core.singletons import external_global_statistics
 
 d3a.models.strategy.external_strategies.ResettableCommunicator = MagicMock
 

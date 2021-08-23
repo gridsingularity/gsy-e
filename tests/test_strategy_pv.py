@@ -27,7 +27,6 @@ from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.exceptions import D3ADeviceException
 from d3a_interface.utils import generate_market_slot_list
 from parameterized import parameterized
-from pendulum import DateTime, duration
 
 from d3a.constants import TIME_FORMAT
 from d3a.constants import TIME_ZONE
@@ -37,7 +36,7 @@ from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from d3a.models.strategy.pv import PVStrategy
 
-ENERGY_FORECAST = {}  # type: Dict[DateTime, float]
+ENERGY_FORECAST = {}  # type: Dict[pendulum.DateTime, float]
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 
@@ -45,8 +44,8 @@ TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 def auto_fixture():
     yield
     GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
-    GlobalConfig.sim_duration = duration(days=GlobalConfig.DURATION_D)
-    GlobalConfig.slot_length = duration(minutes=GlobalConfig.SLOT_LENGTH_M)
+    GlobalConfig.sim_duration = pendulum.duration(days=GlobalConfig.DURATION_D)
+    GlobalConfig.slot_length = pendulum.duration(minutes=GlobalConfig.SLOT_LENGTH_M)
 
 
 class FakeArea:
@@ -69,7 +68,7 @@ class FakeArea:
         return 0.
 
     @property
-    def now(self) -> DateTime:
+    def now(self) -> pendulum.DateTime:
         """
         Return the 'current time' as a `DateTime` object.
         Can be overridden in subclasses to change the meaning of 'now'.
@@ -77,7 +76,7 @@ class FakeArea:
         In this default implementation 'current time' is defined by the number of ticks that
         have passed.
         """
-        return DateTime.now(tz=TIME_ZONE).start_of('day') + (
+        return pendulum.DateTime.now(tz=TIME_ZONE).start_of('day') + (
             self.config.tick_length * self.current_tick
         )
 
