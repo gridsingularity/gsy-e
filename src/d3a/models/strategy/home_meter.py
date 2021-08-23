@@ -180,7 +180,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
         self._reset_rates_and_update_prices()
         self._set_energy_forecast_for_future_markets(reconfigure=False)
-        self.set_energy_measurement_of_last_market()
+        self._set_energy_measurement_of_last_market()
         # Create bids/offers for the expected energy consumption/production in future markets
         for market in self.area.all_markets:
             self._post_offer(market)
@@ -190,7 +190,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
         self._delete_past_state()
 
-    def set_energy_measurement_of_last_market(self):
+    def _set_energy_measurement_of_last_market(self):
         """Set the (simulated) actual energy of the device in the previous market slot."""
         if self.area.current_market:
             self._set_energy_measurement_kWh(self.area.current_market.time_slot)
