@@ -28,6 +28,7 @@ from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rul
 from pendulum import DateTime, now
 
 from d3a.constants import TIME_ZONE
+from d3a.d3a_core.blockchain_interface import NonBlockchainInterface
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import (DeviceNotInRegistryError, InvalidBalancingTradeException,
                                      InvalidOffer, InvalidTrade, MarketReadOnlyException,
@@ -35,7 +36,6 @@ from d3a.d3a_core.exceptions import (DeviceNotInRegistryError, InvalidBalancingT
 from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market.balancing import BalancingMarket
-from d3a.models.market.blockchain_interface import NonBlockchainInterface
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.two_sided import TwoSidedMarket
 
@@ -125,7 +125,7 @@ def test_market_trade(market, offer, accept_offer):
     assert trade == market.trades[0]
     assert trade.id
     assert trade.time == now
-    assert trade.offer == e_offer
+    assert trade.offer_bid == e_offer
     assert trade.seller == "A"
     assert trade.buyer == "B"
 
@@ -140,7 +140,7 @@ def test_balancing_market_negative_offer_trade(market=BalancingMarket(
     assert trade == market.trades[0]
     assert trade.id
     assert trade.time == now
-    assert trade.offer is offer
+    assert trade.offer_bid is offer
     assert trade.seller == "A"
     assert trade.buyer == "B"
 
@@ -199,10 +199,10 @@ def test_market_trade_partial(market, offer, accept_offer):
     assert trade
     assert trade == market.trades[0]
     assert trade.id
-    assert trade.offer is not e_offer
-    assert trade.offer.energy == 5
-    assert trade.offer.price == 5
-    assert trade.offer.seller == "A"
+    assert trade.offer_bid is not e_offer
+    assert trade.offer_bid.energy == 5
+    assert trade.offer_bid.price == 5
+    assert trade.offer_bid.seller == "A"
     assert trade.seller == "A"
     assert trade.buyer == "B"
     assert len(market.offers) == 1
@@ -418,7 +418,9 @@ def test_market_issuance_acct_reverse(last_offer_size, traded_energy):
 def test_market_accept_offer_yields_partial_trade(market, offer, accept_offer):
     e_offer = getattr(market, offer)(2.0, 4, "seller", "seller")
     trade = getattr(market, accept_offer)(e_offer, "buyer", energy=1)
-    assert trade.offer.id == e_offer.id and trade.offer.energy == 1 and trade.residual.energy == 3
+    assert (trade.offer_bid.id == e_offer.id
+            and trade.offer_bid.energy == 1
+            and trade.residual.energy == 3)
 
 
 class MarketStateMachine(RuleBasedStateMachine):
@@ -454,8 +456,8 @@ class MarketStateMachine(RuleBasedStateMachine):
     @precondition(lambda self: self.market.trades)
     @rule()
     def check_avg_trade_price(self):
-        price = sum(t.offer.price for t in self.market.trades)
-        energy = sum(t.offer.energy for t in self.market.trades)
+        price = sum(t.offer_bid.price for t in self.market.trades)
+        energy = sum(t.offer_bid.energy for t in self.market.trades)
         assert self.market.avg_trade_price == round(price / energy, 4)
 
     @precondition(lambda self: self.market.traded_energy)
@@ -463,8 +465,8 @@ class MarketStateMachine(RuleBasedStateMachine):
     def check_acct(self):
         actor_sums = {}
         for t in self.market.trades:
-            actor_sums = add_or_create_key(actor_sums, t.seller, t.offer.energy)
-            actor_sums = subtract_or_create_key(actor_sums, t.buyer, t.offer.energy)
+            actor_sums = add_or_create_key(actor_sums, t.seller, t.offer_bid.energy)
+            actor_sums = subtract_or_create_key(actor_sums, t.buyer, t.offer_bid.energy)
         for actor, sum_ in actor_sums.items():
             assert self.market.traded_energy[actor] == sum_
         assert sum(self.market.traded_energy.values()) == 0

@@ -15,6 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.myco_matcher import MycoMatcher
+from d3a.models.myco_matcher.myco_matcher import MycoMatcher
 
 bid_offer_matcher = MycoMatcher()

@@ -37,7 +37,7 @@ from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
 from d3a.models.state import LoadState
-from d3a.models.strategy import BidEnabledStrategy
+from d3a.models.strategy import BidEnabledStrategy, utils
 from d3a.models.strategy.update_frequency import TemplateStrategyBidUpdater
 
 log = getLogger(__name__)
@@ -171,7 +171,22 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._post_first_bid()
         if self.area.current_market:
             self._cycled_market.add(self.area.current_market.time_slot)
+
+        # Provide energy values for the past market slot, to be used in the settlement market
+        self.set_energy_measurement_of_last_market()
         self._delete_past_state()
+
+    def set_energy_measurement_of_last_market(self):
+        """Set the (simulated) actual energy of the device in the previous market slot."""
+        if self.area.current_market:
+            self._set_energy_measurement_kWh(self.area.current_market.time_slot)
+
+    def _set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
+        """Set the (simulated) actual energy consumed by the device in a market slot."""
+        energy_forecast_kWh = self.state.get_desired_energy_Wh(time_slot) / 1000
+        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
+
+        self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
 
     def _delete_past_state(self):
         if (constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True or
@@ -370,13 +385,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
         market = self.area.get_future_market_from_id(market_id)
 
-        if bid_trade.offer.buyer == self.owner.name:
+        if bid_trade.offer_bid.buyer == self.owner.name:
             self.state.decrement_energy_requirement(
-                bid_trade.offer.energy * 1000,
+                bid_trade.offer_bid.energy * 1000,
                 market.time_slot, self.owner.name)
             market_day = self._get_day_of_timestamp(market.time_slot)
             if self.hrs_per_day != {} and market_day in self.hrs_per_day:
-                self.hrs_per_day[market_day] -= self._operating_hours(bid_trade.offer.energy)
+                self.hrs_per_day[market_day] -= self._operating_hours(bid_trade.offer_bid.energy)
 
     def event_trade(self, *, market_id, trade):
         market = self.area.get_future_market_from_id(market_id)
@@ -411,7 +426,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
             return
         if trade.buyer != self.owner.name:
             return
-        ramp_down_energy = self.balancing_energy_ratio.supply * trade.offer.energy
+        ramp_down_energy = self.balancing_energy_ratio.supply * trade.offer_bid.energy
         ramp_down_price = DeviceRegistry.REGISTRY[self.owner.name][1] * ramp_down_energy
         self.area.get_balancing_market(market.time_slot).balancing_offer(ramp_down_price,
                                                                          ramp_down_energy,

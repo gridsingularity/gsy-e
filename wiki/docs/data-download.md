@@ -1,4 +1,4 @@
-After successfully running a simulation in Grid Singularity’s User Interface (d3a.io), the user can download the results file for a deeper analysis. The downloaded folder is organised into two subfolders with relevant files, as follows: 
+After successfully running a simulation in Grid Singularity’s User Interface, the user can download the results file for a deeper analysis. The downloaded folder is organised into two subfolders with relevant files, as follows: 
 
 *   **Aggregated_results** : 
     *   **area_throughput.json** : Imported/exported energy for each market slot :

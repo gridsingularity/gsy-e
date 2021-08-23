@@ -25,12 +25,8 @@ import tty
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 
-import d3a
-import d3a.constants
 import pendulum
 from click.types import ParamType
-from d3a import setup as d3a_setup
-from d3a.constants import DATE_FORMAT, DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit
 from d3a_interface.enums import BidOfferMatchAlgoEnum
@@ -40,6 +36,10 @@ from d3a_interface.utils import iterate_over_all_modules, str_to_pendulum_dateti
 from pendulum import duration, from_format
 from rex import rex
 
+import d3a
+import d3a.constants
+from d3a import setup as d3a_setup
+
 d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
 
@@ -47,8 +47,6 @@ INTERVAL_DH_RE = rex("/^(?:(?P<days>[0-9]{1,4})[d:])?(?:(?P<hours>[0-9]{1,2})[h:
 INTERVAL_HM_RE = rex("/^(?:(?P<hours>[0-9]{1,4})[h:])?(?:(?P<minutes>[0-9]{1,2})m?)?$/")
 INTERVAL_MS_RE = rex("/^(?:(?P<minutes>[0-9]{1,4})[m:])?(?:(?P<seconds>[0-9]{1,2})s?)?$/")
 IMPORT_RE = rex("/^import +[\"'](?P<contract>[^\"']+.sol)[\"'];$/")
-
-_CONTRACT_CACHE = {}
 
 TRACE = 5
 
@@ -96,14 +94,14 @@ class DateType(ParamType):
     name = 'date'
 
     def __init__(self, type):
-        if type == DATE_FORMAT:
-            self.allowed_formats = DATE_FORMAT
+        if type == d3a.constants.DATE_FORMAT:
+            self.allowed_formats = d3a.constants.DATE_FORMAT
         else:
-            raise ValueError(f"Invalid type. Choices: {DATE_FORMAT} ")
+            raise ValueError(f"Invalid type. Choices: {d3a.constants.DATE_FORMAT} ")
 
     def convert(self, value, param, ctx):
         try:
-            return from_format(value, DATE_FORMAT)
+            return from_format(value, d3a.constants.DATE_FORMAT)
         except ValueError:
             self.fail(
                 "'{}' is not a valid date. Allowed formats: {}".format(
@@ -409,7 +407,8 @@ def export_default_settings_to_json_file():
             "tick_length": f"{GlobalConfig.TICK_LENGTH_S}s",
             "market_count": GlobalConfig.MARKET_COUNT,
             "cloud_coverage": GlobalConfig.CLOUD_COVERAGE,
-            "start_date": pendulum.instance(GlobalConfig.start_date).format(DATE_FORMAT),
+            "start_date": pendulum.instance(GlobalConfig.start_date).format(
+                d3a.constants.DATE_FORMAT),
     }
     all_settings = {"basic_settings": base_settings, "advanced_settings": constsettings_to_dict()}
     settings_filename = os.path.join(d3a_path, "setup", "d3a-settings.json")
@@ -461,7 +460,7 @@ class ExternalTickCounter:
     def _dispatch_tick_frequency(self) -> int:
         return int(
             self.ticks_per_slot *
-            (DISPATCH_EVENT_TICK_FREQUENCY_PERCENT / 100)
+            (d3a.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT / 100)
         )
 
     def is_it_time_for_external_tick(self, current_tick_in_slot) -> bool:

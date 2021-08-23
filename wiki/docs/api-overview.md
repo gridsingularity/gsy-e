@@ -5,7 +5,7 @@ To enable users to interact with a running collaboration or a canary test networ
 
 ##API Client Installation##
 
-_Note:_ If you are running the Grid Singularity energy exchange engine (D3A) using a virtual machine and `vagrant`, the latest `api-client` is already installed on your machine and you can skip to the [Launch Simulation](api-overview.md#launch-simulation) section below. If you are running the engine locally, please follow the following instructions.
+_Note:_ If you are running the Grid Singularity energy exchange engine using a virtual machine and `vagrant`, the latest `api-client` is already installed on your machine and you can skip to the [Launch Simulation](api-overview.md#launch-simulation) section below. If you are running the engine locally, please follow the following instructions.
 
 ###Install Redis server. Open a new terminal and type
 
