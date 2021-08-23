@@ -72,14 +72,14 @@ class StorageExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "list_offers", "status": "ready", "offer_list": filtered_offers,
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
         except Exception:
             logging.exception(f"Error when handling list offers on area {self.device.name}")
             self.redis.publish_json(
                 response_channel,
                 {"command": "list_offers", "status": "error",
                  "error_message": f"Error when listing offers on area {self.device.name}.",
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
 
     def delete_offer(self, payload):
         transaction_id = self._get_transaction_id(payload)
@@ -116,7 +116,7 @@ class StorageExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "offer_delete", "status": "ready",
                  "deleted_offers": deleted_offers,
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
         except Exception:
             logging.exception(f"Error when handling offer delete on area {self.device.name}: "
                               f"Offer Arguments: {arguments}")
@@ -125,7 +125,7 @@ class StorageExternalMixin(ExternalMixin):
                 {"command": "offer_delete", "status": "error",
                  "error_message": f"Error when handling offer delete "
                                   f"on area {self.device.name} with arguments {arguments}.",
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
 
     def offer(self, payload):
         transaction_id = self._get_transaction_id(payload)
@@ -191,7 +191,7 @@ class StorageExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "offer", "status": "ready",
                  "offer": offer.to_json_string(replace_existing=replace_existing),
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
         except Exception:
             logging.exception(f"Error when handling offer create on area {self.device.name}: "
                               f"Offer Arguments: {arguments}")
@@ -200,7 +200,7 @@ class StorageExternalMixin(ExternalMixin):
                 {"command": "offer", "status": "error",
                  "error_message": f"Error when handling offer create "
                                   f"on area {self.device.name} with arguments {arguments}.",
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
 
     def list_bids(self, payload):
         self._get_transaction_id(payload)
@@ -218,14 +218,14 @@ class StorageExternalMixin(ExternalMixin):
                 response_channel, {
                     "command": "list_bids", "status": "ready",
                     "bid_list": self.filtered_bids_next_market,
-                    "transaction_id": arguments.get("transaction_id", None)})
+                    "transaction_id": arguments.get("transaction_id")})
         except Exception:
             logging.exception(f"Error when handling list bids on area {self.device.name}")
             self.redis.publish_json(
                 response_channel,
                 {"command": "list_bids", "status": "error",
                  "error_message": f"Error when listing bids on area {self.device.name}.",
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
 
     def delete_bid(self, payload):
         transaction_id = self._get_transaction_id(payload)
@@ -261,7 +261,7 @@ class StorageExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
         except Exception:
             logging.exception(f"Error when handling bid delete on area {self.device.name}: "
                               f"Bid Arguments: {arguments}")
@@ -270,7 +270,7 @@ class StorageExternalMixin(ExternalMixin):
                 {"command": "bid_delete", "status": "error",
                  "error_message": f"Error when handling bid delete "
                                   f"on area {self.device.name} with arguments {arguments}.",
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
 
     def bid(self, payload):
         transaction_id = self._get_transaction_id(payload)
@@ -324,7 +324,9 @@ class StorageExternalMixin(ExternalMixin):
                 arguments["price"],
                 arguments["energy"],
                 replace_existing=replace_existing,
-                **arguments)
+                attributes=arguments.get("attributes"),
+                requirements=arguments.get("requirements")
+            )
             self.state.offered_buy_kWh[self.next_market.time_slot] = \
                 self.posted_bid_energy(self.next_market.id)
             self.state.clamp_energy_to_buy_kWh([self.next_market.time_slot])
@@ -332,7 +334,7 @@ class StorageExternalMixin(ExternalMixin):
                 bid_response_channel, {
                     "command": "bid", "status": "ready",
                     "bid": bid.to_json_string(replace_existing=replace_existing),
-                    "transaction_id": arguments.get("transaction_id", None)})
+                    "transaction_id": arguments.get("transaction_id")})
         except Exception:
             logging.exception(f"Error when handling bid create on area {self.device.name}: "
                               f"Bid Arguments: {arguments}")
@@ -341,7 +343,7 @@ class StorageExternalMixin(ExternalMixin):
                 {"command": "bid", "status": "error",
                  "error_message": f"Error when handling bid create "
                                   f"on area {self.device.name} with arguments {arguments}.",
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
 
     @property
     def _device_info_dict(self):
@@ -439,7 +441,7 @@ class StorageExternalMixin(ExternalMixin):
                 "command": "offer_delete", "status": "ready",
                 "deleted_offers": deleted_offers,
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id", None)
+                "transaction_id": arguments.get("transaction_id")
             }
         except Exception:
             return {
@@ -447,7 +449,7 @@ class StorageExternalMixin(ExternalMixin):
                 "area_uuid": self.device.uuid,
                 "error_message": f"Error when handling offer delete "
                                  f"on area {self.device.name} with arguments {arguments}.",
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
 
     def _list_offers_aggregator(self, arguments):
         try:
@@ -457,13 +459,13 @@ class StorageExternalMixin(ExternalMixin):
             return {
                 "command": "list_offers", "status": "ready", "offer_list": filtered_offers,
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
         except Exception:
             return {
                 "command": "list_offers", "status": "error",
                 "area_uuid": self.device.uuid,
                 "error_message": f"Error when listing offers on area {self.device.name}.",
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
 
     def _offer_aggregator(self, arguments):
         required_args = {"price", "energy", "type", "transaction_id"}
@@ -496,7 +498,7 @@ class StorageExternalMixin(ExternalMixin):
                     "area_uuid": self.device.uuid,
                     "status": "ready",
                     "offer": offer.to_json_string(replace_existing=replace_existing),
-                    "transaction_id": arguments.get("transaction_id", None),
+                    "transaction_id": arguments.get("transaction_id"),
                 }
             except Exception:
                 return {
@@ -504,7 +506,7 @@ class StorageExternalMixin(ExternalMixin):
                     "area_uuid": self.device.uuid,
                     "error_message": f"Error when handling offer create "
                                      f"on area {self.device.name} with arguments {arguments}.",
-                    "transaction_id": arguments.get("transaction_id", None)}
+                    "transaction_id": arguments.get("transaction_id")}
 
     def _bid_aggregator(self, arguments: Dict):
         required_args = {"price", "energy", "type", "transaction_id"}
@@ -526,7 +528,9 @@ class StorageExternalMixin(ExternalMixin):
                 arguments["price"],
                 arguments["energy"],
                 replace_existing=replace_existing,
-                **arguments)
+                attributes=arguments.get("attributes"),
+                requirements=arguments.get("requirements")
+            )
 
             self.state.offered_buy_kWh[self.next_market.time_slot] = \
                 self.posted_bid_energy(self.next_market.id)
@@ -535,14 +539,14 @@ class StorageExternalMixin(ExternalMixin):
                 "command": "bid", "status": "ready",
                 "bid": bid.to_json_string(replace_existing=replace_existing),
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
         except Exception:
             return {
                 "command": "bid", "status": "error",
                 "area_uuid": self.device.uuid,
                 "error_message": f"Error when handling bid create "
                                  f"on area {self.device.name} with arguments {arguments}.",
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
 
     def _delete_bid_aggregator(self, arguments):
         if ("bid" in arguments and arguments["bid"] is not None) and \
@@ -551,7 +555,7 @@ class StorageExternalMixin(ExternalMixin):
                 "command": "bid_delete", "status": "error",
                 "error_message": "Bid_id is not associated with any posted bid.",
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
         try:
             to_delete_bid_id = arguments["bid"] if "bid" in arguments else None
             deleted_bids = \
@@ -562,14 +566,14 @@ class StorageExternalMixin(ExternalMixin):
             return {
                 "command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
         except Exception:
             return {
                 "command": "bid_delete", "status": "error",
                 "area_uuid": self.device.uuid,
                 "error_message": f"Error when handling bid delete "
                                  f"on area {self.device.name} with arguments {arguments}.",
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
 
     def _list_bids_aggregator(self, arguments):
         try:
@@ -577,14 +581,14 @@ class StorageExternalMixin(ExternalMixin):
                 "command": "list_bids", "status": "ready",
                 "bid_list": self.filtered_bids_next_market,
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
         except Exception:
             logging.exception(f"Error when handling list bids on area {self.device.name}")
             return {
                 "command": "list_bids", "status": "error",
                 "area_uuid": self.device.uuid,
                 "error_message": f"Error when listing bids on area {self.device.name}.",
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
 
 
 class StorageExternalStrategy(StorageExternalMixin, StorageStrategy):
