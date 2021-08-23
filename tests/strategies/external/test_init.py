@@ -21,9 +21,9 @@ import uuid
 from collections import deque
 from unittest.mock import MagicMock, Mock
 
-import d3a.models.strategy.external_strategies
+import d3a.constants
+import d3a.d3a_core.util
 import pytest
-from d3a.constants import DATE_TIME_FORMAT
 from d3a.d3a_core.singletons import external_global_statistics
 from d3a.models.area import Area
 from d3a.models.market.market_structures import Trade, Offer, Bid
@@ -34,12 +34,11 @@ from d3a.models.strategy.external_strategies.load import (LoadHoursExternalStrat
 from d3a.models.strategy.external_strategies.pv import (PVExternalStrategy,
                                                         PVForecastExternalStrategy)
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.constants_limits import GlobalConfig
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from parameterized import parameterized
 from pendulum import now, duration
 
-d3a.models.strategy.external_strategies.ResettableCommunicator = MagicMock
+transaction_id = str(uuid.uuid4())
 
 
 @pytest.fixture
@@ -139,7 +138,7 @@ class TestExternalMixin(unittest.TestCase):
             self.area.uuid
         result = strategy.redis.aggregator.add_batch_tick_event.call_args_list[0][0][1]
         assert result == \
-            {"market_slot": GlobalConfig.start_date.format(DATE_TIME_FORMAT),
+            {"market_slot": GlobalConfig.start_date.format(d3a.constants.DATE_TIME_FORMAT),
              "slot_completion": "20%"}
         strategy.redis.reset_mock()
         strategy.redis.aggregator.add_batch_tick_event.reset_mock()
@@ -153,7 +152,7 @@ class TestExternalMixin(unittest.TestCase):
             self.area.uuid
         result = strategy.redis.aggregator.add_batch_tick_event.call_args_list[0][0][1]
         assert result == \
-            {"market_slot": GlobalConfig.start_date.format(DATE_TIME_FORMAT),
+            {"market_slot": GlobalConfig.start_date.format(d3a.constants.DATE_TIME_FORMAT),
              "slot_completion": "40%"}
 
     @parameterized.expand([
@@ -182,7 +181,8 @@ class TestExternalMixin(unittest.TestCase):
         result.pop("area_uuid")
         assert result == \
             {"slot_completion": "20%",
-             "market_slot": GlobalConfig.start_date.format(DATE_TIME_FORMAT), "event": "tick",
+             "market_slot": GlobalConfig.start_date.format(d3a.constants.DATE_TIME_FORMAT),
+             "event": "tick",
              "device_info": strategy._device_info_dict}
 
         strategy.redis.reset_mock()
@@ -198,7 +198,8 @@ class TestExternalMixin(unittest.TestCase):
         result.pop("area_uuid")
         assert result == \
             {"slot_completion": "40%",
-             "market_slot": GlobalConfig.start_date.format(DATE_TIME_FORMAT), "event": "tick",
+             "market_slot": GlobalConfig.start_date.format(d3a.constants.DATE_TIME_FORMAT),
+             "event": "tick",
              "device_info": strategy._device_info_dict}
 
     @parameterized.expand([
@@ -371,7 +372,7 @@ class TestExternalMixin(unittest.TestCase):
     def test_register_device(self, strategy):
         self.config = MagicMock()
         self.device = Area(name="test_area", config=self.config, strategy=strategy)
-        payload = {"data": json.dumps({"transaction_id": str(uuid.uuid4())})}
+        payload = {"data": json.dumps({"transaction_id": transaction_id})}
         self.device.strategy.owner = self.device
         assert self.device.strategy.connected is False
         self.device.strategy._register(payload)
@@ -426,11 +427,9 @@ class TestExternalMixin(unittest.TestCase):
 class TestForecastRelatedFeatures:
     @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
                                                       PVForecastExternalStrategy()], indirect=True)
-    def test_set_energy_forecast(self, ext_strategy_fixture):
-        # test successful call of set_energy_forecast:
-        transaction_id = str(uuid.uuid4())
+    def test_set_energy_forecast_succeeds(self, ext_strategy_fixture):
         arguments = {"transaction_id": transaction_id,
-                     "energy_forecast": {now().format(DATE_TIME_FORMAT): 1}}
+                     "energy_forecast": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
         payload = {"data": json.dumps(arguments)}
         assert ext_strategy_fixture.pending_requests == deque([])
         ext_strategy_fixture.set_energy_forecast(payload)
@@ -441,11 +440,15 @@ class TestForecastRelatedFeatures:
                 deque([IncomingRequest("set_energy_forecast", arguments,
                                        energy_forecast_response_channel)]))
 
-        # test if set_energy_forecast raises error when provided with wrong payload
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
+                                                      PVForecastExternalStrategy()], indirect=True)
+    def test_set_energy_forecast_fails_for_wrong_payload(self, ext_strategy_fixture):
         ext_strategy_fixture.redis.publish_json = Mock()
         ext_strategy_fixture.pending_requests = deque([])
         payload = {"data": json.dumps({"transaction_id": transaction_id})}
         ext_strategy_fixture.set_energy_forecast(payload)
+        energy_forecast_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
+                                           "response/set_energy_forecast"
         ext_strategy_fixture.redis.publish_json.assert_called_with(
             energy_forecast_response_channel, {"command": "set_energy_forecast",
                                                "error": "Incorrect _set_energy_forecast request. "
@@ -455,11 +458,9 @@ class TestForecastRelatedFeatures:
 
     @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
                                                       PVForecastExternalStrategy()], indirect=True)
-    def test_set_energy_measurement(self, ext_strategy_fixture):
-        # test successful call of set_energy_measurement:
-        transaction_id = str(uuid.uuid4())
+    def test_set_energy_measurement_succeeds(self, ext_strategy_fixture):
         arguments = {"transaction_id": transaction_id,
-                     "energy_measurement": {now().format(DATE_TIME_FORMAT): 1}}
+                     "energy_measurement": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
         payload = {"data": json.dumps(arguments)}
         assert ext_strategy_fixture.pending_requests == deque([])
         ext_strategy_fixture.set_energy_measurement(payload)
@@ -470,11 +471,16 @@ class TestForecastRelatedFeatures:
                 deque([IncomingRequest("set_energy_measurement", arguments,
                                        energy_measurement_response_channel)]))
 
-        # test if set_energy_measurement raises error when provided with wrong payload
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
+                                                      PVForecastExternalStrategy()],
+                             indirect=True)
+    def test_set_energy_measurement_fails_for_wrong_payload(self, ext_strategy_fixture):
         ext_strategy_fixture.redis.publish_json = Mock()
         ext_strategy_fixture.pending_requests = deque([])
         payload = {"data": json.dumps({"transaction_id": transaction_id})}
         ext_strategy_fixture.set_energy_measurement(payload)
+        energy_measurement_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
+                                              "response/set_energy_measurement"
         ext_strategy_fixture.redis.publish_json.assert_called_with(
             energy_measurement_response_channel, {"command": "set_energy_measurement",
                                                   "error": "Incorrect _set_energy_measurement"
@@ -485,12 +491,10 @@ class TestForecastRelatedFeatures:
 
     @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
                                                       PVForecastExternalStrategy()], indirect=True)
-    def test_set_energy_forecast_impl(self, ext_strategy_fixture):
-        # test successful call of set_energy_forecast_impl:
-        transaction_id = str(uuid.uuid4())
+    def test_set_energy_forecast_impl_succeeds(self, ext_strategy_fixture):
         ext_strategy_fixture.redis.publish_json = Mock()
         arguments = {"transaction_id": transaction_id,
-                     "energy_forecast": {now().format(DATE_TIME_FORMAT): 1}}
+                     "energy_forecast": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
         response_channel = "response_channel"
         ext_strategy_fixture.set_energy_forecast_impl(arguments, response_channel)
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
@@ -498,8 +502,12 @@ class TestForecastRelatedFeatures:
                                "status": "ready",
                                "transaction_id": arguments["transaction_id"]})
 
-        # test if error is sent when wrong time format is provided
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
+                                                      PVForecastExternalStrategy()],
+                             indirect=True)
+    def test_set_energy_forecast_impl_fails_for_wrong_time_format(self, ext_strategy_fixture):
         ext_strategy_fixture.redis.publish_json.reset_mock()
+        response_channel = "response_channel"
         arguments = {"transaction_id": transaction_id,
                      "energy_forecast": {"wrong:time:format": 1}}
         ext_strategy_fixture.set_energy_forecast_impl(arguments, response_channel)
@@ -511,10 +519,14 @@ class TestForecastRelatedFeatures:
                                "transaction_id": arguments["transaction_id"],
                                "error_message": error_message})
 
-        # test if error is sent when negative energy is provided
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
+                                                      PVForecastExternalStrategy()],
+                             indirect=True)
+    def test_set_energy_forecast_impl_fails_for_negative_energy(self, ext_strategy_fixture):
         ext_strategy_fixture.redis.publish_json.reset_mock()
+        response_channel = "response_channel"
         arguments = {"transaction_id": transaction_id,
-                     "energy_forecast": {now().format(DATE_TIME_FORMAT): -1}}
+                     "energy_forecast": {now().format(d3a.constants.DATE_TIME_FORMAT): -1}}
         ext_strategy_fixture.set_energy_forecast_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_forecast_impl "
                          f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
@@ -526,12 +538,11 @@ class TestForecastRelatedFeatures:
 
     @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
                                                       PVForecastExternalStrategy()], indirect=True)
-    def test_set_energy_measurement_impl(self, ext_strategy_fixture):
+    def test_set_energy_measurement_impl_succeeds(self, ext_strategy_fixture):
         # test successful call of set_energy_measurement_impl:
-        transaction_id = str(uuid.uuid4())
         ext_strategy_fixture.redis.publish_json = Mock()
         arguments = {"transaction_id": transaction_id,
-                     "energy_measurement": {now().format(DATE_TIME_FORMAT): 1}}
+                     "energy_measurement": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
         response_channel = "response_channel"
         ext_strategy_fixture.set_energy_measurement_impl(arguments, response_channel)
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
@@ -539,7 +550,11 @@ class TestForecastRelatedFeatures:
                                "status": "ready",
                                "transaction_id": arguments["transaction_id"]})
 
-        # test if error is sent when wrong time format is provided
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
+                                                      PVForecastExternalStrategy()],
+                             indirect=True)
+    def test_set_energy_measurement_impl_fails_for_wrong_time_format(self, ext_strategy_fixture):
+        response_channel = "response_channel"
         ext_strategy_fixture.redis.publish_json.reset_mock()
         arguments = {"transaction_id": transaction_id,
                      "energy_measurement": {"wrong:time:format": 1}}
@@ -552,10 +567,14 @@ class TestForecastRelatedFeatures:
                                "transaction_id": arguments["transaction_id"],
                                "error_message": error_message})
 
-        # test if error is sent when negative energy is provided
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
+                                                      PVForecastExternalStrategy()],
+                             indirect=True)
+    def test_set_energy_measurement_impl_fails_for_negative_energy(self, ext_strategy_fixture):
+        response_channel = "response_channel"
         ext_strategy_fixture.redis.publish_json.reset_mock()
         arguments = {"transaction_id": transaction_id,
-                     "energy_measurement": {now().format(DATE_TIME_FORMAT): -1}}
+                     "energy_measurement": {now().format(d3a.constants.DATE_TIME_FORMAT): -1}}
         ext_strategy_fixture.set_energy_measurement_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_measurement_impl "
                          f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
