@@ -21,19 +21,19 @@ from d3a.models.strategy.commercial_producer import CommercialStrategy
 
 '''
 This setup file is testing the ESS buy functionality. Right now the ESS is not buying even though
-the commercial generator price is below the ESS buy threshold'
+the commercial generator price is below the ESS buy threshold"
 '''
 
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
 
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=40,
+                    Area("H1 Storage1", strategy=StorageStrategy(initial_soc=40,
                                                                  battery_capacity_kWh=5,
                                                                  max_abs_battery_power_kW=5,
                                                                  initial_buying_rate=0,
@@ -43,7 +43,7 @@ def get_setup(config):
                 ]
             ),
 
-            Area('Commercial Energy Producer',
+            Area("Commercial Energy Producer",
                  strategy=CommercialStrategy(energy_rate=15),
                  )
         ],

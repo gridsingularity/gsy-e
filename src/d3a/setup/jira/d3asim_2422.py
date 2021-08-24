@@ -29,12 +29,12 @@ def get_setup(config):
     ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR = True
 
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
+                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
                                                                        hrs_per_day=6,
                                                                        hrs_of_day=list(
                                                                            range(12, 18)),
@@ -42,7 +42,7 @@ def get_setup(config):
                                                                        fit_to_limit=True,
                                                                        update_interval=1)
                          ),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50,
+                    Area("H1 Storage1", strategy=StorageStrategy(initial_soc=50,
                                                                  min_allowed_soc=10,
                                                                  battery_capacity_kWh=1.2,
                                                                  max_abs_battery_power_kW=5,
@@ -56,9 +56,9 @@ def get_setup(config):
                 ]
             ),
             Area(
-                'House 2',
+                "House 2",
                 [
-                    Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
+                    Area("H2 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
                                                                        hrs_per_day=4,
                                                                        hrs_of_day=list(range(12,
                                                                                              16)),
@@ -66,7 +66,7 @@ def get_setup(config):
                                                                        fit_to_limit=True,
                                                                        update_interval=1)
                          ),
-                    Area('H2 PV', strategy=PVStrategy(4,
+                    Area("H2 PV", strategy=PVStrategy(4,
                                                       initial_selling_rate=30,
                                                       final_selling_rate=0,
                                                       fit_to_limit=True,
@@ -75,7 +75,7 @@ def get_setup(config):
 
                 ]
             ),
-            Area('Cell Tower',
+            Area("Cell Tower",
                  strategy=LoadHoursStrategy(avg_power_W=100,
                                             hrs_per_day=24,
                                             hrs_of_day=list(range(0, 24)),
@@ -83,7 +83,7 @@ def get_setup(config):
                                             fit_to_limit=True,
                                             update_interval=1)
                  ),
-            Area('Market Maker', strategy=MarketMakerStrategy(energy_rate=30,
+            Area("Market Maker", strategy=MarketMakerStrategy(energy_rate=30,
                                                               grid_connected=True)
                  ),
 

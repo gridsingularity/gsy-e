@@ -30,18 +30,18 @@ sell offer rate.
 def get_setup(config):
     config.read_market_maker_rate(30)
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
                                                                            range(0, 24)),
                                                                        final_buying_rate=35)
                          ),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=100,
+                    Area("H1 Storage1", strategy=StorageStrategy(initial_soc=100,
                                                                  battery_capacity_kWh=6,
                                                                  max_abs_battery_power_kW=6,
                                                                  initial_buying_rate=0,

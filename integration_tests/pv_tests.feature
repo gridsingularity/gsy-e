@@ -36,13 +36,13 @@ Feature: PV Tests
      When the simulation is running
      Then the predefined PV follows the PV profile from the csv
 
-  Scenario: PV max_panel_power_W argument changes power of a single PV panel
+  Scenario: PV capacity_kW argument changes power of a single PV panel
      Given we have a scenario named strategy_tests/pv_max_panel_output
      And d3a is installed
      When we run the simulation with setup file strategy_tests.pv_max_panel_output and parameters [24, 60, 60, 1]
      Then the load buys at most the energy equivalent of 200 W
 
-  Scenario: PV global setting max_panel_power_W changes power of all PV panels
+  Scenario: PV global setting capacity_kW changes power of all PV panels
      Given we have a scenario named strategy_tests/pv_max_panel_power_global
      And d3a is installed
      When we run the simulation with setup file strategy_tests.pv_max_panel_power_global and parameters [24, 60, 60, 1]

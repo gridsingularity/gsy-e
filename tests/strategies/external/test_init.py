@@ -66,7 +66,7 @@ class TestExternalMixin(unittest.TestCase):
 
     def _create_and_activate_strategy_area(self, strategy):
         self.config = MagicMock()
-        self.config.max_panel_power_W = 160
+        self.config.capacity_kW = 0.160
         self.config.ticks_per_slot = 90
         GlobalConfig.end_date = GlobalConfig.start_date + duration(days=1)
         self.area = Area(name="test_area", config=self.config, strategy=strategy,
@@ -115,7 +115,7 @@ class TestExternalMixin(unittest.TestCase):
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
-        [PVExternalStrategy(2, max_panel_power_W=160)],
+        [PVExternalStrategy(2, capacity_kW=0.16)],
         [StorageExternalStrategy()]
     ])
     def test_dispatch_event_tick_to_external_aggregator(self, strategy):
@@ -157,7 +157,7 @@ class TestExternalMixin(unittest.TestCase):
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
-        [PVExternalStrategy(2, max_panel_power_W=160)],
+        [PVExternalStrategy(2, capacity_kW=0.16)],
         [StorageExternalStrategy()]
     ])
     def test_dispatch_event_tick_to_external_agent(self, strategy):
@@ -205,7 +205,7 @@ class TestExternalMixin(unittest.TestCase):
     @parameterized.expand([
         [LoadHoursExternalStrategy(100),
          Bid("bid_id", now(), 20, 1.0, "test_area")],
-        [PVExternalStrategy(2, max_panel_power_W=160),
+        [PVExternalStrategy(2, capacity_kW=0.16),
          Offer("offer_id", now(), 20, 1.0, "test_area")],
         [StorageExternalStrategy(),
          Bid("bid_id", now(), 20, 1.0, "test_area")],
@@ -264,7 +264,7 @@ class TestExternalMixin(unittest.TestCase):
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
-        [PVExternalStrategy(2, max_panel_power_W=160)],
+        [PVExternalStrategy(2, capacity_kW=0.16)],
         [StorageExternalStrategy()]
     ])
     def test_dispatch_event_trade_to_external_agent(self, strategy):
@@ -296,7 +296,7 @@ class TestExternalMixin(unittest.TestCase):
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
-        [PVExternalStrategy(2, max_panel_power_W=160)],
+        [PVExternalStrategy(2, capacity_kW=0.16)],
         [StorageExternalStrategy()]
     ])
     def test_skip_dispatch_double_event_trade_to_external_agent_two_sided_market(self, strategy):
@@ -348,7 +348,7 @@ class TestExternalMixin(unittest.TestCase):
         assert strategy._device_info_dict["energy_requirement_kWh"] == 0.000987
 
     def test_device_info_dict_for_pv_strategy_reports_available_energy(self):
-        strategy = PVExternalStrategy(2, max_panel_power_W=160)
+        strategy = PVExternalStrategy(2, capacity_kW=0.16)
         self._create_and_activate_strategy_area(strategy)
         strategy.state._available_energy_kWh[strategy.next_market.time_slot] = 1.123
         assert strategy._device_info_dict["available_energy_kWh"] == 1.123
@@ -366,7 +366,7 @@ class TestExternalMixin(unittest.TestCase):
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
-        [PVExternalStrategy(2, max_panel_power_W=160)],
+        [PVExternalStrategy(2, capacity_kW=0.16)],
         [StorageExternalStrategy()]
     ])
     def test_register_device(self, strategy):
@@ -390,7 +390,7 @@ class TestExternalMixin(unittest.TestCase):
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
-        [PVExternalStrategy(2, max_panel_power_W=160)],
+        [PVExternalStrategy(2, capacity_kW=0.16)],
         [StorageExternalStrategy()]
     ])
     def test_get_state(self, strategy):
@@ -404,7 +404,7 @@ class TestExternalMixin(unittest.TestCase):
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
-        [PVExternalStrategy(2, max_panel_power_W=160)],
+        [PVExternalStrategy(2, capacity_kW=0.16)],
         [StorageExternalStrategy()]
     ])
     def test_restore_state(self, strategy):

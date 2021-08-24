@@ -22,18 +22,18 @@ from d3a.models.strategy.pv import PVStrategy
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=10,
+                    Area("H1 Storage1", strategy=StorageStrategy(initial_soc=10,
                                                                  battery_capacity_kWh=15.0,
                                                                  initial_buying_rate=0,
                                                                  final_buying_rate=23.99,
                                                                  final_selling_rate=28.01)
                          ),
-                    Area('H1 Storage2', strategy=StorageStrategy(initial_soc=10,
+                    Area("H1 Storage2", strategy=StorageStrategy(initial_soc=10,
                                                                  battery_capacity_kWh=15.0,
                                                                  initial_buying_rate=0,
                                                                  final_buying_rate=22.99,
@@ -43,10 +43,10 @@ def get_setup(config):
                 grid_fee_percentage=0,
             ),
             Area(
-                'House 2',
+                "House 2",
                 [
 
-                    Area('H2 PV', strategy=PVStrategy(1, final_selling_rate=23.0)
+                    Area("H2 PV", strategy=PVStrategy(1, final_selling_rate=23.0)
                          ),
 
                 ],

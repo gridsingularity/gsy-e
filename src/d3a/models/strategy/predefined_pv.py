@@ -16,15 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pathlib
-from pendulum import duration
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
+from d3a.d3a_core.exceptions import D3AException
 from d3a.d3a_core.util import d3a_path
 from d3a.models.strategy.pv import PVStrategy
-from d3a.d3a_core.exceptions import D3AException
-
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.utils import convert_kW_to_kWh
+from d3a_interface.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
+from pendulum import duration
 
 """
 Creates a PV that uses a profile as input for its power values, either predefined or provided
@@ -36,9 +36,9 @@ class PVPredefinedStrategy(PVStrategy):
     """
         Strategy responsible for using one of the predefined PV profiles.
     """
-    parameters = ('panel_count', 'initial_selling_rate', 'final_selling_rate', 'cloud_coverage',
-                  'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
-                  'use_market_maker_rate')
+    parameters = ("panel_count", "initial_selling_rate", "final_selling_rate", "cloud_coverage",
+                  "fit_to_limit", "update_interval", "energy_rate_decrease_per_update",
+                  "use_market_maker_rate", "capacity_kW")
 
     def __init__(
             self, panel_count: int = 1,
@@ -48,21 +48,25 @@ class PVPredefinedStrategy(PVStrategy):
             fit_to_limit: bool = True,
             update_interval=None,
             energy_rate_decrease_per_update=None,
-            use_market_maker_rate: bool = False):
+            use_market_maker_rate: bool = False,
+            capacity_kW: float = None,
+            ):
         """
         Constructor of PVPredefinedStrategy
-        :param panel_count: Number of solar panels for this PV plant
-        :param initial_selling_rate: Upper Threshold for PV offers
-        :param final_selling_rate: Lower Threshold for PV offers
-        :param cloud_coverage: cloud conditions.
+        Args:
+            panel_count: Number of solar panels for this PV plant
+            initial_selling_rate: Upper Threshold for PV offers
+            final_selling_rate: Lower Threshold for PV offers
+            cloud_coverage: cloud conditions.
                                 0=sunny,
                                 1=partially cloudy,
                                 2=cloudy,
                                 4=use global profile
                                 None=use global cloud_coverage (default)
-        :param fit_to_limit: Linear curve following initial_selling_rate & final_selling_rate
-        :param update_interval: Interval after which PV will update its offer
-        :param energy_rate_decrease_per_update: Slope of PV Offer change per update
+            fit_to_limit: Linear curve following initial_selling_rate & final_selling_rate
+            update_interval: Interval after which PV will update its offer
+            energy_rate_decrease_per_update: Slope of PV Offer change per update
+            capacity_kW: power rating of the predefined profiles
         """
 
         if update_interval is None:
@@ -75,12 +79,12 @@ class PVPredefinedStrategy(PVStrategy):
                          fit_to_limit=fit_to_limit,
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
-                         max_panel_power_W=None,
+                         capacity_kW=capacity_kW,
                          use_market_maker_rate=use_market_maker_rate
                          )
         self.cloud_coverage = cloud_coverage
         self._power_profile_index = cloud_coverage
-        self.power_profile = {}
+        self.energy_profile = {}
 
     def read_config_event(self):
         # this is to trigger to read from self.area.config.cloud_coverage:
@@ -94,12 +98,12 @@ class PVPredefinedStrategy(PVStrategy):
             self._read_predefined_profile_for_pv()
         for market in self.area.all_markets:
             slot_time = market.time_slot
-            if not self.power_profile:
+            if not self.energy_profile:
                 raise D3AException(
                     f"PV {self.owner.name} tries to set its available energy forecast without a "
                     f"power profile.")
             available_energy_kWh = find_object_of_same_weekday_and_time(
-                self.power_profile, slot_time) * self.panel_count
+                self.energy_profile, slot_time) * self.panel_count
             self.state.set_available_energy(available_energy_kWh, slot_time, reconfigure)
 
     def _read_predefined_profile_for_pv(self):
@@ -113,17 +117,24 @@ class PVPredefinedStrategy(PVStrategy):
             else:
                 self._power_profile_index = self.owner.config.cloud_coverage
         if self._power_profile_index == 0:  # 0:sunny
-            profile_path = pathlib.Path(d3a_path + '/resources/Solar_Curve_W_sunny.csv')
+            profile_path = (
+                pathlib.Path(d3a_path + "/resources/Solar_Curve_sunny_normalized.csv"))
         elif self._power_profile_index == 1:  # 1:partial
-            profile_path = pathlib.Path(d3a_path + '/resources/Solar_Curve_W_partial.csv')
+            profile_path = (
+                pathlib.Path(d3a_path + "/resources/Solar_Curve_partial_normalized.csv"))
         elif self._power_profile_index == 2:  # 2:cloudy
-            profile_path = pathlib.Path(d3a_path + '/resources/Solar_Curve_W_cloudy.csv')
+            profile_path = (
+                pathlib.Path(d3a_path + "/resources/Solar_Curve_cloudy_normalized.csv"))
         else:
             raise ValueError("Energy_profile has to be in [0,1,2,4]")
 
-        # Populate energy production forecast data
-        self.power_profile = read_arbitrary_profile(
-            InputProfileTypes.POWER, str(profile_path))
+        power_weight_profile = read_arbitrary_profile(
+            InputProfileTypes.IDENTITY, profile_path)
+
+        self.energy_profile = {
+            time_slot: convert_kW_to_kWh(weight * self.capacity_kW,
+                                         self.area.config.slot_length)
+            for time_slot, weight in power_weight_profile.items()}
 
     def area_reconfigure_event(self, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
@@ -136,9 +147,9 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
     """
         Strategy responsible for reading a profile in the form of a dict of values.
     """
-    parameters = ('power_profile', 'panel_count', 'initial_selling_rate', 'final_selling_rate',
-                  'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
-                  'use_market_maker_rate')
+    parameters = ("power_profile", "panel_count", "initial_selling_rate", "final_selling_rate",
+                  "fit_to_limit", "update_interval", "energy_rate_decrease_per_update",
+                  "use_market_maker_rate")
 
     def __init__(
             self, power_profile, panel_count: int = 1,
@@ -151,11 +162,12 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
             use_market_maker_rate: bool = False):
         """
         Constructor of PVUserProfileStrategy
-        :param power_profile: input profile for a day. Can be either a csv file path,
-        or a dict with hourly data (Dict[int, float])
-        or a dict with arbitrary time data (Dict[str, float])
-        :param panel_count: number of solar panels for this PV plant
-        :param final_selling_rate: lower threshold for the PV sale price
+        Args:
+            power_profile: input profile for a day. Can be either a csv file path,
+                           or a dict with hourly data (Dict[int, float])
+                           or a dict with arbitrary time data (Dict[str, float])
+            panel_count: number of solar panels for this PV plant
+            final_selling_rate: lower threshold for the PV sale price
         """
         super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
@@ -171,7 +183,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         Reads profile data from the power profile. Handles csv files and dicts.
         :return: key value pairs of time to energy in kWh
         """
-        self.power_profile = read_arbitrary_profile(
+        self.energy_profile = read_arbitrary_profile(
             InputProfileTypes.POWER,
             self._power_profile_W)
 

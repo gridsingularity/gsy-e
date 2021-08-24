@@ -22,12 +22,12 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
-            Area('Cell Tower', strategy=LoadHoursStrategy(avg_power_W=50,
+            Area("Cell Tower", strategy=LoadHoursStrategy(avg_power_W=50,
                                                           hrs_per_day=24)
                  ),
-            Area('Commercial Energy Producer',
+            Area("Commercial Energy Producer",
                  strategy=FinitePowerPlant(energy_rate=30,
                                            max_available_power_kW=100)
                  ),
