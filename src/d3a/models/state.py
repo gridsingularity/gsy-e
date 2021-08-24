@@ -223,7 +223,7 @@ class ProductionState(ProsumptionInterface):
             self._available_energy_kWh.pop(market_slot, None)
             self._energy_production_forecast_kWh.pop(market_slot, None)
 
-    def get_energy_production_forecast_kWh(self, time_slot, default_value=None):
+    def get_energy_production_forecast_kWh(self, time_slot: DateTime, default_value: float = 0.0):
         """Return the expected produced energy at a specific market slot."""
         production_forecast = self._energy_production_forecast_kWh.get(time_slot, default_value)
         assert production_forecast >= -FLOATING_POINT_TOLERANCE
