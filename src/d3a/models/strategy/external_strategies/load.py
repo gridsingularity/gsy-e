@@ -76,7 +76,7 @@ class LoadExternalMixin(ExternalMixin):
                 response_channel, {
                     "command": "list_bids", "status": "ready",
                     "bid_list": self.filtered_bids_next_market,
-                    "transaction_id": arguments.get("transaction_id", None)})
+                    "transaction_id": arguments.get("transaction_id")})
         except Exception as e:
             logging.error(f"Error when handling list bids on area {self.device.name}: "
                           f"Exception: {str(e)}")
@@ -84,7 +84,7 @@ class LoadExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "list_bids", "status": "error",
                  "error_message": f"Error when listing bids on area {self.device.name}.",
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
 
     def _delete_bid(self, payload):
         transaction_id = self._get_transaction_id(payload)
@@ -117,7 +117,7 @@ class LoadExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
         except Exception as e:
             logging.error(f"Error when handling bid delete on area {self.device.name}: "
                           f"Exception: {str(e)}, Bid Arguments: {arguments}")
@@ -127,7 +127,7 @@ class LoadExternalMixin(ExternalMixin):
                  "error_message": f"Error when handling bid delete "
                                   f"on area {self.device.name} with arguments {arguments}. "
                                   f"Bid does not exist on the current market.",
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
 
     def _bid(self, payload):
         transaction_id = self._get_transaction_id(payload)
@@ -180,7 +180,7 @@ class LoadExternalMixin(ExternalMixin):
                 bid_response_channel, {
                     "command": "bid", "status": "ready",
                     "bid": bid.to_json_string(replace_existing=replace_existing),
-                    "transaction_id": arguments.get("transaction_id", None)})
+                    "transaction_id": arguments.get("transaction_id")})
         except Exception as e:
             logging.error(f"Error when handling bid create on area {self.device.name}: "
                           f"Exception: {str(e)}, Bid Arguments: {arguments}")
@@ -189,7 +189,7 @@ class LoadExternalMixin(ExternalMixin):
                 {"command": "bid", "status": "error",
                  "error_message": f"Error when handling bid create "
                                   f"on area {self.device.name} with arguments {arguments}.",
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
 
     @property
     def _device_info_dict(self):
@@ -284,12 +284,14 @@ class LoadExternalMixin(ExternalMixin):
                 arguments["price"],
                 arguments["energy"],
                 replace_existing=replace_existing,
-                **arguments)
+                attributes=arguments.get("attributes"),
+                requirements=arguments.get("requirements")
+            )
             return {
                 "command": "bid", "status": "ready",
                 "bid": bid.to_json_string(replace_existing=replace_existing),
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
         except Exception as e:
             logging.error(f"Error when handling bid on area {self.device.name}: "
                           f"Exception: {str(e)}. Traceback {traceback.format_exc()}")
@@ -298,7 +300,7 @@ class LoadExternalMixin(ExternalMixin):
                 "area_uuid": self.device.uuid,
                 "error_message": f"Error when handling bid create "
                                  f"on area {self.device.name} with arguments {arguments}.",
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
 
     def _delete_bid_aggregator(self, arguments):
         try:
@@ -308,7 +310,7 @@ class LoadExternalMixin(ExternalMixin):
             return {
                 "command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
         except Exception as e:
             logging.error(f"Error when handling delete bid on area {self.device.name}: "
                           f"Exception: {str(e)}")
@@ -318,7 +320,7 @@ class LoadExternalMixin(ExternalMixin):
                 "error_message": f"Error when handling bid delete "
                                  f"on area {self.device.name} with arguments {arguments}. "
                                  f"Bid does not exist on the current market.",
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
 
     def _list_bids_aggregator(self, arguments):
         try:
@@ -326,7 +328,7 @@ class LoadExternalMixin(ExternalMixin):
                 "command": "list_bids", "status": "ready",
                 "bid_list": self.filtered_bids_next_market,
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
         except Exception as e:
             logging.error(f"Error when handling list bids on area {self.device.name}: "
                           f"Exception: {str(e)}")
@@ -334,7 +336,7 @@ class LoadExternalMixin(ExternalMixin):
                 "command": "list_bids", "status": "error",
                 "area_uuid": self.device.uuid,
                 "error_message": f"Error when listing bids on area {self.device.name}.",
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
 
 
 class LoadHoursExternalStrategy(LoadExternalMixin, LoadHoursStrategy):
