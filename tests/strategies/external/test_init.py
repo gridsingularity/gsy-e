@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import itertools
 import json
 import unittest
 import uuid
@@ -586,30 +585,27 @@ class TestForecastRelatedFeatures:
                                "transaction_id": arguments["transaction_id"],
                                "error_message": error_message})
 
-    @pytest.mark.parametrize(
-        "ext_strategy, command_name",
-        itertools.product(
-            [LoadForecastExternalStrategy(), PVForecastExternalStrategy()],
-            ["set_energy_forecast", "set_energy_measurement"]
-        )
-    )
+    @pytest.mark.parametrize("ext_strategy", [LoadForecastExternalStrategy(),
+                                              PVForecastExternalStrategy()])
+    @pytest.mark.parametrize("command_name", ["set_energy_forecast", "set_energy_measurement"])
     def test_set_device_energy_data_aggregator_succeeds(self, ext_strategy, command_name):
         ext_strategy.owner = Mock()
         device_uuid = str(uuid.uuid4())
         ext_strategy.owner.uuid = device_uuid
         if command_name == "set_energy_forecast":
-            aggregator_method = ext_strategy._set_energy_forecast_aggregator
             energy_buffer = ext_strategy.energy_forecast_buffer
             argument_name = "energy_forecast"
         elif command_name == "set_energy_measurement":
-            aggregator_method = ext_strategy._set_energy_measurement_aggregator
             energy_buffer = ext_strategy.energy_measurement_buffer
             argument_name = "energy_measurement"
         else:
             assert False
 
-        return_value = aggregator_method(
-            {argument_name: {"2021-03-04T12:00": 1234.0}}
+        return_value = ext_strategy.trigger_aggregator_commands(
+            {
+                "type": command_name,
+                argument_name: {"2021-03-04T12:00": 1234.0}
+            }
         )
         assert len(energy_buffer.values()) == 1
         assert list(energy_buffer.values())[0] == 1234.0
