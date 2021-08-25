@@ -15,13 +15,15 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.area import Area
-from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
-from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.enums import BidOfferMatchAlgoEnum
+
+from d3a.models.area import Area
+from d3a.models.strategy.external_strategies.load import (LoadHoursExternalStrategy,
+                                                          LoadForecastExternalStrategy)
+from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.strategy.storage import StorageStrategy
 
 
 def get_setup(config):
@@ -58,6 +60,9 @@ def get_setup(config):
                         final_buying_rate=35)
                          ),
                     Area("pv", strategy=PVExternalStrategy(panel_count=4)
+                         ),
+                    Area("forecast-measurement-load", strategy=LoadForecastExternalStrategy(
+                        final_buying_rate=35)
                          ),
 
                 ], external_connection_available=True,
