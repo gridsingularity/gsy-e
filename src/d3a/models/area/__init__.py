@@ -19,15 +19,8 @@ from logging import getLogger
 from typing import List  # noqa
 from uuid import uuid4
 
-from cached_property import cached_property
-from d3a_interface.area_validator import validate_area
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.enums import SpotMarketTypeEnum
-from d3a_interface.utils import key_in_dict_and_not_none
-from pendulum import DateTime, duration, today
-from slugify import slugify
-
 import d3a.constants
+from cached_property import cached_property
 from d3a.d3a_core.blockchain_interface import blockchain_interface_factory
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
@@ -43,6 +36,12 @@ from d3a.models.area.throughput_parameters import ThroughputParameters
 from d3a.models.config import SimulationConfig
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
+from d3a_interface.area_validator import validate_area
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.enums import SpotMarketTypeEnum
+from d3a_interface.utils import key_in_dict_and_not_none
+from pendulum import DateTime, duration, today
+from slugify import slugify
 
 log = getLogger(__name__)
 
@@ -348,11 +347,12 @@ class Area:
             self._update_descendants_strategy_prices()
             self.should_update_child_strategies = False
 
-        # Clear `current_market` cache
-        self.__dict__.pop("current_market", None)
-
         # Markets range from one slot to market_count into the future
         changed = self._markets.create_future_markets(now_value, True, self)
+
+        # create new settlement market
+        if self.last_past_market:
+            self._markets.create_settlement_market(self.last_past_market.time_slot, self)
 
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
                 len(DeviceRegistry.REGISTRY.keys()) != 0:
@@ -547,6 +547,10 @@ class Area:
             return list(self._markets.past_markets.values())[-1]
         except IndexError:
             return None
+
+    @property
+    def settlement_markets(self):
+        return self._markets.settlement_markets
 
     @cached_property
     def available_triggers(self):

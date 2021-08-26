@@ -179,23 +179,6 @@ class TestAreaClass(unittest.TestCase):
         o3.energy_rate = 20
         assert self.area.market_with_most_expensive_offer is m3
 
-    def test_cycle_markets(self):
-        GlobalConfig.end_date = GlobalConfig.start_date + GlobalConfig.sim_duration
-        self.area = Area(name="Street", children=[Area(name="House")],
-                         config=GlobalConfig, grid_fee_percentage=1)
-        self.area.parent = Area(name="GRID")
-        self.area.config.market_count = 5
-        self.area.activate()
-        assert len(self.area.all_markets) == 5
-
-        assert len(self.area.balancing_markets) == 5
-        self.area.current_tick = 900
-        self.area.cycle_markets()
-        assert len(self.area.past_markets) == 1
-        assert len(self.area.past_balancing_markets) == 1
-        assert len(self.area.all_markets) == 5
-        assert len(self.area.balancing_markets) == 5
-
     def test_get_restore_state_get_called_on_all_areas(self):
         strategy = MagicMock(spec=StorageStrategy)
         bat = Area(name="battery", strategy=strategy)
