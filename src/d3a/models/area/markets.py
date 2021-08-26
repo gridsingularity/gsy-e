@@ -102,7 +102,7 @@ class AreaMarkets:
         market.readonly = True
         self._delete_past_markets(past_markets)
         past_markets[time_slot] = market
-        self.log.error(
+        self.log.debug(
             f"Moving {past_markets[time_slot]} to past.")
 
     def _rotate_settlement_markets(self, current_time: DateTime) -> None:
