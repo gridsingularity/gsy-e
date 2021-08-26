@@ -182,7 +182,7 @@ class ExternalMixin:
                 response_channel,
                 {"command": "device_info", "status": "ready",
                  "device_info": self._device_info_dict,
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
         except Exception:
             error_message = f"Error when handling device info on area {self.device.name}"
             logging.exception(error_message)
@@ -190,21 +190,21 @@ class ExternalMixin:
                 response_channel,
                 {"command": "device_info", "status": "error",
                  "error_message": error_message,
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
 
     def _device_info_aggregator(self, arguments):
         try:
             return {
                 "command": "device_info", "status": "ready",
                 "device_info": self._device_info_dict,
-                "transaction_id": arguments.get("transaction_id", None),
+                "transaction_id": arguments.get("transaction_id"),
                 "area_uuid": self.device.uuid
             }
         except Exception:
             return {
                 "command": "device_info", "status": "error",
                 "error_message": f"Error when handling device info on area {self.device.name}.",
-                "transaction_id": arguments.get("transaction_id", None),
+                "transaction_id": arguments.get("transaction_id"),
                 "area_uuid": self.device.uuid
             }
 
@@ -397,9 +397,9 @@ class ExternalMixin:
             elif command["type"] == "device_info":
                 return self._device_info_aggregator(command)
             elif command["type"] == "set_energy_forecast":
-                return self.set_energy_forecast(command)
+                return self._set_energy_forecast_aggregator(command)
             elif command["type"] == "set_energy_measurement":
-                return self.set_energy_measurement(command)
+                return self._set_energy_measurement_aggregator(command)
             else:
                 return {
                     "command": command["type"], "status": "error",
@@ -477,7 +477,7 @@ class ExternalMixin:
             self.redis.publish_json(
                 response_channel,
                 {"command": command_type, "status": "ready",
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
         except Exception:
             error_message = (f"Error when handling _{command_type}_impl "
                              f"on area {self.device.name}. Arguments: {arguments}")
@@ -486,7 +486,30 @@ class ExternalMixin:
                 response_channel,
                 {"command": command_type, "status": "error",
                  "error_message": error_message,
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": arguments.get("transaction_id")})
+
+    def _set_energy_forecast_aggregator(self, arguments):
+        return self._set_device_energy_data_aggregator(arguments, "set_energy_forecast")
+
+    def _set_energy_measurement_aggregator(self, arguments):
+        return self._set_device_energy_data_aggregator(arguments, "set_energy_measurement")
+
+    def _set_device_energy_data_aggregator(self, arguments, command_name):
+        try:
+            self._set_device_energy_data_state(command_name, arguments)
+            return {
+                "command": command_name, "status": "ready",
+                command_name: arguments,
+                "area_uuid": self.device.uuid,
+                "transaction_id": arguments.get("transaction_id")}
+        except Exception:
+            logging.exception(f"Error when handling bid on area {self.device.name}")
+            return {
+                "command": command_name, "status": "error",
+                "area_uuid": self.device.uuid,
+                "error_message": f"Error when handling {command_name} "
+                                 f"on area {self.device.name} with arguments {arguments}.",
+                "transaction_id": arguments.get("transaction_id")}
 
     @staticmethod
     def _validate_values_positive_in_profile(profile: Dict) -> None:
