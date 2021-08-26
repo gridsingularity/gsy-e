@@ -17,7 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 
-from d3a_interface.constants_limits import ConstSettings, DATE_TIME_UI_FORMAT, GlobalConfig
+from d3a_interface.constants_limits import (ConstSettings, DATE_TIME_UI_FORMAT, DATE_TIME_FORMAT,
+                                            GlobalConfig)
 from d3a_interface.results_validator import results_validator
 from d3a_interface.sim_results.all_results import ResultsHandler
 from d3a_interface.utils import get_json_dict_memory_allocation_size
@@ -32,6 +33,9 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
+from typing import Dict
+from d3a.models.area import Area
+from d3a.models.market import Market
 
 _NO_VALUE = {
     'min': None,
@@ -131,26 +135,44 @@ class SimulationEndpointBuffer:
             **self.results_handler.all_raw_results
         }
 
+    def _read_settlement_markets_stats_to_dict(self, area: Area) -> Dict[str, Dict]:
+        """Loop over all settlement markets and return market_stats for each in a dict."""
+        stats_dict = {}
+        for time_slot, market in area.settlement_markets.items():
+            stats_dict[time_slot.format(DATE_TIME_FORMAT)] = (
+                self._read_market_stats_to_dict(market))
+        return stats_dict
+
+    @staticmethod
+    def _read_market_stats_to_dict(market: Market) -> Dict:
+        """Read all market related stats to a dictionary."""
+        stats_dict = {"bids": [], "offers": [], "trades": [], "market_fee": 0.0}
+        for offer in market.offer_history:
+            stats_dict["offers"].append(offer.serializable_dict())
+        for bid in market.bid_history:
+            stats_dict["bids"].append(bid.serializable_dict())
+        for trade in market.trades:
+            stats_dict["trades"].append(trade.serializable_dict())
+
+        stats_dict["market_fee"] = market.market_fee
+        stats_dict["const_fee_rate"] = (market.const_fee_rate
+                                        if market.const_fee_rate is not None else 0.)
+        stats_dict["feed_in_tariff"] = GlobalConfig.FEED_IN_TARIFF
+        stats_dict["market_maker_rate"] = get_market_maker_rate_from_config(market)
+        return stats_dict
+
     def _populate_core_stats_and_sim_state(self, area):
         if area.uuid not in self.flattened_area_core_stats_dict:
             self.flattened_area_core_stats_dict[area.uuid] = {}
         if self.current_market_time_slot_str == "":
             return
         core_stats_dict = {"bids": [], "offers": [], "trades": [], "market_fee": 0.0}
-        if area.current_market is not None:
-            for offer in area.current_market.offer_history:
-                core_stats_dict["offers"].append(offer.serializable_dict())
-            for bid in area.current_market.bid_history:
-                core_stats_dict["bids"].append(bid.serializable_dict())
-            for trade in area.current_market.trades:
-                core_stats_dict["trades"].append(trade.serializable_dict())
-            core_stats_dict["market_fee"] = area.current_market.market_fee
-            core_stats_dict["const_fee_rate"] = (area.current_market.const_fee_rate
-                                                 if area.current_market.const_fee_rate is not None
-                                                 else 0.)
-            core_stats_dict["feed_in_tariff"] = GlobalConfig.FEED_IN_TARIFF
-            core_stats_dict["market_maker_rate"] = get_market_maker_rate_from_config(
-                area.current_market)
+        if area.current_market:
+            core_stats_dict.update(self._read_market_stats_to_dict(area.current_market))
+
+            if ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS:
+                core_stats_dict["settlement_market_stats"] = (
+                    self._read_settlement_markets_stats_to_dict(area))
 
         if area.strategy is None:
             core_stats_dict["area_throughput"] = {
