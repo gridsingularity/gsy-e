@@ -21,9 +21,13 @@ import uuid
 from collections import deque
 from unittest.mock import MagicMock, Mock
 
+import pytest
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from parameterized import parameterized
+from pendulum import now, duration, datetime
+
 import d3a.constants
 import d3a.d3a_core.util
-import pytest
 from d3a.d3a_core.singletons import external_global_statistics
 from d3a.models.area import Area
 from d3a.models.market.market_structures import Trade, Offer, Bid
@@ -34,9 +38,6 @@ from d3a.models.strategy.external_strategies.load import (LoadHoursExternalStrat
 from d3a.models.strategy.external_strategies.pv import (PVExternalStrategy,
                                                         PVForecastExternalStrategy)
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from parameterized import parameterized
-from pendulum import now, duration
 
 transaction_id = str(uuid.uuid4())
 
@@ -583,3 +584,35 @@ class TestForecastRelatedFeatures:
                                "status": "error",
                                "transaction_id": arguments["transaction_id"],
                                "error_message": error_message})
+
+    @pytest.mark.parametrize("ext_strategy", [LoadForecastExternalStrategy(),
+                                              PVForecastExternalStrategy()])
+    @pytest.mark.parametrize("command_name", ["set_energy_forecast", "set_energy_measurement"])
+    def test_set_device_energy_data_aggregator_succeeds(self, ext_strategy, command_name):
+        ext_strategy.owner = Mock()
+        device_uuid = str(uuid.uuid4())
+        ext_strategy.owner.uuid = device_uuid
+        if command_name == "set_energy_forecast":
+            energy_buffer = ext_strategy.energy_forecast_buffer
+            argument_name = "energy_forecast"
+        elif command_name == "set_energy_measurement":
+            energy_buffer = ext_strategy.energy_measurement_buffer
+            argument_name = "energy_measurement"
+        else:
+            assert False
+
+        return_value = ext_strategy.trigger_aggregator_commands(
+            {
+                "type": command_name,
+                argument_name: {"2021-03-04T12:00": 1234.0}
+            }
+        )
+        assert len(energy_buffer.values()) == 1
+        assert list(energy_buffer.values())[0] == 1234.0
+        assert list(energy_buffer.keys())[0] == datetime(2021, 3, 4, 12, 00)
+        assert return_value["command"] == command_name
+        assert return_value["status"] == "ready"
+        assert return_value["area_uuid"] == device_uuid
+        assert command_name in return_value
+        assert argument_name in return_value[command_name]
+        assert list(return_value[command_name][argument_name].values())[0] == 1234.0
