@@ -16,12 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-
-from d3a_interface.constants_limits import (ConstSettings, DATE_TIME_UI_FORMAT, DATE_TIME_FORMAT,
-                                            GlobalConfig)
-from d3a_interface.results_validator import results_validator
-from d3a_interface.sim_results.all_results import ResultsHandler
-from d3a_interface.utils import get_json_dict_memory_allocation_size
+from typing import Dict, TYPE_CHECKING
 
 from d3a.d3a_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
 from d3a.d3a_core.util import get_market_maker_rate_from_config
@@ -33,18 +28,27 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
-from typing import Dict
-from d3a.models.area import Area
-from d3a.models.market import Market
+from d3a_interface.constants_limits import (ConstSettings, DATE_TIME_UI_FORMAT, DATE_TIME_FORMAT,
+                                            GlobalConfig)
+from d3a_interface.results_validator import results_validator
+from d3a_interface.sim_results.all_results import ResultsHandler
+from d3a_interface.utils import get_json_dict_memory_allocation_size
+
+if TYPE_CHECKING:
+    from d3a.models.area import Area
+    from d3a.models.market import Market
+    from d3a.d3a_core.simulation import SimulationProgressInfo
 
 _NO_VALUE = {
-    'min': None,
-    'avg': None,
-    'max': None
+    "min": None,
+    "avg": None,
+    "max": None
 }
 
 
 class SimulationEndpointBuffer:
+    """Handles collecting and buffering of all results for all areas."""
+
     def __init__(self, job_id, initial_params, area, should_export_plots):
         self.job_id = job_id
         self.result_area_uuids = set()
@@ -52,7 +56,7 @@ class SimulationEndpointBuffer:
         self.current_market_ui_time_slot_str = ""
         self.current_market_time_slot_unix = None
         self.current_market_time_slot = None
-        self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
+        self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ""
         self.status = {}
         self.area_result_dict = self._create_area_tree_dict(area)
         self.flattened_area_core_stats_dict = {}
@@ -71,31 +75,34 @@ class SimulationEndpointBuffer:
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
             self.offer_bid_trade_hr = OfferBidTradeGraphStats()
 
-    def prepare_results_for_publish(self):
+    def prepare_results_for_publish(self) -> Dict:
+        """Validate, serialise and check size of the results before sending to d3a-web."""
         result_report = self.generate_result_report()
         results_validator(result_report)
 
         message_size = get_json_dict_memory_allocation_size(result_report)
         if message_size > 64000:
-            logging.error(f"Do not publish message bigger than 64 MB, current message size "
-                          f"{message_size / 1000.0} MB.")
-            return None
-        logging.debug(f"Publishing {message_size} KB of data via Redis.")
+            logging.error("Do not publish message bigger than 64 MB, current message size "
+                          "%s MB.", message_size / 1000.0)
+            return {}
+        logging.debug("Publishing %s KB of data via Redis.", message_size)
         return result_report
 
     @staticmethod
-    def _structure_results_from_area_object(target_area):
+    def _structure_results_from_area_object(target_area: "Area") -> Dict:
+        """Add basic information about the area in the area_tree_dict."""
         area_dict = dict()
-        area_dict['name'] = target_area.name
-        area_dict['uuid'] = target_area.uuid
-        area_dict['parent_uuid'] = target_area.parent.uuid \
+        area_dict["name"] = target_area.name
+        area_dict["uuid"] = target_area.uuid
+        area_dict["parent_uuid"] = target_area.parent.uuid \
             if target_area.parent is not None else ""
-        area_dict['type'] = str(target_area.strategy.__class__.__name__) \
+        area_dict["type"] = str(target_area.strategy.__class__.__name__) \
             if target_area.strategy is not None else "Area"
-        area_dict['children'] = []
+        area_dict["children"] = []
         return area_dict
 
-    def _create_area_tree_dict(self, area):
+    def _create_area_tree_dict(self, area: "Area") -> Dict:
+        """Create a tree that mirrors the setup architecture and contains basic information."""
         area_result_dict = self._structure_results_from_area_object(area)
         for child in area.children:
             area_result_dict["children"].append(
@@ -103,13 +110,15 @@ class SimulationEndpointBuffer:
             )
         return area_result_dict
 
-    def update_results_area_uuids(self, area):
+    def update_results_area_uuids(self, area: "Area") -> None:
+        """Populate a set of area uuids that contribute to the stats."""
         if area.strategy is not None or (area.strategy is None and area.children):
             self.result_area_uuids.update({area.uuid})
         for child in area.children:
             self.update_results_area_uuids(child)
 
-    def generate_result_report(self):
+    def generate_result_report(self) -> Dict:
+        """Create dict that contains all statistics that are sent to the d3a-web."""
         # TODO: In D3ASIM-2288, add unix_time=True to convert_pendulum_to_str_in_dict
         return {
             "job_id": self.job_id,
@@ -125,7 +134,8 @@ class SimulationEndpointBuffer:
             "configuration_tree": self.area_result_dict
         }
 
-    def generate_json_report(self):
+    def generate_json_report(self) -> Dict:
+        """Create dict that contains all locally exported statistics (for JSON files)."""
         return {
             "job_id": self.job_id,
             "random_seed": self.random_seed,
@@ -135,7 +145,7 @@ class SimulationEndpointBuffer:
             **self.results_handler.all_raw_results
         }
 
-    def _read_settlement_markets_stats_to_dict(self, area: Area) -> Dict[str, Dict]:
+    def _read_settlement_markets_stats_to_dict(self, area: "Area") -> Dict[str, Dict]:
         """Loop over all settlement markets and return market_stats for each in a dict."""
         stats_dict = {}
         for time_slot, market in area.settlement_markets.items():
@@ -144,7 +154,7 @@ class SimulationEndpointBuffer:
         return stats_dict
 
     @staticmethod
-    def _read_market_stats_to_dict(market: Market) -> Dict:
+    def _read_market_stats_to_dict(market: "Market") -> Dict:
         """Read all market related stats to a dictionary."""
         stats_dict = {"bids": [], "offers": [], "trades": [], "market_fee": 0.0}
         for offer in market.offer_history:
@@ -161,7 +171,9 @@ class SimulationEndpointBuffer:
         stats_dict["market_maker_rate"] = get_market_maker_rate_from_config(market)
         return stats_dict
 
-    def _populate_core_stats_and_sim_state(self, area):
+    def _populate_core_stats_and_sim_state(self, area: "Area") -> None:
+        """Populate all area statistics and state into self.flattened_area_core_stats_dict and
+        self.simulation_state."""
         if area.uuid not in self.flattened_area_core_stats_dict:
             self.flattened_area_core_stats_dict[area.uuid] = {}
         if self.current_market_time_slot_str == "":
@@ -246,7 +258,9 @@ class SimulationEndpointBuffer:
         for child in area.children:
             self._populate_core_stats_and_sim_state(child)
 
-    def update_stats(self, area, simulation_status, progress_info, sim_state):
+    def update_stats(self, area: "Area", simulation_status: str,
+                     progress_info: "SimulationProgressInfo", sim_state: Dict) -> None:
+        """Wrapper for handling of all results."""
         self.area_result_dict = self._create_area_tree_dict(area)
         self.status = simulation_status
         is_initial_current_market_on_cn = GlobalConfig.IS_CANARY_NETWORK and \
@@ -281,9 +295,11 @@ class SimulationEndpointBuffer:
         self.update_results_area_uuids(area)
         self.update_offer_bid_trade()
 
-    def update_offer_bid_trade(self):
+    def update_offer_bid_trade(self) -> None:
+        """Populate self.bids_offers_trades with results from flattened_area_core_stats_dict
+        (for local export of statistics)."""
         if self.current_market_time_slot_str == "":
             return
         for area_uuid, area_result in self.flattened_area_core_stats_dict.items():
             self.bids_offers_trades[area_uuid] = \
-                {k: area_result[k] for k in ('offers', 'bids', 'trades')}
+                {k: area_result[k] for k in ("offers", "bids", "trades")}
