@@ -490,6 +490,15 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         return self.offers.can_offer_be_posted(
             offer_energy, offer_price, available_energy, market, replace_existing=replace_existing)
 
+    def can_settlement_offer_be_posted(self, offer_energy, offer_price, market,
+                                       replace_existing=False):
+        if not self.state.should_post_offer(market.time_slot):
+            return False
+        unsettled_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
+        return self.offers.can_offer_be_posted(
+            offer_energy, offer_price, unsettled_energy_kWh, market,
+            replace_existing=replace_existing)
+
     def deactivate(self):
         pass
 
@@ -607,6 +616,14 @@ class BidEnabledStrategy(BaseStrategy):
         total_posted_energy = (bid_energy + posted_bid_energy)
 
         return total_posted_energy <= required_energy_kWh and bid_price >= 0.0
+
+    def can_settlement_bid_be_posted(self, bid_energy, bid_price, market, replace_existing=False):
+        if not self.state.should_post_bid(market.time_slot):
+            return False
+        unsettled_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
+        return self.can_bid_be_posted(
+            bid_energy, bid_price, unsettled_energy_kWh, market,
+            replace_existing=replace_existing)
 
     def is_bid_posted(self, market, bid_id):
         return bid_id in [bid.id for bid in self.get_posted_bids(market)]
