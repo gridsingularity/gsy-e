@@ -24,7 +24,7 @@ from d3a.models.market import GridFee, Market
 from d3a.models.market.balancing import BalancingMarket
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.two_sided import TwoSidedMarket
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from pendulum import DateTime
 
 if TYPE_CHECKING:
@@ -44,92 +44,125 @@ class AreaMarkets:
         self.past_balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]
         # Settlement markets
         self.settlement_markets = OrderedDict()  # type: Dict[DateTime, Market]
-        self._indexed_future_markets = {}
-
-    @property
-    def indexed_future_markets(self) -> Dict:
-        """Return dictionary that contains an id market mapping."""
-        return self._indexed_future_markets
+        self.past_settlement_markets = OrderedDict()  # type: Dict[DateTime, Market]
+        self.indexed_future_markets = {}
 
     @property
     def all_future_spot_markets(self) -> List:
-        """Return all futur markets in a list."""
+        """Return all future markets in a list."""
         return list(self.markets.values())
 
+    def _update_indexed_future_markets(self) -> None:
+        """Update the indexed_future_markets mapping."""
+        self.indexed_future_markets = {m.id: m for m in self.all_future_spot_markets}
+
     @staticmethod
-    def _is_it_time_to_delete_settlement_market(current_time: DateTime,
-                                                time_slot: DateTime) -> bool:
-        """Check if it is time to delete the settlement market with for the time_slot."""
-        return (time_slot < current_time.subtract(
-                    hours=ConstSettings.GeneralSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
+    def _is_it_time_to_delete_past_settlement_market(current_time_slot: DateTime,
+                                                     time_slot: DateTime) -> bool:
+        """Check if the past settlement market for time_slot is ready to be deleted."""
+        return (time_slot < current_time_slot.subtract(
+                    hours=ConstSettings.GeneralSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS,
+                    minutes=GlobalConfig.slot_length.minutes))
+
+    @staticmethod
+    def _is_it_time_to_delete_past_market(current_time_slot: DateTime,
+                                          time_slot: DateTime) -> bool:
+        """Check if the past (balancing-)market for time_slot is ready to be deleted."""
+
+        if d3a.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
+            return False
+
+        if ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS:
+            return (time_slot < current_time_slot.subtract(
+                hours=ConstSettings.GeneralSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
+        else:
+            return time_slot < current_time_slot.subtract(
+                minutes=GlobalConfig.slot_length.minutes)
 
     def rotate_markets(self, current_time: DateTime) -> None:
         """Deal with market rotation of different types."""
-        self._market_rotation(current_time=current_time)
+        self._move_markets_to_past(current_time)
+        self._delete_past_markets(current_time)
 
-        self._balancing_market_rotation(current_time=current_time)
+        if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
+            self._move_balancing_markets_to_past_balancing(current_time)
+            self._delete_past_balancing_markets(current_time)
 
-        self._indexed_future_markets = {
-            m.id: m for m in self.all_future_spot_markets
-        }
+        if ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS:
+            self._move_settlement_markets_to_past_settlement(current_time)
+            self._delete_past_settlement_markets(current_time)
 
-    def _balancing_market_rotation(self, current_time: DateTime) -> None:
-        """Move balancing markets to past."""
-        if not ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
-            return
-        for time_slot in list(self.balancing_markets.keys()):
-            print(current_time, time_slot)
-            if time_slot < current_time:
-                balancing_market = self.balancing_markets.pop(time_slot)
+        self._update_indexed_future_markets()
 
-                self._move_to_past_markets(time_slot, balancing_market,
-                                           self.past_balancing_markets)
+    def _move_markets_to_past(self, current_time: DateTime) -> None:
+        """Move slot markets to self.past_markets."""
 
-    def _market_rotation(self, current_time: DateTime) -> None:
-        """Move markets to past and rotate settlement markets."""
-
-        for time_slot in list(self.markets.keys()):
+        for time_slot in self.markets:
             if time_slot < current_time:
                 market = self.markets.pop(time_slot)
-                if ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS:
-                    self._rotate_settlement_markets(current_time)
+                market.readonly = True
+                self.past_markets[time_slot] = market
+                self.log.debug(
+                    f"Moving {self.past_markets[time_slot]} to past.")
 
-                self._move_to_past_markets(time_slot, market, self.past_markets)
+    def _move_balancing_markets_to_past_balancing(self, current_time: DateTime) -> None:
+        """Move balancing markets to self.past_balancing_markets."""
 
-    def _move_to_past_markets(self, time_slot: DateTime,
-                              market: Market, past_markets: Dict) -> None:
-        """Move market to past markets (also used for balancing markets)."""
-        market.readonly = True
-        self._delete_past_markets(past_markets)
-        past_markets[time_slot] = market
-        self.log.debug(
-            f"Moving {past_markets[time_slot]} to past.")
+        for time_slot in self.balancing_markets:
+            if time_slot < current_time:
+                market = self.balancing_markets.pop(time_slot)
+                market.readonly = True
+                self.past_balancing_markets[time_slot] = market
+                self.log.debug(
+                    f"Moving {self.past_balancing_markets[time_slot]} to past.")
 
-    def _rotate_settlement_markets(self, current_time: DateTime) -> None:
-        """create new settlement market, delete the oldest one"""
-        delete_settlement_market_slots = [
+    def _move_settlement_markets_to_past_settlement(self, current_time: DateTime) -> None:
+        """Move settlement markets to self.past_settlement_markets."""
+        move_settlement_market_slots = [
             time_slot for time_slot in self.settlement_markets.keys()
-            if self._is_it_time_to_delete_settlement_market(current_time=current_time,
-                                                            time_slot=time_slot)]
-        for time_slot in delete_settlement_market_slots:
-            self.settlement_markets.pop(time_slot)
+            if self._is_it_time_to_delete_past_market(current_time, time_slot)]
+        for time_slot in move_settlement_market_slots:
+            self.past_settlement_markets[time_slot] = self.settlement_markets.pop(time_slot)
+            self.log.debug(
+                f"Moving {self.past_settlement_markets[time_slot]} to past.")
 
-    def _delete_past_markets(self, past_markets: Dict):
-        """Delete all past markets and connected instances."""
-        if not d3a.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
-            delete_markets = [pm for pm in past_markets if
-                              pm not in self.markets.values()]
-            for pm in delete_markets:
-                if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-                    past_markets[pm].redis_api.stop()
-                del past_markets[pm].offers
-                del past_markets[pm].trades
-                del past_markets[pm].offer_history
-                del past_markets[pm].notification_listeners
-                del past_markets[pm].bids
-                del past_markets[pm].bid_history
-                del past_markets[pm].traded_energy
-                del past_markets[pm]
+    def _delete_past_markets(self, current_time: DateTime) -> None:
+        """Delete the unneeded slot markets from self.past_markets."""
+        delete_market_slots = [
+            time_slot for time_slot in self.past_markets.keys()
+            if self._is_it_time_to_delete_past_market(current_time, time_slot)]
+        for time_slot in delete_market_slots:
+            self._delete_market_and_all_attributes(self.past_markets, time_slot)
+
+    def _delete_past_balancing_markets(self, current_time: DateTime) -> None:
+        """Delete the unneeded balancing markets from self.past_balancing_markets."""
+        delete_market_slots = [
+            time_slot for time_slot in self.past_balancing_markets.keys()
+            if self._is_it_time_to_delete_past_market(current_time, time_slot)]
+        for time_slot in delete_market_slots:
+            self._delete_market_and_all_attributes(self.past_balancing_markets, time_slot)
+
+    def _delete_past_settlement_markets(self, current_time: DateTime) -> None:
+        """Delete the unneeded settlement markets from self.past_settlement_markets."""
+        delete_settlement_market_slots = [
+            time_slot for time_slot in self.past_settlement_markets.keys()
+            if self._is_it_time_to_delete_past_settlement_market(current_time, time_slot)]
+        for time_slot in delete_settlement_market_slots:
+            self._delete_market_and_all_attributes(self.past_settlement_markets, time_slot)
+
+    @staticmethod
+    def _delete_market_and_all_attributes(market_buffer: Dict, time_slot: DateTime) -> None:
+        """Delete market and all its attributes from the provided market_buffer."""
+        if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+            market_buffer[time_slot].redis_api.stop()
+        del market_buffer[time_slot].offers
+        del market_buffer[time_slot].trades
+        del market_buffer[time_slot].offer_history
+        del market_buffer[time_slot].notification_listeners
+        del market_buffer[time_slot].bids
+        del market_buffer[time_slot].bid_history
+        del market_buffer[time_slot].traded_energy
+        del market_buffer[time_slot]
 
     @staticmethod
     def _select_market_class(is_spot_market: bool) -> Market:
@@ -160,19 +193,19 @@ class AreaMarkets:
                     t=time_slot,
                     format="%H:%M" if area.config.slot_length.seconds > 60 else "%H:%M:%S"
                 ))
-        self._indexed_future_markets = {
-            m.id: m for m in self.all_future_spot_markets
-        }
+        self._update_indexed_future_markets()
         return changed
 
     def create_settlement_market(self, time_slot: DateTime, area: "Area") -> None:
         """Create a new settlement market."""
-        # Settlement markets should always be two-sided
-        new_settlement_market = \
+        self.settlement_markets[time_slot] = (
             self._create_market(market_class=TwoSidedMarket,
                                 time_slot=time_slot,
-                                area=area, is_spot_market=True)
-        self.settlement_markets[time_slot] = new_settlement_market
+                                area=area, is_spot_market=True))
+        self.log.trace(
+            "Adding Settlement {t:{format}} market".format(
+                t=time_slot,
+                format="%H:%M" if area.config.slot_length.seconds > 60 else "%H:%M:%S"))
 
     @staticmethod
     def _create_market(market_class: Market,

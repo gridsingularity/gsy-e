@@ -351,7 +351,7 @@ class Area:
         changed = self._markets.create_future_markets(now_value, True, self)
 
         # create new settlement market
-        if self.last_past_market:
+        if self.last_past_market and ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS:
             self._markets.create_settlement_market(self.last_past_market.time_slot, self)
 
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
@@ -551,6 +551,10 @@ class Area:
     @property
     def settlement_markets(self):
         return self._markets.settlement_markets
+
+    @property
+    def past_settlement_markets(self):
+        return self._markets.past_settlement_markets
 
     @cached_property
     def available_triggers(self):
