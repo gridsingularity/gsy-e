@@ -75,16 +75,14 @@ class ProsumptionInterface(StateInterface, ABC):
         self._unsettled_deviation_kWh: Dict[DateTime, float] = {}
         self._forecast_measurement_deviation_kWh: Dict[DateTime, float] = {}
 
-    @abstractmethod
     def _calculate_unsettled_energy_kWh(self, measured_energy_kWh, time_slot):
         """Return the unsettled energy (produced or consumed) in kWh."""
-        raise NotImplementedError("_calculate_unsettled_energy_kWh should be implemented by "
-                                  "the state class.")
+        return 0.0
 
     def set_energy_measurement_kWh(self, energy_kWh: float, time_slot: DateTime) -> None:
         """Set the actual energy consumed/produced by the device in the given market slot."""
         self._energy_measurement_kWh[time_slot] = energy_kWh
-        self._forecast_measurement_deviation_kWh = self._calculate_unsettled_energy_kWh(
+        self._forecast_measurement_deviation_kWh[time_slot] = self._calculate_unsettled_energy_kWh(
             energy_kWh, time_slot)
         self._unsettled_deviation_kWh[time_slot] = \
             abs(self._forecast_measurement_deviation_kWh[time_slot])
