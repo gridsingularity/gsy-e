@@ -67,12 +67,14 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
                  initial_buying_rate, final_buying_rate,
                  initial_selling_rate, final_selling_rate):
         super().__init__()
+
+        self._update_interval = SettlementTemplateStrategiesConstants.UPDATE_INTERVAL_MIN
         self.bid_updater = SettlementTemplateStrategyBidUpdater(
                 initial_rate=initial_buying_rate,
                 final_rate=final_buying_rate,
                 fit_to_limit=True,
                 energy_rate_change_per_update=None,
-                update_interval=duration(minutes=5),
+                update_interval=duration(minutes=self._update_interval),
                 rate_limit_object=min)
 
         self.offer_updater = SettlementTemplateStrategyOfferUpdater(
@@ -80,7 +82,7 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
                 final_rate=final_selling_rate,
                 fit_to_limit=True,
                 energy_rate_change_per_update=None,
-                update_interval=duration(minutes=5),
+                update_interval=duration(minutes=self._update_interval),
                 rate_limit_object=max)
 
     def event_market_cycle(self, strategy):

@@ -63,3 +63,5 @@ class SettlementTemplateStrategiesConstants:
     FINAL_BUYING_RATE = 50
     INITIAL_SELLING_RATE = 50
     FINAL_SELLING_RATE = 0
+
+    UPDATE_INTERVAL_MIN = 5
