@@ -60,6 +60,7 @@ class TestMarketRotation:
         assert len(area_fixture.past_balancing_markets) == 1
         assert len(area_fixture.all_markets) == 5
         assert len(area_fixture.balancing_markets) == 5
+        ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
 
     def test_cycle_markets_balancing_market_disabled(self, area_fixture):
         ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
@@ -83,3 +84,4 @@ class TestMarketRotation:
             assert len(area_fixture.past_markets) == 1
             assert len(area_fixture.settlement_markets) == min(cycle_count,
                                                                max_number_of_settlement_markets)
+        ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS = False

@@ -420,7 +420,8 @@ class HomeMeterStrategy(BidEnabledStrategy):
         #                   self.balancing_energy_ratio.demand
         try:
             if not self.are_bids_posted(market.id):
-                self.post_first_bid(market, bid_energy)
+                self.post_first_bid(market, bid_energy,
+                                    self.bid_update.initial_rate[market.time_slot])
         except MarketException:
             pass
 
@@ -539,7 +540,8 @@ class HomeMeterStrategy(BidEnabledStrategy):
         self.bid_update.increment_update_counter_all_markets(self)
 
     def _event_tick_production(self):
-        self.offer_update.update(self)
+        for market in self.area.all_markets:
+            self.offer_update.update(market, self)
         self.offer_update.increment_update_counter_all_markets(self)
 
     def _one_sided_market_event_tick(self, market, offer=None):

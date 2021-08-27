@@ -167,8 +167,9 @@ class AreaMarkets:
 
     def create_settlement_market(self, time_slot: DateTime, area: "Area") -> None:
         """Create a new settlement market."""
+        # Settlement markets should always be two-sided
         new_settlement_market = \
-            self._create_market(market_class=self._select_market_class(is_spot_market=True),
+            self._create_market(market_class=TwoSidedMarket,
                                 time_slot=time_slot,
                                 area=area, is_spot_market=True)
         self.settlement_markets[time_slot] = new_settlement_market
