@@ -106,6 +106,10 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
                 ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
                     BidOfferMatchAlgoEnum.EXTERNAL.value
 
+        d3a.constants.RELATIVE_STD_FROM_FORECAST_ENERGY = settings.get(
+            "relative_std_from_forecast_percent", d3a.constants.RELATIVE_STD_FROM_FORECAST_ENERGY
+        )
+
         if scenario is None:
             scenario_name = "default_2a"
         elif scenario in available_simulation_scenarios:
