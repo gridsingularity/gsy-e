@@ -110,6 +110,10 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
             "relative_std_from_forecast_percent", d3a.constants.RELATIVE_STD_FROM_FORECAST_ENERGY
         )
 
+        ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS = settings.get(
+            "settlement_market_enabled", False
+        )
+
         if scenario is None:
             scenario_name = "default_2a"
         elif scenario in available_simulation_scenarios:
