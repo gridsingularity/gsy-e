@@ -103,16 +103,16 @@ class TestAreaClass(unittest.TestCase):
         self.area.cycle_markets(False, False, False)
         assert len(self.area.past_markets) == 0
 
-        current_time = today(tz=constants.TIME_ZONE).add(hours=1)
+        current_time = today(tz=constants.TIME_ZONE).add(minutes=self.config.slot_length.minutes)
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
         self.area._markets.create_future_markets(current_time, True, self.area)
-        current_time = today(tz=constants.TIME_ZONE).add(hours=2)
+        current_time = today(tz=constants.TIME_ZONE).add(minutes=2*self.config.slot_length.minutes)
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
         assert (list(self.area.past_markets)[-1].time_slot ==
-                today(tz=constants.TIME_ZONE).add(hours=1))
+                today(tz=constants.TIME_ZONE).add(minutes=self.config.slot_length.minutes))
 
     def test_keep_past_markets(self):
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
@@ -125,12 +125,12 @@ class TestAreaClass(unittest.TestCase):
         self.area.cycle_markets(False, False, False)
         assert len(self.area.past_markets) == 0
 
-        current_time = today(tz=constants.TIME_ZONE).add(hours=1)
+        current_time = today(tz=constants.TIME_ZONE).add(minutes=self.config.slot_length.minutes)
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
         self.area._markets.create_future_markets(current_time, True, self.area)
-        current_time = today(tz=constants.TIME_ZONE).add(hours=2)
+        current_time = today(tz=constants.TIME_ZONE).add(minutes=2*self.config.slot_length.minutes)
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 2
 
