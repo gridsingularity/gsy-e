@@ -29,6 +29,7 @@ from pendulum import DateTime
 from d3a import limit_float_precision
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import write_default_to_dict
+from d3a.d3a_core.util import is_time_slot_in_past_markets
 
 StorageSettings = ConstSettings.StorageSettings
 
@@ -186,7 +187,7 @@ class ConsumptionState(ProsumptionInterface):
         """Delete data regarding energy consumption for past market slots."""
         to_delete = []
         for market_slot in self._energy_requirement_Wh.keys():
-            if market_slot < current_time_slot:
+            if is_time_slot_in_past_markets(market_slot, current_time_slot):
                 to_delete.append(market_slot)
 
         for market_slot in to_delete:
@@ -252,7 +253,7 @@ class ProductionState(ProsumptionInterface):
         """Delete data regarding energy production for past market slots."""
         to_delete = []
         for market_slot in self._available_energy_kWh.keys():
-            if market_slot < current_time_slot:
+            if is_time_slot_in_past_markets(market_slot, current_time_slot):
                 to_delete.append(market_slot)
 
         for market_slot in to_delete:
@@ -326,7 +327,7 @@ class HomeMeterState(ConsumptionState, ProductionState):
         """Delete data regarding energy requirements and availability for past market slots."""
         to_delete = []
         for market_slot in self.market_slots:
-            if market_slot < current_time_slot:
+            if is_time_slot_in_past_markets(market_slot, current_time_slot):
                 to_delete.append(market_slot)
 
         for market_slot in to_delete:
@@ -607,7 +608,7 @@ class StorageState(StateInterface):
     def delete_past_state_values(self, current_time_slot: DateTime):
         to_delete = []
         for market_slot in self.pledged_sell_kWh.keys():
-            if market_slot < current_time_slot:
+            if is_time_slot_in_past_markets(market_slot, current_time_slot):
                 to_delete.append(market_slot)
         for market_slot in to_delete:
             self.pledged_sell_kWh.pop(market_slot, None)

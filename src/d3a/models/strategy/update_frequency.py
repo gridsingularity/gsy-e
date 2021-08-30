@@ -21,7 +21,7 @@ from pendulum import duration
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import find_object_of_same_weekday_and_time
-from d3a.d3a_core.util import write_default_to_dict
+from d3a.d3a_core.util import write_default_to_dict, is_time_slot_in_past_markets
 
 
 class UpdateFrequencyMixin:
@@ -51,7 +51,7 @@ class UpdateFrequencyMixin:
     def delete_past_state_values(self, current_market_time_slot):
         to_delete = []
         for market_slot in self.initial_rate.keys():
-            if market_slot < current_market_time_slot:
+            if is_time_slot_in_past_markets(market_slot, current_market_time_slot):
                 to_delete.append(market_slot)
         for market_slot in to_delete:
             self.initial_rate.pop(market_slot, None)
