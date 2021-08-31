@@ -109,9 +109,10 @@ class LoadExternalMixin(ExternalMixin):
 
     def _delete_bid_impl(self, arguments, response_channel):
         try:
+            market = self._get_market_from_command_argument(arguments)
             to_delete_bid_id = arguments["bid"] if "bid" in arguments else None
             deleted_bids = \
-                self.remove_bid_from_pending(self.next_market.id, bid_id=to_delete_bid_id)
+                self.remove_bid_from_pending(market.id, bid_id=to_delete_bid_id)
             self.redis.publish_json(
                 response_channel,
                 {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
@@ -160,16 +161,17 @@ class LoadExternalMixin(ExternalMixin):
 
     def _bid_impl(self, arguments, bid_response_channel):
         try:
+            market = self._get_market_from_command_argument(arguments)
             replace_existing = arguments.get("replace_existing", True)
             assert self.can_bid_be_posted(
                 arguments["energy"],
                 arguments["price"],
                 self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0,
-                self.next_market,
+                market,
                 replace_existing=replace_existing)
 
             bid = self.post_bid(
-                self.next_market,
+                market,
                 arguments["price"],
                 arguments["energy"],
                 replace_existing=replace_existing,
