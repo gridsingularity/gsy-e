@@ -25,7 +25,6 @@ import tty
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 
-import pendulum
 from click.types import ParamType
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit
@@ -33,7 +32,7 @@ from d3a_interface.enums import BidOfferMatchAlgoEnum
 from d3a_interface.exceptions import D3AException
 from d3a_interface.utils import iterate_over_all_modules, str_to_pendulum_datetime, \
     format_datetime, find_object_of_same_weekday_and_time
-from pendulum import duration, from_format
+from pendulum import duration, from_format, instance, DateTime
 from rex import rex
 
 import d3a.constants
@@ -407,7 +406,7 @@ def export_default_settings_to_json_file():
             "tick_length": f"{GlobalConfig.TICK_LENGTH_S}s",
             "market_count": GlobalConfig.MARKET_COUNT,
             "cloud_coverage": GlobalConfig.CLOUD_COVERAGE,
-            "start_date": pendulum.instance(GlobalConfig.start_date).format(DATE_FORMAT),
+            "start_date": instance(GlobalConfig.start_date).format(DATE_FORMAT),
     }
     all_settings = {"basic_settings": base_settings, "advanced_settings": constsettings_to_dict()}
     settings_filename = os.path.join(d3a_path, "setup", "d3a-settings.json")
@@ -472,3 +471,12 @@ def is_external_matching_enabled():
     """
     return (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
             BidOfferMatchAlgoEnum.EXTERNAL.value)
+
+
+def is_time_slot_in_past_markets(time_slot: DateTime, current_time_slot: DateTime):
+    """Checks if the time_slot should be in the area.past_markets."""
+    if ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS:
+        return (time_slot < current_time_slot.subtract(
+            hours=ConstSettings.GeneralSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
+    else:
+        return time_slot < current_time_slot

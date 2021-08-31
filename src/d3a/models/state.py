@@ -28,9 +28,10 @@ from pendulum import DateTime
 
 from d3a import limit_float_precision
 from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a.d3a_core.util import write_default_to_dict
+from d3a.d3a_core.util import is_time_slot_in_past_markets, write_default_to_dict
 
 StorageSettings = ConstSettings.StorageSettings
+
 
 # Complex device models should be split in three classes each:
 #
@@ -72,14 +73,112 @@ class ProsumptionInterface(StateInterface, ABC):
     def __init__(self):
         # Actual energy consumed/produced by the device at specific market slots
         self._energy_measurement_kWh: Dict[DateTime, float] = {}
+        self._unsettled_deviation_kWh: Dict[DateTime, float] = {}
+        self._forecast_measurement_deviation_kWh: Dict[DateTime, float] = {}
+
+    def _calculate_unsettled_energy_kWh(
+            self, measured_energy_kWh: float, time_slot: DateTime) -> float:
+        """
+        Calculates the unsettled energy (produced or consumed) in kWh.
+        Args:
+            measured_energy_kWh: Energy measurement, in kWh
+            time_slot: Time slot that the energy measurement refers to
+
+        Returns: Float value for the kWh of unsettled energy for the asset
+
+        """
+        return 0.0
 
     def set_energy_measurement_kWh(self, energy_kWh: float, time_slot: DateTime) -> None:
-        """Set the actual energy consumed/produced by the device in the given market slot."""
+        """
+        Set the actual energy consumed/produced by the device in the given market slot.
+        Args:
+            energy_kWh: Energy measurement, in kWh
+            time_slot: Time slot that the energy measurement refers to
+
+        Returns: None
+
+        """
         self._energy_measurement_kWh[time_slot] = energy_kWh
+        self._forecast_measurement_deviation_kWh[time_slot] = self._calculate_unsettled_energy_kWh(
+            energy_kWh, time_slot)
+        self._unsettled_deviation_kWh[time_slot] = \
+            abs(self._forecast_measurement_deviation_kWh[time_slot])
 
     def get_energy_measurement_kWh(self, time_slot: DateTime) -> float:
-        """Get the actual energy consumed/produced by the device in the given market slot."""
-        return self._energy_measurement_kWh.get(time_slot, None)
+        """
+        Get the actual energy consumed/produced by the device in the given market slot.
+        Args:
+            time_slot: Time slot that the energy measurement refers to
+
+        Returns: Energy measurement value in kWh
+
+        """
+        return self._energy_measurement_kWh.get(time_slot)
+
+    def get_forecast_measurement_deviation_kWh(self, time_slot: DateTime) -> float:
+        """
+        Get the energy deviation of forecasted energy from measurement by the device in
+        the given market slot. Negative value means that the deviation is beneficial to the
+        grid (and can be posted as an offer), positive value means that the deviation is
+        detrimental to the grid (and can be posted as a bid)
+        Args:
+            time_slot: Time slot that the energy forecast/measurement refers to
+
+        Returns: Deviation between the forecast and measurement for this timeslot, in kWh
+
+        """
+        return self._forecast_measurement_deviation_kWh.get(time_slot)
+
+    def should_post_bid(self, time_slot: DateTime) -> bool:
+        """
+        Checks whether a settlement bid should be posted
+        Args:
+            time_slot:  Time slot that the bid should be posted
+
+        Returns: True if the bid should be posted, false otherwise
+
+        """
+        return self._forecast_measurement_deviation_kWh.get(time_slot) > 0.0
+
+    def should_post_offer(self, time_slot: DateTime) -> bool:
+        """
+        Checks whether a settlement offer should be posted
+        Args:
+            time_slot:  Time slot that the offer should be posted
+
+        Returns: True if the offer should be posted, false otherwise
+
+        """
+        return self._forecast_measurement_deviation_kWh.get(time_slot) < 0.0
+
+    def get_unsettled_deviation_kWh(self, time_slot: DateTime) -> float:
+        """
+        Get the unsettled energy deviation of forecasted energy from measurement by the device
+        in the given market slot.
+        Args:
+            time_slot: Time slot of the unsettled deviation
+
+        Returns: Unsettled energy deviation, in kWh
+
+        """
+        return self._unsettled_deviation_kWh.get(time_slot)
+
+    def decrement_unsettled_deviation(
+            self, purchased_energy_kWh: float, time_slot: DateTime) -> None:
+        """
+        Decrease the device unsettled energy in a specific market slot.
+        Args:
+            purchased_energy_kWh: Settled energy that should be decremented from the unsettled
+            time_slot: Time slot of the unsettled energy
+
+        Returns: None
+
+        """
+        self._unsettled_deviation_kWh[time_slot] -= purchased_energy_kWh
+        assert self._unsettled_deviation_kWh[time_slot] >= -FLOATING_POINT_TOLERANCE, (
+            f"Unsettled energy deviation fell below zero "
+            f"({self._unsettled_deviation_kWh[time_slot]}).")
 
 
 class ConsumptionState(ProsumptionInterface):
@@ -150,7 +249,7 @@ class ConsumptionState(ProsumptionInterface):
         """Delete data regarding energy consumption for past market slots."""
         to_delete = []
         for market_slot in self._energy_requirement_Wh.keys():
-            if market_slot < current_time_slot:
+            if is_time_slot_in_past_markets(market_slot, current_time_slot):
                 to_delete.append(market_slot)
 
         for market_slot in to_delete:
@@ -216,7 +315,7 @@ class ProductionState(ProsumptionInterface):
         """Delete data regarding energy production for past market slots."""
         to_delete = []
         for market_slot in self._available_energy_kWh.keys():
-            if market_slot < current_time_slot:
+            if is_time_slot_in_past_markets(market_slot, current_time_slot):
                 to_delete.append(market_slot)
 
         for market_slot in to_delete:
@@ -237,6 +336,19 @@ class PVState(ProductionState):
     Completely inherits ProductionState, but we keep this class for backward compatibility.
     """
 
+    def _calculate_unsettled_energy_kWh(
+            self, measured_energy_kWh: float, time_slot: DateTime) -> float:
+        """
+        Returns negative values for overproduction (offer will be placed on the settlement market)
+        and positive values for underproduction (bid will be placed on the settlement market)
+        :param measured_energy_kWh: Measured energy that the PV produced
+        :param time_slot: time slot of the measured energy
+        :return: Deviation between forecasted and measured energy
+        """
+        traded_energy_kWh = (self.get_energy_production_forecast_kWh(time_slot) -
+                             self.get_available_energy_kWh(time_slot))
+        return traded_energy_kWh - measured_energy_kWh
+
 
 class LoadState(ConsumptionState):
     def __init__(self):
@@ -248,6 +360,20 @@ class LoadState(ConsumptionState):
 
     def get_desired_energy(self, time_slot):
         return self._desired_energy_Wh[time_slot]
+
+    def _calculate_unsettled_energy_kWh(
+            self, measured_energy_kWh: float, time_slot: DateTime) -> float:
+        """
+        Returns negative values for underconsumption (offer will be placed on the settlement
+        market) and positive values for overconsumption (bid will be placed on the settlement
+        market)
+        :param measured_energy_kWh: Measured energy that the load produced
+        :param time_slot: time slot of the measured energy
+        :return: Deviation between forecasted and measured energy
+        """
+        traded_energy_kWh = (self.get_desired_energy_Wh(time_slot) -
+                             self.get_energy_requirement_Wh(time_slot)) / 1000.0
+        return measured_energy_kWh - traded_energy_kWh
 
 
 class HomeMeterState(ConsumptionState, ProductionState):
@@ -265,7 +391,7 @@ class HomeMeterState(ConsumptionState, ProductionState):
         """Delete data regarding energy requirements and availability for past market slots."""
         to_delete = []
         for market_slot in self.market_slots:
-            if market_slot < current_time_slot:
+            if is_time_slot_in_past_markets(market_slot, current_time_slot):
                 to_delete.append(market_slot)
 
         for market_slot in to_delete:
@@ -546,7 +672,7 @@ class StorageState(StateInterface):
     def delete_past_state_values(self, current_time_slot: DateTime):
         to_delete = []
         for market_slot in self.pledged_sell_kWh.keys():
-            if market_slot < current_time_slot:
+            if is_time_slot_in_past_markets(market_slot, current_time_slot):
                 to_delete.append(market_slot)
         for market_slot in to_delete:
             self.pledged_sell_kWh.pop(market_slot, None)
