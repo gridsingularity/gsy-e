@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from abc import ABC
 from logging import getLogger
 from typing import Dict
 
@@ -26,8 +25,8 @@ from pendulum import DateTime
 log = getLogger(__name__)
 
 
-class BaseRotator(ABC):
-    """Market rotator interface"""
+class BaseRotator:
+    """Base implementation of the market rotator."""
 
     def rotate(self, current_time_slot: DateTime):
         pass
