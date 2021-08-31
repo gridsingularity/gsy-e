@@ -38,7 +38,7 @@ from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
 from d3a.models.state import LoadState
 from d3a.models.strategy import BidEnabledStrategy, utils
-from d3a.models.strategy.settlement_strategies import settlement_market_strategy_factory
+from d3a.models.strategy.settlement.strategy import settlement_market_strategy_factory
 from d3a.models.strategy.update_frequency import TemplateStrategyBidUpdater
 
 log = getLogger(__name__)

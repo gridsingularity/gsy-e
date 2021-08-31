@@ -19,7 +19,6 @@ from pendulum import duration
 
 from d3a.constants import SettlementTemplateStrategiesConstants
 from d3a.d3a_core.exceptions import MarketException
-from d3a.models.area import Area
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Trade
 from d3a.models.strategy import BaseStrategy
@@ -135,8 +134,9 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
             self.bid_updater.update(market, strategy)
             self.offer_updater.update(market, strategy)
 
-    def _get_settlement_market_by_id(self, area: Area, market_id: str) -> Optional["Market"]:
-        markets = [m for m in area.settlement_markets.values() if m.id == market_id]
+    def _get_settlement_market_by_id(
+            self, strategy: BaseStrategy, market_id: str) -> Optional["Market"]:
+        markets = [m for m in strategy.area.settlement_markets.values() if m.id == market_id]
         if not markets:
             return None
         return markets[0]
@@ -149,7 +149,7 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         :param bid_trade: Trade object
         :return: None
         """
-        market = self._get_settlement_market_by_id(strategy.area, market_id)
+        market = self._get_settlement_market_by_id(strategy, market_id)
         if not market:
             return
         if bid_trade.offer_bid.buyer == strategy.owner.name:
@@ -164,7 +164,7 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         :param trade: Trade object
         :return: None
         """
-        market = self._get_settlement_market_by_id(strategy.area, market_id)
+        market = self._get_settlement_market_by_id(strategy, market_id)
         if not market:
             return
         if trade.offer_bid.seller == strategy.owner.name:
