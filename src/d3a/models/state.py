@@ -76,7 +76,8 @@ class ProsumptionInterface(StateInterface, ABC):
         self._unsettled_deviation_kWh: Dict[DateTime, float] = {}
         self._forecast_measurement_deviation_kWh: Dict[DateTime, float] = {}
 
-    def _calculate_unsettled_energy_kWh(self, measured_energy_kWh, time_slot):
+    def _calculate_unsettled_energy_kWh(
+            self, measured_energy_kWh: float, time_slot: DateTime) -> float:
         """
         Calculates the unsettled energy (produced or consumed) in kWh.
         Args:
@@ -335,7 +336,8 @@ class PVState(ProductionState):
     Completely inherits ProductionState, but we keep this class for backward compatibility.
     """
 
-    def _calculate_unsettled_energy_kWh(self, measured_energy_kWh, time_slot):
+    def _calculate_unsettled_energy_kWh(
+            self, measured_energy_kWh: float, time_slot: DateTime) -> float:
         """
         Returns negative values for overproduction (offer will be placed on the settlement market)
         and positive values for underproduction (bid will be placed on the settlement market)
@@ -359,17 +361,18 @@ class LoadState(ConsumptionState):
     def get_desired_energy(self, time_slot):
         return self._desired_energy_Wh[time_slot]
 
-    def _calculate_unsettled_energy_kWh(self, measured_energy_kWh, time_slot):
+    def _calculate_unsettled_energy_kWh(
+            self, measured_energy_kWh: float, time_slot: DateTime) -> float:
         """
         Returns negative values for underconsumption (offer will be placed on the settlement
         market) and positive values for overconsumption (bid will be placed on the settlement
         market)
-        :param measured_energy_kWh: Measured energy that the PV produced
+        :param measured_energy_kWh: Measured energy that the load produced
         :param time_slot: time slot of the measured energy
         :return: Deviation between forecasted and measured energy
         """
         traded_energy_kWh = (self.get_desired_energy_Wh(time_slot) -
-                             self.get_energy_requirement_Wh(time_slot)) * 1000.0
+                             self.get_energy_requirement_Wh(time_slot)) / 1000.0
         return measured_energy_kWh - traded_energy_kWh
 
 
