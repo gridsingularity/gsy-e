@@ -53,6 +53,8 @@ class DefaultMarketRotator(BaseRotator):
             return False
         else:
             if ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS:
+                # if the settlement markets are enabled, the same amount as the active
+                # settlement markets has to be kept in the past_market buffer
                 return (time_slot < current_time_slot.subtract(
                     hours=ConstSettings.GeneralSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
             else:
