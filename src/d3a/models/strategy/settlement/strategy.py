@@ -68,10 +68,11 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
                  initial_selling_rate: float, final_selling_rate: float):
         """
         Manages bid/offer trading strategy for the settlement markets, for a single asset.
-        :param initial_buying_rate: Initial rate of the settlement bids
-        :param final_buying_rate: Final rate of the settlement bids
-        :param initial_selling_rate: Initial rate of the settlement offers
-        :param final_selling_rate: Final rate of the settlement offers
+        Args:
+            initial_buying_rate: Initial rate of the settlement bids
+            final_buying_rate: Final rate of the settlement bids
+            initial_selling_rate: Initial rate of the settlement offers
+            final_selling_rate: Final rate of the settlement offers
         """
         super().__init__()
 
@@ -96,8 +97,11 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         """
         Should be called by the event_market_cycle of the asset strategy class, posts
         settlement bids and offers on markets that do not have posted bids and offers yet
-        :param strategy: Strategy object of the asset
-        :return: None
+        Args:
+            strategy: Strategy object of the asset
+
+        Returns: None
+
         """
         self.bid_updater.update_and_populate_price_settings(strategy.area)
         self.offer_updater.update_and_populate_price_settings(strategy.area)
@@ -125,8 +129,11 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
     def event_tick(self, strategy: BaseStrategy) -> None:
         """
         Update posted settlement bids and offers on market tick
-        :param strategy: Strategy object of the asset
-        :return: None
+        Args:
+            strategy: Strategy object of the asset
+
+        Returns: None
+
         """
         self.bid_updater.increment_update_counter_all_markets(strategy)
         self.offer_updater.increment_update_counter_all_markets(strategy)
@@ -144,10 +151,13 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
     def event_bid_traded(self, strategy: BaseStrategy, market_id: str, bid_trade: Trade) -> None:
         """
         Updates the unsettled deviation with the traded energy from the market
-        :param strategy: Strategy object of the asset
-        :param market_id: Id of the market that the trade took place
-        :param bid_trade: Trade object
-        :return: None
+        Args:
+            strategy: Strategy object of the asset
+            market_id: Id of the market that the trade took place
+            bid_trade: Trade object
+
+        Returns: None
+
         """
         market = self._get_settlement_market_by_id(strategy, market_id)
         if not market:
@@ -159,10 +169,13 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
     def event_trade(self, strategy: BaseStrategy, market_id: str, trade: Trade) -> None:
         """
         Updates the unsettled deviation with the traded energy from the market
-        :param strategy: Strategy object of the asset
-        :param market_id: Id of the market that the trade took place
-        :param trade: Trade object
-        :return: None
+        Args:
+            strategy: Strategy object of the asset
+            market_id: Id of the market that the trade took place
+            trade: Trade object
+
+        Returns: None
+
         """
         market = self._get_settlement_market_by_id(strategy, market_id)
         if not market:
@@ -182,11 +195,14 @@ def settlement_market_strategy_factory(
     Factory method for creating the settlement market trading strategy. Creates an object of a
     class with empty implementation if the settlement market is disabled, with the real
     implementation otherwise
-    :param initial_buying_rate: Initial rate of the settlement bids
-    :param final_buying_rate: Final rate of the settlement bids
-    :param initial_selling_rate: Initial rate of the settlement offers
-    :param final_selling_rate: Final rate of the settlement offers
-    :return: Settlement strategy object
+    Args:
+        initial_buying_rate: Initial rate of the settlement bids
+        final_buying_rate: Final rate of the settlement bids
+        initial_selling_rate: Initial rate of the settlement offers
+        final_selling_rate: Final rate of the settlement offers
+
+    Returns: Settlement strategy object
+
     """
     if ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS:
         return SettlementMarketStrategy(
