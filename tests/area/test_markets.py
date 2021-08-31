@@ -49,7 +49,7 @@ class TestMarketRotation:
 
         DeviceRegistry.REGISTRY = original_registry
         ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
-        ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS = False
+        ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = False
 
     def test_market_rotation_is_successful(self, area_fixture):
         area_fixture.activate()
@@ -97,7 +97,7 @@ class TestMarketRotation:
         assert len(area_fixture.past_balancing_markets) == 1
         assert len(area_fixture.balancing_markets) == 5
 
-    @patch("d3a_interface.constants_limits.ConstSettings.GeneralSettings."
+    @patch("d3a_interface.constants_limits.ConstSettings.SettlementMarketSettings."
            "ENABLE_SETTLEMENT_MARKETS", True)
     def test_settlement_market_rotation_is_successful(self, area_fixture):
         """

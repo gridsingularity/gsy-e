@@ -106,12 +106,15 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
                 ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
                     BidOfferMatchAlgoEnum.EXTERNAL.value
 
-        d3a.constants.RELATIVE_STD_FROM_FORECAST_ENERGY = settings.get(
-            "relative_std_from_forecast_percent", d3a.constants.RELATIVE_STD_FROM_FORECAST_ENERGY
-        )
+        ConstSettings.SettlementMarketSettings.RELATIVE_STD_FROM_FORECAST_FLOAT = (
+            settings.get(
+                "relative_std_from_forecast_percent",
+                ConstSettings.SettlementMarketSettings.RELATIVE_STD_FROM_FORECAST_FLOAT
+            ))
 
-        ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS = settings.get(
-            "settlement_market_enabled", False
+        ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = settings.get(
+            "settlement_market_enabled",
+            ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS
         )
 
         if scenario is None:

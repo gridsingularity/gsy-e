@@ -61,7 +61,7 @@ class AreaMarkets:
                                                      time_slot: DateTime) -> bool:
         """Check if the past settlement market for time_slot is ready to be deleted."""
         return (time_slot < current_time_slot.subtract(
-                    hours=ConstSettings.GeneralSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS,
+                    hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS,
                     minutes=GlobalConfig.slot_length.minutes))
 
     @staticmethod
@@ -72,9 +72,9 @@ class AreaMarkets:
         if d3a.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
             return False
 
-        if ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS:
+        if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
             return (time_slot < current_time_slot.subtract(
-                hours=ConstSettings.GeneralSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
+                hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
         else:
             return time_slot < current_time_slot.subtract(
                 minutes=GlobalConfig.slot_length.minutes)
@@ -88,7 +88,7 @@ class AreaMarkets:
             self._move_balancing_markets_to_past_balancing(current_time)
             self._delete_past_balancing_markets(current_time)
 
-        if ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS:
+        if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
             self._move_settlement_markets_to_past_settlement(current_time)
             self._delete_past_settlement_markets(current_time)
 
