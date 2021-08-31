@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from abc import ABC
 from collections import OrderedDict
 from logging import getLogger
-from typing import Dict, List, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING
 
 from d3a import constants
 from d3a.d3a_core.util import is_timeslot_in_simulation_duration
@@ -115,7 +115,7 @@ class MarketRotatorBase(RotatorInterface):
 
 
 class SlotMarketRotator(MarketRotatorBase):
-    """Deal with market rotation of slot markets."""
+    """Deal with market rotation of spot markets."""
 
 
 class BalancingMarketRotator(MarketRotatorBase):
@@ -169,14 +169,9 @@ class AreaMarkets:
             self.settlement_market_rotator = (
                 SettlementMarketRotator(self.settlement_markets, self.past_settlement_markets))
 
-    @property
-    def future_spot_markets(self) -> List:
-        """Return all future markets in a list."""
-        return list(self.markets.values())
-
     def _update_indexed_future_markets(self) -> None:
         """Update the indexed_future_markets mapping."""
-        self.indexed_future_markets = {m.id: m for m in self.future_spot_markets}
+        self.indexed_future_markets = {m.id: m for m in self.markets.values()}
 
     def rotate_markets(self, current_time: DateTime) -> None:
         """Deal with market rotation of different types."""
@@ -221,7 +216,7 @@ class AreaMarkets:
     def create_settlement_market(self, time_slot: DateTime, area: "Area") -> None:
         """Create a new settlement market."""
         self.settlement_markets[time_slot] = (
-            self._create_market(market_class=self._select_market_class(is_spot_market=True),
+            self._create_market(market_class=TwoSidedMarket,
                                 time_slot=time_slot,
                                 area=area, is_spot_market=True))
         self.log.trace(
