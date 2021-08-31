@@ -27,7 +27,7 @@ from d3a.d3a_core.exceptions import (BidNotFoundException, InvalidBid,
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market import lock_market_action
-from d3a.models.market.market_structures import Bid, Offer, Trade, TradeBidOfferInfo
+from d3a_interface.dataclasses import Bid, Offer, Trade, TradeBidOfferInfo
 from d3a.models.market.market_validators import RequirementsSatisfiedChecker
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a_interface.constants_limits import ConstSettings

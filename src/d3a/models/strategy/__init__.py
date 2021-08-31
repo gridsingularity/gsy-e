@@ -33,7 +33,7 @@ from d3a.events import EventMixin
 from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
-from d3a.models.market.market_structures import (
+from d3a_interface.dataclasses import (
     Offer, trade_from_json_string,
     offer_or_bid_from_json_string, Bid)
 from d3a_interface.constants_limits import ConstSettings

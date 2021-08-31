@@ -35,7 +35,7 @@ from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.market import Market
-from d3a.models.market.market_structures import Offer
+from d3a_interface.dataclasses import Offer
 from d3a.models.state import LoadState
 from d3a.models.strategy import BidEnabledStrategy, utils
 from d3a.models.strategy.update_frequency import TemplateStrategyBidUpdater

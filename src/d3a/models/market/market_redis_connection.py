@@ -6,7 +6,7 @@ from uuid import uuid4
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import (
     ResettableCommunicator, BlockingCommunicator)
 from d3a.events import MarketEvent
-from d3a.models.market.market_structures import (
+from d3a_interface.dataclasses import (
     offer_or_bid_from_json_string, trade_from_json_string)
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT, MAX_WORKER_THREADS
 from d3a_interface.utils import key_in_dict_and_not_none

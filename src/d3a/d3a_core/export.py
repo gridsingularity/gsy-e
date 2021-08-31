@@ -28,6 +28,8 @@ from copy import deepcopy
 from functools import reduce  # forward compatibility for Python 3
 
 import plotly.graph_objs as go
+from d3a_interface.dataclasses import MarketClearingState
+
 from d3a.d3a_core.singletons import bid_offer_matcher
 from d3a_interface.enums import BidOfferMatchAlgoEnum
 from slugify import slugify
@@ -36,11 +38,10 @@ from sortedcontainers import SortedDict
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
 from d3a_interface.utils import mkdir_from_str, generate_market_slot_list
 from d3a.d3a_core.util import constsettings_to_dict, round_floats_for_ui
-from d3a.models.market.market_structures import MarketClearingState
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.state import ESSEnergyOrigin
 from d3a.d3a_core.sim_results.plotly_graph import PlotlyGraph
-from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
+from d3a_interface.dataclasses import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.area import Area
 import d3a.constants
 

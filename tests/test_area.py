@@ -33,7 +33,7 @@ from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.stats import AreaStats
 from d3a.models.config import SimulationConfig
 from d3a.models.market import Market
-from d3a.models.market.market_structures import Offer
+from d3a_interface.dataclasses import Offer
 from d3a.models.strategy.storage import StorageStrategy
 
 

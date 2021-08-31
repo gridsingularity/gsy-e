@@ -20,7 +20,7 @@ from typing import Dict  # NOQA
 from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent  # NOQA
 from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
 from d3a.d3a_core.exceptions import BidNotFoundException, MarketException
-from d3a.models.market.market_structures import Bid
+from d3a_interface.dataclasses import Bid
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.constants import FLOATING_POINT_TOLERANCE
 

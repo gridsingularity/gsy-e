@@ -28,7 +28,7 @@ from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import d3a_path
 from d3a.models.area import DEFAULT_CONFIG
-from d3a.models.market.market_structures import Offer, Trade, BalancingOffer, Bid
+from d3a_interface.dataclasses import Offer, Trade, BalancingOffer, Bid
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)

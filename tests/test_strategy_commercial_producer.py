@@ -20,7 +20,7 @@ import sys
 import pendulum
 from uuid import uuid4
 
-from d3a.models.market.market_structures import Offer, Trade, BalancingOffer
+from d3a_interface.dataclasses import Offer, Trade, BalancingOffer
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.d3a_core.device_registry import DeviceRegistry

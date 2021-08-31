@@ -32,7 +32,7 @@ from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import change_global_config
 from d3a.models.config import SimulationConfig
-from d3a.models.market.market_structures import Offer, Trade, BalancingOffer, Bid
+from d3a_interface.dataclasses import Offer, Trade, BalancingOffer, Bid
 from d3a.models.state import EnergyOrigin, ESSEnergyOrigin
 from d3a.models.strategy.storage import StorageStrategy
 

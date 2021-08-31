@@ -21,7 +21,7 @@ from pendulum import DateTime
 from math import isclose
 
 from d3a.events.event_structures import MarketEvent
-from d3a.models.market.market_structures import Offer, Trade
+from d3a_interface.dataclasses import Offer, Trade
 from d3a.models.market import Market, lock_market_action
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade, MarketException

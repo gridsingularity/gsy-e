@@ -21,7 +21,7 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.d3a_core.exceptions import MarketException, OfferNotFoundException
-from d3a.models.market.market_structures import copy_offer
+from d3a_interface.dataclasses import copy_offer
 
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
