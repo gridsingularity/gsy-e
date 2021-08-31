@@ -21,6 +21,8 @@ from copy import deepcopy
 from dataclasses import asdict, dataclass, field
 from typing import Dict, List, Tuple, Union  # noqa
 
+from d3a_interface.dataclasses import Trade, BaseBidOffer
+
 from d3a.events import MarketEvent
 from d3a_interface.utils import datetime_to_string_incl_seconds, key_in_dict_and_not_none
 from pendulum import DateTime, parse
@@ -31,13 +33,13 @@ def parse_event_and_parameters_from_json_string(payload) -> Tuple:
     kwargs = data["kwargs"]
     for key in ["offer", "existing_offer", "new_offer"]:
         if key in kwargs:
-            kwargs[key] = offer_or_bid_from_json_string(kwargs[key])
+            kwargs[key] = BaseBidOffer.from_json(kwargs[key])
     if "trade" in kwargs:
-        kwargs["trade"] = trade_from_json_string(kwargs["trade"])
+        kwargs["trade"] = Trade.from_json(kwargs["trade"])
     for key in ["bid", "existing_bid", "new_bid"]:
         if key in kwargs:
-            kwargs[key] = offer_or_bid_from_json_string(kwargs[key])
+            kwargs[key] = BaseBidOffer.from_json(kwargs[key])
     if "bid_trade" in kwargs:
-        kwargs["bid_trade"] = trade_from_json_string(kwargs["bid_trade"])
+        kwargs["bid_trade"] = Trade.from_json(kwargs["bid_trade"])
     event_type = MarketEvent(data["event_type"])
     return event_type, kwargs

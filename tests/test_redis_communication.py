@@ -33,8 +33,7 @@ from d3a.models.area.event_dispatcher import RedisAreaDispatcher, AreaDispatcher
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import RedisCommunicator
 from d3a.events.event_structures import AreaEvent, MarketEvent
 from d3a_interface.dataclasses import (
-    Offer, Trade, offer_or_bid_from_json_string,
-    trade_from_json_string, TradeBidOfferInfo)
+    Offer, Trade, TradeBidOfferInfo)
 
 log = getLogger(__name__)
 
@@ -270,12 +269,12 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
             assert dispatcher.redis.publish.call_count == 1
             payload = json.loads(dispatcher.redis.publish.call_args_list[0][0][1])
             assert isinstance(payload["kwargs"]["offer"], str)
-            assert offer_or_bid_from_json_string(payload["kwargs"]["offer"], offer.time) == offer
+            assert Offer.from_json(payload["kwargs"]["offer"], offer.time) == offer
             assert isinstance(payload["kwargs"]["trade"], str)
-            assert trade_from_json_string(payload["kwargs"]["trade"], trade.time) == trade
+            assert Trade.from_json(payload["kwargs"]["trade"], trade.time) == trade
             assert isinstance(payload["kwargs"]["new_offer"], str)
-            assert offer_or_bid_from_json_string(payload["kwargs"]["new_offer"],
-                                                 new_offer.time) == new_offer
+            assert Offer.from_json(payload["kwargs"]["new_offer"],
+                                   new_offer.time) == new_offer
             assert isinstance(payload["kwargs"]["existing_offer"], str)
-            assert offer_or_bid_from_json_string(payload["kwargs"]["existing_offer"],
-                                                 existing_offer.time) == existing_offer
+            assert Offer.from_json(payload["kwargs"]["existing_offer"],
+                                   existing_offer.time) == existing_offer

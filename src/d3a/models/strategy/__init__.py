@@ -34,8 +34,7 @@ from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, Market
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
 from d3a_interface.dataclasses import (
-    Offer, trade_from_json_string,
-    offer_or_bid_from_json_string, Bid)
+    Offer, Bid, Trade)
 from d3a_interface.constants_limits import ConstSettings
 
 log = getLogger(__name__)
@@ -336,7 +335,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         if isinstance(data, str):
             data = json.loads(data)
         if data["status"] == "ready":
-            self.offer_buffer = offer_or_bid_from_json_string(data["offer"])
+            self.offer_buffer = Offer.from_json(data["offer"])
             self.event_response_uuids.append(data["transaction_uuid"])
         else:
             raise D3ARedisException(
@@ -394,7 +393,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         if isinstance(data, str):
             data = json.loads(data)
         if data["status"] == "ready":
-            self.trade_buffer = trade_from_json_string(data["trade"])
+            self.trade_buffer = Trade.from_json(data["trade"])
             self.event_response_uuids.append(data["transaction_uuid"])
         else:
             raise D3ARedisException(
