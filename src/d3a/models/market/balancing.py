@@ -20,10 +20,10 @@ from typing import Union, Dict, List, Optional  # noqa
 from pendulum import DateTime
 from logging import getLogger
 
-from d3a_interface.dataclasses import Offer
+from d3a_interface.data_classes import Offer
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.events.event_structures import MarketEvent
-from d3a_interface.dataclasses import BalancingOffer, BalancingTrade
+from d3a_interface.data_classes import BalancingOffer, BalancingTrade
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidBalancingTradeException, \
     DeviceNotInRegistryError

@@ -32,7 +32,7 @@ from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import d3a_path
 from d3a.models.area import DEFAULT_CONFIG
-from d3a_interface.dataclasses import Offer, BalancingOffer, Bid, Trade
+from d3a_interface.data_classes import Offer, BalancingOffer, Bid, Trade
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 

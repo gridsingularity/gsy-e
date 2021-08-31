@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 from typing import Dict, List, Tuple, Union  # noqa
 
-from d3a_interface.dataclasses import Trade, BaseBidOffer
+from d3a_interface.data_classes import Trade, BaseBidOffer
 
 from d3a.events import MarketEvent
 

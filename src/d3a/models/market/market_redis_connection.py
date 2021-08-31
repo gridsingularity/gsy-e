@@ -3,7 +3,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from uuid import uuid4
 
-from d3a_interface.dataclasses import BaseBidOffer, Trade
+from d3a_interface.data_classes import BaseBidOffer, Trade
 
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import (
     ResettableCommunicator, BlockingCommunicator)

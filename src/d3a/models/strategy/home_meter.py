@@ -30,7 +30,7 @@ from d3a.d3a_core.exceptions import D3AException
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.market import Market
-from d3a_interface.dataclasses import Offer
+from d3a_interface.data_classes import Offer
 from d3a.models.state import HomeMeterState
 from d3a.models.strategy import BidEnabledStrategy, utils
 from d3a.models.strategy.update_frequency import (

@@ -26,7 +26,7 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.blockchain_interface import NonBlockchainInterface
 from d3a.d3a_core.exceptions import MarketException
-from d3a_interface.dataclasses import Offer, Trade, Bid
+from d3a_interface.data_classes import Offer, Trade, Bid
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.two_sided import TwoSidedMarket
 from d3a.models.strategy import BidEnabledStrategy, Offers, BaseStrategy

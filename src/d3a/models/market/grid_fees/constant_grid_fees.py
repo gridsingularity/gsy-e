@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.market.grid_fees import BaseClassGridFees
-from d3a_interface.dataclasses import TradeBidOfferInfo
+from d3a_interface.data_classes import TradeBidOfferInfo
 
 
 class ConstantGridFees(BaseClassGridFees):

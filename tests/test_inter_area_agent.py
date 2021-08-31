@@ -21,12 +21,12 @@ import pendulum
 from math import isclose
 from uuid import uuid4
 
-from d3a_interface.dataclasses import MarketClearingState
+from d3a_interface.data_classes import MarketClearingState
 
 from d3a.constants import TIME_FORMAT
 from d3a.constants import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
-from d3a_interface.dataclasses import Offer, Trade, Bid
+from d3a_interface.data_classes import Offer, Trade, Bid
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
 from d3a.models.strategy.area_agents.two_sided_engine import BidInfo
