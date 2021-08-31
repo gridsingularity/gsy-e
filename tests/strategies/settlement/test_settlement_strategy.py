@@ -3,13 +3,14 @@ from unittest.mock import Mock, MagicMock
 
 import pytest
 from d3a_interface.constants_limits import ConstSettings
-from pendulum import datetime, duration
+from pendulum import today, duration
 
+from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Bid, Offer, Trade
 from d3a.models.market.two_sided import TwoSidedMarket
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.settlement_strategies import SettlementMarketStrategy
+from d3a.models.strategy.settlement.strategy import SettlementMarketStrategy
 
 
 class TestSettlementMarketStrategy:
@@ -17,7 +18,7 @@ class TestSettlementMarketStrategy:
     def setup_method(self):
         ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS = True
         self.settlement_strategy = SettlementMarketStrategy(10, 50, 50, 20)
-        self.time_slot = datetime(2021, 8, 27, 12, 0)
+        self.time_slot = today(tz=TIME_ZONE).at(hour=12, minute=0, second=0)
         self.market_mock = MagicMock(spec=TwoSidedMarket)
         self.market_mock.time_slot = self.time_slot
         self.market_mock.id = str(uuid.uuid4())

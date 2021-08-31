@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from collections import OrderedDict
 from typing import Dict, List, TYPE_CHECKING
 
-import d3a.constants
+from d3a import constants
 from d3a.d3a_core.util import is_timeslot_in_simulation_duration
 from d3a.models.market import GridFee, Market
 from d3a.models.market.balancing import BalancingMarket
@@ -62,14 +62,14 @@ class AreaMarkets:
         """Check if the past settlement market for time_slot is ready to be deleted."""
         return (time_slot < current_time_slot.subtract(
                     hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS,
-                    minutes=GlobalConfig.slot_length.minutes))
+                    minutes=GlobalConfig.slot_length.total_minutes()))
 
     @staticmethod
     def _is_it_time_to_delete_past_market(current_time_slot: DateTime,
                                           time_slot: DateTime) -> bool:
         """Check if the past (balancing-)market for time_slot is ready to be deleted."""
 
-        if d3a.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
+        if constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
             return False
 
         if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
@@ -77,7 +77,7 @@ class AreaMarkets:
                 hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
         else:
             return time_slot < current_time_slot.subtract(
-                minutes=GlobalConfig.slot_length.minutes)
+                minutes=GlobalConfig.slot_length.total_minutes())
 
     def rotate_markets(self, current_time: DateTime) -> None:
         """Deal with market rotation of different types."""
@@ -96,8 +96,8 @@ class AreaMarkets:
 
     def _move_markets_to_past(self, current_time: DateTime) -> None:
         """Move slot markets to self.past_markets."""
-
-        for time_slot in self.markets:
+        # the conversion to list is needed in order to omit 'mutated during iteration' error
+        for time_slot in list(self.markets.keys()):
             if time_slot < current_time:
                 market = self.markets.pop(time_slot)
                 market.readonly = True
@@ -107,8 +107,8 @@ class AreaMarkets:
 
     def _move_balancing_markets_to_past_balancing(self, current_time: DateTime) -> None:
         """Move balancing markets to self.past_balancing_markets."""
-
-        for time_slot in self.balancing_markets:
+        # the conversion to list is needed in order to omit 'mutated during iteration' error
+        for time_slot in list(self.balancing_markets.keys()):
             if time_slot < current_time:
                 market = self.balancing_markets.pop(time_slot)
                 market.readonly = True
