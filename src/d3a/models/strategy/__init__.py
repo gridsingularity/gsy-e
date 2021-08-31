@@ -331,10 +331,10 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         return offer
 
     def post_first_offer(self, market, energy_kWh, initial_energy_rate):
-        if not all(offer.seller != self.owner.name for offer in market.get_offers().values()):
+        if any(offer.seller == self.owner.name for offer in market.get_offers().values()):
             self.owner.log.warning("There is already another offer posted on the market, therefore"
                                    " do not repost another first offer.")
-            return None
+            return
         return self.post_offer(
             market,
             replace_existing=True,
@@ -354,7 +354,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         return markets[0]
 
     def are_offers_posted(self, market_id):
-        """Checks if any bids have been posted in the market slot with the given ID."""
+        """Checks if any offers have been posted in the market slot with the given ID."""
         return len(self.offers.posted_in_market(market_id)) > 0
 
     def _offer_response(self, payload):
@@ -492,6 +492,15 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     def can_settlement_offer_be_posted(self, offer_energy, offer_price, market,
                                        replace_existing=False):
+        """
+        Checks whether an offer can be posted to the settlement market
+        :param offer_energy: Energy of the offer that we want to post
+        :param offer_price: Price of the offer that we want to post
+        :param market: Settlement market that we want the offer to be posted to
+        :param replace_existing: Boolean argument that controls whether the offer should replace
+                                 existing offers from the same asset
+        :return: True in case the offer can be posted, False otherwise
+        """
         if not self.state.should_post_offer(market.time_slot):
             return False
         unsettled_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
@@ -618,6 +627,15 @@ class BidEnabledStrategy(BaseStrategy):
         return total_posted_energy <= required_energy_kWh and bid_price >= 0.0
 
     def can_settlement_bid_be_posted(self, bid_energy, bid_price, market, replace_existing=False):
+        """
+        Checks whether  abid can be posted to the settlement market
+        :param bid_energy: Energy of the bid that we want to post
+        :param bid_price: Price of the bid that we want to post
+        :param market: Settlement market that we want the bid to be posted to
+        :param replace_existing: Boolean argument that controls whether the bid should replace
+                                 existing bids from the same asset
+        :return: True in case the bid can be posted, False otherwise
+        """
         if not self.state.should_post_bid(market.time_slot):
             return False
         unsettled_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
@@ -688,10 +706,10 @@ class BidEnabledStrategy(BaseStrategy):
         # should be only bid from a device to a market at all times, which will be replaced if
         # it needs to be updated. If this check is not there, the market cycle event will post
         # one bid twice, which actually happens on the very first market slot cycle.
-        if not all(bid.buyer != self.owner.name for bid in market.get_bids().values()):
+        if any(bid.buyer == self.owner.name for bid in market.get_bids().values()):
             self.owner.log.warning("There is already another bid posted on the market, therefore"
                                    " do not repost another first bid.")
-            return None
+            return
         return self.post_bid(
             market,
             energy_Wh * initial_energy_rate / 1000.0,
