@@ -125,12 +125,14 @@ class TestAreaClass(unittest.TestCase):
         self.area.cycle_markets(False, False, False)
         assert len(self.area.past_markets) == 0
 
-        current_time = today(tz=constants.TIME_ZONE).add(minutes=self.config.slot_length.minutes)
+        current_time = today(tz=constants.TIME_ZONE).add(
+            minutes=self.config.slot_length.total_minutes())
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
         self.area._markets.create_future_markets(current_time, True, self.area)
-        current_time = today(tz=constants.TIME_ZONE).add(minutes=2*self.config.slot_length.minutes)
+        current_time = today(tz=constants.TIME_ZONE).add(
+            minutes=2*self.config.slot_length.total_minutes())
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 2
 
