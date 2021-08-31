@@ -370,8 +370,8 @@ class StorageStrategy(BidEnabledStrategy):
                             pass
 
             self.state.tick(self.area, market.time_slot)
-        if self.cap_price_strategy is False:
-            self.offer_update.update(self)
+            if self.cap_price_strategy is False:
+                self.offer_update.update(market, self)
 
         self.bid_update.increment_update_counter_all_markets(self)
         if self.offer_update.increment_update_counter_all_markets(self):
@@ -457,7 +457,8 @@ class StorageStrategy(BidEnabledStrategy):
             energy_kWh = self.state.energy_to_buy_dict[current_market.time_slot]
             if energy_kWh > 0:
                 try:
-                    self.post_first_bid(current_market, energy_kWh * 1000.0)
+                    self.post_first_bid(current_market, energy_kWh * 1000.0,
+                                        self.bid_update.initial_rate[current_market.time_slot])
                     self.state.offered_buy_kWh[current_market.time_slot] += energy_kWh
                 except MarketException:
                     pass

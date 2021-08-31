@@ -199,7 +199,7 @@ class AreaMarkets:
     def create_settlement_market(self, time_slot: DateTime, area: "Area") -> None:
         """Create a new settlement market."""
         self.settlement_markets[time_slot] = (
-            self._create_market(market_class=self._select_market_class(is_spot_market=True),
+            self._create_market(market_class=TwoSidedMarket,
                                 time_slot=time_slot,
                                 area=area, is_spot_market=True))
         self.log.trace(

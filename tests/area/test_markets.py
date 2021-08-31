@@ -48,6 +48,8 @@ class TestMarketRotation:
         yield area
 
         DeviceRegistry.REGISTRY = original_registry
+        ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
+        ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS = False
 
     def test_market_rotation_is_successful(self, area_fixture):
         area_fixture.activate()
@@ -57,6 +59,7 @@ class TestMarketRotation:
         area_fixture.cycle_markets()
         assert len(area_fixture.past_markets) == 1
         assert len(area_fixture.all_markets) == 5
+        assert len(area_fixture.balancing_markets) == 5
 
         area_fixture.current_tick = slot_length_in_ticks * 2
         area_fixture.cycle_markets()

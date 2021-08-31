@@ -81,7 +81,7 @@ class Offers:
     def _delete_past_offers(self, existing_offers):
         offers = {}
         for offer, market_id in existing_offers.items():
-            market = self.area.get_future_market_from_id(market_id)
+            market = self.strategy.get_market_from_id(market_id)
             if market is not None:
                 offers[offer] = market_id
         return offers
@@ -330,6 +330,33 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
         return offer
 
+    def post_first_offer(self, market, energy_kWh, initial_energy_rate):
+        if any(offer.seller == self.owner.name for offer in market.get_offers().values()):
+            self.owner.log.warning("There is already another offer posted on the market, therefore"
+                                   " do not repost another first offer.")
+            return
+        return self.post_offer(
+            market,
+            replace_existing=True,
+            price=energy_kWh * initial_energy_rate,
+            energy=energy_kWh,
+        )
+
+    def get_market_from_id(self, market_id):
+        # Look in spot and future markets first
+        market = self.area.get_future_market_from_id(market_id)
+        if market is not None:
+            return market
+        # Then check settlement markets
+        markets = [m for m in self.area.settlement_markets.values() if m.id == market_id]
+        if not markets:
+            return None
+        return markets[0]
+
+    def are_offers_posted(self, market_id):
+        """Checks if any offers have been posted in the market slot with the given ID."""
+        return len(self.offers.posted_in_market(market_id)) > 0
+
     def _offer_response(self, payload):
         data = json.loads(payload["data"])
         # TODO: is this additional parsing needed?
@@ -401,12 +428,6 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                 f"Error when receiving response on channel {payload['channel']}:: "
                 f"{data['exception']}:  {data['error_message']} {data}")
 
-    def post(self, **data):
-        self.event_data_received(data)
-
-    def event_data_received(self, data: Dict[str, Any]):
-        pass
-
     def trigger_enable(self, **kw):
         self.enabled = True
         self.log.info("Trading has been enabled")
@@ -469,6 +490,24 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         return self.offers.can_offer_be_posted(
             offer_energy, offer_price, available_energy, market, replace_existing=replace_existing)
 
+    def can_settlement_offer_be_posted(self, offer_energy, offer_price, market,
+                                       replace_existing=False):
+        """
+        Checks whether an offer can be posted to the settlement market
+        :param offer_energy: Energy of the offer that we want to post
+        :param offer_price: Price of the offer that we want to post
+        :param market: Settlement market that we want the offer to be posted to
+        :param replace_existing: Boolean argument that controls whether the offer should replace
+                                 existing offers from the same asset
+        :return: True in case the offer can be posted, False otherwise
+        """
+        if not self.state.should_post_offer(market.time_slot):
+            return False
+        unsettled_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
+        return self.offers.can_offer_be_posted(
+            offer_energy, offer_price, unsettled_energy_kWh, market,
+            replace_existing=replace_existing)
+
     def deactivate(self):
         pass
 
@@ -495,13 +534,13 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                 "Strategy does not have a state. "
                 "State is required to support load state functionality.")
 
-    def update_energy_price(self, market, updated_rate):
+    def update_offer_rates(self, market, updated_rate):
         """Update the total price of all offers in the specified market based on their new rate."""
         if market.id not in self.offers.open.values():
             return
 
         for offer, iterated_market_id in self.offers.open.items():
-            iterated_market = self.area.get_future_market_from_id(iterated_market_id)
+            iterated_market = self.get_market_from_id(iterated_market_id)
             # Skip offers that don't belong to the specified market slot
             if market is None or iterated_market is None or iterated_market.id != market.id:
                 continue
@@ -539,7 +578,6 @@ class BidEnabledStrategy(BaseStrategy):
 
     def _remove_existing_bids(self, market: Market) -> None:
         """Remove all existing bids in the market."""
-
         for bid in self.get_posted_bids(market):
             assert bid.buyer == self.owner.name
             self.remove_bid_from_pending(market.id, bid.id)
@@ -588,6 +626,23 @@ class BidEnabledStrategy(BaseStrategy):
 
         return total_posted_energy <= required_energy_kWh and bid_price >= 0.0
 
+    def can_settlement_bid_be_posted(self, bid_energy, bid_price, market, replace_existing=False):
+        """
+        Checks whether  abid can be posted to the settlement market
+        :param bid_energy: Energy of the bid that we want to post
+        :param bid_price: Price of the bid that we want to post
+        :param market: Settlement market that we want the bid to be posted to
+        :param replace_existing: Boolean argument that controls whether the bid should replace
+                                 existing bids from the same asset
+        :return: True in case the bid can be posted, False otherwise
+        """
+        if not self.state.should_post_bid(market.time_slot):
+            return False
+        unsettled_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
+        return self.can_bid_be_posted(
+            bid_energy, bid_price, unsettled_energy_kWh, market,
+            replace_existing=replace_existing)
+
     def is_bid_posted(self, market, bid_id):
         return bid_id in [bid.id for bid in self.get_posted_bids(market)]
 
@@ -607,7 +662,7 @@ class BidEnabledStrategy(BaseStrategy):
         return sum(b.price for b in self._traded_bids[market_id])
 
     def remove_bid_from_pending(self, market_id, bid_id=None):
-        market = self.area.get_future_market_from_id(market_id)
+        market = self.get_market_from_id(market_id)
         if market is None:
             return
         if bid_id is None:
@@ -645,19 +700,19 @@ class BidEnabledStrategy(BaseStrategy):
             return False
         return len(self._bids[market_id]) > 0
 
-    def post_first_bid(self, market, energy_Wh):
+    def post_first_bid(self, market, energy_Wh, initial_energy_rate):
         # TODO: It will be safe to remove this check once we remove the event_market_cycle being
         # called twice, but still it is nice to have it here as a precaution. In general, there
         # should be only bid from a device to a market at all times, which will be replaced if
         # it needs to be updated. If this check is not there, the market cycle event will post
         # one bid twice, which actually happens on the very first market slot cycle.
-        if not all(bid.buyer != self.owner.name for bid in market.get_bids().values()):
+        if any(bid.buyer == self.owner.name for bid in market.get_bids().values()):
             self.owner.log.warning("There is already another bid posted on the market, therefore"
                                    " do not repost another first bid.")
-            return None
+            return
         return self.post_bid(
             market,
-            energy_Wh * self.bid_update.initial_rate[market.time_slot] / 1000.0,
+            energy_Wh * initial_energy_rate / 1000.0,
             energy_Wh / 1000.0,
         )
 
