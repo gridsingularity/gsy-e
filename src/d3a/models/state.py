@@ -369,7 +369,7 @@ class LoadState(ConsumptionState):
         :return: Deviation between forecasted and measured energy
         """
         traded_energy_kWh = (self.get_desired_energy_Wh(time_slot) -
-                             self.get_energy_requirement_Wh(time_slot)) * 1000.0
+                             self.get_energy_requirement_Wh(time_slot)) / 1000.0
         return measured_energy_kWh - traded_energy_kWh
 
 
