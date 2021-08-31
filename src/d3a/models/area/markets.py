@@ -38,14 +38,14 @@ log = getLogger(__name__)
 class RotatorInterface(ABC):
     """Market rotator interface"""
 
-    def rotate(self, current_time_slot):
+    def rotate(self, current_time_slot: DateTime):
         pass
 
 
 class MarketRotatorBase(RotatorInterface):
     """Deal with market rotation."""
 
-    def __init__(self, markets: Dict, past_markets: Dict):
+    def __init__(self, markets: Dict, past_markets: Dict) -> None:
         self.markets = markets
         self.past_markets = past_markets
 
@@ -114,7 +114,7 @@ class MarketRotatorBase(RotatorInterface):
         del market_buffer[time_slot]
 
 
-class SlotMarketRotator(MarketRotatorBase):
+class SpotMarketRotator(MarketRotatorBase):
     """Deal with market rotation of spot markets."""
 
 
@@ -161,7 +161,7 @@ class AreaMarkets:
     def activate_market_rotators(self):
         """The user specific ConstSettings are not available when the class is constructed,
         so we need to have a two-stage initialization here."""
-        self.slot_market_rotator = SlotMarketRotator(self.markets, self.past_markets)
+        self.slot_market_rotator = SpotMarketRotator(self.markets, self.past_markets)
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.balancing_market_rotator = (
                 BalancingMarketRotator(self.balancing_markets, self.past_balancing_markets))
