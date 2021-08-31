@@ -52,14 +52,15 @@ class TestMarketRotation:
     def test_market_rotation_is_successful(self, area_fixture):
         area_fixture.activate()
         assert len(area_fixture.all_markets) == 5
-        slot_length_in_ticks = area_fixture.config.slot_length / area_fixture.config.tick_length
-        area_fixture.current_tick = slot_length_in_ticks
+        ticks_per_slot = area_fixture.config.slot_length / area_fixture.config.tick_length
+        area_fixture.current_tick = ticks_per_slot
         area_fixture.cycle_markets()
         assert len(area_fixture.past_markets) == 1
         assert len(area_fixture.all_markets) == 5
 
-        area_fixture.current_tick = slot_length_in_ticks * 2
+        area_fixture.current_tick = ticks_per_slot * 2
         area_fixture.cycle_markets()
+        # if RETAIN_PAST_MARKET_STRATEGIES_STATE == False, only one past market is kep in memory
         assert len(area_fixture.past_markets) == 1
         assert len(area_fixture.all_markets) == 5
 
@@ -67,13 +68,13 @@ class TestMarketRotation:
     def test_market_rotation_is_successful_keep_past_markets(self, area_fixture):
         area_fixture.activate()
         assert len(area_fixture.all_markets) == 5
-        slot_length_in_ticks = area_fixture.config.slot_length / area_fixture.config.tick_length
-        area_fixture.current_tick = slot_length_in_ticks
+        ticks_per_slot = area_fixture.config.slot_length / area_fixture.config.tick_length
+        area_fixture.current_tick = ticks_per_slot
         area_fixture.cycle_markets()
         assert len(area_fixture.past_markets) == 1
         assert len(area_fixture.all_markets) == 5
 
-        area_fixture.current_tick = slot_length_in_ticks * 2
+        area_fixture.current_tick = ticks_per_slot * 2
         area_fixture.cycle_markets()
         assert len(area_fixture.past_markets) == 2
         assert len(area_fixture.all_markets) == 5
@@ -83,13 +84,13 @@ class TestMarketRotation:
     def test_balancing_market_rotation_is_successful(self, area_fixture):
         area_fixture.activate()
         assert len(area_fixture.balancing_markets) == 5
-        slot_length_in_ticks = area_fixture.config.slot_length / area_fixture.config.tick_length
-        area_fixture.current_tick = slot_length_in_ticks
+        ticks_per_slot = area_fixture.config.slot_length / area_fixture.config.tick_length
+        area_fixture.current_tick = ticks_per_slot
         area_fixture.cycle_markets()
         assert len(area_fixture.past_balancing_markets) == 1
         assert len(area_fixture.balancing_markets) == 5
 
-        area_fixture.current_tick = slot_length_in_ticks * 2
+        area_fixture.current_tick = ticks_per_slot * 2
         area_fixture.cycle_markets()
         assert len(area_fixture.past_balancing_markets) == 1
         assert len(area_fixture.balancing_markets) == 5
@@ -117,11 +118,11 @@ class TestMarketRotation:
         }
 
         area_fixture.activate()
-        slot_length_in_ticks = area_fixture.config.slot_length / area_fixture.config.tick_length
+        ticks_per_slot = area_fixture.config.slot_length / area_fixture.config.tick_length
 
         current_slot_number = 1
         for time_slot, expected_counts in expected_market_cycles.items():
-            area_fixture.current_tick = slot_length_in_ticks * current_slot_number
+            area_fixture.current_tick = ticks_per_slot * current_slot_number
             area_fixture.cycle_markets()
 
             assert len(area_fixture.all_markets) == expected_counts[0]
