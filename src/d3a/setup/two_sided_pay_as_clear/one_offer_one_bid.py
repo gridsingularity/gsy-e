@@ -27,16 +27,16 @@ def get_setup(config):
         BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
 
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'Energy Community 2',
+                "Energy Community 2",
                 [
-                    Area('House 3 Load', strategy=LoadHoursStrategy(
+                    Area("House 3 Load", strategy=LoadHoursStrategy(
                         avg_power_W=100, hrs_per_day=24, hrs_of_day=list(range(24)),
                         initial_buying_rate=30, final_buying_rate=30),
                          ),
-                    Area('House 2 PV',
+                    Area("House 2 PV",
                          strategy=PVStrategy(initial_selling_rate=10, final_selling_rate=10),
                          ),
                 ],

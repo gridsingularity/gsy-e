@@ -184,7 +184,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
         self.strategy.bid_update.delete_past_state_values = Mock()
         self.strategy.offer_update.delete_past_state_values = Mock()
         self.strategy._set_energy_forecast_for_future_markets = Mock()
-        self.strategy.set_energy_measurement_of_last_market = Mock()
+        self.strategy._set_energy_measurement_of_last_market = Mock()
         self.strategy._post_offer = Mock()
         market_mocks = self._create_market_mocks(3)
         self.strategy.area.all_markets = market_mocks
@@ -202,7 +202,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
         self.strategy._set_energy_forecast_for_future_markets.assert_called_once_with(
             reconfigure=False)
         assert self.strategy._post_offer.call_count == 3
-        self.strategy.set_energy_measurement_of_last_market.assert_called_once()
+        self.strategy._set_energy_measurement_of_last_market.assert_called_once()
 
         self.strategy.state.delete_past_state_values.assert_called_once_with(
             self.area_mock.current_market.time_slot)
@@ -217,7 +217,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
         # If we are in the first market slot, the real energy is not set
         self.strategy.area.current_market = None
         self.strategy.state.set_energy_measurement_kWh = Mock()
-        self.strategy.set_energy_measurement_of_last_market()
+        self.strategy._set_energy_measurement_of_last_market()
         self.strategy.state.set_energy_measurement_kWh.assert_not_called()
 
         # When there is at least one past market, the real energy is set
@@ -225,7 +225,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
         self.strategy.area.current_market = Mock()
         utils_mock.compute_altered_energy.return_value = 100
 
-        self.strategy.set_energy_measurement_of_last_market()
+        self.strategy._set_energy_measurement_of_last_market()
         self.strategy.state.set_energy_measurement_kWh.assert_called_once_with(
             100, self.strategy.area.current_market.time_slot)
 

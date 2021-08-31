@@ -22,15 +22,15 @@ from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
-            Area('Load', strategy=LoadHoursStrategy(avg_power_W=200,
+            Area("Load", strategy=LoadHoursStrategy(avg_power_W=200,
                                                     hrs_per_day=24,
                                                     hrs_of_day=list(
                                                         range(0, 24)),
                                                     final_buying_rate=40)
                  ),
-            Area('Market Maker', strategy=MarketMakerStrategy(energy_rate=18.7,
+            Area("Market Maker", strategy=MarketMakerStrategy(energy_rate=18.7,
                                                               grid_connected=False)
                  ),
 

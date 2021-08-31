@@ -25,14 +25,14 @@ from d3a_interface.constants_limits import ConstSettings
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'Community',
+                "Community",
                 [
-                    Area('H1',
+                    Area("H1",
                          [
-                            Area('Load', strategy=LoadHoursStrategy(avg_power_W=1000,
+                            Area("Load", strategy=LoadHoursStrategy(avg_power_W=1000,
                                                                     hrs_per_day=1,
                                                                     hrs_of_day=list(
                                                                        range(10, 11)),
@@ -45,15 +45,15 @@ def get_setup(config):
                 grid_fee_constant=3,
             ),
             Area(
-                'DSO',
+                "DSO",
                 [
-                    Area('Power Plant', strategy=FinitePowerPlant(energy_rate=30,
+                    Area("Power Plant", strategy=FinitePowerPlant(energy_rate=30,
                                                                   max_available_power_kW=1000)
                          ),
                 ],
                 grid_fee_constant=10,
             ),
-            Area('Market Maker', strategy=MarketMakerStrategy(grid_connected=True, energy_rate=50)
+            Area("Market Maker", strategy=MarketMakerStrategy(grid_connected=True, energy_rate=50)
                  ),
         ], grid_fee_constant=10,
         config=config

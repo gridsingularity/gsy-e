@@ -200,7 +200,7 @@ class ProductionState(ProsumptionInterface):
 
         assert self._energy_production_forecast_kWh[time_slot] >= 0.0
 
-    def get_available_energy_kWh(self, time_slot, default_value=None):
+    def get_available_energy_kWh(self, time_slot, default_value=0.0):
         available_energy = self._available_energy_kWh.get(time_slot, default_value)
 
         assert available_energy >= -FLOATING_POINT_TOLERANCE
@@ -223,7 +223,7 @@ class ProductionState(ProsumptionInterface):
             self._available_energy_kWh.pop(market_slot, None)
             self._energy_production_forecast_kWh.pop(market_slot, None)
 
-    def get_energy_production_forecast_kWh(self, time_slot, default_value=None):
+    def get_energy_production_forecast_kWh(self, time_slot: DateTime, default_value: float = 0.0):
         """Return the expected produced energy at a specific market slot."""
         production_forecast = self._energy_production_forecast_kWh.get(time_slot, default_value)
         assert production_forecast >= -FLOATING_POINT_TOLERANCE
@@ -296,7 +296,7 @@ class ESSEnergyOrigin(Enum):
     UNKNOWN = 3
 
 
-EnergyOrigin = namedtuple('EnergyOrigin', ('origin', 'value'))
+EnergyOrigin = namedtuple("EnergyOrigin", ("origin", "value"))
 
 
 class StorageState(StateInterface):
@@ -517,8 +517,8 @@ class StorageState(StateInterface):
 
             write_default_to_dict(self.energy_to_buy_dict, time_slot, 0)
             write_default_to_dict(self.energy_to_sell_dict, time_slot, 0)
-            write_default_to_dict(self.offered_history, time_slot, '-')
-            write_default_to_dict(self.used_history, time_slot, '-')
+            write_default_to_dict(self.offered_history, time_slot, "-")
+            write_default_to_dict(self.used_history, time_slot, "-")
 
             write_default_to_dict(self.time_series_ess_share, time_slot,
                                   {ESSEnergyOrigin.UNKNOWN: 0.,
