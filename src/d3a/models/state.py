@@ -99,10 +99,10 @@ class ProsumptionInterface(StateInterface, ABC):
         detrimental to the grid (and can be posted as a bid)"""
         return self._forecast_measurement_deviation_kWh.get(time_slot)
 
-    def should_post_bid(self, time_slot: DateTime) -> bool:
+    def can_post_settlement_bid(self, time_slot: DateTime) -> bool:
         return self._forecast_measurement_deviation_kWh.get(time_slot) > 0.0
 
-    def should_post_offer(self, time_slot: DateTime) -> bool:
+    def can_post_settlement_offer(self, time_slot: DateTime) -> bool:
         return self._forecast_measurement_deviation_kWh.get(time_slot) < 0.0
 
     def get_unsettled_deviation_kWh(self, time_slot: DateTime) -> float:

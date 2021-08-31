@@ -108,7 +108,7 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         for market in strategy.area.settlement_markets.values():
             energy_deviation_kWh = strategy.state.get_unsettled_deviation_kWh(market.time_slot)
 
-            if strategy.state.should_post_bid(market.time_slot):
+            if strategy.state.can_post_settlement_bid(market.time_slot):
                 try:
                     strategy.post_first_bid(
                         market, energy_deviation_kWh * 1000.0,
@@ -117,7 +117,7 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
                 except MarketException:
                     pass
 
-            if strategy.state.should_post_offer(market.time_slot):
+            if strategy.state.can_post_settlement_offer(market.time_slot):
                 try:
                     strategy.post_first_offer(
                         market, energy_deviation_kWh,
