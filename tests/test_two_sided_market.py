@@ -230,7 +230,7 @@ class TestTwoSidedMarket:
 
     def test_market_bid_trade(self, market=TwoSidedMarket(bc=MagicMock(),
                                                           time_slot=pendulum.now())):
-        bid = market.bid(20, 10, "A", "A", original_bid_price=20)
+        bid = market.bid(20, 10, "A", "A", original_price=20)
         trade_offer_info = TradeBidOfferInfo(2, 2, 0.5, 0.5, 2)
         trade = market.accept_bid(bid, energy=10, seller="B", trade_offer_info=trade_offer_info)
         assert trade
@@ -253,7 +253,7 @@ class TestTwoSidedMarket:
 
     def test_market_trade_bid_partial(
             self, market=TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())):
-        bid = market.bid(20, 20, "A", "A", original_bid_price=20)
+        bid = market.bid(20, 20, "A", "A", original_price=20)
         trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
         trade = market.accept_bid(bid, energy=5, seller="B", trade_offer_info=trade_offer_info)
         assert trade

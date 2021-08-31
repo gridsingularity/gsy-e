@@ -107,10 +107,10 @@ class FakeMarket:
                          seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
                          buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
 
-    def bid(self, price, energy, buyer, original_bid_price=None,
+    def bid(self, price, energy, buyer, original_price=None,
             buyer_origin=None, buyer_origin_id=None, buyer_id=None,
             attributes=None, requirements=None):
-        return Bid(123, pendulum.now(), price, energy, buyer, original_bid_price,
+        return Bid(123, pendulum.now(), price, energy, buyer, original_price,
                    buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id,
                    buyer_id=buyer_id, attributes=attributes, requirements=requirements)
 

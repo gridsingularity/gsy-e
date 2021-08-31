@@ -547,7 +547,7 @@ class StorageStrategy(BidEnabledStrategy):
                             price=energy * selling_rate,
                             energy=energy,
                             seller=self.owner.name,
-                            original_offer_price=energy * selling_rate,
+                            original_price=energy * selling_rate,
                             seller_origin=self.owner.name,
                             seller_origin_id=self.owner.uuid,
                             seller_id=self.owner.uuid

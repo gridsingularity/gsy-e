@@ -50,14 +50,14 @@ class BalancingMarket(OneSidedMarket):
                          grid_fees, name, in_sim_duration=in_sim_duration)
 
     def offer(self, price: float, energy: float, seller: str, offer_id: Optional[str] = None,
-              original_offer_price: Optional[float] = None, dispatch_event: bool = True,
+              original_price: Optional[float] = None, dispatch_event: bool = True,
               seller_origin: Optional[str] = None,
               adapt_price_with_fees: bool = True, seller_origin_id: Optional[str] = None,
               attributes: Optional[Dict] = None, requirements: Optional[List[Dict]] = None):
         assert False
 
     def balancing_offer(self, price: float, energy: float, seller: str,
-                        original_offer_price=None, offer_id=None, from_agent: bool = False,
+                        original_price=None, offer_id=None, from_agent: bool = False,
                         adapt_price_with_fees: bool = False, dispatch_event=True,
                         seller_origin=None, attributes: Dict = None,
                         requirements: List[Dict] = None) -> BalancingOffer:
@@ -115,7 +115,7 @@ class BalancingMarket(OneSidedMarket):
         residual_offer = self.balancing_offer(price=residual_price,
                                               energy=residual_energy,
                                               seller=original_offer.seller,
-                                              original_offer_price=original_residual_price,
+                                              original_price=original_residual_price,
                                               dispatch_event=False,
                                               seller_origin=original_offer.seller_origin,
                                               adapt_price_with_fees=False,

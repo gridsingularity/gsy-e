@@ -401,7 +401,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
                     offer_price,
                     offer_energy_kWh,
                     self.owner.name,
-                    original_offer_price=offer_price,
+                    original_price=offer_price,
                     seller_origin=self.owner.name,
                     seller_origin_id=self.owner.uuid,
                     seller_id=self.owner.uuid)

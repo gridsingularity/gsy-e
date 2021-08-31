@@ -50,13 +50,13 @@ class IAAEngine:
 
     def _offer_in_market(self, offer):
         updated_price = self.markets.target.fee_class.update_forwarded_offer_with_fee(
-            offer.energy_rate, offer.original_offer_price / offer.energy) * offer.energy
+            offer.energy_rate, offer.original_price / offer.energy) * offer.energy
 
         kwargs = {
             "price": updated_price,
             "energy": offer.energy,
             "seller": self.owner.name,
-            "original_offer_price": offer.original_offer_price,
+            "original_price": offer.original_price,
             "dispatch_event": False,
             "seller_origin": offer.seller_origin,
             "seller_origin_id": offer.seller_origin_id,
@@ -228,12 +228,12 @@ class IAAEngine:
             # offer was split in target market, also split in source market
 
             local_offer = self.forwarded_offers[original_offer.id].source_offer
-            original_offer_price = local_offer.original_offer_price \
-                if local_offer.original_offer_price is not None else local_offer.price
+            original_price = local_offer.original_price \
+                if local_offer.original_price is not None else local_offer.price
 
             local_split_offer, local_residual_offer = \
                 self.markets.source.split_offer(local_offer, accepted_offer.energy,
-                                                original_offer_price)
+                                                original_price)
 
             #  add the new offers to forwarded_offers
             self._add_to_forward_offers(local_residual_offer, residual_offer)
@@ -247,12 +247,12 @@ class IAAEngine:
 
             local_offer = self.forwarded_offers[original_offer.id].source_offer
 
-            original_offer_price = local_offer.original_offer_price \
-                if local_offer.original_offer_price is not None else local_offer.price
+            original_price = local_offer.original_price \
+                if local_offer.original_price is not None else local_offer.price
 
             local_split_offer, local_residual_offer = \
                 self.markets.target.split_offer(local_offer, accepted_offer.energy,
-                                                original_offer_price)
+                                                original_price)
 
             #  add the new offers to forwarded_offers
             self._add_to_forward_offers(residual_offer, local_residual_offer)

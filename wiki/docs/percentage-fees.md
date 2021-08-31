@@ -13,7 +13,7 @@ The price of a bid or offer changes as it is propagated into different [markets]
 In the One-Sided Pay-as-Offer market, there are no bids, only offers. The offers are propagated throughout the markets in the hierarchy. The grid fees are taken into account when an offer is forwarded to the higher market, by the higher market itself. Therefore the agent is not responsible for adapting the offer price to include the grid fees. The grid fees' unit is a ratio of the original offer price, therefore the formula to calculate the new offer price when placing an offer to a market is the following:
 
 ```
-offer_price_after_fees = offer_price + original_offer_price * grid_fee_ratio
+offer_price_after_fees = offer_price + original_price * grid_fee_ratio
 ```
 
 If the offer is not purchased after two ticks, it is moved into the next market, where the price is increased by that market’s grid fee. In the provided example, the PV offer of 0.10€ is first placed in the House 2 Market where it gains zero fees. Then it propagates into the Neighborhood 2 Market, gaining the market’s fee of 5% of the original offer price `0.10*0.05+0.10=0.105€`.  If unmatched, it propagates into the Grid Market, with an additional 10% fee of the original offer is applied: `0.10*0.10+0.105=0.115€`. Continuing into the Neighborhood 1 Market, the offer gains another fee of 5% of the original price `0.10*0.05+0.115=0.12€`. Continuing into the House 1 Market, the offer gains zero additional fees as there is no fee in that market. The Load buys the offer in the House 1 Market at the Clearing Price of 0.12€. Starting with the initial offer price, the total fees are calculated  `0.10*(1+0.05+0.10+0.05)=0.02` to yield the Trade Price of 0.12€.
@@ -36,13 +36,13 @@ trade_price = energy * trade_rate
 In the Two-Sided Pay-as-Bid market, both bids and offers are propagated through the markets in the hierarchy. If a bid or offer is not purchased after two [ticks](markets.md#market-ticks), it propagates into the next market. In order to prevent double accounting of a market's grid fee when a bid and an offer are matched in that market, market fees are added to offers when they enter that market (target market) and subtracted from bids when they leave that market and enter another (source market). The formula for propagating the offers is the same as for the one-sided market:
 
 ```
-offer_price_after_fees = offer_price + original_offer_price * grid_fee_ratio
+offer_price_after_fees = offer_price + original_price * grid_fee_ratio
 ```
 
 The IAA subtracts the fees from the bid before propagating it to a higher market. The formula for an area to update the bid to include grid fees is the following: 
 
 ```
-bid_price_after_fees = bid_price - original_bid_price * grid_fee_ratio
+bid_price_after_fees = bid_price - original_price * grid_fee_ratio
 ```
 
 In the case of the Two-Sided Pay-as-Bid market, the offer has moved into the Grid Market by the same mechanism as for the One-Sided Pay-as-Offer market. The bid of 0.30€ follows a similar mechanism and is placed into the House 1 Market where there are zero fees. If the bid is not purchased after two ticks, it is moved into the Neighborhood 1 Market. As explained above, only the fees from the source market are added, which are zero in this case. Hence the bid remains at 0.30€. Next, the bid is moved to the Grid Market, and incurs the fees of the source market, the Neighborhood 1 Market of 5% to `0.30-0.30*0.05=0.285€`.

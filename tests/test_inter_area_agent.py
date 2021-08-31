@@ -146,26 +146,26 @@ class FakeMarket:
     def delete_bid(self, *args):
         pass
 
-    def _update_new_offer_price_with_fee(self, offer_price, original_offer_price, energy):
-        return offer_price + self.fee_class.grid_fee_rate * original_offer_price
+    def _update_new_offer_price_with_fee(self, offer_price, original_price, energy):
+        return offer_price + self.fee_class.grid_fee_rate * original_price
 
-    def _update_new_bid_price_with_fee(self, bid_price, original_bid_price):
+    def _update_new_bid_price_with_fee(self, bid_price, original_price):
         return self.fee_class.update_incoming_bid_with_fee(
-            bid_price, original_bid_price)
+            bid_price, original_price)
 
     def offer(self, price: float, energy: float, seller: str, offer_id=None,
-              original_offer_price=None, dispatch_event=True, seller_origin=None,
+              original_price=None, dispatch_event=True, seller_origin=None,
               adapt_price_with_fees=True, seller_origin_id=None,
               seller_id=None) -> Offer:
         self.offer_call_count += 1
 
-        if original_offer_price is None:
-            original_offer_price = price
+        if original_price is None:
+            original_price = price
         if offer_id is None:
             offer_id = "uuid"
         if adapt_price_with_fees:
-            price = self._update_new_offer_price_with_fee(price, original_offer_price, energy)
-        offer = Offer(offer_id, pendulum.now(), price, energy, seller, original_offer_price,
+            price = self._update_new_offer_price_with_fee(price, original_price, energy)
+        offer = Offer(offer_id, pendulum.now(), price, energy, seller, original_price,
                       seller_origin=seller_origin, seller_origin_id=seller_origin_id,
                       seller_id=seller_id)
         self.offers[offer.id] = deepcopy(offer)
@@ -177,21 +177,21 @@ class FakeMarket:
         pass
 
     def bid(self, price: float, energy: float, buyer: str,
-            bid_id: str = None, original_bid_price=None, buyer_origin=None,
+            bid_id: str = None, original_price=None, buyer_origin=None,
             adapt_price_with_fees=True, buyer_origin_id=None, buyer_id=None):
         self.bid_call_count += 1
 
-        if original_bid_price is None:
-            original_bid_price = price
+        if original_price is None:
+            original_price = price
 
         if bid_id is None:
             bid_id = "uuid"
 
         if adapt_price_with_fees:
-            price = self._update_new_bid_price_with_fee(price, original_bid_price)
+            price = self._update_new_bid_price_with_fee(price, original_price)
 
         bid = Bid(bid_id, pendulum.now(), price, energy, buyer,
-                  original_bid_price=original_bid_price,
+                  original_price=original_price,
                   buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id,
                   buyer_id=buyer_id)
         self._bids.append(bid)
@@ -217,7 +217,7 @@ class FakeMarket:
         residual_offer = self.offer(price=residual_price,
                                     energy=residual_energy,
                                     seller=original_offer.seller,
-                                    original_offer_price=original_residual_price,
+                                    original_price=original_residual_price,
                                     dispatch_event=False,
                                     seller_origin=original_offer.seller_origin,
                                     adapt_price_with_fees=False)
@@ -240,7 +240,7 @@ class FakeMarket:
         residual_bid = self.bid(price=residual_price,
                                 buyer=original_bid.buyer,
                                 energy=residual_energy,
-                                original_bid_price=original_residual_price,
+                                original_price=original_residual_price,
                                 buyer_origin=original_bid.buyer_origin,
                                 adapt_price_with_fees=False)
         return accepted_bid, residual_bid

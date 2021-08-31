@@ -92,7 +92,7 @@ class FakeMarket:
     def time_slot(self):
         return TIME
 
-    def offer(self, price, energy, seller, original_offer_price=None,
+    def offer(self, price, energy, seller, original_price=None,
               seller_origin=None, seller_origin_id=None, seller_id=None,
               attributes=None, requirements=None):
         offer = Offer("id", pendulum.now(), price, energy, seller, seller_origin=seller_origin,
@@ -118,7 +118,7 @@ class FakeMarket:
         self.traded_offers.append(trade)
         return trade
 
-    def bid(self, price, energy, buyer, original_bid_price=None,
+    def bid(self, price, energy, buyer, original_price=None,
             buyer_origin=None, buyer_origin_id=None, buyer_id=None,
             attributes=None, requirements=None):
         bid = Bid("bid_id", pendulum.now(), price, energy, buyer, buyer_origin=buyer_origin,

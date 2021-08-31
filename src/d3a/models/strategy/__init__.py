@@ -512,7 +512,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                     updated_price,
                     offer.energy,
                     self.owner.name,
-                    original_offer_price=updated_price,
+                    original_price=updated_price,
                     seller_origin=offer.seller_origin,
                     seller_origin_id=offer.seller_origin_id,
                     seller_id=self.owner.uuid
@@ -553,7 +553,7 @@ class BidEnabledStrategy(BaseStrategy):
             price,
             energy,
             self.owner.name,
-            original_bid_price=price,
+            original_price=price,
             buyer_origin=self.owner.name,
             buyer_origin_id=self.owner.uuid,
             buyer_id=self.owner.uuid,

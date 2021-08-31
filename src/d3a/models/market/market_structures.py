@@ -15,17 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import datetime
 import json
-from copy import deepcopy
-from dataclasses import asdict, dataclass, field
 from typing import Dict, List, Tuple, Union  # noqa
 
 from d3a_interface.dataclasses import Trade, BaseBidOffer
 
 from d3a.events import MarketEvent
-from d3a_interface.utils import datetime_to_string_incl_seconds, key_in_dict_and_not_none
-from pendulum import DateTime, parse
 
 
 def parse_event_and_parameters_from_json_string(payload) -> Tuple:
