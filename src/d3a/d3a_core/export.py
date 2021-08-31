@@ -28,8 +28,6 @@ from copy import deepcopy
 from functools import reduce  # forward compatibility for Python 3
 
 import plotly.graph_objs as go
-from d3a_interface.data_classes import MarketClearingState
-
 from d3a.d3a_core.singletons import bid_offer_matcher
 from d3a_interface.enums import BidOfferMatchAlgoEnum
 from slugify import slugify
@@ -41,7 +39,8 @@ from d3a.d3a_core.util import constsettings_to_dict, round_floats_for_ui
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.state import ESSEnergyOrigin
 from d3a.d3a_core.sim_results.plotly_graph import PlotlyGraph
-from d3a_interface.data_classes import Trade, BalancingTrade, Bid, Offer, BalancingOffer
+from d3a_interface.data_classes import (
+    Trade, BalancingTrade, Bid, Offer, BalancingOffer, MarketClearingState)
 from d3a.models.area import Area
 import d3a.constants
 
@@ -209,7 +208,7 @@ class ExportAndPlot:
 
     def _export_area_clearing_rate(self, area, directory, file_suffix, is_first):
         file_path = self._file_path(directory, f"{area.slug}-{file_suffix}")
-        labels = ("slot",) + MarketClearingState._csv_fields()
+        labels = ("slot",) + MarketClearingState.csv_fields()
         try:
             with open(file_path, 'a') as csv_file:
                 writer = csv.writer(csv_file)
@@ -233,7 +232,7 @@ class ExportAndPlot:
         return: dict[out_keys]
         """
         file_path = self._file_path(directory, f"{area.slug}-{file_suffix}")
-        labels = ("slot",) + offer_type._csv_fields()
+        labels = ("slot",) + offer_type.csv_fields()
         try:
             with open(file_path, 'a') as csv_file:
                 writer = csv.writer(csv_file)
@@ -241,7 +240,7 @@ class ExportAndPlot:
                     writer.writerow(labels)
                 for market in past_markets:
                     for offer in getattr(market, market_member):
-                        row = (market.time_slot,) + offer._to_csv()
+                        row = (market.time_slot,) + offer.csv_values()
                         writer.writerow(row)
         except OSError:
             _log.exception("Could not export area balancing offers")
@@ -255,11 +254,11 @@ class ExportAndPlot:
 
         if balancing:
             file_path = self._file_path(directory, "{}-balancing-trades".format(area.slug))
-            labels = ("slot",) + BalancingTrade._csv_fields()
+            labels = ("slot",) + BalancingTrade.csv_fields()
             past_markets = area.past_balancing_markets
         else:
             file_path = self._file_path(directory, "{}-trades".format(area.slug))
-            labels = ("slot",) + Trade._csv_fields()
+            labels = ("slot",) + Trade.csv_fields()
             past_markets = area.past_markets
 
         try:
@@ -269,7 +268,7 @@ class ExportAndPlot:
                     writer.writerow(labels)
                 for market in past_markets:
                     for trade in market.trades:
-                        row = (market.time_slot,) + trade._to_csv()
+                        row = (market.time_slot,) + trade.csv_values()
                         writer.writerow(row)
         except OSError:
             _log.exception("Could not export area trades")

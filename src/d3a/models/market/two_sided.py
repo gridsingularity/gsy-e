@@ -37,7 +37,7 @@ log = getLogger(__name__)
 
 
 class TwoSidedMarket(OneSidedMarket):
-    """Extends One sided market class and adds support for bidding functionality.
+    """Extend One sided market class and add support for bidding functionality.
 
     A market type that allows producers to place energy offers to the markets
     (exactly the same way as on the one-sided market case), but also allows the consumers
