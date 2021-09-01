@@ -205,7 +205,7 @@ def settlement_market_strategy_factory(
     Returns: Settlement strategy object
 
     """
-    if ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS:
+    if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
         return SettlementMarketStrategy(
             initial_buying_rate, final_buying_rate,
             initial_selling_rate, final_selling_rate)
