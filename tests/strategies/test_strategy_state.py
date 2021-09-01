@@ -44,22 +44,22 @@ class TestProsumptionInterface:
         assert state._unsettled_deviation_kWh[self.timeslot] == 50.0
 
     @pytest.mark.parametrize("state", [LoadState(), PVState()])
-    def test_should_post_bid(self, state):
+    def test_can_post_settlement_bid(self, state):
         state._forecast_measurement_deviation_kWh[self.timeslot] = 123.0
-        assert state.should_post_bid(self.timeslot) is True
+        assert state.can_post_settlement_bid(self.timeslot) is True
         state._forecast_measurement_deviation_kWh[self.timeslot] = -123.0
-        assert state.should_post_bid(self.timeslot) is False
+        assert state.can_post_settlement_bid(self.timeslot) is False
         state._forecast_measurement_deviation_kWh[self.timeslot] = 0.0
-        assert state.should_post_bid(self.timeslot) is False
+        assert state.can_post_settlement_bid(self.timeslot) is False
 
     @pytest.mark.parametrize("state", [LoadState(), PVState()])
-    def test_should_post_offer(self, state):
+    def test_can_post_settlement_offer(self, state):
         state._forecast_measurement_deviation_kWh[self.timeslot] = -123.0
-        assert state.should_post_offer(self.timeslot) is True
+        assert state.can_post_settlement_offer(self.timeslot) is True
         state._forecast_measurement_deviation_kWh[self.timeslot] = 123.0
-        assert state.should_post_offer(self.timeslot) is False
+        assert state.can_post_settlement_offer(self.timeslot) is False
         state._forecast_measurement_deviation_kWh[self.timeslot] = 0.0
-        assert state.should_post_offer(self.timeslot) is False
+        assert state.can_post_settlement_offer(self.timeslot) is False
 
     @pytest.mark.parametrize("state", [LoadState(), PVState()])
     def test_decrement_unsettled_deviation(self, state):

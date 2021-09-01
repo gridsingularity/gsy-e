@@ -20,11 +20,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from unittest.mock import Mock, patch
 
 import pytest
+from d3a_interface.constants_limits import ConstSettings, TIME_ZONE
+from pendulum import duration, today
+
+import d3a
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
-from d3a_interface.constants_limits import ConstSettings, TIME_ZONE
-from pendulum import duration, today
 
 
 class TestMarketRotation:
@@ -45,11 +47,19 @@ class TestMarketRotation:
         config.market_count = 5
         child = Area(name="test_market_area", config=config, strategy=StorageStrategy())
         area = Area(name="parent_area", children=[child], config=config)
+        ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
+        ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS = False
+        d3a.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
+
         yield area
 
         DeviceRegistry.REGISTRY = original_registry
+        ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
+        ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS = False
+        d3a.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 
     def test_market_rotation_is_successful(self, area_fixture):
+        ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
         area_fixture.activate()
         assert len(area_fixture.all_markets) == 5
         ticks_per_slot = area_fixture.config.slot_length / area_fixture.config.tick_length
@@ -57,6 +67,7 @@ class TestMarketRotation:
         area_fixture.cycle_markets()
         assert len(area_fixture.past_markets) == 1
         assert len(area_fixture.all_markets) == 5
+        assert len(area_fixture.balancing_markets) == 5
 
         area_fixture.current_tick = ticks_per_slot * 2
         area_fixture.cycle_markets()

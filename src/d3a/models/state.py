@@ -130,7 +130,7 @@ class ProsumptionInterface(StateInterface, ABC):
         """
         return self._forecast_measurement_deviation_kWh.get(time_slot)
 
-    def should_post_bid(self, time_slot: DateTime) -> bool:
+    def can_post_settlement_bid(self, time_slot: DateTime) -> bool:
         """
         Checks whether a settlement bid should be posted
         Args:
@@ -141,7 +141,7 @@ class ProsumptionInterface(StateInterface, ABC):
         """
         return self._forecast_measurement_deviation_kWh.get(time_slot) > 0.0
 
-    def should_post_offer(self, time_slot: DateTime) -> bool:
+    def can_post_settlement_offer(self, time_slot: DateTime) -> bool:
         """
         Checks whether a settlement offer should be posted
         Args:
