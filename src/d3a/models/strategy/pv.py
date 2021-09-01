@@ -22,25 +22,27 @@ from logging import getLogger
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import (
-    convert_W_to_kWh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
+    convert_kW_to_kWh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
 from d3a_interface.validators import PVValidator
-from pendulum import duration, Time  # noqa
+from pendulum import duration  # noqa
+from pendulum.datetime import DateTime
 
 from d3a import constants
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.state import PVState
-from d3a.models.strategy import BaseStrategy
+from d3a.models.strategy import BidEnabledStrategy, utils
+from d3a.models.strategy.settlement.strategy import settlement_market_strategy_factory
 from d3a.models.strategy.update_frequency import TemplateStrategyOfferUpdater
 
 log = getLogger(__name__)
 
 
-class PVStrategy(BaseStrategy):
+class PVStrategy(BidEnabledStrategy):
 
-    parameters = ('panel_count', 'initial_selling_rate', 'final_selling_rate',
-                  'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
-                  'max_panel_power_W', 'use_market_maker_rate')
+    parameters = ("panel_count", "initial_selling_rate", "final_selling_rate",
+                  "fit_to_limit", "update_interval", "energy_rate_decrease_per_update",
+                  "capacity_kW", "use_market_maker_rate")
 
     def __init__(self, panel_count: int = 1,
                  initial_selling_rate:
@@ -50,27 +52,29 @@ class PVStrategy(BaseStrategy):
                  fit_to_limit: bool = True,
                  update_interval=None,
                  energy_rate_decrease_per_update=None,
-                 max_panel_power_W: float = None,
+                 capacity_kW: float = None,
                  use_market_maker_rate: bool = False):
         """
-        :param panel_count: Number of solar panels for this PV plant
-        :param initial_selling_rate: Upper Threshold for PV offers
-        :param final_selling_rate: Lower Threshold for PV offers
-        :param fit_to_limit: Linear curve following initial_selling_rate & initial_selling_rate
-        :param update_interval: Interval after which PV will update its offer
-        :param energy_rate_decrease_per_update: Slope of PV Offer change per update
-        :param max_panel_power_W:
+        Args:
+             panel_count: Number of solar panels for this PV plant
+             initial_selling_rate: Upper Threshold for PV offers
+             final_selling_rate: Lower Threshold for PV offers
+             fit_to_limit: Linear curve following initial_selling_rate & initial_selling_rate
+             update_interval: Interval after which PV will update its offer
+             energy_rate_decrease_per_update: Slope of PV Offer change per update
+             capacity_kW: power rating of the predefined profiles
         """
         super().__init__()
-        PVValidator.validate_energy(panel_count=panel_count, max_panel_power_W=max_panel_power_W)
+        PVValidator.validate_energy(panel_count=panel_count, capacity_kW=capacity_kW)
 
         self.panel_count = panel_count
-        self.max_panel_power_W = max_panel_power_W
+        self.capacity_kW = capacity_kW
         self.state = PVState()
 
         self._init_price_update(update_interval, initial_selling_rate, final_selling_rate,
                                 use_market_maker_rate, fit_to_limit,
                                 energy_rate_decrease_per_update)
+        self._settlement_market_strategy = settlement_market_strategy_factory()
 
     def _init_price_update(self, update_interval, initial_selling_rate, final_selling_rate,
                            use_market_maker_rate, fit_to_limit, energy_rate_decrease_per_update):
@@ -100,45 +104,45 @@ class PVStrategy(BaseStrategy):
         self._area_reconfigure_prices(**kwargs)
         self.offer_update.update_and_populate_price_settings(self.area)
 
-        if key_in_dict_and_not_none(kwargs, 'panel_count'):
-            self.panel_count = kwargs['panel_count']
-        if key_in_dict_and_not_none(kwargs, 'max_panel_power_W'):
-            self.max_panel_power_W = kwargs['max_panel_power_W']
+        if key_in_dict_and_not_none(kwargs, "panel_count"):
+            self.panel_count = kwargs["panel_count"]
+        if key_in_dict_and_not_none(kwargs, "capacity_kW"):
+            self.capacity_kW = kwargs["capacity_kW"]
 
         self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
 
     def _area_reconfigure_prices(self, **kwargs):
-        if key_in_dict_and_not_none(kwargs, 'initial_selling_rate'):
+        if key_in_dict_and_not_none(kwargs, "initial_selling_rate"):
             initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                  kwargs['initial_selling_rate'])
+                                                  kwargs["initial_selling_rate"])
         else:
             initial_rate = self.offer_update.initial_rate_profile_buffer
 
-        if key_in_dict_and_not_none(kwargs, 'final_selling_rate'):
+        if key_in_dict_and_not_none(kwargs, "final_selling_rate"):
             final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                kwargs['final_selling_rate'])
+                                                kwargs["final_selling_rate"])
         else:
             final_rate = self.offer_update.final_rate_profile_buffer
-        if key_in_dict_and_not_none(kwargs, 'energy_rate_decrease_per_update'):
+        if key_in_dict_and_not_none(kwargs, "energy_rate_decrease_per_update"):
             energy_rate_change_per_update = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                       kwargs['energy_rate_decrease_per_update'])
+                                       kwargs["energy_rate_decrease_per_update"])
         else:
             energy_rate_change_per_update = \
                 self.offer_update.energy_rate_change_per_update_profile_buffer
-        if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
-            fit_to_limit = kwargs['fit_to_limit']
+        if key_in_dict_and_not_none(kwargs, "fit_to_limit"):
+            fit_to_limit = kwargs["fit_to_limit"]
         else:
             fit_to_limit = self.offer_update.fit_to_limit
-        if key_in_dict_and_not_none(kwargs, 'update_interval'):
-            if isinstance(kwargs['update_interval'], int):
-                update_interval = duration(minutes=kwargs['update_interval'])
+        if key_in_dict_and_not_none(kwargs, "update_interval"):
+            if isinstance(kwargs["update_interval"], int):
+                update_interval = duration(minutes=kwargs["update_interval"])
             else:
-                update_interval = kwargs['update_interval']
+                update_interval = kwargs["update_interval"]
         else:
             update_interval = self.offer_update.update_interval
-        if key_in_dict_and_not_none(kwargs, 'use_market_maker_rate'):
-            self.use_market_maker_rate = kwargs['use_market_maker_rate']
+        if key_in_dict_and_not_none(kwargs, "use_market_maker_rate"):
+            self.use_market_maker_rate = kwargs["use_market_maker_rate"]
 
         try:
             self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
@@ -186,8 +190,8 @@ class PVStrategy(BaseStrategy):
                              self.offer_update.fit_to_limit)
 
     def event_activate_energy(self):
-        if self.max_panel_power_W is None:
-            self.max_panel_power_W = self.area.config.max_panel_power_W
+        if self.capacity_kW is None:
+            self.capacity_kW = self.area.config.capacity_kW
         self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
 
     def event_tick(self):
@@ -195,8 +199,10 @@ class PVStrategy(BaseStrategy):
 
         This method is triggered by the TICK event.
         """
-        self.offer_update.update(self)
+        for market in self.area.all_markets:
+            self.offer_update.update(market, self)
         self.offer_update.increment_update_counter_all_markets(self)
+        self._settlement_market_strategy.event_tick(self)
 
     def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
         # This forecast ist based on the real PV system data provided by enphase
@@ -221,21 +227,37 @@ class PVStrategy(BaseStrategy):
             gauss_forecast = 0
 
         else:
-            gauss_forecast = self.max_panel_power_W * math.exp(
+            gauss_forecast = self.capacity_kW * math.exp(
                 # time/5 is needed because we only have one data set per 5 minutes
 
                 (- (((round(time_in_minutes / 5, 0)) - 147.2)
                     / 38.60) ** 2
                  )
             )
-        return round(convert_W_to_kWh(gauss_forecast, self.area.config.slot_length), 4)
+
+        return round(convert_kW_to_kWh(gauss_forecast, self.area.config.slot_length), 4)
 
     def event_market_cycle(self):
         super().event_market_cycle()
+        # Provide energy values for the past market slot, to be used in the settlement market
+        self._set_energy_measurement_of_last_market()
         self.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
         self._set_alternative_pricing_scheme()
         self.event_market_cycle_price()
         self._delete_past_state()
+        self._settlement_market_strategy.event_market_cycle(self)
+
+    def _set_energy_measurement_of_last_market(self):
+        """Set the (simulated) actual energy of the device in the previous market slot."""
+        if self.area.current_market:
+            self._set_energy_measurement_kWh(self.area.current_market.time_slot)
+
+    def _set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
+        """Set the (simulated) actual energy produced by the device in a market slot."""
+        energy_forecast_kWh = self.state.get_energy_production_forecast_kWh(time_slot)
+        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
+
+        self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
 
     def _delete_past_state(self):
         if (constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True or
@@ -274,6 +296,7 @@ class PVStrategy(BaseStrategy):
 
     def event_trade(self, *, market_id, trade):
         super().event_trade(market_id=market_id, trade=trade)
+        self._settlement_market_strategy.event_trade(self, market_id, trade)
         market = self.area.get_future_market_from_id(market_id)
         if market is None:
             return
@@ -283,6 +306,9 @@ class PVStrategy(BaseStrategy):
         if trade.seller == self.owner.name:
             self.state.decrement_available_energy(
                 trade.offer_bid.energy, market.time_slot, self.owner.name)
+
+    def event_bid_traded(self, *, market_id, bid_trade):
+        self._settlement_market_strategy.event_bid_traded(self, market_id, bid_trade)
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:

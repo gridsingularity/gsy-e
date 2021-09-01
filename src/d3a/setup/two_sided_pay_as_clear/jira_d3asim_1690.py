@@ -34,20 +34,20 @@ def get_setup(config):
     ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS = False
 
     area = Area(
-        'GRID',
+        "GRID",
         [
             Area(
-                'LEM',
+                "LEM",
                 [
                     Area(
-                        'House 1',
+                        "House 1",
                         [
-                            Area('Load H1', strategy=LoadHoursStrategy(
+                            Area("Load H1", strategy=LoadHoursStrategy(
                                 avg_power_W=200, hrs_per_day=24, hrs_of_day=range(24),
                                 final_buying_rate=30, initial_buying_rate=15,
                                 fit_to_limit=True, update_interval=5),
                                  ),
-                            Area('H1 PV', strategy=PVStrategy(
+                            Area("H1 PV", strategy=PVStrategy(
                                 panel_count=1, initial_selling_rate=13,
                                 fit_to_limit=False,
                                 energy_rate_decrease_per_update=1,
@@ -56,14 +56,14 @@ def get_setup(config):
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
-                        'House 2',
+                        "House 2",
                         [
-                            Area('Load H2', strategy=LoadHoursStrategy(
+                            Area("Load H2", strategy=LoadHoursStrategy(
                                 avg_power_W=200, hrs_per_day=24, hrs_of_day=range(24),
                                 final_buying_rate=30, initial_buying_rate=18,
                                 fit_to_limit=True, update_interval=5),
                                  ),
-                            Area('H2 PV', strategy=PVStrategy(
+                            Area("H2 PV", strategy=PVStrategy(
                                 panel_count=1, initial_selling_rate=24,
                                 fit_to_limit=False,
                                 energy_rate_decrease_per_update=1,
@@ -72,9 +72,9 @@ def get_setup(config):
                             ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
-                        'House 3',
+                        "House 3",
                         [
-                            Area('Load H3', strategy=LoadHoursStrategy(
+                            Area("Load H3", strategy=LoadHoursStrategy(
                                 avg_power_W=200, hrs_per_day=24, hrs_of_day=range(24),
                                 final_buying_rate=30, initial_buying_rate=16,
                                 update_interval=5),
@@ -82,9 +82,9 @@ def get_setup(config):
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                     Area(
-                        'House 4',
+                        "House 4",
                         [
-                            Area('Load H4', strategy=LoadHoursStrategy(
+                            Area("Load H4", strategy=LoadHoursStrategy(
                                 avg_power_W=200, hrs_per_day=24, hrs_of_day=range(24),
                                 final_buying_rate=30, initial_buying_rate=15,
                                 update_interval=5),
@@ -93,7 +93,7 @@ def get_setup(config):
                     ),
                 ],
             ),
-            Area('Infinite Bus', strategy=InfiniteBusStrategy(
+            Area("Infinite Bus", strategy=InfiniteBusStrategy(
                 energy_buy_rate=12, energy_sell_rate=30),
                  ),
         ],

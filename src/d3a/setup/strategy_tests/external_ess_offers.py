@@ -25,16 +25,16 @@ ConstSettings.IAASettings.MARKET_TYPE = 2
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('load', strategy=LoadHoursStrategy(
+                    Area("load", strategy=LoadHoursStrategy(
                         hrs_of_day=list(range(2, 24)), hrs_per_day=20, avg_power_W=4000,
                         initial_buying_rate=0, final_buying_rate=30),
                          ),
-                    Area('storage', strategy=StorageExternalStrategy(
+                    Area("storage", strategy=StorageExternalStrategy(
                         initial_soc=50, battery_capacity_kWh=20, max_abs_battery_power_kW=1
                     ),
                          ),

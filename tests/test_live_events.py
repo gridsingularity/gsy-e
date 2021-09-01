@@ -38,7 +38,7 @@ class TestLiveEvents(unittest.TestCase):
         self.strategy_pv = PVStrategy(
             panel_count=3, initial_selling_rate=34, final_selling_rate=12,
             fit_to_limit=False, update_interval=6, energy_rate_decrease_per_update=4,
-            max_panel_power_W=432)
+            capacity_kW=432)
         self.strategy_battery = StorageStrategy(
             initial_soc=11, min_allowed_soc=10, battery_capacity_kWh=6,
             max_abs_battery_power_kW=123, cap_price_strategy=False, initial_selling_rate=32,
@@ -65,6 +65,7 @@ class TestLiveEvents(unittest.TestCase):
             "House 2", children=[self.area3, self.area_home_meter], config=self.config)
         self.area_grid = Area("Grid", children=[self.area_house1, self.area_house2],
                               config=self.config)
+        self.area_grid.activate()
 
     def tearDown(self) -> None:
         GlobalConfig.sim_duration = duration(days=GlobalConfig.DURATION_D)
@@ -210,7 +211,7 @@ class TestLiveEvents(unittest.TestCase):
             "area_uuid": self.area2.uuid,
             "area_representation": {
                 "panel_count": 12, "initial_selling_rate": 68, "final_selling_rate": 42,
-                "fit_to_limit": True, "update_interval": 12, "max_panel_power_W": 999
+                "fit_to_limit": True, "update_interval": 12, "capacity_kW": 999
             }
         }
 
@@ -223,7 +224,7 @@ class TestLiveEvents(unittest.TestCase):
         assert set(self.area2.strategy.offer_update.final_rate.values()) == {42}
         assert self.area2.strategy.offer_update.fit_to_limit is True
         assert self.area2.strategy.offer_update.update_interval.minutes == 12
-        assert self.area2.strategy.max_panel_power_W == 999
+        assert self.area2.strategy.capacity_kW == 999
 
     def test_update_area_event_is_updating_the_parameters_of_a_storage(self):
         event_dict = {

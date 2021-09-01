@@ -1,12 +1,12 @@
 ![alt_text](img/balancing-market-implementation-1.png)
 
-Figure: Structure of Balancing Market in Grid Singularity energy exchange (D3A)
+Figure: Structure of Balancing Market in Grid Singularity energy exchange
 
-Grid Singularity energy exchange (D3A) bottom-up market design allows participants to engage in Local Energy Market (LEM) for energy trading, providing energy balance at a local level. D3A flexibility trading also facilitates the procurement of flexibility locally from participants to assist distribution grid operation in balancing the grid.
+Grid Singularity energy exchange bottom-up market design allows participants to engage in Local Energy Market (LEM) for energy trading, providing energy balance at a local level. Grid Singularity Exchange flexibility trading also facilitates the procurement of flexibility locally from participants to assist distribution grid operation in balancing the grid.
 
 ##Assets
 
-In the Grid Singularity D3A, balancing has been implemented using:
+In the Grid Singularity Exchange, balancing has been implemented using:
 
 *   Fast responding non-critical loads to provide load shedding
 *   Battery storage

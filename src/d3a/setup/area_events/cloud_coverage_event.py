@@ -24,26 +24,26 @@ from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
 def get_setup(config):
     config.cloud_coverage = 0
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
-                event_list=[ConfigEvents(12, {'cloud_coverage': 1})],
+                "House 1",
+                event_list=[ConfigEvents(12, {"cloud_coverage": 1})],
                 children=[
-                    Area('H1 PV', strategy=PVPredefinedStrategy(),
+                    Area("H1 PV", strategy=PVPredefinedStrategy(capacity_kW=0.25),
                          ),
                 ]
             ),
             Area(
-                'House 2',
-                event_list=[ConfigEvents(12, {'cloud_coverage': 2})],
+                "House 2",
+                event_list=[ConfigEvents(12, {"cloud_coverage": 2})],
                 children=[
-                    Area('H2 PV', strategy=PVPredefinedStrategy(),
+                    Area("H2 PV", strategy=PVPredefinedStrategy(capacity_kW=0.25),
                          ),
 
                 ]
             ),
-            Area('Grid Load', strategy=LoadHoursStrategy(avg_power_W=100000,
+            Area("Grid Load", strategy=LoadHoursStrategy(avg_power_W=100000,
                                                          hrs_per_day=24,
                                                          hrs_of_day=list(
                                                              range(0, 24)),

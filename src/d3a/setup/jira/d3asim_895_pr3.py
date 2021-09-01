@@ -25,19 +25,19 @@ from d3a_interface.constants_limits import ConstSettings
 def get_setup(config):
     ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = 3
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=50,
+                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=50,
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
                                                                            range(0, 24)))
                          ),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=10)
+                    Area("H1 Storage1", strategy=StorageStrategy(initial_soc=10)
                          ),
-                    Area('H1 PV', strategy=PVStrategy(4, 0)
+                    Area("H1 PV", strategy=PVStrategy(4, 0)
                          ),
                 ]
             ),

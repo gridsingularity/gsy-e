@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import uuid
 from typing import Dict  # NOQA
+from unittest.mock import Mock, patch
 from uuid import uuid4
 
 import pendulum
@@ -26,7 +27,6 @@ from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.exceptions import D3ADeviceException
 from d3a_interface.utils import generate_market_slot_list
 from parameterized import parameterized
-from pendulum import DateTime, duration
 
 from d3a.constants import TIME_FORMAT
 from d3a.constants import TIME_ZONE
@@ -36,7 +36,7 @@ from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from d3a.models.strategy.pv import PVStrategy
 
-ENERGY_FORECAST = {}  # type: Dict[DateTime, float]
+ENERGY_FORECAST = {}  # type: Dict[pendulum.DateTime, float]
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 
@@ -44,8 +44,8 @@ TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 def auto_fixture():
     yield
     GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
-    GlobalConfig.sim_duration = duration(days=GlobalConfig.DURATION_D)
-    GlobalConfig.slot_length = duration(minutes=GlobalConfig.SLOT_LENGTH_M)
+    GlobalConfig.sim_duration = pendulum.duration(days=GlobalConfig.DURATION_D)
+    GlobalConfig.slot_length = pendulum.duration(minutes=GlobalConfig.SLOT_LENGTH_M)
 
 
 class FakeArea:
@@ -68,7 +68,7 @@ class FakeArea:
         return 0.
 
     @property
-    def now(self) -> DateTime:
+    def now(self) -> pendulum.DateTime:
         """
         Return the 'current time' as a `DateTime` object.
         Can be overridden in subclasses to change the meaning of 'now'.
@@ -76,7 +76,7 @@ class FakeArea:
         In this default implementation 'current time' is defined by the number of ticks that
         have passed.
         """
-        return DateTime.now(tz=TIME_ZONE).start_of('day') + (
+        return pendulum.DateTime.now(tz=TIME_ZONE).start_of('day') + (
             self.config.tick_length * self.current_tick
         )
 
@@ -158,8 +158,8 @@ def area_test1():
     return FakeArea()
 
 
-@pytest.fixture()
-def pv_test1(area_test1):
+@pytest.fixture(name="pv_test1")
+def fixture_pv_test1(area_test1):
     p = PVStrategy()
     p.area = area_test1
     p.owner = area_test1
@@ -400,7 +400,7 @@ def test_pv_constructor_rejects_incorrect_parameters():
     with pytest.raises(D3ADeviceException):
         PVStrategy(panel_count=-1)
     with pytest.raises(D3ADeviceException):
-        PVStrategy(max_panel_power_W=-100)
+        PVStrategy(capacity_kW=-100)
     with pytest.raises(D3ADeviceException):
         pv = PVStrategy(initial_selling_rate=5, final_selling_rate=15)
         pv.event_activate()
@@ -500,7 +500,7 @@ def test_initial_selling_rate(pv_strategy_test10, area_test10):
 def test_use_mmr_parameter_is_respected1(strategy_type, use_mmr, expected_rate):
     GlobalConfig.market_maker_rate = 12
     pv = strategy_type(initial_selling_rate=19, use_market_maker_rate=use_mmr,
-                       max_panel_power_W=200)
+                       capacity_kW=0.2)
     pv.area = FakeArea()
     pv.owner = pv.area
     pv.event_activate()
@@ -555,3 +555,32 @@ def test_assert_if_trade_rate_is_lower_than_offer_rate(pv_test11):
 
     with pytest.raises(AssertionError):
         pv_test11.event_trade(market_id=market_id, trade=trade)
+
+
+@pytest.fixture(name="pv_strategy")
+def fixture_pv_strategy():
+    pv_strategy = PVStrategy()
+    pv_strategy.area = Mock()
+
+    return pv_strategy
+
+
+@patch("d3a.models.strategy.pv.utils")
+def test_set_energy_measurement_of_last_market(utils_mock, pv_strategy):
+    """The real energy of the last market is set when necessary."""
+    # If we are in the first market slot, the real energy is not set
+    pv_strategy.area.current_market = None
+    pv_strategy.state.set_energy_measurement_kWh = Mock()
+    pv_strategy.state.get_energy_production_forecast_kWh = Mock(return_value=50)
+    pv_strategy._set_energy_measurement_of_last_market()
+
+    pv_strategy.state.set_energy_measurement_kWh.assert_not_called()
+
+    # When there is at least one past market, the real energy is set
+    pv_strategy.state.set_energy_measurement_kWh.reset_mock()
+    pv_strategy.area.current_market = Mock()
+    utils_mock.compute_altered_energy.return_value = 100
+    pv_strategy._set_energy_measurement_of_last_market()
+
+    pv_strategy.state.set_energy_measurement_kWh.assert_called_once_with(
+        100, pv_strategy.area.current_market.time_slot)

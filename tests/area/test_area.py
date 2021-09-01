@@ -15,26 +15,26 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from pendulum import duration, today
+import unittest
 from collections import OrderedDict
 from unittest.mock import MagicMock
-import unittest
+
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from parameterized import parameterized
+from pendulum import duration, today
+
+from d3a import constants
+from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.events.event_structures import AreaEvent, MarketEvent
 from d3a.models.area import Area, check_area_name_exists_in_parent_area
+from d3a.models.area.event_dispatcher import AreaDispatcher
 from d3a.models.area.events import Events
 from d3a.models.area.markets import AreaMarkets
-
-from d3a.models.strategy.storage import StorageStrategy
+from d3a.models.area.stats import AreaStats
 from d3a.models.config import SimulationConfig
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a.constants import TIME_ZONE
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.models.area.event_dispatcher import AreaDispatcher
-from d3a.models.area.stats import AreaStats
-from d3a import constants
+from d3a.models.strategy.storage import StorageStrategy
 
 
 class TestAreaClass(unittest.TestCase):
@@ -54,7 +54,7 @@ class TestAreaClass(unittest.TestCase):
         self.config.tick_length = duration(seconds=15)
         self.config.ticks_per_slot = int(self.config.slot_length.seconds /
                                          self.config.tick_length.seconds)
-        self.config.start_date = today(tz=TIME_ZONE)
+        self.config.start_date = today(tz=constants.TIME_ZONE)
         GlobalConfig.sim_duration = duration(days=1)
         self.config.sim_duration = duration(days=1)
         self.config.grid_fee_type = 1
@@ -103,15 +103,16 @@ class TestAreaClass(unittest.TestCase):
         self.area.cycle_markets(False, False, False)
         assert len(self.area.past_markets) == 0
 
-        current_time = today(tz=TIME_ZONE).add(hours=1)
+        current_time = today(tz=constants.TIME_ZONE).add(minutes=self.config.slot_length.minutes)
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
         self.area._markets.create_future_markets(current_time, True, self.area)
-        current_time = today(tz=TIME_ZONE).add(hours=2)
+        current_time = today(tz=constants.TIME_ZONE).add(minutes=2*self.config.slot_length.minutes)
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
-        assert list(self.area.past_markets)[-1].time_slot == today(tz=TIME_ZONE).add(hours=1)
+        assert (list(self.area.past_markets)[-1].time_slot ==
+                today(tz=constants.TIME_ZONE).add(minutes=self.config.slot_length.minutes))
 
     def test_keep_past_markets(self):
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
@@ -124,12 +125,14 @@ class TestAreaClass(unittest.TestCase):
         self.area.cycle_markets(False, False, False)
         assert len(self.area.past_markets) == 0
 
-        current_time = today(tz=TIME_ZONE).add(hours=1)
+        current_time = today(tz=constants.TIME_ZONE).add(
+            minutes=self.config.slot_length.total_minutes())
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
         self.area._markets.create_future_markets(current_time, True, self.area)
-        current_time = today(tz=TIME_ZONE).add(hours=2)
+        current_time = today(tz=constants.TIME_ZONE).add(
+            minutes=2*self.config.slot_length.total_minutes())
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 2
 
@@ -153,7 +156,7 @@ class TestAreaClass(unittest.TestCase):
         o3.energy = 1
         o3.energy_rate = 12
         markets = OrderedDict()
-        td = today(tz=TIME_ZONE)
+        td = today(tz=constants.TIME_ZONE)
         td1 = td + self.config.slot_length
         m1.time_slot = td1
         markets[m1.time_slot] = m1
@@ -177,23 +180,6 @@ class TestAreaClass(unittest.TestCase):
         o2.energy_rate = 19
         o3.energy_rate = 20
         assert self.area.market_with_most_expensive_offer is m3
-
-    def test_cycle_markets(self):
-        GlobalConfig.end_date = GlobalConfig.start_date + GlobalConfig.sim_duration
-        self.area = Area(name="Street", children=[Area(name="House")],
-                         config=GlobalConfig, grid_fee_percentage=1)
-        self.area.parent = Area(name="GRID")
-        self.area.config.market_count = 5
-        self.area.activate()
-        assert len(self.area.all_markets) == 5
-
-        assert len(self.area.balancing_markets) == 5
-        self.area.current_tick = 900
-        self.area.cycle_markets()
-        assert len(self.area.past_markets) == 1
-        assert len(self.area.past_balancing_markets) == 1
-        assert len(self.area.all_markets) == 5
-        assert len(self.area.balancing_markets) == 5
 
     def test_get_restore_state_get_called_on_all_areas(self):
         strategy = MagicMock(spec=StorageStrategy)

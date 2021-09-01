@@ -23,13 +23,13 @@ from d3a.models.area.throughput_parameters import ThroughputParameters
 
 def get_setup(config):
     area = Area(
-        'Grid',
-        [Area('Neighborhood 1',
+        "Grid",
+        [Area("Neighborhood 1",
               [
                 Area(
-                    'House 1',
+                    "House 1",
                     [
-                        Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                        Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
                                                                            hrs_per_day=24,
                                                                            hrs_of_day=list(
                                                                                range(0, 24)),
@@ -40,18 +40,18 @@ def get_setup(config):
                     throughput=ThroughputParameters(baseline_peak_energy_import_kWh=0.4)
                 ),
                 Area(
-                      'House 1 2', [], throughput=ThroughputParameters(import_capacity_kVA=2.0,
+                      "House 1 2", [], throughput=ThroughputParameters(import_capacity_kVA=2.0,
                                                                        export_capacity_kVA=2.0)
                   ),
               ], throughput=ThroughputParameters(baseline_peak_energy_import_kWh=0.4,
                                                  import_capacity_kVA=2.0)
               ),
-            Area('Neighborhood 2',
+            Area("Neighborhood 2",
                  [
                     Area(
-                        'House 2',
+                        "House 2",
                         [
-                            Area('H2 Diesel Generator',
+                            Area("H2 Diesel Generator",
                                  strategy=FinitePowerPlant(max_available_power_kW=300,
                                                            energy_rate=20)
                                  ),
@@ -63,7 +63,7 @@ def get_setup(config):
                     ], throughput=ThroughputParameters(baseline_peak_energy_export_kWh=0.3,
                                                        export_capacity_kVA=2.0)
                  ),
-            Area('Global Load', strategy=LoadHoursStrategy(avg_power_W=100,
+            Area("Global Load", strategy=LoadHoursStrategy(avg_power_W=100,
                                                            hrs_per_day=24,
                                                            hrs_of_day=list(range(0, 24)),
                                                            final_buying_rate=35)

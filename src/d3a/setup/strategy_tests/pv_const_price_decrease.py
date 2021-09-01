@@ -22,12 +22,12 @@ from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(
+                    Area("H1 General Load", strategy=LoadHoursStrategy(
                             avg_power_W=500,
                             hrs_per_day=24,
                             hrs_of_day=list(
@@ -36,7 +36,8 @@ def get_setup(config):
                             final_buying_rate=30.1
                         )
                          ),
-                    Area('H1 PV', strategy=PVPredefinedStrategy(panel_count=1, fit_to_limit=False,
+                    Area("H1 PV", strategy=PVPredefinedStrategy(capacity_kW=0.25,
+                                                                panel_count=1, fit_to_limit=False,
                                                                 energy_rate_decrease_per_update=4,
                                                                 cloud_coverage=2)
                          ),

@@ -32,18 +32,18 @@ profile_path = os.path.join(d3a_path, "resources/LOAD_DATA_1.csv")
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 DefinedLoad',
+                    Area("H1 DefinedLoad",
                          strategy=DefinedLoadStrategy(daily_load_profile=profile_path,
                                                       final_buying_rate=36)
                          ),
                 ]
             ),
-            Area('Commercial Energy Producer', strategy=CommercialStrategy()
+            Area("Commercial Energy Producer", strategy=CommercialStrategy()
                  ),
         ],
         config=config

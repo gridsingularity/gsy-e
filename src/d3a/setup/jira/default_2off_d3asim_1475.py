@@ -10,24 +10,24 @@ def get_setup(config):
     ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
         BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
     area = Area(
-            name='GRID',
+            name="GRID",
             children=[
                     Area(
-                            name='Building-1',
+                            name="Building-1",
                             children=[
                                     Area(
-                                            name='Office1X',
+                                            name="Office1X",
                                             children=[
                                                     Area(
-                                                            name='Office1X-PV',
+                                                            name="Office1X-PV",
                                                             strategy=PVStrategy(
                                                                     panel_count=50,
-                                                                    max_panel_power_W=200,
+                                                                    capacity_kW=0.2,
                                                                     initial_selling_rate=25,
                                                                     final_selling_rate=15)
                                                             ),
                                                     Area(
-                                                            name='Office1X-LOAD',
+                                                            name="Office1X-LOAD",
                                                             strategy=LoadHoursStrategy(
                                                                     avg_power_W=500,
                                                                     hrs_per_day=5,
@@ -38,10 +38,10 @@ def get_setup(config):
                                                     ],
                                             ),
                                     Area(
-                                            name='Office1Y',
+                                            name="Office1Y",
                                             children=[
                                                     Area(
-                                                            name='Office1Y-LOAD',
+                                                            name="Office1Y-LOAD",
                                                             strategy=LoadHoursStrategy(
                                                                     avg_power_W=1000,
                                                                     hrs_per_day=24,
@@ -54,21 +54,21 @@ def get_setup(config):
                                             ],
                                             ),
                     Area(
-                            name='Building-2',
+                            name="Building-2",
                             children=[
                                     Area(
-                                            name='Office2X',
+                                            name="Office2X",
                                             children=[
                                                     Area(
-                                                            name='Office2X-PV',
+                                                            name="Office2X-PV",
                                                             strategy=PVStrategy(
                                                                     panel_count=50,
-                                                                    max_panel_power_W=200,
+                                                                    capacity_kW=0.2,
                                                                     initial_selling_rate=25,
                                                                     final_selling_rate=5)
                                                             ),
                                                     Area(
-                                                            name='Office2X-LOAD',
+                                                            name="Office2X-LOAD",
                                                             strategy=LoadHoursStrategy(
                                                                     avg_power_W=500,
                                                                     hrs_per_day=5,
@@ -79,10 +79,10 @@ def get_setup(config):
                                                     ],
                                             ),
                                     Area(
-                                            name='Office2Y',
+                                            name="Office2Y",
                                             children=[
                                                     Area(
-                                                            name='Office2Y-LOAD',
+                                                            name="Office2Y-LOAD",
                                                             strategy=LoadHoursStrategy(
                                                                     avg_power_W=1000,
                                                                     hrs_per_day=24,

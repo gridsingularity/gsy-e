@@ -35,12 +35,12 @@ market_maker_rate = {
 def get_setup(config):
     config.read_market_maker_rate(market_maker_rate)
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
                                                                        hrs_per_day=23,
                                                                        hrs_of_day=list(
                                                                            range(0, 23)),
@@ -48,7 +48,7 @@ def get_setup(config):
                          ),
                 ]
             ),
-            Area('Commercial Energy Producer', strategy=CommercialStrategy()
+            Area("Commercial Energy Producer", strategy=CommercialStrategy()
                  ),
 
         ],

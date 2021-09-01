@@ -24,12 +24,12 @@ Leaf areas are areas that have a strategy.
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
-            Area('Finite Power Plant', strategy=FinitePowerPlant(energy_rate=30,
+            Area("Finite Power Plant", strategy=FinitePowerPlant(energy_rate=30,
                                                                  max_available_power_kW=100)
                  ),
-            Area('Load', strategy=LoadHoursStrategy(avg_power_W=100, hrs_per_day=9,
+            Area("Load", strategy=LoadHoursStrategy(avg_power_W=100, hrs_per_day=9,
                                                     hrs_of_day=list(range(8, 18))),
                  children=[
                     Area("Forbidden Load", strategy=LoadHoursStrategy(avg_power_W=100,

@@ -26,12 +26,12 @@ def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
 
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House',
+                "House",
                 [
-                    Area('General Load',
+                    Area("General Load",
                          strategy=LoadHoursStrategy(
                              avg_power_W=200,
                              hrs_per_day=24,
@@ -39,7 +39,7 @@ def get_setup(config):
                              initial_buying_rate=30,
                              final_buying_rate=35)
                          ),
-                    Area('Commercial Energy Producer',
+                    Area("Commercial Energy Producer",
                          strategy=CommercialStrategy(energy_rate=20)
                          ),
                 ],

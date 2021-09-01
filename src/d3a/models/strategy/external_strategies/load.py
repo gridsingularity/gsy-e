@@ -17,18 +17,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import logging
-import traceback
 from collections import deque
 from typing import List, Dict, Union
 
-from pendulum import duration
-
+from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
 from d3a.models.strategy.external_strategies import IncomingRequest, default_market_info
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
-from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
-from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a_interface.constants_limits import ConstSettings
+from pendulum import duration
 
 
 class LoadExternalMixin(ExternalMixin):
@@ -42,9 +40,9 @@ class LoadExternalMixin(ExternalMixin):
     @property
     def channel_dict(self):
         return {**super().channel_dict,
-                f'{self.channel_prefix}/bid': self._bid,
-                f'{self.channel_prefix}/delete_bid': self._delete_bid,
-                f'{self.channel_prefix}/list_bids': self._list_bids,
+                f"{self.channel_prefix}/bid": self.bid,
+                f"{self.channel_prefix}/delete_bid": self.delete_bid,
+                f"{self.channel_prefix}/list_bids": self.list_bids,
                 }
 
     @property
@@ -52,7 +50,7 @@ class LoadExternalMixin(ExternalMixin):
         """Get a representation of each of the device's bids from the next market."""
 
         return [
-            {'id': bid.id, 'price': bid.price, 'energy': bid.energy}
+            {"id": bid.id, "price": bid.price, "energy": bid.energy}
             for _, bid in self.next_market.get_bids().items()
             if bid.buyer == self.device.name]
 
@@ -60,9 +58,9 @@ class LoadExternalMixin(ExternalMixin):
         super().event_activate(**kwargs)
         self.redis.sub_to_multiple_channels(self.channel_dict)
 
-    def _list_bids(self, payload):
+    def list_bids(self, payload):
         self._get_transaction_id(payload)
-        list_bids_response_channel = f'{self.channel_prefix}/response/list_bids'
+        list_bids_response_channel = f"{self.channel_prefix}/response/list_bids"
         if not check_for_connected_and_reply(self.redis, list_bids_response_channel,
                                              self.connected):
             return
@@ -76,19 +74,19 @@ class LoadExternalMixin(ExternalMixin):
                 response_channel, {
                     "command": "list_bids", "status": "ready",
                     "bid_list": self.filtered_bids_next_market,
-                    "transaction_id": arguments.get("transaction_id", None)})
-        except Exception as e:
-            logging.error(f"Error when handling list bids on area {self.device.name}: "
-                          f"Exception: {str(e)}")
+                    "transaction_id": arguments.get("transaction_id")})
+        except Exception:
+            error_message = f"Error when handling list bids on area {self.device.name}"
+            logging.exception(error_message)
             self.redis.publish_json(
                 response_channel,
                 {"command": "list_bids", "status": "error",
-                 "error_message": f"Error when listing bids on area {self.device.name}.",
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "error_message": error_message,
+                 "transaction_id": arguments.get("transaction_id")})
 
-    def _delete_bid(self, payload):
+    def delete_bid(self, payload):
         transaction_id = self._get_transaction_id(payload)
-        delete_bid_response_channel = f'{self.channel_prefix}/response/delete_bid'
+        delete_bid_response_channel = f"{self.channel_prefix}/response/delete_bid"
         if not check_for_connected_and_reply(self.redis,
                                              delete_bid_response_channel, self.connected):
             return
@@ -117,19 +115,19 @@ class LoadExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
-                 "transaction_id": arguments.get("transaction_id", None)})
-        except Exception as e:
-            logging.error(f"Error when handling bid delete on area {self.device.name}: "
-                          f"Exception: {str(e)}, Bid Arguments: {arguments}")
+                 "transaction_id": arguments.get("transaction_id")})
+        except Exception:
+            error_message = (f"Error when handling bid delete on area {self.device.name}: "
+                             f"Bid Arguments: {arguments}, "
+                             "Bid does not exist on the current market.")
+            logging.exception(error_message)
             self.redis.publish_json(
                 response_channel,
                 {"command": "bid_delete", "status": "error",
-                 "error_message": f"Error when handling bid delete "
-                                  f"on area {self.device.name} with arguments {arguments}. "
-                                  f"Bid does not exist on the current market.",
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "error_message": error_message,
+                 "transaction_id": arguments.get("transaction_id")})
 
-    def _bid(self, payload):
+    def bid(self, payload):
         transaction_id = self._get_transaction_id(payload)
         required_args = {"price", "energy", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
@@ -152,8 +150,9 @@ class LoadExternalMixin(ExternalMixin):
                 bid_response_channel,
                 {"command": "bid",
                  "error": (
-                     "Incorrect bid request. "
-                     "Available parameters: ('price', 'energy', 'replace_existing')."),
+                     "Incorrect bid request. ",
+                     f"Required parameters: {required_args}"
+                     f"Available parameters: {allowed_args}."),
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
@@ -161,7 +160,7 @@ class LoadExternalMixin(ExternalMixin):
 
     def _bid_impl(self, arguments, bid_response_channel):
         try:
-            replace_existing = arguments.get('replace_existing', True)
+            replace_existing = arguments.get("replace_existing", True)
             assert self.can_bid_be_posted(
                 arguments["energy"],
                 arguments["price"],
@@ -173,30 +172,32 @@ class LoadExternalMixin(ExternalMixin):
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
-                replace_existing=replace_existing)
+                replace_existing=replace_existing,
+                attributes=arguments.get("attributes"),
+                requirements=arguments.get("requirements"))
             self.redis.publish_json(
                 bid_response_channel, {
                     "command": "bid", "status": "ready",
                     "bid": bid.to_json_string(replace_existing=replace_existing),
-                    "transaction_id": arguments.get("transaction_id", None)})
-        except Exception as e:
-            logging.error(f"Error when handling bid create on area {self.device.name}: "
-                          f"Exception: {str(e)}, Bid Arguments: {arguments}")
+                    "transaction_id": arguments.get("transaction_id")})
+        except Exception:
+            error_message = (f"Error when handling bid create on area {self.device.name}: "
+                             f"Bid Arguments: {arguments}")
+            logging.exception(error_message)
             self.redis.publish_json(
                 bid_response_channel,
                 {"command": "bid", "status": "error",
-                 "error_message": f"Error when handling bid create "
-                                  f"on area {self.device.name} with arguments {arguments}.",
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "error_message": error_message,
+                 "transaction_id": arguments.get("transaction_id")})
 
     @property
     def _device_info_dict(self):
         return {
-            'energy_requirement_kWh':
+            "energy_requirement_kWh":
                 self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0,
-            'energy_active_in_bids': self.posted_bid_energy(self.next_market.id),
-            'energy_traded': self.energy_traded(self.next_market.id),
-            'total_cost': self.energy_traded_costs(self.next_market.id),
+            "energy_active_in_bids": self.posted_bid_energy(self.next_market.id),
+            "energy_traded": self.energy_traded(self.next_market.id),
+            "total_cost": self.energy_traded_costs(self.next_market.id),
         }
 
     def event_market_cycle(self):
@@ -211,14 +212,14 @@ class LoadExternalMixin(ExternalMixin):
                 market_info = self.next_market.info
                 if self.is_aggregator_controlled:
                     market_info.update(default_market_info)
-                market_info['device_info'] = self._device_info_dict
+                market_info["device_info"] = self._device_info_dict
                 market_info["event"] = "market"
                 market_info["area_uuid"] = self.device.uuid
-                market_info['device_bill'] = self.device.stats.aggregated_stats["bills"] \
+                market_info["device_bill"] = self.device.stats.aggregated_stats["bills"] \
                     if "bills" in self.device.stats.aggregated_stats else None
                 market_info["last_market_maker_rate"] = \
                     get_market_maker_rate_from_config(self.area.current_market)
-                market_info['last_market_stats'] = \
+                market_info["last_market_stats"] = \
                     self.market_area.stats.get_price_stats_current_market()
                 self.redis.publish_json(market_event_channel, market_info)
 
@@ -269,7 +270,7 @@ class LoadExternalMixin(ExternalMixin):
             # Check that every provided argument is allowed
             assert all(arg in allowed_args for arg in arguments.keys())
 
-            replace_existing = arguments.get("replace_existing", True)
+            replace_existing = arguments.pop("replace_existing", True)
             assert self.can_bid_be_posted(
                 arguments["energy"],
                 arguments["price"],
@@ -281,21 +282,23 @@ class LoadExternalMixin(ExternalMixin):
                 self.next_market,
                 arguments["price"],
                 arguments["energy"],
-                replace_existing=replace_existing)
+                replace_existing=replace_existing,
+                attributes=arguments.get("attributes"),
+                requirements=arguments.get("requirements")
+            )
             return {
                 "command": "bid", "status": "ready",
                 "bid": bid.to_json_string(replace_existing=replace_existing),
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id", None)}
-        except Exception as e:
-            logging.error(f"Error when handling bid on area {self.device.name}: "
-                          f"Exception: {str(e)}. Traceback {traceback.format_exc()}")
+                "transaction_id": arguments.get("transaction_id")}
+        except Exception:
+            logging.exception(f"Error when handling bid on area {self.device.name}")
             return {
                 "command": "bid", "status": "error",
                 "area_uuid": self.device.uuid,
                 "error_message": f"Error when handling bid create "
                                  f"on area {self.device.name} with arguments {arguments}.",
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
 
     def _delete_bid_aggregator(self, arguments):
         try:
@@ -305,17 +308,16 @@ class LoadExternalMixin(ExternalMixin):
             return {
                 "command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id", None)}
-        except Exception as e:
-            logging.error(f"Error when handling delete bid on area {self.device.name}: "
-                          f"Exception: {str(e)}")
+                "transaction_id": arguments.get("transaction_id")}
+        except Exception:
+            logging.exception(f"Error when handling delete bid on area {self.device.name}")
             return {
                 "command": "bid_delete", "status": "error",
                 "area_uuid": self.device.uuid,
                 "error_message": f"Error when handling bid delete "
                                  f"on area {self.device.name} with arguments {arguments}. "
                                  f"Bid does not exist on the current market.",
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
 
     def _list_bids_aggregator(self, arguments):
         try:
@@ -323,15 +325,14 @@ class LoadExternalMixin(ExternalMixin):
                 "command": "list_bids", "status": "ready",
                 "bid_list": self.filtered_bids_next_market,
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id", None)}
-        except Exception as e:
-            logging.error(f"Error when handling list bids on area {self.device.name}: "
-                          f"Exception: {str(e)}")
+                "transaction_id": arguments.get("transaction_id")}
+        except Exception:
+            logging.exception(f"Error when handling list bids on area {self.device.name}")
             return {
                 "command": "list_bids", "status": "error",
                 "area_uuid": self.device.uuid,
                 "error_message": f"Error when listing bids on area {self.device.name}.",
-                "transaction_id": arguments.get("transaction_id", None)}
+                "transaction_id": arguments.get("transaction_id")}
 
 
 class LoadHoursExternalStrategy(LoadExternalMixin, LoadHoursStrategy):
@@ -344,14 +345,13 @@ class LoadProfileExternalStrategy(LoadExternalMixin, DefinedLoadStrategy):
 
 class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
     """
-        Strategy responsible for reading single forecast consumption data via hardware API
+        Strategy responsible for reading forecast and measurement consumption data via hardware API
     """
-    parameters = ('energy_forecast_Wh', 'fit_to_limit', 'energy_rate_increase_per_update',
-                  'update_interval', 'initial_buying_rate', 'final_buying_rate',
-                  'balancing_energy_ratio', 'use_market_maker_rate')
+    parameters = ("energy_forecast_Wh", "fit_to_limit", "energy_rate_increase_per_update",
+                  "update_interval", "initial_buying_rate", "final_buying_rate",
+                  "balancing_energy_ratio", "use_market_maker_rate")
 
-    def __init__(self, energy_forecast_Wh: float = 0,
-                 fit_to_limit=True, energy_rate_increase_per_update=None,
+    def __init__(self, fit_to_limit=True, energy_rate_increase_per_update=None,
                  update_interval=None,
                  initial_buying_rate: Union[float, dict, str] =
                  ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
@@ -363,7 +363,6 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
                  use_market_maker_rate: bool = False):
         """
         Constructor of LoadForecastStrategy
-        :param energy_forecast_Wh: forecast for the next market slot
         """
         if update_interval is None:
             update_interval = \
@@ -378,12 +377,17 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
                          balancing_energy_ratio=balancing_energy_ratio,
                          use_market_maker_rate=use_market_maker_rate)
 
-        self.energy_forecast_buffer_Wh = energy_forecast_Wh
+        # Buffers for energy forecast and measurement values,
+        # that have been sent by the d3a-api-client in the duration of one market slot
+        self.energy_forecast_buffer = {}  # Dict[DateTime, float]
+        self.energy_measurement_buffer = {}  # Dict[DateTime, float]
 
     @property
     def channel_dict(self):
+        """Extend channel_dict property with forecast related channels."""
         return {**super().channel_dict,
-                f'{self.channel_prefix}/set_energy_forecast': self._set_energy_forecast}
+                f"{self.channel_prefix}/set_energy_forecast": self.set_energy_forecast,
+                f"{self.channel_prefix}/set_energy_measurement": self.set_energy_measurement}
 
     def event_tick(self):
         """Set the energy forecast using pending requests. Extends super implementation.
@@ -394,36 +398,55 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
         # from the MQTT subscriber (non-connected admin)
         for req in self.pending_requests:
             if req.request_type == "set_energy_forecast":
-                self._set_energy_forecast_impl(req.arguments, req.response_channel)
+                self.set_energy_forecast_impl(req.arguments, req.response_channel)
+            elif req.request_type == "set_energy_measurement":
+                self.set_energy_measurement_impl(req.arguments, req.response_channel)
 
         self.pending_requests = deque(
             req for req in self.pending_requests
-            if req.request_type not in "set_energy_forecast")
+            if req.request_type not in ["set_energy_forecast", "set_energy_measurement"])
 
         super().event_tick()
 
     def _incoming_commands_callback_selection(self, req):
+        """Map commands to callbacks for forecast and measurement reading."""
         if req.request_type == "set_energy_forecast":
-            self._set_energy_forecast_impl(req.arguments, req.response_channel)
+            self.set_energy_forecast_impl(req.arguments, req.response_channel)
+        elif req.request_type == "set_energy_measurement":
+            self.set_energy_measurement_impl(req.arguments, req.response_channel)
         else:
             super()._incoming_commands_callback_selection(req)
 
     def event_market_cycle(self):
+        """Update forecast and measurement in state by reading from buffers."""
         self.update_energy_forecast()
+        self.update_energy_measurement()
+        self._clear_energy_buffers()
         super().event_market_cycle()
 
     def event_activate_energy(self):
-        self.update_energy_forecast()
+        """This strategy does not need to initiate energy values as they are sent via the API."""
+        self._clear_energy_buffers()
 
-    def update_energy_forecast(self):
-        # sets energy forecast for next_market
-        energy_forecast_Wh = self.energy_forecast_buffer_Wh
-        slot_time = self.area.next_market.time_slot
-        self.state.set_desired_energy(energy_forecast_Wh, slot_time, overwrite=True)
-        self.state.update_total_demanded_energy(slot_time)
+    def _clear_energy_buffers(self):
+        """Clear forecast and measurement buffers."""
+        self.energy_forecast_buffer = {}
+        self.energy_measurement_buffer = {}
+
+    def update_energy_forecast(self) -> None:
+        """Set energy forecast for future markets."""
+        for slot_time, energy_kWh in self.energy_forecast_buffer.items():
+            if slot_time >= self.area.next_market.time_slot:
+                self.state.set_desired_energy(energy_kWh * 1000, slot_time, overwrite=True)
+                self.state.update_total_demanded_energy(slot_time)
+
+    def update_energy_measurement(self) -> None:
+        """Set energy measurement for past markets."""
+        for slot_time, energy_kWh in self.energy_measurement_buffer.items():
+            if slot_time < self.area.next_market.time_slot:
+                self.state.set_energy_measurement_kWh(energy_kWh, slot_time)
 
     def _update_energy_requirement_future_markets(self):
         """
         Setting demanded energy for the next slot is already done by update_energy_forecast
         """
-        pass

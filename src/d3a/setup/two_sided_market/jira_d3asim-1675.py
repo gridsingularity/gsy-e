@@ -25,24 +25,24 @@ from d3a_interface.constants_limits import ConstSettings
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
                                                                        hrs_of_day=list(
                                                                            range(0, 23)),
                                                                        initial_buying_rate=0,
                                                                        final_buying_rate=30)
                          ),
-                    Area('H1 PV', strategy=PVStrategy(panel_count=4,
+                    Area("H1 PV", strategy=PVStrategy(panel_count=4,
                                                       initial_selling_rate=30,
                                                       final_selling_rate=5)
                          ),
                 ],
             ),
-            Area('Infinite Bus', strategy=InfiniteBusStrategy(energy_buy_rate=5,
+            Area("Infinite Bus", strategy=InfiniteBusStrategy(energy_buy_rate=5,
                                                               energy_sell_rate=30)
 
                  ),
