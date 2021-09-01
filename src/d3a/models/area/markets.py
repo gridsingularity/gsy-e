@@ -58,7 +58,7 @@ class AreaMarkets:
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.balancing_market_rotator = (
                 DefaultMarketRotator(self.balancing_markets, self.past_balancing_markets))
-        if ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS:
+        if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
             self.settlement_market_rotator = (
                 SettlementMarketRotator(self.settlement_markets, self.past_settlement_markets))
 

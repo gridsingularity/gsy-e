@@ -475,8 +475,8 @@ def is_external_matching_enabled():
 
 def is_time_slot_in_past_markets(time_slot: DateTime, current_time_slot: DateTime):
     """Checks if the time_slot should be in the area.past_markets."""
-    if ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS:
+    if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
         return (time_slot < current_time_slot.subtract(
-            hours=ConstSettings.GeneralSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
+            hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
     else:
         return time_slot < current_time_slot

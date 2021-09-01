@@ -16,7 +16,7 @@ from d3a.models.strategy.settlement.strategy import SettlementMarketStrategy
 class TestSettlementMarketStrategy:
 
     def setup_method(self):
-        ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS = True
+        ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = True
         self.settlement_strategy = SettlementMarketStrategy(10, 50, 50, 20)
         self.time_slot = today(tz=TIME_ZONE).at(hour=12, minute=0, second=0)
         self.market_mock = MagicMock(spec=TwoSidedMarket)
@@ -47,7 +47,7 @@ class TestSettlementMarketStrategy:
         strategy_fixture.get_market_from_id = MagicMock(return_value=self.market_mock)
 
     def teardown_method(self):
-        ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS = False
+        ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = False
 
     @pytest.mark.parametrize(
         "strategy_fixture", [LoadHoursStrategy(100), PVStrategy()])

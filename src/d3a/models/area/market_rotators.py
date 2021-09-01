@@ -52,11 +52,11 @@ class DefaultMarketRotator(BaseRotator):
         if constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
             return False
         else:
-            if ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS:
+            if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
                 # if the settlement markets are enabled, the same amount as the active
                 # settlement markets has to be kept in the past_market buffer
                 return (time_slot < current_time_slot.subtract(
-                    hours=ConstSettings.GeneralSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
+                    hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
             else:
                 return time_slot < current_time_slot.subtract(
                     minutes=GlobalConfig.slot_length.total_minutes())
@@ -113,11 +113,11 @@ class SettlementMarketRotator(DefaultMarketRotator):
                                           time_slot: DateTime) -> bool:
         """Check if the past market for time_slot is ready to be deleted."""
         return (time_slot < current_time_slot.subtract(
-            hours=ConstSettings.GeneralSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS,
+            hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS,
             minutes=GlobalConfig.slot_length.total_minutes()))
 
     def _is_it_time_to_rotate_market(self, current_time_slot: DateTime,
                                      time_slot: DateTime) -> bool:
         """ Check if it is time to move market for time_slot into past markets. """
         return (time_slot < current_time_slot.subtract(
-            hours=ConstSettings.GeneralSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
+            hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
