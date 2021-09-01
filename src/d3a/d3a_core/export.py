@@ -215,9 +215,12 @@ class ExportAndPlot:
                 if is_first:
                     writer.writerow(labels)
                 for market in area.past_markets:
-                    for time, clearing in (
-                            bid_offer_matcher.matcher.match_algorithm.state.clearing.items()):
-                        if market.time_slot_str > time:
+                    market_clearing = bid_offer_matcher.matcher.match_algorithm.state.clearing.get(
+                        market.id)
+                    if market_clearing is None:
+                        continue
+                    for time, clearing in market_clearing.items():
+                        if market.time_slot > time:
                             row = (market.time_slot_str, time, clearing)
                             writer.writerow(row)
         except OSError:
