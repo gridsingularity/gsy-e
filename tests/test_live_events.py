@@ -65,6 +65,7 @@ class TestLiveEvents(unittest.TestCase):
             "House 2", children=[self.area3, self.area_home_meter], config=self.config)
         self.area_grid = Area("Grid", children=[self.area_house1, self.area_house2],
                               config=self.config)
+        self.area_grid.activate()
 
     def tearDown(self) -> None:
         GlobalConfig.sim_duration = duration(days=GlobalConfig.DURATION_D)

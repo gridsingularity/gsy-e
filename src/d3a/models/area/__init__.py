@@ -276,6 +276,8 @@ class Area:
                 raise AreaException(
                     f"Strategy {self.strategy.__class__.__name__} on area {self} without parent!"
                     )
+        else:
+            self._markets.activate_market_rotators()
 
         if self.budget_keeper:
             self.budget_keeper.activate()
@@ -351,7 +353,8 @@ class Area:
         changed = self._markets.create_future_markets(now_value, True, self)
 
         # create new settlement market
-        if self.last_past_market and ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS:
+        if (self.last_past_market and
+                ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS):
             self._markets.create_settlement_market(self.last_past_market.time_slot, self)
 
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \

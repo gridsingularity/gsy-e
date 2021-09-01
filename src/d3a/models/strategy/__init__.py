@@ -501,7 +501,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                                  existing offers from the same asset
         :return: True in case the offer can be posted, False otherwise
         """
-        if not self.state.should_post_offer(market.time_slot):
+        if not self.state.can_post_settlement_offer(market.time_slot):
             return False
         unsettled_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
         return self.offers.can_offer_be_posted(
@@ -628,7 +628,7 @@ class BidEnabledStrategy(BaseStrategy):
 
     def can_settlement_bid_be_posted(self, bid_energy, bid_price, market, replace_existing=False):
         """
-        Checks whether  abid can be posted to the settlement market
+        Checks whether a bid can be posted to the settlement market
         :param bid_energy: Energy of the bid that we want to post
         :param bid_price: Price of the bid that we want to post
         :param market: Settlement market that we want the bid to be posted to
@@ -636,7 +636,7 @@ class BidEnabledStrategy(BaseStrategy):
                                  existing bids from the same asset
         :return: True in case the bid can be posted, False otherwise
         """
-        if not self.state.should_post_bid(market.time_slot):
+        if not self.state.can_post_settlement_bid(market.time_slot):
             return False
         unsettled_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
         return self.can_bid_be_posted(
