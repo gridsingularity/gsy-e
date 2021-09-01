@@ -19,24 +19,26 @@ import math
 import traceback
 from logging import getLogger
 
-from d3a import constants
-from d3a.d3a_core.exceptions import MarketException
-from d3a.d3a_core.util import get_market_maker_rate_from_config
-from d3a.models.state import PVState
-from d3a.models.strategy import BaseStrategy, utils
-from d3a.models.strategy.update_frequency import TemplateStrategyOfferUpdater
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import (
     convert_kW_to_kWh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
 from d3a_interface.validators import PVValidator
-from pendulum import duration, Time  # noqa
+from pendulum import duration  # noqa
 from pendulum.datetime import DateTime
+
+from d3a import constants
+from d3a.d3a_core.exceptions import MarketException
+from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a.models.state import PVState
+from d3a.models.strategy import BidEnabledStrategy, utils
+from d3a.models.strategy.settlement.strategy import settlement_market_strategy_factory
+from d3a.models.strategy.update_frequency import TemplateStrategyOfferUpdater
 
 log = getLogger(__name__)
 
 
-class PVStrategy(BaseStrategy):
+class PVStrategy(BidEnabledStrategy):
 
     parameters = ("panel_count", "initial_selling_rate", "final_selling_rate",
                   "fit_to_limit", "update_interval", "energy_rate_decrease_per_update",
@@ -72,6 +74,7 @@ class PVStrategy(BaseStrategy):
         self._init_price_update(update_interval, initial_selling_rate, final_selling_rate,
                                 use_market_maker_rate, fit_to_limit,
                                 energy_rate_decrease_per_update)
+        self._settlement_market_strategy = settlement_market_strategy_factory()
 
     def _init_price_update(self, update_interval, initial_selling_rate, final_selling_rate,
                            use_market_maker_rate, fit_to_limit, energy_rate_decrease_per_update):
@@ -196,8 +199,10 @@ class PVStrategy(BaseStrategy):
 
         This method is triggered by the TICK event.
         """
-        self.offer_update.update(self)
+        for market in self.area.all_markets:
+            self.offer_update.update(market, self)
         self.offer_update.increment_update_counter_all_markets(self)
+        self._settlement_market_strategy.event_tick(self)
 
     def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
         # This forecast ist based on the real PV system data provided by enphase
@@ -240,6 +245,7 @@ class PVStrategy(BaseStrategy):
         self._set_alternative_pricing_scheme()
         self.event_market_cycle_price()
         self._delete_past_state()
+        self._settlement_market_strategy.event_market_cycle(self)
 
     def _set_energy_measurement_of_last_market(self):
         """Set the (simulated) actual energy of the device in the previous market slot."""
@@ -290,6 +296,7 @@ class PVStrategy(BaseStrategy):
 
     def event_trade(self, *, market_id, trade):
         super().event_trade(market_id=market_id, trade=trade)
+        self._settlement_market_strategy.event_trade(self, market_id, trade)
         market = self.area.get_future_market_from_id(market_id)
         if market is None:
             return
@@ -299,6 +306,9 @@ class PVStrategy(BaseStrategy):
         if trade.seller == self.owner.name:
             self.state.decrement_available_energy(
                 trade.offer_bid.energy, market.time_slot, self.owner.name)
+
+    def event_bid_traded(self, *, market_id, bid_trade):
+        self._settlement_market_strategy.event_bid_traded(self, market_id, bid_trade)
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
