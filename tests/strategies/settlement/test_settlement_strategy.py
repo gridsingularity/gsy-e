@@ -26,7 +26,7 @@ class TestSettlementMarketStrategy:
         self.test_offer = Offer("234", self.time_slot, 50, 1, seller="test_name")
         self.market_mock.bid = MagicMock(return_value=self.test_bid)
         self.market_mock.offer = MagicMock(return_value=self.test_offer)
-        self.market_mock.bids = {self.time_slot: self.test_bid}
+        self.market_mock.bids = {self.test_bid.id: self.test_bid}
         self.area_mock = Mock()
         self.area_mock.name = "test_name"
         self.area_mock.uuid = str(uuid.uuid4())

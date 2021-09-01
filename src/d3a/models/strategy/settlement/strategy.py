@@ -146,6 +146,7 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         markets = [m for m in strategy.area.settlement_markets.values() if m.id == market_id]
         if not markets:
             return None
+        assert len(markets) == 1
         return markets[0]
 
     def event_bid_traded(self, strategy: BaseStrategy, market_id: str, bid_trade: Trade) -> None:
