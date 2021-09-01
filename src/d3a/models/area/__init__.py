@@ -276,6 +276,8 @@ class Area:
                 raise AreaException(
                     f"Strategy {self.strategy.__class__.__name__} on area {self} without parent!"
                     )
+        else:
+            self._markets.activate_market_rotators()
 
         if self.budget_keeper:
             self.budget_keeper.activate()
