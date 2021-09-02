@@ -17,14 +17,14 @@ from pathlib import Path
 
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.home_meter import HomeMeterStrategy
+from d3a.models.strategy.smart_meter import SmartMeterStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.d3a_core.util import d3a_path
 
 
 def get_setup(config):
-    """Returns a setup that allows testing a Home Meter device and its profile."""
+    """Returns a setup that allows testing a Smart Meter device and its profile."""
     area = Area(
         "Grid",
         [
@@ -36,13 +36,9 @@ def get_setup(config):
                 ],
                 grid_fee_percentage=0, grid_fee_constant=0,
             ),
-            Area("House 2", [
-                Area("H2 Home Meter", strategy=HomeMeterStrategy(
-                    initial_selling_rate=30, final_selling_rate=5,
-                    home_meter_profile=Path(d3a_path) / "resources/home_meter_profile.csv"))
-                ],
-                grid_fee_percentage=0, grid_fee_constant=0,
-            ),
+            Area("House 2 Smart Meter", strategy=SmartMeterStrategy(
+                initial_selling_rate=30, final_selling_rate=5,
+                smart_meter_profile=Path(d3a_path) / "resources/smart_meter_profile.csv")),
             Area("Commercial Energy Producer", strategy=CommercialStrategy(energy_rate=30)),
         ],
         config=config
