@@ -16,33 +16,35 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import csv
-import logging
-import pathlib
-import os
-import shutil
 import json
+import logging
 import operator
-from typing import Dict
+import os
+import pathlib
+import shutil
 from collections import namedtuple
 from copy import deepcopy
 from functools import reduce  # forward compatibility for Python 3
+from typing import Dict, Tuple, List, Mapping
 
+import d3a.constants
 import plotly.graph_objs as go
+from d3a.d3a_core.sim_results.file_export_endpoints import (PastDataEnum,
+                                                            past_market_type_file_suffix_dict)
+from d3a.d3a_core.sim_results.plotly_graph import PlotlyGraph
 from d3a.d3a_core.singletons import bid_offer_matcher
+from d3a.d3a_core.util import constsettings_to_dict, round_floats_for_ui
+from d3a.models.area import Area
+from d3a.models.market.market_structures import MarketClearingState
+from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
+from d3a.models.state import ESSEnergyOrigin
+from d3a.models.strategy.storage import StorageStrategy
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
 from d3a_interface.enums import BidOfferMatchAlgoEnum
+from d3a_interface.utils import mkdir_from_str, generate_market_slot_list
+from pendulum import DateTime
 from slugify import slugify
 from sortedcontainers import SortedDict
-
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
-from d3a_interface.utils import mkdir_from_str, generate_market_slot_list
-from d3a.d3a_core.util import constsettings_to_dict, round_floats_for_ui
-from d3a.models.market.market_structures import MarketClearingState
-from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.state import ESSEnergyOrigin
-from d3a.d3a_core.sim_results.plotly_graph import PlotlyGraph
-from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
-from d3a.models.area import Area
-import d3a.constants
 
 _log = logging.getLogger(__name__)
 
@@ -61,14 +63,11 @@ EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "sold_trade_energy_kWh", "bought_
                            "trade_price_eur", "pv_production_kWh", "soc_history_%",
                            "load_profile_kWh"]
 
-SlotDataRange = namedtuple('SlotDataRange', ('start', 'end'))
-
-
-def get_from_dict(data_dict, map_list):
-    return reduce(operator.getitem, map_list, data_dict)
+SlotDataRange = namedtuple("SlotDataRange", ("start", "end"))
 
 
 class ExportAndPlot:
+    """Handle local export of plots and csv-files."""
 
     def __init__(self, root_area: Area, path: str, subdir: str, file_stats_endpoint,
                  endpoint_buffer):
@@ -92,27 +91,30 @@ class ExportAndPlot:
                 if not self.raw_data_subdir.exists():
                     self.raw_data_subdir.mkdir(exist_ok=True, parents=True)
         except Exception as ex:
-            _log.error("Could not open directory for csv exports: %s" % str(ex))
+            _log.error("Could not open directory for csv exports: %s", str(ex))
             return
 
-    def export_json_data(self, directory: dir):
+    def export_json_data(self, directory: dir) -> None:
+        """Write aggregated results into JSON files."""
         json_dir = os.path.join(directory, "aggregated_results")
         mkdir_from_str(json_dir)
         settings_file = os.path.join(json_dir, "const_settings.json")
-        with open(settings_file, 'w') as outfile:
+        with open(settings_file, "w") as outfile:
             json.dump(constsettings_to_dict(), outfile, indent=2)
         for key, value in self.endpoint_buffer.generate_json_report().items():
             json_file = os.path.join(json_dir, key + ".json")
-            with open(json_file, 'w') as outfile:
+            with open(json_file, "w") as outfile:
                 json.dump(value, outfile, indent=2)
 
     @staticmethod
-    def _file_path(directory: dir, slug: str):
-        file_name = ("%s.csv" % slug).replace(' ', '_')
+    def _file_path(directory: dir, area_slug: str) -> dir:
+        """Return directory for the provided area_slug."""
+        file_name = ("%s.csv" % area_slug).replace(" ", "_")
         return directory.joinpath(file_name).as_posix()
 
-    def export(self, power_flow=None):
-        self.plot_dir = os.path.join(self.directory, 'plot')
+    def export(self, power_flow=None) -> None:
+        """Main caller for local export of plots and csv-files."""
+        self.plot_dir = os.path.join(self.directory, "plot")
         if power_flow is not None:
             power_flow.export_power_flow_results(self.plot_dir)
 
@@ -139,23 +141,26 @@ class ExportAndPlot:
             self.plot_supply_demand_curve(self.area, self.plot_dir)
         self.move_root_plot_folder()
 
-    def data_to_csv(self, area, is_first):
+    def data_to_csv(self, area: Area, is_first: bool) -> None:
+        """Wrapper for recursive function self._export_area_with_children."""
         self._export_area_with_children(area, self.directory, is_first)
 
-    def area_tree_summary_to_json(self, data: Dict):
+    def area_tree_summary_to_json(self, data: Dict) -> None:
+        """Write area tree information to JSON file."""
         subdirectory = pathlib.Path(self.directory, "raw_data")
         if not subdirectory.exists():
             subdirectory.mkdir(exist_ok=True, parents=True)
         json_file = os.path.join(self.directory, "area_tree_summary.json")
-        with open(json_file, 'w') as outfile:
+        with open(json_file, "w") as outfile:
             json.dump(data, outfile, indent=2)
 
-    def raw_data_to_json(self, time_slot, data: Dict):
+    def raw_data_to_json(self, time_slot, data: Dict) -> None:
+        """Write raw data (bids/offers/trades to local JSON files for integration tests."""
         json_file = os.path.join(self.raw_data_subdir, f"{time_slot}.json")
-        with open(json_file, 'w') as outfile:
+        with open(json_file, "w") as outfile:
             json.dump(data, outfile, indent=2)
 
-    def move_root_plot_folder(self):
+    def move_root_plot_folder(self) -> None:
         """
         Removes "grid" folder in self.plot_dir
         """
@@ -169,48 +174,103 @@ class ExportAndPlot:
             shutil.move(os.path.join(old_dir, si), self.plot_dir)
         shutil.rmtree(old_dir)
 
-    def _export_area_with_children(self, area: Area, directory: dir, is_first: bool = False):
+    def _export_spot_markets_stats(self, area: Area, directory: dir, is_first: bool) -> None:
+        """Export bids, offers, trades, statistics csv-files for all spot markets."""
+        self._export_area_stats_csv_file(area, directory, PastDataEnum.SPOT_MARKET, is_first)
+
+        self._export_trade_csv_files(past_markets=area.past_markets,
+                                     directory=directory,
+                                     filename=f"{area.slug}-trades",
+                                     is_first=is_first)
+
+        self._export_area_offers_bids_csv_files(past_markets=area.past_markets,
+                                                market_member="offer_history",
+                                                directory=directory,
+                                                filename=f"{area.slug}-offers",
+                                                labels=("slot",) + Offer.csv_fields(),
+                                                is_first=is_first)
+
+        self._export_area_offers_bids_csv_files(past_markets=area.past_markets,
+                                                market_member="bid_history",
+                                                directory=directory,
+                                                filename=f"{area.slug}-bids",
+                                                labels=("slot",) + Bid.csv_fields(),
+                                                is_first=is_first)
+
+    def _export_settlement_markets_stats(self, area: Area, directory: dir, is_first: bool) -> None:
+        """Export bids, offers, trades, statistics csv-files for all settlement markets."""
+        if not ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
+            return
+        self._export_area_stats_csv_file(area, directory, PastDataEnum.SETTLEMENT_MARKET, is_first)
+
+        self._export_trade_csv_files(
+            past_markets=list(area.past_settlement_markets.values()),
+            directory=directory,
+            filename=f"{area.slug}-settlement-trades",
+            is_first=is_first)
+        self._export_area_offers_bids_csv_files(
+            past_markets=list(area.past_settlement_markets.values()),
+            market_member="offer_history",
+            directory=directory,
+            filename=f"{area.slug}-settlement-offers",
+            labels=("slot",) + Offer.csv_fields(),
+            is_first=is_first)
+        self._export_area_offers_bids_csv_files(
+            past_markets=list(area.past_settlement_markets.values()),
+            market_member="bid_history",
+            directory=directory,
+            filename=f"{area.slug}-settlement-bids",
+            labels=("slot",) + Bid.csv_fields(),
+            is_first=is_first)
+
+    def _export_balancing_markets_stats(self, area: Area, directory: dir, is_first: bool) -> None:
+        """Export bids, offers, trades, statistics csv-files for all balancing markets."""
+        if not ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
+            return
+        self._export_area_stats_csv_file(area, directory, PastDataEnum.BALANCING_MARKET, is_first)
+
+        self._export_trade_csv_files(past_markets=area.past_balancing_markets,
+                                     directory=directory,
+                                     filename=f"{area.slug}-balancing-trades",
+                                     labels=BalancingTrade.csv_fields(),
+                                     is_first=is_first)
+
+        self._export_area_offers_bids_csv_files(past_markets=area.past_balancing_markets,
+                                                market_member="offer_history",
+                                                directory=directory,
+                                                filename=f"{area.slug}-balancing-offers",
+                                                labels=("slot",) + BalancingOffer.csv_fields(),
+                                                is_first=is_first)
+
+    def _export_area_with_children(self, area: Area, directory: dir,
+                                   is_first: bool = False) -> None:
         """
         Uses the FileExportEndpoints object and writes them to csv files
         Runs _export_area_energy and _export_area_stats_csv_file
         """
-
         if area.children:
-            subdirectory = pathlib.Path(directory, area.slug.replace(' ', '_'))
+            subdirectory = pathlib.Path(directory, area.slug.replace(" ", "_"))
             if not subdirectory.exists():
                 subdirectory.mkdir(exist_ok=True, parents=True)
             for child in area.children:
                 self._export_area_with_children(child, subdirectory, is_first)
 
-        self._export_area_stats_csv_file(area, directory, balancing=False, is_first=is_first)
-        if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
-            self._export_area_stats_csv_file(area, directory, balancing=True, is_first=is_first)
-
         if area.children:
-            self._export_trade_csv_files(area, directory, balancing=False, is_first=is_first)
-            if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
-                self._export_trade_csv_files(area, directory, balancing=True, is_first=is_first)
-            self._export_area_offers_bids_csv_files(area, directory, "offers", Offer,
-                                                    "offer_history", area.past_markets,
-                                                    is_first=is_first)
-            self._export_area_offers_bids_csv_files(area, directory, "bids", Bid,
-                                                    "bid_history", area.past_markets,
-                                                    is_first=is_first)
-            if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
-                self._export_area_offers_bids_csv_files(area, directory, "balancing-offers",
-                                                        BalancingOffer, "offer_history",
-                                                        area.past_balancing_markets,
-                                                        is_first=is_first)
+            self._export_spot_markets_stats(area, directory, is_first)
+            self._export_settlement_markets_stats(area, directory, is_first)
+            self._export_balancing_markets_stats(area, directory, is_first)
+
             if ConstSettings.IAASettings.MARKET_TYPE == 2 and \
                     ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == \
                     BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value:
                 self._export_area_clearing_rate(area, directory, "market-clearing-rate", is_first)
 
-    def _export_area_clearing_rate(self, area, directory, file_suffix, is_first):
+    def _export_area_clearing_rate(self, area, directory, file_suffix, is_first) -> None:
+        """Export clearing rate as in a csv-file."""
         file_path = self._file_path(directory, f"{area.slug}-{file_suffix}")
-        labels = ("slot",) + MarketClearingState._csv_fields()
+        labels = ("slot",) + MarketClearingState.csv_fields()
         try:
-            with open(file_path, 'a') as csv_file:
+            with open(file_path, "a") as csv_file:
                 writer = csv.writer(csv_file)
                 if is_first:
                     writer.writerow(labels)
@@ -223,81 +283,61 @@ class ExportAndPlot:
         except OSError:
             _log.exception("Could not export area market_clearing_rate")
 
-    def _export_area_offers_bids_csv_files(self, area, directory, file_suffix,
-                                           offer_type, market_member, past_markets,
-                                           is_first: bool):
-        """
-        Exports files containing individual offers, bids or balancing offers
-        (*-bids/offers/balancing-offers.csv files)
-        return: dict[out_keys]
-        """
-        file_path = self._file_path(directory, f"{area.slug}-{file_suffix}")
-        labels = ("slot",) + offer_type._csv_fields()
+    def _export_area_offers_bids_csv_files(self, past_markets: List, market_member: str,
+                                           directory: dir, filename: str, labels: Tuple,
+                                           is_first: bool = False) -> None:
+        """ Export files containing individual offers, bids (*-bids*/*-offers*.csv files)."""
+        file_path = self._file_path(directory, filename)
         try:
-            with open(file_path, 'a') as csv_file:
+            with open(file_path, "a") as csv_file:
                 writer = csv.writer(csv_file)
                 if is_first:
                     writer.writerow(labels)
                 for market in past_markets:
-                    for offer in getattr(market, market_member):
-                        row = (market.time_slot,) + offer._to_csv()
+                    for offer_or_bid in getattr(market, market_member):
+                        row = (market.time_slot,) + offer_or_bid.to_csv()
                         writer.writerow(row)
         except OSError:
             _log.exception("Could not export area balancing offers")
 
-    def _export_trade_csv_files(self, area: Area, directory: dir, balancing: bool = False,
-                                is_first: bool = False):
-        """
-        Exports files containing individual trades  (*-trades.csv  files)
-        return: dict[out_keys]
-        """
-
-        if balancing:
-            file_path = self._file_path(directory, "{}-balancing-trades".format(area.slug))
-            labels = ("slot",) + BalancingTrade._csv_fields()
-            past_markets = area.past_balancing_markets
-        else:
-            file_path = self._file_path(directory, "{}-trades".format(area.slug))
-            labels = ("slot",) + Trade._csv_fields()
-            past_markets = area.past_markets
-
+    def _export_trade_csv_files(self, past_markets: List, directory: dir, filename: str,
+                                labels: Tuple = Trade.csv_fields(),
+                                is_first: bool = False) -> None:
+        """ Export files containing individual trades  (*-trades.csv  files)."""
+        file_path = self._file_path(directory, filename)
         try:
-            with open(file_path, 'a') as csv_file:
+            with open(file_path, "a") as csv_file:
                 writer = csv.writer(csv_file)
                 if is_first:
                     writer.writerow(labels)
                 for market in past_markets:
                     for trade in market.trades:
-                        row = (market.time_slot,) + trade._to_csv()
+                        row = (market.time_slot,) + trade.to_csv()
                         writer.writerow(row)
         except OSError:
             _log.exception("Could not export area trades")
 
-    def _export_area_stats_csv_file(self, area: Area, directory: dir,
-                                    balancing: bool, is_first: bool):
-        """
-        Exports stats (*.csv files)
-        """
-
-        area_name = area.slug
-        if balancing:
-            area_name += "-balancing"
-        data = self.file_stats_endpoint.generate_market_export_data(area, balancing)
+    def _export_area_stats_csv_file(self, area: Area, directory: str,
+                                    past_market_type: PastDataEnum,
+                                    is_first: bool) -> None:
+        """Export trade statistics in *.csv files."""
+        file_name = f"{area.slug}{past_market_type_file_suffix_dict[past_market_type]}"
+        data = self.file_stats_endpoint.export_data_factory(area, past_market_type)
         rows = data.rows()
         if not rows and not is_first:
             return
 
         try:
-            with open(self._file_path(directory, area_name), 'a') as csv_file:
+            with open(self._file_path(directory, file_name), "a") as csv_file:
                 writer = csv.writer(csv_file)
                 if is_first:
-                    writer.writerow(data.labels())
+                    writer.writerow(data.labels)
                 for row in rows:
                     writer.writerow(row)
         except Exception as ex:
             _log.error("Could not export area data: %s" % str(ex))
 
-    def plot_device_stats(self, area: Area, node_address_list: list):
+    def plot_device_stats(self, area: Area, node_address_list: list) -> None:
         """
         Wrapper for _plot_device_stats
         """
@@ -309,26 +349,28 @@ class ExportAndPlot:
                 address_list = new_node_address_list + [child.name]
                 self._plot_device_stats(address_list, child.strategy)
 
+    @staticmethod
+    def _get_from_dict(data_dict: Dict, map_list: List) -> Mapping:
+        """Get data from dict by following a map_list."""
+        return reduce(operator.getitem, map_list, data_dict)
+
     def _plot_device_stats(self, address_list: list, device_strategy):
-        """
-        Plots device graphs
-        """
+        """Plot device graphs."""
         # Dont use the root area name for address list:
         device_address_list = address_list[1::]
 
         device_name = device_address_list[-1].replace(" ", "_")
         device_stats = self.endpoint_buffer.results_handler.all_raw_results["device_statistics"]
-        device_dict = get_from_dict(device_stats,
-                                    device_address_list)
+        device_dict = self._get_from_dict(device_stats, device_address_list)
         # converting address_list into plot_dir by slugifying the members
         plot_dir = os.path.join(self.plot_dir,
                                 "/".join([slugify(node).lower() for node in address_list][0:-1]))
         mkdir_from_str(plot_dir)
         output_file = os.path.join(
-            plot_dir, 'device_profile_{}.html'.format(device_name))
+            plot_dir, "device_profile_{}.html".format(device_name))
         PlotlyGraph.plot_device_profile(device_dict, device_name, output_file, device_strategy)
 
-    def plot_energy_profile(self, area: Area, subdir: str):
+    def plot_energy_profile(self, area: Area, subdir: str) -> None:
         """Plot the energy profile of areas (not devices)."""
         energy_profile = self.endpoint_buffer.results_handler.trade_profile_plot_results
 
@@ -338,16 +380,16 @@ class ExportAndPlot:
             if child.children:
                 self.plot_energy_profile(child, new_subdir)
 
-    def _plot_energy_profile(self, subdir: str, market_name: str, energy_profile):
+    def _plot_energy_profile(self, subdir: str, market_name: str, energy_profile) -> None:
         """
         Plots history of energy trades
         """
         data = list()
         barmode = "relative"
-        xtitle = 'Time'
-        ytitle = 'Energy [kWh]'
-        key = 'energy'
-        title = 'Energy Trade Profile of {}'.format(market_name)
+        xtitle = "Time"
+        ytitle = "Energy [kWh]"
+        key = "energy"
+        title = "Energy Trade Profile of {}".format(market_name)
         data.extend(self._plot_energy_graph(
             energy_profile,
             market_name, "sold_energy_lists", "-seller", key, ENERGY_SELLER_SIGN_PLOTS))
@@ -361,7 +403,7 @@ class ExportAndPlot:
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir,
-                                   'energy_profile_{}.html'.format(market_name))
+                                   "energy_profile_{}.html".format(market_name))
         PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
     def _plot_energy_graph(self, trades, market_name, agent, agent_label, key, scale_value):
@@ -380,13 +422,13 @@ class ExportAndPlot:
         """
         Plot unmatched loads of all loads in the configuration into one plot
         """
-        unmatched_key = 'deficit [kWh]'
+        unmatched_key = "deficit [kWh]"
         data = list()
         root_name = self.area.slug
-        title = 'Unmatched Loads for all devices in {}'.format(root_name)
-        xtitle = 'Time'
-        ytitle = 'Energy (kWh)'
-        barmode = 'stack'
+        title = "Unmatched Loads for all devices in {}".format(root_name)
+        xtitle = "Time"
+        ytitle = "Energy (kWh)"
+        barmode = "stack"
         load_list = [child_key for child_key in self.file_stats_endpoint.plot_stats.keys()
                      if unmatched_key in self.file_stats_endpoint.plot_stats[child_key].keys()]
 
@@ -403,7 +445,7 @@ class ExportAndPlot:
             return
         plot_dir = os.path.join(self.plot_dir)
         mkdir_from_str(plot_dir)
-        output_file = os.path.join(plot_dir, 'unmatched_loads_{}.html'.format(root_name))
+        output_file = os.path.join(plot_dir, "unmatched_loads_{}.html".format(root_name))
         PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
     def plot_ess_soc_history(self, area, subdir):
@@ -411,7 +453,7 @@ class ExportAndPlot:
         Wrapper for _plot_ess_soc_history.
         """
 
-        storage_key = 'charge [%]'
+        storage_key = "charge [%]"
         new_subdir = os.path.join(subdir, area.slug)
         storage_list = [child.slug for child in area.children
                         if storage_key in self.file_stats_endpoint.plot_stats[child.slug].keys()]
@@ -426,12 +468,12 @@ class ExportAndPlot:
         Plots ess soc for each knot in the hierarchy
         """
 
-        storage_key = 'charge [%]'
+        storage_key = "charge [%]"
         data = list()
         barmode = "relative"
-        title = 'ESS SOC ({})'.format(root_name)
-        xtitle = 'Time'
-        ytitle = 'Charge [%]'
+        title = "ESS SOC ({})".format(root_name)
+        xtitle = "Time"
+        ytitle = "Charge [%]"
 
         for si in storage_list:
             graph_obj = PlotlyGraph(self.file_stats_endpoint.plot_stats[si], storage_key)
@@ -444,7 +486,7 @@ class ExportAndPlot:
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
-        output_file = os.path.join(plot_dir, 'ess_soc_history_{}.html'.format(root_name))
+        output_file = os.path.join(plot_dir, "ess_soc_history_{}.html".format(root_name))
         PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
     def _plot_stock_info_per_area_per_market_slot(self, area, plot_dir):
@@ -479,7 +521,7 @@ class ExportAndPlot:
                     size = 5 if info_dict["tag"] in ["offer", "bid"] else 10
                     all_info_dicts = list([
                         info_dict,
-                        *[i for i in info_dicts if i['rate'] == info_dict['rate']]])
+                        *[i for i in info_dicts if i["rate"] == info_dict["rate"]]])
                     # Removes duplicate dicts from a list of dicts
                     all_info_dicts = [dict(t)
                                       for t in {
@@ -489,10 +531,10 @@ class ExportAndPlot:
                     tooltip_text = "<br />".join(map(lambda e: e["tool_tip"], all_info_dicts))
                     fig.add_trace(
                         go.Scatter(x=[tick_slot],
-                                   y=[info_dict['rate']],
+                                   y=[info_dict["rate"]],
                                    text=tooltip_text,
-                                   hoverinfo='text',
-                                   marker=dict(size=size, color=all_info_dicts[0]['color']),
+                                   hoverinfo="text",
+                                   marker=dict(size=size, color=all_info_dicts[0]["color"]),
                                    visible=False)
                     )
             self.market_slot_data_mapping[index] = SlotDataRange(start, len(fig.data))
@@ -535,9 +577,9 @@ class ExportAndPlot:
 
         data = list()
         barmode = "stack"
-        title = 'ESS ENERGY SHARE ({})'.format(root_name)
-        xtitle = 'Time'
-        ytitle = 'Energy [kWh]'
+        title = "ESS ENERGY SHARE ({})".format(root_name)
+        xtitle = "Time"
+        ytitle = "Energy [kWh]"
 
         temp = {ESSEnergyOrigin.UNKNOWN: {slot: 0. for slot in generate_market_slot_list()},
                 ESSEnergyOrigin.LOCAL: {slot: 0. for slot in generate_market_slot_list()},
@@ -557,7 +599,7 @@ class ExportAndPlot:
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
-        output_file = os.path.join(plot_dir, 'ess_energy_share_{}.html'.format(root_name))
+        output_file = os.path.join(plot_dir, "ess_energy_share_{}.html".format(root_name))
         PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
     def plot_supply_demand_curve(self, area, subdir):
@@ -592,34 +634,34 @@ class ExportAndPlot:
                 if len(clearing_point) != 0:
                     data_obj = go.Scatter(x=[0, clearing_point[1]],
                                           y=[clearing_point[0], clearing_point[0]],
-                                          mode='lines+markers',
+                                          mode="lines+markers",
                                           line=dict(width=5),
                                           name=time_slot.format(DATE_TIME_FORMAT)
-                                               + ' Clearing-Rate')
+                                               + " Clearing-Rate")
                     data.append(data_obj)
                     data_obj = go.Scatter(x=[clearing_point[1], clearing_point[1]],
                                           y=[0, clearing_point[0]],
-                                          mode='lines+markers',
+                                          mode="lines+markers",
                                           line=dict(width=5),
                                           name=time_slot.format(DATE_TIME_FORMAT)
-                                               + ' Clearing-Energy')
+                                               + " Clearing-Energy")
                     data.append(data_obj)
                     xmax = max(xmax, clearing_point[1]) * 3
 
-            plot_dir = os.path.join(self.plot_dir, subdir, 'mcp')
+            plot_dir = os.path.join(self.plot_dir, subdir, "mcp")
             mkdir_from_str(plot_dir)
             output_file = os.path.join(plot_dir,
-                                       f'supply_demand_{market_slot}.html')
-            PlotlyGraph.plot_line_graph('supply_demand_curve', 'Energy (kWh)',
-                                        'Rate (ct./kWh)', data, output_file, xmax)
+                                       f"supply_demand_{market_slot}.html")
+            PlotlyGraph.plot_line_graph("supply_demand_curve", "Energy (kWh)",
+                                        "Rate (ct./kWh)", data, output_file, xmax)
 
     @classmethod
     def render_supply_demand_curve(cls, dataset, time, supply):
         rate, energy = cls.calc_supply_demand_curve(dataset, supply=supply)
-        name = str(time) + '-' + ('supply' if supply else 'demand')
+        name = str(time) + "-" + ("supply" if supply else "demand")
         data_obj = go.Scatter(x=energy,
                               y=rate,
-                              mode='lines',
+                              mode="lines",
                               name=name)
         return data_obj
 
@@ -671,11 +713,11 @@ class ExportAndPlot:
         Plots average trade for the specified level of the hierarchy
         """
         data = list()
-        barmode = 'stack'
+        barmode = "stack"
         xtitle = "Time"
         ytitle = "Rate [ct./kWh]"
-        key = 'avg trade rate [ct./kWh]'
-        title = 'Average Trade Price {}'.format(area_list[0])
+        key = "avg trade rate [ct./kWh]"
+        title = "Average Trade Price {}".format(area_list[0])
         for area_name in area_list:
             data.append(
                 self._plot_avg_trade_graph(self.file_stats_endpoint.plot_stats,
@@ -686,13 +728,13 @@ class ExportAndPlot:
                 area_name_balancing = area_name.lower() + "-demand-balancing-trades"
                 data.append(self._plot_avg_trade_graph(
                     self.file_stats_endpoint.plot_balancing_stats, area_name,
-                    'avg demand balancing trade rate [ct./kWh]',
+                    "avg demand balancing trade rate [ct./kWh]",
                     area_name_balancing)
                 )
                 area_name_balancing = area_name.lower() + "-supply-balancing-trades"
                 data.append(self._plot_avg_trade_graph(
                     self.file_stats_endpoint.plot_balancing_stats, area_name,
-                    'avg supply balancing trade rate [ct./kWh]',
+                    "avg supply balancing trade rate [ct./kWh]",
                     area_name_balancing)
                 )
 
@@ -700,7 +742,7 @@ class ExportAndPlot:
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
-        output_file = os.path.join(plot_dir, 'average_trade_price_{}.html'.format(area_list[0]))
+        output_file = os.path.join(plot_dir, "average_trade_price_{}.html".format(area_list[0]))
         PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
     def _plot_avg_trade_graph(self, stats, area_name, key, label):
@@ -727,26 +769,27 @@ class ExportAndPlot:
         """
         area_stats = self.endpoint_buffer.offer_bid_trade_hr.state[area.name]
         barmode = "relative"
-        xtitle = 'Time'
-        ytitle = 'Energy [kWh]'
+        xtitle = "Time"
+        ytitle = "Energy [kWh]"
         market_name = area.name
-        title = f'High Resolution Energy Trade Profile of {market_name}'
+        title = f"High Resolution Energy Trade Profile of {market_name}"
         plot_dir = os.path.join(self.plot_dir, subdir, "energy_profile_hr")
         mkdir_from_str(plot_dir)
         for market_slot, data in area_stats.items():
-            plot_data = self.add_plotly_graph_dataset(data, market_slot)
+            plot_data = self.get_plotly_graph_dataset(data, market_slot)
             if len(plot_data) > 0:
                 market_slot_str = market_slot.format(DATE_TIME_FORMAT)
                 output_file = \
-                    os.path.join(plot_dir, f'energy_profile_hr_'
-                                           f'{market_name}_{market_slot_str}.html')
+                    os.path.join(plot_dir, f"energy_profile_hr_"
+                                           f"{market_name}_{market_slot_str}.html")
                 time_range = [market_slot - GlobalConfig.tick_length,
                               market_slot + GlobalConfig.slot_length + GlobalConfig.tick_length]
                 PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, plot_data, output_file,
                                            time_range=time_range)
 
     @staticmethod
-    def add_plotly_graph_dataset(market_trades, market_slot):
+    def get_plotly_graph_dataset(market_trades: Dict, market_slot: DateTime) -> List:
+        """Add plotly graph dataset"""
         plotly_dataset_list = []
         seller_dict = {}
         buyer_dict = {}
@@ -756,7 +799,7 @@ class ExportAndPlot:
         # 1. accumulate data by buyer and seller:
         for market_slot_time, market_slot_trades in market_trades.items():
             for trade in market_slot_trades:
-                if trade['tag'] == "trade":
+                if trade["tag"] == "trade":
                     trade_time = market_slot_time
                     seller = trade["seller_origin"]
                     buyer = trade["buyer_origin"]

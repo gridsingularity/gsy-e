@@ -182,7 +182,7 @@ class SimulationEndpointBuffer:
         if area.current_market:
             core_stats_dict.update(self._read_market_stats_to_dict(area.current_market))
 
-            if ConstSettings.GeneralSettings.ENABLE_SETTLEMENT_MARKETS:
+            if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
                 core_stats_dict["settlement_market_stats"] = (
                     self._read_settlement_markets_stats_to_dict(area))
 

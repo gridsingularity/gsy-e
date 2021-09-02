@@ -72,7 +72,7 @@ class BaseBidOffer:
 
         return json.dumps(obj_dict, default=my_converter)
 
-    def _to_csv(self) -> Tuple:
+    def to_csv(self) -> Tuple:
         rate = round(self.energy_rate, 4)
         return (rate, self.energy, self.price,
                 self.seller if isinstance(self, Offer) else self.buyer)
@@ -136,7 +136,7 @@ class Offer(BaseBidOffer):
                 self.requirements == other.requirements)
 
     @classmethod
-    def _csv_fields(cls):
+    def csv_fields(cls):
         return "rate [ct./kWh]", "energy [kWh]", "price [ct.]", "seller"
 
 
@@ -189,7 +189,7 @@ class Bid(BaseBidOffer):
                 }
 
     @classmethod
-    def _csv_fields(cls):
+    def csv_fields(cls):
         return "rate [ct./kWh]", "energy [kWh]", "price [ct.]", "buyer"
 
     def __eq__(self, other) -> bool:
@@ -264,11 +264,11 @@ class Trade:
         )
 
     @classmethod
-    def _csv_fields(cls) -> Tuple:
+    def csv_fields(cls) -> Tuple:
         return (tuple(cls.__dataclass_fields__.keys())[1:2] + ("rate [ct./kWh]", "energy [kWh]") +
                 tuple(cls.__dataclass_fields__.keys())[3:5])
 
-    def _to_csv(self) -> Tuple:
+    def to_csv(self) -> Tuple:
         rate = round(self.offer_bid.energy_rate, 4)
         return (tuple(asdict(self).values())[1:2] +
                 (rate, self.offer_bid.energy) +
@@ -371,11 +371,11 @@ class BalancingTrade:
         )
 
     @classmethod
-    def _csv_fields(cls) -> Tuple:
+    def csv_fields(cls) -> Tuple:
         return (tuple(cls.__dataclass_fields__.keys())[1:2] + ("rate [ct./kWh]", "energy [kWh]") +
                 tuple(cls.__dataclass_fields__.keys())[3:5])
 
-    def _to_csv(self) -> Tuple:
+    def to_csv(self) -> Tuple:
         rate = round(self.offer_bid.energy_rate, 4)
         return (tuple(asdict(self).values())[1:2] +
                 (rate, self.offer_bid.energy) +
@@ -389,7 +389,7 @@ class MarketClearingState:
     clearing: dict = field(default_factory=dict)
 
     @classmethod
-    def _csv_fields(cls) -> Tuple:
+    def csv_fields(cls) -> Tuple:
         return "time", "rate [ct./kWh]"
 
 

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
-from typing import List  # noqa
+from typing import List, Dict
 from uuid import uuid4
 
 import d3a.constants
@@ -489,7 +489,7 @@ class Area:
         return [m for m in self._markets.markets.values() if m.in_sim_duration]
 
     @property
-    def past_markets(self):
+    def past_markets(self) -> List:
         return list(self._markets.past_markets.values())
 
     def get_market(self, timeslot):
@@ -502,11 +502,11 @@ class Area:
         return self._markets.balancing_markets[timeslot]
 
     @property
-    def balancing_markets(self):
+    def balancing_markets(self) -> List:
         return list(self._markets.balancing_markets.values())
 
     @property
-    def past_balancing_markets(self):
+    def past_balancing_markets(self) -> List:
         return list(self._markets.past_balancing_markets.values())
 
     @property
@@ -552,11 +552,11 @@ class Area:
             return None
 
     @property
-    def settlement_markets(self):
+    def settlement_markets(self) -> Dict:
         return self._markets.settlement_markets
 
     @property
-    def past_settlement_markets(self):
+    def past_settlement_markets(self) -> Dict:
         return self._markets.past_settlement_markets
 
     @cached_property
