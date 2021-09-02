@@ -171,7 +171,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def update_state(self):
         self._post_first_bid()
         if self.area.current_market:
-            self._cycled_market.add(self.area.current_market.time_slot)
+            self._cycled_market = {self.area.current_market.time_slot}
 
         # Provide energy values for the past market slot, to be used in the settlement market
         self._set_energy_measurement_of_last_market()
@@ -338,8 +338,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
             return
 
         market = self.area.get_future_market_from_id(market_id)
-        # TODO: do we really need self._cycled_market ?
+        if not market:
+            return
         if market.time_slot not in self._cycled_market:
+            # Blocking _one_sided_market_event_tick before self.event_market_cycle was called
             return
 
         if self._can_buy_in_market(market) and self._offer_comes_from_different_seller(offer):

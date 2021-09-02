@@ -332,8 +332,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     def post_first_offer(self, market, energy_kWh, initial_energy_rate):
         if any(offer.seller == self.owner.name for offer in market.get_offers().values()):
-            self.owner.log.warning("There is already another offer posted on the market, therefore"
-                                   " do not repost another first offer.")
+            self.owner.log.debug("There is already another offer posted on the market, therefore"
+                                 " do not repost another first offer.")
             return
         return self.post_offer(
             market,
@@ -707,8 +707,8 @@ class BidEnabledStrategy(BaseStrategy):
         # it needs to be updated. If this check is not there, the market cycle event will post
         # one bid twice, which actually happens on the very first market slot cycle.
         if any(bid.buyer == self.owner.name for bid in market.get_bids().values()):
-            self.owner.log.warning("There is already another bid posted on the market, therefore"
-                                   " do not repost another first bid.")
+            self.owner.log.debug("There is already another bid posted on the market, therefore"
+                                 " do not repost another first bid.")
             return
         return self.post_bid(
             market,

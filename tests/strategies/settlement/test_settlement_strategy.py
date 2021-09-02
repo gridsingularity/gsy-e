@@ -79,12 +79,14 @@ class TestSettlementMarketStrategy:
             self, strategy_fixture, can_post_settlement_bid, can_post_settlement_offer):
         self._setup_strategy_fixture(
             strategy_fixture, can_post_settlement_bid, can_post_settlement_offer)
-        self.settlement_strategy.event_market_cycle(strategy_fixture)
 
-        strategy_fixture.area.current_tick = 30
+        strategy_fixture.area.current_tick = 0
         strategy_fixture.area.config = Mock()
         strategy_fixture.area.config.ticks_per_slot = 60
         strategy_fixture.area.config.tick_length = duration(seconds=15)
+        self.settlement_strategy.event_market_cycle(strategy_fixture)
+
+        strategy_fixture.area.current_tick = 30
         self.market_mock.bid.reset_mock()
         self.market_mock.offer.reset_mock()
 

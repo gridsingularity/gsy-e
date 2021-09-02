@@ -605,6 +605,8 @@ class StorageStrategy(BidEnabledStrategy):
         super().event_offer(market_id=market_id, offer=offer)
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
             market = self.area.get_future_market_from_id(market_id)
+            if not market:
+                return
             # sometimes the offer event arrives earlier than the market_cycle event,
             # so the default values have to be written here too:
             self._update_profiles_with_default_values()
