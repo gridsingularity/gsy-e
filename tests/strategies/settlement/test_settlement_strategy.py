@@ -45,6 +45,10 @@ class TestSettlementMarketStrategy:
         strategy_fixture.area = Mock()
         strategy_fixture.area.settlement_markets = self.settlement_markets
         strategy_fixture.get_market_from_id = MagicMock(return_value=self.market_mock)
+        strategy_fixture.area.current_tick = 0
+        strategy_fixture.area.config = Mock()
+        strategy_fixture.area.config.ticks_per_slot = 60
+        strategy_fixture.area.config.tick_length = duration(seconds=15)
 
     def teardown_method(self):
         ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = False
