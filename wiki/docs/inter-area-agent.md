@@ -1,4 +1,4 @@
-The Inter-Area Agent (IAA) plays a crucial role in the communication architecture of Grid Singularity’s exchange engine (D3A), allowing different markets in the hierarchy to interact and trade with each other. IAA is created for each [market](model-markets.md) (households/buildings, streets, etc. that do not have preset trading strategies) and mainly deals with forwarding bids and offers  markets of different hierarchy levels. 
+The Inter-Area Agent (IAA) plays a crucial role in the communication architecture of Grid Singularity’s exchange engine, allowing different markets in the hierarchy to interact and trade with each other. IAA is created for each [market](model-markets.md) (households/buildings, streets, etc. that do not have preset trading strategies) and mainly deals with forwarding bids and offers  markets of different hierarchy levels. 
 
 The following illustration shows a sample grid setup and the role of the IAA in the market hierarchy during one time slot:
 

@@ -27,38 +27,38 @@ def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
 
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
+                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
                                                                        hrs_per_day=6,
                                                                        hrs_of_day=list(
                                                                            range(12, 18)),
                                                                        final_buying_rate=35)
                          ),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50)
+                    Area("H1 Storage1", strategy=StorageStrategy(initial_soc=50)
                          ),
-                    Area('H1 Storage2', strategy=StorageStrategy()
+                    Area("H1 Storage2", strategy=StorageStrategy()
                          )
                 ]
             ),
             Area(
-                'House 2',
+                "House 2",
                 [
-                    Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
+                    Area("H2 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
                                                                        hrs_per_day=4,
                                                                        hrs_of_day=list(range(12,
                                                                                              16)),
                                                                        final_buying_rate=35)
                          ),
-                    Area('H2 PV', strategy=PVStrategy(4),
+                    Area("H2 PV", strategy=PVStrategy(4),
                          ),
 
                 ]
             ),
-            Area('Cell Tower',
+            Area("Cell Tower",
                  strategy=LoadHoursStrategy(avg_power_W=100,
                                             hrs_per_day=24,
                                             hrs_of_day=list(range(0, 24)),

@@ -28,6 +28,7 @@ from d3a_interface.enums import SpotMarketTypeEnum
 from d3a_interface.utils import key_in_dict_and_not_none
 
 import d3a.constants
+from d3a.d3a_core.blockchain_interface import blockchain_interface_factory
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
 from d3a.d3a_core.singletons import bid_offer_matcher
@@ -40,8 +41,6 @@ from d3a.models.area.redis_external_market_connection import RedisMarketExternal
 from d3a.models.area.stats import AreaStats
 from d3a.models.area.throughput_parameters import ThroughputParameters
 from d3a.models.config import SimulationConfig
-from d3a.models.market.blockchain_interface import (
-    NonBlockchainInterface, SubstrateBlockchainInterface)
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
 
@@ -57,7 +56,7 @@ DEFAULT_CONFIG = SimulationConfig(
     tick_length=duration(seconds=1),
     cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
     start_date=today(tz=d3a.constants.TIME_ZONE),
-    max_panel_power_W=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W
+    capacity_kW=ConstSettings.PVSettings.DEFAULT_CAPACITY_KW
 )
 
 
@@ -267,10 +266,9 @@ class Area:
     def activate(self, bc=None, current_tick=None, simulation_id=None):
         if current_tick is not None:
             self.current_tick = current_tick
-        if bc:
-            self._bc = SubstrateBlockchainInterface(self.uuid, simulation_id)
-        else:
-            self._bc = NonBlockchainInterface(self.uuid, simulation_id)
+
+        self._bc = blockchain_interface_factory(bc, self.uuid, simulation_id)
+
         if self.strategy:
             if self.parent:
                 self.strategy.area = self.parent
@@ -279,6 +277,8 @@ class Area:
                 raise AreaException(
                     f"Strategy {self.strategy.__class__.__name__} on area {self} without parent!"
                     )
+        else:
+            self._markets.activate_market_rotators()
 
         if self.budget_keeper:
             self.budget_keeper.activate()
@@ -350,11 +350,13 @@ class Area:
             self._update_descendants_strategy_prices()
             self.should_update_child_strategies = False
 
-        # Clear `current_market` cache
-        self.__dict__.pop("current_market", None)
-
         # Markets range from one slot to market_count into the future
         changed = self._markets.create_future_markets(now_value, True, self)
+
+        # create new settlement market
+        if (self.last_past_market and
+                ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS):
+            self._markets.create_settlement_market(self.last_past_market.time_slot, self)
 
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
                 len(DeviceRegistry.REGISTRY.keys()) != 0:
@@ -549,6 +551,14 @@ class Area:
             return list(self._markets.past_markets.values())[-1]
         except IndexError:
             return None
+
+    @property
+    def settlement_markets(self):
+        return self._markets.settlement_markets
+
+    @property
+    def past_settlement_markets(self):
+        return self._markets.past_settlement_markets
 
     @cached_property
     def available_triggers(self):

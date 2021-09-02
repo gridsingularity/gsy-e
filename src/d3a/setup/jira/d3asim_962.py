@@ -30,37 +30,37 @@ profile_path = os.path.join(d3a_path, "resources/LOAD_DATA_1_5d.csv")
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 DefinedLoad',
+                    Area("H1 DefinedLoad",
                          strategy=DefinedLoadStrategy(daily_load_profile=profile_path,
                                                       final_buying_rate=36)
                          ),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50)
+                    Area("H1 Storage1", strategy=StorageStrategy(initial_soc=50)
                          ),
                 ]
             ),
             Area(
-                'House 2',
+                "House 2",
                 [
-                    Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=1000,
+                    Area("H2 General Load", strategy=LoadHoursStrategy(avg_power_W=1000,
                                                                        hrs_per_day=4,
                                                                        hrs_of_day=list(
                                                                            range(12, 16)),
                                                                        final_buying_rate=35)
                          ),
-                    Area('H2 PV', strategy=PVStrategy(1, 80)
+                    Area("H2 PV", strategy=PVStrategy(1, 80)
                          ),
 
                 ]
             ),
-            Area('Finite Commercial Producer',
+            Area("Finite Commercial Producer",
                  strategy=FinitePowerPlant(energy_rate=30, max_available_power_kW=0.01)
                  ),
-            Area('Commercial Energy Producer',
+            Area("Commercial Energy Producer",
                  strategy=CommercialStrategy(energy_rate=30)
                  ),
         ],

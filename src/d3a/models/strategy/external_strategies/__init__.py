@@ -15,17 +15,18 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import logging
 import json
-from threading import Lock
+import logging
 from collections import deque, namedtuple
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.utils import key_in_dict_and_not_none
+from threading import Lock
+from typing import Dict
+
 import d3a.constants
 from d3a.d3a_core.singletons import external_global_statistics
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.utils import key_in_dict_and_not_none, convert_str_to_pendulum_in_dict
 
-
-IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
+IncomingRequest = namedtuple("IncomingRequest", ("request_type", "arguments", "response_channel"))
 
 default_market_info = {"device_info": None,
                        "asset_bill": None,
@@ -49,16 +50,15 @@ def check_for_connected_and_reply(redis, channel_name, is_connected):
 
 
 def register_area(redis, channel_prefix, is_connected, transaction_id, area_uuid=None):
-    register_response_channel = f'{channel_prefix}/response/register_participant'
+    register_response_channel = f"{channel_prefix}/response/register_participant"
     try:
         redis.publish_json(
             register_response_channel,
             {"command": "register", "status": "ready", "registered": True,
              "transaction_id": transaction_id, "device_uuid": area_uuid})
         return True
-    except Exception as e:
-        logging.error(f"Error when registering to area {channel_prefix}: "
-                      f"Exception: {str(e)}")
+    except Exception:
+        logging.exception(f"Error when registering to area {channel_prefix}")
         redis.publish_json(
             register_response_channel,
             {"command": "register", "status": "error", "transaction_id": transaction_id,
@@ -68,7 +68,7 @@ def register_area(redis, channel_prefix, is_connected, transaction_id, area_uuid
 
 
 def unregister_area(redis, channel_prefix, is_connected, transaction_id):
-    unregister_response_channel = f'{channel_prefix}/response/unregister_participant'
+    unregister_response_channel = f"{channel_prefix}/response/unregister_participant"
     if not check_for_connected_and_reply(redis, unregister_response_channel,
                                          is_connected):
         return
@@ -78,9 +78,8 @@ def unregister_area(redis, channel_prefix, is_connected, transaction_id):
             {"command": "unregister", "status": "ready", "unregistered": True,
              "transaction_id": transaction_id})
         return False
-    except Exception as e:
-        logging.error(f"Error when unregistering from area {channel_prefix}: "
-                      f"Exception: {str(e)}")
+    except Exception:
+        logging.exception(f"Error when unregistering from area {channel_prefix}")
         redis.publish_json(
             unregister_response_channel,
             {"command": "unregister", "status": "error", "transaction_id": transaction_id,
@@ -116,9 +115,9 @@ class ExternalMixin:
     @property
     def channel_dict(self):
         return {
-            f'{self.channel_prefix}/register_participant': self._register,
-            f'{self.channel_prefix}/unregister_participant': self._unregister,
-            f'{self.channel_prefix}/device_info': self._device_info,
+            f"{self.channel_prefix}/register_participant": self._register,
+            f"{self.channel_prefix}/unregister_participant": self._unregister,
+            f"{self.channel_prefix}/device_info": self._device_info,
         }
 
     @property
@@ -150,8 +149,8 @@ class ExternalMixin:
 
     def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
-        if key_in_dict_and_not_none(kwargs, 'allow_external_connection'):
-            self._use_template_strategy = not kwargs['allow_external_connection']
+        if key_in_dict_and_not_none(kwargs, "allow_external_connection"):
+            self._use_template_strategy = not kwargs["allow_external_connection"]
         super().area_reconfigure_event(*args, **kwargs)
 
     def _register(self, payload):
@@ -169,7 +168,7 @@ class ExternalMixin:
         self.connected = self._connected
 
     def _device_info(self, payload):
-        device_info_response_channel = f'{self.channel_prefix}/response/device_info'
+        device_info_response_channel = f"{self.channel_prefix}/response/device_info"
         if not check_for_connected_and_reply(self.redis, device_info_response_channel,
                                              self.connected):
             return
@@ -183,29 +182,29 @@ class ExternalMixin:
                 response_channel,
                 {"command": "device_info", "status": "ready",
                  "device_info": self._device_info_dict,
-                 "transaction_id": arguments.get("transaction_id", None)})
-        except Exception as e:
-            logging.error(f"Error when handling device info on area {self.device.name}: "
-                          f"Exception: {str(e)}")
+                 "transaction_id": arguments.get("transaction_id")})
+        except Exception:
+            error_message = f"Error when handling device info on area {self.device.name}"
+            logging.exception(error_message)
             self.redis.publish_json(
                 response_channel,
                 {"command": "device_info", "status": "error",
-                 "error_message": f"Error when handling device info on area {self.device.name}.",
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "error_message": error_message,
+                 "transaction_id": arguments.get("transaction_id")})
 
     def _device_info_aggregator(self, arguments):
         try:
             return {
                 "command": "device_info", "status": "ready",
                 "device_info": self._device_info_dict,
-                "transaction_id": arguments.get("transaction_id", None),
+                "transaction_id": arguments.get("transaction_id"),
                 "area_uuid": self.device.uuid
             }
         except Exception:
             return {
                 "command": "device_info", "status": "error",
                 "error_message": f"Error when handling device info on area {self.device.name}.",
-                "transaction_id": arguments.get("transaction_id", None),
+                "transaction_id": arguments.get("transaction_id"),
                 "area_uuid": self.device.uuid
             }
 
@@ -233,20 +232,20 @@ class ExternalMixin:
     def _progress_info(self):
         slot_completion_percent = int((self.device.current_tick_in_slot /
                                        self.device.config.ticks_per_slot) * 100)
-        return {'slot_completion': f'{slot_completion_percent}%',
-                'market_slot': self.area.next_market.time_slot_str}
+        return {"slot_completion": f"{slot_completion_percent}%",
+                "market_slot": self.area.next_market.time_slot_str}
 
     def _dispatch_event_tick_to_external_agent(self):
         if external_global_statistics.is_it_time_for_external_tick(self.device.current_tick):
             if self.is_aggregator_controlled:
                 self.redis.aggregator.add_batch_tick_event(self.device.uuid, self._progress_info)
             elif self.connected:
-                tick_event_channel = f'{self.channel_prefix}/events/tick'
+                tick_event_channel = f"{self.channel_prefix}/events/tick"
                 current_tick_info = {
                     **self._progress_info,
-                    'event': 'tick',
-                    'area_uuid': self.device.uuid,
-                    'device_info': self._device_info_dict
+                    "event": "tick",
+                    "area_uuid": self.device.uuid,
+                    "device_info": self._device_info_dict
                 }
                 self.redis.publish_json(tick_event_channel, current_tick_info)
 
@@ -341,7 +340,7 @@ class ExternalMixin:
         super().deactivate()
 
         if self.is_aggregator_controlled:
-            deactivate_msg = {'event': 'finish'}
+            deactivate_msg = {"event": "finish"}
             self.redis.aggregator.add_batch_finished_event(self.owner.uuid, deactivate_msg)
         elif self.connected:
             deactivate_event_channel = f"{self.channel_prefix}/events/finish"
@@ -397,6 +396,10 @@ class ExternalMixin:
                 return self._list_offers_aggregator(command)
             elif command["type"] == "device_info":
                 return self._device_info_aggregator(command)
+            elif command["type"] == "set_energy_forecast":
+                return self._set_energy_forecast_aggregator(command)
+            elif command["type"] == "set_energy_measurement":
+                return self._set_energy_measurement_aggregator(command)
             else:
                 return {
                     "command": command["type"], "status": "error",
@@ -418,64 +421,129 @@ class ExternalMixin:
                                   f"Market cycle already finished."})
         self.pending_requests = deque()
 
-    def _set_energy_forecast(self, payload):
+    def set_energy_forecast(self, payload: Dict) -> None:
+        """Callback for set_energy_forecast redis endpoint."""
+        self.set_device_energy_data(payload, "set_energy_forecast", "energy_forecast")
+
+    def set_energy_measurement(self, payload: Dict) -> None:
+        """Callback for set_energy_measurement redis endpoint."""
+        self.set_device_energy_data(payload, "set_energy_measurement", "energy_measurement")
+
+    def set_device_energy_data(self, payload: Dict, command_type: str,
+                               energy_data_arg_name: str) -> None:
         transaction_id = self._get_transaction_id(payload)
-        energy_forecast_response_channel = \
-            f'{self.channel_prefix}/response/set_energy_forecast'
+        energy_data_response_channel = \
+            f"{self.channel_prefix}/response/{command_type}"
         # Deactivating register/connected requirement for power forecasts.
         # if not check_for_connected_and_reply(self.redis, power_forecast_response_channel,
         #                                      self.connected):
         #     return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'energy_forecast', 'transaction_id'}
-        except Exception as e:
-            logging.error(
-                f"Incorrect _set_energy_forecast request. "
-                f"Payload {payload}. Exception {str(e)}.")
+            assert set(arguments.keys()) == {energy_data_arg_name, "transaction_id"}
+        except Exception:
+            logging.exception(
+                f"Incorrect {command_type} request: Payload {payload}")
             self.redis.publish_json(
-                energy_forecast_response_channel,
-                {"command": "set_energy_forecast",
-                 "error": "Incorrect _set_energy_forecast request. "
-                          "Available parameters: (energy_forecast).",
+                energy_data_response_channel,
+                {"command": command_type,
+                 "error": f"Incorrect {command_type} request. "
+                          f"Available parameters: ({energy_data_arg_name}).",
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
-                IncomingRequest("set_energy_forecast", arguments,
-                                energy_forecast_response_channel))
+                IncomingRequest(command_type, arguments,
+                                energy_data_response_channel))
 
-    def _set_energy_forecast_impl(self, arguments, response_channel):
+    def set_energy_forecast_impl(self, arguments: Dict, response_channel: str) -> None:
+        self._set_device_energy_data_impl(arguments, response_channel, "set_energy_forecast")
+
+    def set_energy_measurement_impl(self, arguments: Dict, response_channel: str) -> None:
+        self._set_device_energy_data_impl(arguments, response_channel, "set_energy_measurement")
+
+    def _set_device_energy_data_impl(self, arguments: Dict, response_channel: str,
+                                     command_type: str) -> None:
+        """
+        Digest command from buffer and perform set_energy_forecast or set_energy_measurement.
+        Args:
+            arguments: Dictionary containing "energy_forecast/energy_measurement" that is a dict
+                containing a profile
+                key: time string, value: energy in kWh
+            response_channel: redis channel string where the response should be sent to
+        """
         try:
-            assert arguments["energy_forecast"] >= 0.0
-            self.energy_forecast_buffer_Wh = arguments["energy_forecast"]
+            self._set_device_energy_data_state(command_type, arguments)
+
             self.redis.publish_json(
                 response_channel,
-                {"command": "set_energy_forecast", "status": "ready",
-                 "transaction_id": arguments.get("transaction_id", None)})
-        except Exception as e:
-            logging.error(f"Error when handling _set_energy_forecast_impl "
-                          f"on area {self.device.name}: "
-                          f"Exception: {str(e)}, Arguments: {arguments}")
+                {"command": command_type, "status": "ready",
+                 "transaction_id": arguments.get("transaction_id")})
+        except Exception:
+            error_message = (f"Error when handling _{command_type}_impl "
+                             f"on area {self.device.name}. Arguments: {arguments}")
+            logging.exception(error_message)
             self.redis.publish_json(
                 response_channel,
-                {"command": "set_energy_forecast", "status": "error",
-                 "error_message": f"Error when handling _set_energy_forecast_impl "
-                                  f"on area {self.device.name} with arguments {arguments}.",
-                 "transaction_id": arguments.get("transaction_id", None)})
+                {"command": command_type, "status": "error",
+                 "error_message": error_message,
+                 "transaction_id": arguments.get("transaction_id")})
+
+    def _set_energy_forecast_aggregator(self, arguments):
+        return self._set_device_energy_data_aggregator(arguments, "set_energy_forecast")
+
+    def _set_energy_measurement_aggregator(self, arguments):
+        return self._set_device_energy_data_aggregator(arguments, "set_energy_measurement")
+
+    def _set_device_energy_data_aggregator(self, arguments, command_name):
+        try:
+            self._set_device_energy_data_state(command_name, arguments)
+            return {
+                "command": command_name, "status": "ready",
+                command_name: arguments,
+                "area_uuid": self.device.uuid,
+                "transaction_id": arguments.get("transaction_id")}
+        except Exception:
+            logging.exception(f"Error when handling bid on area {self.device.name}")
+            return {
+                "command": command_name, "status": "error",
+                "area_uuid": self.device.uuid,
+                "error_message": f"Error when handling {command_name} "
+                                 f"on area {self.device.name} with arguments {arguments}.",
+                "transaction_id": arguments.get("transaction_id")}
+
+    @staticmethod
+    def _validate_values_positive_in_profile(profile: Dict) -> None:
+        """Validate whether all values are positive in a profile."""
+        for time_str, energy in profile.items():
+            if energy < 0.0:
+                raise ValueError(f"Energy is not positive for time stamp {time_str}.")
+
+    def _set_device_energy_data_state(self, command_type: str, arguments: Dict) -> None:
+        if command_type == "set_energy_forecast":
+            self._validate_values_positive_in_profile(arguments["energy_forecast"])
+            self.energy_forecast_buffer.update(
+                convert_str_to_pendulum_in_dict(arguments["energy_forecast"]))
+        elif command_type == "set_energy_measurement":
+            self._validate_values_positive_in_profile(arguments["energy_measurement"])
+            self.energy_measurement_buffer.update(
+                convert_str_to_pendulum_in_dict(arguments["energy_measurement"]))
+        else:
+            assert False, f"Unsupported command {command_type}, available commands: " \
+                          f"set_energy_forecast, set_energy_measurement"
 
     @property
     def market_info_dict(self):
-        return {'asset_info': self._device_info_dict,
-                'last_slot_asset_info': self.last_slot_asset_info,
-                'asset_bill': self.device.stats.aggregated_stats["bills"]
+        return {"asset_info": self._device_info_dict,
+                "last_slot_asset_info": self.last_slot_asset_info,
+                "asset_bill": self.device.stats.aggregated_stats["bills"]
                 if "bills" in self.device.stats.aggregated_stats else None
                 }
 
     @property
     def last_slot_asset_info(self):
         return {
-                'energy_traded': self.energy_traded(self.area.current_market.id)
+                "energy_traded": self.energy_traded(self.area.current_market.id)
                 if self.area.current_market else None,
-                'total_cost': self.energy_traded_costs(self.area.current_market.id)
+                "total_cost": self.energy_traded_costs(self.area.current_market.id)
                 if self.area.current_market else None,
                 }

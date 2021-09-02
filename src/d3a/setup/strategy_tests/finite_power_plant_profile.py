@@ -35,12 +35,12 @@ diesel_power_profile_kW = {
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
                                                                            range(0, 24)),
@@ -48,7 +48,7 @@ def get_setup(config):
                          ),
                 ]
             ),
-            Area('Finite Commercial Producer Profile',
+            Area("Finite Commercial Producer Profile",
                  strategy=FinitePowerPlant(energy_rate=31.3,
                                            max_available_power_kW=diesel_power_profile_kW)
                  ),

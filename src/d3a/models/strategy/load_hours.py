@@ -37,7 +37,8 @@ from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
 from d3a.models.state import LoadState
-from d3a.models.strategy import BidEnabledStrategy
+from d3a.models.strategy import BidEnabledStrategy, utils
+from d3a.models.strategy.settlement.strategy import settlement_market_strategy_factory
 from d3a.models.strategy.update_frequency import TemplateStrategyBidUpdater
 
 log = getLogger(__name__)
@@ -96,6 +97,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._calculate_active_markets()
         self._cycled_market = set()
         self._simulation_start_timestamp = None
+        self._settlement_market_strategy = settlement_market_strategy_factory()
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
                            use_market_maker_rate, initial_buying_rate, final_buying_rate):
@@ -158,6 +160,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._update_energy_requirement_future_markets()
         self._set_alternative_pricing_scheme()
         self.update_state()
+        self._settlement_market_strategy.event_market_cycle(self)
 
     def add_entry_in_hrs_per_day(self, overwrite=False):
         for market in self.area.all_markets:
@@ -169,7 +172,22 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._post_first_bid()
         if self.area.current_market:
             self._cycled_market.add(self.area.current_market.time_slot)
+
+        # Provide energy values for the past market slot, to be used in the settlement market
+        self._set_energy_measurement_of_last_market()
         self._delete_past_state()
+
+    def _set_energy_measurement_of_last_market(self):
+        """Set the (simulated) actual energy of the device in the previous market slot."""
+        if self.area.current_market:
+            self._set_energy_measurement_kWh(self.area.current_market.time_slot)
+
+    def _set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
+        """Set the (simulated) actual energy consumed by the device in a market slot."""
+        energy_forecast_kWh = self.state.get_desired_energy_Wh(time_slot) / 1000
+        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
+
+        self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
 
     def _delete_past_state(self):
         if (constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True or
@@ -307,6 +325,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 self._double_sided_market_event_tick(market)
 
         self.bid_update.increment_update_counter_all_markets(self)
+        self._settlement_market_strategy.event_tick(self)
 
     def event_offer(self, *, market_id, offer):
         """Automatically react to offers in single-sided markets.
@@ -349,10 +368,11 @@ class LoadHoursStrategy(BidEnabledStrategy):
                     and not self.are_bids_posted(market.id)):
                 bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
                 if self.is_eligible_for_balancing_market:
-                    bid_energy -= self.state.get_desired_energy(market.time_slot) * \
-                                  self.balancing_energy_ratio.demand
+                    bid_energy -= (self.state.get_desired_energy(market.time_slot) *
+                                   self.balancing_energy_ratio.demand)
                 try:
-                    self.post_first_bid(market, bid_energy)
+                    self.post_first_bid(market, bid_energy,
+                                        self.bid_update.initial_rate[market.time_slot])
                 except MarketException:
                     pass
 
@@ -375,8 +395,11 @@ class LoadHoursStrategy(BidEnabledStrategy):
             market_day = self._get_day_of_timestamp(market.time_slot)
             if self.hrs_per_day != {} and market_day in self.hrs_per_day:
                 self.hrs_per_day[market_day] -= self._operating_hours(bid_trade.offer_bid.energy)
+        self._settlement_market_strategy.event_bid_traded(self, market_id, bid_trade)
 
     def event_trade(self, *, market_id, trade):
+        self._settlement_market_strategy.event_bid_traded(self, market_id, trade)
+
         market = self.area.get_future_market_from_id(market_id)
         assert market is not None
 

@@ -32,15 +32,15 @@ def get_setup(config):
     ConstSettings.StorageSettings.BUYING_RATE_RANGE = RateRange(5, 15)
 
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'Microgrid',
+                "Microgrid",
                 [
                     Area(
-                        'House 1',
+                        "House 1",
                         [
-                            Area('H1 storage', strategy=StorageStrategy(
+                            Area("H1 storage", strategy=StorageStrategy(
                                 initial_soc=10,
                                 battery_capacity_kWh=1,
                                 max_abs_battery_power_kW=0.01,
@@ -53,7 +53,7 @@ def get_setup(config):
                         ], grid_fee_percentage=0, grid_fee_constant=0,
                     ),
                 ],),
-            Area('DSO', strategy=InfiniteBusStrategy(energy_sell_rate=15,
+            Area("DSO", strategy=InfiniteBusStrategy(energy_sell_rate=15,
                                                      energy_buy_rate=0)
                  ),
         ],

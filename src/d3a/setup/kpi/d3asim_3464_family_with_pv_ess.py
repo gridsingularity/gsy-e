@@ -43,7 +43,7 @@ def get_setup(config):
                                 avg_power_W=5680, hrs_of_day=list(range(24)), hrs_per_day=24,
                                 initial_buying_rate=23, final_buying_rate=23)),
                             Area("Family PV", strategy=PVStrategy(
-                                max_panel_power_W=17985, panel_count=1,
+                                capacity_kW=17.985, panel_count=1,
                                 initial_selling_rate=6, final_selling_rate=6)),
                             Area("Family ESS", strategy=StorageStrategy(
                                  initial_soc=20, battery_capacity_kWh=5,

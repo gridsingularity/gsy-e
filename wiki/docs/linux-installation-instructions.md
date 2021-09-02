@@ -1,4 +1,4 @@
-##Installing Grid Singularity energy exchange (D3A) on Linux Ubuntu 18.04:
+##Installing Grid Singularity energy exchange on Linux Ubuntu 18.04:
 
 ###Step 1: In case you have not already installed git, python3.8 and pip (otherwise please go directly to step 2):
 
@@ -38,12 +38,12 @@ export LC_ALL=C.UTF-8
 export LANG=C.UTF-8
 ```
 
-###Step 4: Clone the Grid Singularity D3A repository to a directory of your choice:
+###Step 4: Clone the Grid Singularity repository to a directory of your choice:
 ```
 git clone https://github.com/gridsingularity/d3a.git
 ```
 
-###Step 5: Install the Grid Singularity energy exchange (D3A):
+###Step 5: Install the Grid Singularity energy exchange:
 
 ####Activate your virtual environment and go into the d3a repository
 
@@ -65,7 +65,7 @@ pip install -e.
 
 Now, if you run `d3a run -–help` , the help of d3a should be shown.
 
-##Installing Grid Singularity energy exchange (D3A) on Linux Ubuntu 20.04:
+##Installing Grid Singularity energy exchange on Linux Ubuntu 20.04:
 
 Please follow the installation instructions for [Ubuntu 18.04](https://gridsingularity.github.io/d3a/installation-instructions/#ubuntu-1804) 
 

@@ -22,14 +22,14 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
-            Area('Load', strategy=LoadHoursStrategy(avg_power_W=100,
+            Area("Load", strategy=LoadHoursStrategy(avg_power_W=100,
                                                     hrs_per_day=24,
                                                     hrs_of_day=list(range(0, 24)),
                                                     initial_buying_rate=0,
                                                     use_market_maker_rate=True)),
-            Area('Market Maker',
+            Area("Market Maker",
                  strategy=MarketMakerStrategy(energy_rate=30)
 
                  ),

@@ -22,18 +22,18 @@ from d3a.models.strategy.pv import PVStrategy
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=20,
+                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=20,
                                                                        hrs_per_day=2,
                                                                        hrs_of_day=list(
                                                                            range(12, 22)),
                                                                        final_buying_rate=35)
                          ),
-                    Area('H1 PV', strategy=PVStrategy(4, 80)
+                    Area("H1 PV", strategy=PVStrategy(4, 80)
                          ),
 
                 ]
