@@ -36,13 +36,9 @@ def get_setup(config):
                 ],
                 grid_fee_percentage=0, grid_fee_constant=0,
             ),
-            Area("House 2", [
-                Area("H2 Smart Meter", strategy=SmartMeterStrategy(
-                    initial_selling_rate=30, final_selling_rate=5,
-                    smart_meter_profile=Path(d3a_path) / "resources/smart_meter_profile.csv"))
-                ],
-                grid_fee_percentage=0, grid_fee_constant=0,
-            ),
+            Area("House 2 Smart Meter", strategy=SmartMeterStrategy(
+                initial_selling_rate=30, final_selling_rate=5,
+                smart_meter_profile=Path(d3a_path) / "resources/smart_meter_profile.csv")),
             Area("Commercial Energy Producer", strategy=CommercialStrategy(energy_rate=30)),
         ],
         config=config
