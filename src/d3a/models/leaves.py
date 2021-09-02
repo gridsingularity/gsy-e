@@ -26,7 +26,7 @@ from d3a.models.strategy.external_strategies.pv import (
     PVUserProfileExternalStrategy)
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
-from d3a.models.strategy.home_meter import HomeMeterStrategy
+from d3a.models.strategy.smart_meter import SmartMeterStrategy
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
@@ -126,8 +126,8 @@ class Storage(Leaf):
     strategy_type = StorageStrategy
 
 
-class HomeMeter(Leaf):
-    strategy_type = HomeMeterStrategy
+class SmartMeter(Leaf):
+    strategy_type = SmartMeterStrategy
 
 
 class FiniteDieselGenerator(Leaf):

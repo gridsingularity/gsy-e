@@ -24,7 +24,7 @@ from d3a.constants import TIME_ZONE
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.home_meter import HomeMeterStrategy
+from d3a.models.strategy.smart_meter import SmartMeterStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
@@ -47,7 +47,7 @@ DEVICE_YAXIS = {"trade_energy_kWh": 'Traded [kWh]',
                 "energy_buffer_kWh": 'Energy Buffer [kWh]',
                 "production_kWh": 'Power Production [kWh]',
                 "load_profile_kWh": 'Load Profile [kWh]',
-                "home_meter_profile_kWh": 'Home Meter Profile [kWh]',
+                "smart_meter_profile_kWh": 'Smart Meter Profile [kWh]',
                 "soc_history_%": 'State of Charge [%]',
                 "trade_price_eur": 'Energy Rate [EUR/kWh]'}
 
@@ -508,10 +508,10 @@ class PlotlyGraph:
             layout = cls._device_plot_layout("overlay", f"{device_name}",
                                              'Time', yaxis_caption_list)
 
-        elif isinstance(device_strategy, HomeMeterStrategy):
+        elif isinstance(device_strategy, SmartMeterStrategy):
             y1axis_key = "trade_price_eur"
             y2axis_key = trade_energy_var_name
-            y3axis_key = "home_meter_profile_kWh"
+            y3axis_key = "smart_meter_profile_kWh"
             yaxis_caption_list = [DEVICE_YAXIS[y1axis_key], DEVICE_YAXIS[y2axis_key],
                                   DEVICE_YAXIS[y3axis_key]]
 
