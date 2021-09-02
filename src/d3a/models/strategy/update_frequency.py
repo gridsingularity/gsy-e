@@ -21,7 +21,7 @@ from pendulum import duration
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import find_object_of_same_weekday_and_time
-from d3a.d3a_core.util import write_default_to_dict
+from d3a.d3a_core.util import write_default_to_dict, is_time_slot_in_past_markets
 
 
 class UpdateFrequencyMixin:
@@ -51,7 +51,7 @@ class UpdateFrequencyMixin:
     def delete_past_state_values(self, current_market_time_slot):
         to_delete = []
         for market_slot in self.initial_rate.keys():
-            if market_slot < current_market_time_slot:
+            if is_time_slot_in_past_markets(market_slot, current_market_time_slot):
                 to_delete.append(market_slot)
         for market_slot in to_delete:
             self.initial_rate.pop(market_slot, None)
@@ -59,8 +59,12 @@ class UpdateFrequencyMixin:
             self.energy_rate_change_per_update.pop(market_slot, None)
             self.update_counter.pop(market_slot, None)
 
+    @staticmethod
+    def get_all_markets(area):
+        return area.all_markets
+
     def _populate_profiles(self, area):
-        for market in area.all_markets:
+        for market in self.get_all_markets(area):
             time_slot = market.time_slot
             if self.fit_to_limit is False:
                 self.energy_rate_change_per_update[time_slot] = \
@@ -144,7 +148,8 @@ class UpdateFrequencyMixin:
     def increment_update_counter_all_markets(self, strategy):
         should_update = [
             self.increment_update_counter(strategy, market.time_slot)
-            for market in strategy.area.all_markets]
+            for market in self.get_all_markets(strategy.area)
+        ]
         return any(should_update)
 
     def increment_update_counter(self, strategy, time_slot):
@@ -179,7 +184,7 @@ class TemplateStrategyBidUpdater(UpdateFrequencyMixin):
     def reset(self, strategy):
         """Reset the price of all bids to use their initial rate."""
         # decrease energy rate for each market again, except for the newly created one
-        for market in strategy.area.all_markets[:-1]:
+        for market in self.get_all_markets(strategy.area)[:-1]:
             self.update_counter[market.time_slot] = 0
             strategy.update_bid_rates(market, self.get_updated_rate(market.time_slot))
 
@@ -193,12 +198,12 @@ class TemplateStrategyBidUpdater(UpdateFrequencyMixin):
 class TemplateStrategyOfferUpdater(UpdateFrequencyMixin):
     def reset(self, strategy):
         """Reset the price of all offers based to use their initial rate."""
-        for market in strategy.area.all_markets[:-1]:
+        for market in self.get_all_markets(strategy.area)[:-1]:
             self.update_counter[market.time_slot] = 0
-            strategy.update_energy_price(market, self.get_updated_rate(market.time_slot))
+            strategy.update_offer_rates(market, self.get_updated_rate(market.time_slot))
 
-    def update(self, strategy):
+    def update(self, market, strategy):
         """Update the price of existing offers to reflect the new rates."""
-        for market in strategy.area.all_markets:
-            if self.time_for_price_update(strategy, market.time_slot):
-                strategy.update_energy_price(market, self.get_updated_rate(market.time_slot))
+        if self.time_for_price_update(strategy, market.time_slot):
+            if strategy.are_offers_posted(market.id):
+                strategy.update_offer_rates(market, self.get_updated_rate(market.time_slot))

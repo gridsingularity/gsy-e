@@ -103,16 +103,16 @@ class TestAreaClass(unittest.TestCase):
         self.area.cycle_markets(False, False, False)
         assert len(self.area.past_markets) == 0
 
-        current_time = today(tz=constants.TIME_ZONE).add(hours=1)
+        current_time = today(tz=constants.TIME_ZONE).add(minutes=self.config.slot_length.minutes)
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
         self.area._markets.create_future_markets(current_time, True, self.area)
-        current_time = today(tz=constants.TIME_ZONE).add(hours=2)
+        current_time = today(tz=constants.TIME_ZONE).add(minutes=2*self.config.slot_length.minutes)
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
         assert (list(self.area.past_markets)[-1].time_slot ==
-                today(tz=constants.TIME_ZONE).add(hours=1))
+                today(tz=constants.TIME_ZONE).add(minutes=self.config.slot_length.minutes))
 
     def test_keep_past_markets(self):
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
@@ -125,12 +125,14 @@ class TestAreaClass(unittest.TestCase):
         self.area.cycle_markets(False, False, False)
         assert len(self.area.past_markets) == 0
 
-        current_time = today(tz=constants.TIME_ZONE).add(hours=1)
+        current_time = today(tz=constants.TIME_ZONE).add(
+            minutes=self.config.slot_length.total_minutes())
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
         self.area._markets.create_future_markets(current_time, True, self.area)
-        current_time = today(tz=constants.TIME_ZONE).add(hours=2)
+        current_time = today(tz=constants.TIME_ZONE).add(
+            minutes=2*self.config.slot_length.total_minutes())
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 2
 
@@ -178,23 +180,6 @@ class TestAreaClass(unittest.TestCase):
         o2.energy_rate = 19
         o3.energy_rate = 20
         assert self.area.market_with_most_expensive_offer is m3
-
-    def test_cycle_markets(self):
-        GlobalConfig.end_date = GlobalConfig.start_date + GlobalConfig.sim_duration
-        self.area = Area(name="Street", children=[Area(name="House")],
-                         config=GlobalConfig, grid_fee_percentage=1)
-        self.area.parent = Area(name="GRID")
-        self.area.config.market_count = 5
-        self.area.activate()
-        assert len(self.area.all_markets) == 5
-
-        assert len(self.area.balancing_markets) == 5
-        self.area.current_tick = 900
-        self.area.cycle_markets()
-        assert len(self.area.past_markets) == 1
-        assert len(self.area.past_balancing_markets) == 1
-        assert len(self.area.all_markets) == 5
-        assert len(self.area.balancing_markets) == 5
 
     def test_get_restore_state_get_called_on_all_areas(self):
         strategy = MagicMock(spec=StorageStrategy)
