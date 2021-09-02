@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
-import unittest
 import uuid
 from collections import deque
 from unittest.mock import MagicMock, Mock
@@ -63,7 +62,7 @@ def ext_strategy_fixture(request):
     return strategy
 
 
-class TestExternalMixin(unittest.TestCase):
+class TestExternalMixin:
 
     def _create_and_activate_strategy_area(self, strategy):
         self.config = MagicMock()
@@ -81,7 +80,7 @@ class TestExternalMixin(unittest.TestCase):
         self.parent.get_future_market_from_id = lambda _: market
         self.area.get_future_market_from_id = lambda _: market
 
-    def tearDown(self) -> None:
+    def teardown_method(self) -> None:
         ConstSettings.IAASettings.MARKET_TYPE = 1
 
     def test_dispatch_tick_frequency_gets_calculated_correctly(self):
@@ -384,9 +383,9 @@ class TestExternalMixin(unittest.TestCase):
         assert self.device.strategy.connected is False
 
         payload = {"data": json.dumps({"transaction_id": None})}
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             self.device.strategy._register(payload)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             self.device.strategy._unregister(payload)
 
     @parameterized.expand([
@@ -423,6 +422,46 @@ class TestExternalMixin(unittest.TestCase):
         assert strategy._connected is False
         assert strategy._use_template_strategy is False
         strategy.state.restore_state.assert_called_once_with(state_dict)
+
+    @pytest.mark.parametrize("strategy", [
+        LoadHoursExternalStrategy(100),
+        PVExternalStrategy(2, capacity_kW=0.16),
+        StorageExternalStrategy()
+    ])
+    def test_get_market_from_cmd_arg_returns_next_market_if_arg_missing(self, strategy):
+        strategy.area = Mock()
+        strategy.area.next_market = Mock()
+        market = strategy._get_market_from_command_argument({})
+        assert market == strategy.area.next_market
+
+    @pytest.mark.parametrize("strategy", [
+        LoadHoursExternalStrategy(100),
+        PVExternalStrategy(2, capacity_kW=0.16),
+        StorageExternalStrategy()
+    ])
+    def test_get_market_from_cmd_arg_returns_spot_market(self, strategy):
+        strategy.area = Mock()
+        strategy.area.next_market = Mock()
+        timeslot = now()
+        market_mock = Mock()
+        strategy.area.get_market = MagicMock(return_value=market_mock)
+        market = strategy._get_market_from_command_argument({"timeslot": timeslot})
+        assert market == market_mock
+
+    @pytest.mark.parametrize("strategy", [
+        LoadHoursExternalStrategy(100),
+        PVExternalStrategy(2, capacity_kW=0.16),
+        StorageExternalStrategy()
+    ])
+    def test_get_market_from_cmd_arg_returns_settlement_market(self, strategy):
+        strategy.area = Mock()
+        strategy.area.next_market = Mock()
+        timeslot = now()
+        market_mock = Mock()
+        strategy.area.get_market = MagicMock(return_value=None)
+        strategy.area.get_settlement_market = MagicMock(return_value=market_mock)
+        market = strategy._get_market_from_command_argument({"timeslot": timeslot})
+        assert market == market_mock
 
 
 class TestForecastRelatedFeatures:

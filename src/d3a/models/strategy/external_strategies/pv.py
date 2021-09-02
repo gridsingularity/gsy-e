@@ -125,6 +125,7 @@ class PVExternalMixin(ExternalMixin):
         transaction_id = self._get_transaction_id(payload)
         required_args = {"price", "energy", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
+                                            "timeslot",
                                             "attributes",
                                             "requirements"})
 
@@ -296,6 +297,7 @@ class PVExternalMixin(ExternalMixin):
     def _offer_aggregator(self, arguments):
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
+                                            "timeslot",
                                             "attributes",
                                             "requirements"})
 
