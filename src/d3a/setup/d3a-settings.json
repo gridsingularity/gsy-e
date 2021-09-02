@@ -173,7 +173,7 @@
       "MAX_PANEL_OUTPUT_W": 160,
       "PV_PENALTY_RATE": 0
     },
-    "HomeMeterSettings": {
+    "SmartMeterSettings": {
       "SELLING_RATE_RANGE": [
         30,
         0

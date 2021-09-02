@@ -376,8 +376,8 @@ class LoadState(ConsumptionState):
         return measured_energy_kWh - traded_energy_kWh
 
 
-class HomeMeterState(ConsumptionState, ProductionState):
-    """State for the Home Meter device"""
+class SmartMeterState(ConsumptionState, ProductionState):
+    """State for the Smart Meter device."""
 
     def __init__(self):
         super().__init__()

@@ -8,7 +8,7 @@ The following features were implemented :
 * Animated color visuals in the map view assist analysis, with a color assigned to each home and community on the [map](https://map.gridsingularity.com/singularity-map) when the simulation is running: **green** for net exports, **blue** for neutral, and **red** for net imports
 * We also provide **Map 3D** view, where users can view their simulations and homes in 3-Dimensions
 * Side navigation bar summarizes the contents of a users’ energy community to additionally aid optimal energy community configuration
-* Home meter asset, a new asset type which can be configured directly in the codebase simulation file to allow users to upload **smart meter** net consumption and production profiles
+* Smart meter asset, a new asset type which can be configured directly in the codebase simulation file to allow users to upload **smart meter** net consumption and production profiles
 
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/5_nbtxR-SYM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
@@ -21,7 +21,7 @@ The following features were implemented :
 * Users can now download the **registry** page as a JSON file, to facilitate the connection with the API to a collaboration/Canary Network.
 
 ##Version 0.11.0
-The following features were implemented : 
+The following features were implemented :
 
 * Time Resolution setting for graphs: Users can choose to **view data** in the graphs in 2 hour, 1 hour, or 15 minutes time resolution. This allows for **faster** loading of the graphs as the simulation run time is extended. Users can change the time resolution for the Energy Trade Profile, Energy Pricing, and Asset Profile graphs.
 * Add a Library as an [Event](events.md): Users can add **grid components** from the Library into their simulation while it is running.
@@ -32,7 +32,7 @@ The following features were implemented :
 <iframe width="560" height="315" src="https://www.youtube.com/embed/b2LGxgnEAcM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ##Version 0.10.0
-The following features were implemented : 
+The following features were implemented :
 
 * [Canary Networks](canary-network.md): An admin user can create a Canary Network simulation, which duplicates a [collaboration](collaboration.md) simulation and allows the admin to connect each energy asset in the grid to its **live data stream** in order to simulate trading on the asset's live metered data readings. The Canary Network runs in **real-time**, with incoming data collected during each 15 minute market slot. Researcher users can trade on behalf of energy assets using the registry to connect to the live data stream which broadcasts the energy required for each asset through the [Asset API](assets-api.md). Grid Operator users can change the grid fees and grid parameters of each grid market using the registry which connects them to their markets through the [Grid Operator API](grid-operator-api.md). Therefore, the Canary Network realizes the digital twin model of an energy asset and enables Researcher users to trade in real-time on behalf of their assets as a proof of concept. Once a Canary Network is established, it continues to run and agents can trade over weeks and months of time, for long term study of energy asset data and agent and market behavior. Previous weeks of data and results are saved in the results page weekly history.
 * Island or Grid-connect a [Market Maker](model-market-maker.md) as an event: Users can now change the role and mode of the Market Maker as an event, allowing users to simulate **blackouts** by changing the Market Maker to an islanding role, or simulating other impacts resulting from a change in the Market Maker parameters, such as showing the effect of connecting an islanded Market Maker to the grid.
@@ -40,15 +40,15 @@ The following features were implemented :
 <iframe width="560" height="315" src="https://www.youtube.com/embed/kHacTJvTRwM" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ##Version 0.9.0
-The following features were implemented : 
+The following features were implemented :
 
-* [Market API](grid-operator-api.md), which allows grid operators and researchers to monitor metrics and set grid fees in the select local energy market simulation collaboration 
+* [Market API](grid-operator-api.md), which allows grid operators and researchers to monitor metrics and set grid fees in the select local energy market simulation collaboration
 * Easier registration for researchers and grid operators to manage multiple assets and use market [API](api-overview.md) through the Registry page.
-* Bids and offers are prioritised in their first market by setting a wait time of 2 ticks before allowing them to propagate to higher markets in the grid hierarchy. This wait time is set in the backend as the minimum bid or offer age parameter. 
-* [Grid fees](constant-fees.md) integrated in the Results page - [Energy Pricing](results.md#energy-pricing) graph for each market 
+* Bids and offers are prioritised in their first market by setting a wait time of 2 ticks before allowing them to propagate to higher markets in the grid hierarchy. This wait time is set in the backend as the minimum bid or offer age parameter.
+* [Grid fees](constant-fees.md) integrated in the Results page - [Energy Pricing](results.md#energy-pricing) graph for each market
 * Total grid fees reported in the Scoreboard page that demonstrates market performance metrics for each collaboration simulation.
 * Net Energy calculation added to Results page - [Energy Trade Profile](results.md#energy-trade-profile) graph in order to calculate the peak energy at a market node in the simulation. The current peak imports and exports were previously calculated based on the cumulative trades, but are now calculated from the net energy consumption, which can be a net import or export.
-* Updated load final selling rate and PV initial buying rate in the [template strategies](default-trading-strategy.md) now take the total grid fees into account in addition to the market maker (usually utility) rate. 
+* Updated load final selling rate and PV initial buying rate in the [template strategies](default-trading-strategy.md) now take the total grid fees into account in addition to the market maker (usually utility) rate.
 * Users can now run three simulations and/or collaborations at once (previous limit was two)
 
 
@@ -56,7 +56,7 @@ The following features were implemented :
 
 
 ##Version 0.8.0
-The following features were implemented : 
+The following features were implemented :
 
 * Simulation Location Map. Users can geo-tag all energy resources and markets in their simulation to make a map view of the simulation and results. A summary of all simulations can be viewed in a global map, to see where Grid Singularity is running simulations all over the world!
 
@@ -64,9 +64,9 @@ The following features were implemented :
 
 
 ##Version 0.7.0
-The following features were implemented : 
+The following features were implemented :
 
-* [Detailed energy trade profile graph](results.md#detailed-energy-trade-profile). Zoom in to each 15 minute market slot to view the scheduled trades with 1 minute resolution. 
+* [Detailed energy trade profile graph](results.md#detailed-energy-trade-profile). Zoom in to each 15 minute market slot to view the scheduled trades with 1 minute resolution.
 * Grid Operator user can change grid parameters inside a collaboration and while it is running, like [grid fees](constant-fees.md) or the transformer capacity.
 * Allow collaboration participants to register for [events](events.md) while the simulation is running. Allows users to simulate a growing community.
 * Information Aggregator to compile and send average market measurements to assist data scientists in building smart strategies to trade through the [API](assets-api.md).
@@ -76,7 +76,7 @@ The following features were implemented :
 <iframe width="560" height="315" src="https://www.youtube.com/embed/RrYMdITH1CA" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ##Version 0.6.0
-The following features were implemented : 
+The following features were implemented :
 
 * [Bid and Offer matching graph](results.md#bids-offers-and-trades-per-market-slot) <br /> Analyze all bids, offers, and trades in a market and see why they match based on their strategies.
 * [Simulation events](events.md) <br />Add, delete, or update areas or energy resources in a simulation while it is running. This allows users to grow their simulations in real-time and analyze the impacts of energy resources coming online and changes to grid parameters such as grid fees.
@@ -107,7 +107,7 @@ The following features were implemented :
 
 * [Grid fees](grid-fees.md) configuration
 * User roles, including 'Collaborations' feature for multi user testing and Grid Singularity-hosted challenges
-* [API](assets-api.md) connection to energy devices allowing bids and offers to be submitted by external algorithms 
+* [API](assets-api.md) connection to energy devices allowing bids and offers to be submitted by external algorithms
 
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/8un6qw_CGjI" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
@@ -134,5 +134,3 @@ The following features were implemented :
 * Download simulation results
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/hHXWzs1PJGI" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
-

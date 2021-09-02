@@ -22,7 +22,7 @@ from d3a.d3a_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGra
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
-from d3a.models.strategy.home_meter import HomeMeterStrategy
+from d3a.models.strategy.smart_meter import SmartMeterStrategy
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
@@ -201,8 +201,8 @@ class SimulationEndpointBuffer:
                                                     if area.current_market is not None
                                                     else 0.)
 
-        if isinstance(area.strategy, HomeMeterStrategy):
-            core_stats_dict["home_meter_profile_kWh"] = (
+        if isinstance(area.strategy, SmartMeterStrategy):
+            core_stats_dict["smart_meter_profile_kWh"] = (
                 area.strategy.state.get_energy_at_market_slot(self.current_market_time_slot))
             if area.parent.current_market is not None:
                 for trade in area.strategy.trades[area.parent.current_market]:
