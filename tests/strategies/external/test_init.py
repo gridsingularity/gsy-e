@@ -22,6 +22,7 @@ from unittest.mock import MagicMock, Mock
 
 import pytest
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.utils import format_datetime
 from parameterized import parameterized
 from pendulum import now, duration, datetime
 
@@ -442,7 +443,7 @@ class TestExternalMixin:
     def test_get_market_from_cmd_arg_returns_spot_market(self, strategy):
         strategy.area = Mock()
         strategy.area.next_market = Mock()
-        timeslot = now()
+        timeslot = format_datetime(now())
         market_mock = Mock()
         strategy.area.get_market = MagicMock(return_value=market_mock)
         market = strategy._get_market_from_command_argument({"timeslot": timeslot})
@@ -456,7 +457,7 @@ class TestExternalMixin:
     def test_get_market_from_cmd_arg_returns_settlement_market(self, strategy):
         strategy.area = Mock()
         strategy.area.next_market = Mock()
-        timeslot = now()
+        timeslot = format_datetime(now())
         market_mock = Mock()
         strategy.area.get_market = MagicMock(return_value=None)
         strategy.area.get_settlement_market = MagicMock(return_value=market_mock)
