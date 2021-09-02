@@ -10,7 +10,7 @@ from d3a.d3a_core.live_events import LiveEvents
 from d3a.d3a_core.util import d3a_path
 from d3a.models.area import Area
 from d3a.models.config import SimulationConfig
-from d3a.models.strategy.home_meter import HomeMeterStrategy
+from d3a.models.strategy.smart_meter import SmartMeterStrategy
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
@@ -46,10 +46,10 @@ class TestLiveEvents(unittest.TestCase):
             fit_to_limit=False, energy_rate_increase_per_update=5,
             energy_rate_decrease_per_update=8, update_interval=9
         )
-        self.home_meter_profile = Path(d3a_path) / "resources/home_meter_profile.csv"
-        self.strategy_home_meter = HomeMeterStrategy(
+        self.smart_meter_profile = Path(d3a_path) / "resources/smart_meter_profile.csv"
+        self.strategy_smart_meter = SmartMeterStrategy(
             initial_selling_rate=30, final_selling_rate=5,
-            home_meter_profile=self.home_meter_profile)
+            smart_meter_profile=self.smart_meter_profile)
 
         self.area1 = Area("load", None, None, self.strategy_load,
                           self.config, None, grid_fee_percentage=0)
@@ -57,12 +57,12 @@ class TestLiveEvents(unittest.TestCase):
                           self.config, None, grid_fee_percentage=0)
         self.area3 = Area("storage", None, None, self.strategy_battery,
                           self.config, None, grid_fee_percentage=0)
-        self.area_home_meter = Area(
-            "home meter", None, None, self.strategy_home_meter, self.config, None,
+        self.area_smart_meter = Area(
+            "smart meter", None, None, self.strategy_smart_meter, self.config, None,
             grid_fee_percentage=0)
         self.area_house1 = Area("House 1", children=[self.area1, self.area2], config=self.config)
         self.area_house2 = Area(
-            "House 2", children=[self.area3, self.area_home_meter], config=self.config)
+            "House 2", children=[self.area3, self.area_smart_meter], config=self.config)
         self.area_grid = Area("Grid", children=[self.area_house1, self.area_house2],
                               config=self.config)
         self.area_grid.activate()
@@ -184,11 +184,11 @@ class TestLiveEvents(unittest.TestCase):
         assert self.area1.strategy.bid_update.update_interval.minutes == 9
         assert set(self.area1.strategy.bid_update.initial_rate.values()) == {12}
 
-    def test_update_area_event_is_updating_the_parameters_of_a_home_meter(self):
-        """The Home Meter parameters are updated when an update area event is triggered."""
+    def test_update_area_event_is_updating_the_parameters_of_a_smart_meter(self):
+        """The Smart Meter parameters are updated when an update area event is triggered."""
         event_dict = {
             "eventType": "update_area",
-            "area_uuid": self.area_home_meter.uuid,
+            "area_uuid": self.area_smart_meter.uuid,
             "area_representation": {
                 "initial_selling_rate": 25, "final_selling_rate": 15,
                 "initial_buying_rate": 15, "final_buying_rate": 30,
@@ -199,7 +199,7 @@ class TestLiveEvents(unittest.TestCase):
         self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
 
-        strategy = self.area_home_meter.strategy
+        strategy = self.area_smart_meter.strategy
         assert set(strategy.offer_update.energy_rate_change_per_update.values()) == {10}
         assert set(strategy.bid_update.energy_rate_change_per_update.values()) == {-15}
         assert strategy.bid_update.update_interval.minutes == 10

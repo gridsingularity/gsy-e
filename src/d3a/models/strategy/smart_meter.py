@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Dict, Union
 
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.validators.smart_meter_validator import SmartMeterValidator
 from d3a_interface.enums import SpotMarketTypeEnum
 from d3a_interface.validators.home_meter_validator import HomeMeterValidator
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
@@ -32,7 +33,7 @@ from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
-from d3a.models.state import HomeMeterState
+from d3a.models.state import SmartMeterState
 from d3a.models.strategy import BidEnabledStrategy, utils
 from d3a.models.strategy.update_frequency import (
     TemplateStrategyBidUpdater, TemplateStrategyOfferUpdater)
@@ -40,13 +41,13 @@ from d3a.models.strategy.update_frequency import (
 log = getLogger(__name__)
 
 
-class HomeMeterStrategy(BidEnabledStrategy):
-    """Class defining a strategy for Home Meter devices."""
+class SmartMeterStrategy(BidEnabledStrategy):
+    """Class defining a strategy for Smart Meter devices."""
 
     # The `parameters` set is used to decide which fields will be added to the serialized
     # representation of the Leaf object that uses this strategy (see AreaEncoder).
     parameters = (
-        "home_meter_profile",
+        "smart_meter_profile",
         # Energy production parameters
         "initial_selling_rate", "final_selling_rate", "energy_rate_decrease_per_update",
         # Energy consumption parameters
@@ -56,11 +57,12 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
     def __init__(
             self,
-            home_meter_profile: Union[Path, str, Dict[int, float], Dict[str, float]],
+            smart_meter_profile: Union[Path, str, Dict[int, float], Dict[str, float]],
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-            final_selling_rate: float = ConstSettings.HomeMeterSettings.SELLING_RATE_RANGE.final,
+            final_selling_rate: float = ConstSettings.SmartMeterSettings.SELLING_RATE_RANGE.final,
             energy_rate_decrease_per_update: Union[float, None] = None,
-            initial_buying_rate: float = ConstSettings.HomeMeterSettings.BUYING_RATE_RANGE.initial,
+            initial_buying_rate: float = (
+                ConstSettings.SmartMeterSettings.BUYING_RATE_RANGE.initial),
             final_buying_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
             energy_rate_increase_per_update: Union[float, None] = None,
             fit_to_limit: bool = True,
@@ -68,8 +70,8 @@ class HomeMeterStrategy(BidEnabledStrategy):
             use_market_maker_rate: bool = False):
         """
         Args:
-            home_meter_profile: input profile defining the energy production/consumption of the
-                Home Meter. It can be either a CSV file path, a dict with hourly data
+            smart_meter_profile: input profile defining the energy production/consumption of the
+                Smart Meter. It can be either a CSV file path, a dict with hourly data
                 (Dict[int, float]) or a dict with arbitrary time data (Dict[str, float]).
             initial_selling_rate: Starting point for offers.
             final_selling_rate: Ending point for offers.
@@ -84,15 +86,15 @@ class HomeMeterStrategy(BidEnabledStrategy):
                 - For bids: `energy_rate_increase_per_update` is ignored and the rate will
                     increase at each update_interval, starting at `initial_buying_rate` and ending
                     at `final_buying_rate`.
-            update_interval: Interval in minutes after which the Home Meter will update its offers
+            update_interval: Interval in minutes after which the Smart Meter will update its offers
                 and bids.
-            use_market_maker_rate: If set to True, the Home Meter will track its final buying and
+            use_market_maker_rate: If set to True, the Smart Meter will track its final buying and
                 selling rate as per utility's trading rate.
         """
         super().__init__()
 
-        self.home_meter_profile = home_meter_profile  # Raw profile data
-        self.profile = None  # Preprocessed data extracted from home_meter_profile
+        self.smart_meter_profile = smart_meter_profile  # Raw profile data
+        self.profile = None  # Preprocessed data extracted from smart_meter_profile
 
         self.initial_selling_rate = initial_selling_rate
         self.final_selling_rate = final_selling_rate
@@ -104,16 +106,16 @@ class HomeMeterStrategy(BidEnabledStrategy):
         self.update_interval = self._convert_update_interval_to_duration(update_interval)
         self.use_market_maker_rate = use_market_maker_rate
 
-        self.validator = HomeMeterValidator
+        self.validator = SmartMeterValidator
         self.validator.validate(
             fit_to_limit=fit_to_limit,
             energy_rate_increase_per_update=energy_rate_increase_per_update,
             energy_rate_decrease_per_update=energy_rate_decrease_per_update)
 
-        self.state = HomeMeterState()
+        self.state = SmartMeterState()
         self._simulation_start_timestamp = None
 
-        # Instances to update the Home Meter's bids and offers across all market slots
+        # Instances to update the Smart Meter's bids and offers across all market slots
         self.bid_update = None
         self.offer_update = None
         self._init_price_update()
@@ -168,7 +170,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
         This method is triggered by the ACTIVATE event.
         """
-        self.profile = self._read_raw_profile_data(self.home_meter_profile)
+        self.profile = self._read_raw_profile_data(self.smart_meter_profile)
         self._simulation_start_timestamp = self.area.now
         self._set_energy_forecast_for_future_markets(reconfigure=True)
 
@@ -276,8 +278,8 @@ class HomeMeterStrategy(BidEnabledStrategy):
         self._area_reconfigure_production_prices(**kwargs)
 
         # Update the raw profile. It will be read later while setting the energy forecast.
-        if kwargs.get("home_meter_profile") is not None:
-            self.home_meter_profile = kwargs["home_meter_profile"]
+        if kwargs.get("smart_meter_profile") is not None:
+            self.smart_meter_profile = kwargs["smart_meter_profile"]
 
         self.offer_update.update_and_populate_price_settings(self.area)
         self.bid_update.update_and_populate_price_settings(self.area)
@@ -323,7 +325,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
             self._validate_production_rates(
                 initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit)
         except Exception as ex:
-            log.exception("HomeMeterStrategy._area_reconfigure_production_prices failed: %s", ex)
+            log.exception("SmartMeterStrategy._area_reconfigure_production_prices failed: %s", ex)
             return
 
         self.offer_update.set_parameters(
@@ -433,17 +435,17 @@ class HomeMeterStrategy(BidEnabledStrategy):
             reconfigure: if True, re-read and preprocess the raw profile data.
         """
         if reconfigure:
-            self.profile = self._read_raw_profile_data(self.home_meter_profile)
+            self.profile = self._read_raw_profile_data(self.smart_meter_profile)
 
         if not self.profile:
             raise D3AException(
-                f"Home Meter {self.owner.name} tries to set its required energy forecast without "
+                f"Smart Meter {self.owner.name} tries to set its required energy forecast without "
                 "a profile.")
 
         for market in self.area.all_markets:
             slot_time = market.time_slot
             energy_kWh = find_object_of_same_weekday_and_time(self.profile, slot_time)
-            # For the Home Meter, the energy amount can be either positive (consumption) or
+            # For the Smart Meter, the energy amount can be either positive (consumption) or
             # negative (production).
             consumed_energy = energy_kWh if energy_kWh > 0 else 0.0
             # Turn energy into a positive number (required for set_available_energy method)
@@ -451,7 +453,7 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
             if consumed_energy and produced_energy:
                 raise InconsistentEnergyException(
-                    "The home meter can't both produce and consume energy at the same time.")
+                    "The Smart Meter can't both produce and consume energy at the same time.")
 
             # NOTE: set_desired_energy accepts energy in Wh (not kWh) so we multiply * 1000
             self.state.set_desired_energy(consumed_energy * 1000, slot_time, overwrite=False)
@@ -586,4 +588,4 @@ class HomeMeterStrategy(BidEnabledStrategy):
 
 
 class InconsistentEnergyException(Exception):
-    """Exception raised when the energy produced/consumed by the Home Meter does not make sense."""
+    """Exception raised when the energy produced/consumed by the Smart Meter doesn't make sense."""
