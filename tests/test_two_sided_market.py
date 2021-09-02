@@ -1,35 +1,22 @@
+from math import isclose
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pendulum
 import pytest
-from d3a.models.market.blockchain_interface import NonBlockchainInterface
-from d3a_interface.dataclasses import BidOfferMatch
-from pendulum import now
-from math import isclose
-from unittest.mock import MagicMock, patch
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
-from d3a_interface.matching_algorithms import (
-    PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
-)
 from d3a.d3a_core.exceptions import (
     BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade, MarketException)
 from d3a.events import MarketEvent
-from d3a.models.area import Area
 from d3a.models.market import Bid, Offer
+from d3a.models.market.blockchain_interface import NonBlockchainInterface
 from d3a.models.market.market_structures import TradeBidOfferInfo, Trade
 from d3a.models.market.two_sided import TwoSidedMarket
-from d3a.d3a_core.singletons import bid_offer_matcher
-
-
-@pytest.fixture
-def pac_area():
-    ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
-    bid_offer_matcher.activate()
-    yield Area(name='fake_area')
-    ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
-    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.dataclasses import BidOfferMatch
+from d3a_interface.matching_algorithms import (
+    PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
+)
+from pendulum import now
 
 
 @pytest.fixture
