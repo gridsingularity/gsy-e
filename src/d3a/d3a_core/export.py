@@ -177,7 +177,8 @@ class ExportAndPlot:
     def _export_spot_markets_stats(self, area: Area, directory: dir, is_first: bool) -> None:
         """Export bids, offers, trades, statistics csv-files for all spot markets."""
         self._export_area_stats_csv_file(area, directory, PastDataEnum.SPOT_MARKET, is_first)
-
+        if not area.children:
+            return
         self._export_trade_csv_files(past_markets=area.past_markets,
                                      directory=directory,
                                      filename=f"{area.slug}-trades",
@@ -202,7 +203,8 @@ class ExportAndPlot:
         if not ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
             return
         self._export_area_stats_csv_file(area, directory, PastDataEnum.SETTLEMENT_MARKET, is_first)
-
+        if not area.children:
+            return
         self._export_trade_csv_files(
             past_markets=list(area.past_settlement_markets.values()),
             directory=directory,
@@ -228,7 +230,8 @@ class ExportAndPlot:
         if not ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             return
         self._export_area_stats_csv_file(area, directory, PastDataEnum.BALANCING_MARKET, is_first)
-
+        if not area.children:
+            return
         self._export_trade_csv_files(past_markets=area.past_balancing_markets,
                                      directory=directory,
                                      filename=f"{area.slug}-balancing-trades",
@@ -255,11 +258,11 @@ class ExportAndPlot:
             for child in area.children:
                 self._export_area_with_children(child, subdirectory, is_first)
 
-        if area.children:
-            self._export_spot_markets_stats(area, directory, is_first)
-            self._export_settlement_markets_stats(area, directory, is_first)
-            self._export_balancing_markets_stats(area, directory, is_first)
+        self._export_spot_markets_stats(area, directory, is_first)
+        self._export_settlement_markets_stats(area, directory, is_first)
+        self._export_balancing_markets_stats(area, directory, is_first)
 
+        if area.children:
             if ConstSettings.IAASettings.MARKET_TYPE == 2 and \
                     ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == \
                     BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value:

@@ -432,6 +432,41 @@ def test_offer_bid_files(context, with_or_without, nonempty=False):
                for f in file_list)
 
 
+@then('offers, bids trades and stats are exported also for settlement markets')
+def test_settlement_offer_bid_files(context):
+    file_dict = {}
+    for root, _, files in os.walk(context.export_path):
+        if "grid" in root:
+            file_dict[root.split("grid")[1]] = files
+
+    assert file_dict == {"": ["house-1-trades.csv",
+                              "house-1-settlement-trades.csv",
+                              "house-1-bids.csv",
+                              "house-2-settlement-bids.csv",
+                              "house-2-settlement-offers.csv",
+                              "house-1-settlement-bids.csv",
+                              "house-2-offers.csv",
+                              "cell-tower-settlement.csv",
+                              "house-1-offers.csv",
+                              "house-2-settlement.csv",
+                              "house-1-settlement-offers.csv",
+                              "house-2-settlement-trades.csv",
+                              "house-2-bids.csv", "cell-tower.csv",
+                              "house-2.csv", "house-1.csv",
+                              "house-1-settlement.csv",
+                              "house-2-trades.csv"],
+                         "/house-2": ["h2-pv-settlement.csv",
+                                      "h2-general-load.csv",
+                                      "h2-general-load-settlement.csv",
+                                      "h2-pv.csv"],
+                         "/house-1": ["h1-storage1.csv",
+                                      "h1-storage2.csv",
+                                      "h1-storage2-settlement.csv",
+                                      "h1-general-load.csv",
+                                      "h1-storage1-settlement.csv",
+                                      "h1-general-load-settlement.csv"]}
+
+
 @then('aggregated result files are exported')
 def test_aggregated_result_files(context):
     base_path = os.path.join(context.export_path, "*", "aggregated_results")
