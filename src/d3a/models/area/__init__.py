@@ -349,8 +349,9 @@ class Area:
             self._update_descendants_strategy_prices()
             self.should_update_child_strategies = False
 
+        from d3a.models.area.market_rotators import MarketClassType
         # Markets range from one slot to market_count into the future
-        changed = self._markets.create_future_markets(now_value, True, self)
+        changed = self._markets.create_future_markets(now_value, MarketClassType.SPOT, self)
 
         # create new settlement market
         if (self.last_past_market and
@@ -359,7 +360,8 @@ class Area:
 
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
                 len(DeviceRegistry.REGISTRY.keys()) != 0:
-            changed_balancing_market = self._markets.create_future_markets(now_value, False, self)
+            changed_balancing_market = self._markets.create_future_markets(
+                now_value, MarketClassType.BALANCING, self)
         else:
             changed_balancing_market = None
 

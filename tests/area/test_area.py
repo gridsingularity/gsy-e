@@ -29,6 +29,7 @@ from d3a.events.event_structures import AreaEvent, MarketEvent
 from d3a.models.area import Area, check_area_name_exists_in_parent_area
 from d3a.models.area.event_dispatcher import AreaDispatcher
 from d3a.models.area.events import Events
+from d3a.models.area.market_rotators import MarketClassType
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.stats import AreaStats
 from d3a.models.config import SimulationConfig
@@ -107,7 +108,7 @@ class TestAreaClass(unittest.TestCase):
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
-        self.area._markets.create_future_markets(current_time, True, self.area)
+        self.area._markets.create_future_markets(current_time, MarketClassType.SPOT, self.area)
         current_time = today(tz=constants.TIME_ZONE).add(minutes=2*self.config.slot_length.minutes)
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
@@ -130,7 +131,7 @@ class TestAreaClass(unittest.TestCase):
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
-        self.area._markets.create_future_markets(current_time, True, self.area)
+        self.area._markets.create_future_markets(current_time, MarketClassType.SPOT, self.area)
         current_time = today(tz=constants.TIME_ZONE).add(
             minutes=2*self.config.slot_length.total_minutes())
         self.area._markets.rotate_markets(current_time)

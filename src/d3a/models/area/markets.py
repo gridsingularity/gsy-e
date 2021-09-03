@@ -18,15 +18,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from collections import OrderedDict
 from typing import Dict, TYPE_CHECKING
 
+from d3a_interface.constants_limits import ConstSettings
+from pendulum import DateTime
+
 from d3a.d3a_core.util import is_timeslot_in_simulation_duration
 from d3a.models.area.market_rotators import (BaseRotator, DefaultMarketRotator,
-                                             SettlementMarketRotator)
+                                             SettlementMarketRotator, MarketClassType)
 from d3a.models.market import GridFee, Market
 from d3a.models.market.balancing import BalancingMarket
 from d3a.models.market.one_sided import OneSidedMarket
-from d3a.models.market.two_sided import TwoSidedMarket
-from d3a_interface.constants_limits import ConstSettings
-from pendulum import DateTime
+from d3a.models.market.two_sided import TwoSidedMarket, SettlementMarket
 
 if TYPE_CHECKING:
     from d3a.models.area import Area
@@ -75,29 +76,40 @@ class AreaMarkets:
         self._update_indexed_future_markets()
 
     @staticmethod
-    def _select_market_class(is_spot_market: bool) -> Market:
+    def _select_market_class(market_type: MarketClassType) -> Market:
         """Select market class dependent on the global config."""
-        if is_spot_market:
+        if market_type == MarketClassType.SPOT:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 return OneSidedMarket
             elif ConstSettings.IAASettings.MARKET_TYPE == 2:
                 return TwoSidedMarket
-        else:
+        elif market_type == MarketClassType.SETTLEMENT:
+            return SettlementMarket
+        elif market_type == MarketClassType.BALANCING:
             return BalancingMarket
 
+    def _select_market_instances_from_class_type(self, market_type: MarketClassType) -> Dict:
+        """Select market dict based on the market class type."""
+        if market_type == MarketClassType.SPOT:
+            return self.markets
+        elif market_type == MarketClassType.SETTLEMENT:
+            return self.settlement_markets
+        elif market_type == MarketClassType.BALANCING:
+            return self.balancing_markets
+
     def create_future_markets(self, current_time: DateTime,
-                              is_spot_market: bool, area: "Area") -> bool:
+                              market_type: MarketClassType, area: "Area") -> bool:
         """Create future markets according to the market count."""
-        markets = self.markets if is_spot_market else self.balancing_markets
-        market_class = self._select_market_class(is_spot_market)
+        markets = self._select_market_instances_from_class_type(market_type)
+        market_class = self._select_market_class(market_type)
 
         changed = False
         for offset in (area.config.slot_length * i
                        for i in range(area.config.market_count)):
             time_slot = current_time + offset
-            if time_slot not in markets:
+            if not markets or time_slot not in markets:
                 markets[time_slot] = self._create_market(market_class, time_slot, area,
-                                                         is_spot_market)
+                                                         market_type)
                 changed = True
                 self.log.trace("Adding {t:{format}} market".format(
                     t=time_slot,
@@ -109,9 +121,9 @@ class AreaMarkets:
     def create_settlement_market(self, time_slot: DateTime, area: "Area") -> None:
         """Create a new settlement market."""
         self.settlement_markets[time_slot] = (
-            self._create_market(market_class=TwoSidedMarket,
+            self._create_market(market_class=SettlementMarket,
                                 time_slot=time_slot,
-                                area=area, is_spot_market=True))
+                                area=area, market_type=MarketClassType.SETTLEMENT))
         self.log.trace(
             "Adding Settlement {t:{format}} market".format(
                 t=time_slot,
@@ -119,7 +131,7 @@ class AreaMarkets:
 
     @staticmethod
     def _create_market(market_class: Market,
-                       time_slot: DateTime, area: "Area", is_spot_market: bool) -> Market:
+                       time_slot: DateTime, area: "Area", market_type: MarketClassType) -> Market:
         """Create market for specific time_slot and market type."""
         market = market_class(
             time_slot=time_slot,
@@ -132,5 +144,5 @@ class AreaMarkets:
             in_sim_duration=is_timeslot_in_simulation_duration(area.config, time_slot)
         )
 
-        area.dispatcher.create_area_agents(is_spot_market, market)
+        area.dispatcher.create_area_agents(market_type, market)
         return market

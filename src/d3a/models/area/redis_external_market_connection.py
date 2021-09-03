@@ -40,7 +40,7 @@ class RedisMarketExternalConnection:
 
     @property
     def is_aggregator_controlled(self):
-        return self.aggregator.is_controlling_device(self.area.uuid)
+        return self.aggregator and self.aggregator.is_controlling_device(self.area.uuid)
 
     @property
     def channel_prefix(self):

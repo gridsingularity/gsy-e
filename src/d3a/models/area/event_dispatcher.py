@@ -15,27 +15,30 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from numpy.random import random
-from typing import Union, Dict  # noqa
 from logging import getLogger
+from typing import Union, Dict  # noqa
+
+from d3a_interface.constants_limits import ConstSettings
+from numpy.random import random
 from pendulum import DateTime  # noqa
 
-from d3a.events.event_structures import MarketEvent, AreaEvent
-from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
-from d3a.models.strategy.area_agents.one_sided_alternative_pricing_agent import \
-    OneSidedAlternativePricingAgent
-from d3a.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
-from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
-from d3a_interface.constants_limits import ConstSettings
-from d3a.d3a_core.exceptions import WrongMarketTypeException
-from d3a.d3a_core.util import create_subdict_or_update
-from d3a.models.area.redis_dispatcher.market_event_dispatcher import AreaRedisMarketEventDispatcher
-from d3a.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
-from d3a.models.area.redis_dispatcher.market_notify_event_subscriber \
-    import MarketNotifyEventSubscriber
-from d3a.models.area.redis_dispatcher.area_to_market_publisher import AreaToMarketEventPublisher
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import RedisCommunicator
 from d3a import constants
+from d3a.d3a_core.exceptions import WrongMarketTypeException
+from d3a.d3a_core.redis_connections.redis_area_market_communicator import RedisCommunicator
+from d3a.d3a_core.util import create_subdict_or_update
+from d3a.events.event_structures import MarketEvent, AreaEvent
+from d3a.models.area.market_rotators import MarketClassType
+from d3a.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
+from d3a.models.area.redis_dispatcher.area_to_market_publisher import AreaToMarketEventPublisher
+from d3a.models.area.redis_dispatcher.market_event_dispatcher import AreaRedisMarketEventDispatcher
+from d3a.models.area.redis_dispatcher.market_notify_event_subscriber import (
+    MarketNotifyEventSubscriber)
+from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
+from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
+from d3a.models.strategy.area_agents.one_sided_alternative_pricing_agent import (
+    OneSidedAlternativePricingAgent)
+from d3a.models.strategy.area_agents.settlement_agent import SettlementAgent
+from d3a.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
 
 log = getLogger(__name__)
 
@@ -46,6 +49,7 @@ class AreaDispatcher:
     def __init__(self, area):
         self._inter_area_agents = {}  # type: Dict[DateTime, Dict[str, OneSidedAgent]]
         self._balancing_agents = {}  # type: Dict[DateTime, Dict[str, BalancingAgent]]
+        self._settlement_agents = {}  # type: Dict[DateTime, Dict[str, SettlementAgent]]
         self.area = area
 
     @property
@@ -55,6 +59,10 @@ class AreaDispatcher:
     @property
     def balancing_agents(self):
         return self._balancing_agents
+
+    @property
+    def settlement_agents(self):
+        return self._settlement_agents
 
     def broadcast_activate(self, **kwargs):
         return self._broadcast_notification(AreaEvent.ACTIVATE, **kwargs)
@@ -101,6 +109,16 @@ class AreaDispatcher:
             for area_name in sorted(agents, key=lambda _: random()):
                 agents[area_name].event_listener(event_type, **kwargs)
 
+        for time_slot, agents in self._settlement_agents.items():
+            if time_slot not in self.area._markets.settlement_markets:
+                # exclude past SAs
+                continue
+
+            if not self.area.events.is_connected:
+                break
+            for area_name in sorted(agents, key=lambda _: random()):
+                agents[area_name].event_listener(event_type, **kwargs)
+
     def _should_dispatch_to_strategies(self, event_type, **kwargs):
         if event_type is AreaEvent.ACTIVATE:
             return True
@@ -123,14 +141,14 @@ class AreaDispatcher:
             self.area.strategy.event_on_disabled_area()
 
     @staticmethod
-    def create_agent_object(owner, higher_market, lower_market, is_spot_market):
+    def create_agent_object(owner, higher_market, lower_market, market_type):
         agent_constructor_arguments = {
             "owner": owner,
             "higher_market": higher_market,
             "lower_market": lower_market,
             "min_offer_age": ConstSettings.IAASettings.MIN_OFFER_AGE
         }
-        if is_spot_market:
+        if market_type == MarketClassType.SPOT:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
                     return OneSidedAlternativePricingAgent(**agent_constructor_arguments)
@@ -144,10 +162,12 @@ class AreaDispatcher:
             else:
                 raise WrongMarketTypeException(f'Wrong market type setting flag '
                                                f'{ConstSettings.IAASettings.MARKET_TYPE}')
-        else:
+        elif market_type == MarketClassType.SETTLEMENT:
+            return SettlementAgent(**agent_constructor_arguments)
+        elif market_type == MarketClassType.BALANCING:
             return BalancingAgent(**agent_constructor_arguments)
 
-    def create_area_agents(self, is_spot_market, market):
+    def create_area_agents(self, market_type, market):
         if not self.area.parent:
             return
         if self.area.strategy:
@@ -157,7 +177,7 @@ class AreaDispatcher:
         if not self.area.children:
             return
 
-        if is_spot_market:
+        if market_type == MarketClassType.SPOT:
             if market.time_slot in self.interarea_agents or \
                     market.time_slot not in self.area.parent._markets.markets:
                 return
@@ -166,7 +186,7 @@ class AreaDispatcher:
                 owner=self.area,
                 higher_market=self.area.parent._markets.markets[market.time_slot],
                 lower_market=market,
-                is_spot_market=True
+                market_type=market_type
             )
 
             # Attach agent to own IAA list
@@ -178,7 +198,7 @@ class AreaDispatcher:
                 self.area.parent.dispatcher._inter_area_agents, market.time_slot,
                 {self.area.name: iaa})
 
-        else:
+        elif market_type == MarketClassType.BALANCING:
             if market.time_slot in self.balancing_agents or \
                     market.time_slot not in self.area.parent._markets.balancing_markets:
                 return
@@ -186,7 +206,7 @@ class AreaDispatcher:
                 owner=self.area,
                 higher_market=self.area.parent._markets.balancing_markets[market.time_slot],
                 lower_market=market,
-                is_spot_market=False
+                market_type=market_type
             )
 
             self._balancing_agents = create_subdict_or_update(self._balancing_agents,
@@ -195,6 +215,25 @@ class AreaDispatcher:
             self.area.parent.dispatcher._balancing_agents = create_subdict_or_update(
                 self.area.parent.dispatcher._balancing_agents, market.time_slot,
                 {self.area.name: ba})
+
+        elif market_type == MarketClassType.SETTLEMENT:
+            if market.time_slot in self.settlement_agents or \
+                    market.time_slot not in self.area.parent._markets.settlement_markets:
+                return
+            sa = self.create_agent_object(
+                owner=self.area,
+                higher_market=self.area.parent._markets.settlement_markets[market.time_slot],
+                lower_market=market,
+                market_type=market_type
+            )
+
+            self._settlement_agents = create_subdict_or_update(
+                self._settlement_agents,
+                market.time_slot,
+                {self.area.name: sa})
+            self.area.parent.dispatcher._settlement_agents = create_subdict_or_update(
+                self.area.parent.dispatcher._settlement_agents, market.time_slot,
+                {self.area.name: sa})
 
     def _delete_past_agents(self, area_agent_member):
         if not constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:

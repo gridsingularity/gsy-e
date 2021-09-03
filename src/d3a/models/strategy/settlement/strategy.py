@@ -142,7 +142,7 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
             self.offer_updater.update(market, strategy)
 
     def _get_settlement_market_by_id(
-            self, strategy: BaseStrategy, market_id: str) -> Optional["Market"]:
+            self, strategy: BaseStrategy, market_id: str) -> Optional[Market]:
         markets = [m for m in strategy.area.settlement_markets.values() if m.id == market_id]
         if not markets:
             return None
