@@ -81,22 +81,24 @@ class TestSettlementMarketStrategy:
             strategy_fixture, can_post_settlement_bid, can_post_settlement_offer)
         self.settlement_strategy.event_market_cycle(strategy_fixture)
 
-        strategy_fixture.area.current_tick = 30
         strategy_fixture.area.config = Mock()
         strategy_fixture.area.config.ticks_per_slot = 60
         strategy_fixture.area.config.tick_length = duration(seconds=15)
         self.market_mock.bid.reset_mock()
         self.market_mock.offer.reset_mock()
 
+        strategy_fixture.area.current_tick = 19
+        self.settlement_strategy.event_tick(strategy_fixture)
+        strategy_fixture.area.current_tick = 20
         self.settlement_strategy.event_tick(strategy_fixture)
         if can_post_settlement_bid:
-            self.market_mock.bid.assert_called_once_with(
+            self.market_mock.bid.assert_called_with(
                 30.0, 1.0, self.area_mock.name, original_bid_price=30.0,
                 buyer_origin=self.area_mock.name, buyer_origin_id=self.area_mock.uuid,
                 buyer_id=self.area_mock.uuid, attributes=None, requirements=None
             )
         if can_post_settlement_offer:
-            self.market_mock.offer.assert_called_once_with(
+            self.market_mock.offer.assert_called_with(
                 35, 1, self.area_mock.name, original_offer_price=35,
                 seller_origin=None, seller_origin_id=None, seller_id=self.area_mock.uuid
             )

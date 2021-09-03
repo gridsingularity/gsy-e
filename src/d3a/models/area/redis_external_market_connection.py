@@ -153,7 +153,7 @@ class RedisMarketExternalConnection:
         if self.is_aggregator_controlled:
             deactivate_msg = {'event': 'finish'}
             self.aggregator.add_batch_finished_event(self.area.uuid, deactivate_msg)
-        else:
+        elif self.redis_com.is_enabled:
             deactivate_event_channel = f"{self.channel_prefix}/events/finish"
             deactivate_msg = {
                 "event": "finish"
