@@ -61,7 +61,7 @@ class OneSidedMarket(Market):
 
     @property
     def _class_name(self):
-        return "OneSided"
+        return "OneSidedMarket"
 
     @property
     def _debug_log_market_type_identifier(self):

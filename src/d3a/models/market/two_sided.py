@@ -54,7 +54,7 @@ class TwoSidedMarket(OneSidedMarket):
 
     @property
     def _class_name(self):
-        return "TwoSidedPayAsBid"
+        return "TwoSidedMarket"
 
     @property
     def _debug_log_market_type_identifier(self):
@@ -387,14 +387,3 @@ class TwoSidedMarket(OneSidedMarket):
             recommendations = [replace_recommendations_with_residuals(recommendation)
                                for recommendation in recommendations]
         return recommendations
-
-
-class SettlementMarket(TwoSidedMarket):
-
-    @property
-    def _class_name(self):
-        return "Settlement"
-
-    @property
-    def _debug_log_market_type_identifier(self):
-        return "[SETTLEMENT]"

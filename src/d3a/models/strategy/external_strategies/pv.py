@@ -281,7 +281,7 @@ class PVExternalMixin(ExternalMixin):
         try:
             market = self._get_market_from_command_argument(arguments)
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
-                               for _, v in market.get_offers().items()
+                               for v in market.get_offers().values()
                                if v.seller == self.device.name]
             return {
                 "command": "list_offers", "status": "ready", "offer_list": filtered_offers,

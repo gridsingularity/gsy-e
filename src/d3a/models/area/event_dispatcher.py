@@ -27,12 +27,12 @@ from d3a.d3a_core.exceptions import WrongMarketTypeException
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import RedisCommunicator
 from d3a.d3a_core.util import create_subdict_or_update
 from d3a.events.event_structures import MarketEvent, AreaEvent
-from d3a.models.area.market_rotators import MarketClassType
 from d3a.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
 from d3a.models.area.redis_dispatcher.area_to_market_publisher import AreaToMarketEventPublisher
 from d3a.models.area.redis_dispatcher.market_event_dispatcher import AreaRedisMarketEventDispatcher
 from d3a.models.area.redis_dispatcher.market_notify_event_subscriber import (
     MarketNotifyEventSubscriber)
+from d3a.models.market.market_structures import MarketClassType
 from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.one_sided_alternative_pricing_agent import (
@@ -47,9 +47,9 @@ EVENT_DISPATCHING_VIA_REDIS = ConstSettings.GeneralSettings.EVENT_DISPATCHING_VI
 
 class AreaDispatcher:
     def __init__(self, area):
-        self._inter_area_agents = {}  # type: Dict[DateTime, Dict[str, OneSidedAgent]]
-        self._balancing_agents = {}  # type: Dict[DateTime, Dict[str, BalancingAgent]]
-        self._settlement_agents = {}  # type: Dict[DateTime, Dict[str, SettlementAgent]]
+        self._inter_area_agents: Dict[DateTime, Dict[str, OneSidedAgent]] = {}
+        self._balancing_agents: Dict[DateTime, Dict[str, BalancingAgent]] = {}
+        self._settlement_agents: Dict[DateTime, Dict[str, SettlementAgent]] = {}
         self.area = area
 
     @property

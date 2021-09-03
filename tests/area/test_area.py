@@ -29,12 +29,11 @@ from d3a.events.event_structures import AreaEvent, MarketEvent
 from d3a.models.area import Area, check_area_name_exists_in_parent_area
 from d3a.models.area.event_dispatcher import AreaDispatcher
 from d3a.models.area.events import Events
-from d3a.models.area.market_rotators import MarketClassType
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.stats import AreaStats
 from d3a.models.config import SimulationConfig
 from d3a.models.market import Market
-from d3a.models.market.market_structures import Offer
+from d3a.models.market.market_structures import MarketClassType, Offer
 from d3a.models.strategy.storage import StorageStrategy
 
 

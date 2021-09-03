@@ -23,11 +23,13 @@ from pendulum import DateTime
 
 from d3a.d3a_core.util import is_timeslot_in_simulation_duration
 from d3a.models.area.market_rotators import (BaseRotator, DefaultMarketRotator,
-                                             SettlementMarketRotator, MarketClassType)
+                                             SettlementMarketRotator)
 from d3a.models.market import GridFee, Market
 from d3a.models.market.balancing import BalancingMarket
+from d3a.models.market.market_structures import MarketClassType
 from d3a.models.market.one_sided import OneSidedMarket
-from d3a.models.market.two_sided import TwoSidedMarket, SettlementMarket
+from d3a.models.market.settlement import SettlementMarket
+from d3a.models.market.two_sided import TwoSidedMarket
 
 if TYPE_CHECKING:
     from d3a.models.area import Area

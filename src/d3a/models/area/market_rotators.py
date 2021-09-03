@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from enum import Enum
 from logging import getLogger
 from typing import Dict
 
@@ -25,12 +24,6 @@ from pendulum import DateTime
 from d3a import constants
 
 log = getLogger(__name__)
-
-
-class MarketClassType(Enum):
-    SPOT = 0
-    BALANCING = 1
-    SETTLEMENT = 2
 
 
 class BaseRotator:

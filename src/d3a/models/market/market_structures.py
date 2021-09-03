@@ -19,11 +19,13 @@ import datetime
 import json
 from copy import deepcopy
 from dataclasses import asdict, dataclass, field
+from enum import Enum
 from typing import Dict, List, Tuple, Union  # noqa
 
-from d3a.events import MarketEvent
 from d3a_interface.utils import datetime_to_string_incl_seconds, key_in_dict_and_not_none
 from pendulum import DateTime, parse
+
+from d3a.events import MarketEvent
 
 
 @dataclass
@@ -408,3 +410,9 @@ def parse_event_and_parameters_from_json_string(payload) -> Tuple:
         kwargs["bid_trade"] = trade_from_json_string(kwargs["bid_trade"])
     event_type = MarketEvent(data["event_type"])
     return event_type, kwargs
+
+
+class MarketClassType(Enum):
+    SPOT = 0
+    BALANCING = 1
+    SETTLEMENT = 2
