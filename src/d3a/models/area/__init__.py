@@ -493,7 +493,7 @@ class Area:
         return list(self._markets.past_markets.values())
 
     def get_market(self, timeslot):
-        return self._markets.markets[timeslot]
+        return self._markets.markets.get(timeslot)
 
     def get_past_market(self, timeslot):
         return self._markets.past_markets[timeslot]
@@ -558,6 +558,9 @@ class Area:
     @property
     def past_settlement_markets(self):
         return self._markets.past_settlement_markets
+
+    def get_settlement_market(self, timeslot):
+        return self._markets.settlement_markets.get(timeslot)
 
     @cached_property
     def available_triggers(self):
