@@ -40,7 +40,7 @@ class TestTwoSidedMarket:
     def test_two_sided_market_repr(self, market):
         """Test the __repr__ value of TwoSidedMarket."""
         assert market.__repr__() == (
-            "<TwoSidedPayAsBid{} bids: {} (E: {} kWh V:{}) "
+            "<TwoSidedMarket{} bids: {} (E: {} kWh V:{}) "
             "offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>".format(
                 " {}".format(market.time_slot_str),
                 len(market.bids),
