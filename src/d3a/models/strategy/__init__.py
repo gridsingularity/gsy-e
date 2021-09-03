@@ -344,6 +344,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     def get_market_from_id(self, market_id):
         # Look in spot and future markets first
+        if not self.area:
+            return None
         market = self.area.get_future_market_from_id(market_id)
         if market is not None:
             return market

@@ -24,6 +24,7 @@ from d3a.models.market.market_structures import Trade
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.update_frequency import TemplateStrategyBidUpdater, \
     TemplateStrategyOfferUpdater
+from d3a.models.market.market_structures import Offer, Bid
 
 
 class SettlementTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
@@ -135,11 +136,12 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         Returns: None
 
         """
-        self.bid_updater.increment_update_counter_all_markets(strategy)
-        self.offer_updater.increment_update_counter_all_markets(strategy)
         for market in strategy.area.settlement_markets.values():
             self.bid_updater.update(market, strategy)
             self.offer_updater.update(market, strategy)
+
+        self.bid_updater.increment_update_counter_all_markets(strategy)
+        self.offer_updater.increment_update_counter_all_markets(strategy)
 
     def _get_settlement_market_by_id(
             self, strategy: BaseStrategy, market_id: str) -> Optional[Market]:
@@ -160,6 +162,8 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         Returns: None
 
         """
+        if isinstance(bid_trade.offer_bid, Offer):
+            return
         market = self._get_settlement_market_by_id(strategy, market_id)
         if not market:
             return
@@ -178,6 +182,8 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         Returns: None
 
         """
+        if isinstance(trade.offer_bid, Bid):
+            return
         market = self._get_settlement_market_by_id(strategy, market_id)
         if not market:
             return

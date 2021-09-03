@@ -415,12 +415,17 @@ class Area:
         """Update the markets cache that the myco matcher will request"""
         bid_offer_matcher.update_area_uuid_markets_mapping(
             area_uuid_markets_mapping={
-                self.uuid: {"markets": self.all_markets, "current_time": self.now}})
+                self.uuid: {"markets": self.all_markets,
+                            "settlement_markets": list(self.settlement_markets.values()),
+                            "current_time": self.now}})
 
     def update_area_current_tick(self):
         self.current_tick += 1
         if self._markets:
             for market in self._markets.markets.values():
+                market.update_clock(self.current_tick_in_slot)
+
+            for market in self._markets.settlement_markets.values():
                 market.update_clock(self.current_tick_in_slot)
         for child in self.children:
             child.update_area_current_tick()

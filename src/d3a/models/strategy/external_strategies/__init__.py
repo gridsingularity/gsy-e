@@ -132,7 +132,8 @@ class ExternalMixin:
 
     @property
     def is_aggregator_controlled(self):
-        return self.redis.aggregator.is_controlling_device(self.device.uuid)
+        return (self.redis.aggregator is not None
+                and self.redis.aggregator.is_controlling_device(self.device.uuid))
 
     def _remove_area_uuid_from_aggregator_mapping(self):
         self.redis.aggregator.device_aggregator_mapping.pop(self.device.uuid, None)
@@ -347,12 +348,16 @@ class ExternalMixin:
 
     def event_bid_traded(self, market_id, bid_trade):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
-        if self.connected or self.redis.aggregator.is_controlling_device(self.device.uuid):
+        if (self.connected or
+                (self.redis.aggregator is not None
+                 and self.redis.aggregator.is_controlling_device(self.device.uuid))):
             self._publish_trade_event(bid_trade, True)
 
     def event_trade(self, market_id, trade):
         super().event_trade(market_id=market_id, trade=trade)
-        if self.connected or self.redis.aggregator.is_controlling_device(self.device.uuid):
+        if (self.connected or
+                (self.redis.aggregator is not None
+                 and self.redis.aggregator.is_controlling_device(self.device.uuid))):
             self._publish_trade_event(trade, False)
 
     def deactivate(self):

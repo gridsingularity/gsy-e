@@ -387,7 +387,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         """
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
         market = self.area.get_future_market_from_id(market_id)
-
+        if not market:
+            return
         if bid_trade.offer_bid.buyer == self.owner.name:
             self.state.decrement_energy_requirement(
                 bid_trade.offer_bid.energy * 1000,
@@ -401,7 +402,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._settlement_market_strategy.event_bid_traded(self, market_id, trade)
 
         market = self.area.get_future_market_from_id(market_id)
-        assert market is not None
+        if not market:
+            return
 
         self.assert_if_trade_bid_price_is_too_high(market, trade)
 
