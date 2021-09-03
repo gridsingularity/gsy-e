@@ -87,8 +87,10 @@ class AreaMarkets:
             return SettlementMarket
         elif market_type == MarketClassType.BALANCING:
             return BalancingMarket
+        else:
+            assert False, f"Market type not supported {market_type}"
 
-    def _select_market_instances_from_class_type(self, market_type: MarketClassType) -> Dict:
+    def get_market_instances_from_class_type(self, market_type: MarketClassType) -> Dict:
         """Select market dict based on the market class type."""
         if market_type == MarketClassType.SPOT:
             return self.markets
@@ -96,11 +98,13 @@ class AreaMarkets:
             return self.settlement_markets
         elif market_type == MarketClassType.BALANCING:
             return self.balancing_markets
+        else:
+            assert False, f"Market type not supported {market_type}"
 
     def create_future_markets(self, current_time: DateTime,
                               market_type: MarketClassType, area: "Area") -> bool:
         """Create future markets according to the market count."""
-        markets = self._select_market_instances_from_class_type(market_type)
+        markets = self.get_market_instances_from_class_type(market_type)
         market_class = self._select_market_class(market_type)
 
         changed = False

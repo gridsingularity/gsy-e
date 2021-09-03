@@ -80,16 +80,10 @@ class AreaDispatcher:
     def broadcast_callback(self):
         return self._broadcast_notification
 
-    def _broadcast_notification(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
-        if not self.area.events.is_enabled and \
-           event_type not in [AreaEvent.ACTIVATE, AreaEvent.MARKET_CYCLE]:
-            return
-        # Broadcast to children in random order to ensure fairness
-        for child in sorted(self.area.children, key=lambda _: random()):
-            child.dispatcher.event_listener(event_type, **kwargs)
-        # Also broadcast to IAAs. Again in random order
-        for time_slot, agents in self._inter_area_agents.items():
-            if time_slot not in self.area._markets.markets:
+    def _broadcast_notification_to_agents_of_market_type(self, market_type, event_type, **kwargs):
+        for time_slot, agents in self._get_agents_for_market_type(self, market_type).items():
+            if time_slot not in self.area._markets.get_market_instances_from_class_type(
+                    market_type):
                 # exclude past IAAs
                 continue
 
@@ -97,27 +91,21 @@ class AreaDispatcher:
                 break
             for area_name in sorted(agents, key=lambda _: random()):
                 agents[area_name].event_listener(event_type, **kwargs)
-        # Also broadcast to BAs. Again in random order
-        # TODO: Refactor to reuse the spot market mechanism
-        for time_slot, agents in self._balancing_agents.items():
-            if time_slot not in self.area._markets.balancing_markets:
-                # exclude past BAs
-                continue
 
-            if not self.area.events.is_connected:
-                break
-            for area_name in sorted(agents, key=lambda _: random()):
-                agents[area_name].event_listener(event_type, **kwargs)
+    def _broadcast_notification(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
+        if not self.area.events.is_enabled and \
+           event_type not in [AreaEvent.ACTIVATE, AreaEvent.MARKET_CYCLE]:
+            return
 
-        for time_slot, agents in self._settlement_agents.items():
-            if time_slot not in self.area._markets.settlement_markets:
-                # exclude past SAs
-                continue
-
-            if not self.area.events.is_connected:
-                break
-            for area_name in sorted(agents, key=lambda _: random()):
-                agents[area_name].event_listener(event_type, **kwargs)
+        # Broadcast to children in random order to ensure fairness
+        for child in sorted(self.area.children, key=lambda _: random()):
+            child.dispatcher.event_listener(event_type, **kwargs)
+        self._broadcast_notification_to_agents_of_market_type(
+            MarketClassType.SPOT, event_type, **kwargs)
+        self._broadcast_notification_to_agents_of_market_type(
+            MarketClassType.BALANCING, event_type, **kwargs)
+        self._broadcast_notification_to_agents_of_market_type(
+            MarketClassType.SETTLEMENT, event_type, **kwargs)
 
     def _should_dispatch_to_strategies(self, event_type, **kwargs):
         if event_type is AreaEvent.ACTIVATE:
@@ -166,6 +154,41 @@ class AreaDispatcher:
             return SettlementAgent(**agent_constructor_arguments)
         elif market_type == MarketClassType.BALANCING:
             return BalancingAgent(**agent_constructor_arguments)
+        else:
+            assert False, f"Market type not supported {market_type}"
+
+    @staticmethod
+    def _get_agents_for_market_type(dispatcher_object, market_type: MarketClassType):
+        if market_type == MarketClassType.SPOT:
+            return dispatcher_object._inter_area_agents
+        if market_type == MarketClassType.BALANCING:
+            return dispatcher_object._balancing_agents
+        if market_type == MarketClassType.SETTLEMENT:
+            return dispatcher_object._settlement_agents
+        else:
+            assert False, f"Market type not supported {market_type}"
+
+    def _create_area_agents_for_market_type(self, market, market_type: MarketClassType):
+        interarea_agents = self._get_agents_for_market_type(self, market_type)
+        parent_markets = self.area.parent._markets.get_market_instances_from_class_type(
+            market_type)
+        if market.time_slot in interarea_agents or market.time_slot not in parent_markets:
+            return
+
+        iaa = self.create_agent_object(
+            owner=self.area,
+            higher_market=parent_markets[market.time_slot],
+            lower_market=market,
+            market_type=market_type
+        )
+
+        # Attach agent to own IAA list
+        create_subdict_or_update(interarea_agents, market.time_slot, {self.area.name: iaa})
+
+        parent_interarea_agents = self._get_agents_for_market_type(
+            self.area.parent.dispatcher, market_type)
+        # And also to parents to allow events to flow from both markets
+        create_subdict_or_update(parent_interarea_agents, market.time_slot, {self.area.name: iaa})
 
     def create_area_agents(self, market_type, market):
         if not self.area.parent:
@@ -177,63 +200,7 @@ class AreaDispatcher:
         if not self.area.children:
             return
 
-        if market_type == MarketClassType.SPOT:
-            if market.time_slot in self.interarea_agents or \
-                    market.time_slot not in self.area.parent._markets.markets:
-                return
-
-            iaa = self.create_agent_object(
-                owner=self.area,
-                higher_market=self.area.parent._markets.markets[market.time_slot],
-                lower_market=market,
-                market_type=market_type
-            )
-
-            # Attach agent to own IAA list
-            self._inter_area_agents = create_subdict_or_update(self._inter_area_agents,
-                                                               market.time_slot,
-                                                               {self.area.name: iaa})
-            # And also to parents to allow events to flow from both markets
-            self.area.parent.dispatcher._inter_area_agents = create_subdict_or_update(
-                self.area.parent.dispatcher._inter_area_agents, market.time_slot,
-                {self.area.name: iaa})
-
-        elif market_type == MarketClassType.BALANCING:
-            if market.time_slot in self.balancing_agents or \
-                    market.time_slot not in self.area.parent._markets.balancing_markets:
-                return
-            ba = self.create_agent_object(
-                owner=self.area,
-                higher_market=self.area.parent._markets.balancing_markets[market.time_slot],
-                lower_market=market,
-                market_type=market_type
-            )
-
-            self._balancing_agents = create_subdict_or_update(self._balancing_agents,
-                                                              market.time_slot,
-                                                              {self.area.name: ba})
-            self.area.parent.dispatcher._balancing_agents = create_subdict_or_update(
-                self.area.parent.dispatcher._balancing_agents, market.time_slot,
-                {self.area.name: ba})
-
-        elif market_type == MarketClassType.SETTLEMENT:
-            if market.time_slot in self.settlement_agents or \
-                    market.time_slot not in self.area.parent._markets.settlement_markets:
-                return
-            sa = self.create_agent_object(
-                owner=self.area,
-                higher_market=self.area.parent._markets.settlement_markets[market.time_slot],
-                lower_market=market,
-                market_type=market_type
-            )
-
-            self._settlement_agents = create_subdict_or_update(
-                self._settlement_agents,
-                market.time_slot,
-                {self.area.name: sa})
-            self.area.parent.dispatcher._settlement_agents = create_subdict_or_update(
-                self.area.parent.dispatcher._settlement_agents, market.time_slot,
-                {self.area.name: sa})
+        self._create_area_agents_for_market_type(market, market_type)
 
     def _delete_past_agents(self, area_agent_member):
         if not constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
