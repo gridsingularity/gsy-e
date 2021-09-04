@@ -17,11 +17,10 @@ from pathlib import Path
 from typing import Dict, Union
 
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.validators.smart_meter_validator import SmartMeterValidator
 from d3a_interface.enums import SpotMarketTypeEnum
-from d3a_interface.validators.home_meter_validator import HomeMeterValidator
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import find_object_of_same_weekday_and_time
+from d3a_interface.validators.smart_meter_validator import SmartMeterValidator
 from numpy import random
 from pendulum import duration
 from pendulum.datetime import DateTime
