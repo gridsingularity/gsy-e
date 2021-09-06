@@ -21,10 +21,13 @@ from collections import deque, namedtuple
 from threading import Lock
 from typing import Dict
 
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.utils import (key_in_dict_and_not_none, convert_str_to_pendulum_in_dict,
+                                 str_to_pendulum_datetime)
+from pendulum import DateTime
+
 import d3a.constants
 from d3a.d3a_core.singletons import external_global_statistics
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.utils import key_in_dict_and_not_none, convert_str_to_pendulum_in_dict
 
 IncomingRequest = namedtuple("IncomingRequest", ("request_type", "arguments", "response_channel"))
 
@@ -211,6 +214,22 @@ class ExternalMixin:
     @property
     def next_market(self):
         return self.market_area.next_market
+
+    def _get_market_from_command_argument(self, arguments: Dict):
+        if "timeslot" not in arguments:
+            return self.next_market
+        timeslot = str_to_pendulum_datetime(arguments["timeslot"])
+        return self._get_market_from_timeslot(timeslot)
+
+    def _get_market_from_timeslot(self, timeslot: DateTime):
+        market = self.market_area.get_market(timeslot)
+        if market:
+            return market
+        market = self.market_area.get_settlement_market(timeslot)
+        if not market:
+            raise Exception(f"Timeslot {timeslot} is not currently in the spot, future or "
+                            f"settlement markets")
+        return market
 
     @property
     def market_area(self):
