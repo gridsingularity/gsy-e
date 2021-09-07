@@ -186,7 +186,8 @@ class StorageExternalMixin(ExternalMixin):
 
     def _offer_impl(self, arguments, response_channel):
         try:
-            offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
+            offer_arguments = {
+                k: v for k, v in arguments.items() if k not in ["transaction_id", "timeslot"]}
 
             replace_existing = offer_arguments.pop("replace_existing", True)
             market = self._get_market_from_command_argument(arguments)
@@ -502,7 +503,9 @@ class StorageExternalMixin(ExternalMixin):
         with self.lock:
             try:
                 offer_arguments = {
-                    k: v for k, v in arguments.items() if k not in ["transaction_id", "type"]}
+                    k: v for k, v in arguments.items()
+                    if k not in ["transaction_id", "type", "timeslot"]}
+
                 assert self.can_offer_be_posted(market.time_slot, **offer_arguments)
 
                 replace_existing = offer_arguments.pop("replace_existing", True)
