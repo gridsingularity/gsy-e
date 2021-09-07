@@ -24,7 +24,9 @@ from redis import StrictRedis
 from redis.exceptions import ConnectionError
 from rq import get_current_job
 from rq.exceptions import NoSuchJobError
+from typing import Dict, TYPE_CHECKING
 
+import d3a.constants
 from d3a_interface.results_validator import results_validator  # NOQA
 from d3a_interface.constants_limits import HeartBeat
 from d3a_interface.utils import RepeatingTimer
@@ -41,20 +43,26 @@ RESULTS_CHANNEL = "d3a-results"
 ZIP_RESULTS_CHANNEL = "d3a-zip-results"
 ZIP_RESULTS_KEY = "d3a-zip-results-key/"
 
+if TYPE_CHECKING:
+    from d3a.models.area import Area
+
 
 class RedisSimulationCommunication:
     def __init__(self, simulation, simulation_id, live_events):
-        if simulation_id is None:
-            return
         self._live_events = live_events
         self._simulation_id = simulation_id
         self._simulation = simulation
         self._sub_callback_dict = {
-            self._simulation_id + "/stop": self._stop_callback,
-            self._simulation_id + "/pause": self._pause_callback,
-            self._simulation_id + "/resume": self._resume_callback,
-            self._simulation_id + "/live-event": self._live_event_callback,
-            self._simulation_id + "/bulk-live-event": self._bulk_live_event_callback}
+            f"{d3a.constants.COLLABORATION_ID}/area-map/": self._area_map_callback
+        }
+        if simulation_id is not None:
+            self._sub_callback_dict.update({
+                self._simulation_id + "/stop": self._stop_callback,
+                self._simulation_id + "/pause": self._pause_callback,
+                self._simulation_id + "/resume": self._resume_callback,
+                self._simulation_id + "/live-event": self._live_event_callback,
+                self._simulation_id + "/bulk-live-event": self._bulk_live_event_callback,
+            })
         self.result_channel = RESULTS_CHANNEL
 
         try:
@@ -96,6 +104,21 @@ class RedisSimulationCommunication:
                     "error_message": f"Error when handling simulation {command_type}."
                 })
         self.publish_json(response_channel, response_json)
+
+    def _area_map_callback(self, payload: Dict) -> None:
+        """Triggers the calculation of area uuid and name map and publish it
+        back to a redis response channel"""
+        area_map = self._area_uuid_name_map_wrapper(self._simulation.area)
+        response_channel = f"external-myco/{d3a.constants.COLLABORATION_ID}/area-map/response/"
+        response_dict = {"area_mapp": area_map, "event": "area_map"}
+        self.publish_json(response_channel, response_dict)
+
+    def _area_uuid_name_map_wrapper(self, area: "Area", area_map: Dict = {}) -> Dict:
+        """Recursive method to populate area uuid and name map for area object"""
+        area_map[area.uuid] = area.name
+        for child in area.children:
+            area_map = self._area_uuid_name_map_wrapper(child, area_map)
+        return area_map
 
     def _stop_callback(self, payload):
         response = json.loads(payload["data"])
