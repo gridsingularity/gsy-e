@@ -1269,13 +1269,13 @@
 <h2 id="asset-registry">Asset Registry<a class="headerlink" href="#asset-registry" title="Permanent link">&para;</a></h2>
 <p>How to register an energy asset in the registry in the the setup file:</p>
 <p>The balancing asset registry is a dictionary that contains the names of assets as keys and the balancing rates as tuple values: (demand balancing rate, supply balancing rate).</p>
-<div class="codehilite"><pre><span></span><code>asset_registry_dict = {
+<pre class="codehilite"><code>asset_registry_dict = {
     &quot;H1 General Load&quot;: (33, 35),
     &quot;H2 General Load&quot;: (33, 35),
     &quot;H1 Storage1&quot;: (33, 35),
     &quot;H1 Storage2&quot;: (33, 35),
 }
-</code></pre></div>
+</code></pre>
 
 <h2 id="balancing-market">Balancing Market<a class="headerlink" href="#balancing-market" title="Permanent link">&para;</a></h2>
 <p>The present setting is a <a href="../one-sided-pay-as-offer/">One-Sided Pay-as-Offer market</a>, which accepts <em>balancing_offers</em> from energy assets and connected hierarchies of <em>balancing_market</em>. <em>balancing_offers</em> could be positive or negative. It also facilitates the <em>balancing_trade</em>.</p>

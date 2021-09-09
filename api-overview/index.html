@@ -1587,51 +1587,51 @@
 <h2 id="api-client-installation">API Client Installation<a class="headerlink" href="#api-client-installation" title="Permanent link">&para;</a></h2>
 <p><em>Note:</em> If you are running the Grid Singularity energy exchange engine using a virtual machine and <code>vagrant</code>, the latest <code>api-client</code> is already installed on your machine and you can skip to the <a href="./#launch-simulation">Launch Simulation</a> section below. If you are running the engine locally, please follow the following instructions.</p>
 <h3 id="install-redis-server-open-a-new-terminal-and-type">Install Redis server. Open a new terminal and type<a class="headerlink" href="#install-redis-server-open-a-new-terminal-and-type" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code>brew install redis
-</code></pre></div>
+<pre class="codehilite"><code>brew install redis
+</code></pre>
 
 <p>To install redis in Ubuntu follow the <a href="https://redis.io/topics/quickstart">link</a></p>
 <h3 id="install-d3a-client">Install d3a-client<a class="headerlink" href="#install-d3a-client" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code>mkvirtualenv d3a-api-env
+<pre class="codehilite"><code>mkvirtualenv d3a-api-env
 pip install git+https://github.com/gridsingularity/d3a-api-client.git
-</code></pre></div>
+</code></pre>
 
 <h3 id="update-d3a-client-as-needed-when-an-update-is-deployed">Update d3a-client (as needed when an update is deployed)<a class="headerlink" href="#update-d3a-client-as-needed-when-an-update-is-deployed" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code>pip uninstall d3a-api-client
+<pre class="codehilite"><code>pip uninstall d3a-api-client
 pip install git+https://github.com/gridsingularity/d3a-api-client.git
-</code></pre></div>
+</code></pre>
 
 <p>Lastly for the Grid Operator API, 3 additional packages are required for the template script to work: </p>
-<div class="codehilite"><pre><span></span><code>pip install pandas
+<pre class="codehilite"><code>pip install pandas
 pip install openpyxl
 pip install tabulate
-</code></pre></div>
+</code></pre>
 
 <h2 id="registration-simulations-run-on-the-user-interface">Registration - Simulations run on the User Interface<a class="headerlink" href="#registration-simulations-run-on-the-user-interface" title="Permanent link">&para;</a></h2>
 <p>To connect the API to simulations, the user needs to register and be approved for a collaborative simulation by following these <a href="../collaboration/#how-to-connect">steps</a>. Once the user successfully registers for the relevant assets or markets, the user needs to adapt their API scripts. </p>
 <h2 id="registration-simulations-run-on-the-backend">Registration - Simulations run on the Backend<a class="headerlink" href="#registration-simulations-run-on-the-backend" title="Permanent link">&para;</a></h2>
 <h3 id="start-redis-server">Start Redis server<a class="headerlink" href="#start-redis-server" title="Permanent link">&para;</a></h3>
 <p>To use the API locally, your script interacts with the simulation using a local Redis instance. To start the redis instance, open a new terminal and run the following command :</p>
-<div class="codehilite"><pre><span></span><code>redis-server /usr/local/etc/redis.conf`
-</code></pre></div>
+<pre class="codehilite"><code>redis-server /usr/local/etc/redis.conf
+</code></pre>
 
 <h3 id="open-external-connection-to-api-for-assets">Open external connection to API for Assets<a class="headerlink" href="#open-external-connection-to-api-for-assets" title="Permanent link">&para;</a></h3>
 <p>In the setup file (template available <a href="https://github.com/gridsingularity/d3a/blob/master/src/d3a/setup/api_setup/default_community.py">here</a>), an asset must be designated as open to external connection via the API. This is controlled when setting up the simulation in the setup file by designating the ExternalStrategy for each relevant energy assets :</p>
-<div class="codehilite"><pre><span></span><code>Area(&#39;Family 3 children+PV+Batt&#39;,
+<pre class="codehilite"><code>Area('Family 3 children+PV+Batt',
                          [
-                             Area(&#39;Load 3 L17&#39;, strategy=LoadProfileExternalStrategy(
+                             Area('Load 3 L17', strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  &quot;resources/CHR41 Family with 3 children, both at work HH1.csv&quot;),
                                  initial_buying_rate=Load_initial_buying_rate,
                                  final_buying_rate=Load_final_buying_rate),
                                   ),
-                             Area(&#39;PV 3 (5kW)&#39;, strategy=PVUserProfileExternalStrategy(
+                             Area('PV 3 (5kW)', strategy=PVUserProfileExternalStrategy(
                                  power_profile=os.path.join(current_dir, &quot;resources/Berlin_pv.csv&quot;),
                                  panel_count=5,
                                  initial_selling_rate=30,
                                  final_selling_rate=11),
                                   ),
-                             Area(&#39;Tesla Powerwall 3&#39;, strategy=StorageExternalStrategy(initial_soc=10,
+                             Area('Tesla Powerwall 3', strategy=StorageExternalStrategy(initial_soc=10,
 54min_allowed_soc=10,
 battery_capacity_kWh=14,
 max_abs_battery_power_kW=5,
@@ -1640,27 +1640,27 @@ final_buying_rate=25,
 initial_selling_rate=30,                                                                              final_selling_rate=25.1),
                                   ),
                          ])
-</code></pre></div>
+</code></pre>
 
 <p>By default, trading strategies do not allow API connections unless the <code>ExternalStrategy</code> is used. Please also ensure that the appropriate libraries are imported to use the API. </p>
 <h3 id="open-markets-for-external-connection">Open Markets for external connection<a class="headerlink" href="#open-markets-for-external-connection" title="Permanent link">&para;</a></h3>
 <p>The API supports multiple markets managed with the Grid Operator API. Access is controlled when setting up the simulation, using the <code>Area</code> class’ boolean argument called <code>external_connection_available</code>:</p>
-<div class="codehilite"><pre><span></span><code> Area(
-&#39;Community&#39;,[
+<pre class="codehilite"><code> Area(
+'Community',[
 ...
  ], grid_fee_constant=4, external_connection_available=True),
-</code></pre></div>
+</code></pre>
 
 <p>If set to <code>True</code>, the area allows all the <a href="../grid-operator-api/">Grid Operator API</a> to connect to that market, receive statistics and change grid fees. By default, this <code>external_connection_available</code> is set to <code>False</code>.</p>
 <h3 id="launch-simulation">Launch simulation<a class="headerlink" href="#launch-simulation" title="Permanent link">&para;</a></h3>
 <p>This requires you to have the <a href="https://github.com/gridsingularity/d3a">backend codebase</a> installed on your machine to run simulations (see <a href="../ios-installation-instructions/">installation instructions</a>). First navigate to the D3A folder in a new terminal, then activate the D3A environment with the command:</p>
-<div class="codehilite"><pre><span></span><code>workon d3a
-</code></pre></div>
+<pre class="codehilite"><code>workon d3a
+</code></pre>
 
 <p>An template setup is already available in github and ready to be run <a href="https://github.com/gridsingularity/d3a/blob/master/src/d3a/setup/api_setup/default_community.py">here</a> (data available for the July 2021). </p>
 <p>To run this simulation and wait for the API template script to execute:</p>
-<div class="codehilite"><pre><span></span><code>d3a -l INFO run -t 15s -s 15m --setup api_setup.default_community --slot-length-realtime 5 --start-date 2021-07-01 --enable-external-connection --paused
-</code></pre></div>
+<pre class="codehilite"><code>d3a -l INFO run -t 15s -s 15m --setup api_setup.default_community --slot-length-realtime 5 --start-date 2021-07-01 --enable-external-connection --paused
+</code></pre>
 
 <p><em>For more information on launching a simulation on the backend please visit <a href="../general-settings/#simulation-launch">this page</a>.</em></p>
 <p>After few seconds, the simulation should begin, waiting for the API template as mentioned in the figure below:</p>
@@ -1669,32 +1669,32 @@ initial_selling_rate=30,                                                        
 <p>Before launching the API script, the user needs to adapt the following information in their script (script template available here) : </p>
 <h3 id="oracle-name">Oracle name<a class="headerlink" href="#oracle-name" title="Permanent link">&para;</a></h3>
 <p>This parameter is only relevant when using the API on the User-Interface. This defines the name of the aggregator / API name that manages the markets and energy assets. Once the name is set it cannot be changed within the same running collaboration.</p>
-<div class="codehilite"><pre><span></span><code>oracle_name = &#39;oracle&#39;
-</code></pre></div>
+<pre class="codehilite"><code>oracle_name = 'oracle'
+</code></pre>
 
 <h3 id="assetsmarkets-list">Assets/markets list<a class="headerlink" href="#assetsmarkets-list" title="Permanent link">&para;</a></h3>
 <p>The list of assets / markets needs to be updated to include the assets registered to user through the registration process, in arrays as follows :</p>
-<div class="codehilite"><pre><span></span><code>load_names = [&#39;Load 1 L13&#39;, &#39;Load 2 L21&#39;, &#39;Load 3 L17&#39;]
-pv_names = [&#39;PV 1 (4kW)&#39;, &#39;PV 3 (5kW)&#39;]
-storage_names = [&#39;Tesla Powerwall 3&#39;]
-</code></pre></div>
+<pre class="codehilite"><code>load_names = ['Load 1 L13', 'Load 2 L21', 'Load 3 L17']
+pv_names = ['PV 1 (4kW)', 'PV 3 (5kW)']
+storage_names = ['Tesla Powerwall 3']
+</code></pre>
 
-<div class="codehilite"><pre><span></span><code>market_names = [&quot;Grid&quot;, &quot;Community&quot;]
-</code></pre></div>
+<pre class="codehilite"><code>market_names = [&quot;Grid&quot;, &quot;Community&quot;]
+</code></pre>
 
 <p>The API script has an <em>automatic</em> connection method to manage energy assets. If <code>automatic</code> is <code>True</code>, the API client will automatically connect to all energy assets that the user is registered to. This option is only available for simulations running on the <a href="https://www.d3a.io/">User-Interface</a>.</p>
 <h3 id="launching-the-api-client">Launching the API client:<a class="headerlink" href="#launching-the-api-client" title="Permanent link">&para;</a></h3>
 <p>The API client is launched with a <strong>cli command</strong>. To launch the agent, you need to open a new terminal and activate d3a-api-client environment</p>
-<div class="codehilite"><pre><span></span><code>Workon d3a-api-client
-</code></pre></div>
+<pre class="codehilite"><code>workon d3a-api-env
+</code></pre>
 
 <p>And go to the d3a-api-client repository</p>
-<div class="codehilite"><pre><span></span><code>cd path_to_repository/d3a-api-client
-</code></pre></div>
+<pre class="codehilite"><code>cd path_to_repository/d3a-api-client
+</code></pre>
 
 <p>The api launch cli command takes several arguments that can be listed with: </p>
-<div class="codehilite"><pre><span></span><code>d3a-api-client run --help
-</code></pre></div>
+<pre class="codehilite"><code>d3a-api-client run --help
+</code></pre>
 
 <p>The arguments are : </p>
 <ul>
@@ -1718,31 +1718,31 @@ storage_names = [&#39;Tesla Powerwall 3&#39;]
 <p>The simulation configuration file is a JSON format file downloadable on the User-Interface. It contains all the information about the simulation setup (username, simulation name and UUID, domain name, websocket domain name, global settings of the simulation and the registry, consisting of all the grid hierarchy including markets and assets and whether or not the user is connected to those). To download this file the user needs to go to the registry page of the relevant collaboration/CN and click on the top right edit icon and Download API Client Summary.</p>
 <p><img alt="alt_text" src="../img/api-overview-3.png" /></p>
 <p>To run the API agent you can run the following command by adapting the arguments to your case:</p>
-<div class="codehilite"><pre><span></span><code>d3a-api-client --log-level INFO run  --setup asset_api_template -u username -p password -i absolute_path/my_simulation_config.json 
-</code></pre></div>
+<pre class="codehilite"><code>d3a-api-client --log-level INFO run  --setup asset_api_template -u username -p password -i absolute_path/my_simulation_config.json 
+</code></pre>
 
 <h4 id="cli-command">CLI command:<a class="headerlink" href="#cli-command" title="Permanent link">&para;</a></h4>
 <p>Instead of passing the JSON file, the user can directly pass the relevant variables as arguments in the CLI commands. For that to work, users need to pass the domain name and websocket name (both are optional parameters and only relevant when connecting to specific domains) and the simulation_id. The simulation_id corresponds to the Universally Unique IDentifier. This token can be found in the URL of a collaboration or a Canary Network in the User Interface. </p>
 <p><img alt="alt_text" src="../img/api-overview-4.png" /></p>
 <p>To run the API agent you can run the following command by adapting the arguments to your case:</p>
-<div class="codehilite"><pre><span></span><code>d3a-api-client --log-level INFO run  --setup asset_api_template -u username -p password --simulation-id UUID
-</code></pre></div>
+<pre class="codehilite"><code class="language-commandline">d3a-api-client --log-level INFO run  --setup asset_api_template -u username -p password --simulation-id UUID
+</code></pre>
 
 <h4 id="environnement-variables">Environnement variables:<a class="headerlink" href="#environnement-variables" title="Permanent link">&para;</a></h4>
 <p>The last method to launch the API is to send the set the required variable in the environment. To do that users can simply define those parameters at the top of their script as follow:</p>
-<div class="codehilite"><pre><span></span><code>os.environ[&quot;API_CLIENT_USERNAME&quot;] = &quot;username&quot;
+<pre class="codehilite"><code>os.environ[&quot;API_CLIENT_USERNAME&quot;] = &quot;username&quot;
 os.environ[&quot;API_CLIENT_PASSWORD&quot;] = &quot;password&quot;
 os.environ[&quot;API_CLIENT_SIMULATION_ID&quot;] = &quot;simulation_uuid&quot;
-</code></pre></div>
+</code></pre>
 
 <p>To run the API agent you can run the following command by adapting the arguments to your case:</p>
-<div class="codehilite"><pre><span></span><code>d3a-api-client --log-level INFO run  --setup asset_api_template
-</code></pre></div>
+<pre class="codehilite"><code>d3a-api-client --log-level INFO run  --setup asset_api_template
+</code></pre>
 
 <h4 id="local-simulation">Local simulation:<a class="headerlink" href="#local-simulation" title="Permanent link">&para;</a></h4>
 <p>To interact with a locally running simulation (backend simulation), username, passwords, domain and websocket names and simulation_id are not necessary. There is only an additional flag required in the CLI command : <code>--run-on-redis</code>.  </p>
-<div class="codehilite"><pre><span></span><code>d3a-api-client --log-level INFO run --setup asset_api_template --run-on-redis
-</code></pre></div>
+<pre class="codehilite"><code>d3a-api-client --log-level INFO run --setup asset_api_template --run-on-redis
+</code></pre>
 
 <h4 id="log-levels">Log levels:<a class="headerlink" href="#log-levels" title="Permanent link">&para;</a></h4>
 <p>The API CLI command can receive a <em>--log-level</em> argument. Adjusting this parameter will increase or reduce the level of information displayed in the terminal, while the agent is running. There are 4 levels (classed from low detailed to high: </p>
