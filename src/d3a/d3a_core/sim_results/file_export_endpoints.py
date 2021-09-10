@@ -110,7 +110,7 @@ class LeafDataExporter(BaseDataExporter):
 
     @property
     def rows(self):
-        return [self._row(m.time_slot, m) for m in self.past_markets]
+        return [self._row(market.time_slot, market) for market in self.past_markets]
 
     def _traded(self, market):
         return market.traded_energy[self.area.name] \
@@ -169,7 +169,7 @@ class FileExportEndpoints:
         if past_market_type == AvailableMarketTypes.BALANCING_MARKET:
             return BalancingDataExporter(area.past_balancing_markets)
         if past_market_type == AvailableMarketTypes.SETTLEMENT_MARKET:
-            past_markets = list(area.past_settlement_markets.values())
+            past_markets = area.past_settlement_markets.values()
             return (UpperLevelDataExporter(past_markets)
                     if len(area.children) > 0 else LeafDataExporter(area, past_markets))
 

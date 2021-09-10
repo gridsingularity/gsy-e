@@ -133,7 +133,7 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         """
         Update posted settlement bids and offers on market tick.
         Order matters here:
-            - FIRST: the bis and offers need to be updated (update())
+            - FIRST: the bids and offers need to be updated (update())
             - SECOND: the update counter has to be increased (increment_update_counter_all_markets)
         Args:
             strategy: Strategy object of the asset
@@ -151,7 +151,8 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
     @staticmethod
     def _get_settlement_market_by_id(strategy: BidEnabledStrategy,
                                      market_id: str) -> Optional["Market"]:
-        markets = [m for m in strategy.area.settlement_markets.values() if m.id == market_id]
+        markets = [market for market in strategy.area.settlement_markets.values()
+                   if market.id == market_id]
         if not markets:
             return None
         assert len(markets) == 1

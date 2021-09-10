@@ -207,19 +207,19 @@ class ExportAndPlot:
         if not area.children:
             return
         self._export_trade_csv_files(
-            past_markets=list(area.past_settlement_markets.values()),
+            past_markets=area.past_settlement_markets.values(),
             directory=directory,
             filename=f"{area.slug}-settlement-trades",
             is_first=is_first)
         self._export_area_offers_bids_csv_files(
-            past_markets=list(area.past_settlement_markets.values()),
+            past_markets=area.past_settlement_markets.values(),
             market_member="offer_history",
             directory=directory,
             filename=f"{area.slug}-settlement-offers",
             labels=("slot",) + Offer.csv_fields(),
             is_first=is_first)
         self._export_area_offers_bids_csv_files(
-            past_markets=list(area.past_settlement_markets.values()),
+            past_markets=area.past_settlement_markets.values(),
             market_member="bid_history",
             directory=directory,
             filename=f"{area.slug}-settlement-bids",
@@ -308,7 +308,7 @@ class ExportAndPlot:
     def _export_trade_csv_files(self, past_markets: List, directory: dir, filename: str,
                                 labels: Tuple = Trade.csv_fields(),
                                 is_first: bool = False) -> None:
-        """ Export files containing individual trades  (*-trades.csv  files)."""
+        """Export files containing individual trades (*-trades.csv files)."""
         file_path = self._file_path(directory, filename)
         try:
             with open(file_path, "a") as csv_file:
@@ -356,7 +356,7 @@ class ExportAndPlot:
 
     @staticmethod
     def _get_from_dict(data_dict: Dict, map_list: List) -> Mapping:
-        """Get data from dict by following a map_list."""
+        """Get nested data from a dict by following a path provided by a list of keys."""
         return reduce(operator.getitem, map_list, data_dict)
 
     def _plot_device_stats(self, address_list: list, device_strategy):
