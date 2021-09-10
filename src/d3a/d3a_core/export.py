@@ -41,6 +41,7 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
 from d3a_interface.enums import BidOfferMatchAlgoEnum
 from d3a_interface.utils import mkdir_from_str, generate_market_slot_list
+from d3a_interface.dataclasses import PlotDescription
 from pendulum import DateTime
 from slugify import slugify
 from sortedcontainers import SortedDict
@@ -389,27 +390,25 @@ class ExportAndPlot:
         """
         Plots history of energy trades
         """
-        data = list()
-        barmode = "relative"
-        xtitle = "Time"
-        ytitle = "Energy [kWh]"
+        plot_desc = PlotDescription(data=[], barmode="relative", xtitle="Time",
+                                    ytitle="Energy [kWh]",
+                                    title="Energy Trade Profile of {}".format(market_name))
         key = "energy"
-        title = "Energy Trade Profile of {}".format(market_name)
-        data.extend(self._plot_energy_graph(
+        plot_desc.data.extend(self._plot_energy_graph(
             energy_profile,
             market_name, "sold_energy_lists", "-seller", key, ENERGY_SELLER_SIGN_PLOTS))
-        data.extend(self._plot_energy_graph(
+        plot_desc.data.extend(self._plot_energy_graph(
             energy_profile,
             market_name, "bought_energy_lists", "-buyer", key, ENERGY_BUYER_SIGN_PLOTS))
-        if len(data) == 0:
+        if len(plot_desc.data) == 0:
             return
-        if all([len(da.y) == 0 for da in data]):
+        if all([len(da.y) == 0 for da in plot_desc.data]):
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir,
                                    "energy_profile_{}.html".format(market_name))
-        PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+        PlotlyGraph.plot_bar_graph(plot_desc, output_file)
 
     def _plot_energy_graph(self, trades, market_name, agent, agent_label, key, scale_value):
         internal_data = []
@@ -427,13 +426,11 @@ class ExportAndPlot:
         """
         Plot unmatched loads of all loads in the configuration into one plot
         """
-        unmatched_key = "deficit [kWh]"
-        data = list()
         root_name = self.area.slug
-        title = "Unmatched Loads for all devices in {}".format(root_name)
-        xtitle = "Time"
-        ytitle = "Energy (kWh)"
-        barmode = "stack"
+        plot_desc = PlotDescription(data=[], barmode="stack",
+                                    xtitle="Time", ytitle="Energy (kWh)",
+                                    title=f"Unmatched Loads for all devices in {root_name}")
+        unmatched_key = "deficit [kWh]"
         load_list = [child_key for child_key in self.file_stats_endpoint.plot_stats.keys()
                      if unmatched_key in self.file_stats_endpoint.plot_stats[child_key].keys()]
 
@@ -445,13 +442,13 @@ class ExportAndPlot:
             data_obj = go.Bar(x=list(graph_obj.umHours.keys()),
                               y=list(graph_obj.umHours.values()),
                               name=li)
-            data.append(data_obj)
-        if len(data) == 0:
+            plot_desc.data.append(data_obj)
+        if len(plot_desc.data) == 0:
             return
         plot_dir = os.path.join(self.plot_dir)
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir, "unmatched_loads_{}.html".format(root_name))
-        PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+        PlotlyGraph.plot_bar_graph(plot_desc, output_file)
 
     def plot_ess_soc_history(self, area, subdir):
         """
@@ -472,13 +469,11 @@ class ExportAndPlot:
         """
         Plots ess soc for each knot in the hierarchy
         """
+        plot_desc = PlotDescription(
+            data=[], barmode="relative", xtitle="Time", ytitle="Charge [%]",
+            title=f"ESS SOC ({root_name})")
 
         storage_key = "charge [%]"
-        data = list()
-        barmode = "relative"
-        title = "ESS SOC ({})".format(root_name)
-        xtitle = "Time"
-        ytitle = "Charge [%]"
 
         for si in storage_list:
             graph_obj = PlotlyGraph(self.file_stats_endpoint.plot_stats[si], storage_key)
@@ -486,13 +481,13 @@ class ExportAndPlot:
             data_obj = go.Scatter(x=list(graph_obj.umHours.keys()),
                                   y=list(graph_obj.umHours.values()),
                                   name=si)
-            data.append(data_obj)
-        if len(data) == 0:
+            plot_desc.data.append(data_obj)
+        if len(plot_desc.data) == 0:
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir, "ess_soc_history_{}.html".format(root_name))
-        PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+        PlotlyGraph.plot_bar_graph(plot_desc, output_file)
 
     def _plot_stock_info_per_area_per_market_slot(self, area, plot_dir):
         """
@@ -579,12 +574,9 @@ class ExportAndPlot:
         """
         Plots ess energy trace for each knot in the hierarchy
         """
-
-        data = list()
-        barmode = "stack"
-        title = "ESS ENERGY SHARE ({})".format(root_name)
-        xtitle = "Time"
-        ytitle = "Energy [kWh]"
+        plot_desc = PlotDescription(data=[], barmode="stack", xtitle="Time",
+                                    ytitle="Energy [kWh]",
+                                    title=f"ESS ENERGY SHARE ({root_name})")
 
         temp = {ESSEnergyOrigin.UNKNOWN: {slot: 0. for slot in generate_market_slot_list()},
                 ESSEnergyOrigin.LOCAL: {slot: 0. for slot in generate_market_slot_list()},
@@ -599,13 +591,13 @@ class ExportAndPlot:
             data_obj = go.Bar(x=list(temp[energy_type].keys()),
                               y=list(temp[energy_type].values()),
                               name=f"{energy_type}")
-            data.append(data_obj)
-        if len(data) == 0:
+            plot_desc.data.append(data_obj)
+        if len(plot_desc.data) == 0:
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir, "ess_energy_share_{}.html".format(root_name))
-        PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+        PlotlyGraph.plot_bar_graph(plot_desc, output_file)
 
     def plot_supply_demand_curve(self, area, subdir):
         """
@@ -717,38 +709,36 @@ class ExportAndPlot:
         """
         Plots average trade for the specified level of the hierarchy
         """
-        data = list()
-        barmode = "stack"
-        xtitle = "Time"
-        ytitle = "Rate [ct./kWh]"
+        plot_desc = PlotDescription(data=[], barmode="stack", xtitle="Time",
+                                    ytitle="Rate [ct./kWh]",
+                                    title=f"Average Trade Price {area_list[0]}")
         key = "avg trade rate [ct./kWh]"
-        title = "Average Trade Price {}".format(area_list[0])
         for area_name in area_list:
-            data.append(
+            plot_desc.data.append(
                 self._plot_avg_trade_graph(self.file_stats_endpoint.plot_stats,
                                            area_name, key, area_name)
             )
             if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
                     self.file_stats_endpoint.plot_balancing_stats[area_name.lower()] is not None:
                 area_name_balancing = area_name.lower() + "-demand-balancing-trades"
-                data.append(self._plot_avg_trade_graph(
+                plot_desc.data.append(self._plot_avg_trade_graph(
                     self.file_stats_endpoint.plot_balancing_stats, area_name,
                     "avg demand balancing trade rate [ct./kWh]",
                     area_name_balancing)
                 )
                 area_name_balancing = area_name.lower() + "-supply-balancing-trades"
-                data.append(self._plot_avg_trade_graph(
+                plot_desc.data.append(self._plot_avg_trade_graph(
                     self.file_stats_endpoint.plot_balancing_stats, area_name,
                     "avg supply balancing trade rate [ct./kWh]",
                     area_name_balancing)
                 )
 
-        if all([len(da.y) == 0 for da in data]):
+        if all([len(da.y) == 0 for da in plot_desc.data]):
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir, "average_trade_price_{}.html".format(area_list[0]))
-        PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+        PlotlyGraph.plot_bar_graph(plot_desc, output_file)
 
     def _plot_avg_trade_graph(self, stats, area_name, key, label):
         graph_obj = PlotlyGraph(stats[area_name.lower()], key)
@@ -772,12 +762,12 @@ class ExportAndPlot:
         """
         Plots history of energy trades plotted for each market_slot
         """
-        area_stats = self.endpoint_buffer.offer_bid_trade_hr.state[area.name]
-        barmode = "relative"
-        xtitle = "Time"
-        ytitle = "Energy [kWh]"
         market_name = area.name
-        title = f"High Resolution Energy Trade Profile of {market_name}"
+        plot_desc = PlotDescription(
+            data=[], barmode="relative", xtitle="Time", ytitle="Energy [kWh]",
+            title=f"High Resolution Energy Trade Profile of {market_name}")
+
+        area_stats = self.endpoint_buffer.offer_bid_trade_hr.state[area.name]
         plot_dir = os.path.join(self.plot_dir, subdir, "energy_profile_hr")
         mkdir_from_str(plot_dir)
         for market_slot, data in area_stats.items():
@@ -789,8 +779,7 @@ class ExportAndPlot:
                                            f"{market_name}_{market_slot_str}.html")
                 time_range = [market_slot - GlobalConfig.tick_length,
                               market_slot + GlobalConfig.slot_length + GlobalConfig.tick_length]
-                PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, plot_data, output_file,
-                                           time_range=time_range)
+                PlotlyGraph.plot_bar_graph(plot_desc, output_file, time_range=time_range)
 
     @staticmethod
     def get_plotly_graph_dataset(market_trades: Dict, market_slot: DateTime) -> List:

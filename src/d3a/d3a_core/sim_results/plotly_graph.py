@@ -20,6 +20,7 @@ import plotly.graph_objs as go
 import pendulum
 import os
 
+from d3a_interface.dataclasses import PlotDescription
 from d3a.constants import TIME_ZONE
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
@@ -72,19 +73,18 @@ class PlotlyGraph:
         self.trade_history = dict()
 
     @staticmethod
-    def common_layout(barmode: str, title: str, ytitle: str, xtitle: str, xrange: list,
-                      showlegend=True, hovermode="x"):
+    def common_layout(data_desc: PlotDescription, xrange: list, showlegend=True, hovermode="x"):
         return go.Layout(
             autosize=False,
             width=1200,
             height=700,
-            barmode=barmode,
-            title=title,
+            barmode=data_desc.barmode,
+            title=data_desc.title,
             yaxis=dict(
-                title=ytitle
+                title=data_desc.ytitle
             ),
             xaxis=dict(
-                title=xtitle,
+                title=data_desc.xtitle,
                 range=xrange
             ),
             font=dict(
@@ -109,14 +109,14 @@ class PlotlyGraph:
                             round(self.dataset[self.key][de], 5) * scale_value
 
     @staticmethod
-    def modify_time_axis(data: dict, title: str):
+    def modify_time_axis(plot_desc: PlotDescription):
         """
         Changes timezone of pendulum x-values to 'UTC' and determines the list of days
         in order to return the time_range for the plot
         """
         day_set = set()
-        for di in range(len(data)):
-            time_list = data[di]["x"]
+        for di in range(len(plot_desc.data)):
+            time_list = plot_desc.data[di]["x"]
             for ti in time_list:
                 day_set.add(
                     pendulum.datetime(ti.year, ti.month, ti.day, ti.hour, ti.minute, tz=TIME_ZONE)
@@ -124,7 +124,7 @@ class PlotlyGraph:
 
         day_list = sorted(list(day_set))
         if len(day_list) == 0:
-            raise ValueError("There is no time information in plot {}".format(title))
+            raise ValueError("There is no time information in plot {}".format(plot_desc.title))
 
         start_time = pendulum.datetime(
             day_list[0].year, day_list[0].month, day_list[0].day,
@@ -134,7 +134,7 @@ class PlotlyGraph:
             day_list[-1].year, day_list[-1].month, day_list[-1].day,
             day_list[-1].hour, day_list[-1].minute, day_list[-1].second, tz=TIME_ZONE)
 
-        return [start_time, end_time], data
+        return [start_time, end_time], plot_desc.data
 
     @classmethod
     def plot_slider_graph(cls, fig, stats_plot_dir, area_name, market_slot_data_mapping):
@@ -168,16 +168,16 @@ class PlotlyGraph:
         py.offline.plot(fig, filename=output_file, auto_open=False)
 
     @classmethod
-    def plot_bar_graph(cls, barmode: str, title: str, xtitle: str, ytitle: str, data, iname: str,
+    def plot_bar_graph(cls, plot_desc: PlotDescription, iname: str,
                        time_range=None, showlegend=True, hovermode="x"):
         if time_range is None:
             try:
-                time_range, data = cls.modify_time_axis(data, title)
+                time_range, data = cls.modify_time_axis(plot_desc)
             except ValueError:
                 return
 
         layout = cls.common_layout(
-            barmode, title, ytitle, xtitle, time_range, showlegend, hovermode=hovermode
+            plot_desc, time_range, showlegend, hovermode=hovermode
         )
         fig = go.Figure(data=data, layout=layout)
         py.offline.plot(fig, filename=iname, auto_open=False)
