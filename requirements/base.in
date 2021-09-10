@@ -6,7 +6,6 @@ click-default-group
 colorlog==4.7.2
 numpy==1.20.3
 pendulum==2.1.2
-pip-tools
 plotly
 python-rex
 redis
