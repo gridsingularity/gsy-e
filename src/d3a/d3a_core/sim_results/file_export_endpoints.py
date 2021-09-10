@@ -29,10 +29,12 @@ from d3a_interface.constants_limits import ConstSettings
 
 class BaseDataExporter(ABC):
 
+    @property
     @abstractmethod
     def labels(self) -> List:
         """Labels for csv headers."""
 
+    @property
     @abstractmethod
     def rows(self) -> List:
         """Return rows containing the offer, bids, trades data."""
@@ -52,6 +54,7 @@ class UpperLevelDataExporter(BaseDataExporter):
                 "total energy traded [kWh]",
                 "total trade volume [EURO ct.]"]
 
+    @property
     def rows(self):
         return [self._row(m.time_slot, m) for m in self.past_markets]
 
@@ -75,6 +78,7 @@ class BalancingDataExporter(BaseDataExporter):
                 "avg supply balancing trade rate [ct./kWh]",
                 "avg demand balancing trade rate [ct./kWh]"]
 
+    @property
     def rows(self):
         return [self._row(m.time_slot, m) for m in self.past_markets]
 
@@ -104,6 +108,7 @@ class LeafDataExporter(BaseDataExporter):
             return ["produced [kWh]", "not sold [kWh]"]
         return []
 
+    @property
     def rows(self):
         return [self._row(m.time_slot, m) for m in self.past_markets]
 
@@ -174,7 +179,7 @@ class FileExportEndpoints:
         data = self.export_data_factory(area, past_market_type)
         if area.slug not in out_dict:
             out_dict[area.slug] = dict((label, []) for label in data.labels)
-        for row in data.rows():
+        for row in data.rows:
             for ii, label in enumerate(data.labels):
                 out_dict[area.slug][label].append(row[ii])
 

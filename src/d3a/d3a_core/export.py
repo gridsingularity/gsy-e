@@ -328,7 +328,7 @@ class ExportAndPlot:
         """Export trade statistics in *.csv files."""
         file_name = f"{area.slug}{market_type_file_suffix_dict[past_market_type]}"
         data = self.file_stats_endpoint.export_data_factory(area, past_market_type)
-        rows = data.rows()
+        rows = data.rows
         if not rows and not is_first:
             return
 
