@@ -29,13 +29,12 @@ from typing import Dict, Tuple, List, Mapping
 
 import d3a.constants
 import plotly.graph_objs as go
-from d3a.d3a_core.sim_results.file_export_endpoints import (PastDataEnum,
-                                                            past_market_type_file_suffix_dict)
 from d3a.d3a_core.sim_results.plotly_graph import PlotlyGraph
 from d3a.d3a_core.singletons import bid_offer_matcher
 from d3a.d3a_core.util import constsettings_to_dict, round_floats_for_ui
 from d3a.models.area import Area
-from d3a.models.market.market_structures import MarketClearingState
+from d3a.models.market.market_structures import MarketClearingState, AvailableMarketTypes, \
+    market_type_file_suffix_dict
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.state import ESSEnergyOrigin
 from d3a.models.strategy.storage import StorageStrategy
@@ -176,7 +175,8 @@ class ExportAndPlot:
 
     def _export_spot_markets_stats(self, area: Area, directory: dir, is_first: bool) -> None:
         """Export bids, offers, trades, statistics csv-files for all spot markets."""
-        self._export_area_stats_csv_file(area, directory, PastDataEnum.SPOT_MARKET, is_first)
+        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.SPOT_MARKET,
+                                         is_first)
         if not area.children:
             return
         self._export_trade_csv_files(past_markets=area.past_markets,
@@ -202,7 +202,8 @@ class ExportAndPlot:
         """Export bids, offers, trades, statistics csv-files for all settlement markets."""
         if not ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
             return
-        self._export_area_stats_csv_file(area, directory, PastDataEnum.SETTLEMENT_MARKET, is_first)
+        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.SETTLEMENT_MARKET,
+                                         is_first)
         if not area.children:
             return
         self._export_trade_csv_files(
@@ -229,7 +230,8 @@ class ExportAndPlot:
         """Export bids, offers, trades, statistics csv-files for all balancing markets."""
         if not ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             return
-        self._export_area_stats_csv_file(area, directory, PastDataEnum.BALANCING_MARKET, is_first)
+        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.BALANCING_MARKET,
+                                         is_first)
         if not area.children:
             return
         self._export_trade_csv_files(past_markets=area.past_balancing_markets,
@@ -321,10 +323,10 @@ class ExportAndPlot:
             _log.exception("Could not export area trades")
 
     def _export_area_stats_csv_file(self, area: Area, directory: str,
-                                    past_market_type: PastDataEnum,
+                                    past_market_type: AvailableMarketTypes,
                                     is_first: bool) -> None:
         """Export trade statistics in *.csv files."""
-        file_name = f"{area.slug}{past_market_type_file_suffix_dict[past_market_type]}"
+        file_name = f"{area.slug}{market_type_file_suffix_dict[past_market_type]}"
         data = self.file_stats_endpoint.export_data_factory(area, past_market_type)
         rows = data.rows()
         if not rows and not is_first:

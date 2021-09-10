@@ -16,32 +16,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from abc import ABC, abstractmethod
-from enum import Enum
 from typing import List, Dict
 
 from d3a.d3a_core.singletons import bid_offer_matcher
 from d3a.models.area import Area
+from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a_interface.constants_limits import ConstSettings
 
 
-class PastDataEnum(Enum):
-    """Enum for deciding which markets to access."""
-    SPOT_MARKET = 1
-    BALANCING_MARKET = 2
-    SETTLEMENT_MARKET = 3
-
-
-past_market_type_file_suffix_dict = {
-    PastDataEnum.SPOT_MARKET: "",
-    PastDataEnum.BALANCING_MARKET: "-balancing",
-    PastDataEnum.SETTLEMENT_MARKET: "-settlement",
-}
-
-
-class ExportDataBase(ABC):
+class BaseDataExporter(ABC):
 
     @abstractmethod
     def labels(self) -> List:
@@ -52,7 +38,7 @@ class ExportDataBase(ABC):
         """Return rows containing the offer, bids, trades data."""
 
 
-class ExportUpperLevelData(ExportDataBase):
+class UpperLevelDataExporter(BaseDataExporter):
     def __init__(self, past_markets):
         self.past_markets = past_markets
 
@@ -79,7 +65,7 @@ class ExportUpperLevelData(ExportDataBase):
                 sum(trade.offer_bid.price for trade in market.trades)]
 
 
-class ExportBalancingData(ExportDataBase):
+class BalancingDataExporter(BaseDataExporter):
     def __init__(self, past_markets):
         self.past_markets = past_markets
 
@@ -98,7 +84,7 @@ class ExportBalancingData(ExportDataBase):
                 market.avg_demand_balancing_trade_rate]
 
 
-class ExportLeafData(ExportDataBase):
+class LeafDataExporter(BaseDataExporter):
     def __init__(self, area, past_markets):
         self.area = area
         self.past_markets = past_markets
@@ -168,20 +154,22 @@ class FileExportEndpoints:
         self._update_plot_stats(area)
 
     @staticmethod
-    def export_data_factory(area: Area, past_market_type: PastDataEnum) -> ExportDataBase:
+    def export_data_factory(
+            area: Area, past_market_type: AvailableMarketTypes
+    ) -> BaseDataExporter:
         """Decide which data acquisition class to use."""
-        if past_market_type == PastDataEnum.SPOT_MARKET:
-            return ExportUpperLevelData(area.past_markets) \
-                if len(area.children) > 0 else ExportLeafData(area, area.past_markets)
-        if past_market_type == PastDataEnum.BALANCING_MARKET:
-            return ExportBalancingData(area.past_balancing_markets)
-        if past_market_type == PastDataEnum.SETTLEMENT_MARKET:
+        if past_market_type == AvailableMarketTypes.SPOT_MARKET:
+            return UpperLevelDataExporter(area.past_markets) \
+                if len(area.children) > 0 else LeafDataExporter(area, area.past_markets)
+        if past_market_type == AvailableMarketTypes.BALANCING_MARKET:
+            return BalancingDataExporter(area.past_balancing_markets)
+        if past_market_type == AvailableMarketTypes.SETTLEMENT_MARKET:
             past_markets = list(area.past_settlement_markets.values())
-            return (ExportUpperLevelData(past_markets)
-                    if len(area.children) > 0 else ExportLeafData(area, past_markets))
+            return (UpperLevelDataExporter(past_markets)
+                    if len(area.children) > 0 else LeafDataExporter(area, past_markets))
 
     def _get_stats_from_market_data(self, out_dict: Dict, area: Area,
-                                    past_market_type: PastDataEnum) -> None:
+                                    past_market_type: AvailableMarketTypes) -> None:
         """Get statistics and write them to out_dict."""
         data = self.export_data_factory(area, past_market_type)
         if area.slug not in out_dict:
@@ -211,9 +199,9 @@ class FileExportEndpoints:
 
     def _update_plot_stats(self, area: Area) -> None:
         """Populate the statistics for the plots into self.plot_stats."""
-        self._get_stats_from_market_data(self.plot_stats, area, PastDataEnum.SPOT_MARKET)
+        self._get_stats_from_market_data(self.plot_stats, area, AvailableMarketTypes.SPOT_MARKET)
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self._get_stats_from_market_data(self.plot_balancing_stats, area,
-                                             PastDataEnum.BALANCING_MARKET)
+                                             AvailableMarketTypes.BALANCING_MARKET)
         if ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS:
             self._populate_plots_stats_for_supply_demand_curve(area)
