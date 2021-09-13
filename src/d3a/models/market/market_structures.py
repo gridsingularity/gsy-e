@@ -417,7 +417,7 @@ class AvailableMarketTypes(Enum):
     SETTLEMENT_MARKET = 3
 
 
-market_type_file_suffix_dict = {
+PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING = {
     AvailableMarketTypes.SPOT_MARKET: "",
     AvailableMarketTypes.BALANCING_MARKET: "-balancing",
     AvailableMarketTypes.SETTLEMENT_MARKET: "-settlement",

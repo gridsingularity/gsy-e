@@ -35,7 +35,7 @@ from d3a.d3a_core.util import constsettings_to_dict, round_floats_for_ui
 from d3a.dataclasses import PlotDescription
 from d3a.models.area import Area
 from d3a.models.market.market_structures import (MarketClearingState, AvailableMarketTypes,
-                                                 market_type_file_suffix_dict)
+                                                 PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING)
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.state import ESSEnergyOrigin
 from d3a.models.strategy.storage import StorageStrategy
@@ -327,7 +327,7 @@ class ExportAndPlot:
                                     past_market_type: AvailableMarketTypes,
                                     is_first: bool) -> None:
         """Export trade statistics in *.csv files."""
-        file_name = f"{area.slug}{market_type_file_suffix_dict[past_market_type]}"
+        file_name = f"{area.slug}{PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING[past_market_type]}"
         data = self.file_stats_endpoint.export_data_factory(area, past_market_type)
         rows = data.rows
         if not rows and not is_first:
