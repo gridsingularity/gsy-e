@@ -26,6 +26,12 @@ from collections import namedtuple
 from copy import deepcopy
 from functools import reduce  # forward compatibility for Python 3
 from typing import Dict, Tuple, List, Mapping
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
+from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
+from d3a_interface.utils import mkdir_from_str, generate_market_slot_list
+from pendulum import DateTime
+from slugify import slugify
+from sortedcontainers import SortedDict
 
 import d3a.constants
 import plotly.graph_objs as go
@@ -39,12 +45,6 @@ from d3a.models.market.market_structures import (MarketClearingState, AvailableM
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.state import ESSEnergyOrigin
 from d3a.models.strategy.storage import StorageStrategy
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
-from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
-from d3a_interface.utils import mkdir_from_str, generate_market_slot_list
-from pendulum import DateTime
-from slugify import slugify
-from sortedcontainers import SortedDict
 
 _log = logging.getLogger(__name__)
 

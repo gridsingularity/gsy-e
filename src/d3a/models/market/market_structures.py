@@ -22,9 +22,10 @@ from dataclasses import asdict, dataclass, field
 from enum import Enum
 from typing import Dict, List, Tuple, Union  # noqa
 
-from d3a.events import MarketEvent
 from d3a_interface.utils import datetime_to_string_incl_seconds, key_in_dict_and_not_none
 from pendulum import DateTime, parse
+
+from d3a.events import MarketEvent
 
 
 @dataclass

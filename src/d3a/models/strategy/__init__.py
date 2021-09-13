@@ -21,6 +21,8 @@ from logging import getLogger
 from typing import List, Dict, Any, Union, Optional  # noqa
 from uuid import uuid4
 
+from d3a_interface.constants_limits import ConstSettings
+
 from d3a import constants
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
@@ -36,7 +38,6 @@ from d3a.models.market import Market
 from d3a.models.market.market_structures import (
     Offer, trade_from_json_string,
     offer_or_bid_from_json_string, Bid)
-from d3a_interface.constants_limits import ConstSettings
 
 log = getLogger(__name__)
 

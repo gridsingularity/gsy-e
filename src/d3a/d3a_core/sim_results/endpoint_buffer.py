@@ -17,6 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 from typing import Dict, TYPE_CHECKING
+from d3a_interface.constants_limits import (ConstSettings, DATE_TIME_UI_FORMAT, DATE_TIME_FORMAT,
+                                            GlobalConfig)
+from d3a_interface.results_validator import results_validator
+from d3a_interface.sim_results.all_results import ResultsHandler
+from d3a_interface.utils import get_json_dict_memory_allocation_size
 
 from d3a.d3a_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
 from d3a.d3a_core.util import get_market_maker_rate_from_config
@@ -28,11 +33,6 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
-from d3a_interface.constants_limits import (ConstSettings, DATE_TIME_UI_FORMAT, DATE_TIME_FORMAT,
-                                            GlobalConfig)
-from d3a_interface.results_validator import results_validator
-from d3a_interface.sim_results.all_results import ResultsHandler
-from d3a_interface.utils import get_json_dict_memory_allocation_size
 
 if TYPE_CHECKING:
     from d3a.models.area import Area

@@ -26,11 +26,6 @@ from copy import deepcopy
 from math import isclose
 
 from behave import given, when, then
-from d3a import constants
-from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
-from d3a.d3a_core.simulation import Simulation
-from d3a.d3a_core.util import d3a_path
-from d3a.models.config import SimulationConfig
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
@@ -40,6 +35,12 @@ from d3a_interface.utils import convert_W_to_Wh, convert_W_to_kWh, convert_kW_to
     get_area_name_uuid_mapping
 from deepdiff import DeepDiff
 from pendulum import duration, today, from_format
+
+from d3a import constants
+from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
+from d3a.d3a_core.simulation import Simulation
+from d3a.d3a_core.util import d3a_path
+from d3a.models.config import SimulationConfig
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
 ACCUMULATED_KEYS_LIST = ["Accumulated Trades", "External Trades", "Totals", "Market Fees"]

@@ -19,6 +19,13 @@ from logging import getLogger
 from typing import List, Dict
 from uuid import uuid4
 
+from d3a_interface.area_validator import validate_area
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.enums import SpotMarketTypeEnum
+from d3a_interface.utils import key_in_dict_and_not_none
+from pendulum import DateTime, duration, today
+from slugify import slugify
+
 import d3a.constants
 from cached_property import cached_property
 from d3a.d3a_core.blockchain_interface import blockchain_interface_factory
@@ -36,12 +43,6 @@ from d3a.models.area.throughput_parameters import ThroughputParameters
 from d3a.models.config import SimulationConfig
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
-from d3a_interface.area_validator import validate_area
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.enums import SpotMarketTypeEnum
-from d3a_interface.utils import key_in_dict_and_not_none
-from pendulum import DateTime, duration, today
-from slugify import slugify
 
 log = getLogger(__name__)
 
