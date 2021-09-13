@@ -217,7 +217,7 @@ class ExternalMixin:
         return self.market_area.next_market
 
     def _get_market_from_command_argument(self, arguments: Dict):
-        if "timeslot" not in arguments:
+        if arguments.get("timeslot") is None:
             return self.next_market
         timeslot = str_to_pendulum_datetime(arguments["timeslot"])
         return self._get_market_from_timeslot(timeslot)

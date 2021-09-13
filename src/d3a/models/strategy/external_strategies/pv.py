@@ -166,7 +166,8 @@ class PVExternalMixin(ExternalMixin):
                 market,
                 replace_existing=replace_existing)
 
-            offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
+            offer_arguments = {
+                k: v for k, v in arguments.items() if k not in ["transaction_id", "timeslot"]}
             offer = self.post_offer(
                 market, replace_existing=replace_existing, **offer_arguments)
 
@@ -319,7 +320,7 @@ class PVExternalMixin(ExternalMixin):
 
             offer_arguments = {k: v
                                for k, v in arguments.items()
-                               if k not in ["transaction_id", "type"]}
+                               if k not in ["transaction_id", "type", "timeslot"]}
 
             offer = self.post_offer(
                 market, replace_existing=replace_existing, **offer_arguments)

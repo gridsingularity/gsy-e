@@ -28,6 +28,8 @@
 	color: black;
 }
 
+
+
 div.md-footer-logo.img {
 	border: 0;
 }
@@ -37,10 +39,12 @@ div.md-footer-nav {
 }
 
 div.md-footer-meta {
-	background-color: #CCD2D3;
+	background-color: #EFEFF1;
 
 }
-
+div.md-footer-meta.md-typeset a{
+    color: #FC1355;
+}
 .md-search__input::placeholder {
     color: #635F5F;
 }
@@ -196,6 +200,13 @@ p{
     text-align: justify;
     text-justify: inter-word;
 }
+.md-typeset a{
+    color: #FC1355;
+}
+.md-nav__link--active{
+    color: #FC1355;
+}
+
 .table {
   font-family: NB Akademie Std;
   border-collapse: collapse;
