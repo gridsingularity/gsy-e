@@ -20,6 +20,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.enums import BidOfferMatchAlgoEnum
 
 
 class FileExportEndpoints:
@@ -52,7 +53,8 @@ class FileExportEndpoints:
                 out_dict[area.slug][label].append(row[ii])
 
     def _populate_plots_stats_for_supply_demand_curve(self, area):
-        if ConstSettings.IAASettings.MARKET_TYPE == 3:
+        if (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+                BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value):
             if len(area.past_markets) == 0:
                 return
             market = area.past_markets[-1]

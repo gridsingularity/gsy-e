@@ -22,6 +22,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.enums import SpotMarketTypeEnum
 from parameterized import parameterized
 from pendulum import datetime
 
@@ -89,7 +90,7 @@ class TestD3ACoreUtil:
         ConstSettings.IAASettings.MARKET_TYPE = market_type
         ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = alt_pricing
         validate_const_settings_for_simulation()
-        assert ConstSettings.IAASettings.MARKET_TYPE == 1
+        assert ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
         assert ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == alt_pricing
         assert ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES
 
