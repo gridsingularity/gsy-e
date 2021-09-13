@@ -131,7 +131,7 @@ class AreaDispatcher:
             self.area.strategy.event_on_disabled_area()
 
     @staticmethod
-    def create_agent_object(owner, higher_market: Market,
+    def create_agent_object(owner: "AreaDispatcher", higher_market: Market,
                             lower_market: Market, market_type: MarketClassType):
         agent_constructor_arguments = {
             "owner": owner,
