@@ -17,10 +17,11 @@ from pathlib import Path
 from typing import Dict, Union
 
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.validators.smart_meter_validator import SmartMeterValidator
 from d3a_interface.data_classes import Offer
+from d3a_interface.enums import SpotMarketTypeEnum
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import find_object_of_same_weekday_and_time
+from d3a_interface.validators.smart_meter_validator import SmartMeterValidator
 from numpy import random
 from pendulum import duration
 from pendulum.datetime import DateTime
@@ -530,10 +531,10 @@ class SmartMeterStrategy(BidEnabledStrategy):
     def _event_tick_consumption(self):
         for market in self.area.all_markets:
             # One-sided market (only offers are posted)
-            if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                 self._one_sided_market_event_tick(market)
             # Two-sided markets (both offers and bids are posted)
-            elif ConstSettings.IAASettings.MARKET_TYPE in [2, 3]:
+            elif ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
                 # Update the price of existing bids to reflect the new rates
                 self.bid_update.update(market, self)
 

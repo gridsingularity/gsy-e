@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import Union, Dict, List  # noqa
 from logging import getLogger
+
+from d3a_interface.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 from math import isclose
 
@@ -199,7 +201,7 @@ class OneSidedMarket(Market):
 
     def determine_offer_price(self, energy_portion, energy, trade_rate,
                               trade_bid_info, orig_offer_price):
-        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             return self._update_offer_fee_and_calculate_final_price(
                 energy, trade_rate, energy_portion, orig_offer_price
             )

@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.enums import SpotMarketTypeEnum
 from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.models.strategy.commercial_producer import CommercialStrategy
@@ -94,13 +95,13 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
 
     def event_tick(self):
         """Buy energy on market tick. This method is triggered by the TICK event."""
-        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             for market in self.area.all_markets:
                 self.buy_energy(market)
 
     def event_market_cycle(self):
         super().event_market_cycle()
-        if ConstSettings.IAASettings.MARKET_TYPE == 2:
+        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
             for market in self.area.all_markets:
                 try:
                     buy_rate = find_object_of_same_weekday_and_time(self.energy_buy_rate,

@@ -20,6 +20,7 @@ import uuid
 from logging import getLogger
 from typing import Dict, List, Union  # noqa
 
+from d3a_interface.enums import SpotMarketTypeEnum
 from numpy.random import random
 from collections import namedtuple
 from pendulum import DateTime
@@ -98,9 +99,10 @@ class Market:
         self.current_tick_in_slot = 0
         self.device_registry = DeviceRegistry.REGISTRY
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-            self.redis_api = MarketRedisEventSubscriber(self) \
-                if ConstSettings.IAASettings.MARKET_TYPE == 1 \
-                else TwoSidedMarketRedisEventSubscriber(self)
+            self.redis_api = (
+                MarketRedisEventSubscriber(self)
+                if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
+                else TwoSidedMarketRedisEventSubscriber(self))
         setattr(self, RLOCK_MEMBER_NAME, RLock())
 
     def _create_fee_handler(self, grid_fee_type, grid_fees):
