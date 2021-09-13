@@ -27,6 +27,7 @@ from d3a.d3a_core.exceptions import WrongMarketTypeException
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import RedisCommunicator
 from d3a.d3a_core.util import create_subdict_or_update
 from d3a.events.event_structures import MarketEvent, AreaEvent
+from d3a.models.market import Market
 from d3a.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
 from d3a.models.area.redis_dispatcher.area_to_market_publisher import AreaToMarketEventPublisher
 from d3a.models.area.redis_dispatcher.market_event_dispatcher import AreaRedisMarketEventDispatcher
@@ -80,7 +81,8 @@ class AreaDispatcher:
     def broadcast_callback(self):
         return self._broadcast_notification
 
-    def _broadcast_notification_to_agents_of_market_type(self, market_type, event_type, **kwargs):
+    def _broadcast_notification_to_agents_of_market_type(
+            self, market_type: MarketClassType, event_type: AreaEvent, **kwargs):
         for time_slot, agents in self._get_agents_for_market_type(self, market_type).items():
             if time_slot not in self.area._markets.get_market_instances_from_class_type(
                     market_type):
@@ -129,7 +131,8 @@ class AreaDispatcher:
             self.area.strategy.event_on_disabled_area()
 
     @staticmethod
-    def create_agent_object(owner, higher_market, lower_market, market_type):
+    def create_agent_object(owner, higher_market: Market,
+                            lower_market: Market, market_type: MarketClassType):
         agent_constructor_arguments = {
             "owner": owner,
             "higher_market": higher_market,
