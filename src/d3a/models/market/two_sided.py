@@ -67,8 +67,8 @@ class TwoSidedMarket(OneSidedMarket):
                     self.accumulated_trade_price
                     )
 
-    def _update_new_bid_price_with_fee(self, bid_price, original_price):
-        return self.fee_class.update_incoming_bid_with_fee(bid_price, original_price)
+    def _update_new_bid_price_with_fee(self, price, original_price):
+        return self.fee_class.update_incoming_bid_with_fee(price, original_price)
 
     @lock_market_action
     def get_bids(self):

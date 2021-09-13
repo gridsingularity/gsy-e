@@ -62,17 +62,17 @@ class OneSidedMarket(Market):
     def balancing_offer(self, price, energy, seller, from_agent):
         assert False
 
-    def _update_new_offer_price_with_fee(self, offer_price, original_price, energy):
+    def _update_new_offer_price_with_fee(self, price, original_price, energy):
         """
         Override one sided market private method to abstract away the grid fee calculation
         when placing an offer to a market.
-        :param offer_price: Price of the offer coming from the source market, in cents
+        :param price: Price of the offer coming from the source market, in cents
         :param original_price: Price of the original offer from the device
         :param energy: Energy of the offer
         :return: Updated price for the forwarded offer on this market, in cents
         """
         return self.fee_class.update_incoming_offer_with_fee(
-            offer_price / energy, original_price / energy
+            price / energy, original_price / energy
         ) * energy
 
     @lock_market_action
