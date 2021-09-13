@@ -146,11 +146,13 @@ class SimulationEndpointBuffer:
         }
 
     def _read_settlement_markets_stats_to_dict(self, area: "Area") -> Dict[str, Dict]:
-        """Loop over all settlement markets and return market_stats for each in a dict."""
+        """Read last settlement market and return market_stats in a dict."""
         stats_dict = {}
-        for time_slot, market in area.settlement_markets.items():
-            stats_dict[time_slot.format(DATE_TIME_FORMAT)] = (
-                self._read_market_stats_to_dict(market))
+        if not area.last_past_settlement_market:
+            return stats_dict
+        last_market_time = area.last_past_settlement_market[0].format(DATE_TIME_FORMAT)
+        last_market_obj = area.last_past_settlement_market[1]
+        stats_dict[last_market_time] = self._read_market_stats_to_dict(last_market_obj)
         return stats_dict
 
     @staticmethod

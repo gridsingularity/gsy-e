@@ -556,6 +556,13 @@ class Area:
         return self._markets.settlement_markets
 
     @property
+    def last_past_settlement_market(self):
+        try:
+            return list(self._markets.past_settlement_markets.items())[-1]
+        except IndexError:
+            return None
+
+    @property
     def past_settlement_markets(self) -> Dict:
         return self._markets.past_settlement_markets
 
