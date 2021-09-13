@@ -17,6 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import OrderedDict
 from typing import Dict, TYPE_CHECKING
+from pendulum import DateTime
+
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.enums import SpotMarketTypeEnum
 
 from d3a_interface.constants_limits import ConstSettings
 from pendulum import DateTime
@@ -30,6 +34,7 @@ from d3a.models.market.market_structures import MarketClassType
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.settlement import SettlementMarket
 from d3a.models.market.two_sided import TwoSidedMarket
+
 
 if TYPE_CHECKING:
     from d3a.models.area import Area
@@ -81,9 +86,9 @@ class AreaMarkets:
     def _select_market_class(market_type: MarketClassType) -> Market:
         """Select market class dependent on the global config."""
         if market_type == MarketClassType.SPOT:
-            if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                 return OneSidedMarket
-            elif ConstSettings.IAASettings.MARKET_TYPE == 2:
+            elif ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
                 return TwoSidedMarket
         elif market_type == MarketClassType.SETTLEMENT:
             return SettlementMarket
