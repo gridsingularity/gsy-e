@@ -153,8 +153,8 @@ class AreaDispatcher:
                     min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE
                 )
             else:
-                raise WrongMarketTypeException(f'Wrong market type setting flag '
-                                               f'{ConstSettings.IAASettings.MARKET_TYPE}')
+                raise WrongMarketTypeException(f"Wrong market type setting flag "
+                                               f"{ConstSettings.IAASettings.MARKET_TYPE}")
         elif market_type == MarketClassType.SETTLEMENT:
             return SettlementAgent(**agent_constructor_arguments)
         elif market_type == MarketClassType.BALANCING:
