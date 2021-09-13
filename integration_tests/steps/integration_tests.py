@@ -434,7 +434,7 @@ def test_offer_bid_files(context, with_or_without, nonempty=False):
                for f in file_list)
 
 
-@then('offers, bids trades and stats are exported also for settlement markets')
+@then("offers, bids trades and stats are exported also for settlement markets")
 def test_settlement_offer_bid_files(context):
     file_dict = {}
     for root, _, files in os.walk(context.export_path):

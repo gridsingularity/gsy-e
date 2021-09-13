@@ -20,11 +20,12 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.enums import SpotMarketTypeEnum
 
 
 def get_setup(config):
     ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = True
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
 
     area = Area(
         "Grid",

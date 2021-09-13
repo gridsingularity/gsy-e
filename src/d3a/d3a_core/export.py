@@ -166,8 +166,8 @@ class ExportAndPlot:
         """
         old_dir = os.path.join(self.plot_dir, self.area.slug)
         if not os.path.isdir(old_dir):
-            _log.error("PLOT ERROR: No plots were generated for {} under {}".
-                       format(self.area.slug, self.plot_dir))
+            _log.error(f"PLOT ERROR: No plots were generated for {self.area.slug} "
+                       f"under {self.plot_dir}")
             return
         source = os.listdir(old_dir)
         for si in source:
@@ -372,8 +372,7 @@ class ExportAndPlot:
         plot_dir = os.path.join(self.plot_dir,
                                 "/".join([slugify(node).lower() for node in address_list][0:-1]))
         mkdir_from_str(plot_dir)
-        output_file = os.path.join(
-            plot_dir, "device_profile_{}.html".format(device_name))
+        output_file = os.path.join(plot_dir, f"device_profile_{device_name}.html")
         PlotlyGraph.plot_device_profile(device_dict, device_name, output_file, device_strategy)
 
     def plot_energy_profile(self, area: Area, subdir: str) -> None:
@@ -392,7 +391,7 @@ class ExportAndPlot:
         """
         plot_desc = PlotDescription(data=[], barmode="relative", xtitle="Time",
                                     ytitle="Energy [kWh]",
-                                    title="Energy Trade Profile of {}".format(market_name))
+                                    title=f"Energy Trade Profile of {market_name}")
         key = "energy"
         plot_desc.data.extend(self._plot_energy_graph(
             energy_profile,
@@ -407,7 +406,7 @@ class ExportAndPlot:
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir,
-                                   "energy_profile_{}.html".format(market_name))
+                                   f"energy_profile_{market_name}.html")
         PlotlyGraph.plot_bar_graph(plot_desc, output_file)
 
     def _plot_energy_graph(self, trades, market_name, agent, agent_label, key, scale_value):
@@ -447,7 +446,7 @@ class ExportAndPlot:
             return
         plot_dir = os.path.join(self.plot_dir)
         mkdir_from_str(plot_dir)
-        output_file = os.path.join(plot_dir, "unmatched_loads_{}.html".format(root_name))
+        output_file = os.path.join(plot_dir, f"unmatched_loads_{root_name}.html")
         PlotlyGraph.plot_bar_graph(plot_desc, output_file)
 
     def plot_ess_soc_history(self, area, subdir):
@@ -486,7 +485,7 @@ class ExportAndPlot:
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
-        output_file = os.path.join(plot_dir, "ess_soc_history_{}.html".format(root_name))
+        output_file = os.path.join(plot_dir, f"ess_soc_history_{root_name}.html")
         PlotlyGraph.plot_bar_graph(plot_desc, output_file)
 
     def _plot_stock_info_per_area_per_market_slot(self, area, plot_dir):
@@ -596,7 +595,7 @@ class ExportAndPlot:
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
-        output_file = os.path.join(plot_dir, "ess_energy_share_{}.html".format(root_name))
+        output_file = os.path.join(plot_dir, f"ess_energy_share_{root_name}.html")
         PlotlyGraph.plot_bar_graph(plot_desc, output_file)
 
     def plot_supply_demand_curve(self, area, subdir):
@@ -737,7 +736,7 @@ class ExportAndPlot:
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
-        output_file = os.path.join(plot_dir, "average_trade_price_{}.html".format(area_list[0]))
+        output_file = os.path.join(plot_dir, f"average_trade_price_{area_list[0]}.html")
         PlotlyGraph.plot_bar_graph(plot_desc, output_file)
 
     def _plot_avg_trade_graph(self, stats, area_name, key, label):
