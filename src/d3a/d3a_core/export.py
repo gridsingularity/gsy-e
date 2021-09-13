@@ -32,7 +32,7 @@ import plotly.graph_objs as go
 from d3a.d3a_core.sim_results.plotly_graph import PlotlyGraph
 from d3a.d3a_core.singletons import bid_offer_matcher
 from d3a.d3a_core.util import constsettings_to_dict, round_floats_for_ui
-from d3a.dataclasses import PlotDescription
+from d3a.data_classes import PlotDescription
 from d3a.models.area import Area
 from d3a.models.market.market_structures import (MarketClearingState, AvailableMarketTypes,
                                                  PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING)

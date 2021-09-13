@@ -22,7 +22,7 @@ import plotly as py
 import plotly.graph_objs as go
 from d3a import limit_float_precision
 from d3a.constants import TIME_ZONE
-from d3a.dataclasses import PlotDescription
+from d3a.data_classes import PlotDescription
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
