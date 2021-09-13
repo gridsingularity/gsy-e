@@ -34,8 +34,8 @@ from d3a.d3a_core.singletons import bid_offer_matcher
 from d3a.d3a_core.util import constsettings_to_dict, round_floats_for_ui
 from d3a.dataclasses import PlotDescription
 from d3a.models.area import Area
-from d3a.models.market.market_structures import MarketClearingState, AvailableMarketTypes, \
-    market_type_file_suffix_dict
+from d3a.models.market.market_structures import (MarketClearingState, AvailableMarketTypes,
+                                                 market_type_file_suffix_dict)
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.state import ESSEnergyOrigin
 from d3a.models.strategy.storage import StorageStrategy
@@ -501,20 +501,19 @@ class ExportAndPlot:
             for tick_slot, info_dicts in markets.items():
                 for info_dict in info_dicts:
                     if info_dict["tag"] == "bid":
-                        tool_tip = f"{info_dict['buyer_origin']} " \
-                                   f"Bid ({info_dict['energy']} kWh @ " \
-                                   f"{round_floats_for_ui(info_dict['rate'])} € cents / kWh)"
+                        tool_tip = (f"{info_dict['buyer_origin']} "
+                                    f"Bid ({info_dict['energy']} kWh @ "
+                                    f"{round_floats_for_ui(info_dict['rate'])} € cents / kWh)")
                         info_dict.update({"tool_tip": tool_tip})
                     elif info_dict["tag"] == "offer":
-                        tool_tip = f"{info_dict['seller_origin']} " \
-                                   f"Offer({info_dict['energy']} kWh @ " \
-                                   f"{round_floats_for_ui(info_dict['rate'])} € cents / kWh)"
+                        tool_tip = (f"{info_dict['seller_origin']} "
+                                    f"Offer({info_dict['energy']} kWh @ "
+                                    f"{round_floats_for_ui(info_dict['rate'])} € cents / kWh)")
                         info_dict.update({"tool_tip": tool_tip})
                     elif info_dict["tag"] == "trade":
-                        tool_tip = f"Trade: {info_dict['seller_origin']} --> " \
-                                   f"{info_dict['buyer_origin']} " \
-                                   f"({info_dict['energy']} kWh @ " \
-                                   f"{round_floats_for_ui(info_dict['rate'])} € / kWh)"
+                        tool_tip = (f"Trade: {info_dict['seller_origin']} --> "
+                                    f"{info_dict['buyer_origin']} ({info_dict['energy']} kWh @ "
+                                    f"{round_floats_for_ui(info_dict['rate'])} € / kWh)")
                         info_dict.update({"tool_tip": tool_tip})
                 for info_dict in info_dicts:
                     size = 5 if info_dict["tag"] in ["offer", "bid"] else 10
@@ -614,11 +613,11 @@ class ExportAndPlot:
         for market_slot, clearing in self.file_stats_endpoint.clearing[area.slug].items():
             data = list()
             xmax = 0
-            for time_slot, supply_curve in \
-                    self.file_stats_endpoint.cumulative_offers[area.slug][market_slot].items():
+            for time_slot, supply_curve in (
+                    self.file_stats_endpoint.cumulative_offers[area.slug][market_slot].items()):
                 data.append(self.render_supply_demand_curve(supply_curve, time_slot, True))
-            for time_slot, demand_curve in \
-                    self.file_stats_endpoint.cumulative_bids[area.slug][market_slot].items():
+            for time_slot, demand_curve in (
+                    self.file_stats_endpoint.cumulative_bids[area.slug][market_slot].items()):
                 data.append(self.render_supply_demand_curve(demand_curve, time_slot, False))
 
             if len(data) == 0:
@@ -717,8 +716,8 @@ class ExportAndPlot:
                 self._plot_avg_trade_graph(self.file_stats_endpoint.plot_stats,
                                            area_name, key, area_name)
             )
-            if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
-                    self.file_stats_endpoint.plot_balancing_stats[area_name.lower()] is not None:
+            if (ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and
+                    self.file_stats_endpoint.plot_balancing_stats[area_name.lower()] is not None):
                 area_name_balancing = area_name.lower() + "-demand-balancing-trades"
                 plot_desc.data.append(self._plot_avg_trade_graph(
                     self.file_stats_endpoint.plot_balancing_stats, area_name,
@@ -773,9 +772,8 @@ class ExportAndPlot:
             plot_data = self.get_plotly_graph_dataset(data, market_slot)
             if len(plot_data) > 0:
                 market_slot_str = market_slot.format(DATE_TIME_FORMAT)
-                output_file = \
-                    os.path.join(plot_dir, f"energy_profile_hr_"
-                                           f"{market_name}_{market_slot_str}.html")
+                output_file = os.path.join(
+                    plot_dir, f"energy_profile_hr_{market_name}_{market_slot_str}.html")
                 time_range = [market_slot - GlobalConfig.tick_length,
                               market_slot + GlobalConfig.slot_length + GlobalConfig.tick_length]
                 PlotlyGraph.plot_bar_graph(plot_desc, output_file, time_range=time_range)

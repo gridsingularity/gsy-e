@@ -105,8 +105,8 @@ class PlotlyGraph:
                     if self.dataset[self.key][de] == "-":
                         self.umHours[self.dataset['slot'][de]] = 0.0
                     else:
-                        self.umHours[self.dataset['slot'][de]] = \
-                            round(self.dataset[self.key][de], 5) * scale_value
+                        self.umHours[self.dataset['slot'][de]] = (
+                                round(self.dataset[self.key][de], 5) * scale_value)
 
     @staticmethod
     def modify_time_axis(plot_desc: PlotDescription):
@@ -225,8 +225,8 @@ class PlotlyGraph:
     def _plot_line_time_series(cls, device_dict, var_name, invert_y=False):
         color = _get_color(var_name, OPAQUE_ALPHA)
         fill_color = _get_color(var_name, TRANSPARENT_ALPHA)
-        time, var_data, longterm_min_var_data, longterm_max_var_data = \
-            cls.prepare_input(device_dict, var_name)
+        time, var_data, longterm_min_var_data, longterm_max_var_data = (
+            cls.prepare_input(device_dict, var_name))
         yaxis = "y3"
         connectgaps = True
         line = dict(color=color,
@@ -302,8 +302,8 @@ class PlotlyGraph:
                                      expected_varname=None, invert_y=False):
         color_traded = _get_color(traded_varname, OPAQUE_ALPHA)
         fill_color_traded = _get_color(traded_varname, OPAQUE_ALPHA)
-        time_traded, energy_traded, min_energy_traded, max_energy_traded = \
-            cls.prepare_input(device_dict, traded_varname, invert_y)
+        time_traded, energy_traded, min_energy_traded, max_energy_traded = (
+            cls.prepare_input(device_dict, traded_varname, invert_y))
 
         yaxis = yaxis
         time_series_traded = go.Bar(
@@ -326,8 +326,8 @@ class PlotlyGraph:
         if expected_varname is not None:
             color_expected = _get_color(expected_varname, OPAQUE_ALPHA)
             fill_color_expected = _get_color(expected_varname, TRANSPARENT_ALPHA)
-            time_expected, energy_expected, min_energy_expected, max_energy_expected = \
-                cls.prepare_input(device_dict, expected_varname)
+            time_expected, energy_expected, min_energy_expected, max_energy_expected = (
+                cls.prepare_input(device_dict, expected_varname))
             time_series_expected = go.Bar(
                 x=time_expected,
                 y=energy_expected,
@@ -344,13 +344,12 @@ class PlotlyGraph:
                 xaxis="x",
                 yaxis=yaxis,
             )
-            return [time_series_expected, time_series_traded] + \
-                cls._hoverinfo(time_expected, min_energy_expected, max_energy_expected, yaxis,
-                               only_time=True)
+            return [time_series_expected, time_series_traded] + cls._hoverinfo(
+                time_expected, min_energy_expected, max_energy_expected, yaxis,
+                only_time=True)
         else:
-            return [time_series_traded] + \
-                cls._hoverinfo(time_traded, min_energy_traded, max_energy_traded, yaxis,
-                               only_time=True)
+            return [time_series_traded] + cls._hoverinfo(
+                time_traded, min_energy_traded, max_energy_traded, yaxis, only_time=True)
 
     @classmethod
     def _hoverinfo(cls, time, longterm_min, longterm_max, yaxis, only_time=False):
@@ -391,8 +390,8 @@ class PlotlyGraph:
     @classmethod
     def _plot_candlestick_time_series_price(cls, device_dict, var_name, yaxis):
 
-        time, trade_rate_list, longterm_min_trade_rate, longterm_max_trade_rate = \
-            cls.prepare_input(device_dict, var_name)
+        time, trade_rate_list, longterm_min_trade_rate, longterm_max_trade_rate = (
+            cls.prepare_input(device_dict, var_name))
         plot_time = []
         plot_local_min_trade_rate = []
         plot_local_max_trade_rate = []
@@ -444,9 +443,8 @@ class PlotlyGraph:
             yaxis=yaxis
         )
 
-        return [candle_stick, hoverinfo_local_max, hoverinfo_loacl_min] + \
-            cls._hoverinfo(plot_time, plot_longterm_min_trade_rate,
-                           plot_longterm_max_trade_rate, yaxis)
+        return [candle_stick, hoverinfo_local_max, hoverinfo_loacl_min] + cls._hoverinfo(
+            plot_time, plot_longterm_min_trade_rate, plot_longterm_max_trade_rate, yaxis)
 
     @classmethod
     def prepare_input(cls, device_dict, var_name, invert_y=False):

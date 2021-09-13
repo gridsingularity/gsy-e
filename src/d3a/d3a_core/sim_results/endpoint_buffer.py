@@ -71,8 +71,8 @@ class SimulationEndpointBuffer:
         self.results_handler = ResultsHandler(should_export_plots)
         self.simulation_state = {"general": {}, "areas": {}}
 
-        if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or \
-                ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
+        if (ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or
+                ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR):
             self.offer_bid_trade_hr = OfferBidTradeGraphStats()
 
     def prepare_results_for_publish(self) -> Dict:
@@ -94,10 +94,10 @@ class SimulationEndpointBuffer:
         area_dict = dict()
         area_dict["name"] = target_area.name
         area_dict["uuid"] = target_area.uuid
-        area_dict["parent_uuid"] = target_area.parent.uuid \
-            if target_area.parent is not None else ""
-        area_dict["type"] = str(target_area.strategy.__class__.__name__) \
-            if target_area.strategy is not None else "Area"
+        area_dict["parent_uuid"] = (target_area.parent.uuid
+                                    if target_area.parent is not None else "")
+        area_dict["type"] = (str(target_area.strategy.__class__.__name__)
+                             if target_area.strategy is not None else "Area")
         area_dict["children"] = []
         return area_dict
 
@@ -263,13 +263,16 @@ class SimulationEndpointBuffer:
         """Wrapper for handling of all results."""
         self.area_result_dict = self._create_area_tree_dict(area)
         self.status = simulation_status
-        is_initial_current_market_on_cn = GlobalConfig.IS_CANARY_NETWORK and \
-            (area.next_market is None or (area.current_market and
-             area.next_market.time_slot - area.current_market.time_slot > area.config.slot_length))
+        is_initial_current_market_on_cn = (
+                GlobalConfig.IS_CANARY_NETWORK and
+                (area.next_market is None or
+                 (area.current_market and
+                  area.next_market.time_slot -
+                  area.current_market.time_slot > area.config.slot_length)))
         if area.current_market is not None and not is_initial_current_market_on_cn:
             self.current_market_time_slot_str = area.current_market.time_slot_str
-            self.current_market_ui_time_slot_str = \
-                area.current_market.time_slot.format(DATE_TIME_UI_FORMAT)
+            self.current_market_ui_time_slot_str = (
+                area.current_market.time_slot.format(DATE_TIME_UI_FORMAT))
             self.current_market_time_slot_unix = area.current_market.time_slot.timestamp()
             self.current_market_time_slot = area.current_market.time_slot
         self.simulation_state["general"] = sim_state
@@ -287,8 +290,8 @@ class SimulationEndpointBuffer:
 
         self.bids_offers_trades.clear()
 
-        if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or \
-                ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
+        if (ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or
+                ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR):
             self.offer_bid_trade_hr.update(area)
 
         self.result_area_uuids = set()
@@ -301,5 +304,5 @@ class SimulationEndpointBuffer:
         if self.current_market_time_slot_str == "":
             return
         for area_uuid, area_result in self.flattened_area_core_stats_dict.items():
-            self.bids_offers_trades[area_uuid] = \
-                {k: area_result[k] for k in ("offers", "bids", "trades")}
+            self.bids_offers_trades[area_uuid] = {
+                k: area_result[k] for k in ("offers", "bids", "trades")}

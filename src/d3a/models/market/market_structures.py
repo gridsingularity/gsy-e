@@ -335,13 +335,12 @@ def trade_from_json_string(trade_string, current_time=None) -> Trade:
 class BalancingOffer(Offer):
 
     def __repr__(self) -> str:
-        return "<BalancingOffer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller} {rate}'>"\
-            .format(s=self, rate=self.energy_rate)
+        return ("<BalancingOffer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', "
+                "'{s.seller} {rate}'>".format(s=self, rate=self.energy_rate))
 
     def __str__(self) -> str:
-        return "<BalancingOffer{{{s.id!s:.6s}}} [{s.seller}]: " \
-               "{s.energy} kWh @ {s.price} @ {rate}>".format(s=self,
-                                                             rate=self.energy_rate)
+        return ("<BalancingOffer{{{s.id!s:.6s}}} [{s.seller}]: "
+                "{s.energy} kWh @ {s.price} @ {rate}>".format(s=self, rate=self.energy_rate))
 
 
 @dataclass

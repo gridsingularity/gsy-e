@@ -113,8 +113,8 @@ class LeafDataExporter(BaseDataExporter):
         return [self._row(market.time_slot, market) for market in self.past_markets]
 
     def _traded(self, market):
-        return market.traded_energy[self.area.name] \
-            if self.area.name in market.traded_energy else 0
+        return (market.traded_energy[self.area.name]
+                if self.area.name in market.traded_energy else 0)
 
     def _row(self, slot, market):
         return [slot,
@@ -164,8 +164,8 @@ class FileExportEndpoints:
     ) -> BaseDataExporter:
         """Decide which data acquisition class to use."""
         if past_market_type == AvailableMarketTypes.SPOT_MARKET:
-            return UpperLevelDataExporter(area.past_markets) \
-                if len(area.children) > 0 else LeafDataExporter(area, area.past_markets)
+            return (UpperLevelDataExporter(area.past_markets)
+                    if len(area.children) > 0 else LeafDataExporter(area, area.past_markets))
         if past_market_type == AvailableMarketTypes.BALANCING_MARKET:
             return BalancingDataExporter(area.past_balancing_markets)
         if past_market_type == AvailableMarketTypes.SETTLEMENT_MARKET:
@@ -202,8 +202,8 @@ class FileExportEndpoints:
                 self.clearing[area.slug][market.time_slot] = {}
             self.cumulative_offers[area.slug][market.time_slot] = market.state.cumulative_offers
             self.cumulative_bids[area.slug][market.time_slot] = market.state.cumulative_bids
-            self.clearing[area.slug][market.time_slot] = \
-                bid_offer_matcher.matcher.match_algorithm.state.clearing
+            self.clearing[area.slug][market.time_slot] = (
+                bid_offer_matcher.matcher.match_algorithm.state.clearing)
 
     def _update_plot_stats(self, area: Area) -> None:
         """Populate the statistics for the plots into self.plot_stats."""

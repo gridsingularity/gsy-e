@@ -296,8 +296,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     @property
     def is_eligible_for_balancing_market(self):
-        if self.owner.name in DeviceRegistry.REGISTRY and \
-                ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
+        if (self.owner.name in DeviceRegistry.REGISTRY and
+                ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET):
             return True
 
     def offer(self, market_id, offer_args):
@@ -481,8 +481,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     def assert_if_trade_offer_price_is_too_low(self, market_id, trade):
         if trade.is_offer_trade and trade.offer_bid.seller == self.owner.name:
             offer = [o for o in self.offers.sold[market_id] if o.id == trade.offer_bid.id][0]
-            assert trade.offer_bid.energy_rate >= \
-                offer.energy_rate - FLOATING_POINT_TOLERANCE
+            assert (trade.offer_bid.energy_rate >=
+                    offer.energy_rate - FLOATING_POINT_TOLERANCE)
 
     def can_offer_be_posted(
             self, offer_energy, offer_price, available_energy, market, replace_existing=False):
@@ -722,16 +722,18 @@ class BidEnabledStrategy(BaseStrategy):
         return self._bids[market.id]
 
     def event_bid_deleted(self, *, market_id, bid):
-        assert ConstSettings.IAASettings.MARKET_TYPE != 1, \
-            "Invalid state, cannot receive a bid if single sided market is globally configured."
+        assert ConstSettings.IAASettings.MARKET_TYPE != 1, ("Invalid state, cannot receive a bid "
+                                                            "if single sided market is "
+                                                            "globally configured.")
 
         if bid.buyer != self.owner.name:
             return
         self.remove_bid_from_pending(market_id, bid.id)
 
     def event_bid_split(self, *, market_id, original_bid, accepted_bid, residual_bid):
-        assert ConstSettings.IAASettings.MARKET_TYPE != 1, \
-            "Invalid state, cannot receive a bid if single sided market is globally configured."
+        assert ConstSettings.IAASettings.MARKET_TYPE != 1, ("Invalid state, cannot receive a bid "
+                                                            "if single sided market is "
+                                                            "globally configured.")
         if accepted_bid.buyer != self.owner.name:
             return
         self.add_bid_to_posted(market_id, bid=accepted_bid)
@@ -742,8 +744,9 @@ class BidEnabledStrategy(BaseStrategy):
 
         This method is triggered by the MarketEvent.BID_TRADED event.
         """
-        assert ConstSettings.IAASettings.MARKET_TYPE != 1, \
-            "Invalid state, cannot receive a bid if single sided market is globally configured."
+        assert ConstSettings.IAASettings.MARKET_TYPE != 1, ("Invalid state, cannot receive a bid "
+                                                            "if single sided market is "
+                                                            "globally configured.")
 
         if bid_trade.buyer == self.owner.name:
             self.add_bid_to_bought(bid_trade.offer_bid, market_id)
