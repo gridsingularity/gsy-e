@@ -185,7 +185,10 @@ class FileExportEndpoints:
 
     def _populate_plots_stats_for_supply_demand_curve(self, area: Area) -> None:
         """Populate the statistics for supply_demand_curve."""
-        if ConstSettings.IAASettings.MARKET_TYPE == 3:
+        """To be enabled in context of D3ASIM-3534"""
+        return
+        if (ConstSettings.IAASettings.MARKET_TYPE == 2 and
+                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == 2):
             if len(area.past_markets) == 0:
                 return
             market = area.past_markets[-1]
