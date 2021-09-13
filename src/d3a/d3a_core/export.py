@@ -32,6 +32,7 @@ import plotly.graph_objs as go
 from d3a.d3a_core.sim_results.plotly_graph import PlotlyGraph
 from d3a.d3a_core.singletons import bid_offer_matcher
 from d3a.d3a_core.util import constsettings_to_dict, round_floats_for_ui
+from d3a.dataclasses import PlotDescription
 from d3a.models.area import Area
 from d3a.models.market.market_structures import MarketClearingState, AvailableMarketTypes, \
     market_type_file_suffix_dict
@@ -39,7 +40,6 @@ from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offe
 from d3a.models.state import ESSEnergyOrigin
 from d3a.models.strategy.storage import StorageStrategy
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
-from d3a_interface.dataclasses import PlotDescription
 from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 from d3a_interface.utils import mkdir_from_str, generate_market_slot_list
 from pendulum import DateTime

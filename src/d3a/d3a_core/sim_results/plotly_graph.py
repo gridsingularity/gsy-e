@@ -15,22 +15,22 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import plotly as py
-import plotly.graph_objs as go
-import pendulum
 import os
 
-from d3a_interface.dataclasses import PlotDescription
+import pendulum
+import plotly as py
+import plotly.graph_objs as go
+from d3a import limit_float_precision
 from d3a.constants import TIME_ZONE
-from d3a.models.strategy.storage import StorageStrategy
+from d3a.dataclasses import PlotDescription
+from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a.models.strategy.finite_power_plant import FinitePowerPlant
+from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.smart_meter import SmartMeterStrategy
-from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
-from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
-from d3a.models.strategy.finite_power_plant import FinitePowerPlant
-from d3a import limit_float_precision
+from d3a.models.strategy.storage import StorageStrategy
 
 green = 'rgba(20,150,20, alpha)'
 purple = 'rgba(156, 110, 177, alpha)'
