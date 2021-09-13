@@ -33,13 +33,19 @@ class StorageExternalMixin(ExternalMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @property
-    def filtered_bids_next_market(self) -> List[Dict]:
-        """Get a representation of each of the device's bids from the next market."""
+    def filtered_market_bids(self, market) -> List[Dict]:
+        """
+        Get a representation of each of the asset's bids from the market.
+        Args:
+            market: Market object that will read the bids from
+
+        Returns: List of bids for the strategy asset
+
+        """
 
         return [
-            {"id": bid.id, 'price': bid.price, 'energy': bid.energy}
-            for _, bid in self.next_market.get_bids().items()
+            {"id": bid.id, "price": bid.price, "energy": bid.energy}
+            for _, bid in market.get_bids().items()
             if bid.buyer == self.device.name]
 
     def event_activate(self, **kwargs):
@@ -66,8 +72,9 @@ class StorageExternalMixin(ExternalMixin):
 
     def _list_offers_impl(self, arguments, response_channel):
         try:
+            market = self._get_market_from_command_argument(arguments)
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
-                               for _, v in self.next_market.get_offers().items()
+                               for _, v in market.get_offers().items()
                                if v.seller == self.device.name]
             self.redis.publish_json(
                 response_channel,
@@ -89,8 +96,9 @@ class StorageExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
+            market = self._get_market_from_command_argument(arguments)
             if ("offer" in arguments and arguments["offer"] is not None) and \
-                    not self.offers.is_offer_posted(self.next_market.id, arguments["offer"]):
+                    not self.offers.is_offer_posted(market.id, arguments["offer"]):
                 raise Exception("Offer_id is not associated with any posted offer.")
         except Exception:
             logging.exception(f"Error when handling delete offer request. Payload {payload}")
@@ -105,13 +113,14 @@ class StorageExternalMixin(ExternalMixin):
 
     def _delete_offer_impl(self, arguments, response_channel):
         try:
+            market = self._get_market_from_command_argument(arguments)
             to_delete_offer_id = arguments["offer"] if "offer" in arguments else None
             deleted_offers = \
                 self.offers.remove_offer_from_cache_and_market(
-                    self.next_market, to_delete_offer_id)
-            self.state.offered_sell_kWh[self.next_market.time_slot] = \
-                self.offers.open_offer_energy(self.next_market.id)
-            self.state.clamp_energy_to_sell_kWh([self.next_market.time_slot])
+                    market, to_delete_offer_id)
+            self.state.offered_sell_kWh[market.time_slot] = \
+                self.offers.open_offer_energy(market.id)
+            self.state.clamp_energy_to_sell_kWh([market.time_slot])
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer_delete", "status": "ready",
@@ -131,6 +140,7 @@ class StorageExternalMixin(ExternalMixin):
         transaction_id = self._get_transaction_id(payload)
         required_args = {"price", "energy", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
+                                            "timeslot",
                                             "attributes",
                                             "requirements"})
 
@@ -176,16 +186,18 @@ class StorageExternalMixin(ExternalMixin):
 
     def _offer_impl(self, arguments, response_channel):
         try:
-            offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
+            offer_arguments = {
+                k: v for k, v in arguments.items() if k not in ["transaction_id", "timeslot"]}
 
             replace_existing = offer_arguments.pop("replace_existing", True)
-            assert self.can_offer_be_posted(self.next_market.time_slot, **arguments)
+            market = self._get_market_from_command_argument(arguments)
+            assert self.can_offer_be_posted(market.time_slot, **arguments)
             offer = self.post_offer(
-                self.next_market, replace_existing=replace_existing, **offer_arguments)
+                market, replace_existing=replace_existing, **offer_arguments)
 
-            self.state.offered_sell_kWh[self.next_market.time_slot] = \
-                self.offers.open_offer_energy(self.next_market.id)
-            self.state.clamp_energy_to_sell_kWh([self.next_market.time_slot])
+            self.state.offered_sell_kWh[market.time_slot] = \
+                self.offers.open_offer_energy(market.id)
+            self.state.clamp_energy_to_sell_kWh([market.time_slot])
 
             self.redis.publish_json(
                 response_channel,
@@ -214,10 +226,11 @@ class StorageExternalMixin(ExternalMixin):
 
     def _list_bids_impl(self, arguments, response_channel):
         try:
+            market = self._get_market_from_command_argument(arguments)
             self.redis.publish_json(
                 response_channel, {
                     "command": "list_bids", "status": "ready",
-                    "bid_list": self.filtered_bids_next_market,
+                    "bid_list": self.filtered_market_bids(market),
                     "transaction_id": arguments.get("transaction_id")})
         except Exception:
             logging.exception(f"Error when handling list bids on area {self.device.name}")
@@ -235,8 +248,9 @@ class StorageExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
+            market = self._get_market_from_command_argument(arguments)
             if ("bid" in arguments and arguments["bid"] is not None) and \
-                    not self.is_bid_posted(self.next_market, arguments["bid"]):
+                    not self.is_bid_posted(market, arguments["bid"]):
                 raise Exception("Bid_id is not associated with any posted bid.")
         except Exception as e:
             self.redis.publish_json(
@@ -252,12 +266,13 @@ class StorageExternalMixin(ExternalMixin):
 
     def _delete_bid_impl(self, arguments, response_channel):
         try:
+            market = self._get_market_from_command_argument(arguments)
             to_delete_bid_id = arguments["bid"] if "bid" in arguments else None
             deleted_bids = \
-                self.remove_bid_from_pending(self.next_market.id, bid_id=to_delete_bid_id)
-            self.state.offered_buy_kWh[self.next_market.time_slot] = \
-                self.posted_bid_energy(self.next_market.id)
-            self.state.clamp_energy_to_buy_kWh([self.next_market.time_slot])
+                self.remove_bid_from_pending(market.id, bid_id=to_delete_bid_id)
+            self.state.offered_buy_kWh[market.time_slot] = \
+                self.posted_bid_energy(market.id)
+            self.state.clamp_energy_to_buy_kWh([market.time_slot])
             self.redis.publish_json(
                 response_channel,
                 {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
@@ -276,6 +291,7 @@ class StorageExternalMixin(ExternalMixin):
         transaction_id = self._get_transaction_id(payload)
         required_args = {"price", "energy", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
+                                            "timeslot",
                                             "attributes",
                                             "requirements"})
 
@@ -318,18 +334,19 @@ class StorageExternalMixin(ExternalMixin):
     def _bid_impl(self, arguments, bid_response_channel):
         try:
             replace_existing = arguments.get("replace_existing", True)
-            assert self.can_bid_be_posted(self.next_market.time_slot, **arguments)
+            market = self._get_market_from_command_argument(arguments)
+            assert self.can_bid_be_posted(market.time_slot, **arguments)
             bid = self.post_bid(
-                self.next_market,
+                market,
                 arguments["price"],
                 arguments["energy"],
                 replace_existing=replace_existing,
                 attributes=arguments.get("attributes"),
                 requirements=arguments.get("requirements")
             )
-            self.state.offered_buy_kWh[self.next_market.time_slot] = \
-                self.posted_bid_energy(self.next_market.id)
-            self.state.clamp_energy_to_buy_kWh([self.next_market.time_slot])
+            self.state.offered_buy_kWh[market.time_slot] = \
+                self.posted_bid_energy(market.id)
+            self.state.clamp_energy_to_buy_kWh([market.time_slot])
             self.redis.publish_json(
                 bid_response_channel, {
                     "command": "bid", "status": "ready",
@@ -426,17 +443,19 @@ class StorageExternalMixin(ExternalMixin):
             assert False, f"Incorrect incoming request name: {req}"
 
     def _delete_offer_aggregator(self, arguments):
+        market = self._get_market_from_command_argument(arguments)
         if ("offer" in arguments and arguments["offer"] is not None) and \
-                not self.offers.is_offer_posted(self.next_market.id, arguments["offer"]):
+                not self.offers.is_offer_posted(market.id, arguments["offer"]):
             raise Exception("Offer_id is not associated with any posted offer.")
 
         try:
+            market = self._get_market_from_command_argument(arguments)
             to_delete_offer_id = arguments["offer"] if "offer" in arguments else None
             deleted_offers = self.offers.remove_offer_from_cache_and_market(
-                self.next_market, to_delete_offer_id)
-            self.state.offered_sell_kWh[self.next_market.time_slot] = \
-                self.offers.open_offer_energy(self.next_market.id)
-            self.state.clamp_energy_to_sell_kWh([self.next_market.time_slot])
+                market, to_delete_offer_id)
+            self.state.offered_sell_kWh[market.time_slot] = \
+                self.offers.open_offer_energy(market.id)
+            self.state.clamp_energy_to_sell_kWh([market.time_slot])
             return {
                 "command": "offer_delete", "status": "ready",
                 "deleted_offers": deleted_offers,
@@ -453,8 +472,9 @@ class StorageExternalMixin(ExternalMixin):
 
     def _list_offers_aggregator(self, arguments):
         try:
+            market = self._get_market_from_command_argument(arguments)
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
-                               for _, v in self.next_market.get_offers().items()
+                               for _, v in market.get_offers().items()
                                if v.seller == self.device.name]
             return {
                 "command": "list_offers", "status": "ready", "offer_list": filtered_offers,
@@ -470,6 +490,7 @@ class StorageExternalMixin(ExternalMixin):
     def _offer_aggregator(self, arguments):
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
+                                            "timeslot",
                                             "attributes",
                                             "requirements"})
 
@@ -477,21 +498,24 @@ class StorageExternalMixin(ExternalMixin):
         assert all(arg in arguments.keys() for arg in required_args)
         # Check that every provided argument is allowed
         assert all(arg in allowed_args for arg in arguments.keys())
+        market = self._get_market_from_command_argument(arguments)
 
         with self.lock:
             try:
                 offer_arguments = {
-                    k: v for k, v in arguments.items() if k not in ["transaction_id", "type"]}
-                assert self.can_offer_be_posted(self.next_market.time_slot, **offer_arguments)
+                    k: v for k, v in arguments.items()
+                    if k not in ["transaction_id", "type", "timeslot"]}
+
+                assert self.can_offer_be_posted(market.time_slot, **offer_arguments)
 
                 replace_existing = offer_arguments.pop("replace_existing", True)
 
                 offer = self.post_offer(
-                    self.next_market, replace_existing=replace_existing, **offer_arguments)
+                    market, replace_existing=replace_existing, **offer_arguments)
 
-                self.state.offered_sell_kWh[self.next_market.time_slot] = \
-                    self.offers.open_offer_energy(self.next_market.id)
-                self.state.clamp_energy_to_sell_kWh([self.next_market.time_slot])
+                self.state.offered_sell_kWh[market.time_slot] = \
+                    self.offers.open_offer_energy(market.id)
+                self.state.clamp_energy_to_sell_kWh([market.time_slot])
 
                 return {
                     "command": "offer",
@@ -511,6 +535,7 @@ class StorageExternalMixin(ExternalMixin):
     def _bid_aggregator(self, arguments: Dict):
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
+                                            "timeslot",
                                             "attributes",
                                             "requirements"})
 
@@ -520,11 +545,12 @@ class StorageExternalMixin(ExternalMixin):
             # Check that every provided argument is allowed
             assert all(arg in allowed_args for arg in arguments.keys())
 
-            assert self.can_bid_be_posted(self.next_market.time_slot, **arguments)
+            market = self._get_market_from_command_argument(arguments)
+            assert self.can_bid_be_posted(market.time_slot, **arguments)
 
             replace_existing = arguments.pop("replace_existing", True)
             bid = self.post_bid(
-                self.next_market,
+                market,
                 arguments["price"],
                 arguments["energy"],
                 replace_existing=replace_existing,
@@ -532,9 +558,9 @@ class StorageExternalMixin(ExternalMixin):
                 requirements=arguments.get("requirements")
             )
 
-            self.state.offered_buy_kWh[self.next_market.time_slot] = \
-                self.posted_bid_energy(self.next_market.id)
-            self.state.clamp_energy_to_buy_kWh([self.next_market.time_slot])
+            self.state.offered_buy_kWh[market.time_slot] = \
+                self.posted_bid_energy(market.id)
+            self.state.clamp_energy_to_buy_kWh([market.time_slot])
             return {
                 "command": "bid", "status": "ready",
                 "bid": bid.to_json_string(replace_existing=replace_existing),
@@ -549,8 +575,9 @@ class StorageExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id")}
 
     def _delete_bid_aggregator(self, arguments):
+        market = self._get_market_from_command_argument(arguments)
         if ("bid" in arguments and arguments["bid"] is not None) and \
-                not self.is_bid_posted(self.next_market, arguments["bid"]):
+                not self.is_bid_posted(market, arguments["bid"]):
             return {
                 "command": "bid_delete", "status": "error",
                 "error_message": "Bid_id is not associated with any posted bid.",
@@ -559,10 +586,10 @@ class StorageExternalMixin(ExternalMixin):
         try:
             to_delete_bid_id = arguments["bid"] if "bid" in arguments else None
             deleted_bids = \
-                self.remove_bid_from_pending(self.next_market.id, bid_id=to_delete_bid_id)
-            self.state.offered_buy_kWh[self.next_market.time_slot] = \
-                self.posted_bid_energy(self.next_market.id)
-            self.state.clamp_energy_to_buy_kWh([self.next_market.time_slot])
+                self.remove_bid_from_pending(market.id, bid_id=to_delete_bid_id)
+            self.state.offered_buy_kWh[market.time_slot] = \
+                self.posted_bid_energy(market.id)
+            self.state.clamp_energy_to_buy_kWh([market.time_slot])
             return {
                 "command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
                 "area_uuid": self.device.uuid,
@@ -577,9 +604,10 @@ class StorageExternalMixin(ExternalMixin):
 
     def _list_bids_aggregator(self, arguments):
         try:
+            market = self._get_market_from_command_argument(arguments)
             return {
                 "command": "list_bids", "status": "ready",
-                "bid_list": self.filtered_bids_next_market,
+                "bid_list": self.filtered_market_bids(market),
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id")}
         except Exception:

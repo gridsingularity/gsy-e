@@ -45,13 +45,19 @@ class LoadExternalMixin(ExternalMixin):
                 f"{self.channel_prefix}/list_bids": self.list_bids,
                 }
 
-    @property
-    def filtered_bids_next_market(self) -> List[Dict]:
-        """Get a representation of each of the device's bids from the next market."""
+    def filtered_market_bids(self, market) -> List[Dict]:
+        """
+        Get a representation of each of the asset's bids from the market.
+        Args:
+            market: Market object that will read the bids from
+
+        Returns: List of bids for the strategy asset
+
+        """
 
         return [
             {"id": bid.id, "price": bid.price, "energy": bid.energy}
-            for _, bid in self.next_market.get_bids().items()
+            for _, bid in market.get_bids().items()
             if bid.buyer == self.device.name]
 
     def event_activate(self, **kwargs):
@@ -70,10 +76,11 @@ class LoadExternalMixin(ExternalMixin):
 
     def _list_bids_impl(self, arguments, response_channel):
         try:
+            market = self._get_market_from_command_argument(arguments)
             self.redis.publish_json(
                 response_channel, {
                     "command": "list_bids", "status": "ready",
-                    "bid_list": self.filtered_bids_next_market,
+                    "bid_list": self.filtered_market_bids(market),
                     "transaction_id": arguments.get("transaction_id")})
         except Exception:
             error_message = f"Error when handling list bids on area {self.device.name}"
@@ -92,8 +99,9 @@ class LoadExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
+            market = self._get_market_from_command_argument(arguments)
             if ("bid" in arguments and arguments["bid"] is not None) and \
-                    not self.is_bid_posted(self.next_market, arguments["bid"]):
+                    not self.is_bid_posted(market, arguments["bid"]):
                 raise Exception("Bid_id is not associated with any posted bid.")
         except Exception as e:
             self.redis.publish_json(
@@ -109,9 +117,10 @@ class LoadExternalMixin(ExternalMixin):
 
     def _delete_bid_impl(self, arguments, response_channel):
         try:
+            market = self._get_market_from_command_argument(arguments)
             to_delete_bid_id = arguments["bid"] if "bid" in arguments else None
             deleted_bids = \
-                self.remove_bid_from_pending(self.next_market.id, bid_id=to_delete_bid_id)
+                self.remove_bid_from_pending(market.id, bid_id=to_delete_bid_id)
             self.redis.publish_json(
                 response_channel,
                 {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
@@ -131,6 +140,7 @@ class LoadExternalMixin(ExternalMixin):
         transaction_id = self._get_transaction_id(payload)
         required_args = {"price", "energy", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
+                                            "timeslot",
                                             "attributes",
                                             "requirements"})
 
@@ -160,16 +170,17 @@ class LoadExternalMixin(ExternalMixin):
 
     def _bid_impl(self, arguments, bid_response_channel):
         try:
+            market = self._get_market_from_command_argument(arguments)
             replace_existing = arguments.get("replace_existing", True)
             assert self.can_bid_be_posted(
                 arguments["energy"],
                 arguments["price"],
-                self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0,
-                self.next_market,
+                self.state.get_energy_requirement_Wh(market.time_slot) / 1000.0,
+                market,
                 replace_existing=replace_existing)
 
             bid = self.post_bid(
-                self.next_market,
+                market,
                 arguments["price"],
                 arguments["energy"],
                 replace_existing=replace_existing,
@@ -261,10 +272,12 @@ class LoadExternalMixin(ExternalMixin):
     def _bid_aggregator(self, arguments):
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
+                                            "timeslot",
                                             "attributes",
                                             "requirements"})
 
         try:
+            market = self._get_market_from_command_argument(arguments)
             # Check that all required arguments have been provided
             assert all(arg in arguments.keys() for arg in required_args)
             # Check that every provided argument is allowed
@@ -274,12 +287,12 @@ class LoadExternalMixin(ExternalMixin):
             assert self.can_bid_be_posted(
                 arguments["energy"],
                 arguments["price"],
-                self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0,
-                self.next_market,
+                self.state.get_energy_requirement_Wh(market.time_slot) / 1000.0,
+                market,
                 replace_existing=replace_existing)
 
             bid = self.post_bid(
-                self.next_market,
+                market,
                 arguments["price"],
                 arguments["energy"],
                 replace_existing=replace_existing,
@@ -302,9 +315,10 @@ class LoadExternalMixin(ExternalMixin):
 
     def _delete_bid_aggregator(self, arguments):
         try:
+            market = self._get_market_from_command_argument(arguments)
             to_delete_bid_id = arguments["bid"] if "bid" in arguments else None
             deleted_bids = \
-                self.remove_bid_from_pending(self.next_market.id, bid_id=to_delete_bid_id)
+                self.remove_bid_from_pending(market.id, bid_id=to_delete_bid_id)
             return {
                 "command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
                 "area_uuid": self.device.uuid,
@@ -321,9 +335,10 @@ class LoadExternalMixin(ExternalMixin):
 
     def _list_bids_aggregator(self, arguments):
         try:
+            market = self._get_market_from_command_argument(arguments)
             return {
                 "command": "list_bids", "status": "ready",
-                "bid_list": self.filtered_bids_next_market,
+                "bid_list": self.filtered_market_bids(market),
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id")}
         except Exception:

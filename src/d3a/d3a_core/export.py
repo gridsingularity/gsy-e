@@ -39,9 +39,9 @@ from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offe
 from d3a.models.state import ESSEnergyOrigin
 from d3a.models.strategy.storage import StorageStrategy
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
-from d3a_interface.enums import BidOfferMatchAlgoEnum
-from d3a_interface.utils import mkdir_from_str, generate_market_slot_list
 from d3a_interface.dataclasses import PlotDescription
+from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
+from d3a_interface.utils import mkdir_from_str, generate_market_slot_list
 from pendulum import DateTime
 from slugify import slugify
 from sortedcontainers import SortedDict
@@ -134,10 +134,10 @@ class ExportAndPlot:
             self.plot_device_stats(self.area, [])
         if ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
             self.plot_energy_trade_profile_hr(self.area, self.plot_dir)
-        if ConstSettings.IAASettings.MARKET_TYPE == 2 and \
-                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == \
-                BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value and \
-                ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS is True:
+        if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
+                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+                BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value and
+                ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS is True):
             self.plot_supply_demand_curve(self.area, self.plot_dir)
         self.move_root_plot_folder()
 
@@ -266,9 +266,9 @@ class ExportAndPlot:
         self._export_balancing_markets_stats(area, directory, is_first)
 
         if area.children:
-            if ConstSettings.IAASettings.MARKET_TYPE == 2 and \
-                    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == \
-                    BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value:
+            if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED and
+                    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+                    BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value):
                 self._export_area_clearing_rate(area, directory, "market-clearing-rate", is_first)
 
     def _export_area_clearing_rate(self, area, directory, file_suffix, is_first) -> None:

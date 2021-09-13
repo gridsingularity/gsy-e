@@ -25,7 +25,7 @@ import traceback
 from math import isclose
 from copy import deepcopy
 
-from d3a_interface.enums import BidOfferMatchAlgoEnum
+from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 from pendulum import duration, today, from_format
 from behave import given, when, then
 from deepdiff import DeepDiff
@@ -213,13 +213,16 @@ def load_profile_scenario(context):
 def one_sided_market(context, market_type):
     from d3a_interface.constants_limits import ConstSettings
     if market_type == "one-sided":
-        ConstSettings.IAASettings.MARKET_TYPE = 1
+        ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
     elif market_type == "two-sided-pay-as-bid":
-        ConstSettings.IAASettings.MARKET_TYPE = 2
+        ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
         ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
     elif market_type == "two-sided-pay-as-clear":
-        ConstSettings.IAASettings.MARKET_TYPE = 2
+        ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
         ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+    elif market_type == "two-sided-external":
+        ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
+        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.EXTERNAL.value
 
 
 @given('d3a dispatches events from top to bottom')

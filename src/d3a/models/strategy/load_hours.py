@@ -21,6 +21,7 @@ from logging import getLogger
 from typing import Union, Dict  # NOQA
 
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.enums import SpotMarketTypeEnum
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import (
     convert_W_to_Wh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
@@ -154,7 +155,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         super().event_market_cycle()
         self.add_entry_in_hrs_per_day()
         self.bid_update.update_and_populate_price_settings(self.area)
-        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             self.bid_update.reset(self)
         self._calculate_active_markets()
         self._update_energy_requirement_future_markets()
@@ -318,10 +319,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def event_tick(self):
         """Post bids on market tick. This method is triggered by the TICK event."""
         for market in self.active_markets:
-            if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                 self._one_sided_market_event_tick(market)
-            elif ConstSettings.IAASettings.MARKET_TYPE == 2 or \
-                    ConstSettings.IAASettings.MARKET_TYPE == 3:
+            elif ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
                 self._double_sided_market_event_tick(market)
 
         self.bid_update.increment_update_counter_all_markets(self)
@@ -362,7 +362,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                                          final_rate=final_rate)
 
     def _post_first_bid(self):
-        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             return
         for market in self.active_markets:
             if (

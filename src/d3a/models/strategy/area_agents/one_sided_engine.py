@@ -22,7 +22,7 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.d3a_core.exceptions import MarketException, OfferNotFoundException
 from d3a.models.market.market_structures import copy_offer
-
+from d3a_interface.enums import SpotMarketTypeEnum
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
 Markets = namedtuple('Markets', ('source', 'target'))
@@ -150,7 +150,7 @@ class IAAEngine:
                 f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
             try:
-                if ConstSettings.IAASettings.MARKET_TYPE == 1:
+                if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                     # One sided market should subtract the fees
                     trade_offer_rate = trade.offer_bid.energy_rate - \
                                        trade.fee_price / trade.offer_bid.energy

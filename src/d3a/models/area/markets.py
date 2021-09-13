@@ -17,6 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import OrderedDict
 from typing import Dict, TYPE_CHECKING
+from pendulum import DateTime
+
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.enums import SpotMarketTypeEnum
 
 from d3a.d3a_core.util import is_timeslot_in_simulation_duration
 from d3a.models.area.market_rotators import (BaseRotator, DefaultMarketRotator,
@@ -25,8 +29,7 @@ from d3a.models.market import GridFee, Market
 from d3a.models.market.balancing import BalancingMarket
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.two_sided import TwoSidedMarket
-from d3a_interface.constants_limits import ConstSettings
-from pendulum import DateTime
+
 
 if TYPE_CHECKING:
     from d3a.models.area import Area
@@ -78,9 +81,9 @@ class AreaMarkets:
     def _select_market_class(is_spot_market: bool) -> Market:
         """Select market class dependent on the global config."""
         if is_spot_market:
-            if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                 return OneSidedMarket
-            elif ConstSettings.IAASettings.MARKET_TYPE == 2:
+            elif ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
                 return TwoSidedMarket
         else:
             return BalancingMarket

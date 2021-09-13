@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from d3a_interface.enums import SpotMarketTypeEnum
 from numpy.random import random
 from typing import Union, Dict  # noqa
 from logging import getLogger
@@ -131,12 +132,12 @@ class AreaDispatcher:
             "min_offer_age": ConstSettings.IAASettings.MIN_OFFER_AGE
         }
         if is_spot_market:
-            if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                 if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
                     return OneSidedAlternativePricingAgent(**agent_constructor_arguments)
                 else:
                     return OneSidedAgent(**agent_constructor_arguments)
-            elif ConstSettings.IAASettings.MARKET_TYPE == 2:
+            elif ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
                 return TwoSidedAgent(
                     **agent_constructor_arguments,
                     min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE
