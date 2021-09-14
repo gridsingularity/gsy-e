@@ -501,3 +501,27 @@ class TestTwoSidedMarketMatchRecommendations:
         assert market.accumulated_trade_price == 2
         assert market.traded_energy["Seller"] == 2
         assert market.traded_energy["Buyer"] == -2
+
+    @staticmethod
+    def test_match_recommendations_no_bids_offers(market):
+        """Test match_recommendations() method of TwoSidedMarket using N offers M bids."""
+        bid = Bid("bid_id", pendulum.now(), price=1.5, energy=1.5, buyer="Buyer")
+        offer = Offer("offer_id", pendulum.now(), price=1.2, energy=1.2, seller="Seller")
+
+        def assert_no_trade(bids, offers):
+            recommendations = [
+                BidOfferMatch(
+                    bids=[b.serializable_dict() for b in bids.values()],
+                    offers=[o.serializable_dict() for o in offers.values()],
+                    trade_rate=1, selected_energy=2, market_id=market.id).serializable_dict()
+            ]
+            market.match_recommendations(recommendations)
+            assert len(market.trades) == 0
+
+        market.bids = {}
+        market.offers = {"offer_id": offer}
+        assert_no_trade({"bid_id": bid}, market.offers)
+
+        market.bids = {"bid_id": bid}
+        market.offers = {}
+        assert_no_trade(market.bids, {"offer_id": offer})

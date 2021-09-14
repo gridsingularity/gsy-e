@@ -17,9 +17,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import itertools
 import uuid
+from copy import deepcopy
 from logging import getLogger
 from math import isclose
 from typing import Dict, List, Union  # noqa
+
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.data_classes import Bid, Offer, Trade, TradeBidOfferInfo, BidOfferMatch
 
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import (BidNotFoundException, InvalidBid,
@@ -27,11 +31,8 @@ from d3a.d3a_core.exceptions import (BidNotFoundException, InvalidBid,
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market import lock_market_action
-from d3a_interface.data_classes import Bid, Offer, Trade, TradeBidOfferInfo
 from d3a.models.market.market_validators import RequirementsSatisfiedChecker
 from d3a.models.market.one_sided import OneSidedMarket
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import BidOfferMatch
 
 log = getLogger(__name__)
 
@@ -76,8 +77,16 @@ class TwoSidedMarket(OneSidedMarket):
         return self.fee_class.update_incoming_bid_with_fee(price, original_price)
 
     @lock_market_action
-    def get_bids(self):
-        return self.bids
+    def get_bids(self) -> Dict:
+        """
+        Retrieves a copy of all open bids of the market. The copy of the bids guarantees
+        that the return dict will remain unaffected from any mutations of the market bid list
+        that might happen concurrently (more specifically can be used in for loops without raising
+        the 'dict changed size during iteration' exception)
+        Returns: dict with open bids, bid id as keys, and Bid objects as values
+
+        """
+        return deepcopy(self.bids)
 
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, buyer_origin: str,
@@ -273,7 +282,7 @@ class TwoSidedMarket(OneSidedMarket):
                 self.offers.get(offer["id"]) for offer in recommended_pair.offers]
             market_bids = [self.bids.get(bid["id"]) for bid in recommended_pair.bids]
 
-            if not all(market_offers) and all(market_bids):
+            if not (all(market_offers) and all(market_bids)):
                 # If not all offers bids exist in the market, skip the current recommendation
                 continue
 
