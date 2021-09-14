@@ -21,8 +21,9 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.d3a_core.exceptions import MarketException, OfferNotFoundException
-from d3a.models.market.market_structures import copy_offer
+from d3a_interface.data_classes import Offer
 from d3a_interface.enums import SpotMarketTypeEnum
+
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
 Markets = namedtuple('Markets', ('source', 'target'))
@@ -50,13 +51,13 @@ class IAAEngine:
 
     def _offer_in_market(self, offer):
         updated_price = self.markets.target.fee_class.update_forwarded_offer_with_fee(
-            offer.energy_rate, offer.original_offer_price / offer.energy) * offer.energy
+            offer.energy_rate, offer.original_price / offer.energy) * offer.energy
 
         kwargs = {
             "price": updated_price,
             "energy": offer.energy,
             "seller": self.owner.name,
-            "original_offer_price": offer.original_offer_price,
+            "original_price": offer.original_price,
             "dispatch_event": False,
             "seller_origin": offer.seller_origin,
             "seller_origin_id": offer.seller_origin_id,
@@ -228,12 +229,12 @@ class IAAEngine:
             # offer was split in target market, also split in source market
 
             local_offer = self.forwarded_offers[original_offer.id].source_offer
-            original_offer_price = local_offer.original_offer_price \
-                if local_offer.original_offer_price is not None else local_offer.price
+            original_price = local_offer.original_price \
+                if local_offer.original_price is not None else local_offer.price
 
             local_split_offer, local_residual_offer = \
                 self.markets.source.split_offer(local_offer, accepted_offer.energy,
-                                                original_offer_price)
+                                                original_price)
 
             #  add the new offers to forwarded_offers
             self._add_to_forward_offers(local_residual_offer, residual_offer)
@@ -247,12 +248,12 @@ class IAAEngine:
 
             local_offer = self.forwarded_offers[original_offer.id].source_offer
 
-            original_offer_price = local_offer.original_offer_price \
-                if local_offer.original_offer_price is not None else local_offer.price
+            original_price = local_offer.original_price \
+                if local_offer.original_price is not None else local_offer.price
 
             local_split_offer, local_residual_offer = \
                 self.markets.target.split_offer(local_offer, accepted_offer.energy,
-                                                original_offer_price)
+                                                original_price)
 
             #  add the new offers to forwarded_offers
             self._add_to_forward_offers(residual_offer, local_residual_offer)
@@ -269,7 +270,7 @@ class IAAEngine:
                              f"{short_offer_bid_log_str(local_residual_offer)}")
 
     def _add_to_forward_offers(self, source_offer, target_offer):
-        offer_info = OfferInfo(copy_offer(source_offer), copy_offer(target_offer))
+        offer_info = OfferInfo(Offer.copy(source_offer), Offer.copy(target_offer))
         self.forwarded_offers[source_offer.id] = offer_info
         self.forwarded_offers[target_offer.id] = offer_info
 

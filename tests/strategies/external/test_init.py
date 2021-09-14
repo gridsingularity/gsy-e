@@ -30,7 +30,7 @@ import d3a.constants
 import d3a.d3a_core.util
 from d3a.d3a_core.singletons import external_global_statistics
 from d3a.models.area import Area
-from d3a.models.market.market_structures import Trade, Offer, Bid
+from d3a_interface.data_classes import Trade, Offer, Bid
 from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.external_strategies.load import (LoadHoursExternalStrategy,

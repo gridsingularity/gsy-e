@@ -20,7 +20,7 @@ from typing import Dict  # NOQA
 from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent  # NOQA
 from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
 from d3a.d3a_core.exceptions import BidNotFoundException, MarketException
-from d3a.models.market.market_structures import Bid
+from d3a_interface.data_classes import Bid
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.constants import FLOATING_POINT_TOLERANCE
 
@@ -53,10 +53,10 @@ class TwoSidedEngine(IAAEngine):
         try:
             forwarded_bid = self.markets.target.bid(
                 price=(self.markets.source.fee_class.update_forwarded_bid_with_fee(
-                    bid.energy_rate, bid.original_bid_price / bid.energy)) * bid.energy,
+                    bid.energy_rate, bid.original_price / bid.energy)) * bid.energy,
                 energy=bid.energy,
                 buyer=self.owner.name,
-                original_bid_price=bid.original_bid_price,
+                original_price=bid.original_price,
                 buyer_origin=bid.buyer_origin,
                 buyer_origin_id=bid.buyer_origin_id,
                 buyer_id=self.owner.uuid
@@ -193,11 +193,11 @@ class TwoSidedEngine(IAAEngine):
             # in the source market
 
             local_bid = self.forwarded_bids[original_bid.id].source_bid
-            original_bid_price = local_bid.original_bid_price \
-                if local_bid.original_bid_price is not None else local_bid.price
+            original_price = local_bid.original_price \
+                if local_bid.original_price is not None else local_bid.price
 
             local_split_bid, local_residual_bid = \
-                self.markets.source.split_bid(local_bid, accepted_bid.energy, original_bid_price)
+                self.markets.source.split_bid(local_bid, accepted_bid.energy, original_price)
 
             #  add the new bids to forwarded_bids
             self._add_to_forward_bids(local_residual_bid, residual_bid)
@@ -213,11 +213,11 @@ class TwoSidedEngine(IAAEngine):
 
             local_bid = self.forwarded_bids[original_bid.id].source_bid
 
-            original_bid_price = local_bid.original_bid_price \
-                if local_bid.original_bid_price is not None else local_bid.price
+            original_price = local_bid.original_price \
+                if local_bid.original_price is not None else local_bid.price
 
             local_split_bid, local_residual_bid = \
-                self.markets.target.split_bid(local_bid, accepted_bid.energy, original_bid_price)
+                self.markets.target.split_bid(local_bid, accepted_bid.energy, original_price)
 
             #  add the new bids to forwarded_bids
             self._add_to_forward_bids(residual_bid, local_residual_bid)

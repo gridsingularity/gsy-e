@@ -32,7 +32,7 @@ from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import change_global_config
 from d3a.models.config import SimulationConfig
-from d3a.models.market.market_structures import Offer, Trade, BalancingOffer, Bid
+from d3a_interface.data_classes import Offer, Trade, BalancingOffer, Bid
 from d3a.models.state import EnergyOrigin, ESSEnergyOrigin
 from d3a.models.strategy.storage import StorageStrategy
 
@@ -161,9 +161,9 @@ class FakeMarket:
     def delete_offer(self, offer_id):
         return
 
-    def offer(self, price, energy, seller, original_offer_price=None, seller_origin=None,
+    def offer(self, price, energy, seller, original_price=None, seller_origin=None,
               seller_origin_id=None, seller_id=None):
-        offer = Offer('id', now(), price, energy, seller, original_offer_price,
+        offer = Offer('id', now(), price, energy, seller, original_price,
                       seller_origin=seller_origin, seller_origin_id=seller_origin_id,
                       seller_id=seller_id)
         self.created_offers.append(offer)
@@ -175,7 +175,7 @@ class FakeMarket:
         offer.id = 'id'
         return offer
 
-    def bid(self, price, energy, buyer, market=None, original_bid_price=None,
+    def bid(self, price, energy, buyer, market=None, original_price=None,
             buyer_origin=None, buyer_origin_id=None, buyer_id=None):
         pass
 
