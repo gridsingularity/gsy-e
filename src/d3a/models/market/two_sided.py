@@ -17,9 +17,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import itertools
 import uuid
+from copy import deepcopy
 from logging import getLogger
 from math import isclose
 from typing import Dict, List, Union  # noqa
+
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.dataclasses import BidOfferMatch
 
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import (BidNotFoundException, InvalidBid,
@@ -30,8 +34,6 @@ from d3a.models.market import lock_market_action
 from d3a.models.market.market_structures import Bid, Offer, Trade, TradeBidOfferInfo
 from d3a.models.market.market_validators import RequirementsSatisfiedChecker
 from d3a.models.market.one_sided import OneSidedMarket
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.dataclasses import BidOfferMatch
 
 log = getLogger(__name__)
 
@@ -72,7 +74,7 @@ class TwoSidedMarket(OneSidedMarket):
 
     @lock_market_action
     def get_bids(self):
-        return self.bids
+        return deepcopy(self.bids)
 
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, buyer_origin: str,
