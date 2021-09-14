@@ -291,8 +291,8 @@ class TestIAAGridFee:
         iaa.event_tick()
 
         assert iaa.higher_market.bid_call_count == 1
-        assert iaa.higher_market.forwarded_bid.price == \
-               list(iaa.lower_market.bids.values())[-1].price * (1 - iaa_fee)
+        assert (iaa.higher_market.forwarded_bid.price ==
+                list(iaa.lower_market.bids.values())[-1].price * (1 - iaa_fee))
 
     @pytest.mark.parametrize("iaa_fee_const", [0.5, 1, 5, 10])
     @pytest.mark.skip("need to define if we need a constant fee")
