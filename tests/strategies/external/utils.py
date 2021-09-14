@@ -70,8 +70,7 @@ def assert_bid_offer_aggregator_commands_return_value(return_value, is_offer):
     assert return_value[command_name]["energy_rate"] == 400.0
     assert return_value[command_name][
         "seller" if is_offer else "buyer"] == "forecast_pv"
-    assert return_value[command_name][
-        "original_price" if is_offer else "original_price"] == 200.0
+    assert return_value[command_name]["original_price"] == 200.0
     assert return_value[command_name][
         "seller_origin" if is_offer else "buyer_origin"] == "forecast_pv"
     assert return_value[command_name]["replace_existing"] is True
