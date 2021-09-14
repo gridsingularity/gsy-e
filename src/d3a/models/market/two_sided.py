@@ -264,7 +264,7 @@ class TwoSidedMarket(OneSidedMarket):
                 self.offers.get(offer["id"]) for offer in recommended_pair.offers]
             market_bids = [self.bids.get(bid["id"]) for bid in recommended_pair.bids]
 
-            if not all(market_offers) and all(market_bids):
+            if not (all(market_offers) and all(market_bids)):
                 # If not all offers bids exist in the market, skip the current recommendation
                 continue
 
