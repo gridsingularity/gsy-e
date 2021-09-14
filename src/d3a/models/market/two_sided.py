@@ -53,29 +53,24 @@ class TwoSidedMarket(OneSidedMarket):
                          grid_fees, name, in_sim_duration=in_sim_duration)
 
     @property
-    def _class_name(self):
-        return "TwoSidedMarket"
-
-    @property
     def _debug_log_market_type_identifier(self):
         return "[TWO_SIDED]"
 
     def __repr__(self):  # pragma: no cover
-        return "<{}{} bids: {} (E: {} kWh V:{}) " \
-               "offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>"\
-            .format(
-                self._class_name,
-                " {}".format(self.time_slot_str),
-                len(self.bids),
-                sum(b.energy for b in self.bids.values()),
-                sum(b.price for b in self.bids.values()),
-                len(self.offers),
-                sum(o.energy for o in self.offers.values()),
-                sum(o.price for o in self.offers.values()),
-                len(self.trades),
-                self.accumulated_trade_energy,
-                self.accumulated_trade_price
-            )
+        return ("<{}{} bids: {} (E: {} kWh V:{}) offers: {} (E: {} kWh V: {}) "
+                "trades: {} (E: {} kWh, V: {})>".format(
+                    self._class_name,
+                    " {}".format(self.time_slot_str),
+                    len(self.bids),
+                    sum(b.energy for b in self.bids.values()),
+                    sum(b.price for b in self.bids.values()),
+                    len(self.offers),
+                    sum(o.energy for o in self.offers.values()),
+                    sum(o.price for o in self.offers.values()),
+                    len(self.trades),
+                    self.accumulated_trade_energy,
+                    self.accumulated_trade_price
+                ))
 
     def _update_new_bid_price_with_fee(self, bid_price, original_bid_price):
         return self.fee_class.update_incoming_bid_with_fee(bid_price, original_bid_price)

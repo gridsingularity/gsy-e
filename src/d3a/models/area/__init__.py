@@ -420,7 +420,7 @@ class Area:
         bid_offer_matcher.update_area_uuid_markets_mapping(
             area_uuid_markets_mapping={
                 self.uuid: {"markets": self.all_markets,
-                            "settlement_markets": list(self.settlement_markets.values()),
+                            "settlement_markets": self.settlement_markets.values(),
                             "current_time": self.now}})
 
     def update_area_current_tick(self):

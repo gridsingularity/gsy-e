@@ -49,8 +49,7 @@ class OneSidedMarket(Market):
         self.in_sim_duration = in_sim_duration
 
     def __repr__(self):  # pragma: no cover
-        return "<{}{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>"\
-            .format(
+        return "<{}{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>".format(
                 self._class_name,
                 " {}".format(self.time_slot_str),
                 len(self.offers),
@@ -63,7 +62,7 @@ class OneSidedMarket(Market):
 
     @property
     def _class_name(self):
-        return "OneSidedMarket"
+        return self.__class__.__name__
 
     @property
     def _debug_log_market_type_identifier(self):

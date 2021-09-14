@@ -103,9 +103,6 @@ class ExternalConnectionCommunicator(ResettableCommunicator):
             self.channel_callback_dict = {}
             self.aggregator = AggregatorHandler(self.redis_db)
 
-    def is_aggregator_controlling_device(self, device_uuid):
-        return self.aggregator and self.aggregator.is_controlling_device(device_uuid)
-
     def sub_to_channel(self, channel, callback):
         if not self.is_enabled:
             return

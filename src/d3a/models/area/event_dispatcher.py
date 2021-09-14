@@ -96,8 +96,8 @@ class AreaDispatcher:
                 agents[area_name].event_listener(event_type, **kwargs)
 
     def _broadcast_notification(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
-        if not self.area.events.is_enabled and \
-           event_type not in [AreaEvent.ACTIVATE, AreaEvent.MARKET_CYCLE]:
+        if (not self.area.events.is_enabled and
+                event_type not in [AreaEvent.ACTIVATE, AreaEvent.MARKET_CYCLE]):
             return
 
         # Broadcast to children in random order to ensure fairness
@@ -165,11 +165,11 @@ class AreaDispatcher:
     @staticmethod
     def _get_agents_for_market_type(dispatcher_object, market_type: AvailableMarketTypes):
         if market_type == AvailableMarketTypes.SPOT:
-            return dispatcher_object._inter_area_agents
-        if market_type == AvailableMarketTypes.BALANCING:
-            return dispatcher_object._balancing_agents
-        if market_type == AvailableMarketTypes.SETTLEMENT:
-            return dispatcher_object._settlement_agents
+            return dispatcher_object.interarea_agents
+        elif market_type == AvailableMarketTypes.BALANCING:
+            return dispatcher_object.balancing_agents
+        elif market_type == AvailableMarketTypes.SETTLEMENT:
+            return dispatcher_object.settlement_agents
         else:
             assert False, f"Market type not supported {market_type}"
 

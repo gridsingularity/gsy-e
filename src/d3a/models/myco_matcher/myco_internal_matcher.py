@@ -57,7 +57,7 @@ class MycoInternalMatcher(MycoMatcherInterface):
 
     def match_recommendations(self, **kwargs):
         """Request trade recommendations and match them in the relevant market."""
-        for area_uuid, area_data in self.area_uuid_markets_mapping.items():
+        for area_data in self.area_uuid_markets_mapping.values():
             for market_type in ["markets", "settlement_markets"]:
                 for market in area_data[market_type]:
                     while True:
