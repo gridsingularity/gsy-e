@@ -1,3 +1,20 @@
+"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 import uuid
 from unittest.mock import Mock, MagicMock
 
@@ -45,6 +62,10 @@ class TestSettlementMarketStrategy:
         strategy_fixture.area = Mock()
         strategy_fixture.area.settlement_markets = self.settlement_markets
         strategy_fixture.get_market_from_id = MagicMock(return_value=self.market_mock)
+        strategy_fixture.area.current_tick = 0
+        strategy_fixture.area.config = Mock()
+        strategy_fixture.area.config.ticks_per_slot = 60
+        strategy_fixture.area.config.tick_length = duration(seconds=15)
 
     def teardown_method(self):
         ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = False
@@ -79,12 +100,14 @@ class TestSettlementMarketStrategy:
             self, strategy_fixture, can_post_settlement_bid, can_post_settlement_offer):
         self._setup_strategy_fixture(
             strategy_fixture, can_post_settlement_bid, can_post_settlement_offer)
-        self.settlement_strategy.event_market_cycle(strategy_fixture)
 
-        strategy_fixture.area.current_tick = 30
+        strategy_fixture.area.current_tick = 0
         strategy_fixture.area.config = Mock()
         strategy_fixture.area.config.ticks_per_slot = 60
         strategy_fixture.area.config.tick_length = duration(seconds=15)
+        self.settlement_strategy.event_market_cycle(strategy_fixture)
+
+        strategy_fixture.area.current_tick = 30
         self.market_mock.bid.reset_mock()
         self.market_mock.offer.reset_mock()
 

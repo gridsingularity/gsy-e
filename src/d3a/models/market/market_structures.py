@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
+from enum import Enum
 from typing import Dict, List, Tuple, Union  # noqa
 
 from d3a_interface.data_classes import Trade, BaseBidOffer
@@ -38,3 +39,17 @@ def parse_event_and_parameters_from_json_string(payload) -> Tuple:
         kwargs["bid_trade"] = Trade.from_json(kwargs["bid_trade"])
     event_type = MarketEvent(data["event_type"])
     return event_type, kwargs
+
+
+class AvailableMarketTypes(Enum):
+    """Enum for deciding which markets to access."""
+    SPOT_MARKET = 1
+    BALANCING_MARKET = 2
+    SETTLEMENT_MARKET = 3
+
+
+PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING = {
+    AvailableMarketTypes.SPOT_MARKET: "",
+    AvailableMarketTypes.BALANCING_MARKET: "-balancing",
+    AvailableMarketTypes.SETTLEMENT_MARKET: "-settlement",
+}

@@ -112,28 +112,27 @@ class LoadHoursStrategy(BidEnabledStrategy):
             energy_rate_increase_per_update=energy_rate_increase_per_update)
 
         if update_interval is None:
-            update_interval = \
-                duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+            update_interval = duration(
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
 
         if isinstance(update_interval, int):
             update_interval = duration(minutes=update_interval)
 
         BidEnabledStrategy.__init__(self)
-        self.bid_update = \
-            TemplateStrategyBidUpdater(
-                initial_rate=initial_buying_rate,
-                final_rate=final_buying_rate,
-                fit_to_limit=fit_to_limit,
-                energy_rate_change_per_update=energy_rate_increase_per_update,
-                update_interval=update_interval, rate_limit_object=min)
+        self.bid_update = TemplateStrategyBidUpdater(
+            initial_rate=initial_buying_rate, final_rate=final_buying_rate,
+            fit_to_limit=fit_to_limit,
+            energy_rate_change_per_update=energy_rate_increase_per_update,
+            update_interval=update_interval, rate_limit_object=min)
 
     @staticmethod
     def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
                         fit_to_limit):
         # all parameters have to be validated for each time slot here
         for time_slot in initial_rate.keys():
-            rate_change = None if fit_to_limit else \
-                find_object_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
+            rate_change = (None if fit_to_limit else
+                           find_object_of_same_weekday_and_time(
+                               energy_rate_change_per_update, time_slot))
             LoadValidator.validate_rate(
                 initial_buying_rate=initial_rate[time_slot],
                 energy_rate_increase_per_update=rate_change,
@@ -172,7 +171,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def update_state(self):
         self._post_first_bid()
         if self.area.current_market:
-            self._cycled_market.add(self.area.current_market.time_slot)
+            self._cycled_market = {self.area.current_market.time_slot}
 
         # Provide energy values for the past market slot, to be used in the settlement market
         self._set_energy_measurement_of_last_market()
@@ -210,12 +209,11 @@ class LoadHoursStrategy(BidEnabledStrategy):
         else:
             final_rate = self.bid_update.final_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, 'energy_rate_increase_per_update'):
-            energy_rate_change_per_update = \
-                read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                       kwargs['energy_rate_increase_per_update'])
+            energy_rate_change_per_update = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs['energy_rate_increase_per_update'])
         else:
-            energy_rate_change_per_update = \
-                self.bid_update.energy_rate_change_per_update_profile_buffer
+            energy_rate_change_per_update = (self.bid_update.
+                                             energy_rate_change_per_update_profile_buffer)
         if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
             fit_to_limit = kwargs['fit_to_limit']
         else:
@@ -249,8 +247,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def area_reconfigure_event(self, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
-        if key_in_dict_and_not_none(kwargs, 'hrs_per_day') or \
-                key_in_dict_and_not_none(kwargs, 'hrs_of_day'):
+        if (key_in_dict_and_not_none(kwargs, 'hrs_per_day') or
+                key_in_dict_and_not_none(kwargs, 'hrs_of_day')):
             self.assign_hours_of_per_day(kwargs['hrs_of_day'], kwargs['hrs_per_day'])
             self.add_entry_in_hrs_per_day(overwrite=True)
         if key_in_dict_and_not_none(kwargs, 'avg_power_W'):
@@ -298,9 +296,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 acceptable_offer = offer
             time_slot = market.time_slot
             current_day = self._get_day_of_timestamp(time_slot)
-            if acceptable_offer and \
-                    self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE and \
-                    self._offer_rate_can_be_accepted(acceptable_offer, market):
+            if (acceptable_offer and self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE and
+                    self._offer_rate_can_be_accepted(acceptable_offer, market)):
                 energy_Wh = self.state.calculate_energy_to_accept(
                     acceptable_offer.energy * 1000.0, time_slot)
                 self.accept_offer(market, acceptable_offer, energy=energy_Wh / 1000.0,
@@ -338,8 +335,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
             return
 
         market = self.area.get_future_market_from_id(market_id)
-        # TODO: do we really need self._cycled_market ?
+        if not market:
+            return
         if market.time_slot not in self._cycled_market:
+            # Blocking _one_sided_market_event_tick before self.event_market_cycle was called
             return
 
         if self._can_buy_in_market(market) and self._offer_comes_from_different_seller(offer):
@@ -415,16 +414,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if not self.is_eligible_for_balancing_market:
             return
 
-        ramp_up_energy = \
-            self.balancing_energy_ratio.demand * \
-            self.state.get_desired_energy_Wh(market.time_slot)
+        ramp_up_energy = (self.balancing_energy_ratio.demand *
+                          self.state.get_desired_energy_Wh(market.time_slot))
         self.state.decrement_energy_requirement(ramp_up_energy, market.time_slot, self.owner.name)
         ramp_up_price = DeviceRegistry.REGISTRY[self.owner.name][0] * ramp_up_energy
         if ramp_up_energy != 0 and ramp_up_price != 0:
-            self.area.get_balancing_market(market.time_slot). \
-                balancing_offer(ramp_up_price,
-                                -ramp_up_energy,
-                                self.owner.name)
+            self.area.get_balancing_market(market.time_slot).balancing_offer(
+                ramp_up_price, -ramp_up_energy, self.owner.name)
 
     # committing to reduce its consumption when required
     def _supply_balancing_offer(self, market, trade):
@@ -459,10 +455,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
         ] if self.area else []
 
     def _is_market_active(self, market):
-        return self._allowed_operating_hours(market.time_slot) and \
-            market.in_sim_duration and \
-            (not self.area.current_market or
-             market.time_slot >= self.area.current_market.time_slot)
+        return (self._allowed_operating_hours(market.time_slot) and market.in_sim_duration and
+                (not self.area.current_market or
+                 market.time_slot >= self.area.current_market.time_slot))
 
     def assign_hours_of_per_day(self, hrs_of_day, hrs_per_day):
         if hrs_of_day is None:
@@ -485,14 +480,14 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def _update_energy_requirement_future_markets(self):
         self.energy_per_slot_Wh = convert_W_to_Wh(self.avg_power_W, self.area.config.slot_length)
         for market in self.area.all_markets:
-            desired_energy_Wh = self.energy_per_slot_Wh \
-                if self._allowed_operating_hours(market.time_slot) else 0.0
+            desired_energy_Wh = (self.energy_per_slot_Wh
+                                 if self._allowed_operating_hours(market.time_slot) else 0.0)
             self.state.set_desired_energy(desired_energy_Wh, market.time_slot)
 
         for market in self.active_markets:
             current_day = self._get_day_of_timestamp(market.time_slot)
-            if current_day not in self.hrs_per_day or \
-                    self.hrs_per_day[current_day] <= FLOATING_POINT_TOLERANCE:
+            if (current_day not in self.hrs_per_day or
+                    self.hrs_per_day[current_day] <= FLOATING_POINT_TOLERANCE):
                 # Overwrite desired energy to 0 in case the previous step has populated the
                 # desired energy by the hrs_per_day have been exhausted.
                 self.state.set_desired_energy(0.0, market.time_slot, True)
