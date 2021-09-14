@@ -33,7 +33,7 @@ from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import d3a_path
 from d3a.models.area import DEFAULT_CONFIG
-from d3a.models.market.market_structures import Offer, BalancingOffer, Bid, Trade
+from d3a_interface.data_classes import Offer, BalancingOffer, Bid, Trade
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 
@@ -113,11 +113,11 @@ class FakeMarket:
     def get_bids(self):
         return deepcopy(self.bids)
 
-    def bid(self, price: float, energy: float, buyer: str, original_bid_price=None,
+    def bid(self, price: float, energy: float, buyer: str, original_price=None,
             buyer_origin=None, buyer_origin_id=None, buyer_id=None,
             attributes=None, requirements=None) -> Bid:
         bid = Bid(id="bid_id", time=now(), price=price, energy=energy, buyer=buyer,
-                  original_bid_price=original_bid_price,
+                  original_price=original_price,
                   buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id,
                   buyer_id=buyer_id, attributes=attributes, requirements=requirements)
         self.bids[bid.id] = bid

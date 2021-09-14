@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Dict, Union
 
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.data_classes import Offer
 from d3a_interface.enums import SpotMarketTypeEnum
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import find_object_of_same_weekday_and_time
@@ -31,7 +32,6 @@ from d3a.d3a_core.exceptions import D3AException
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.market import Market
-from d3a.models.market.market_structures import Offer
 from d3a.models.state import SmartMeterState
 from d3a.models.strategy import BidEnabledStrategy, utils
 from d3a.models.strategy.update_frequency import (
@@ -403,7 +403,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
                     offer_price,
                     offer_energy_kWh,
                     self.owner.name,
-                    original_offer_price=offer_price,
+                    original_price=offer_price,
                     seller_origin=self.owner.name,
                     seller_origin_id=self.owner.uuid,
                     seller_id=self.owner.uuid)

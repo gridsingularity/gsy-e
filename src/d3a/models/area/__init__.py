@@ -19,6 +19,7 @@ from logging import getLogger
 from typing import List, Dict
 from uuid import uuid4
 
+from cached_property import cached_property
 from d3a_interface.area_validator import validate_area
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.enums import SpotMarketTypeEnum
@@ -27,7 +28,6 @@ from pendulum import DateTime, duration, today
 from slugify import slugify
 
 import d3a.constants
-from cached_property import cached_property
 from d3a.d3a_core.blockchain_interface import blockchain_interface_factory
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
@@ -41,6 +41,7 @@ from d3a.models.area.redis_external_market_connection import RedisMarketExternal
 from d3a.models.area.stats import AreaStats
 from d3a.models.area.throughput_parameters import ThroughputParameters
 from d3a.models.config import SimulationConfig
+from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
 
@@ -350,8 +351,11 @@ class Area:
             self._update_descendants_strategy_prices()
             self.should_update_child_strategies = False
 
+        # TODO: Refactor and port the future, spot, settlement and balancing market creation to
+        # AreaMarkets class, in order to create all necessary markets with one call.
+
         # Markets range from one slot to market_count into the future
-        changed = self._markets.create_future_markets(now_value, True, self)
+        changed = self._markets.create_future_markets(now_value, AvailableMarketTypes.SPOT, self)
 
         # create new settlement market
         if (self.last_past_market and
@@ -360,7 +364,8 @@ class Area:
 
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
                 len(DeviceRegistry.REGISTRY.keys()) != 0:
-            changed_balancing_market = self._markets.create_future_markets(now_value, False, self)
+            changed_balancing_market = self._markets.create_future_markets(
+                now_value, AvailableMarketTypes.BALANCING, self)
         else:
             changed_balancing_market = None
 
@@ -414,12 +419,17 @@ class Area:
         """Update the markets cache that the myco matcher will request"""
         bid_offer_matcher.update_area_uuid_markets_mapping(
             area_uuid_markets_mapping={
-                self.uuid: {"markets": self.all_markets, "current_time": self.now}})
+                self.uuid: {"markets": self.all_markets,
+                            "settlement_markets": self.settlement_markets.values(),
+                            "current_time": self.now}})
 
     def update_area_current_tick(self):
         self.current_tick += 1
         if self._markets:
             for market in self._markets.markets.values():
+                market.update_clock(self.current_tick_in_slot)
+
+            for market in self._markets.settlement_markets.values():
                 market.update_clock(self.current_tick_in_slot)
         for child in self.children:
             child.update_area_current_tick()

@@ -36,7 +36,7 @@ from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.market import Market
-from d3a.models.market.market_structures import Offer
+from d3a_interface.data_classes import Offer
 from d3a.models.state import LoadState
 from d3a.models.strategy import BidEnabledStrategy, utils
 from d3a.models.strategy.settlement.strategy import settlement_market_strategy_factory
@@ -386,7 +386,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         """
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
         market = self.area.get_future_market_from_id(market_id)
-
+        if not market:
+            return
         if bid_trade.offer_bid.buyer == self.owner.name:
             self.state.decrement_energy_requirement(
                 bid_trade.offer_bid.energy * 1000,
@@ -400,7 +401,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._settlement_market_strategy.event_bid_traded(self, market_id, trade)
 
         market = self.area.get_future_market_from_id(market_id)
-        assert market is not None
+        if not market:
+            return
 
         self.assert_if_trade_bid_price_is_too_high(market, trade)
 

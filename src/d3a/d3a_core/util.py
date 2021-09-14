@@ -163,12 +163,12 @@ def make_iaa_name(owner):
     return f"IAA {owner.name}"
 
 
-def make_iaa_name_from_dict(owner):
-    return f"IAA {owner['name']}"
-
-
 def make_ba_name(owner):
     return f"BA {owner.name}"
+
+
+def make_sa_name(owner):
+    return f"SA {owner.name}"
 
 
 def area_name_from_area_or_iaa_name(name):

@@ -20,10 +20,10 @@ from unittest.mock import Mock, MagicMock
 
 import pytest
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.data_classes import Bid, Offer, Trade
 from pendulum import today, duration
 
 from d3a.constants import TIME_ZONE
-from d3a.models.market.market_structures import Bid, Offer, Trade
 from d3a.models.market.two_sided import TwoSidedMarket
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
@@ -81,7 +81,7 @@ class TestSettlementMarketStrategy:
         self.settlement_strategy.event_market_cycle(strategy_fixture)
         if can_post_settlement_bid:
             self.market_mock.bid.assert_called_once_with(
-                10.0, 1.0, self.area_mock.name, original_bid_price=10.0,
+                10.0, 1.0, self.area_mock.name, original_price=10.0,
                 buyer_origin=self.area_mock.name, buyer_origin_id=self.area_mock.uuid,
                 buyer_id=self.area_mock.uuid, attributes=None, requirements=None
             )
@@ -111,16 +111,19 @@ class TestSettlementMarketStrategy:
         self.market_mock.bid.reset_mock()
         self.market_mock.offer.reset_mock()
 
+        strategy_fixture.area.current_tick = 19
+        self.settlement_strategy.event_tick(strategy_fixture)
+        strategy_fixture.area.current_tick = 20
         self.settlement_strategy.event_tick(strategy_fixture)
         if can_post_settlement_bid:
             self.market_mock.bid.assert_called_once_with(
-                30.0, 1.0, self.area_mock.name, original_bid_price=30.0,
+                30.0, 1.0, self.area_mock.name, original_price=30.0,
                 buyer_origin=self.area_mock.name, buyer_origin_id=self.area_mock.uuid,
                 buyer_id=self.area_mock.uuid, attributes=None, requirements=None
             )
         if can_post_settlement_offer:
             self.market_mock.offer.assert_called_once_with(
-                35, 1, self.area_mock.name, original_offer_price=35,
+                35, 1, self.area_mock.name, original_price=35,
                 seller_origin=None, seller_origin_id=None, seller_id=self.area_mock.uuid
             )
 

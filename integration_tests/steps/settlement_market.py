@@ -1,0 +1,24 @@
+from behave import then
+
+
+@then("no settlement market is created")
+def check_no_settlement_market(context):
+    house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+    assert len(house.past_settlement_markets) == 0
+
+
+@then("settlement markets are created")
+def check_settlement_market(context):
+    house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+    assert len(house.past_settlement_markets) == 23
+
+
+@then("settlement market trades have been executed")
+def check_settlement_market_trades(context):
+    house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+    assert any(len(market.trades) > 0 for market in house.past_settlement_markets.values())
+    assert all(
+        25.0 <= t.offer_bid.energy_rate <= 30.0
+        for market in house.past_settlement_markets.values()
+        for t in market.trades
+    )

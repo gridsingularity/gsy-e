@@ -163,12 +163,12 @@ class FileExportEndpoints:
             area: Area, past_market_type: AvailableMarketTypes
     ) -> BaseDataExporter:
         """Decide which data acquisition class to use."""
-        if past_market_type == AvailableMarketTypes.SPOT_MARKET:
+        if past_market_type == AvailableMarketTypes.SPOT:
             return (UpperLevelDataExporter(area.past_markets)
                     if len(area.children) > 0 else LeafDataExporter(area, area.past_markets))
-        if past_market_type == AvailableMarketTypes.BALANCING_MARKET:
+        if past_market_type == AvailableMarketTypes.BALANCING:
             return BalancingDataExporter(area.past_balancing_markets)
-        if past_market_type == AvailableMarketTypes.SETTLEMENT_MARKET:
+        if past_market_type == AvailableMarketTypes.SETTLEMENT:
             past_markets = area.past_settlement_markets.values()
             return (UpperLevelDataExporter(past_markets)
                     if len(area.children) > 0 else LeafDataExporter(area, past_markets))
@@ -207,9 +207,9 @@ class FileExportEndpoints:
 
     def _update_plot_stats(self, area: Area) -> None:
         """Populate the statistics for the plots into self.plot_stats."""
-        self._get_stats_from_market_data(self.plot_stats, area, AvailableMarketTypes.SPOT_MARKET)
+        self._get_stats_from_market_data(self.plot_stats, area, AvailableMarketTypes.SPOT)
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self._get_stats_from_market_data(self.plot_balancing_stats, area,
-                                             AvailableMarketTypes.BALANCING_MARKET)
+                                             AvailableMarketTypes.BALANCING)
         if ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS:
             self._populate_plots_stats_for_supply_demand_curve(area)

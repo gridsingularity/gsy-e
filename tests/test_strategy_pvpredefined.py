@@ -32,7 +32,7 @@ from d3a_interface.utils import generate_market_slot_list
 from d3a.d3a_core.util import d3a_path, change_global_config
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.models.area import DEFAULT_CONFIG
-from d3a.models.market.market_structures import Offer
+from d3a_interface.data_classes import Offer
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 
 
@@ -111,10 +111,10 @@ class FakeMarket:
         self.offers = {'id': Offer(id='id', time=pendulum.now(), price=10, energy=0.5, seller='A')}
         self._time_slot = TIME
 
-    def offer(self, price, energy, seller, original_offer_price=None, seller_origin=None,
+    def offer(self, price, energy, seller, original_price=None, seller_origin=None,
               seller_origin_id=None, seller_id=None):
         offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy, seller,
-                      original_offer_price, seller_origin=seller_origin,
+                      original_price, seller_origin=seller_origin,
                       seller_origin_id=seller_origin_id, seller_id=seller_id)
         self.created_offers.append(offer)
         self.offers[offer.id] = offer
