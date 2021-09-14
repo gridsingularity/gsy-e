@@ -23,7 +23,7 @@ from pendulum import DateTime
 from math import isclose
 
 from d3a.events.event_structures import MarketEvent
-from d3a.models.market.market_structures import Offer, Trade
+from d3a_interface.data_classes import Offer, Trade
 from d3a.models.market import Market, lock_market_action
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade, MarketException
@@ -71,17 +71,17 @@ class OneSidedMarket(Market):
     def balancing_offer(self, price, energy, seller, from_agent):
         assert False
 
-    def _update_new_offer_price_with_fee(self, offer_price, original_offer_price, energy):
+    def _update_new_offer_price_with_fee(self, price, original_price, energy):
         """
         Override one sided market private method to abstract away the grid fee calculation
         when placing an offer to a market.
-        :param offer_price: Price of the offer coming from the source market, in cents
-        :param original_offer_price: Price of the original offer from the device
+        :param price: Price of the offer coming from the source market, in cents
+        :param original_price: Price of the original offer from the device
         :param energy: Energy of the offer
         :return: Updated price for the forwarded offer on this market, in cents
         """
         return self.fee_class.update_incoming_offer_with_fee(
-            offer_price / energy, original_offer_price / energy
+            price / energy, original_price / energy
         ) * energy
 
     @lock_market_action
@@ -90,25 +90,25 @@ class OneSidedMarket(Market):
 
     @lock_market_action
     def offer(self, price: float, energy: float, seller: str, seller_origin,
-              offer_id=None, original_offer_price=None, dispatch_event=True,
+              offer_id=None, original_price=None, dispatch_event=True,
               adapt_price_with_fees=True, add_to_history=True, seller_origin_id=None,
               seller_id=None, attributes: Dict = None, requirements: List[Dict] = None) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
             raise InvalidOffer()
-        if original_offer_price is None:
-            original_offer_price = price
+        if original_price is None:
+            original_price = price
 
         if adapt_price_with_fees:
-            price = self._update_new_offer_price_with_fee(price, original_offer_price, energy)
+            price = self._update_new_offer_price_with_fee(price, original_price, energy)
 
         if price < 0.0:
             raise MarketException("Negative price after taxes, offer cannot be posted.")
 
         if offer_id is None:
             offer_id = self.bc_interface.create_new_offer(energy, price, seller)
-        offer = Offer(offer_id, self.now, price, energy, seller, original_offer_price,
+        offer = Offer(offer_id, self.now, price, energy, seller, original_price,
                       seller_origin=seller_origin, seller_origin_id=seller_origin_id,
                       seller_id=seller_id, attributes=attributes, requirements=requirements)
 
@@ -153,8 +153,8 @@ class OneSidedMarket(Market):
 
     @classmethod
     def _calculate_original_prices(cls, offer):
-        return offer.original_offer_price \
-            if offer.original_offer_price is not None \
+        return offer.original_price \
+            if offer.original_price is not None \
             else offer.price
 
     def split_offer(self, original_offer, energy, orig_offer_price):
@@ -166,7 +166,7 @@ class OneSidedMarket(Market):
                                     price=original_offer.price * (energy / original_offer.energy),
                                     energy=energy,
                                     seller=original_offer.seller,
-                                    original_offer_price=original_accepted_price,
+                                    original_price=original_accepted_price,
                                     dispatch_event=False,
                                     seller_origin=original_offer.seller_origin,
                                     seller_origin_id=original_offer.seller_origin_id,
@@ -185,7 +185,7 @@ class OneSidedMarket(Market):
         residual_offer = self.offer(price=residual_price,
                                     energy=residual_energy,
                                     seller=original_offer.seller,
-                                    original_offer_price=original_residual_price,
+                                    original_price=original_residual_price,
                                     dispatch_event=False,
                                     seller_origin=original_offer.seller_origin,
                                     seller_origin_id=original_offer.seller_origin_id,

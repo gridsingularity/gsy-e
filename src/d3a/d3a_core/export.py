@@ -22,27 +22,29 @@ import operator
 import os
 import pathlib
 import shutil
+import plotly.graph_objs as go
+
 from collections import namedtuple
 from copy import deepcopy
 from functools import reduce  # forward compatibility for Python 3
 from typing import Dict, Tuple, List, Mapping
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
-from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
-from d3a_interface.utils import mkdir_from_str, generate_market_slot_list
 from pendulum import DateTime
 from slugify import slugify
 from sortedcontainers import SortedDict
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
+from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
+from d3a_interface.utils import mkdir_from_str, generate_market_slot_list
+from d3a_interface.data_classes import (
+    Trade, BalancingTrade, Bid, Offer, BalancingOffer, MarketClearingState)
 
 import d3a.constants
-import plotly.graph_objs as go
 from d3a.d3a_core.sim_results.plotly_graph import PlotlyGraph
 from d3a.d3a_core.singletons import bid_offer_matcher
 from d3a.d3a_core.util import constsettings_to_dict, round_floats_for_ui
 from d3a.data_classes import PlotDescription
 from d3a.models.area import Area
-from d3a.models.market.market_structures import (MarketClearingState, AvailableMarketTypes,
+from d3a.models.market.market_structures import (AvailableMarketTypes,
                                                  PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING)
-from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.state import ESSEnergyOrigin
 from d3a.models.strategy.storage import StorageStrategy
 
@@ -301,7 +303,7 @@ class ExportAndPlot:
                     writer.writerow(labels)
                 for market in past_markets:
                     for offer_or_bid in getattr(market, market_member):
-                        row = (market.time_slot,) + offer_or_bid.to_csv()
+                        row = (market.time_slot,) + offer_or_bid.csv_values()
                         writer.writerow(row)
         except OSError:
             _log.exception("Could not export area balancing offers")
@@ -318,7 +320,7 @@ class ExportAndPlot:
                     writer.writerow(labels)
                 for market in past_markets:
                     for trade in market.trades:
-                        row = (market.time_slot,) + trade.to_csv()
+                        row = (market.time_slot,) + trade.csv_values()
                         writer.writerow(row)
         except OSError:
             _log.exception("Could not export area trades")

@@ -20,6 +20,7 @@ from collections import OrderedDict
 from unittest.mock import MagicMock
 
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.data_classes import Offer
 from parameterized import parameterized
 from pendulum import duration, today
 
@@ -33,7 +34,7 @@ from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.stats import AreaStats
 from d3a.models.config import SimulationConfig
 from d3a.models.market import Market
-from d3a.models.market.market_structures import AvailableMarketTypes, Offer
+from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.strategy.storage import StorageStrategy
 
 

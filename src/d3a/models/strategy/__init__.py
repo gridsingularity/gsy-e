@@ -21,6 +21,8 @@ from logging import getLogger
 from typing import List, Dict, Any, Union, Optional  # noqa
 from uuid import uuid4
 
+from d3a_interface.data_classes import (
+    Offer, Bid, Trade)
 from d3a_interface.constants_limits import ConstSettings
 
 from d3a import constants
@@ -35,9 +37,6 @@ from d3a.events import EventMixin
 from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
-from d3a.models.market.market_structures import (
-    Offer, trade_from_json_string,
-    offer_or_bid_from_json_string, Bid)
 
 log = getLogger(__name__)
 
@@ -366,7 +365,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         if isinstance(data, str):
             data = json.loads(data)
         if data["status"] == "ready":
-            self.offer_buffer = offer_or_bid_from_json_string(data["offer"])
+            self.offer_buffer = Offer.from_json(data["offer"])
             self.event_response_uuids.append(data["transaction_uuid"])
         else:
             raise D3ARedisException(
@@ -424,7 +423,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         if isinstance(data, str):
             data = json.loads(data)
         if data["status"] == "ready":
-            self.trade_buffer = trade_from_json_string(data["trade"])
+            self.trade_buffer = Trade.from_json(data["trade"])
             self.event_response_uuids.append(data["transaction_uuid"])
         else:
             raise D3ARedisException(
@@ -555,7 +554,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                     updated_price,
                     offer.energy,
                     self.owner.name,
-                    original_offer_price=updated_price,
+                    original_price=updated_price,
                     seller_origin=offer.seller_origin,
                     seller_origin_id=offer.seller_origin_id,
                     seller_id=self.owner.uuid
@@ -595,7 +594,7 @@ class BidEnabledStrategy(BaseStrategy):
             price,
             energy,
             self.owner.name,
-            original_bid_price=price,
+            original_price=price,
             buyer_origin=self.owner.name,
             buyer_origin_id=self.owner.uuid,
             buyer_id=self.owner.uuid,

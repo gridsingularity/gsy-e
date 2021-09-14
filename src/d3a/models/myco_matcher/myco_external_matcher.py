@@ -21,7 +21,7 @@ import logging
 from enum import Enum
 from typing import Dict, List, Optional
 
-from d3a_interface.dataclasses import BidOfferMatch
+from d3a_interface.data_classes import BidOfferMatch
 
 import d3a.constants
 from d3a.d3a_core.exceptions import (
