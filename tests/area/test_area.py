@@ -33,7 +33,7 @@ from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.stats import AreaStats
 from d3a.models.config import SimulationConfig
 from d3a.models.market import Market
-from d3a.models.market.market_structures import MarketClassType, Offer
+from d3a.models.market.market_structures import AvailableMarketTypes, Offer
 from d3a.models.strategy.storage import StorageStrategy
 
 
@@ -107,7 +107,8 @@ class TestAreaClass(unittest.TestCase):
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
-        self.area._markets.create_future_markets(current_time, MarketClassType.SPOT, self.area)
+        self.area._markets.create_future_markets(
+            current_time, AvailableMarketTypes.SPOT, self.area)
         current_time = today(tz=constants.TIME_ZONE).add(minutes=2*self.config.slot_length.minutes)
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
@@ -130,7 +131,8 @@ class TestAreaClass(unittest.TestCase):
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
-        self.area._markets.create_future_markets(current_time, MarketClassType.SPOT, self.area)
+        self.area._markets.create_future_markets(
+            current_time, AvailableMarketTypes.SPOT, self.area)
         current_time = today(tz=constants.TIME_ZONE).add(
             minutes=2*self.config.slot_length.total_minutes())
         self.area._markets.rotate_markets(current_time)

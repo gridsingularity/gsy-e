@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
-from typing import List  # noqa
+from typing import List, Dict
 from uuid import uuid4
 
 from cached_property import cached_property
@@ -41,7 +41,7 @@ from d3a.models.area.redis_external_market_connection import RedisMarketExternal
 from d3a.models.area.stats import AreaStats
 from d3a.models.area.throughput_parameters import ThroughputParameters
 from d3a.models.config import SimulationConfig
-from d3a.models.market.market_structures import MarketClassType
+from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
 
@@ -355,7 +355,7 @@ class Area:
         # AreaMarkets class, in order to create all necessary markets with one call.
 
         # Markets range from one slot to market_count into the future
-        changed = self._markets.create_future_markets(now_value, MarketClassType.SPOT, self)
+        changed = self._markets.create_future_markets(now_value, AvailableMarketTypes.SPOT, self)
 
         # create new settlement market
         if (self.last_past_market and
@@ -365,7 +365,7 @@ class Area:
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
                 len(DeviceRegistry.REGISTRY.keys()) != 0:
             changed_balancing_market = self._markets.create_future_markets(
-                now_value, MarketClassType.BALANCING, self)
+                now_value, AvailableMarketTypes.BALANCING, self)
         else:
             changed_balancing_market = None
 
@@ -500,7 +500,7 @@ class Area:
         return [m for m in self._markets.markets.values() if m.in_sim_duration]
 
     @property
-    def past_markets(self):
+    def past_markets(self) -> List:
         return list(self._markets.past_markets.values())
 
     def get_market(self, timeslot):
@@ -513,11 +513,11 @@ class Area:
         return self._markets.balancing_markets[timeslot]
 
     @property
-    def balancing_markets(self):
+    def balancing_markets(self) -> List:
         return list(self._markets.balancing_markets.values())
 
     @property
-    def past_balancing_markets(self):
+    def past_balancing_markets(self) -> List:
         return list(self._markets.past_balancing_markets.values())
 
     @property
@@ -563,11 +563,18 @@ class Area:
             return None
 
     @property
-    def settlement_markets(self):
+    def settlement_markets(self) -> Dict:
         return self._markets.settlement_markets
 
     @property
-    def past_settlement_markets(self):
+    def last_past_settlement_market(self):
+        try:
+            return list(self._markets.past_settlement_markets.items())[-1]
+        except IndexError:
+            return None
+
+    @property
+    def past_settlement_markets(self) -> Dict:
         return self._markets.past_settlement_markets
 
     def get_settlement_market(self, timeslot):

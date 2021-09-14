@@ -74,7 +74,7 @@ class BaseBidOffer:
 
         return json.dumps(obj_dict, default=my_converter)
 
-    def _to_csv(self) -> Tuple:
+    def to_csv(self) -> Tuple:
         rate = round(self.energy_rate, 4)
         return (rate, self.energy, self.price,
                 self.seller if isinstance(self, Offer) else self.buyer)
@@ -138,7 +138,7 @@ class Offer(BaseBidOffer):
                 self.requirements == other.requirements)
 
     @classmethod
-    def _csv_fields(cls):
+    def csv_fields(cls):
         return "rate [ct./kWh]", "energy [kWh]", "price [ct.]", "seller"
 
 
@@ -191,7 +191,7 @@ class Bid(BaseBidOffer):
                 }
 
     @classmethod
-    def _csv_fields(cls):
+    def csv_fields(cls):
         return "rate [ct./kWh]", "energy [kWh]", "price [ct.]", "buyer"
 
     def __eq__(self, other) -> bool:
@@ -266,11 +266,11 @@ class Trade:
         )
 
     @classmethod
-    def _csv_fields(cls) -> Tuple:
+    def csv_fields(cls) -> Tuple:
         return (tuple(cls.__dataclass_fields__.keys())[1:2] + ("rate [ct./kWh]", "energy [kWh]") +
                 tuple(cls.__dataclass_fields__.keys())[3:5])
 
-    def _to_csv(self) -> Tuple:
+    def to_csv(self) -> Tuple:
         rate = round(self.offer_bid.energy_rate, 4)
         return (tuple(asdict(self).values())[1:2] +
                 (rate, self.offer_bid.energy) +
@@ -336,13 +336,12 @@ def trade_from_json_string(trade_string, current_time=None) -> Trade:
 class BalancingOffer(Offer):
 
     def __repr__(self) -> str:
-        return "<BalancingOffer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller} {rate}'>"\
-            .format(s=self, rate=self.energy_rate)
+        return ("<BalancingOffer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', "
+                "'{s.seller} {rate}'>".format(s=self, rate=self.energy_rate))
 
     def __str__(self) -> str:
-        return "<BalancingOffer{{{s.id!s:.6s}}} [{s.seller}]: " \
-               "{s.energy} kWh @ {s.price} @ {rate}>".format(s=self,
-                                                             rate=self.energy_rate)
+        return ("<BalancingOffer{{{s.id!s:.6s}}} [{s.seller}]: "
+                "{s.energy} kWh @ {s.price} @ {rate}>".format(s=self, rate=self.energy_rate))
 
 
 @dataclass
@@ -373,11 +372,11 @@ class BalancingTrade:
         )
 
     @classmethod
-    def _csv_fields(cls) -> Tuple:
+    def csv_fields(cls) -> Tuple:
         return (tuple(cls.__dataclass_fields__.keys())[1:2] + ("rate [ct./kWh]", "energy [kWh]") +
                 tuple(cls.__dataclass_fields__.keys())[3:5])
 
-    def _to_csv(self) -> Tuple:
+    def to_csv(self) -> Tuple:
         rate = round(self.offer_bid.energy_rate, 4)
         return (tuple(asdict(self).values())[1:2] +
                 (rate, self.offer_bid.energy) +
@@ -391,7 +390,7 @@ class MarketClearingState:
     clearing: dict = field(default_factory=dict)
 
     @classmethod
-    def _csv_fields(cls) -> Tuple:
+    def csv_fields(cls) -> Tuple:
         return "time", "rate [ct./kWh]"
 
 
@@ -412,7 +411,14 @@ def parse_event_and_parameters_from_json_string(payload) -> Tuple:
     return event_type, kwargs
 
 
-class MarketClassType(Enum):
+class AvailableMarketTypes(Enum):
     SPOT = 0
     BALANCING = 1
     SETTLEMENT = 2
+
+
+PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING = {
+    AvailableMarketTypes.SPOT: "",
+    AvailableMarketTypes.BALANCING: "-balancing",
+    AvailableMarketTypes.SETTLEMENT: "-settlement",
+}

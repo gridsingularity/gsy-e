@@ -34,7 +34,7 @@ from d3a.models.area.redis_dispatcher.area_to_market_publisher import AreaToMark
 from d3a.models.area.redis_dispatcher.market_event_dispatcher import AreaRedisMarketEventDispatcher
 from d3a.models.area.redis_dispatcher.market_notify_event_subscriber import (
     MarketNotifyEventSubscriber)
-from d3a.models.market.market_structures import MarketClassType
+from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.one_sided_alternative_pricing_agent import (
@@ -83,7 +83,7 @@ class AreaDispatcher:
         return self._broadcast_notification
 
     def _broadcast_notification_to_agents_of_market_type(
-            self, market_type: MarketClassType, event_type: AreaEvent, **kwargs):
+            self, market_type: AvailableMarketTypes, event_type: AreaEvent, **kwargs):
         for time_slot, agents in self._get_agents_for_market_type(self, market_type).items():
             if time_slot not in self.area._markets.get_market_instances_from_class_type(
                     market_type):
@@ -104,11 +104,11 @@ class AreaDispatcher:
         for child in sorted(self.area.children, key=lambda _: random()):
             child.dispatcher.event_listener(event_type, **kwargs)
         self._broadcast_notification_to_agents_of_market_type(
-            MarketClassType.SPOT, event_type, **kwargs)
+            AvailableMarketTypes.SPOT, event_type, **kwargs)
         self._broadcast_notification_to_agents_of_market_type(
-            MarketClassType.BALANCING, event_type, **kwargs)
+            AvailableMarketTypes.BALANCING, event_type, **kwargs)
         self._broadcast_notification_to_agents_of_market_type(
-            MarketClassType.SETTLEMENT, event_type, **kwargs)
+            AvailableMarketTypes.SETTLEMENT, event_type, **kwargs)
 
     def _should_dispatch_to_strategies(self, event_type, **kwargs):
         if event_type is AreaEvent.ACTIVATE:
@@ -133,7 +133,7 @@ class AreaDispatcher:
 
     @staticmethod
     def create_agent_object(owner: "AreaDispatcher", higher_market: Market,
-                            lower_market: Market, market_type: MarketClassType):
+                            lower_market: Market, market_type: AvailableMarketTypes):
         agent_constructor_arguments = {
             "owner": owner,
             "higher_market": higher_market,
@@ -141,7 +141,7 @@ class AreaDispatcher:
             "min_offer_age": ConstSettings.IAASettings.MIN_OFFER_AGE
         }
 
-        if market_type == MarketClassType.SPOT:
+        if market_type == AvailableMarketTypes.SPOT:
             if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                 if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
                     return OneSidedAlternativePricingAgent(**agent_constructor_arguments)
@@ -155,25 +155,25 @@ class AreaDispatcher:
             else:
                 raise WrongMarketTypeException(f"Wrong market type setting flag "
                                                f"{ConstSettings.IAASettings.MARKET_TYPE}")
-        elif market_type == MarketClassType.SETTLEMENT:
+        elif market_type == AvailableMarketTypes.SETTLEMENT:
             return SettlementAgent(**agent_constructor_arguments)
-        elif market_type == MarketClassType.BALANCING:
+        elif market_type == AvailableMarketTypes.BALANCING:
             return BalancingAgent(**agent_constructor_arguments)
         else:
             assert False, f"Market type not supported {market_type}"
 
     @staticmethod
-    def _get_agents_for_market_type(dispatcher_object, market_type: MarketClassType):
-        if market_type == MarketClassType.SPOT:
+    def _get_agents_for_market_type(dispatcher_object, market_type: AvailableMarketTypes):
+        if market_type == AvailableMarketTypes.SPOT:
             return dispatcher_object._inter_area_agents
-        if market_type == MarketClassType.BALANCING:
+        if market_type == AvailableMarketTypes.BALANCING:
             return dispatcher_object._balancing_agents
-        if market_type == MarketClassType.SETTLEMENT:
+        if market_type == AvailableMarketTypes.SETTLEMENT:
             return dispatcher_object._settlement_agents
         else:
             assert False, f"Market type not supported {market_type}"
 
-    def _create_area_agents_for_market_type(self, market, market_type: MarketClassType):
+    def _create_area_agents_for_market_type(self, market, market_type: AvailableMarketTypes):
         interarea_agents = self._get_agents_for_market_type(self, market_type)
         parent_markets = self.area.parent._markets.get_market_instances_from_class_type(
             market_type)

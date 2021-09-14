@@ -27,7 +27,7 @@ from d3a.models.area.market_rotators import (BaseRotator, DefaultMarketRotator,
                                              SettlementMarketRotator)
 from d3a.models.market import GridFee, Market
 from d3a.models.market.balancing import BalancingMarket
-from d3a.models.market.market_structures import MarketClassType
+from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.settlement import SettlementMarket
 from d3a.models.market.two_sided import TwoSidedMarket
@@ -79,33 +79,33 @@ class AreaMarkets:
         self._update_indexed_future_markets()
 
     @staticmethod
-    def _select_market_class(market_type: MarketClassType) -> Market:
+    def _select_market_class(market_type: AvailableMarketTypes) -> Market:
         """Select market class dependent on the global config."""
-        if market_type == MarketClassType.SPOT:
+        if market_type == AvailableMarketTypes.SPOT:
             if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                 return OneSidedMarket
             elif ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
                 return TwoSidedMarket
-        elif market_type == MarketClassType.SETTLEMENT:
+        elif market_type == AvailableMarketTypes.SETTLEMENT:
             return SettlementMarket
-        elif market_type == MarketClassType.BALANCING:
+        elif market_type == AvailableMarketTypes.BALANCING:
             return BalancingMarket
         else:
             assert False, f"Market type not supported {market_type}"
 
-    def get_market_instances_from_class_type(self, market_type: MarketClassType) -> Dict:
+    def get_market_instances_from_class_type(self, market_type: AvailableMarketTypes) -> Dict:
         """Select market dict based on the market class type."""
-        if market_type == MarketClassType.SPOT:
+        if market_type == AvailableMarketTypes.SPOT:
             return self.markets
-        elif market_type == MarketClassType.SETTLEMENT:
+        elif market_type == AvailableMarketTypes.SETTLEMENT:
             return self.settlement_markets
-        elif market_type == MarketClassType.BALANCING:
+        elif market_type == AvailableMarketTypes.BALANCING:
             return self.balancing_markets
         else:
             assert False, f"Market type not supported {market_type}"
 
     def create_future_markets(self, current_time: DateTime,
-                              market_type: MarketClassType, area: "Area") -> bool:
+                              market_type: AvailableMarketTypes, area: "Area") -> bool:
         """Create future markets according to the market count."""
         markets = self.get_market_instances_from_class_type(market_type)
         market_class = self._select_market_class(market_type)
@@ -130,7 +130,7 @@ class AreaMarkets:
         self.settlement_markets[time_slot] = (
             self._create_market(market_class=SettlementMarket,
                                 time_slot=time_slot,
-                                area=area, market_type=MarketClassType.SETTLEMENT))
+                                area=area, market_type=AvailableMarketTypes.SETTLEMENT))
         self.log.trace(
             "Adding Settlement {t:{format}} market".format(
                 t=time_slot,
@@ -138,7 +138,8 @@ class AreaMarkets:
 
     @staticmethod
     def _create_market(market_class: Market,
-                       time_slot: DateTime, area: "Area", market_type: MarketClassType) -> Market:
+                       time_slot: DateTime, area: "Area",
+                       market_type: AvailableMarketTypes) -> Market:
         """Create market for specific time_slot and market type."""
         market = market_class(
             time_slot=time_slot,
