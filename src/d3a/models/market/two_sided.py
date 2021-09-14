@@ -73,7 +73,15 @@ class TwoSidedMarket(OneSidedMarket):
         return self.fee_class.update_incoming_bid_with_fee(bid_price, original_bid_price)
 
     @lock_market_action
-    def get_bids(self):
+    def get_bids(self) -> Dict:
+        """
+        Retrieves a copy of all open bids of the market. The copy of the bids guarantees
+        that the return dict will remain unaffected from any mutations of the market bid list
+        that might happen concurrently (more specifically can be used in for loops without raising
+        the 'dict changed size during iteration' exception)
+        Returns: dict with open bids, bid id as keys, and Bid objects as values
+
+        """
         return deepcopy(self.bids)
 
     @lock_market_action

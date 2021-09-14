@@ -77,7 +77,15 @@ class OneSidedMarket(Market):
         ) * energy
 
     @lock_market_action
-    def get_offers(self):
+    def get_offers(self) -> Dict:
+        """
+        Retrieves a copy of all open offers of the market. The copy of the offers guarantees
+        that the return dict will remain unaffected from any mutations of the market offer list
+        that might happen concurrently (more specifically can be used in for loops without raising
+        the 'dict changed size during iteration' exception)
+        Returns: dict with open offers, offer id as keys, and Offer objects as values
+
+        """
         return deepcopy(self.offers)
 
     @lock_market_action
