@@ -16,8 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
-from typing import List  # noqa
+from typing import List, Dict
 from uuid import uuid4
+
+from d3a_interface.area_validator import validate_area
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.enums import SpotMarketTypeEnum
+from d3a_interface.utils import key_in_dict_and_not_none
+from pendulum import DateTime, duration, today
+from slugify import slugify
 
 import d3a.constants
 from cached_property import cached_property
@@ -36,12 +43,6 @@ from d3a.models.area.throughput_parameters import ThroughputParameters
 from d3a.models.config import SimulationConfig
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
-from d3a_interface.area_validator import validate_area
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.enums import SpotMarketTypeEnum
-from d3a_interface.utils import key_in_dict_and_not_none
-from pendulum import DateTime, duration, today
-from slugify import slugify
 
 log = getLogger(__name__)
 
@@ -489,7 +490,7 @@ class Area:
         return [m for m in self._markets.markets.values() if m.in_sim_duration]
 
     @property
-    def past_markets(self):
+    def past_markets(self) -> List:
         return list(self._markets.past_markets.values())
 
     def get_market(self, timeslot):
@@ -502,11 +503,11 @@ class Area:
         return self._markets.balancing_markets[timeslot]
 
     @property
-    def balancing_markets(self):
+    def balancing_markets(self) -> List:
         return list(self._markets.balancing_markets.values())
 
     @property
-    def past_balancing_markets(self):
+    def past_balancing_markets(self) -> List:
         return list(self._markets.past_balancing_markets.values())
 
     @property
@@ -552,11 +553,18 @@ class Area:
             return None
 
     @property
-    def settlement_markets(self):
+    def settlement_markets(self) -> Dict:
         return self._markets.settlement_markets
 
     @property
-    def past_settlement_markets(self):
+    def last_past_settlement_market(self):
+        try:
+            return list(self._markets.past_settlement_markets.items())[-1]
+        except IndexError:
+            return None
+
+    @property
+    def past_settlement_markets(self) -> Dict:
         return self._markets.past_settlement_markets
 
     def get_settlement_market(self, timeslot):
