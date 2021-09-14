@@ -6,6 +6,10 @@ from d3a.models.strategy.area_agents.two_sided_engine import TwoSidedEngine
 
 
 class SettlementAgent(TwoSidedAgent):
+    """
+    Extends TwoSidedAgent class to support settlement agents, in order to be able to
+    forward bids and offers from one settlement market to another.
+    """
     def __init__(self, owner, higher_market, lower_market,
                  min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
                  min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE):
