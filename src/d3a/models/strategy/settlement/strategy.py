@@ -15,12 +15,12 @@ see <http://www.gnu.org/licenses/>.
 from typing import Optional
 
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.data_classes import Offer, Bid, Trade
 from pendulum import duration
 
 from d3a.constants import SettlementTemplateStrategiesConstants
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.market import Market  # NOQA
-from d3a.models.market.market_structures import Trade
 from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.strategy.update_frequency import (TemplateStrategyBidUpdater,
                                                   TemplateStrategyOfferUpdater)
@@ -170,6 +170,8 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         Returns: None
 
         """
+        if isinstance(bid_trade.offer_bid, Offer):
+            return
         market = self._get_settlement_market_by_id(strategy, market_id)
         if not market:
             return
@@ -188,6 +190,8 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         Returns: None
 
         """
+        if isinstance(trade.offer_bid, Bid):
+            return
         market = self._get_settlement_market_by_id(strategy, market_id)
         if not market:
             return

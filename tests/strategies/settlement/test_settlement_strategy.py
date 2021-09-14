@@ -111,6 +111,9 @@ class TestSettlementMarketStrategy:
         self.market_mock.bid.reset_mock()
         self.market_mock.offer.reset_mock()
 
+        strategy_fixture.area.current_tick = 19
+        self.settlement_strategy.event_tick(strategy_fixture)
+        strategy_fixture.area.current_tick = 20
         self.settlement_strategy.event_tick(strategy_fixture)
         if can_post_settlement_bid:
             self.market_mock.bid.assert_called_once_with(

@@ -42,14 +42,13 @@ def parse_event_and_parameters_from_json_string(payload) -> Tuple:
 
 
 class AvailableMarketTypes(Enum):
-    """Enum for deciding which markets to access."""
-    SPOT_MARKET = 1
-    BALANCING_MARKET = 2
-    SETTLEMENT_MARKET = 3
+    SPOT = 0
+    BALANCING = 1
+    SETTLEMENT = 2
 
 
 PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING = {
-    AvailableMarketTypes.SPOT_MARKET: "",
-    AvailableMarketTypes.BALANCING_MARKET: "-balancing",
-    AvailableMarketTypes.SETTLEMENT_MARKET: "-settlement",
+    AvailableMarketTypes.SPOT: "",
+    AvailableMarketTypes.BALANCING: "-balancing",
+    AvailableMarketTypes.SETTLEMENT: "-settlement",
 }

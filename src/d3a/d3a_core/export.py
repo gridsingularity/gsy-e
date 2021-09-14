@@ -178,7 +178,7 @@ class ExportAndPlot:
 
     def _export_spot_markets_stats(self, area: Area, directory: dir, is_first: bool) -> None:
         """Export bids, offers, trades, statistics csv-files for all spot markets."""
-        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.SPOT_MARKET,
+        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.SPOT,
                                          is_first)
         if not area.children:
             return
@@ -205,7 +205,7 @@ class ExportAndPlot:
         """Export bids, offers, trades, statistics csv-files for all settlement markets."""
         if not ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
             return
-        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.SETTLEMENT_MARKET,
+        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.SETTLEMENT,
                                          is_first)
         if not area.children:
             return
@@ -233,7 +233,7 @@ class ExportAndPlot:
         """Export bids, offers, trades, statistics csv-files for all balancing markets."""
         if not ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             return
-        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.BALANCING_MARKET,
+        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.BALANCING,
                                          is_first)
         if not area.children:
             return

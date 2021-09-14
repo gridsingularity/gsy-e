@@ -49,15 +49,24 @@ class OneSidedMarket(Market):
         self.in_sim_duration = in_sim_duration
 
     def __repr__(self):  # pragma: no cover
-        return "<OneSidedMarket{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>"\
-            .format(" {}".format(self.time_slot_str),
-                    len(self.offers),
-                    sum(o.energy for o in self.offers.values()),
-                    sum(o.price for o in self.offers.values()),
-                    len(self.trades),
-                    self.accumulated_trade_energy,
-                    self.accumulated_trade_price
-                    )
+        return "<{}{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>".format(
+                self._class_name,
+                " {}".format(self.time_slot_str),
+                len(self.offers),
+                sum(o.energy for o in self.offers.values()),
+                sum(o.price for o in self.offers.values()),
+                len(self.trades),
+                self.accumulated_trade_energy,
+                self.accumulated_trade_price
+            )
+
+    @property
+    def _class_name(self):
+        return self.__class__.__name__
+
+    @property
+    def _debug_log_market_type_identifier(self):
+        return "[ONE_SIDED]"
 
     def balancing_offer(self, price, energy, seller, from_agent):
         assert False
@@ -108,7 +117,8 @@ class OneSidedMarket(Market):
             self.offer_history.append(offer)
             self._update_min_max_avg_offer_prices()
 
-        log.debug(f"[OFFER][NEW][{self.name}][{self.time_slot_str}] {offer}")
+        log.debug(f"{self._debug_log_market_type_identifier}[OFFER][NEW]"
+                  f"[{self.name}][{self.time_slot_str}] {offer}")
         if dispatch_event is True:
             self.dispatch_market_offer_event(offer)
         return offer
@@ -128,7 +138,8 @@ class OneSidedMarket(Market):
         self._update_min_max_avg_offer_prices()
         if not offer:
             raise OfferNotFoundException()
-        log.debug(f"[OFFER][DEL][{self.name}][{self.time_slot_str}] {offer}")
+        log.debug(f"{self._debug_log_market_type_identifier}[OFFER][DEL]"
+                  f"[{self.name}][{self.time_slot_str}] {offer}")
         # TODO: Once we add event-driven blockchain, this should be asynchronous
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
@@ -184,7 +195,8 @@ class OneSidedMarket(Market):
                                     attributes=original_offer.attributes,
                                     requirements=original_offer.requirements)
 
-        log.debug(f"[OFFER][SPLIT][{self.time_slot_str}, {self.name}] "
+        log.debug(f"{self._debug_log_market_type_identifier}[OFFER][SPLIT]"
+                  f"[{self.time_slot_str}, {self.name}] "
                   f"({short_offer_bid_log_str(original_offer)} into "
                   f"{short_offer_bid_log_str(accepted_offer)} and "
                   f"{short_offer_bid_log_str(residual_offer)}")
@@ -291,7 +303,8 @@ class OneSidedMarket(Market):
 
         if already_tracked is False:
             self._update_stats_after_trade(trade, offer)
-            log.info(f"[TRADE] [{self.name}] [{self.time_slot_str}] {trade}")
+            log.info(f"{self._debug_log_market_type_identifier}[TRADE] "
+                     f"[{self.name}] [{self.time_slot_str}] {trade}")
 
         # TODO: Use non-blockchain non-event-driven version for now for both blockchain and
         # normal runs.
