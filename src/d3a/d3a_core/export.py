@@ -632,14 +632,14 @@ class ExportAndPlot:
                 if isinstance(clearing_point, Clearing) and clearing_point.energy > 0:
                     data_obj = go.Scatter(x=[0, clearing_point.energy],
                                           y=[clearing_point.rate, clearing_point.rate],
-                                          mode='lines+markers',
+                                          mode="lines+markers",
                                           line=dict(width=5),
                                           name=time_slot.format(DATE_TIME_FORMAT)
                                                + " Clearing-Rate")
                     data.append(data_obj)
                     data_obj = go.Scatter(x=[clearing_point.energy, clearing_point.energy],
                                           y=[0, clearing_point.rate],
-                                          mode='lines+markers',
+                                          mode="lines+markers",
                                           line=dict(width=5),
                                           name=time_slot.format(DATE_TIME_FORMAT)
                                                + " Clearing-Energy")
