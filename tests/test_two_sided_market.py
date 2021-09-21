@@ -226,7 +226,7 @@ class TestTwoSidedMarket:
             Bid("bid_id3", pendulum.now(), 1.1, 1, "B", buyer_origin="S").serializable_dict()]
 
         matched = pac_market.get_clearing_point(bids, offers, now(), str(uuid4()))
-        assert matched[0] == 2.2
+        assert matched.rate == 2.2
 
     def test_market_bid_trade(self, market=TwoSidedMarket(bc=MagicMock(),
                                                           time_slot=pendulum.now())):
@@ -350,8 +350,8 @@ class TestTwoSidedMarket:
         ]
 
         clearing = pac_market.get_clearing_point(bids, offers, now(), str(uuid4()))
-        assert clearing[0] == mcp_rate
-        assert clearing[1] == mcp_energy
+        assert clearing.rate == mcp_rate
+        assert clearing.energy == mcp_energy
 
     def test_matching_list_gets_updated_with_residual_offers(self):
         matches = [

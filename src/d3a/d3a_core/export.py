@@ -16,33 +16,34 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import csv
-import logging
-import pathlib
-import os
-import shutil
 import json
+import logging
 import operator
-from typing import Dict
+import os
+import pathlib
+import shutil
 from collections import namedtuple
 from copy import deepcopy
 from functools import reduce  # forward compatibility for Python 3
+from typing import Dict
 
-import plotly.graph_objs as go
-from d3a.d3a_core.singletons import bid_offer_matcher
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
+from d3a_interface.dataclasses import Clearing
 from d3a_interface.enums import BidOfferMatchAlgoEnum
+from d3a_interface.utils import mkdir_from_str, generate_market_slot_list
 from slugify import slugify
 from sortedcontainers import SortedDict
 
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
-from d3a_interface.utils import mkdir_from_str, generate_market_slot_list
-from d3a.d3a_core.util import constsettings_to_dict, round_floats_for_ui
-from d3a.models.market.market_structures import MarketClearingState
-from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.state import ESSEnergyOrigin
-from d3a.d3a_core.sim_results.plotly_graph import PlotlyGraph
-from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
-from d3a.models.area import Area
 import d3a.constants
+import plotly.graph_objs as go
+from d3a.d3a_core.sim_results.plotly_graph import PlotlyGraph
+from d3a.d3a_core.singletons import bid_offer_matcher
+from d3a.d3a_core.util import constsettings_to_dict, round_floats_for_ui
+from d3a.models.area import Area
+from d3a.models.market.market_structures import MarketClearingState
+from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
+from d3a.models.state import ESSEnergyOrigin
+from d3a.models.strategy.storage import StorageStrategy
 
 _log = logging.getLogger(__name__)
 
@@ -590,24 +591,22 @@ class ExportAndPlot:
                 continue
 
             for time_slot, clearing_point in clearing.items():
-                # clearing_point[0] --> Clearing-Rate
-                # clearing_point[1] --> Clearing-Energy
-                if len(clearing_point) != 0:
-                    data_obj = go.Scatter(x=[0, clearing_point[1]],
-                                          y=[clearing_point[0], clearing_point[0]],
+                if isinstance(clearing_point, Clearing) and clearing_point.energy > 0:
+                    data_obj = go.Scatter(x=[0, clearing_point.energy],
+                                          y=[clearing_point.rate, clearing_point.rate],
                                           mode='lines+markers',
                                           line=dict(width=5),
                                           name=time_slot.format(DATE_TIME_FORMAT)
                                                + ' Clearing-Rate')
                     data.append(data_obj)
-                    data_obj = go.Scatter(x=[clearing_point[1], clearing_point[1]],
-                                          y=[0, clearing_point[0]],
+                    data_obj = go.Scatter(x=[clearing_point.energy, clearing_point.energy],
+                                          y=[0, clearing_point.rate],
                                           mode='lines+markers',
                                           line=dict(width=5),
                                           name=time_slot.format(DATE_TIME_FORMAT)
                                                + ' Clearing-Energy')
                     data.append(data_obj)
-                    xmax = max(xmax, clearing_point[1]) * 3
+                    xmax = max(xmax, clearing_point.energy) * 3
 
             plot_dir = os.path.join(self.plot_dir, subdir, 'mcp')
             mkdir_from_str(plot_dir)

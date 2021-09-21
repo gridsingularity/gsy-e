@@ -108,7 +108,7 @@ def one_on_one_matching_at_clearing_rate_at_bid_rate(context):
     count = 0
     for clearing in bid_offer_matcher.matcher.match_algorithm.state.clearing.values():
         count += 1
-        assert all(isclose(cv[0], 30.0) for cv in clearing.values())
+        assert all(isclose(cv.rate, 30.0) for cv in clearing.values())
     assert count > 0
 
 
@@ -117,7 +117,7 @@ def clearing_rate_at_last_matched_bid_rate(context):
     count = 0
     for clearing in bid_offer_matcher.matcher.match_algorithm.state.clearing.values():
         count += 1
-        assert all(isclose(cv[0], 15.0) for cv in clearing.values())
+        assert all(isclose(cv.rate, 15.0) for cv in clearing.values())
     assert count > 0
 
 
@@ -126,5 +126,5 @@ def clearing_rate_at_bid_rate(context):
     count = 0
     for clearing in bid_offer_matcher.matcher.match_algorithm.state.clearing.values():
         count += 1
-        assert all(isclose(cv[0], 25.0) for cv in clearing.values())
+        assert all(isclose(cv.rate, 25.0) for cv in clearing.values())
     assert count > 0
