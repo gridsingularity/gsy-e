@@ -21,10 +21,13 @@ from collections import deque, namedtuple
 from threading import Lock
 from typing import Dict
 
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.utils import (key_in_dict_and_not_none, convert_str_to_pendulum_in_dict,
+                                 str_to_pendulum_datetime)
+from pendulum import DateTime
+
 import d3a.constants
 from d3a.d3a_core.singletons import external_global_statistics
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.utils import key_in_dict_and_not_none, convert_str_to_pendulum_in_dict
 
 IncomingRequest = namedtuple("IncomingRequest", ("request_type", "arguments", "response_channel"))
 
@@ -129,7 +132,8 @@ class ExternalMixin:
 
     @property
     def is_aggregator_controlled(self):
-        return self.redis.aggregator.is_controlling_device(self.device.uuid)
+        return (self.redis.aggregator is not None
+                and self.redis.aggregator.is_controlling_device(self.device.uuid))
 
     def _remove_area_uuid_from_aggregator_mapping(self):
         self.redis.aggregator.device_aggregator_mapping.pop(self.device.uuid, None)
@@ -211,6 +215,22 @@ class ExternalMixin:
     @property
     def next_market(self):
         return self.market_area.next_market
+
+    def _get_market_from_command_argument(self, arguments: Dict):
+        if arguments.get("timeslot") is None:
+            return self.next_market
+        timeslot = str_to_pendulum_datetime(arguments["timeslot"])
+        return self._get_market_from_timeslot(timeslot)
+
+    def _get_market_from_timeslot(self, timeslot: DateTime):
+        market = self.market_area.get_market(timeslot)
+        if market:
+            return market
+        market = self.market_area.get_settlement_market(timeslot)
+        if not market:
+            raise Exception(f"Timeslot {timeslot} is not currently in the spot, future or "
+                            f"settlement markets")
+        return market
 
     @property
     def market_area(self):
@@ -328,12 +348,12 @@ class ExternalMixin:
 
     def event_bid_traded(self, market_id, bid_trade):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
-        if self.connected or self.redis.aggregator.is_controlling_device(self.device.uuid):
+        if self.connected or self.is_aggregator_controlled:
             self._publish_trade_event(bid_trade, True)
 
     def event_trade(self, market_id, trade):
         super().event_trade(market_id=market_id, trade=trade)
-        if self.connected or self.redis.aggregator.is_controlling_device(self.device.uuid):
+        if self.connected or self.is_aggregator_controlled:
             self._publish_trade_event(trade, False)
 
     def deactivate(self):

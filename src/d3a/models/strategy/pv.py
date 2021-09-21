@@ -202,6 +202,7 @@ class PVStrategy(BidEnabledStrategy):
         for market in self.area.all_markets:
             self.offer_update.update(market, self)
         self.offer_update.increment_update_counter_all_markets(self)
+
         self._settlement_market_strategy.event_tick(self)
 
     def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
@@ -285,7 +286,7 @@ class PVStrategy(BidEnabledStrategy):
                         offer_price,
                         offer_energy_kWh,
                         self.owner.name,
-                        original_offer_price=offer_price,
+                        original_price=offer_price,
                         seller_origin=self.owner.name,
                         seller_origin_id=self.owner.uuid,
                         seller_id=self.owner.uuid
@@ -308,6 +309,7 @@ class PVStrategy(BidEnabledStrategy):
                 trade.offer_bid.energy, market.time_slot, self.owner.name)
 
     def event_bid_traded(self, *, market_id, bid_trade):
+        super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
         self._settlement_market_strategy.event_bid_traded(self, market_id, bid_trade)
 
     def _set_alternative_pricing_scheme(self):

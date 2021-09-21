@@ -17,9 +17,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import itertools
 import uuid
+from copy import deepcopy
 from logging import getLogger
 from math import isclose
 from typing import Dict, List, Union  # noqa
+
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.data_classes import Bid, Offer, Trade, TradeBidOfferInfo, BidOfferMatch
 
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import (BidNotFoundException, InvalidBid,
@@ -27,17 +31,14 @@ from d3a.d3a_core.exceptions import (BidNotFoundException, InvalidBid,
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market import lock_market_action
-from d3a.models.market.market_structures import Bid, Offer, Trade, TradeBidOfferInfo
 from d3a.models.market.market_validators import RequirementsSatisfiedChecker
 from d3a.models.market.one_sided import OneSidedMarket
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.dataclasses import BidOfferMatch
 
 log = getLogger(__name__)
 
 
 class TwoSidedMarket(OneSidedMarket):
-    """Extends One sided market class and adds support for bidding functionality.
+    """Extend One sided market class and add support for bidding functionality.
 
     A market type that allows producers to place energy offers to the markets
     (exactly the same way as on the one-sided market case), but also allows the consumers
@@ -52,10 +53,15 @@ class TwoSidedMarket(OneSidedMarket):
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name, in_sim_duration=in_sim_duration)
 
+    @property
+    def _debug_log_market_type_identifier(self):
+        return "[TWO_SIDED]"
+
     def __repr__(self):  # pragma: no cover
-        return "<TwoSidedPayAsBid{} bids: {} (E: {} kWh V:{}) " \
-               "offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>"\
-            .format(" {}".format(self.time_slot_str),
+        return ("<{}{} bids: {} (E: {} kWh V:{}) offers: {} (E: {} kWh V: {}) "
+                "trades: {} (E: {} kWh, V: {})>".format(
+                    self._class_name,
+                    " {}".format(self.time_slot_str),
                     len(self.bids),
                     sum(b.energy for b in self.bids.values()),
                     sum(b.price for b in self.bids.values()),
@@ -65,41 +71,50 @@ class TwoSidedMarket(OneSidedMarket):
                     len(self.trades),
                     self.accumulated_trade_energy,
                     self.accumulated_trade_price
-                    )
+                ))
 
-    def _update_new_bid_price_with_fee(self, bid_price, original_bid_price):
-        return self.fee_class.update_incoming_bid_with_fee(bid_price, original_bid_price)
+    def _update_new_bid_price_with_fee(self, price, original_price):
+        return self.fee_class.update_incoming_bid_with_fee(price, original_price)
 
     @lock_market_action
-    def get_bids(self):
-        return self.bids
+    def get_bids(self) -> Dict:
+        """
+        Retrieves a copy of all open bids of the market. The copy of the bids guarantees
+        that the return dict will remain unaffected from any mutations of the market bid list
+        that might happen concurrently (more specifically can be used in for loops without raising
+        the 'dict changed size during iteration' exception)
+        Returns: dict with open bids, bid id as keys, and Bid objects as values
+
+        """
+        return deepcopy(self.bids)
 
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, buyer_origin: str,
-            bid_id: str = None, original_bid_price=None, adapt_price_with_fees=True,
+            bid_id: str = None, original_price=None, adapt_price_with_fees=True,
             add_to_history=True, buyer_origin_id=None, buyer_id=None,
             attributes: Dict = None, requirements: List[Dict] = None) -> Bid:
         if energy <= 0:
             raise InvalidBid()
 
-        if original_bid_price is None:
-            original_bid_price = price
+        if original_price is None:
+            original_price = price
 
         if adapt_price_with_fees:
-            price = self._update_new_bid_price_with_fee(price, original_bid_price)
+            price = self._update_new_bid_price_with_fee(price, original_price)
 
         if price < 0.0:
             raise MarketException("Negative price after taxes, bid cannot be posted.")
 
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
-                  self.now, price, energy, buyer, original_bid_price, buyer_origin,
+                  self.now, price, energy, buyer, original_price, buyer_origin,
                   buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
                   attributes=attributes, requirements=requirements)
 
         self.bids[bid.id] = bid
         if add_to_history is True:
             self.bid_history.append(bid)
-        log.debug(f"[BID][NEW][{self.time_slot_str}] {bid}")
+        log.debug(f"{self._debug_log_market_type_identifier}[BID][NEW]"
+                  f"[{self.time_slot_str}] {bid}")
         return bid
 
     @lock_market_action
@@ -109,7 +124,8 @@ class TwoSidedMarket(OneSidedMarket):
         bid = self.bids.pop(bid_or_id, None)
         if not bid:
             raise BidNotFoundException(bid_or_id)
-        log.debug(f"[BID][DEL][{self.time_slot_str}] {bid}")
+        log.debug(f"{self._debug_log_market_type_identifier}[BID][DEL]"
+                  f"[{self.time_slot_str}] {bid}")
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
     def split_bid(self, original_bid, energy, orig_bid_price):
@@ -121,7 +137,7 @@ class TwoSidedMarket(OneSidedMarket):
                                 price=original_bid.price * (energy / original_bid.energy),
                                 energy=energy,
                                 buyer=original_bid.buyer,
-                                original_bid_price=original_accepted_price,
+                                original_price=original_accepted_price,
                                 buyer_origin=original_bid.buyer_origin,
                                 buyer_origin_id=original_bid.buyer_origin_id,
                                 buyer_id=original_bid.buyer_id,
@@ -139,7 +155,7 @@ class TwoSidedMarket(OneSidedMarket):
         residual_bid = self.bid(price=residual_price,
                                 energy=residual_energy,
                                 buyer=original_bid.buyer,
-                                original_bid_price=original_residual_price,
+                                original_price=original_residual_price,
                                 buyer_origin=original_bid.buyer_origin,
                                 buyer_origin_id=original_bid.buyer_origin_id,
                                 buyer_id=original_bid.buyer_id,
@@ -148,7 +164,8 @@ class TwoSidedMarket(OneSidedMarket):
                                 attributes=original_bid.attributes,
                                 requirements=original_bid.requirements)
 
-        log.debug(f"[BID][SPLIT][{self.time_slot_str}, {self.name}] "
+        log.debug(f"{self._debug_log_market_type_identifier}[BID][SPLIT]"
+                  f"[{self.time_slot_str}, {self.name}] "
                   f"({short_offer_bid_log_str(original_bid)} into "
                   f"{short_offer_bid_log_str(accepted_bid)} and "
                   f"{short_offer_bid_log_str(residual_bid)}")
@@ -179,7 +196,7 @@ class TwoSidedMarket(OneSidedMarket):
         if energy is None or isclose(energy, market_bid.energy, abs_tol=1e-8):
             energy = market_bid.energy
 
-        orig_price = bid.original_bid_price if bid.original_bid_price is not None else bid.price
+        orig_price = bid.original_price if bid.original_price is not None else bid.price
         residual_bid = None
 
         if energy <= 0:
@@ -222,7 +239,8 @@ class TwoSidedMarket(OneSidedMarket):
 
         if already_tracked is False:
             self._update_stats_after_trade(trade, bid, already_tracked)
-            log.info(f"[TRADE][BID] [{self.name}] [{self.time_slot_str}] {trade}")
+            log.info(f"{self._debug_log_market_type_identifier}[TRADE][BID] [{self.name}] "
+                     f"[{self.time_slot_str}] {trade}")
 
         self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
         return trade
@@ -263,7 +281,7 @@ class TwoSidedMarket(OneSidedMarket):
                 self.offers.get(offer["id"]) for offer in recommended_pair.offers]
             market_bids = [self.bids.get(bid["id"]) for bid in recommended_pair.bids]
 
-            if not all(market_offers) and all(market_bids):
+            if not (all(market_offers) and all(market_bids)):
                 # If not all offers bids exist in the market, skip the current recommendation
                 continue
 
@@ -276,11 +294,11 @@ class TwoSidedMarket(OneSidedMarket):
             market_offer = next(market_offers, None)
             market_bid = next(market_bids, None)
             while market_bid and market_offer:
-                original_bid_rate = market_bid.original_bid_price / market_bid.energy
+                original_bid_rate = market_bid.original_price / market_bid.energy
                 trade_bid_info = TradeBidOfferInfo(
                     original_bid_rate=original_bid_rate,
                     propagated_bid_rate=market_bid.energy_rate,
-                    original_offer_rate=market_offer.original_offer_price / market_offer.energy,
+                    original_offer_rate=market_offer.original_price / market_offer.energy,
                     propagated_offer_rate=market_offer.energy_rate,
                     trade_rate=original_bid_rate)
 

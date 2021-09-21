@@ -15,15 +15,15 @@ see <http://www.gnu.org/licenses/>.
 from typing import Optional
 
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.data_classes import Offer, Bid, Trade
 from pendulum import duration
 
 from d3a.constants import SettlementTemplateStrategiesConstants
 from d3a.d3a_core.exceptions import MarketException
-from d3a.models.market import Market
-from d3a.models.market.market_structures import Trade
-from d3a.models.strategy import BaseStrategy
-from d3a.models.strategy.update_frequency import TemplateStrategyBidUpdater, \
-    TemplateStrategyOfferUpdater
+from d3a.models.market import Market  # NOQA
+from d3a.models.strategy import BidEnabledStrategy
+from d3a.models.strategy.update_frequency import (TemplateStrategyBidUpdater,
+                                                  TemplateStrategyOfferUpdater)
 
 
 class SettlementTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
@@ -93,7 +93,7 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
                 update_interval=duration(minutes=self._update_interval),
                 rate_limit_object=max)
 
-    def event_market_cycle(self, strategy: BaseStrategy) -> None:
+    def event_market_cycle(self, strategy: BidEnabledStrategy) -> None:
         """
         Should be called by the event_market_cycle of the asset strategy class, posts
         settlement bids and offers on markets that do not have posted bids and offers yet
@@ -125,31 +125,41 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
                     )
                 except MarketException:
                     pass
+        # has to be called in order not to update the initial bid/offer in the first tick
+        self.bid_updater.increment_update_counter_all_markets(strategy)
+        self.offer_updater.increment_update_counter_all_markets(strategy)
 
-    def event_tick(self, strategy: BaseStrategy) -> None:
+    def event_tick(self, strategy: BidEnabledStrategy) -> None:
         """
-        Update posted settlement bids and offers on market tick
+        Update posted settlement bids and offers on market tick.
+        Order matters here:
+            - FIRST: the bids and offers need to be updated (update())
+            - SECOND: the update counter has to be increased (increment_update_counter_all_markets)
         Args:
             strategy: Strategy object of the asset
 
         Returns: None
 
         """
-        self.bid_updater.increment_update_counter_all_markets(strategy)
-        self.offer_updater.increment_update_counter_all_markets(strategy)
         for market in strategy.area.settlement_markets.values():
             self.bid_updater.update(market, strategy)
             self.offer_updater.update(market, strategy)
 
-    def _get_settlement_market_by_id(
-            self, strategy: BaseStrategy, market_id: str) -> Optional["Market"]:
-        markets = [m for m in strategy.area.settlement_markets.values() if m.id == market_id]
+        self.bid_updater.increment_update_counter_all_markets(strategy)
+        self.offer_updater.increment_update_counter_all_markets(strategy)
+
+    @staticmethod
+    def _get_settlement_market_by_id(strategy: BidEnabledStrategy,
+                                     market_id: str) -> Optional["Market"]:
+        markets = [market for market in strategy.area.settlement_markets.values()
+                   if market.id == market_id]
         if not markets:
             return None
         assert len(markets) == 1
         return markets[0]
 
-    def event_bid_traded(self, strategy: BaseStrategy, market_id: str, bid_trade: Trade) -> None:
+    def event_bid_traded(self, strategy: BidEnabledStrategy, market_id: str,
+                         bid_trade: Trade) -> None:
         """
         Updates the unsettled deviation with the traded energy from the market
         Args:
@@ -160,6 +170,8 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         Returns: None
 
         """
+        if isinstance(bid_trade.offer_bid, Offer):
+            return
         market = self._get_settlement_market_by_id(strategy, market_id)
         if not market:
             return
@@ -167,7 +179,7 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
             strategy.state.decrement_unsettled_deviation(
                 bid_trade.offer_bid.energy, market.time_slot)
 
-    def event_trade(self, strategy: BaseStrategy, market_id: str, trade: Trade) -> None:
+    def event_trade(self, strategy: BidEnabledStrategy, market_id: str, trade: Trade) -> None:
         """
         Updates the unsettled deviation with the traded energy from the market
         Args:
@@ -178,6 +190,8 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         Returns: None
 
         """
+        if isinstance(trade.offer_bid, Bid):
+            return
         market = self._get_settlement_market_by_id(strategy, market_id)
         if not market:
             return

@@ -58,3 +58,20 @@ def check_external_command_endpoint_with_correct_payload_succeeds(ext_strategy_f
     response_channel = f"{ext_strategy_fixture.channel_prefix}/response/{command}"
     assert (ext_strategy_fixture.pending_requests ==
             deque([IncomingRequest(command, arguments, response_channel)]))
+
+
+def assert_bid_offer_aggregator_commands_return_value(return_value, is_offer):
+    command_name = "offer" if is_offer else "bid"
+    assert return_value["status"] == "ready"
+    assert return_value["command"] == command_name
+    return_value[command_name] = json.loads(return_value[command_name])
+    assert return_value[command_name]["price"] == 200.0
+    assert return_value[command_name]["energy"] == 0.5
+    assert return_value[command_name]["energy_rate"] == 400.0
+    assert return_value[command_name][
+        "seller" if is_offer else "buyer"] == "forecast_pv"
+    assert return_value[command_name]["original_price"] == 200.0
+    assert return_value[command_name][
+        "seller_origin" if is_offer else "buyer_origin"] == "forecast_pv"
+    assert return_value[command_name]["replace_existing"] is True
+    assert return_value[command_name]["type"] == "Offer" if is_offer else "Bid"

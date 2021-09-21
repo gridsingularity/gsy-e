@@ -60,8 +60,9 @@ class PVExternalMixin(ExternalMixin):
 
     def _list_offers_impl(self, arguments, response_channel):
         try:
+            market = self._get_market_from_command_argument(arguments)
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
-                               for _, v in self.next_market.get_offers().items()
+                               for _, v in market.get_offers().items()
                                if v.seller == self.device.name]
             self.redis.publish_json(
                 response_channel,
@@ -84,8 +85,9 @@ class PVExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
+            market = self._get_market_from_command_argument(arguments)
             if ("offer" in arguments and arguments["offer"] is not None) and \
-                    not self.offers.is_offer_posted(self.next_market.id, arguments["offer"]):
+                    not self.offers.is_offer_posted(market.id, arguments["offer"]):
                 raise Exception("Offer_id is not associated with any posted offer.")
         except Exception:
             logging.exception(f"Error when handling delete offer request. Payload {payload}")
@@ -100,9 +102,10 @@ class PVExternalMixin(ExternalMixin):
 
     def _delete_offer_impl(self, arguments, response_channel):
         try:
+            market = self._get_market_from_command_argument(arguments)
             to_delete_offer_id = arguments["offer"] if "offer" in arguments else None
             deleted_offers = self.offers.remove_offer_from_cache_and_market(
-                self.next_market, to_delete_offer_id)
+                market, to_delete_offer_id)
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer_delete", "status": "ready",
@@ -122,6 +125,7 @@ class PVExternalMixin(ExternalMixin):
         transaction_id = self._get_transaction_id(payload)
         required_args = {"price", "energy", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
+                                            "timeslot",
                                             "attributes",
                                             "requirements"})
 
@@ -154,17 +158,18 @@ class PVExternalMixin(ExternalMixin):
     def _offer_impl(self, arguments, response_channel):
         try:
             replace_existing = arguments.pop("replace_existing", True)
-
+            market = self._get_market_from_command_argument(arguments)
             assert self.can_offer_be_posted(
                 arguments["energy"],
                 arguments["price"],
-                self.state.get_available_energy_kWh(self.next_market.time_slot),
-                self.next_market,
+                self.state.get_available_energy_kWh(market.time_slot),
+                market,
                 replace_existing=replace_existing)
 
-            offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
+            offer_arguments = {
+                k: v for k, v in arguments.items() if k not in ["transaction_id", "timeslot"]}
             offer = self.post_offer(
-                self.next_market, replace_existing=replace_existing, **offer_arguments)
+                market, replace_existing=replace_existing, **offer_arguments)
 
             self.redis.publish_json(
                 response_channel,
@@ -250,14 +255,15 @@ class PVExternalMixin(ExternalMixin):
             super().event_offer(market_id=market_id, offer=offer)
 
     def _delete_offer_aggregator(self, arguments):
+        market = self._get_market_from_command_argument(arguments)
         if ("offer" in arguments and arguments["offer"] is not None) and \
-                not self.offers.is_offer_posted(self.next_market.id, arguments["offer"]):
+                not self.offers.is_offer_posted(market.id, arguments["offer"]):
             raise Exception("Offer_id is not associated with any posted offer.")
 
         try:
             to_delete_offer_id = arguments["offer"] if "offer" in arguments else None
             deleted_offers = self.offers.remove_offer_from_cache_and_market(
-                self.next_market, to_delete_offer_id)
+                market, to_delete_offer_id)
             return {
                 "command": "offer_delete", "status": "ready",
                 "area_uuid": self.device.uuid,
@@ -274,8 +280,9 @@ class PVExternalMixin(ExternalMixin):
 
     def _list_offers_aggregator(self, arguments):
         try:
+            market = self._get_market_from_command_argument(arguments)
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
-                               for _, v in self.next_market.get_offers().items()
+                               for v in market.get_offers().values()
                                if v.seller == self.device.name]
             return {
                 "command": "list_offers", "status": "ready", "offer_list": filtered_offers,
@@ -291,6 +298,7 @@ class PVExternalMixin(ExternalMixin):
     def _offer_aggregator(self, arguments):
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
+                                            "timeslot",
                                             "attributes",
                                             "requirements"})
 
@@ -301,20 +309,21 @@ class PVExternalMixin(ExternalMixin):
 
         try:
             replace_existing = arguments.pop("replace_existing", True)
+            market = self._get_market_from_command_argument(arguments)
 
             assert self.can_offer_be_posted(
                 arguments["energy"],
                 arguments["price"],
-                self.state.get_available_energy_kWh(self.next_market.time_slot),
-                self.next_market,
+                self.state.get_available_energy_kWh(market.time_slot),
+                market,
                 replace_existing=replace_existing)
 
             offer_arguments = {k: v
                                for k, v in arguments.items()
-                               if k not in ["transaction_id", "type"]}
+                               if k not in ["transaction_id", "type", "timeslot"]}
 
             offer = self.post_offer(
-                self.next_market, replace_existing=replace_existing, **offer_arguments)
+                market, replace_existing=replace_existing, **offer_arguments)
 
             return {
                 "command": "offer",
