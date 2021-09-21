@@ -201,12 +201,12 @@ class FileExportEndpoints:
                 self.cumulative_bids[area.slug][market.time_slot] = {}
                 self.clearing[area.slug][market.time_slot] = {}
                 clearing_state = bid_offer_matcher.matcher.match_algorithm.state
-            self.cumulative_offers[area.slug][market.time_slot] = \
-                clearing_state.cumulative_offers.get(market.id, {})
-            self.cumulative_bids[area.slug][market.time_slot] = \
-                clearing_state.cumulative_bids.get(market.id, {})
-            self.clearing[area.slug][market.time_slot] = \
-                clearing_state.clearing.get(market.id, ())
+            self.cumulative_offers[area.slug][market.time_slot] = (
+                clearing_state.cumulative_offers.get(market.id, {}))
+            self.cumulative_bids[area.slug][market.time_slot] = (
+                clearing_state.cumulative_bids.get(market.id, {}))
+            self.clearing[area.slug][market.time_slot] = (
+                clearing_state.clearing.get(market.id, ()))
 
     def _update_plot_stats(self, area: Area) -> None:
         """Populate the statistics for the plots into self.plot_stats."""
