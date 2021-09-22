@@ -650,8 +650,10 @@ class ExportAndPlot:
             mkdir_from_str(plot_dir)
             output_file = os.path.join(plot_dir,
                                        f"supply_demand_{market_slot}.html")
-            PlotlyGraph.plot_line_graph("supply_demand_curve", "Energy (kWh)",
-                                        "Rate (ct./kWh)", data, output_file, xmax)
+            plot_desc = PlotDescription(data=data, barmode="group", xtitle="Energy (kWh)",
+                                        ytitle="Rate (ct./kWh)",
+                                        title="supply_demand_curve")
+            PlotlyGraph.plot_line_graph(plot_desc, output_file, xmax)
 
     @classmethod
     def render_supply_demand_curve(cls, dataset, time, supply):
