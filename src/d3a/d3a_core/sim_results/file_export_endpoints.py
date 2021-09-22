@@ -17,7 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from abc import ABC, abstractmethod
 from typing import List, Dict
+
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 
 from d3a.d3a_core.singletons import bid_offer_matcher
 from d3a.models.area import Area
@@ -184,11 +186,9 @@ class FileExportEndpoints:
                 out_dict[area.slug][label].append(row[ii])
 
     def _populate_plots_stats_for_supply_demand_curve(self, area: Area) -> None:
-        """Populate the statistics for supply_demand_curve."""
-        """To be enabled in context of D3ASIM-3534"""
-        return
-        if (ConstSettings.IAASettings.MARKET_TYPE == 2 and
-                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE == 2):
+        if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
+                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+                BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value):
             if len(area.past_markets) == 0:
                 return
             market = area.past_markets[-1]
@@ -200,10 +200,13 @@ class FileExportEndpoints:
                 self.cumulative_offers[area.slug][market.time_slot] = {}
                 self.cumulative_bids[area.slug][market.time_slot] = {}
                 self.clearing[area.slug][market.time_slot] = {}
-            self.cumulative_offers[area.slug][market.time_slot] = market.state.cumulative_offers
-            self.cumulative_bids[area.slug][market.time_slot] = market.state.cumulative_bids
+                clearing_state = bid_offer_matcher.matcher.match_algorithm.state
+            self.cumulative_offers[area.slug][market.time_slot] = (
+                clearing_state.cumulative_offers.get(market.id, {}))
+            self.cumulative_bids[area.slug][market.time_slot] = (
+                clearing_state.cumulative_bids.get(market.id, {}))
             self.clearing[area.slug][market.time_slot] = (
-                bid_offer_matcher.matcher.match_algorithm.state.clearing)
+                clearing_state.clearing.get(market.id, ()))
 
     def _update_plot_stats(self, area: Area) -> None:
         """Populate the statistics for the plots into self.plot_stats."""

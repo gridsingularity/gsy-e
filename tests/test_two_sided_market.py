@@ -6,16 +6,17 @@ import pendulum
 import pytest
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.data_classes import BidOfferMatch
+from d3a_interface.data_classes import TradeBidOfferInfo, Trade
 from d3a_interface.matching_algorithms import (
     PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
 )
+from pendulum import now
 
 from d3a.d3a_core.blockchain_interface import NonBlockchainInterface
 from d3a.d3a_core.exceptions import (
     BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade, MarketException)
 from d3a.events import MarketEvent
 from d3a.models.market import Bid, Offer
-from d3a_interface.data_classes import TradeBidOfferInfo, Trade
 from d3a.models.market.two_sided import TwoSidedMarket
 
 
@@ -225,8 +226,8 @@ class TestTwoSidedMarket:
             Bid("bid_id2", pendulum.now(), 2.2, 1, "B", buyer_origin="S").serializable_dict(),
             Bid("bid_id3", pendulum.now(), 1.1, 1, "B", buyer_origin="S").serializable_dict()]
 
-        matched = pac_market.get_clearing_point(bids, offers, pendulum.now())[0]
-        assert matched == 2.2
+        matched = pac_market.get_clearing_point(bids, offers, now(), str(uuid4()))
+        assert matched.rate == 2.2
 
     def test_market_bid_trade(self, market=TwoSidedMarket(bc=MagicMock(),
                                                           time_slot=pendulum.now())):
@@ -349,11 +350,9 @@ class TestTwoSidedMarket:
             Bid("bid_id7", pendulum.now(), bid[6], 1, "B", buyer_origin="S").serializable_dict()
         ]
 
-        matched_rate, matched_energy = pac_market.get_clearing_point(
-            bids, offers, pendulum.now()
-        )
-        assert matched_rate == mcp_rate
-        assert matched_energy == mcp_energy
+        clearing = pac_market.get_clearing_point(bids, offers, now(), str(uuid4()))
+        assert clearing.rate == mcp_rate
+        assert clearing.energy == mcp_energy
 
     def test_matching_list_gets_updated_with_residual_offers(self):
         matches = [

@@ -35,9 +35,7 @@ Feature: Two sided pay_as_clear market tests
      When we run the d3a simulation on console with settlement_market.default_2a_settlement for 2 hrs
      Then offers, bids trades and stats are exported also for settlement markets
 
-  # TODO: re-enable in context of bug/D3ASIM-3534
   @slow
-  @disabled
   Scenario: Supply Demand Curve
      Given we have a scenario named two_sided_pay_as_clear/test_clearing_energy
      And d3a is installed

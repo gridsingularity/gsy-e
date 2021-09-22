@@ -19,7 +19,6 @@ from logging import getLogger
 from typing import List, Dict
 from uuid import uuid4
 
-from cached_property import cached_property
 from d3a_interface.area_validator import validate_area
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.enums import SpotMarketTypeEnum
@@ -28,6 +27,7 @@ from pendulum import DateTime, duration, today
 from slugify import slugify
 
 import d3a.constants
+from cached_property import cached_property
 from d3a.d3a_core.blockchain_interface import blockchain_interface_factory
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException

@@ -271,7 +271,6 @@ class TwoSidedMarket(OneSidedMarket):
     def match_recommendations(
             self, recommendations: List[BidOfferMatch.serializable_dict]) -> None:
         """Match a list of bid/offer pairs, create trades and residual offers/bids."""
-
         while recommendations:
             recommended_pair = recommendations.pop(0)
             recommended_pair = BidOfferMatch.from_dict(recommended_pair)
