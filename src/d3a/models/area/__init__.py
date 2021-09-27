@@ -580,6 +580,27 @@ class Area:
     def get_settlement_market(self, timeslot):
         return self._markets.settlement_markets.get(timeslot)
 
+    def _accumulate_energy_deviances_of_children(self, area, total_energy_deviance_kWh):
+        for child in area.children:
+            print(f"child: {child.name} | STRATEGY: {child.strategy}")
+            if child.strategy:
+                last_past_settlement_market = (
+                    self.last_past_settlement_market[0]
+                    if self.last_past_settlement_market is not None
+                    else None)
+                if last_past_settlement_market is not None:
+                    total_energy_deviance_kWh += (
+                        child.strategy.state.get_forecast_measurement_deviation_kWh(
+                            self.last_past_settlement_market[0]))
+            if child.children:
+                self._accumulate_energy_deviances_of_children(child, total_energy_deviance_kWh)
+
+    def get_energy_deviances(self):
+        total_energy_deviance_kWh = 0.
+        if self.strategy is None:
+            self._accumulate_energy_deviances_of_children(self, total_energy_deviance_kWh)
+        return total_energy_deviance_kWh
+
     @cached_property
     def available_triggers(self):
         triggers = []

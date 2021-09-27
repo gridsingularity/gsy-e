@@ -133,6 +133,8 @@ class AreaStats:
             out_dict["area_throughput"] = self._get_current_market_area_throughput()
             out_dict["self_sufficiency"] = self.kpi.get("self_sufficiency", None)
             out_dict["self_consumption"] = self.kpi.get("self_consumption", None)
+            out_dict["market_energy_deviance"] = self._area.get_energy_deviances()
+
         return out_dict
 
     def _aggregate_exported_imported_energy(self):
