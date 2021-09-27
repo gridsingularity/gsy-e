@@ -15,11 +15,11 @@ see <http://www.gnu.org/licenses/>.
 import os
 
 import pytest
-from d3a.d3a_core.util import d3a_path, StrategyProfileConfigurationException
-from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a_interface.exceptions import D3ADeviceException
 from parameterized import parameterized
 
+from d3a.d3a_core.util import d3a_path
+from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from tests.test_strategy_load_hours import FakeArea
 
 
@@ -42,8 +42,3 @@ def test_predefined_load_strategy_rejects_incorrect_rate_parameters(use_mmr, ini
     with pytest.raises(D3ADeviceException):
         DefinedLoadStrategy(daily_load_profile=user_profile_path, fit_to_limit=False,
                             energy_rate_increase_per_update=-1)
-
-
-def test_strategy_raises_strategy_profile_configuration_exception():
-    with pytest.raises(StrategyProfileConfigurationException):
-        DefinedLoadStrategy(daily_load_profile_uuid=None, daily_load_profile=None)

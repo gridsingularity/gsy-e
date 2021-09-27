@@ -30,8 +30,7 @@ from d3a import constants
 from d3a.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
 from d3a.d3a_core.exceptions import D3AException, MarketException
 from d3a.d3a_core.global_objects_singleton import global_objects
-from d3a.d3a_core.util import (get_market_maker_rate_from_config, should_read_profile_from_db,
-                               validate_profile_or_uuid_input)
+from d3a.d3a_core.util import (get_market_maker_rate_from_config, should_read_profile_from_db)
 from d3a.models.market import Market
 from d3a.models.state import SmartMeterState
 from d3a.models.strategy import BidEnabledStrategy, utils
@@ -94,7 +93,6 @@ class SmartMeterStrategy(BidEnabledStrategy):
         """
         super().__init__()
 
-        validate_profile_or_uuid_input(self.area, smart_meter_profile, smart_meter_profile_uuid)
         self.smart_meter_profile = smart_meter_profile  # Raw profile data
         self.profile = None  # Preprocessed data extracted from smart_meter_profile
         if should_read_profile_from_db(self.smart_meter_profile):

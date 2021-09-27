@@ -15,25 +15,24 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import pytest
-import uuid
-import pathlib
 import os
+import pathlib
+import uuid
 from typing import Dict  # NOQA
 from uuid import uuid4
 
 import pendulum
+import pytest
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig, PROFILE_EXPANSION_DAYS
+from d3a_interface.data_classes import Offer
+from d3a_interface.exceptions import D3ADeviceException
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.utils import generate_market_slot_list
 from pendulum import DateTime, duration, today, datetime
 
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig, PROFILE_EXPANSION_DAYS
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.exceptions import D3ADeviceException
-from d3a_interface.utils import generate_market_slot_list
-from d3a.d3a_core.util import (d3a_path, change_global_config,
-                               StrategyProfileConfigurationException)
 from d3a.constants import TIME_ZONE, TIME_FORMAT
+from d3a.d3a_core.util import (d3a_path, change_global_config)
 from d3a.models.area import DEFAULT_CONFIG
-from d3a_interface.data_classes import Offer
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 
 
@@ -451,8 +450,3 @@ def test_profile_with_date_and_seconds_can_be_parsed():
         assert all(x == 0.25 for x in list(profile.values())[6:])
 
     GlobalConfig.start_date = today(tz=TIME_ZONE)
-
-
-def test_strategy_raises_strategy_profile_configuration_exception():
-    with pytest.raises(StrategyProfileConfigurationException):
-        PVUserProfileStrategy(power_profile_uuid=None, power_profile=None)

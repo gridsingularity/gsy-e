@@ -23,7 +23,6 @@ from d3a_interface.validators.smart_meter_validator import SmartMeterValidator
 from pendulum import datetime, duration
 
 from d3a import constants
-from d3a.d3a_core.util import StrategyProfileConfigurationException
 from d3a.models.area import Area
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.state import SmartMeterState
@@ -266,7 +265,3 @@ class SmartMeterStrategyTest(unittest.TestCase):
             slot_time += duration(minutes=15)
 
         return market_mocks
-
-    def test_strategy_raises_strategy_profile_configuration_exception(self):
-        with self.assertRaises(StrategyProfileConfigurationException):
-            SmartMeterStrategy(home_meter_profile=None, home_meter_profile_uuid=None)

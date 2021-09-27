@@ -26,7 +26,7 @@ from pendulum import duration
 from d3a.d3a_core.exceptions import D3AException
 from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.d3a_core.util import d3a_path
-from d3a.d3a_core.util import should_read_profile_from_db, validate_profile_or_uuid_input
+from d3a.d3a_core.util import should_read_profile_from_db
 from d3a.models.strategy.pv import PVStrategy
 
 """
@@ -181,7 +181,6 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
                          use_market_maker_rate=use_market_maker_rate)
 
-        validate_profile_or_uuid_input(self.area, power_profile, power_profile_uuid)
         self.power_profile = None
         self.power_profile_uuid = power_profile_uuid
 
@@ -193,7 +192,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
     def _read_or_rotate_profiles(self, reconfigure=False):
         input_profile = self._power_profile_input \
             if reconfigure or not self.power_profile else self.power_profile
-        self.power_profile = \
+        self.energy_profile = \
             global_objects.profiles_handler.rotate_profile(profile_type=InputProfileTypes.POWER,
                                                            profile=input_profile,
                                                            profile_uuid=self.power_profile_uuid)

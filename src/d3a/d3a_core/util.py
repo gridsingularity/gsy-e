@@ -481,12 +481,6 @@ class StrategyProfileConfigurationException(Exception):
     pass
 
 
-def validate_profile_or_uuid_input(area_uuid, profile, profile_uuid):
-    if not profile and not profile_uuid:
-        raise StrategyProfileConfigurationException(
-            f"Neither a profile nor a profile_uuid are provided for area with uuid {area_uuid}.")
-
-
 def is_time_slot_in_past_markets(time_slot: DateTime, current_time_slot: DateTime):
     """Checks if the time_slot should be in the area.past_markets."""
     if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
