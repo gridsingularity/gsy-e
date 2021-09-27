@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.market.grid_fees import BaseClassGridFees
-from d3a.models.market.market_structures import TradeBidOfferInfo
+from d3a_interface.data_classes import TradeBidOfferInfo
 
 
 class GridFees(BaseClassGridFees):
@@ -26,10 +26,10 @@ class GridFees(BaseClassGridFees):
             return original_bid
         return source_bid
 
-    def update_incoming_offer_with_fee(self, source_offer_price, original_offer_price):
+    def update_incoming_offer_with_fee(self, source_offer_price, original_price):
         if source_offer_price is None:
-            return original_offer_price * (1 + self.grid_fee_rate)
-        return source_offer_price + original_offer_price * self.grid_fee_rate
+            return original_price * (1 + self.grid_fee_rate)
+        return source_offer_price + original_price * self.grid_fee_rate
 
     def calculate_fee_revenue_from_clearing_trade(
             self, bid_propagated_rate, bid_original_rate,
@@ -77,7 +77,7 @@ class GridFees(BaseClassGridFees):
         if not trade_original_info:
             return None
         trade_offer_info = TradeBidOfferInfo(
-            original_bid_rate=market_bid.original_bid_price / market_bid.energy,
+            original_bid_rate=market_bid.original_price / market_bid.energy,
             propagated_bid_rate=market_bid.energy_rate,
             original_offer_rate=trade_original_info.original_offer_rate,
             propagated_offer_rate=trade_original_info.propagated_offer_rate,
@@ -90,7 +90,7 @@ class GridFees(BaseClassGridFees):
         trade_bid_info = TradeBidOfferInfo(
             original_bid_rate=trade_original_info.original_bid_rate,
             propagated_bid_rate=trade_original_info.propagated_bid_rate,
-            original_offer_rate=market_offer.original_offer_price / market_offer.energy,
+            original_offer_rate=market_offer.original_price / market_offer.energy,
             propagated_offer_rate=market_offer.energy_rate,
             trade_rate=trade_original_info.trade_rate)
         return trade_bid_info

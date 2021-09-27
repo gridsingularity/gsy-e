@@ -43,17 +43,17 @@ user_profile = {
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=500,
+                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=500,
                                                                        hrs_per_day=12,
                                                                        hrs_of_day=list(
                                                                            range(7, 20)))
                          ),
-                    Area('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile,
+                    Area("H1 PV", strategy=PVUserProfileStrategy(power_profile=user_profile,
                                                                  panel_count=1)
                          ),
                 ]

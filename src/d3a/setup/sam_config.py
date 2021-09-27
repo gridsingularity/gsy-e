@@ -26,132 +26,132 @@ import os
 def get_setup(config):
 
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 PV', strategy=PVStrategy(60, 80),
+                    Area("H1 PV", strategy=PVStrategy(60, 80),
                          ),
-                    Area('H1 Storage1',
+                    Area("H1 Storage1",
                          strategy=StorageStrategy(battery_capacity_kWh=12 * 1.2,
                                                   max_abs_battery_power_kW=12 * 1.2,
                                                   initial_soc=60),
                          ),
-                    Area('H1 General Load',
+                    Area("H1 General Load",
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources',
-                                                             'SAM_MF2_Summer.csv'),
+                                                             "resources",
+                                                             "SAM_MF2_Summer.csv"),
                              final_buying_rate=35),
                          ),
                 ]
             ),
             Area(
-                'House 2',
+                "House 2",
                 [
-                    Area('H2 PV', strategy=PVStrategy(30, 80),
+                    Area("H2 PV", strategy=PVStrategy(30, 80),
                          ),
-                    Area('H2 Storage1',
+                    Area("H2 Storage1",
                          strategy=StorageStrategy(battery_capacity_kWh=6 * 1.2,
                                                   max_abs_battery_power_kW=6 * 1.2,
                                                   initial_soc=60),
                          ),
-                    Area('H2 General Load',
+                    Area("H2 General Load",
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources',
-                                                             'SAM_SF_Summer.csv'),
+                                                             "resources",
+                                                             "SAM_SF_Summer.csv"),
                              final_buying_rate=35),
                          ),
 
                 ]
             ),
             Area(
-                'House 3',
+                "House 3",
                 [
-                    Area('H3 PV', strategy=PVStrategy(60, 80),
+                    Area("H3 PV", strategy=PVStrategy(60, 80),
                          ),
-                    Area('H3 General Load',
+                    Area("H3 General Load",
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources',
-                                                             'SAM_MF2_Summer.csv'),
+                                                             "resources",
+                                                             "SAM_MF2_Summer.csv"),
                              final_buying_rate=35),
                          ),
 
                 ]
             ),
             Area(
-                'House 4',
+                "House 4",
                 [
-                    Area('H4 PV', strategy=PVStrategy(30, 80),
+                    Area("H4 PV", strategy=PVStrategy(30, 80),
                          ),
-                    Area('H4 General Load',
+                    Area("H4 General Load",
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources',
-                                                             'SAM_SF_Summer.csv'),
+                                                             "resources",
+                                                             "SAM_SF_Summer.csv"),
                              final_buying_rate=35),
                          ),
                 ]
             ),
             Area(
-                'House 5',
+                "House 5",
                 [
-                    Area('H5 Storage1',
+                    Area("H5 Storage1",
                          strategy=StorageStrategy(battery_capacity_kWh=12 * 1.2,
                                                   max_abs_battery_power_kW=12 * 1.2,
                                                   initial_soc=60),
                          ),
-                    Area('H5 General Load',
+                    Area("H5 General Load",
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources',
-                                                             'SAM_MF2_Summer.csv'),
+                                                             "resources",
+                                                             "SAM_MF2_Summer.csv"),
                              final_buying_rate=35),
                          ),
                 ]
             ),
             Area(
-                'House 6',
+                "House 6",
                 [
-                    Area('H6 Storage1',
+                    Area("H6 Storage1",
                          strategy=StorageStrategy(battery_capacity_kWh=6 * 1.2,
                                                   max_abs_battery_power_kW=6 * 1.2,
                                                   initial_soc=60),
                          ),
-                    Area('H6 General Load',
+                    Area("H6 General Load",
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources',
-                                                             'SAM_SF_Summer.csv'),
+                                                             "resources",
+                                                             "SAM_SF_Summer.csv"),
                              final_buying_rate=35),
                          ),
 
                 ]
             ),
             Area(
-                'House 7',
+                "House 7",
                 [
-                    Area('H7 General Load',
+                    Area("H7 General Load",
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources',
-                                                             'SAM_MF2_Summer.csv'),
+                                                             "resources",
+                                                             "SAM_MF2_Summer.csv"),
                              final_buying_rate=35),
                          ),
 
                 ]
             ),
             Area(
-                'House 8',
+                "House 8",
                 [
-                    Area('H8 General Load',
+                    Area("H8 General Load",
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources',
-                                                             'SAM_SF_Summer.csv'),
+                                                             "resources",
+                                                             "SAM_SF_Summer.csv"),
                              final_buying_rate=35),
                          ),
 

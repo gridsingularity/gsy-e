@@ -5,14 +5,14 @@ import pickle
 from datetime import datetime, date
 from zlib import decompress
 
+from d3a_interface.constants_limits import GlobalConfig, ConstSettings
+from d3a_interface.settings_validators import validate_global_settings
+from pendulum import duration, instance
+
 import d3a.constants
 from d3a.d3a_core.simulation import run_simulation
 from d3a.d3a_core.util import available_simulation_scenarios, update_advanced_settings
 from d3a.models.config import SimulationConfig
-from d3a_interface.constants_limits import GlobalConfig, ConstSettings
-from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
-from d3a_interface.settings_validators import validate_global_settings
-from pendulum import duration, instance
 
 log = logging.getLogger()
 
@@ -49,27 +49,27 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
 
         config_settings = {
             "start_date":
-                instance(datetime.combine(settings.get('start_date'), datetime.min.time()))
-                if 'start_date' in settings else GlobalConfig.start_date,
+                instance(datetime.combine(settings.get("start_date"), datetime.min.time()))
+                if "start_date" in settings else GlobalConfig.start_date,
             "sim_duration":
-                duration(days=settings['duration'].days)
-                if 'duration' in settings else GlobalConfig.sim_duration,
+                duration(days=settings["duration"].days)
+                if "duration" in settings else GlobalConfig.sim_duration,
             "slot_length":
-                duration(seconds=settings['slot_length'].seconds)
-                if 'slot_length' in settings else GlobalConfig.slot_length,
+                duration(seconds=settings["slot_length"].seconds)
+                if "slot_length" in settings else GlobalConfig.slot_length,
             "tick_length":
-                duration(seconds=settings['tick_length'].seconds)
-                if 'tick_length' in settings else GlobalConfig.tick_length,
+                duration(seconds=settings["tick_length"].seconds)
+                if "tick_length" in settings else GlobalConfig.tick_length,
             "market_maker_rate":
-                settings.get('market_maker_rate',
+                settings.get("market_maker_rate",
                              str(ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE)),
-            "market_count": settings.get('market_count', GlobalConfig.market_count),
-            "cloud_coverage": settings.get('cloud_coverage', GlobalConfig.cloud_coverage),
-            "pv_user_profile": settings.get('pv_user_profile', None),
-            "max_panel_power_W": settings.get('max_panel_power_W',
-                                              ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W),
-            "grid_fee_type": settings.get('grid_fee_type', GlobalConfig.grid_fee_type),
-            "external_connection_enabled": settings.get('external_connection_enabled', False),
+            "market_count": settings.get("market_count", GlobalConfig.market_count),
+            "cloud_coverage": settings.get("cloud_coverage", GlobalConfig.cloud_coverage),
+            "pv_user_profile": settings.get("pv_user_profile", None),
+            "capacity_kW": settings.get("capacity_kW",
+                                        ConstSettings.PVSettings.DEFAULT_CAPACITY_KW),
+            "grid_fee_type": settings.get("grid_fee_type", GlobalConfig.grid_fee_type),
+            "external_connection_enabled": settings.get("external_connection_enabled", False),
             "aggregator_device_mapping": aggregator_device_mapping
         }
 
@@ -84,25 +84,24 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
 
         config = SimulationConfig(**config_settings)
 
-        spot_market_type = settings.get('spot_market_type', None)
-        if spot_market_type is not None:
-            if spot_market_type == SpotMarketTypeEnum.ONE_SIDED.value:
-                ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
-            if spot_market_type == SpotMarketTypeEnum.TWO_SIDED_PAY_AS_BID.value:
-                ConstSettings.IAASettings.MARKET_TYPE = (
-                    SpotMarketTypeEnum.TWO_SIDED_PAY_AS_BID.value)
-                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = (
-                    BidOfferMatchAlgoEnum.PAY_AS_BID.value)
-            if spot_market_type == SpotMarketTypeEnum.TWO_SIDED_PAY_AS_CLEAR.value:
-                ConstSettings.IAASettings.MARKET_TYPE = (
-                    SpotMarketTypeEnum.TWO_SIDED_PAY_AS_BID.value)
-                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-                    BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
-            if spot_market_type == SpotMarketTypeEnum.TWO_SIDED_EXTERNAL.value:
-                ConstSettings.IAASettings.MARKET_TYPE = (
-                    SpotMarketTypeEnum.TWO_SIDED_PAY_AS_BID.value)
-                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-                    BidOfferMatchAlgoEnum.EXTERNAL.value
+        spot_market_type = settings.get("spot_market_type")
+        bid_offer_match_algo = settings.get("bid_offer_match_algo")
+
+        if spot_market_type:
+            ConstSettings.IAASettings.MARKET_TYPE = spot_market_type
+        if bid_offer_match_algo:
+            ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = bid_offer_match_algo
+
+        ConstSettings.SettlementMarketSettings.RELATIVE_STD_FROM_FORECAST_FLOAT = (
+            settings.get(
+                "relative_std_from_forecast_percent",
+                ConstSettings.SettlementMarketSettings.RELATIVE_STD_FROM_FORECAST_FLOAT
+            ))
+
+        ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = settings.get(
+            "settlement_market_enabled",
+            ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS
+        )
 
         if scenario is None:
             scenario_name = "default_2a"

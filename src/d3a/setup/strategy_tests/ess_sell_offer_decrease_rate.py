@@ -28,18 +28,18 @@ reduces its unsold offers based on energy_rate_decrease_per_update.
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
                                                                            range(0, 24)),
                                                                        final_buying_rate=25)
                          ),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=100,
+                    Area("H1 Storage1", strategy=StorageStrategy(initial_soc=100,
                                                                  battery_capacity_kWh=5,
                                                                  max_abs_battery_power_kW=5,
                                                                  initial_buying_rate=0,

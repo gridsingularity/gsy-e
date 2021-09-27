@@ -31,12 +31,12 @@ def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
 
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=4000,
+                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=4000,
                                                                        hrs_per_day=1,
                                                                        hrs_of_day=list(
                                                                            range(12, 13)),
@@ -47,7 +47,7 @@ def get_setup(config):
                 ], grid_fee_percentage=0, grid_fee_constant=0,
             ),
 
-            Area('DSO', strategy=InfiniteBusStrategy(energy_buy_rate=5, energy_sell_rate=30),
+            Area("DSO", strategy=InfiniteBusStrategy(energy_buy_rate=5, energy_sell_rate=30),
                  )
         ],
         config=config, grid_fee_percentage=0, grid_fee_constant=45,

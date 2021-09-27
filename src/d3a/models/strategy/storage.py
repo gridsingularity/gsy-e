@@ -22,6 +22,7 @@ from logging import getLogger
 from typing import Union
 
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.enums import SpotMarketTypeEnum
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
 from d3a_interface.validators import StorageValidator
@@ -78,8 +79,8 @@ class StorageStrategy(BidEnabledStrategy):
                                                   BalancingSettings.OFFER_SUPPLY_RATIO)):
 
         if update_interval is None:
-            update_interval = \
-                duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+            update_interval = duration(
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
 
         if min_allowed_soc is None:
             min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
@@ -100,40 +101,32 @@ class StorageStrategy(BidEnabledStrategy):
 
         BidEnabledStrategy.__init__(self)
 
-        self.offer_update = \
-            TemplateStrategyOfferUpdater(
-                initial_rate=initial_selling_rate,
-                final_rate=final_selling_rate,
-                fit_to_limit=fit_to_limit,
-                energy_rate_change_per_update=energy_rate_decrease_per_update,
-                update_interval=update_interval)
+        self.offer_update = TemplateStrategyOfferUpdater(
+            initial_rate=initial_selling_rate, final_rate=final_selling_rate,
+            fit_to_limit=fit_to_limit,
+            energy_rate_change_per_update=energy_rate_decrease_per_update,
+            update_interval=update_interval)
         for time_slot in self.offer_update.initial_rate_profile_buffer.keys():
             StorageValidator.validate(
                 initial_selling_rate=self.offer_update.initial_rate_profile_buffer[time_slot],
                 final_selling_rate=find_object_of_same_weekday_and_time(
                     self.offer_update.final_rate_profile_buffer, time_slot))
-        self.bid_update = \
-            TemplateStrategyBidUpdater(
-                initial_rate=initial_buying_rate,
-                final_rate=final_buying_rate,
-                fit_to_limit=fit_to_limit,
-                energy_rate_change_per_update=energy_rate_increase_per_update,
-                update_interval=update_interval,
-                rate_limit_object=min
-            )
+        self.bid_update = TemplateStrategyBidUpdater(
+            initial_rate=initial_buying_rate, final_rate=final_buying_rate,
+            fit_to_limit=fit_to_limit,
+            energy_rate_change_per_update=energy_rate_increase_per_update,
+            update_interval=update_interval, rate_limit_object=min
+        )
         for time_slot in self.bid_update.initial_rate_profile_buffer.keys():
             StorageValidator.validate(
                 initial_buying_rate=self.bid_update.initial_rate_profile_buffer[time_slot],
                 final_buying_rate=find_object_of_same_weekday_and_time(
                     self.bid_update.final_rate_profile_buffer, time_slot))
-        self.state = \
-            StorageState(initial_soc=initial_soc,
-                         initial_energy_origin=initial_energy_origin,
-                         capacity=battery_capacity_kWh,
-                         max_abs_battery_power_kW=max_abs_battery_power_kW,
-                         loss_per_hour=loss_per_hour,
-                         loss_function=loss_function,
-                         min_allowed_soc=min_allowed_soc)
+        self.state = StorageState(
+            initial_soc=initial_soc, initial_energy_origin=initial_energy_origin,
+            capacity=battery_capacity_kWh, max_abs_battery_power_kW=max_abs_battery_power_kW,
+            loss_per_hour=loss_per_hour, loss_function=loss_function,
+            min_allowed_soc=min_allowed_soc)
         self.cap_price_strategy = cap_price_strategy
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
@@ -159,19 +152,17 @@ class StorageStrategy(BidEnabledStrategy):
         else:
             final_buying_rate = self.bid_update.final_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, 'energy_rate_decrease_per_update'):
-            energy_rate_decrease_per_update = \
-                read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                       kwargs['energy_rate_decrease_per_update'])
+            energy_rate_decrease_per_update = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs['energy_rate_decrease_per_update'])
         else:
-            energy_rate_decrease_per_update = \
-                self.offer_update.energy_rate_change_per_update_profile_buffer
+            energy_rate_decrease_per_update = (self.offer_update.
+                                               energy_rate_change_per_update_profile_buffer)
         if key_in_dict_and_not_none(kwargs, 'energy_rate_increase_per_update'):
-            energy_rate_increase_per_update = \
-                read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                       kwargs['energy_rate_increase_per_update'])
+            energy_rate_increase_per_update = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs['energy_rate_increase_per_update'])
         else:
-            energy_rate_increase_per_update = \
-                self.bid_update.energy_rate_change_per_update_profile_buffer
+            energy_rate_increase_per_update = (
+                self.bid_update.energy_rate_change_per_update_profile_buffer)
         if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
             bid_fit_to_limit = kwargs['fit_to_limit']
             offer_fit_to_limit = kwargs['fit_to_limit']
@@ -225,10 +216,13 @@ class StorageStrategy(BidEnabledStrategy):
             if self.area and \
                     self.area.current_market and time_slot < self.area.current_market.time_slot:
                 continue
-            bid_rate_change = None if bid_fit_to_limit else \
-                find_object_of_same_weekday_and_time(energy_rate_increase_per_update, time_slot)
-            offer_rate_change = None if offer_fit_to_limit else \
-                find_object_of_same_weekday_and_time(energy_rate_decrease_per_update, time_slot)
+
+            bid_rate_change = (None if bid_fit_to_limit else
+                               find_object_of_same_weekday_and_time(
+                                   energy_rate_increase_per_update, time_slot))
+            offer_rate_change = (None if offer_fit_to_limit else
+                                 find_object_of_same_weekday_and_time(
+                                     energy_rate_decrease_per_update, time_slot))
             StorageValidator.validate(
                 initial_selling_rate=initial_selling_rate[time_slot],
                 final_selling_rate=find_object_of_same_weekday_and_time(
@@ -270,10 +264,9 @@ class StorageStrategy(BidEnabledStrategy):
                     self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=0,
                                                                final_rate=0)
                 elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
-                    rate = \
-                        self.area.config.market_maker_rate[time_slot] * \
-                        ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / \
-                        100
+                    rate = (self.area.config.market_maker_rate[time_slot] *
+                            ConstSettings.IAASettings.AlternativePricing.
+                            FEED_IN_TARIFF_PERCENTAGE / 100)
                     self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
                                                              final_rate=rate)
                     self.offer_update.reassign_mixin_arguments(time_slot,
@@ -303,16 +296,16 @@ class StorageStrategy(BidEnabledStrategy):
             raise ValueError("initial SOC must be in between 0-100 %")
         if min_allowed_soc is not None and 0 < min_allowed_soc > 100:
             raise ValueError("initial SOC must be in between 0-100 %")
-        if initial_soc is not None and min_allowed_soc is not None and \
-                initial_soc < min_allowed_soc:
+        if (initial_soc is not None and min_allowed_soc is not None and
+                initial_soc < min_allowed_soc):
             raise ValueError("Initial charge must be more than the minimum allowed soc.")
         if initial_selling_rate is not None and initial_selling_rate < 0:
             raise ValueError("Initial selling rate must be greater equal 0.")
         if final_selling_rate is not None:
             if type(final_selling_rate) is float and final_selling_rate < 0:
                 raise ValueError("Final selling rate must be greater equal 0.")
-            elif type(final_selling_rate) is dict and \
-                    any(rate < 0 for _, rate in final_selling_rate.items()):
+            elif (type(final_selling_rate) is dict and
+                  any(rate < 0 for _, rate in final_selling_rate.items())):
                 raise ValueError("Final selling rate must be greater equal 0.")
         if initial_selling_rate is not None and final_selling_rate is not None:
             initial_selling_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
@@ -356,8 +349,7 @@ class StorageStrategy(BidEnabledStrategy):
         self.state.clamp_energy_to_buy_kWh(self.future_markets_time_slots)
 
         for market in self.area.all_markets:
-            if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
-                    ConstSettings.IAASettings.MARKET_TYPE == 3:
+            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
                 self.state.clamp_energy_to_buy_kWh(self.future_markets_time_slots)
                 if self.are_bids_posted(market.id):
                     self.bid_update.update(market, self)
@@ -372,8 +364,8 @@ class StorageStrategy(BidEnabledStrategy):
                             pass
 
             self.state.tick(self.area, market.time_slot)
-        if self.cap_price_strategy is False:
-            self.offer_update.update(self)
+            if self.cap_price_strategy is False:
+                self.offer_update.update(market, self)
 
         self.bid_update.increment_update_counter_all_markets(self)
         if self.offer_update.increment_update_counter_all_markets(self):
@@ -388,7 +380,7 @@ class StorageStrategy(BidEnabledStrategy):
         self.assert_if_trade_offer_price_is_too_low(market_id, trade)
 
         if trade.buyer == self.owner.name:
-            if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                 # in order to omit double counting this is only applied for one sided market
                 self._track_energy_bought_type(trade)
         if trade.seller == self.owner.name:
@@ -412,8 +404,8 @@ class StorageStrategy(BidEnabledStrategy):
                 self.state.get_used_storage_share.pop(0)
             elif energy < first_in_energy_with_origin.value:
                 residual = first_in_energy_with_origin.value - energy
-                self.state._used_storage_share[0] = \
-                    EnergyOrigin(first_in_energy_with_origin.origin, residual)
+                self.state._used_storage_share[0] = EnergyOrigin(
+                    first_in_energy_with_origin.origin, residual)
                 energy = 0
 
     def _track_energy_bought_type(self, trade):
@@ -452,14 +444,14 @@ class StorageStrategy(BidEnabledStrategy):
         if self.state.used_storage > 0:
             self.sell_energy()
 
-        if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
-           ConstSettings.IAASettings.MARKET_TYPE == 3:
+        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
             self.state.clamp_energy_to_buy_kWh([current_market.time_slot])
             self.bid_update.reset(self)
             energy_kWh = self.state.energy_to_buy_dict[current_market.time_slot]
             if energy_kWh > 0:
                 try:
-                    self.post_first_bid(current_market, energy_kWh * 1000.0)
+                    self.post_first_bid(current_market, energy_kWh * 1000.0,
+                                        self.bid_update.initial_rate[current_market.time_slot])
                     self.state.offered_buy_kWh[current_market.time_slot] += energy_kWh
                 except MarketException:
                     pass
@@ -499,8 +491,8 @@ class StorageStrategy(BidEnabledStrategy):
             # therefore the following offers will be more expensive
             return True
         alt_pricing_settings = ConstSettings.IAASettings.AlternativePricing
-        if offer.seller == alt_pricing_settings.ALT_PRICING_MARKET_MAKER_NAME \
-                and alt_pricing_settings.PRICING_SCHEME != 0:
+        if (offer.seller == alt_pricing_settings.ALT_PRICING_MARKET_MAKER_NAME and
+                alt_pricing_settings.PRICING_SCHEME != 0):
             # don't buy from IAA if alternative pricing scheme is activated
             return
 
@@ -549,7 +541,7 @@ class StorageStrategy(BidEnabledStrategy):
                             price=energy * selling_rate,
                             energy=energy,
                             seller=self.owner.name,
-                            original_offer_price=energy * selling_rate,
+                            original_price=energy * selling_rate,
                             seller_origin=self.owner.name,
                             seller_origin_id=self.owner.uuid,
                             seller_id=self.owner.uuid
@@ -566,8 +558,8 @@ class StorageStrategy(BidEnabledStrategy):
                 max_rate = 0.0
                 most_expensive_market = self.area.all_markets[0]
                 for market in self.area.all_markets:
-                    if len(market.sorted_offers) > 0 and \
-                       market.sorted_offers[0].energy_rate > max_rate:
+                    if (len(market.sorted_offers) > 0 and
+                            market.sorted_offers[0].energy_rate > max_rate):
                         max_rate = market.sorted_offers[0].energy_rate
                         most_expensive_market = market
             except IndexError:
@@ -604,14 +596,15 @@ class StorageStrategy(BidEnabledStrategy):
 
     def event_offer(self, *, market_id, offer):
         super().event_offer(market_id=market_id, offer=offer)
-        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             market = self.area.get_future_market_from_id(market_id)
+            if not market:
+                return
             # sometimes the offer event arrives earlier than the market_cycle event,
             # so the default values have to be written here too:
             self._update_profiles_with_default_values()
-            if offer.id in market.offers and \
-                    offer.seller != self.owner.name and \
-                    offer.seller != self.area.name:
+            if (offer.id in market.offers and offer.seller != self.owner.name and
+                    offer.seller != self.area.name):
                 self.buy_energy(market, offer)
 
     def _delete_past_state(self):

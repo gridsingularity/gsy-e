@@ -26,20 +26,20 @@ def get_setup(config):
     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = 22
 
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'Community',
+                "Community",
                 [
-                    Area('Family 2 children+PV',
+                    Area("Family 2 children+PV",
                          [
-                             Area('Load 1 L13', strategy=LoadProfileExternalStrategy(
+                             Area("Load 1 L13", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  "resources/CHR27 Family both at work, 2 children HH1.csv"),
                                  initial_buying_rate=11,
                                  use_market_maker_rate=True),
                                   ),
-                             Area('PV 1 (4kW)', strategy=PVUserProfileExternalStrategy(
+                             Area("PV 1 (4kW)", strategy=PVUserProfileExternalStrategy(
                                  power_profile=os.path.join(current_dir, "resources/Berlin_pv.csv"),
                                  panel_count=4,
                                  initial_selling_rate=30,
@@ -47,9 +47,9 @@ def get_setup(config):
                                   ),
                          ]),
 
-                    Area('Family 2 children',
+                    Area("Family 2 children",
                          [
-                             Area('Load 2 L21', strategy=LoadProfileExternalStrategy(
+                             Area("Load 2 L21", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  "resources/CHR44 Family with 2 children, 1 at work, 1 at home HH1.csv"),
                                  initial_buying_rate=11,
@@ -57,21 +57,21 @@ def get_setup(config):
                                   ),
                          ]),
 
-                    Area('Family 3 children+PV+Batt',
+                    Area("Family 3 children+PV+Batt",
                          [
-                             Area('Load 3 L17', strategy=LoadProfileExternalStrategy(
+                             Area("Load 3 L17", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  "resources/CHR41 Family with 3 children, both at work HH1.csv"),
                                  initial_buying_rate=11,
                                  use_market_maker_rate=True),
                                   ),
-                             Area('PV 3 (5kW)', strategy=PVUserProfileExternalStrategy(
+                             Area("PV 3 (5kW)", strategy=PVUserProfileExternalStrategy(
                                  power_profile=os.path.join(current_dir, "resources/Berlin_pv.csv"),
                                  panel_count=5,
                                  initial_selling_rate=30,
                                  final_selling_rate=11),
                                   ),
-                             Area('Tesla Powerwall 3', strategy=StorageExternalStrategy(initial_soc=10,
+                             Area("Tesla Powerwall 3", strategy=StorageExternalStrategy(initial_soc=10,
                                                                                         min_allowed_soc=10,
                                                                                         battery_capacity_kWh=14,
                                                                                         max_abs_battery_power_kW=5,
@@ -82,9 +82,9 @@ def get_setup(config):
                                   ),
                          ]),
 
-                    Area('Young Couple',
+                    Area("Young Couple",
                          [
-                             Area('Load 4 L15', strategy=LoadProfileExternalStrategy(
+                             Area("Load 4 L15", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  "resources/CHR33 Couple under 30 years with work HH1.csv"),
                                  initial_buying_rate=11,
@@ -92,21 +92,21 @@ def get_setup(config):
                                   ),
                          ]),
 
-                    Area('Multigenerational house',
+                    Area("Multigenerational house",
                          [
-                             Area('Load 5 L9', strategy=LoadProfileExternalStrategy(
+                             Area("Load 5 L9", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  "resources/CHR15 Multigenerational Home working couple, 2 children, 2 seniors HH1.csv"),
                                  initial_buying_rate=11,
                                  use_market_maker_rate=True),
                                   ),
-                             Area('PV 5 (10kW)', strategy=PVUserProfileExternalStrategy(
+                             Area("PV 5 (10kW)", strategy=PVUserProfileExternalStrategy(
                                  power_profile=os.path.join(current_dir, "resources/Berlin_pv.csv"),
                                  panel_count=10,
                                  initial_selling_rate=30,
                                  final_selling_rate=11),
                                   ),
-                             Area('Tesla Powerwall 5', strategy=StorageExternalStrategy(initial_soc=10,
+                             Area("Tesla Powerwall 5", strategy=StorageExternalStrategy(initial_soc=10,
                                                                                         min_allowed_soc=10,
                                                                                         battery_capacity_kWh=14,
                                                                                         max_abs_battery_power_kW=5,
@@ -117,9 +117,9 @@ def get_setup(config):
                                   ),
                          ]),
 
-                    Area('Retired couple',
+                    Area("Retired couple",
                          [
-                             Area('Load 6 L24', strategy=LoadProfileExternalStrategy(
+                             Area("Load 6 L24", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  "resources/CHR54 Retired Couple, no work HH1.csv"),
                                  initial_buying_rate=11,
@@ -127,9 +127,9 @@ def get_setup(config):
                                   ),
                          ]),
 
-                    Area('Flatsharing Student',
+                    Area("Flatsharing Student",
                          [
-                             Area('Load 7 L22', strategy=LoadProfileExternalStrategy(
+                             Area("Load 7 L22", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  "resources/CHR52 Student Flatsharing HH1.csv"),
                                  initial_buying_rate=11,
@@ -137,83 +137,83 @@ def get_setup(config):
                                   ),
                          ]),
 
-                    Area('6 apartments building',
+                    Area("6 apartments building",
                          [
-                             Area('Load 81 L20', strategy=LoadProfileExternalStrategy(
+                             Area("Load 81 L20", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  "resources/CHR43 Single with 1 child, with work HH1.csv"),
                                  initial_buying_rate=11,
                                  use_market_maker_rate=True),
                                   ),
-                             Area('Load 82 L17', strategy=LoadProfileExternalStrategy(
+                             Area("Load 82 L17", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  "resources/CHR39 Couple, 30 - 64 years, with work HH1.csv"),
                                  initial_buying_rate=11,
                                  use_market_maker_rate=True),
                                   ),
-                             Area('Load 83 L14', strategy=LoadProfileExternalStrategy(
+                             Area("Load 83 L14", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  "resources/CHR31 Single, Retired HH1.csv"),
                                  initial_buying_rate=11,
                                  use_market_maker_rate=True),
                                   ),
-                             Area('Load 84 L10', strategy=LoadProfileExternalStrategy(
+                             Area("Load 84 L10", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  "resources/CHR16 Couple over 65 years HH1.csv"),
                                  initial_buying_rate=11,
                                  use_market_maker_rate=True),
                                   ),
-                             Area('Load 85 L22', strategy=LoadProfileExternalStrategy(
+                             Area("Load 85 L22", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  "resources/CHR52 Student Flatsharing HH1.csv"),
                                  initial_buying_rate=11,
                                  use_market_maker_rate=True),
                                   ),
-                             Area('Load 86 L8', strategy=LoadProfileExternalStrategy(
+                             Area("Load 86 L8", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir, "resources/CHR11 Student, HH1.csv"),
                                  initial_buying_rate=11,
                                  use_market_maker_rate=True),
                                   ),
                          ]),
 
-                    Area('6 apartments building+PV',
+                    Area("6 apartments building+PV",
                          [
-                             Area('Load 81 L20', strategy=LoadProfileExternalStrategy(
+                             Area("Load 81 L20", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  "resources/CHR43 Single with 1 child, with work HH1.csv"),
                                  initial_buying_rate=11,
                                  use_market_maker_rate=True),
                                   ),
-                             Area('Load 82 L17', strategy=LoadProfileExternalStrategy(
+                             Area("Load 82 L17", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  "resources/CHR39 Couple, 30 - 64 years, with work HH1.csv"),
                                  initial_buying_rate=11,
                                  use_market_maker_rate=True),
                                   ),
-                             Area('Load 83 L14', strategy=LoadProfileExternalStrategy(
+                             Area("Load 83 L14", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  "resources/CHR31 Single, Retired HH1.csv"),
                                  initial_buying_rate=11,
                                  use_market_maker_rate=True),
                                   ),
-                             Area('Load 84 L10', strategy=LoadProfileExternalStrategy(
+                             Area("Load 84 L10", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  "resources/CHR16 Couple over 65 years HH1.csv"),
                                  initial_buying_rate=11,
                                  use_market_maker_rate=True),
                                   ),
-                             Area('Load 85 L22', strategy=LoadProfileExternalStrategy(
+                             Area("Load 85 L22", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  "resources/CHR52 Student Flatsharing HH1.csv"),
                                  initial_buying_rate=11,
                                  use_market_maker_rate=True),
                                   ),
-                             Area('Load 86 L8', strategy=LoadProfileExternalStrategy(
+                             Area("Load 86 L8", strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir, "resources/CHR11 Student, HH1.csv"),
                                  initial_buying_rate=11,
                                  use_market_maker_rate=True),
                                   ),
-                             Area('PV 9 (15kW)', strategy=PVUserProfileExternalStrategy(
+                             Area("PV 9 (15kW)", strategy=PVUserProfileExternalStrategy(
                                  power_profile=os.path.join(current_dir, "resources/Berlin_pv.csv"),
                                  panel_count=15,
                                  initial_selling_rate=30,
@@ -223,7 +223,7 @@ def get_setup(config):
 
                 ], grid_fee_constant=4, external_connection_available=True),
 
-            Area('Market Maker', strategy=InfiniteBusStrategy(energy_buy_rate=21, energy_sell_rate=22)),
+            Area("Market Maker", strategy=InfiniteBusStrategy(energy_buy_rate=21, energy_sell_rate=22)),
         ],
         config=config, grid_fee_constant=4, external_connection_available=True
     )

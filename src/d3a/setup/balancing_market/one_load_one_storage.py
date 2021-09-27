@@ -33,12 +33,12 @@ def get_setup(config):
     ConstSettings.BalancingSettings.FLEXIBLE_LOADS_SUPPORT = False
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 Load', strategy=LoadHoursStrategy(
+                    Area("H1 Load", strategy=LoadHoursStrategy(
                         avg_power_W=50,
                         hrs_per_day=24,
                         hrs_of_day=list(range(0, 24)),
@@ -46,9 +46,9 @@ def get_setup(config):
                 ]
             ),
             Area(
-                'House 2',
+                "House 2",
                 [
-                    Area('H2 Storage', strategy=StorageStrategy(initial_soc=98,
+                    Area("H2 Storage", strategy=StorageStrategy(initial_soc=98,
                                                                 battery_capacity_kWh=50.0),
                          ),
                 ]

@@ -25,15 +25,13 @@ import tty
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 
-import pendulum
 from click.types import ParamType
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.constants_limits import GlobalConfig, RangeLimit
+from d3a_interface.constants_limits import GlobalConfig, RangeLimit, ConstSettings
 from d3a_interface.enums import BidOfferMatchAlgoEnum
 from d3a_interface.exceptions import D3AException
 from d3a_interface.utils import iterate_over_all_modules, str_to_pendulum_datetime, \
     format_datetime, find_object_of_same_weekday_and_time
-from pendulum import duration, from_format
+from pendulum import duration, from_format, instance, DateTime
 from rex import rex
 
 import d3a
@@ -164,12 +162,12 @@ def make_iaa_name(owner):
     return f"IAA {owner.name}"
 
 
-def make_iaa_name_from_dict(owner):
-    return f"IAA {owner['name']}"
-
-
 def make_ba_name(owner):
     return f"BA {owner.name}"
+
+
+def make_sa_name(owner):
+    return f"SA {owner.name}"
 
 
 def area_name_from_area_or_iaa_name(name):
@@ -407,8 +405,7 @@ def export_default_settings_to_json_file():
             "tick_length": f"{GlobalConfig.TICK_LENGTH_S}s",
             "market_count": GlobalConfig.MARKET_COUNT,
             "cloud_coverage": GlobalConfig.CLOUD_COVERAGE,
-            "start_date": pendulum.instance(GlobalConfig.start_date).format(
-                d3a.constants.DATE_FORMAT),
+            "start_date": instance(GlobalConfig.start_date).format(d3a.constants.DATE_FORMAT),
     }
     all_settings = {"basic_settings": base_settings, "advanced_settings": constsettings_to_dict()}
     settings_filename = os.path.join(d3a_path, "setup", "d3a-settings.json")
@@ -488,3 +485,12 @@ def validate_profile_or_uuid_input(area_uuid, profile, profile_uuid):
     if not profile and not profile_uuid:
         raise StrategyProfileConfigurationException(
             f"Neither a profile nor a profile_uuid are provided for area with uuid {area_uuid}.")
+
+
+def is_time_slot_in_past_markets(time_slot: DateTime, current_time_slot: DateTime):
+    """Checks if the time_slot should be in the area.past_markets."""
+    if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
+        return (time_slot < current_time_slot.subtract(
+            hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
+    else:
+        return time_slot < current_time_slot

@@ -29,7 +29,7 @@ from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import d3a_path
 from d3a.models.area import DEFAULT_CONFIG
-from d3a.models.market.market_structures import Offer, Trade, BalancingOffer, Bid
+from d3a_interface.data_classes import Offer, Trade, BalancingOffer, Bid
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
@@ -100,7 +100,7 @@ class FakeMarket:
     def time_slot(self):
         return TIME
 
-    def offer(self, price, energy, seller, original_offer_price=None,
+    def offer(self, price, energy, seller, original_price=None,
               seller_origin=None, seller_origin_id=None, seller_id=None,
               attributes=None, requirements=None):
         offer = Offer("id", pendulum.now(), price, energy, seller, seller_origin=seller_origin,
@@ -126,7 +126,7 @@ class FakeMarket:
         self.traded_offers.append(trade)
         return trade
 
-    def bid(self, price, energy, buyer, original_bid_price=None,
+    def bid(self, price, energy, buyer, original_price=None,
             buyer_origin=None, buyer_origin_id=None, buyer_id=None,
             attributes=None, requirements=None):
         bid = Bid("bid_id", pendulum.now(), price, energy, buyer, buyer_origin=buyer_origin,

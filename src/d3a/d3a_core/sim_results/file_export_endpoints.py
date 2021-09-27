@@ -15,92 +15,50 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.d3a_core.myco_singleton import bid_offer_matcher
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.pv import PVStrategy
+from abc import ABC, abstractmethod
+from typing import List, Dict
+
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
+
+from d3a.d3a_core.myco_singleton import bid_offer_matcher
+from d3a.models.area import Area
+from d3a.models.market.market_structures import AvailableMarketTypes
+from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.storage import StorageStrategy
 
 
-class FileExportEndpoints:
-    def __init__(self):
-        self.plot_stats = {}
-        self.plot_balancing_stats = {}
-        self.cumulative_offers = {}
-        self.cumulative_bids = {}
-        self.clearing = {}
+class BaseDataExporter(ABC):
 
-    def __call__(self, area):
-        self._populate_area_children_data(area)
+    @property
+    @abstractmethod
+    def labels(self) -> List:
+        """Labels for csv headers."""
 
-    def _populate_area_children_data(self, area):
-        if area.children:
-            for child in area.children:
-                self._populate_area_children_data(child)
-        self.update_plot_stats(area)
-
-    @staticmethod
-    def generate_market_export_data(area, is_balancing_market):
-        return ExportBalancingData(area) if is_balancing_market else ExportData.create(area)
-
-    def _get_stats_from_market_data(self, out_dict, area, balancing):
-        data = self.generate_market_export_data(area, balancing)
-        if area.slug not in out_dict:
-            out_dict[area.slug] = dict((key, []) for key in data.labels())
-        for row in data.rows():
-            for ii, label in enumerate(data.labels()):
-                out_dict[area.slug][label].append(row[ii])
-
-    def _populate_plots_stats_for_supply_demand_curve(self, area):
-        if ConstSettings.IAASettings.MARKET_TYPE == 3:
-            if len(area.past_markets) == 0:
-                return
-            market = area.past_markets[-1]
-            if area.slug not in self.cumulative_offers:
-                self.cumulative_offers[area.slug] = {}
-                self.cumulative_bids[area.slug] = {}
-                self.clearing[area.slug] = {}
-            if market.time_slot not in self.cumulative_offers[area.slug]:
-                self.cumulative_offers[area.slug][market.time_slot] = {}
-                self.cumulative_bids[area.slug][market.time_slot] = {}
-                self.clearing[area.slug][market.time_slot] = {}
-            self.cumulative_offers[area.slug][market.time_slot] = market.state.cumulative_offers
-            self.cumulative_bids[area.slug][market.time_slot] = market.state.cumulative_bids
-            self.clearing[area.slug][market.time_slot] = \
-                bid_offer_matcher.matcher.match_algorithm.state.clearing
-
-    def update_plot_stats(self, area):
-        self._get_stats_from_market_data(self.plot_stats, area, False)
-        if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
-            self._get_stats_from_market_data(self.plot_balancing_stats, area, True)
-        if ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS:
-            self._populate_plots_stats_for_supply_demand_curve(area)
+    @property
+    @abstractmethod
+    def rows(self) -> List:
+        """Return rows containing the offer, bids, trades data."""
 
 
-class ExportData:
-    def __init__(self, area):
-        self.area = area
+class UpperLevelDataExporter(BaseDataExporter):
+    def __init__(self, past_markets):
+        self.past_markets = past_markets
 
-    @staticmethod
-    def create(area):
-        return ExportUpperLevelData(area) if len(area.children) > 0 else ExportLeafData(area)
+    @property
+    def labels(self) -> List:
+        return ["slot",
+                "avg trade rate [ct./kWh]",
+                "min trade rate [ct./kWh]",
+                "max trade rate [ct./kWh]",
+                "# trades",
+                "total energy traded [kWh]",
+                "total trade volume [EURO ct.]"]
 
-
-class ExportUpperLevelData(ExportData):
-    def __init__(self, area):
-        super(ExportUpperLevelData, self).__init__(area)
-
-    def labels(self):
-        return ['slot',
-                'avg trade rate [ct./kWh]',
-                'min trade rate [ct./kWh]',
-                'max trade rate [ct./kWh]',
-                '# trades',
-                'total energy traded [kWh]',
-                'total trade volume [EURO ct.]']
-
+    @property
     def rows(self):
-        return [self._row(m.time_slot, m) for m in self.area.past_markets]
+        return [self._row(m.time_slot, m) for m in self.past_markets]
 
     def _row(self, slot, market):
         return [slot,
@@ -112,17 +70,19 @@ class ExportUpperLevelData(ExportData):
                 sum(trade.offer_bid.price for trade in market.trades)]
 
 
-class ExportBalancingData:
-    def __init__(self, area):
-        self.area = area
+class BalancingDataExporter(BaseDataExporter):
+    def __init__(self, past_markets):
+        self.past_markets = past_markets
 
-    def labels(self):
-        return ['slot',
-                'avg supply balancing trade rate [ct./kWh]',
-                'avg demand balancing trade rate [ct./kWh]']
+    @property
+    def labels(self) -> List:
+        return ["slot",
+                "avg supply balancing trade rate [ct./kWh]",
+                "avg demand balancing trade rate [ct./kWh]"]
 
+    @property
     def rows(self):
-        return [self._row(m.time_slot, m) for m in self.area.past_balancing_markets]
+        return [self._row(m.time_slot, m) for m in self.past_markets]
 
     def _row(self, slot, market):
         return [slot,
@@ -130,30 +90,33 @@ class ExportBalancingData:
                 market.avg_demand_balancing_trade_rate]
 
 
-class ExportLeafData(ExportData):
-    def __init__(self, area):
-        super(ExportLeafData, self).__init__(area)
+class LeafDataExporter(BaseDataExporter):
+    def __init__(self, area, past_markets):
+        self.area = area
+        self.past_markets = past_markets
 
-    def labels(self):
-        return ['slot',
-                'energy traded [kWh]',
+    @property
+    def labels(self) -> List:
+        return ["slot",
+                "energy traded [kWh]",
                 ] + self._specific_labels()
 
     def _specific_labels(self):
         if isinstance(self.area.strategy, StorageStrategy):
-            return ['bought [kWh]', 'sold [kWh]', 'charge [kWh]', 'offered [kWh]', 'charge [%]']
+            return ["bought [kWh]", "sold [kWh]", "charge [kWh]", "offered [kWh]", "charge [%]"]
         elif isinstance(self.area.strategy, LoadHoursStrategy):
-            return ['desired energy [kWh]', 'deficit [kWh]']
+            return ["desired energy [kWh]", "deficit [kWh]"]
         elif isinstance(self.area.strategy, PVStrategy):
-            return ['produced [kWh]', 'not sold [kWh]']
+            return ["produced [kWh]", "not sold [kWh]"]
         return []
 
+    @property
     def rows(self):
-        return [self._row(m.time_slot, m) for m in self.area.parent.past_markets]
+        return [self._row(market.time_slot, market) for market in self.past_markets]
 
     def _traded(self, market):
-        return market.traded_energy[self.area.name] \
-            if self.area.name in market.traded_energy else 0
+        return (market.traded_energy[self.area.name]
+                if self.area.name in market.traded_energy else 0)
 
     def _row(self, slot, market):
         return [slot,
@@ -176,3 +139,80 @@ class ExportLeafData(ExportData):
             produced = self.area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
             return [produced, not_sold]
         return []
+
+
+class FileExportEndpoints:
+    """Handle data preparation for csv-file and plot export."""
+    def __init__(self):
+        self.plot_stats = {}
+        self.plot_balancing_stats = {}
+        self.cumulative_offers = {}
+        self.cumulative_bids = {}
+        self.clearing = {}
+
+    def __call__(self, area):
+        self._populate_area_children_data(area)
+
+    def _populate_area_children_data(self, area: Area) -> None:
+        """Wrapper for calling self.update_plot_stats recursively"""
+        if area.children:
+            for child in area.children:
+                self._populate_area_children_data(child)
+        self._update_plot_stats(area)
+
+    @staticmethod
+    def export_data_factory(
+            area: Area, past_market_type: AvailableMarketTypes
+    ) -> BaseDataExporter:
+        """Decide which data acquisition class to use."""
+        if past_market_type == AvailableMarketTypes.SPOT:
+            return (UpperLevelDataExporter(area.past_markets)
+                    if len(area.children) > 0 else LeafDataExporter(area, area.past_markets))
+        if past_market_type == AvailableMarketTypes.BALANCING:
+            return BalancingDataExporter(area.past_balancing_markets)
+        if past_market_type == AvailableMarketTypes.SETTLEMENT:
+            past_markets = area.past_settlement_markets.values()
+            return (UpperLevelDataExporter(past_markets)
+                    if len(area.children) > 0 else LeafDataExporter(area, past_markets))
+
+    def _get_stats_from_market_data(self, out_dict: Dict, area: Area,
+                                    past_market_type: AvailableMarketTypes) -> None:
+        """Get statistics and write them to out_dict."""
+        data = self.export_data_factory(area, past_market_type)
+        if area.slug not in out_dict:
+            out_dict[area.slug] = dict((label, []) for label in data.labels)
+        for row in data.rows:
+            for ii, label in enumerate(data.labels):
+                out_dict[area.slug][label].append(row[ii])
+
+    def _populate_plots_stats_for_supply_demand_curve(self, area: Area) -> None:
+        if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
+                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+                BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value):
+            if len(area.past_markets) == 0:
+                return
+            market = area.past_markets[-1]
+            if area.slug not in self.cumulative_offers:
+                self.cumulative_offers[area.slug] = {}
+                self.cumulative_bids[area.slug] = {}
+                self.clearing[area.slug] = {}
+            if market.time_slot not in self.cumulative_offers[area.slug]:
+                self.cumulative_offers[area.slug][market.time_slot] = {}
+                self.cumulative_bids[area.slug][market.time_slot] = {}
+                self.clearing[area.slug][market.time_slot] = {}
+                clearing_state = bid_offer_matcher.matcher.match_algorithm.state
+            self.cumulative_offers[area.slug][market.time_slot] = (
+                clearing_state.cumulative_offers.get(market.id, {}))
+            self.cumulative_bids[area.slug][market.time_slot] = (
+                clearing_state.cumulative_bids.get(market.id, {}))
+            self.clearing[area.slug][market.time_slot] = (
+                clearing_state.clearing.get(market.id, ()))
+
+    def _update_plot_stats(self, area: Area) -> None:
+        """Populate the statistics for the plots into self.plot_stats."""
+        self._get_stats_from_market_data(self.plot_stats, area, AvailableMarketTypes.SPOT)
+        if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
+            self._get_stats_from_market_data(self.plot_balancing_stats, area,
+                                             AvailableMarketTypes.BALANCING)
+        if ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS:
+            self._populate_plots_stats_for_supply_demand_curve(area)

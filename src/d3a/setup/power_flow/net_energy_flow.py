@@ -25,13 +25,13 @@ from d3a.models.area.throughput_parameters import ThroughputParameters
 
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    area = Area('Grid', children=[
-        Area('Community', children=[
-            Area('House 1', children=[
-                Area('H1 Seller', strategy=FinitePowerPlant(energy_rate=5,
+    area = Area("Grid", children=[
+        Area("Community", children=[
+            Area("House 1", children=[
+                Area("H1 Seller", strategy=FinitePowerPlant(energy_rate=5,
                                                             max_available_power_kW=0.5)
                      ),
-                Area('H1 Buyer', strategy=LoadHoursStrategy(avg_power_W=1000,
+                Area("H1 Buyer", strategy=LoadHoursStrategy(avg_power_W=1000,
                                                             hrs_of_day=list(range(24)),
                                                             hrs_per_day=24,
                                                             fit_to_limit=False,
@@ -41,14 +41,14 @@ def get_setup(config):
                  throughput=ThroughputParameters(import_capacity_kVA=1, export_capacity_kVA=1,
                  baseline_peak_energy_import_kWh=1, baseline_peak_energy_export_kWh=1)
                  ),
-            Area('Community Load', strategy=LoadHoursStrategy(avg_power_W=500,
+            Area("Community Load", strategy=LoadHoursStrategy(avg_power_W=500,
                                                               hrs_per_day=24,
                                                               hrs_of_day=list(range(24)),
                                                               fit_to_limit=False,
                                                               initial_buying_rate=6,
                                                               energy_rate_increase_per_update=0)
                  )]),
-        Area('Market Maker', strategy=MarketMakerStrategy(energy_rate=3),
+        Area("Market Maker", strategy=MarketMakerStrategy(energy_rate=3),
              )],
                 config=config)
     return area

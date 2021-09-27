@@ -42,7 +42,7 @@ def get_setup(config):
                                 initial_buying_rate=27.895, final_buying_rate=27.895,
                                 fit_to_limit=True)),
                             Area("Family PV", strategy=PVStrategy(
-                                max_panel_power_W=17985, panel_count=1,
+                                capacity_kW=17.985, panel_count=1,
                                 initial_selling_rate=5, final_selling_rate=5))
                          ]),
                     Area("Community PP", strategy=FinitePowerPlant(

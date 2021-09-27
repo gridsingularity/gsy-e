@@ -32,23 +32,23 @@ def get_setup(config):
     Houses_final_buying_rate = 30
 
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'Microgrid',
+                "Microgrid",
                 [
                     Area(
-                        'House 1',
+                        "House 1",
                         [
-                            Area('H1 General Load', strategy=LoadHoursStrategy(
+                            Area("H1 General Load", strategy=LoadHoursStrategy(
                                 avg_power_W=100,
                                 hrs_per_day=5, hrs_of_day=[9, 10, 11, 12, 13, 14, 15, 16],
                                 initial_buying_rate=Houses_initial_buying_rate,
                                 final_buying_rate=Houses_final_buying_rate)
                                  ),
 
-                            Area('H1 PV', strategy=PVStrategy(panel_count=3,
-                                                              max_panel_power_W=250,  # to test
+                            Area("H1 PV", strategy=PVStrategy(panel_count=3,
+                                                              capacity_kW=0.25,  # to test
                                                               initial_selling_rate=30,
                                                               final_selling_rate=0)
                                  ),
@@ -58,17 +58,17 @@ def get_setup(config):
 
 
                     Area(
-                        'House 2',
+                        "House 2",
                         [
-                            Area('H2 General Load', strategy=LoadHoursStrategy(
+                            Area("H2 General Load", strategy=LoadHoursStrategy(
                                 avg_power_W=100,
                                 hrs_per_day=5, hrs_of_day=[9, 10, 11, 12, 13, 14, 15, 16],
                                 initial_buying_rate=Houses_initial_buying_rate,
                                 final_buying_rate=Houses_final_buying_rate)
                                  ),
 
-                            Area('H2 PV', strategy=PVStrategy(panel_count=4,
-                                                              max_panel_power_W=250,
+                            Area("H2 PV", strategy=PVStrategy(panel_count=4,
+                                                              capacity_kW=0.25,
                                                               initial_selling_rate=30,
                                                               final_selling_rate=0)
                                  ),
@@ -77,7 +77,7 @@ def get_setup(config):
                     ),
                 ],),
 
-            Area('DSO', strategy=InfiniteBusStrategy(energy_buy_rate=5)
+            Area("DSO", strategy=InfiniteBusStrategy(energy_buy_rate=5)
                  ),
 
         ],

@@ -33,12 +33,12 @@ def get_setup(config):
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
 
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(
+                    Area("H1 General Load", strategy=LoadHoursStrategy(
                         avg_power_W=200,
                         hrs_per_day=8,
                         hrs_of_day=list(range(8, 16))
@@ -46,9 +46,9 @@ def get_setup(config):
                 ]
             ),
             Area(
-                'House 2',
+                "House 2",
                 [
-                    Area('H2 PV',
+                    Area("H2 PV",
                          strategy=PVStrategy(4, 0)
                          ),
 

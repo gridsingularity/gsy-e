@@ -97,6 +97,7 @@ class ResettableCommunicator(RedisCommunicator):
 class ExternalConnectionCommunicator(ResettableCommunicator):
     def __init__(self, is_enabled):
         self.is_enabled = is_enabled
+        self.aggregator = None
         if self.is_enabled:
             super().__init__()
             self.channel_callback_dict = {}

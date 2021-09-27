@@ -57,19 +57,22 @@ class MycoInternalMatcher(MycoMatcherInterface):
 
     def match_recommendations(self, **kwargs):
         """Request trade recommendations and match them in the relevant market."""
-        for area_uuid, area_data in self.area_uuid_markets_mapping.items():
-            for market in area_data["markets"]:
-                while True:
-                    bids, offers = market.open_bids_and_offers
-                    data = {
-                        market.id:
-                            {"bids": [bid.serializable_dict() for bid in bids.values()],
-                             "offers": [offer.serializable_dict() for offer in offers.values()],
-                             "current_time": area_data["current_time"]}}
-                    bid_offer_pairs = self._get_matches_recommendations(data)
-                    if not bid_offer_pairs:
-                        break
-                    market.match_recommendations(bid_offer_pairs)
+        for area_data in self.area_uuid_markets_mapping.values():
+            for market_type in ["markets", "settlement_markets"]:
+                for market in area_data[market_type]:
+                    while True:
+                        bids, offers = market.open_bids_and_offers
+                        data = {
+                            market.id:
+                                {"bids": [bid.serializable_dict()
+                                          for bid in bids.values()],
+                                 "offers": [offer.serializable_dict()
+                                            for offer in offers.values()],
+                                 "current_time": area_data["current_time"]}}
+                        bid_offer_pairs = self._get_matches_recommendations(data)
+                        if not bid_offer_pairs:
+                            break
+                        market.match_recommendations(bid_offer_pairs)
         self.area_uuid_markets_mapping = {}
 
     def event_tick(self, **kwargs) -> None:

@@ -25,24 +25,24 @@ from d3a_interface.constants_limits import ConstSettings
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     area = Area(
-        'Grid',
+        "Grid",
         children=[
             Area(
-                'House 1',
+                "House 1",
                 children=[
-                    Area('H1 General Load',
+                    Area("H1 General Load",
                          strategy=DefinedLoadStrategy(daily_load_profile={0: 200, 12: 200},
                                                       initial_buying_rate=1,
                                                       final_buying_rate=37),
-                         event_list=[StrategyEvents(12, {'daily_load_profile': {0: 200, 12: 400}}),
-                                     StrategyEvents(15, {'initial_buying_rate': 24,
-                                                         'fit_to_limit': False,
-                                                         'update_interval': 10,
-                                                         'energy_rate_increase_per_update': 1})]
+                         event_list=[StrategyEvents(12, {"daily_load_profile": {0: 200, 12: 400}}),
+                                     StrategyEvents(15, {"initial_buying_rate": 24,
+                                                         "fit_to_limit": False,
+                                                         "update_interval": 10,
+                                                         "energy_rate_increase_per_update": 1})]
                          )
                 ]
             ),
-            Area('Commercial Energy Producer',
+            Area("Commercial Energy Producer",
                  strategy=CommercialStrategy(energy_rate=30)
                  ),
 

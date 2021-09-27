@@ -15,32 +15,32 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import uuid
-import json
-import os
-import importlib
-import logging
 import glob
+import importlib
+import json
+import logging
+import os
 import traceback
-from math import isclose
+import uuid
 from copy import deepcopy
+from math import isclose
 
-from d3a_interface.enums import BidOfferMatchAlgoEnum
-from pendulum import duration, today, from_format
 from behave import given, when, then
-from deepdiff import DeepDiff
-
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
     default_profile_dict
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.unit_test_utils import assert_dicts_identical
 from d3a_interface.utils import convert_W_to_Wh, convert_W_to_kWh, convert_kW_to_kWh, \
     get_area_name_uuid_mapping
-from d3a.models.config import SimulationConfig
+from deepdiff import DeepDiff
+from pendulum import duration, today, from_format
+
+from d3a import constants
+from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
 from d3a.d3a_core.simulation import Simulation
 from d3a.d3a_core.util import d3a_path
-from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
-from d3a import constants
-
+from d3a.models.config import SimulationConfig
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
 ACCUMULATED_KEYS_LIST = ["Accumulated Trades", "External Trades", "Totals", "Market Fees"]
@@ -213,13 +213,16 @@ def load_profile_scenario(context):
 def one_sided_market(context, market_type):
     from d3a_interface.constants_limits import ConstSettings
     if market_type == "one-sided":
-        ConstSettings.IAASettings.MARKET_TYPE = 1
+        ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
     elif market_type == "two-sided-pay-as-bid":
-        ConstSettings.IAASettings.MARKET_TYPE = 2
+        ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
         ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
     elif market_type == "two-sided-pay-as-clear":
-        ConstSettings.IAASettings.MARKET_TYPE = 2
+        ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
         ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+    elif market_type == "two-sided-external":
+        ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
+        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.EXTERNAL.value
 
 
 @given('d3a dispatches events from top to bottom')
@@ -389,7 +392,7 @@ def test_export_data_csv(context, scenario):
 
 @then('the export functionality of supply/demand curve is tested')
 def test_export_supply_demand_curve(context):
-    sim_data_csv = glob.glob(os.path.join(context.export_path, "*", "plot", "mcp"))
+    sim_data_csv = glob.glob(os.path.join(context.export_path, "*", "plot", "*", "mcp"))
     if len(sim_data_csv) != 1:
         raise FileExistsError("Not found in {path}".format(path=context.export_path))
 
@@ -430,6 +433,42 @@ def test_offer_bid_files(context, with_or_without, nonempty=False):
     assert all(len(glob.glob(f)) == 1 for f in file_list)
     assert all(len(open(glob.glob(f)[0]).readlines()) > line_count_limit
                for f in file_list)
+
+
+@then("offers, bids trades and stats are exported also for settlement markets")
+def test_settlement_offer_bid_files(context):
+    file_dict = {}
+    for root, _, files in os.walk(context.export_path):
+        if "grid" in root:
+            file_dict[root.split("grid")[1]] = files
+
+    expected_result = {"": ["house-1-trades.csv",
+                            "house-1-settlement-trades.csv",
+                            "house-1-bids.csv",
+                            "house-2-settlement-bids.csv",
+                            "house-2-settlement-offers.csv",
+                            "house-1-settlement-bids.csv",
+                            "house-2-offers.csv",
+                            "cell-tower-settlement.csv",
+                            "house-1-offers.csv",
+                            "house-2-settlement.csv",
+                            "house-1-settlement-offers.csv",
+                            "house-2-settlement-trades.csv",
+                            "house-2-bids.csv", "cell-tower.csv",
+                            "house-2.csv", "house-1.csv",
+                            "house-1-settlement.csv",
+                            "house-2-trades.csv"],
+                       "/house-2": ["h2-pv-settlement.csv",
+                                    "h2-general-load.csv",
+                                    "h2-general-load-settlement.csv",
+                                    "h2-pv.csv"],
+                       "/house-1": ["h1-storage1.csv",
+                                    "h1-storage2.csv",
+                                    "h1-storage2-settlement.csv",
+                                    "h1-general-load.csv",
+                                    "h1-storage1-settlement.csv",
+                                    "h1-general-load-settlement.csv"]}
+    assert_dicts_identical(file_dict, expected_result)
 
 
 @then('aggregated result files are exported')
