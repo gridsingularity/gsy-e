@@ -333,7 +333,9 @@ class Simulation:
             if self.simulation_config.external_connection_enabled:
                 external_global_statistics.update(market_cycle=True)
                 self.area.publish_market_cycle_to_external_clients()
-                bid_offer_matcher.event_market_cycle()
+                bid_offer_matcher.event_market_cycle(
+                    slot_completion=f"{int(self.progress_info.percentage_completed)}%",
+                    market_slot=self.progress_info.next_slot_str)
 
             self._update_and_send_results()
             self.live_events.handle_all_events(self.area)
@@ -366,7 +368,9 @@ class Simulation:
                 self.area.update_area_current_tick()
                 bid_offer_matcher.event_tick(
                     is_it_time_for_external_tick=external_global_statistics.
-                    is_it_time_for_external_tick(current_tick_in_slot))
+                    is_it_time_for_external_tick(current_tick_in_slot),
+                    slot_completion=f"{int(self.progress_info.percentage_completed)}%",
+                    market_slot=self.progress_info.next_slot_str)
                 self.simulation_config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()
 
