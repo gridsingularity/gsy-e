@@ -56,7 +56,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
 
     def __init__(
             self,
-            smart_meter_profile: Union[Path, str, Dict[int, float], Dict[str, float]],
+            smart_meter_profile: Union[Path, str, Dict[int, float], Dict[str, float]] = None,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
             final_selling_rate: float = ConstSettings.SmartMeterSettings.SELLING_RATE_RANGE.final,
             energy_rate_decrease_per_update: Union[float, None] = None,

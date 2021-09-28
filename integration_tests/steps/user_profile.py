@@ -17,8 +17,8 @@ def init_uuids(context):
     context.pv_profile_uuid = str(uuid.uuid4())
     context.load_area_uuid = str(uuid.uuid4())
     context.load_profile_uuid = str(uuid.uuid4())
-    context.home_meter_area_uuid = str(uuid.uuid4())
-    context.home_meter_profile_uuid = str(uuid.uuid4())
+    context.smart_meter_area_uuid = str(uuid.uuid4())
+    context.smart_meter_profile_uuid = str(uuid.uuid4())
     GlobalConfig.slot_length = duration(minutes=60)
 
 
@@ -41,7 +41,7 @@ def load_yearly_profile(context):
     from integration_tests.write_user_profiles import write_yearly_user_profiles_to_db
     context.daily_profile_load = \
         read_arbitrary_profile(InputProfileTypes.POWER,
-                               d3a_path + '/resources/LOAD_DATA_1.csv')
+                               d3a_path + "/resources/LOAD_DATA_1.csv")
     write_yearly_user_profiles_to_db(context.daily_profile_load,
                                      InputProfileTypes.POWER.value,
                                      context.config_uuid,
@@ -49,17 +49,17 @@ def load_yearly_profile(context):
                                      context.load_profile_uuid)
 
 
-@given("a yearly Home Meter profile exist in the DB")
-def home_meter_yearly_profile(context):
+@given("a yearly Smart Meter profile exist in the DB")
+def smart_meter_yearly_profile(context):
     from integration_tests.write_user_profiles import write_yearly_user_profiles_to_db
-    context.daily_profile_home_meter = \
+    context.daily_profile_smart_meter = \
         read_arbitrary_profile(InputProfileTypes.POWER,
-                               d3a_path + '/resources/home_meter_profile.csv')
-    write_yearly_user_profiles_to_db(context.daily_profile_home_meter,
+                               d3a_path + "/resources/smart_meter_profile.csv")
+    write_yearly_user_profiles_to_db(context.daily_profile_smart_meter,
                                      InputProfileTypes.POWER.value,
                                      context.config_uuid,
-                                     context.home_meter_area_uuid,
-                                     context.home_meter_profile_uuid)
+                                     context.smart_meter_area_uuid,
+                                     context.smart_meter_profile_uuid)
 
 
 @given("the connection to the profiles DB is disconnected")
@@ -94,10 +94,10 @@ def db_profile_scenario(context):
                         "power_profile_uuid": context.pv_profile_uuid
                     },
                     {
-                        "name": "Home Meter",
-                        "uuid": context.home_meter_area_uuid,
-                        "type": "HomeMeter",
-                        "home_meter_profile_uuid": context.home_meter_profile_uuid
+                        "name": "Smart Meter",
+                        "uuid": context.smart_meter_area_uuid,
+                        "type": "SmartMeter",
+                        "smart_meter_profile_uuid": context.smart_meter_profile_uuid
                     }
                 ]
             },
@@ -143,19 +143,19 @@ def check_load_profile(context):
     assert expected_consumed_energy == consumed_energy
 
 
-@then('the Home Meter follows the profile from DB')
-def check_home_meter_profile(context):
+@then('the Smart Meter follows the profile from DB')
+def check_smart_meter_profile(context):
     house1 = list(filter(lambda x: x.name == "House", context.simulation.area.children))[0]
-    home_meter = list(filter(lambda x: x.name == "Home Meter", house1.children))[0]
+    smart_meter = list(filter(lambda x: x.name == "Smart Meter", house1.children))[0]
 
-    daily_energy_profile = context.daily_profile_home_meter.values()
+    daily_energy_profile = context.daily_profile_smart_meter.values()
 
     expected_energy_profile = []
     for days in range(GlobalConfig.sim_duration.days):
         expected_energy_profile += daily_energy_profile
 
-    consumed_energy_Wh = list(home_meter.strategy.state._desired_energy_Wh.values())
-    produced_energy_kWh = list(home_meter.strategy.state._energy_production_forecast_kWh.values())
+    consumed_energy_Wh = list(smart_meter.strategy.state._desired_energy_Wh.values())
+    produced_energy_kWh = list(smart_meter.strategy.state._energy_production_forecast_kWh.values())
     energy_profile = \
         [consumed - produced_energy_kWh[ii]*1000 for ii, consumed in enumerate(consumed_energy_Wh)]
     assert expected_energy_profile == energy_profile

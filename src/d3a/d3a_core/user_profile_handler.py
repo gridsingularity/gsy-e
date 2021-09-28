@@ -38,12 +38,12 @@ class ProfileDBConnectionHandler:
     """
     _db = Database()
 
-    class Profile_Database_ProfileTimeSeries(_db.Entity):
+    class ProfileTimeSeries(_db.Entity):
         profile_uuid = Required(uuid.UUID)
         time = Required(datetime)
         value = Required(float)
 
-    class Profile_Database_ConfigurationAreaProfileUuids(_db.Entity):
+    class ConfigurationAreaProfileUuids(_db.Entity):
         configuration_uuid = Required(uuid.UUID)
         area_uuid = Required(uuid.UUID)
         profile_uuid = Required(uuid.UUID)
@@ -89,14 +89,14 @@ class ProfileDBConnectionHandler:
 
         """
         first_datapoint_time = select(
-            datapoint for datapoint in self.Profile_Database_ProfileTimeSeries
+            datapoint for datapoint in self.ProfileTimeSeries
             if str(datapoint.profile_uuid) == profile_uuid
         ).order_by(lambda d: d.time).limit(1)[0].time
 
         from pendulum import duration
 
         datapoints = select(
-            datapoint for datapoint in self.Profile_Database_ProfileTimeSeries
+            datapoint for datapoint in self.ProfileTimeSeries
             if str(datapoint.profile_uuid) == profile_uuid
             and datapoint.time >= first_datapoint_time
             and datapoint.time <= first_datapoint_time + duration(days=7)
@@ -125,11 +125,10 @@ class ProfileDBConnectionHandler:
 
         """
         selection = select(
-            datapoint for datapoint in self.Profile_Database_ProfileTimeSeries
+            datapoint for datapoint in self.ProfileTimeSeries
             if datapoint.profile_uuid in self._profile_uuids
             and datapoint.time >= start_time and datapoint.time <= end_time
         )
-
         return selection
 
     @db_session
@@ -138,7 +137,7 @@ class ProfileDBConnectionHandler:
         self._profile_uuids"""
         profile_selection = select(
             datapoint.profile_uuid
-            for datapoint in self.Profile_Database_ConfigurationAreaProfileUuids
+            for datapoint in self.ConfigurationAreaProfileUuids
             if str(datapoint.configuration_uuid) == d3a.constants.CONFIGURATION_ID)
 
         self._profile_uuids = list(profile_selection)

@@ -71,34 +71,36 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             GlobalConfig.market_maker_rate = self.energy_rate
 
     def _read_or_rotate_profiles(self, reconfigure=False):
-        if self.energy_buy_rate_input is None and \
-                self.buying_rate_profile is None and \
-                self.buying_rate_profile_uuid is None:
+        if (self.energy_buy_rate_input is None and
+                self.buying_rate_profile is None and
+                self.buying_rate_profile_uuid is None):
             self.energy_buy_rate = GlobalConfig.market_maker_rate
         else:
             if self.energy_buy_rate_input is None and self.energy_buy_rate is None:
                 self.energy_buy_rate_input = self.buying_rate_profile
-            self.energy_buy_rate = \
+            self.energy_buy_rate = (
                 convert_identity_profile_to_float(
                     global_objects.profiles_handler.rotate_profile(
                         profile_type=InputProfileTypes.IDENTITY,
                         profile=self.energy_buy_rate
                         if self.energy_buy_rate else self.energy_buy_rate_input,
-                        profile_uuid=self.buying_rate_profile_uuid))
+                        profile_uuid=self.buying_rate_profile_uuid)))
 
-        if self.energy_rate_input is None and \
-                self.energy_rate_profile is None and \
-                self.energy_rate_profile_uuid is None:
-            self.energy_rate = GlobalConfig.market_maker_rate
+        if (self.energy_rate_input is None and
+                self.energy_rate_profile is None and
+                self.energy_rate_profile_uuid is None):
+            self.energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                      GlobalConfig.market_maker_rate)
         else:
             if self.energy_rate_input is None and self.energy_rate is None:
                 self.energy_rate_input = self.energy_rate_profile
-            self.energy_rate = \
+            self.energy_rate = (
                 convert_identity_profile_to_float(
                     global_objects.profiles_handler.rotate_profile(
                         profile_type=InputProfileTypes.IDENTITY,
-                        profile=self.energy_rate if self.energy_rate else self.energy_rate_input,
-                        profile_uuid=self.energy_rate_profile_uuid))
+                        profile=(self.energy_rate
+                                 if self.energy_rate else self.energy_rate_input),
+                        profile_uuid=self.energy_rate_profile_uuid)))
 
         self._set_global_market_maker_rate()
 

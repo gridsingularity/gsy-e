@@ -172,7 +172,7 @@ class TestExternalMixin:
         [StorageExternalStrategy()]
     ])
     def test_dispatch_event_tick_to_external_agent(self, strategy):
-        d3a.d3a_core.util.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
+        d3a.d3a_core.util.d3a.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
         self._create_and_activate_strategy_area(strategy)
         strategy.redis.aggregator.is_controlling_device = lambda _: False
         self.config.ticks_per_slot = 90

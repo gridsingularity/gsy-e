@@ -190,12 +190,15 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
             self._power_profile_input = power_profile
 
     def _read_or_rotate_profiles(self, reconfigure=False):
-        input_profile = self._power_profile_input \
-            if reconfigure or not self.power_profile else self.power_profile
-        self.energy_profile = \
-            global_objects.profiles_handler.rotate_profile(profile_type=InputProfileTypes.POWER,
-                                                           profile=input_profile,
-                                                           profile_uuid=self.power_profile_uuid)
+        input_profile = (self._power_profile_input
+                         if reconfigure or not self.power_profile else self.power_profile)
+        if global_objects.profiles_handler.should_create_profile(
+                self.energy_profile) or reconfigure:
+            self.energy_profile = (
+                global_objects.profiles_handler.rotate_profile(
+                    profile_type=InputProfileTypes.POWER,
+                    profile=input_profile,
+                    profile_uuid=self.power_profile_uuid))
 
     def _read_predefined_profile_for_pv(self):
         """
