@@ -27,13 +27,15 @@ class TestProfileDBConnectionHandler(ProfileDBConnectionHandler):
     def write_profile(self, config_uuid: str, area_uuid: str, profile_uuid: str, profile_type: int,
                       profile: dict):
 
-        self.ConfigurationAreaProfileUuids(configuration_uuid=config_uuid,
-                                           area_uuid=area_uuid,
-                                           profile_uuid=profile_uuid,
-                                           profile_type=profile_type)
+        self.Profile_Database_ConfigurationAreaProfileUuids(
+            configuration_uuid=config_uuid,
+            area_uuid=area_uuid,
+            profile_uuid=profile_uuid,
+            profile_type=profile_type)
 
         for time, value in profile.items():
-            self.ProfileTimeSeries(profile_uuid=profile_uuid, time=time, value=value)
+            self.Profile_Database_ProfileTimeSeries(
+                profile_uuid=profile_uuid, time=time, value=value)
         commit()
 
     def disconnect(self):
