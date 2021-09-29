@@ -43,7 +43,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
     """Class responsible for external bids / offers matching."""
     def __init__(self):
         super().__init__()
-        self.simulation_id = d3a.constants.COLLABORATION_ID
+        self.simulation_id = d3a.constants.CONFIGURATION_ID
         self.myco_ext_conn = None
         self._channel_prefix = f"external-myco/{self.simulation_id}"
         self._events_channel = f"{self._channel_prefix}/events/"

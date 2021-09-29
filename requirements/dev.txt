@@ -100,6 +100,8 @@ pluggy==0.13.1
     #   -r requirements/base.txt
     #   d3a-interface
     #   tox
+pony==0.7.14
+    # via -r requirements/base.txt
 pre-commit==2.14.0
     # via -r requirements/dev.in
 psutil==5.8.0
