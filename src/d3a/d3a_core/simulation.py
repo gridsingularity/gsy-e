@@ -340,9 +340,10 @@ class Simulation:
             if self.simulation_config.external_connection_enabled:
                 global_objects.external_global_stats.update(market_cycle=True)
                 self.area.publish_market_cycle_to_external_clients()
-                bid_offer_matcher.event_market_cycle(
-                    slot_completion=f"{int(self.progress_info.percentage_completed)}%",
-                    market_slot=self.progress_info.next_slot_str)
+
+            bid_offer_matcher.event_market_cycle(
+                slot_completion=f"{int(self.progress_info.percentage_completed)}%",
+                market_slot=self.progress_info.next_slot_str)
 
             self._update_and_send_results()
             self.live_events.handle_all_events(self.area)
