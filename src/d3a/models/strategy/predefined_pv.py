@@ -17,14 +17,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pathlib
 
-from d3a.d3a_core.exceptions import D3AException
-from d3a.d3a_core.util import d3a_path
-from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import convert_kW_to_kWh
 from d3a_interface.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
 from pendulum import duration
+
+from d3a.d3a_core.exceptions import D3AException
+from d3a.d3a_core.global_objects_singleton import global_objects
+from d3a.d3a_core.util import d3a_path
+from d3a.d3a_core.util import should_read_profile_from_db
+from d3a.models.strategy.pv import PVStrategy
 
 """
 Creates a PV that uses a profile as input for its power values, either predefined or provided
@@ -38,7 +41,7 @@ class PVPredefinedStrategy(PVStrategy):
     """
     parameters = ("panel_count", "initial_selling_rate", "final_selling_rate", "cloud_coverage",
                   "fit_to_limit", "update_interval", "energy_rate_decrease_per_update",
-                  "use_market_maker_rate", "capacity_kW")
+                  "use_market_maker_rate", "power_profile_uuid", "capacity_kW")
 
     def __init__(
             self, panel_count: int = 1,
@@ -149,17 +152,18 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
     """
     parameters = ("power_profile", "panel_count", "initial_selling_rate", "final_selling_rate",
                   "fit_to_limit", "update_interval", "energy_rate_decrease_per_update",
-                  "use_market_maker_rate")
+                  "use_market_maker_rate", "power_profile_uuid")
 
     def __init__(
-            self, power_profile, panel_count: int = 1,
+            self, power_profile=None, panel_count: int = 1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
             final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
             fit_to_limit: bool = True,
             update_interval=duration(
                 minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
             energy_rate_decrease_per_update=None,
-            use_market_maker_rate: bool = False):
+            use_market_maker_rate: bool = False,
+            power_profile_uuid: str = None):
         """
         Constructor of PVUserProfileStrategy
         Args:
@@ -176,20 +180,45 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
                          use_market_maker_rate=use_market_maker_rate)
-        self._power_profile_W = power_profile
+
+        self.power_profile = None
+        self.power_profile_uuid = power_profile_uuid
+
+        if should_read_profile_from_db(power_profile_uuid):
+            self._power_profile_input = None
+        else:
+            self._power_profile_input = power_profile
+
+    def _read_or_rotate_profiles(self, reconfigure=False):
+        input_profile = (self._power_profile_input
+                         if reconfigure or not self.power_profile else self.power_profile)
+        if global_objects.profiles_handler.should_create_profile(
+                self.energy_profile) or reconfigure:
+            self.energy_profile = (
+                global_objects.profiles_handler.rotate_profile(
+                    profile_type=InputProfileTypes.POWER,
+                    profile=input_profile,
+                    profile_uuid=self.power_profile_uuid))
 
     def _read_predefined_profile_for_pv(self):
         """
         Reads profile data from the power profile. Handles csv files and dicts.
         :return: key value pairs of time to energy in kWh
         """
-        self.energy_profile = read_arbitrary_profile(
-            InputProfileTypes.POWER,
-            self._power_profile_W)
+        self._read_or_rotate_profiles()
 
     def area_reconfigure_event(self, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
         super().area_reconfigure_event(**kwargs)
         if key_in_dict_and_not_none(kwargs, 'power_profile'):
-            self._power_profile_W = kwargs['power_profile']
+            self._power_profile_input = kwargs['power_profile']
+        self._read_or_rotate_profiles(reconfigure=True)
         self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
+
+    def event_market_cycle(self):
+        self._read_predefined_profile_for_pv()
+        super().event_market_cycle()
+
+    def event_activate_energy(self):
+        self._read_predefined_profile_for_pv()
+        super().event_activate_energy()

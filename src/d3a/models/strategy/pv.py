@@ -153,17 +153,20 @@ class PVStrategy(BidEnabledStrategy):
             return
 
         self.offer_update.set_parameters(
-            initial_rate_profile_buffer=initial_rate,
-            final_rate_profile_buffer=final_rate,
-            energy_rate_change_per_update_profile_buffer=energy_rate_change_per_update,
+            initial_rate=initial_rate,
+            final_rate=final_rate,
+            energy_rate_change_per_update=energy_rate_change_per_update,
             fit_to_limit=fit_to_limit,
             update_interval=update_interval
         )
 
-    @staticmethod
-    def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
+    def _validate_rates(self, initial_rate, final_rate, energy_rate_change_per_update,
+                        fit_to_limit):
         # all parameters have to be validated for each time slot here
         for time_slot in initial_rate.keys():
+            if self.area and self.area.current_market \
+                    and time_slot < self.area.current_market.time_slot:
+                continue
             rate_change = None if fit_to_limit else \
                 find_object_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
             PVValidator.validate_rate(

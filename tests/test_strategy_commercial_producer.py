@@ -60,6 +60,10 @@ class FakeArea:
         return [self.test_market]
 
     @property
+    def next_market(self):
+        return self.test_market
+
+    @property
     def balancing_markets(self):
         return [self.test_balancing_market, self.test_balancing_market_2]
 

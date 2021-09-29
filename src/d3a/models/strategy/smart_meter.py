@@ -28,9 +28,9 @@ from pendulum.datetime import DateTime
 
 from d3a import constants
 from d3a.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
-from d3a.d3a_core.exceptions import D3AException
-from d3a.d3a_core.exceptions import MarketException
-from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a.d3a_core.exceptions import D3AException, MarketException
+from d3a.d3a_core.global_objects_singleton import global_objects
+from d3a.d3a_core.util import (get_market_maker_rate_from_config, should_read_profile_from_db)
 from d3a.models.market import Market
 from d3a.models.state import SmartMeterState
 from d3a.models.strategy import BidEnabledStrategy, utils
@@ -46,7 +46,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
     # The `parameters` set is used to decide which fields will be added to the serialized
     # representation of the Leaf object that uses this strategy (see AreaEncoder).
     parameters = (
-        "smart_meter_profile",
+        "smart_meter_profile", "smart_meter_profile_uuid",
         # Energy production parameters
         "initial_selling_rate", "final_selling_rate", "energy_rate_decrease_per_update",
         # Energy consumption parameters
@@ -56,7 +56,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
 
     def __init__(
             self,
-            smart_meter_profile: Union[Path, str, Dict[int, float], Dict[str, float]],
+            smart_meter_profile: Union[Path, str, Dict[int, float], Dict[str, float]] = None,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
             final_selling_rate: float = ConstSettings.SmartMeterSettings.SELLING_RATE_RANGE.final,
             energy_rate_decrease_per_update: Union[float, None] = None,
@@ -66,7 +66,8 @@ class SmartMeterStrategy(BidEnabledStrategy):
             energy_rate_increase_per_update: Union[float, None] = None,
             fit_to_limit: bool = True,
             update_interval=None,
-            use_market_maker_rate: bool = False):
+            use_market_maker_rate: bool = False,
+            smart_meter_profile_uuid: str = None):
         """
         Args:
             smart_meter_profile: input profile defining the energy production/consumption of the
@@ -94,6 +95,9 @@ class SmartMeterStrategy(BidEnabledStrategy):
 
         self.smart_meter_profile = smart_meter_profile  # Raw profile data
         self.profile = None  # Preprocessed data extracted from smart_meter_profile
+        if should_read_profile_from_db(self.smart_meter_profile):
+            self.smart_meter_profile = None
+        self.profile_uuid = smart_meter_profile_uuid
 
         self.initial_selling_rate = initial_selling_rate
         self.final_selling_rate = final_selling_rate
@@ -169,9 +173,18 @@ class SmartMeterStrategy(BidEnabledStrategy):
 
         This method is triggered by the ACTIVATE event.
         """
-        self.profile = self._read_raw_profile_data(self.smart_meter_profile)
+
+        self._read_or_rotate_profiles()
         self._simulation_start_timestamp = self.area.now
         self._set_energy_forecast_for_future_markets(reconfigure=True)
+
+    def _read_or_rotate_profiles(self, reconfigure=False):
+        input_profile = self.smart_meter_profile \
+            if reconfigure or not self.profile else self.profile
+        self.profile = \
+            global_objects.profiles_handler.rotate_profile(profile_type=InputProfileTypes.POWER,
+                                                           profile=input_profile,
+                                                           profile_uuid=self.profile_uuid)
 
     def event_market_cycle(self):
         """Prepare rates and execute bids/offers when a new market slot begins.
@@ -275,14 +288,16 @@ class SmartMeterStrategy(BidEnabledStrategy):
         """
         self._area_reconfigure_consumption_prices(**kwargs)
         self._area_reconfigure_production_prices(**kwargs)
+        self.offer_update.update_and_populate_price_settings(self.area)
+        self.bid_update.update_and_populate_price_settings(self.area)
 
         # Update the raw profile. It will be read later while setting the energy forecast.
         if kwargs.get("smart_meter_profile") is not None:
             self.smart_meter_profile = kwargs["smart_meter_profile"]
 
-        self.offer_update.update_and_populate_price_settings(self.area)
-        self.bid_update.update_and_populate_price_settings(self.area)
-        self._set_energy_forecast_for_future_markets(reconfigure=True)
+            self.offer_update.update_and_populate_price_settings(self.area)
+            self.bid_update.update_and_populate_price_settings(self.area)
+            self._set_energy_forecast_for_future_markets(reconfigure=True)
 
     def _area_reconfigure_production_prices(self, **kwargs):
         if kwargs.get("initial_selling_rate") is not None:
@@ -328,9 +343,9 @@ class SmartMeterStrategy(BidEnabledStrategy):
             return
 
         self.offer_update.set_parameters(
-            initial_rate_profile_buffer=initial_rate,
-            final_rate_profile_buffer=final_rate,
-            energy_rate_change_per_update_profile_buffer=energy_rate_change_per_update,
+            initial_rate=initial_rate,
+            final_rate=final_rate,
+            energy_rate_change_per_update=energy_rate_change_per_update,
             fit_to_limit=fit_to_limit,
             update_interval=update_interval)
 
@@ -378,9 +393,9 @@ class SmartMeterStrategy(BidEnabledStrategy):
             return
 
         self.bid_update.set_parameters(
-            initial_rate_profile_buffer=initial_rate,
-            final_rate_profile_buffer=final_rate,
-            energy_rate_change_per_update_profile_buffer=energy_rate_change_per_update,
+            initial_rate=initial_rate,
+            final_rate=final_rate,
+            energy_rate_change_per_update=energy_rate_change_per_update,
             fit_to_limit=fit_to_limit,
             update_interval=update_interval)
 
@@ -433,8 +448,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         Args:
             reconfigure: if True, re-read and preprocess the raw profile data.
         """
-        if reconfigure:
-            self.profile = self._read_raw_profile_data(self.smart_meter_profile)
+        self._read_or_rotate_profiles(reconfigure=reconfigure)
 
         if not self.profile:
             raise D3AException(
@@ -458,11 +472,6 @@ class SmartMeterStrategy(BidEnabledStrategy):
             self.state.set_desired_energy(consumed_energy * 1000, slot_time, overwrite=False)
             self.state.set_available_energy(produced_energy, slot_time, reconfigure)
             self.state.update_total_demanded_energy(slot_time)
-
-    @staticmethod
-    def _read_raw_profile_data(profile):
-        """Return the preprocessed the raw profile data."""
-        return read_arbitrary_profile(InputProfileTypes.POWER, profile)
 
     @staticmethod
     def _convert_update_interval_to_duration(update_interval):

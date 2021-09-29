@@ -184,10 +184,10 @@ class PlotlyGraph:
         py.offline.plot(fig, filename=iname, auto_open=False)
 
     @classmethod
-    def plot_line_graph(cls, title: str, xtitle: str, ytitle: str, data, iname: str, xmax: int):
-        layout = cls.common_layout("group", title, ytitle, xtitle, [0, xmax])
+    def plot_line_graph(cls, plot_desc: PlotDescription, iname: str, xmax: int):
+        layout = cls.common_layout(plot_desc, [0, xmax])
 
-        fig = go.Figure(data=data, layout=layout)
+        fig = go.Figure(data=plot_desc.data, layout=layout)
         py.offline.plot(fig, filename=iname, auto_open=False)
 
     def arrange_data(self):

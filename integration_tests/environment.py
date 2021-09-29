@@ -16,14 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import contextlib
-import shutil
 import os
+import shutil
+from time import sleep
 
 import d3a.constants
+from d3a import constants
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import update_advanced_settings, constsettings_to_dict
-from d3a_interface.constants_limits import GlobalConfig
-from d3a import constants
+from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 
 """
 before_step(context, step), after_step(context, step)
@@ -39,11 +40,36 @@ before_tag(context, tag), after_tag(context, tag)
 """
 
 
+if d3a.constants.CONNECT_TO_PROFILES_DB is True:
+    # profiles_handler needs to be a singleton in the integration tests:
+    from integration_tests.write_user_profiles import TestProfileDBConnectionHandler
+    profiles_handler = TestProfileDBConnectionHandler()
+    profiles_handler.connect()
+
+
+def before_feature(context, feature):
+    # TODO: Ignore the following if one has only selected an individual scenario with
+    #  behave integration_tests -n ""
+    if feature.name == "User Profiles Tests":
+        d3a.constants.CONNECT_TO_PROFILES_DB = True
+        os.environ["PROFILE_DB_USER"] = "d3a_profiles_user"
+        os.environ["PROFILE_DB_PASSWORD"] = ""
+        os.environ["PROFILE_DB_NAME"] = "d3a_profiles"
+        os.system("docker-compose -f integration_tests/compose/docker_compose_postgres.yml up -d")
+        sleep(3)
+
+
+def after_feature(context, feature):
+    if feature.name == "User Profiles Tests":
+        d3a.constants.CONNECT_TO_PROFILES_DB = False
+        os.system("docker-compose -f integration_tests/compose/docker_compose_postgres.yml down")
+        os.system("docker rmi compose_postgres:latest")
+
+
 def before_scenario(context, scenario):
     context.simdir = "./d3a-simulation/integration_tests/"
     os.makedirs(context.simdir, exist_ok=True)
     context.resource_manager = contextlib.ExitStack()
-    from d3a_interface.constants_limits import ConstSettings
     ConstSettings.IAASettings.MIN_OFFER_AGE = 0
     ConstSettings.IAASettings.MIN_BID_AGE = 0
     constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
@@ -59,7 +85,7 @@ def after_scenario(context, scenario):
     update_advanced_settings(context.default_const_settings)
     context.resource_manager.close()
     DeviceRegistry.REGISTRY = {}
-    GlobalConfig.market_maker_rate = 30
+    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
 
 
 def before_all(context):
