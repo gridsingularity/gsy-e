@@ -15,9 +15,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.d3a_core.global_objects import ExternalConnectionGlobalStatistics
-from d3a.models.myco_matcher.myco_matcher import MycoMatcher
+from d3a.d3a_core.user_profile_handler import ProfilesHandler
+from d3a.d3a_core.global_stats import ExternalConnectionGlobalStatistics
 
-external_global_statistics = ExternalConnectionGlobalStatistics()
 
-bid_offer_matcher = MycoMatcher()
+class GlobalObjects:
+    profiles_handler = ProfilesHandler()
+    external_global_stats = ExternalConnectionGlobalStatistics()
+
+
+global_objects = GlobalObjects()

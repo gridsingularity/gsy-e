@@ -1,6 +1,5 @@
 from setuptools import find_packages, setup
 
-
 d3a_interface_branch = "master"
 
 try:

@@ -19,7 +19,7 @@ import os
 import glob
 from math import isclose
 from behave import then
-from d3a.d3a_core.singletons import bid_offer_matcher
+from d3a.d3a_core.myco_singleton import bid_offer_matcher
 from d3a.d3a_core.util import make_iaa_name
 
 
