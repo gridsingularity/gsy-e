@@ -20,9 +20,10 @@ class TestMycoExternalMatcher:
     def setup_class(cls):
         cls.matcher = MycoExternalMatcher()
         cls.market = TwoSidedMarket(time_slot=now())
+        cls.matcher.markets_mapping = {cls.market.id: cls.market}
         cls.redis_connection = d3a.models.myco_matcher.myco_external_matcher.ResettableCommunicator
-        assert cls.matcher.simulation_id == d3a.constants.COLLABORATION_ID
-        cls.channel_prefix = f"external-myco/{d3a.constants.COLLABORATION_ID}/"
+        assert cls.matcher.simulation_id == d3a.constants.CONFIGURATION_ID
+        cls.channel_prefix = f"external-myco/{d3a.constants.CONFIGURATION_ID}/"
         cls.events_channel = f"{cls.channel_prefix}events/"
 
     def setup_method(self, method):

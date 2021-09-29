@@ -138,6 +138,8 @@ pluggy==0.13.1
     #   -r requirements/dev.txt
     #   d3a-interface
     #   tox
+pony==0.7.14
+    # via -r requirements/dev.txt
 pre-commit==2.14.0
     # via -r requirements/dev.txt
 psutil==5.8.0

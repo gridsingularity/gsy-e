@@ -31,7 +31,7 @@ from cached_property import cached_property
 from d3a.d3a_core.blockchain_interface import blockchain_interface_factory
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
-from d3a.d3a_core.singletons import bid_offer_matcher
+from d3a.d3a_core.myco_singleton import bid_offer_matcher
 from d3a.d3a_core.util import TaggedLogWrapper
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.area.event_dispatcher import DispatcherFactory
