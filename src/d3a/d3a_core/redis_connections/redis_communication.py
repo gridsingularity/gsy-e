@@ -114,8 +114,9 @@ class RedisSimulationCommunication:
         self.publish_json(response_channel, response_dict)
 
     @classmethod
-    def _area_uuid_name_map_wrapper(cls, area: "Area", area_map: Dict = {}) -> Dict:
+    def _area_uuid_name_map_wrapper(cls, area: "Area", area_mapping: Optional[dict] = None) -> Dict:
         """Recursive method to populate area uuid and name map for area object"""
+        area_mapping = area_mapping or {}
         area_map[area.uuid] = area.name
         for child in area.children:
             area_map = RedisSimulationCommunication._area_uuid_name_map_wrapper(child, area_map)
