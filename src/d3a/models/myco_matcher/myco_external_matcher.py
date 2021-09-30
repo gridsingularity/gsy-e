@@ -144,14 +144,14 @@ class MycoExternalMatcher(MycoMatcherInterface):
         # If External matching is enabled, limit the number of ticks dispatched.
         if not is_it_time_for_external_tick:
             return
-        data = {"event": ExternalMatcherEventsEnum.TICK.value}
+        data = {"event": ExternalMatcherEventsEnum.TICK.value, **kwargs}
         self.myco_ext_conn.publish_json(self._events_channel, data)
 
     def event_market_cycle(self, **kwargs):
         """Publish the market event to the Myco client and clear finished markets cache.."""
 
         self.markets_mapping = {}  # clear finished markets
-        data = {"event": ExternalMatcherEventsEnum.MARKET.value}
+        data = {"event": ExternalMatcherEventsEnum.MARKET.value, **kwargs}
         self.myco_ext_conn.publish_json(self._events_channel, data)
 
     def event_finish(self, **kwargs):
