@@ -305,11 +305,13 @@ class ExternalMixin:
                                    "local_market_fee":
                                        self.area.current_market.fee_class.grid_fee_rate
                                        if self.area.current_market is not None else "None",
-                                   "attributes": {},
+                                   "attributes": trade.offer_bid.attributes,
                                    "seller": trade.seller
                                    if trade.seller_id == self.device.uuid else "anonymous",
                                    "buyer": trade.buyer
                                    if trade.buyer_id == self.device.uuid else "anonymous",
+                                   "seller_origin": trade.seller_origin,
+                                   "buyer_origin": trade.buyer_origin,
                                    "bid_id": trade.offer_bid.id
                                    if trade.is_bid_trade else "None",
                                    "offer_id": trade.offer_bid.id

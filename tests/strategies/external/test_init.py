@@ -253,7 +253,8 @@ class TestExternalMixin:
         assert set(call_args.keys()) == {"attributes", "residual_bid_id", "asset_id", "buyer",
                                          "local_market_fee", "residual_offer_id", "total_fee",
                                          "traded_energy", "bid_id", "time", "seller",
-                                         "trade_price", "trade_id", "offer_id", "event"}
+                                         "trade_price", "trade_id", "offer_id", "event",
+                                         "seller_origin", "buyer_origin"}
         assert call_args["trade_id"] == trade.id
         assert call_args["asset_id"] == self.area.uuid
         assert call_args["event"] == "trade"
