@@ -110,7 +110,7 @@ class RedisSimulationCommunication:
         back to a redis response channel"""
         area_map = self._area_uuid_name_map_wrapper(self._simulation.area)
         response_channel = f"external-myco/{d3a.constants.CONFIGURATION_ID}/area-map/response/"
-        response_dict = {"area_map": area_map, "event": "area_map"}
+        response_dict = {"area_map": area_map, "event": "area_map_response"}
         self.publish_json(response_channel, response_dict)
 
     @classmethod
