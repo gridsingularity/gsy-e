@@ -106,7 +106,7 @@ class RedisSimulationCommunication:
         self.publish_json(response_channel, response_json)
 
     def _area_map_callback(self, payload: Dict) -> None:
-        """Triggers the calculation of area uuid and name map and publish it
+        """Trigger the calculation of area uuid and name mapping and publish it
         back to a redis response channel"""
         area_map = self._area_uuid_name_map_wrapper(self._simulation.area)
         response_channel = f"external-myco/{d3a.constants.CONFIGURATION_ID}/area-map/response/"
