@@ -53,7 +53,7 @@ class RedisSimulationCommunication:
         self._simulation_id = simulation_id
         self._simulation = simulation
         self._sub_callback_dict = {
-            f"{d3a.constants.COLLABORATION_ID}/area-map/": self._area_map_callback
+            f"{d3a.constants.CONFIGURATION_ID}/area-map/": self._area_map_callback
         }
         if simulation_id is not None:
             self._sub_callback_dict.update({
@@ -109,15 +109,16 @@ class RedisSimulationCommunication:
         """Triggers the calculation of area uuid and name map and publish it
         back to a redis response channel"""
         area_map = self._area_uuid_name_map_wrapper(self._simulation.area)
-        response_channel = f"external-myco/{d3a.constants.COLLABORATION_ID}/area-map/response/"
-        response_dict = {"area_mapp": area_map, "event": "area_map"}
+        response_channel = f"external-myco/{d3a.constants.CONFIGURATION_ID}/area-map/response/"
+        response_dict = {"area_map": area_map, "event": "area_map"}
         self.publish_json(response_channel, response_dict)
 
-    def _area_uuid_name_map_wrapper(self, area: "Area", area_map: Dict = {}) -> Dict:
+    @classmethod
+    def _area_uuid_name_map_wrapper(cls, area: "Area", area_map: Dict = {}) -> Dict:
         """Recursive method to populate area uuid and name map for area object"""
         area_map[area.uuid] = area.name
         for child in area.children:
-            area_map = self._area_uuid_name_map_wrapper(child, area_map)
+            area_map = RedisSimulationCommunication._area_uuid_name_map_wrapper(child, area_map)
         return area_map
 
     def _stop_callback(self, payload):
