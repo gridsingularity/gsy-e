@@ -24,7 +24,7 @@ from redis import StrictRedis
 from redis.exceptions import ConnectionError
 from rq import get_current_job
 from rq.exceptions import NoSuchJobError
-from typing import Dict, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING, Optional
 
 import d3a.constants
 from d3a_interface.results_validator import results_validator  # NOQA
@@ -108,19 +108,21 @@ class RedisSimulationCommunication:
     def _area_map_callback(self, payload: Dict) -> None:
         """Trigger the calculation of area uuid and name mapping and publish it
         back to a redis response channel"""
-        area_map = self._area_uuid_name_map_wrapper(self._simulation.area)
+        area_mapping = self._area_uuid_name_map_wrapper(self._simulation.area)
         response_channel = f"external-myco/{d3a.constants.CONFIGURATION_ID}/area-map/response/"
-        response_dict = {"area_map": area_map, "event": "area_map_response"}
+        response_dict = {"area_mapping": area_mapping, "event": "area_map_response"}
         self.publish_json(response_channel, response_dict)
 
     @classmethod
-    def _area_uuid_name_map_wrapper(cls, area: "Area", area_mapping: Optional[dict] = None) -> Dict:
+    def _area_uuid_name_map_wrapper(
+            cls, area: "Area", area_mapping: Optional[dict] = None) -> Dict:
         """Recursive method to populate area uuid and name map for area object"""
         area_mapping = area_mapping or {}
-        area_map[area.uuid] = area.name
+        area_mapping[area.uuid] = area.name
         for child in area.children:
-            area_map = RedisSimulationCommunication._area_uuid_name_map_wrapper(child, area_map)
-        return area_map
+            area_mapping = RedisSimulationCommunication._area_uuid_name_map_wrapper(
+                child, area_mapping)
+        return area_mapping
 
     def _stop_callback(self, payload):
         response = json.loads(payload["data"])
