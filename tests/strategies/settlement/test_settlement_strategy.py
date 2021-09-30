@@ -1,12 +1,29 @@
+"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 import uuid
 from unittest.mock import Mock, MagicMock
 
 import pytest
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.data_classes import Bid, Offer, Trade
 from pendulum import today, duration
 
 from d3a.constants import TIME_ZONE
-from d3a.models.market.market_structures import Bid, Offer, Trade
 from d3a.models.market.two_sided import TwoSidedMarket
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
@@ -45,6 +62,10 @@ class TestSettlementMarketStrategy:
         strategy_fixture.area = Mock()
         strategy_fixture.area.settlement_markets = self.settlement_markets
         strategy_fixture.get_market_from_id = MagicMock(return_value=self.market_mock)
+        strategy_fixture.area.current_tick = 0
+        strategy_fixture.area.config = Mock()
+        strategy_fixture.area.config.ticks_per_slot = 60
+        strategy_fixture.area.config.tick_length = duration(seconds=15)
 
     def teardown_method(self):
         ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = False
@@ -60,7 +81,7 @@ class TestSettlementMarketStrategy:
         self.settlement_strategy.event_market_cycle(strategy_fixture)
         if can_post_settlement_bid:
             self.market_mock.bid.assert_called_once_with(
-                10.0, 1.0, self.area_mock.name, original_bid_price=10.0,
+                10.0, 1.0, self.area_mock.name, original_price=10.0,
                 buyer_origin=self.area_mock.name, buyer_origin_id=self.area_mock.uuid,
                 buyer_id=self.area_mock.uuid, attributes=None, requirements=None
             )
@@ -79,25 +100,30 @@ class TestSettlementMarketStrategy:
             self, strategy_fixture, can_post_settlement_bid, can_post_settlement_offer):
         self._setup_strategy_fixture(
             strategy_fixture, can_post_settlement_bid, can_post_settlement_offer)
-        self.settlement_strategy.event_market_cycle(strategy_fixture)
 
-        strategy_fixture.area.current_tick = 30
+        strategy_fixture.area.current_tick = 0
         strategy_fixture.area.config = Mock()
         strategy_fixture.area.config.ticks_per_slot = 60
         strategy_fixture.area.config.tick_length = duration(seconds=15)
+        self.settlement_strategy.event_market_cycle(strategy_fixture)
+
+        strategy_fixture.area.current_tick = 30
         self.market_mock.bid.reset_mock()
         self.market_mock.offer.reset_mock()
 
+        strategy_fixture.area.current_tick = 19
+        self.settlement_strategy.event_tick(strategy_fixture)
+        strategy_fixture.area.current_tick = 20
         self.settlement_strategy.event_tick(strategy_fixture)
         if can_post_settlement_bid:
             self.market_mock.bid.assert_called_once_with(
-                30.0, 1.0, self.area_mock.name, original_bid_price=30.0,
+                30.0, 1.0, self.area_mock.name, original_price=30.0,
                 buyer_origin=self.area_mock.name, buyer_origin_id=self.area_mock.uuid,
                 buyer_id=self.area_mock.uuid, attributes=None, requirements=None
             )
         if can_post_settlement_offer:
             self.market_mock.offer.assert_called_once_with(
-                35, 1, self.area_mock.name, original_offer_price=35,
+                35, 1, self.area_mock.name, original_price=35,
                 seller_origin=None, seller_origin_id=None, seller_id=self.area_mock.uuid
             )
 

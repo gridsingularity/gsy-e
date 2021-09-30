@@ -21,7 +21,7 @@ from unittest.mock import MagicMock
 from pendulum import duration, today
 
 from d3a.constants import TIME_ZONE
-from d3a.d3a_core.global_objects import ExternalConnectionGlobalStatistics
+from d3a.d3a_core.global_stats import ExternalConnectionGlobalStatistics
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import \
     ExternalConnectionCommunicator
 from d3a.models.area import Area

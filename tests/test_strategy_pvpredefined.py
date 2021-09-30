@@ -15,24 +15,24 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import pytest
-import uuid
-import pathlib
 import os
+import pathlib
+import uuid
 from typing import Dict  # NOQA
 from uuid import uuid4
 
 import pendulum
+import pytest
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig, PROFILE_EXPANSION_DAYS
+from d3a_interface.data_classes import Offer
+from d3a_interface.exceptions import D3ADeviceException
+from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.utils import generate_market_slot_list
 from pendulum import DateTime, duration, today, datetime
 
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig, CN_PROFILE_EXPANSION_DAYS
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.exceptions import D3ADeviceException
-from d3a_interface.utils import generate_market_slot_list
-from d3a.d3a_core.util import d3a_path, change_global_config
 from d3a.constants import TIME_ZONE, TIME_FORMAT
+from d3a.d3a_core.util import (d3a_path, change_global_config)
 from d3a.models.area import DEFAULT_CONFIG
-from d3a.models.market.market_structures import Offer
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 
 
@@ -66,6 +66,10 @@ class FakeArea:
 
     @property
     def current_market(self):
+        return self.test_market
+
+    @property
+    def next_market(self):
         return self.test_market
 
     @property
@@ -111,10 +115,10 @@ class FakeMarket:
         self.offers = {'id': Offer(id='id', time=pendulum.now(), price=10, energy=0.5, seller='A')}
         self._time_slot = TIME
 
-    def offer(self, price, energy, seller, original_offer_price=None, seller_origin=None,
+    def offer(self, price, energy, seller, original_price=None, seller_origin=None,
               seller_origin_id=None, seller_id=None):
         offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy, seller,
-                      original_offer_price, seller_origin=seller_origin,
+                      original_price, seller_origin=seller_origin,
                       seller_origin_id=seller_origin_id, seller_id=seller_id)
         self.created_offers.append(offer)
         self.offers[offer.id] = offer
@@ -282,6 +286,7 @@ def testing_produced_energy_forecast_real_data(pv_test66):
     morning_counts = Counts('morning')
     afternoon_counts = Counts('afternoon')
     evening_counts = Counts('evening')
+
     for (time, power) in pv_test66.state._energy_production_forecast_kWh.items():
         if time < morning_time:
             morning_counts.total += 1
@@ -370,15 +375,16 @@ def test_correct_interpolation_power_profile():
 
 
 def test_correct_time_expansion_read_arbitrary_profile():
+    # TODO: this test needs to move to d3a-interface
     market_maker_rate = 30
     if GlobalConfig.IS_CANARY_NETWORK:
         GlobalConfig.sim_duration = duration(hours=3)
-        expected_last_time_slot = today(tz=TIME_ZONE).add(days=CN_PROFILE_EXPANSION_DAYS-1,
+        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS-1,
                                                           hours=23, minutes=45)
         mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
         assert list(mmr.keys())[-1] == expected_last_time_slot
         GlobalConfig.sim_duration = duration(hours=30)
-        expected_last_time_slot = today(tz=TIME_ZONE).add(days=CN_PROFILE_EXPANSION_DAYS-1,
+        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS-1,
                                                           hours=23, minutes=45)
         mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
         assert list(mmr.keys())[-1] == expected_last_time_slot
@@ -389,12 +395,6 @@ def test_correct_time_expansion_read_arbitrary_profile():
         GlobalConfig.sim_duration = duration(hours=36)
         mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
         assert (list(mmr.keys())[-1] - today(tz=TIME_ZONE)).days == 1
-        GlobalConfig.sim_duration = duration(hours=48)
-        mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
-        assert list(mmr.keys())[-1] == today(tz=TIME_ZONE).add(days=1, hours=23, minutes=45)
-        GlobalConfig.sim_duration = duration(hours=49)
-        mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
-        assert list(mmr.keys())[-1] == today(tz=TIME_ZONE).add(days=2, minutes=45)
 
 
 def test_predefined_pv_constructor_rejects_incorrect_parameters():

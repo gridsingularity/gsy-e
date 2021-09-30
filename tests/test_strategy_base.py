@@ -26,7 +26,7 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.blockchain_interface import NonBlockchainInterface
 from d3a.d3a_core.exceptions import MarketException
-from d3a.models.market.market_structures import Offer, Trade, Bid
+from d3a_interface.data_classes import Offer, Trade, Bid
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.two_sided import TwoSidedMarket
 from d3a.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
@@ -107,10 +107,10 @@ class FakeMarket:
                          seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
                          buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
 
-    def bid(self, price, energy, buyer, original_bid_price=None,
+    def bid(self, price, energy, buyer, original_price=None,
             buyer_origin=None, buyer_origin_id=None, buyer_id=None,
             attributes=None, requirements=None):
-        return Bid(123, pendulum.now(), price, energy, buyer, original_bid_price,
+        return Bid(123, pendulum.now(), price, energy, buyer, original_price,
                    buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id,
                    buyer_id=buyer_id, attributes=attributes, requirements=requirements)
 

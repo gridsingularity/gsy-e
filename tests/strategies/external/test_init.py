@@ -16,21 +16,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
-import unittest
 import uuid
 from collections import deque
 from unittest.mock import MagicMock, Mock
 
 import pytest
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.data_classes import Trade, Offer, Bid
+from d3a_interface.utils import format_datetime
 from parameterized import parameterized
 from pendulum import now, duration, datetime
 
 import d3a.constants
 import d3a.d3a_core.util
-from d3a.d3a_core.singletons import external_global_statistics
+import d3a.models.strategy.external_strategies
+from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.models.area import Area
-from d3a.models.market.market_structures import Trade, Offer, Bid
 from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.external_strategies.load import (LoadHoursExternalStrategy,
@@ -63,7 +64,7 @@ def ext_strategy_fixture(request):
     return strategy
 
 
-class TestExternalMixin(unittest.TestCase):
+class TestExternalMixin:
 
     def _create_and_activate_strategy_area(self, strategy):
         self.config = MagicMock()
@@ -74,45 +75,53 @@ class TestExternalMixin(unittest.TestCase):
                          external_connection_available=True)
         self.parent = Area(name="parent_area", children=[self.area])
         self.parent.activate()
-        external_global_statistics(self.area, self.config.ticks_per_slot)
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
         strategy.connected = True
         market = MagicMock()
         market.time_slot = GlobalConfig.start_date
         self.parent.get_future_market_from_id = lambda _: market
         self.area.get_future_market_from_id = lambda _: market
 
-    def tearDown(self) -> None:
+    def teardown_method(self) -> None:
         ConstSettings.IAASettings.MARKET_TYPE = 1
 
     def test_dispatch_tick_frequency_gets_calculated_correctly(self):
         self.external_strategy = LoadHoursExternalStrategy(100)
         self._create_and_activate_strategy_area(self.external_strategy)
-        d3a.d3a_core.util.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
+        d3a.d3a_core.util.d3a.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
         self.config.ticks_per_slot = 90
-        external_global_statistics(self.area, self.config.ticks_per_slot)
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 18
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 18
         self.config.ticks_per_slot = 10
-        external_global_statistics(self.area, self.config.ticks_per_slot)
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 2
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 2
         self.config.ticks_per_slot = 100
-        external_global_statistics(self.area, self.config.ticks_per_slot)
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 20
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 20
         self.config.ticks_per_slot = 99
-        external_global_statistics(self.area, self.config.ticks_per_slot)
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 19
-        d3a.d3a_core.util.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 50
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 19
+        d3a.d3a_core.util.d3a.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 50
         self.config.ticks_per_slot = 90
-        external_global_statistics(self.area, self.config.ticks_per_slot)
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 45
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 45
         self.config.ticks_per_slot = 10
-        external_global_statistics(self.area, self.config.ticks_per_slot)
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 5
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 5
         self.config.ticks_per_slot = 100
-        external_global_statistics(self.area, self.config.ticks_per_slot)
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 50
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 50
         self.config.ticks_per_slot = 99
-        external_global_statistics(self.area, self.config.ticks_per_slot)
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 49
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 49
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
@@ -120,12 +129,13 @@ class TestExternalMixin(unittest.TestCase):
         [StorageExternalStrategy()]
     ])
     def test_dispatch_event_tick_to_external_aggregator(self, strategy):
-        d3a.d3a_core.util.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
+        d3a.d3a_core.util.d3a.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
         self._create_and_activate_strategy_area(strategy)
         strategy.redis.aggregator.is_controlling_device = lambda _: True
         self.config.ticks_per_slot = 90
         strategy.event_activate()
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 18
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 18
         self.area.current_tick = 1
         strategy._dispatch_event_tick_to_external_agent()
         strategy.redis.aggregator.add_batch_tick_event.assert_not_called()
@@ -162,12 +172,13 @@ class TestExternalMixin(unittest.TestCase):
         [StorageExternalStrategy()]
     ])
     def test_dispatch_event_tick_to_external_agent(self, strategy):
-        d3a.d3a_core.util.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
+        d3a.d3a_core.util.d3a.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
         self._create_and_activate_strategy_area(strategy)
         strategy.redis.aggregator.is_controlling_device = lambda _: False
         self.config.ticks_per_slot = 90
         strategy.event_activate()
-        assert external_global_statistics.external_tick_counter._dispatch_tick_frequency == 18
+        assert global_objects.external_global_stats.\
+            external_tick_counter._dispatch_tick_frequency == 18
         self.area.current_tick = 1
         strategy._dispatch_event_tick_to_external_agent()
         strategy.redis.publish_json.assert_not_called()
@@ -385,9 +396,9 @@ class TestExternalMixin(unittest.TestCase):
         assert self.device.strategy.connected is False
 
         payload = {"data": json.dumps({"transaction_id": None})}
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             self.device.strategy._register(payload)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             self.device.strategy._unregister(payload)
 
     @parameterized.expand([
@@ -424,6 +435,46 @@ class TestExternalMixin(unittest.TestCase):
         assert strategy._connected is False
         assert strategy._use_template_strategy is False
         strategy.state.restore_state.assert_called_once_with(state_dict)
+
+    @pytest.mark.parametrize("strategy", [
+        LoadHoursExternalStrategy(100),
+        PVExternalStrategy(2, capacity_kW=0.16),
+        StorageExternalStrategy()
+    ])
+    def test_get_market_from_cmd_arg_returns_next_market_if_arg_missing(self, strategy):
+        strategy.area = Mock()
+        strategy.area.next_market = Mock()
+        market = strategy._get_market_from_command_argument({})
+        assert market == strategy.area.next_market
+
+    @pytest.mark.parametrize("strategy", [
+        LoadHoursExternalStrategy(100),
+        PVExternalStrategy(2, capacity_kW=0.16),
+        StorageExternalStrategy()
+    ])
+    def test_get_market_from_cmd_arg_returns_spot_market(self, strategy):
+        strategy.area = Mock()
+        strategy.area.next_market = Mock()
+        timeslot = format_datetime(now())
+        market_mock = Mock()
+        strategy.area.get_market = MagicMock(return_value=market_mock)
+        market = strategy._get_market_from_command_argument({"timeslot": timeslot})
+        assert market == market_mock
+
+    @pytest.mark.parametrize("strategy", [
+        LoadHoursExternalStrategy(100),
+        PVExternalStrategy(2, capacity_kW=0.16),
+        StorageExternalStrategy()
+    ])
+    def test_get_market_from_cmd_arg_returns_settlement_market(self, strategy):
+        strategy.area = Mock()
+        strategy.area.next_market = Mock()
+        timeslot = format_datetime(now())
+        market_mock = Mock()
+        strategy.area.get_market = MagicMock(return_value=None)
+        strategy.area.get_settlement_market = MagicMock(return_value=market_mock)
+        market = strategy._get_market_from_command_argument({"timeslot": timeslot})
+        assert market == market_mock
 
 
 class TestForecastRelatedFeatures:
