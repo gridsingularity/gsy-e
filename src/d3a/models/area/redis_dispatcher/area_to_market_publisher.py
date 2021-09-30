@@ -4,6 +4,7 @@ from d3a.d3a_core.exceptions import D3ARedisException
 from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
+from d3a_interface.enums import SpotMarketTypeEnum
 
 
 class AreaToMarketEventPublisher:
@@ -25,7 +26,7 @@ class AreaToMarketEventPublisher:
         self.event_response_uuids.append(response["transaction_uuid"])
 
     def publish_markets_clearing(self):
-        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             return
         for market in self.area._markets.markets.values():
             response_channel = f"{market.id}/CLEAR/RESPONSE"

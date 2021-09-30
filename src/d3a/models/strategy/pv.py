@@ -153,17 +153,20 @@ class PVStrategy(BidEnabledStrategy):
             return
 
         self.offer_update.set_parameters(
-            initial_rate_profile_buffer=initial_rate,
-            final_rate_profile_buffer=final_rate,
-            energy_rate_change_per_update_profile_buffer=energy_rate_change_per_update,
+            initial_rate=initial_rate,
+            final_rate=final_rate,
+            energy_rate_change_per_update=energy_rate_change_per_update,
             fit_to_limit=fit_to_limit,
             update_interval=update_interval
         )
 
-    @staticmethod
-    def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
+    def _validate_rates(self, initial_rate, final_rate, energy_rate_change_per_update,
+                        fit_to_limit):
         # all parameters have to be validated for each time slot here
         for time_slot in initial_rate.keys():
+            if self.area and self.area.current_market \
+                    and time_slot < self.area.current_market.time_slot:
+                continue
             rate_change = None if fit_to_limit else \
                 find_object_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
             PVValidator.validate_rate(
@@ -202,6 +205,7 @@ class PVStrategy(BidEnabledStrategy):
         for market in self.area.all_markets:
             self.offer_update.update(market, self)
         self.offer_update.increment_update_counter_all_markets(self)
+
         self._settlement_market_strategy.event_tick(self)
 
     def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
@@ -285,7 +289,7 @@ class PVStrategy(BidEnabledStrategy):
                         offer_price,
                         offer_energy_kWh,
                         self.owner.name,
-                        original_offer_price=offer_price,
+                        original_price=offer_price,
                         seller_origin=self.owner.name,
                         seller_origin_id=self.owner.uuid,
                         seller_id=self.owner.uuid
@@ -308,6 +312,7 @@ class PVStrategy(BidEnabledStrategy):
                 trade.offer_bid.energy, market.time_slot, self.owner.name)
 
     def event_bid_traded(self, *, market_id, bid_trade):
+        super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
         self._settlement_market_strategy.event_bid_traded(self, market_id, bid_trade)
 
     def _set_alternative_pricing_scheme(self):

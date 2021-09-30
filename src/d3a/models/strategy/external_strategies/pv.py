@@ -166,7 +166,8 @@ class PVExternalMixin(ExternalMixin):
                 market,
                 replace_existing=replace_existing)
 
-            offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
+            offer_arguments = {
+                k: v for k, v in arguments.items() if k not in ["transaction_id", "timeslot"]}
             offer = self.post_offer(
                 market, replace_existing=replace_existing, **offer_arguments)
 
@@ -281,7 +282,7 @@ class PVExternalMixin(ExternalMixin):
         try:
             market = self._get_market_from_command_argument(arguments)
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
-                               for _, v in market.get_offers().items()
+                               for v in market.get_offers().values()
                                if v.seller == self.device.name]
             return {
                 "command": "list_offers", "status": "ready", "offer_list": filtered_offers,
@@ -319,7 +320,7 @@ class PVExternalMixin(ExternalMixin):
 
             offer_arguments = {k: v
                                for k, v in arguments.items()
-                               if k not in ["transaction_id", "type"]}
+                               if k not in ["transaction_id", "type", "timeslot"]}
 
             offer = self.post_offer(
                 market, replace_existing=replace_existing, **offer_arguments)

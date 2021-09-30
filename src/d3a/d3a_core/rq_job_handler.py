@@ -1,20 +1,18 @@
-import logging
 import ast
 import json
+import logging
 import pickle
 from datetime import datetime, date
-
-from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
-from pendulum import duration, instance
 from zlib import decompress
 
-from d3a.models.config import SimulationConfig
-from d3a.d3a_core.simulation import run_simulation
 from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 from d3a_interface.settings_validators import validate_global_settings
-import d3a.constants
-from d3a.d3a_core.util import available_simulation_scenarios, update_advanced_settings
+from pendulum import duration, instance
 
+import d3a.constants
+from d3a.d3a_core.simulation import run_simulation
+from d3a.d3a_core.util import available_simulation_scenarios, update_advanced_settings
+from d3a.models.config import SimulationConfig
 
 log = logging.getLogger()
 
@@ -27,8 +25,8 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
                                   saved_state, job_id):
     logging.getLogger().setLevel(logging.ERROR)
     scenario = decompress_and_decode_queued_strings(scenario)
+    d3a.constants.CONFIGURATION_ID = scenario.pop("configuration_uuid")
     if "collaboration_uuid" in scenario:
-        d3a.constants.COLLABORATION_ID = scenario.pop("collaboration_uuid")
         d3a.constants.EXTERNAL_CONNECTION_WEB = True
         GlobalConfig.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
         d3a.constants.RUN_IN_REALTIME = GlobalConfig.IS_CANARY_NETWORK
@@ -86,25 +84,13 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
 
         config = SimulationConfig(**config_settings)
 
-        spot_market_type = settings.get('spot_market_type', None)
-        if spot_market_type is not None:
-            if spot_market_type == SpotMarketTypeEnum.ONE_SIDED.value:
-                ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
-            if spot_market_type == SpotMarketTypeEnum.TWO_SIDED_PAY_AS_BID.value:
-                ConstSettings.IAASettings.MARKET_TYPE = (
-                    SpotMarketTypeEnum.TWO_SIDED_PAY_AS_BID.value)
-                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = (
-                    BidOfferMatchAlgoEnum.PAY_AS_BID.value)
-            if spot_market_type == SpotMarketTypeEnum.TWO_SIDED_PAY_AS_CLEAR.value:
-                ConstSettings.IAASettings.MARKET_TYPE = (
-                    SpotMarketTypeEnum.TWO_SIDED_PAY_AS_BID.value)
-                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-                    BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
-            if spot_market_type == SpotMarketTypeEnum.TWO_SIDED_EXTERNAL.value:
-                ConstSettings.IAASettings.MARKET_TYPE = (
-                    SpotMarketTypeEnum.TWO_SIDED_PAY_AS_BID.value)
-                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-                    BidOfferMatchAlgoEnum.EXTERNAL.value
+        spot_market_type = settings.get("spot_market_type")
+        bid_offer_match_algo = settings.get("bid_offer_match_algo")
+
+        if spot_market_type:
+            ConstSettings.IAASettings.MARKET_TYPE = spot_market_type
+        if bid_offer_match_algo:
+            ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = bid_offer_match_algo
 
         ConstSettings.SettlementMarketSettings.RELATIVE_STD_FROM_FORECAST_FLOAT = (
             settings.get(
@@ -128,6 +114,8 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
         kwargs = {"no_export": True,
                   "pricing_scheme": 0,
                   "seed": settings.get('random_seed', 0)}
+
+        d3a.constants.CONNECT_TO_PROFILES_DB = True
 
         run_simulation(setup_module_name=scenario_name,
                        simulation_config=config,

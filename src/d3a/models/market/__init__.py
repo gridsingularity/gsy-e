@@ -20,6 +20,7 @@ import uuid
 from logging import getLogger
 from typing import Dict, List, Union  # noqa
 
+from d3a_interface.enums import SpotMarketTypeEnum
 from numpy.random import random
 from collections import namedtuple
 from pendulum import DateTime
@@ -28,11 +29,12 @@ from threading import RLock
 
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.constants import FLOATING_POINT_TOLERANCE, DATE_TIME_FORMAT
-from d3a.models.market.market_structures import Offer, Trade, Bid  # noqa
 from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
+from d3a_interface.data_classes import Offer, Trade, Bid
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a.models.market.market_redis_connection import MarketRedisEventSubscriber, \
-    MarketRedisEventPublisher, TwoSidedMarketRedisEventSubscriber
+from d3a.models.market.market_redis_connection import (
+    MarketRedisEventSubscriber, MarketRedisEventPublisher,
+    TwoSidedMarketRedisEventSubscriber)
 from d3a.models.market.grid_fees.base_model import GridFees
 from d3a.models.market.grid_fees.constant_grid_fees import ConstantGridFees
 log = getLogger(__name__)
@@ -97,9 +99,10 @@ class Market:
         self.current_tick_in_slot = 0
         self.device_registry = DeviceRegistry.REGISTRY
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-            self.redis_api = MarketRedisEventSubscriber(self) \
-                if ConstSettings.IAASettings.MARKET_TYPE == 1 \
-                else TwoSidedMarketRedisEventSubscriber(self)
+            self.redis_api = (
+                MarketRedisEventSubscriber(self)
+                if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
+                else TwoSidedMarketRedisEventSubscriber(self))
         setattr(self, RLOCK_MEMBER_NAME, RLock())
 
     def _create_fee_handler(self, grid_fee_type, grid_fees):

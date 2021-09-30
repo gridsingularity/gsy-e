@@ -18,9 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from logging import getLogger
 from typing import Dict
 
-from d3a import constants
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from pendulum import DateTime
+
+from d3a import constants
 
 log = getLogger(__name__)
 
@@ -112,6 +113,8 @@ class SettlementMarketRotator(DefaultMarketRotator):
     def _is_it_time_to_delete_past_market(current_time_slot: DateTime,
                                           time_slot: DateTime) -> bool:
         """Check if the past market for time_slot is ready to be deleted."""
+        if constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
+            return False
         return (time_slot < current_time_slot.subtract(
             hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS,
             minutes=GlobalConfig.slot_length.total_minutes()))

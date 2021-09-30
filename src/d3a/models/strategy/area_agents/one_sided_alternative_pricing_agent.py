@@ -80,5 +80,5 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
                 energy_per_slot,
                 ConstSettings.IAASettings.AlternativePricing.ALT_PRICING_MARKET_MAKER_NAME,
                 ConstSettings.IAASettings.AlternativePricing.ALT_PRICING_MARKET_MAKER_NAME,
-                original_offer_price=energy_per_slot * energy_rate
+                original_price=energy_per_slot * energy_rate
             )
