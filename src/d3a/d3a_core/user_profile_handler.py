@@ -88,16 +88,17 @@ class ProfileDBConnectionHandler:
                  values as dict values.
 
         """
+        profile_uuid = uuid.UUID(profile_uuid)
         first_datapoint_time = select(
             datapoint for datapoint in self.Profile_Database_ProfileTimeSeries
-            if str(datapoint.profile_uuid) == profile_uuid
+            if datapoint.profile_uuid == profile_uuid
         ).order_by(lambda d: d.time).limit(1)[0].time
 
         from pendulum import duration
 
         datapoints = select(
             datapoint for datapoint in self.Profile_Database_ProfileTimeSeries
-            if str(datapoint.profile_uuid) == profile_uuid
+            if datapoint.profile_uuid == profile_uuid
             and datapoint.time >= first_datapoint_time
             and datapoint.time <= first_datapoint_time + duration(days=7)
         )
