@@ -53,17 +53,14 @@ class RedisSimulationCommunication:
         self._simulation_id = d3a.constants.CONFIGURATION_ID
         self._simulation = simulation
         self._sub_callback_dict = {
-            f"{self._simulation_id}/area-map/": self._area_map_callback
+            f"{self._simulation_id}/area-map/": self._area_map_callback,
+            f"{self._simulation_id}/stop": self._stop_callback,
+            f"{self._simulation_id}/pause": self._pause_callback,
+            f"{self._simulation_id}/resume": self._resume_callback,
+            f"{self._simulation_id}/live-event": self._live_event_callback,
+            f"{self._simulation_id}/bulk-live-event":
+                self._bulk_live_event_callback,
         }
-        if self._simulation_id != "":
-            self._sub_callback_dict.update({
-                self._simulation_id + "/stop": self._stop_callback,
-                self._simulation_id + "/pause": self._pause_callback,
-                self._simulation_id + "/resume": self._resume_callback,
-                self._simulation_id + "/live-event": self._live_event_callback,
-                self._simulation_id + "/bulk-live-event":
-                    self._bulk_live_event_callback,
-            })
         self.result_channel = RESULTS_CHANNEL
 
         try:
