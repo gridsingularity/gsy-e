@@ -139,7 +139,7 @@ class ProfileDBConnectionHandler:
         profile_selection = select(
             datapoint.profile_uuid
             for datapoint in self.Profile_Database_ConfigurationAreaProfileUuids
-            if str(datapoint.configuration_uuid) == d3a.constants.CONFIGURATION_ID)
+            if datapoint.configuration_uuid == uuid.UUID(d3a.constants.CONFIGURATION_ID))
 
         self._profile_uuids = list(profile_selection)
 
