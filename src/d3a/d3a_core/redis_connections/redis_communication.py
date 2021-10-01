@@ -48,20 +48,20 @@ if TYPE_CHECKING:
 
 
 class RedisSimulationCommunication:
-    def __init__(self, simulation, simulation_id, live_events):
+    def __init__(self, simulation, live_events):
         self._live_events = live_events
-        self._simulation_id = simulation_id
         self._simulation = simulation
         self._sub_callback_dict = {
             f"{d3a.constants.CONFIGURATION_ID}/area-map/": self._area_map_callback
         }
-        if simulation_id is not None:
+        if d3a.constants.CONFIGURATION_ID != "":
             self._sub_callback_dict.update({
-                self._simulation_id + "/stop": self._stop_callback,
-                self._simulation_id + "/pause": self._pause_callback,
-                self._simulation_id + "/resume": self._resume_callback,
-                self._simulation_id + "/live-event": self._live_event_callback,
-                self._simulation_id + "/bulk-live-event": self._bulk_live_event_callback,
+                d3a.constants.CONFIGURATION_ID + "/stop": self._stop_callback,
+                d3a.constants.CONFIGURATION_ID + "/pause": self._pause_callback,
+                d3a.constants.CONFIGURATION_ID + "/resume": self._resume_callback,
+                d3a.constants.CONFIGURATION_ID + "/live-event": self._live_event_callback,
+                d3a.constants.CONFIGURATION_ID + "/bulk-live-event":
+                    self._bulk_live_event_callback,
             })
         self.result_channel = RESULTS_CHANNEL
 
@@ -89,7 +89,7 @@ class RedisSimulationCommunication:
 
         response_json = {
             "command": str(command_type),
-            "simulation_id": str(self._simulation_id),
+            "simulation_id": str(d3a.constants.CONFIGURATION_ID),
             "transaction_id": response["transaction_id"],
         }
         if is_successful:
@@ -128,9 +128,9 @@ class RedisSimulationCommunication:
         response = json.loads(payload["data"])
         self._simulation.stop()
         self._generate_redis_response(
-            response, self._simulation_id, self._simulation.is_stopped, "stop"
+            response, d3a.constants.CONFIGURATION_ID, self._simulation.is_stopped, "stop"
         )
-        log.info(f"Simulation with job_id: {self._simulation_id} is stopped.")
+        log.info(f"Simulation with job_id: {d3a.constants.CONFIGURATION_ID} is stopped.")
 
     def _pause_callback(self, payload):
         response = json.loads(payload["data"])
@@ -138,18 +138,18 @@ class RedisSimulationCommunication:
         if not self._simulation.paused:
             self._simulation.toggle_pause()
         self._generate_redis_response(
-            response, self._simulation_id, self._simulation.paused, "pause"
+            response, d3a.constants.CONFIGURATION_ID, self._simulation.paused, "pause"
         )
-        log.info(f"Simulation with job_id: {self._simulation_id} is paused.")
+        log.info(f"Simulation with job_id: {d3a.constants.CONFIGURATION_ID} is paused.")
 
     def _resume_callback(self, payload):
         response = json.loads(payload["data"])
         if self._simulation.paused:
             self._simulation.toggle_pause()
         self._generate_redis_response(
-            response, self._simulation_id, not self._simulation.paused, "resume"
+            response, d3a.constants.CONFIGURATION_ID, not self._simulation.paused, "resume"
         )
-        log.info(f"Simulation with job_id: {self._simulation_id} is resumed.")
+        log.info(f"Simulation with job_id: {d3a.constants.CONFIGURATION_ID} is resumed.")
 
     def _live_event_callback(self, message):
         data = json.loads(message["data"])
@@ -162,7 +162,7 @@ class RedisSimulationCommunication:
             is_successful = False
 
         self._generate_redis_response(
-            data, self._simulation_id, is_successful, 'live-event',
+            data, d3a.constants.CONFIGURATION_ID, is_successful, 'live-event',
             {"activation_time": self._simulation.progress_info.current_slot_str}
         )
 
@@ -178,7 +178,7 @@ class RedisSimulationCommunication:
             is_successful = False
 
         self._generate_redis_response(
-            data, self._simulation_id, is_successful, 'bulk-live-event',
+            data, d3a.constants.CONFIGURATION_ID, is_successful, 'bulk-live-event',
             {"activation_time": self._simulation.progress_info.current_slot_str}
         )
 
@@ -187,12 +187,13 @@ class RedisSimulationCommunication:
             job = get_current_job()
             job.refresh()
             if job.meta.get("terminated"):
-                log.error(f"Redis job {self._simulation_id} received a stop message via the "
-                          f"job.terminated metadata by d3a-web. Stopping the simulation.")
+                log.error(f"Redis job {d3a.constants.CONFIGURATION_ID} received a stop "
+                          f"message via the job.terminated metadata by d3a-web. "
+                          f"Stopping the simulation.")
                 self._simulation.stop()
 
         except NoSuchJobError:
-            raise D3AException(f"Redis job {self._simulation_id} "
+            raise D3AException(f"Redis job {d3a.constants.CONFIGURATION_ID} "
                                f"cannot be found in the Redis job queue. "
                                f"get_current_job failed. Job will de killed.")
 
@@ -200,7 +201,7 @@ class RedisSimulationCommunication:
         self.redis_db.publish(channel, json.dumps(data))
 
     def heartbeat_tick(self):
-        heartbeat_channel = f"{HeartBeat.CHANNEL_NAME}/{self._simulation_id}"
+        heartbeat_channel = f"{HeartBeat.CHANNEL_NAME}/{d3a.constants.CONFIGURATION_ID}"
         data = {"time": int(time.time())}
         self.redis_db.publish(heartbeat_channel, json.dumps(data))
 
