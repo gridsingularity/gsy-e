@@ -186,8 +186,8 @@ class RedisSimulationCommunication:
             job.refresh()
             if job.meta.get("terminated"):
                 log.error(f"Redis job {self._simulation_id} received a stop "
-                          f"message via the job.terminated metadata by d3a-web. "
-                          f"Stopping the simulation.")
+                          "message via the job.terminated metadata by d3a-web. "
+                          "Stopping the simulation.")
                 self._simulation.stop()
 
         except NoSuchJobError:
