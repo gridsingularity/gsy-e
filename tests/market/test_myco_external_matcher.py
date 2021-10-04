@@ -17,18 +17,14 @@ d3a.models.myco_matcher.myco_external_matcher.ResettableCommunicator = MagicMock
 class TestMycoExternalMatcher:
 
     @classmethod
-    def setup_class(cls):
+    def setup_method(cls):
         cls.matcher = MycoExternalMatcher()
         cls.market = TwoSidedMarket(time_slot=now())
-        cls.matcher.markets_mapping = {cls.market.id: cls.market}
+        cls.matcher.area_markets_mapping = {cls.market.id: cls.market}
         cls.redis_connection = d3a.models.myco_matcher.myco_external_matcher.ResettableCommunicator
         assert cls.matcher.simulation_id == d3a.constants.CONFIGURATION_ID
         cls.channel_prefix = f"external-myco/{d3a.constants.CONFIGURATION_ID}/"
         cls.events_channel = f"{cls.channel_prefix}events/"
-
-    def setup_method(self, method):
-        self.matcher.myco_ext_conn.publish_json.reset_mock()
-        self.matcher.markets_mapping = {self.market.id: self.market}
 
     def _populate_market_bids_offers(self):
         self.market.offers = {"id1": Offer("id1", now(), 3, 3, "seller", 3),
@@ -64,11 +60,11 @@ class TestMycoExternalMatcher:
         assert self.matcher.myco_ext_conn.publish_json.call_count == 1
 
     def test_event_market_cycle(self):
-        assert self.matcher.markets_mapping
+        assert self.matcher.area_markets_mapping
         data = {"event": "market_cycle"}
         self.matcher.event_market_cycle()
         # Market cycle event should clear the markets cache
-        assert not self.matcher.markets_mapping
+        assert not self.matcher.area_markets_mapping
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             self.events_channel, data)
 
@@ -117,7 +113,7 @@ class TestMycoExternalMatcher:
         }
         expected_data = {
             "event": "offers_bids_response",
-            "bids_offers": {self.market.id: {"bids": [], "offers": []}}
+            "bids_offers": {"area1": {self.market.time_slot_str: {"bids": [], "offers": []}}}
         }
         self.matcher.update_area_uuid_markets_mapping({"area1": {"markets": [self.market]}})
         self.matcher.publish_offers_bids(payload)
@@ -144,12 +140,14 @@ class TestMycoExternalMatcher:
         records = [
             {
                 "market_id": self.market.id,
+                "time_slot": self.market.time_slot_str,
                 "bids": [self.market.bids["id3"].serializable_dict()],
                 "offers": [self.market.offers["id1"].serializable_dict()],
                 "trade_rate": 1,
                 "selected_energy": 1},
             {
                 "market_id": self.market.id,
+                "time_slot": self.market.time_slot_str,
                 "bids": [self.market.bids["id4"].serializable_dict()],
                 "offers": [self.market.offers["id2"].serializable_dict()],
                 "trade_rate": 1,

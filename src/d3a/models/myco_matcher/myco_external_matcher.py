@@ -48,7 +48,9 @@ class MycoExternalMatcher(MycoMatcherInterface):
         self._channel_prefix = f"external-myco/{self.simulation_id}"
         self._events_channel = f"{self._channel_prefix}/events/"
         self._setup_redis_connection()
-        self.markets_mapping: Dict[str, TwoSidedMarket] = {}  # Dict[market_id: market] mapping
+
+        # Dict[area_id-time_slot_str: market] mapping
+        self.area_markets_mapping: Dict[str, TwoSidedMarket] = {}
 
     def _setup_redis_connection(self):
         self.myco_ext_conn = ResettableCommunicator()
@@ -61,7 +63,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
         """Publish open offers and bids.
 
         Published data are of the following format:
-            {"bids_offers": {"market_id" : {"bids": [], "offers": [] }, filters: {}}}
+        {"bids_offers": {`market_id` : {`time_slot`: {"bids": [], "offers": [] }, filters: {}}}}
         """
         response_data = {"event": ExternalMatcherEventsEnum.OFFERS_BIDS_RESPONSE.value}
         data = json.loads(message.get("data"))
@@ -75,10 +77,11 @@ class MycoExternalMatcher(MycoMatcherInterface):
                 continue
             for market in area_data["markets"]:
                 # Cache the market (needed while matching)
-                self.markets_mapping[market.id] = market
+                self.area_markets_mapping[f"{area_uuid}-{market.time_slot_str}"] = market
                 bids_list, offers_list = self._get_bids_offers(market, filters)
-                market_offers_bids_list_mapping[market.id] = {
-                    "bids": bids_list, "offers": offers_list}
+                market_offers_bids_list_mapping[area_uuid] = {
+                    market.time_slot_str: {"bids": bids_list, "offers": offers_list}
+                }
         self.area_uuid_markets_mapping = {}
         response_data.update({
             "bids_offers": market_offers_bids_list_mapping,
@@ -112,7 +115,8 @@ class MycoExternalMatcher(MycoMatcherInterface):
 
         for recommendation in recommendations:
             try:
-                market = self.markets_mapping.get(recommendation["market_id"])
+                market = self.area_markets_mapping.get(
+                    f"{recommendation['market_id']}-{recommendation['time_slot']}")
                 market.match_recommendations([recommendation])
                 response_data["recommendations"].append(
                     {**recommendation, "status": "Success"})
@@ -150,7 +154,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
     def event_market_cycle(self, **kwargs):
         """Publish the market event to the Myco client and clear finished markets cache.."""
 
-        self.markets_mapping = {}  # clear finished markets
+        self.area_markets_mapping = {}  # clear finished markets
         data = {"event": ExternalMatcherEventsEnum.MARKET.value, **kwargs}
         self.myco_ext_conn.publish_json(self._events_channel, data)
 
@@ -190,9 +194,11 @@ class MycoExternalMatcher(MycoMatcherInterface):
         for recommendation in recommendations:
             if not BidOfferMatch.is_valid_dict(recommendation):
                 raise MycoValidationException(f"BidOfferMatch is not valid {recommendation}")
-            market = self.markets_mapping.get(recommendation.get("market_id"))
+            market = self.area_markets_mapping.get(
+                f"{recommendation.get('market_id')}-{recommendation.get('time_slot')}")
             if market is None:
                 # The market doesn't exist
                 raise MycoValidationException(
-                    f"Market with id {recommendation.get('market_id')} doesn't exist."
-                    f"{recommendation}")
+                    f"Market with id {recommendation.get('market_id')} "
+                    f"and time slot {recommendation.get('time_slot')}"
+                    f"doesn't exist. {recommendation}")
