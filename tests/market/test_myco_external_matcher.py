@@ -20,7 +20,8 @@ class TestMycoExternalMatcher:
     def setup_method(cls):
         cls.matcher = MycoExternalMatcher()
         cls.market = TwoSidedMarket(time_slot=now())
-        cls.matcher.area_markets_mapping = {cls.market.id: cls.market}
+        cls.matcher.area_markets_mapping = {
+            f"Area1-{cls.market.time_slot_str}": cls.market}
         cls.redis_connection = d3a.models.myco_matcher.myco_external_matcher.ResettableCommunicator
         assert cls.matcher.simulation_id == d3a.constants.CONFIGURATION_ID
         cls.channel_prefix = f"external-myco/{d3a.constants.CONFIGURATION_ID}/"
@@ -139,14 +140,14 @@ class TestMycoExternalMatcher:
         self._populate_market_bids_offers()
         records = [
             {
-                "market_id": self.market.id,
+                "market_id": "Area1",
                 "time_slot": self.market.time_slot_str,
                 "bids": [self.market.bids["id3"].serializable_dict()],
                 "offers": [self.market.offers["id1"].serializable_dict()],
                 "trade_rate": 1,
                 "selected_energy": 1},
             {
-                "market_id": self.market.id,
+                "market_id": "Area1",
                 "time_slot": self.market.time_slot_str,
                 "bids": [self.market.bids["id4"].serializable_dict()],
                 "offers": [self.market.offers["id2"].serializable_dict()],
