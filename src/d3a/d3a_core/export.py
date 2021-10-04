@@ -323,8 +323,7 @@ class ExportAndPlot:
                     writer.writerow(labels)
                 for market in past_markets:
                     for trade in market.trades:
-                        row = (market.time_slot,) + trade.csv_values()
-                        writer.writerow(row)
+                        writer.writerow(trade.csv_values())
         except OSError:
             _log.exception("Could not export area trades")
 
