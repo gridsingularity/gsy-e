@@ -17,9 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import json
-import logging
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 from d3a_interface.data_classes import BidOfferMatch
 
@@ -98,41 +97,27 @@ class MycoExternalMatcher(MycoMatcherInterface):
         channel = f"{self._channel_prefix}/recommendations/response/"
         response_data = {
             "event": ExternalMatcherEventsEnum.MATCH.value,
-            "recommendations": [],
             "status": "success"}
         data = json.loads(message.get("data"))
         recommendations = data.get("recommended_matches", [])
-        try:
-            self._validate_recommendations(recommendations)
-        except MycoValidationException as exception:
-            response_data["status"] = "Fail"
-            response_data["message"] = f"Validation Error, matching will be skipped: {exception}"
+
+        response_data.update(
+            MycoExternalMatcherValidator.validate_and_report(self, recommendations))
+        if response_data["status"] != "success":
             self.myco_ext_conn.publish_json(channel, response_data)
             return
-
-        for recommendation in recommendations:
+        for recommendation in response_data["recommendations"]:
             try:
+                if recommendation["status"] != "success":
+                    continue
                 market = self.markets_mapping.get(recommendation["market_id"])
-                market_offers = [
-                    market.offers.get(offer["id"]) for offer in recommendation["offers"]]
-                market_bids = [market.bids.get(bid["id"]) for bid in recommendation["bids"]]
-
-                if not (all(market_offers) and all(market_bids)):
-                    # If not all offers bids exist in the market, skip the current recommendation
-                    raise InvalidBidOfferPairException(
-                        "Not all bids and offers exist in the market.")
-
+                recommendation.pop("status")
                 market.match_recommendations([recommendation])
-                response_data["recommendations"].append(
-                    {**recommendation, "status": "Success"})
+                recommendation["status"] = "success"
             except InvalidBidOfferPairException as exception:
-                response_data["recommendations"].append(
-                    {**recommendation, "status": "Fail",
-                     "message": str(exception)})
-            except Exception:
-                response_data["recommendations"].append(
-                    {**recommendation, "status": "Fail"})
-                logging.exception("Bid offer pair matching failed.")
+                recommendation["status"] = "Fail"
+                recommendation["message"] = str(exception)
+                continue
 
         self.myco_ext_conn.publish_json(channel, response_data)
 
@@ -186,22 +171,69 @@ class MycoExternalMatcher(MycoMatcherInterface):
                 offer.serializable_dict() for offer in offers.values())
         return bids_list, offers_list
 
-    def _validate_recommendations(
-            self, recommendations: List[Dict]) -> None:
-        """Validate a list of BidOfferMatch instances.
 
-        Check for conditions that should terminate the matching process.
-            - Invalid BidOfferMatch structure
-            - Submitting recommendation to an already finished market
-        Raises
-            MycoValidationException: Condition that is supposed to stop the matching process
-        """
+class MycoExternalMatcherValidator:
+    """Class responsible for the validation of external recommendations."""
+
+    # Blocking exceptions are ones that should block the matching process
+    BLOCKING_EXCEPTIONS = (MycoValidationException, )
+
+    @staticmethod
+    def _validate_valid_dict(matcher: MycoExternalMatcher, recommendation: Dict):
+        """Check whether the recommendation dict is valid."""
+        if not BidOfferMatch.is_valid_dict(recommendation):
+            raise MycoValidationException(f"BidOfferMatch is not valid {recommendation}")
+
+    @staticmethod
+    def _validate_market_exists(matcher: MycoExternalMatcher, recommendation: Dict):
+        """Check whether myco matcher is keeping track of the received market id"""
+        market = matcher.markets_mapping.get(recommendation.get("market_id"))
+        if market is None:
+            # The market doesn't exist
+            raise MycoValidationException(
+                f"Market with id {recommendation.get('market_id')} doesn't exist."
+                f"{recommendation}")
+
+    @staticmethod
+    def _validate_orders_exist_in_market(matcher: MycoExternalMatcher, recommendation: Dict):
+        """Check whether all bids/offers exist in the market."""
+
+        market = matcher.markets_mapping.get(recommendation.get("market_id"))
+        market_offers = [
+            market.offers.get(offer["id"]) for offer in recommendation["offers"]]
+        market_bids = [market.bids.get(bid["id"]) for bid in recommendation["bids"]]
+
+        if not (all(market_offers) and all(market_bids)):
+            # If not all offers bids exist in the market, skip the current recommendation
+            raise InvalidBidOfferPairException(
+                "Not all bids and offers exist in the market.")
+
+    @classmethod
+    def _validate(cls, matcher: MycoExternalMatcher, recommendation: Dict):
+        """Call corresponding validation methods."""
+        cls._validate_valid_dict(matcher, recommendation)
+        cls._validate_market_exists(matcher, recommendation)
+        cls._validate_orders_exist_in_market(matcher, recommendation)
+
+    @classmethod
+    def validate_and_report(cls, matcher: MycoExternalMatcher, recommendations: Dict) -> Dict:
+        """Validate recommendations and return a detailed report."""
+
+        response = {"status": "success", "recommendations": []}
         for recommendation in recommendations:
-            if not BidOfferMatch.is_valid_dict(recommendation):
-                raise MycoValidationException(f"BidOfferMatch is not valid {recommendation}")
-            market = self.markets_mapping.get(recommendation.get("market_id"))
-            if market is None:
-                # The market doesn't exist
-                raise MycoValidationException(
-                    f"Market with id {recommendation.get('market_id')} doesn't exist."
-                    f"{recommendation}")
+            try:
+                cls._validate(matcher, recommendation)
+                response["recommendations"].append(
+                    {**recommendation, "status": "success"}
+                )
+            except Exception as exception:
+                if isinstance(exception, cls.BLOCKING_EXCEPTIONS):
+                    response["status"] = "fail"
+                    response[
+                        "message"] = f"Validation Error, matching will be skipped: {exception}"
+                    break
+                else:
+                    response["recommendations"].append(
+                        {**recommendation, "status": "fail", "message": str(exception)})
+                    continue
+        return response

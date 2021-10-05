@@ -1,14 +1,13 @@
 import json
 from unittest.mock import MagicMock, patch
 
-import pytest
 from pendulum import now
 
 import d3a.models.market.market_redis_connection
-from d3a.d3a_core.exceptions import MycoValidationException
 from d3a.models.market import Offer, Bid
 from d3a.models.market.two_sided import TwoSidedMarket
 from d3a.models.myco_matcher import MycoExternalMatcher
+from d3a.models.myco_matcher.myco_external_matcher import MycoExternalMatcherValidator
 
 d3a.models.myco_matcher.myco_external_matcher.BlockingCommunicator = MagicMock
 d3a.models.myco_matcher.myco_external_matcher.ResettableCommunicator = MagicMock
@@ -139,48 +138,83 @@ class TestMycoExternalMatcher:
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
 
-    def test_validate_recommendations(self):
-        self._populate_market_bids_offers()
-        records = [
-            {
-                "market_id": self.market.id,
-                "bids": [self.market.bids["id3"].serializable_dict()],
-                "offers": [self.market.offers["id1"].serializable_dict()],
-                "trade_rate": 1,
-                "selected_energy": 1},
-            {
-                "market_id": self.market.id,
-                "bids": [self.market.bids["id4"].serializable_dict()],
-                "offers": [self.market.offers["id2"].serializable_dict()],
-                "trade_rate": 1,
-                "selected_energy": 1}
-        ]
-        assert self.matcher._validate_recommendations(records) is None
-
-        # If the market does not exist, it should raise an exception
-        for record in records:
-            record["market_id"] = "other id"
-        with pytest.raises(MycoValidationException):
-            self.matcher._validate_recommendations(records)
-
-    @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcher."
-           "_validate_recommendations", MagicMock())
-    def test_match_recommendations(self):
+    @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcherValidator."
+           "validate_and_report")
+    @patch("d3a.models.myco_matcher.myco_external_matcher.TwoSidedMarket."
+           "match_recommendations", return_value=None)
+    def test_match_recommendations(
+            self, mock_market_match_recommendations, mock_validate_and_report):
         channel = f"{self.channel_prefix}recommendations/response/"
         expected_data = {"event": "match", "status": "success", "recommendations": []}
         payload = {"data": json.dumps({})}
         # Empty recommendations list should pass
+        mock_validate_and_report.return_value = {
+            "status": "success", "recommendations": []}
         self.matcher.match_recommendations(payload)
+        assert mock_market_match_recommendations.call_count == 0
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
 
         self.matcher.myco_ext_conn.publish_json.reset_mock()
-        self.matcher._validate_recommendations.side_effect = (
-            MycoValidationException("Invalid Bid Offer Pair"))
+        mock_validate_and_report.return_value = {
+            "status": "fail",
+            "message": "Validation Error, matching will be skipped: Invalid Bid Offer Pair",
+            "recommendations": []}
         self.matcher.match_recommendations(payload)
         expected_data = {
-            "event": "match", "status": "Fail",
+            "event": "match", "status": "fail",
             "recommendations": [],
             "message": "Validation Error, matching will be skipped: Invalid Bid Offer Pair"}
+        assert mock_market_match_recommendations.call_count == 0
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
+
+        self.matcher.myco_ext_conn.publish_json.reset_mock()
+        mock_validate_and_report.return_value = {
+            "status": "success",
+            "recommendations": [{"status": "success", "market_id": self.market.id}]}
+        self.matcher.match_recommendations(payload)
+        expected_data = {
+            "event": "match", "status": "success",
+            "recommendations": [{"market_id": self.market.id, "status": "success"}]}
+        assert mock_market_match_recommendations.call_count == 1
+        self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
+            channel, expected_data)
+
+
+class TestMycoExternalMatcherValidator:
+    # @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
+    @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcherValidator."
+           "_validate")
+    def test_validate_and_report(self, mock_validate):
+        recommendations = []
+        expected_data = {"status": "success", "recommendations": []}
+        assert MycoExternalMatcherValidator.validate_and_report(
+            None, recommendations) == expected_data
+
+        recommendations = [{
+                "market_id": "market",
+                "bids": [],
+                "offers": [],
+                "trade_rate": 1,
+                "selected_energy": 1}]
+        mock_validate.side_effect = MycoExternalMatcherValidator.BLOCKING_EXCEPTIONS[0]
+        expected_data = {"status": "fail",
+                         "message": "Validation Error, matching will be skipped: ",
+                         "recommendations": []}
+        assert MycoExternalMatcherValidator.validate_and_report(
+            None, recommendations) == expected_data
+
+        mock_validate.side_effect = Exception
+        expected_data = {"status": "success",
+                         "recommendations": [{
+                             "market_id": "market",
+                             "bids": [],
+                             "offers": [],
+                             "trade_rate": 1,
+                             "selected_energy": 1,
+                             "status": "fail",
+                             "message": ""
+                            }]}
+        assert MycoExternalMatcherValidator.validate_and_report(
+            None, recommendations) == expected_data
