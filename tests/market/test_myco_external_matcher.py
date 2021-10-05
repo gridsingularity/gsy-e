@@ -1,9 +1,11 @@
 import json
 from unittest.mock import MagicMock, patch
 
+import pytest
 from pendulum import now
 
 import d3a.models.market.market_redis_connection
+from d3a.d3a_core.exceptions import MycoValidationException, InvalidBidOfferPairException
 from d3a.models.market import Offer, Bid
 from d3a.models.market.two_sided import TwoSidedMarket
 from d3a.models.myco_matcher import MycoExternalMatcher
@@ -183,7 +185,6 @@ class TestMycoExternalMatcher:
 
 
 class TestMycoExternalMatcherValidator:
-    # @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
     @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcherValidator."
            "_validate")
     def test_validate_and_report(self, mock_validate):
@@ -218,3 +219,42 @@ class TestMycoExternalMatcherValidator:
                             }]}
         assert MycoExternalMatcherValidator.validate_and_report(
             None, recommendations) == expected_data
+
+    @patch("d3a.models.myco_matcher.myco_external_matcher.BidOfferMatch.is_valid_dict")
+    def test_validate_valid_dict(self, mock_is_valid_dict):
+        mock_is_valid_dict.return_value = True
+        assert MycoExternalMatcherValidator.validate_valid_dict(None, {}) is None
+
+        mock_is_valid_dict.return_value = False
+        with pytest.raises(MycoValidationException):
+            MycoExternalMatcherValidator.validate_valid_dict(None, {})
+
+    @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
+    def test_validate_market_exists(self, mock_myco_external_matcher):
+        mock_myco_external_matcher.markets_mapping = {"market": MagicMock()}
+        recommendation = {"market_id": "market"}
+        assert MycoExternalMatcherValidator.validate_market_exists(
+            mock_myco_external_matcher, recommendation) is None
+
+        mock_myco_external_matcher.markets_mapping = {}
+        with pytest.raises(MycoValidationException):
+            MycoExternalMatcherValidator.validate_market_exists(
+                mock_myco_external_matcher, recommendation)
+
+    @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
+    def test_validate_orders_exist_in_market(self, mock_myco_external_matcher):
+        market = MagicMock()
+        market.offers = {"offer1": MagicMock()}
+        market.bids = {"bid1": MagicMock()}
+        mock_myco_external_matcher.markets_mapping = {"market": market}
+        recommendation = {
+            "market_id": "market",
+            "offers": [{"id": "offer1"}], "bids": [{"id": "bid1"}]}
+        assert MycoExternalMatcherValidator.validate_orders_exist_in_market(
+            mock_myco_external_matcher, recommendation) is None
+
+        recommendation["offers"].append({"id": "offer2"})
+        with pytest.raises(InvalidBidOfferPairException):
+            MycoExternalMatcherValidator.validate_orders_exist_in_market(
+                mock_myco_external_matcher, recommendation
+            )
