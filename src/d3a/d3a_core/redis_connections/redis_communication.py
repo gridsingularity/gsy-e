@@ -48,12 +48,13 @@ if TYPE_CHECKING:
 
 
 class RedisSimulationCommunication:
-    def __init__(self, simulation, live_events):
+    def __init__(self, simulation, simulation_id, live_events):
         self._live_events = live_events
-        self._simulation_id = d3a.constants.CONFIGURATION_ID
+        self._simulation_id = simulation_id if simulation_id is not None else ""
+        self._configuration_id = d3a.constants.CONFIGURATION_ID
         self._simulation = simulation
         self._sub_callback_dict = {
-            f"{self._simulation_id}/area-map/": self._area_map_callback,
+            f"{self._configuration_id}/area-map/": self._area_map_callback,
             f"{self._simulation_id}/stop": self._stop_callback,
             f"{self._simulation_id}/pause": self._pause_callback,
             f"{self._simulation_id}/resume": self._resume_callback,

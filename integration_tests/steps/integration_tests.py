@@ -508,8 +508,6 @@ def test_simulation_config_parameters(context, cloud_coverage):
 
 @when('a simulation is created for scenario {scenario}')
 def create_sim_object(context, scenario):
-    import d3a
-    d3a.constants.CONFIGURATION_ID = "1234"
     simulation_config = SimulationConfig(duration(hours=int(12)),
                                          duration(minutes=int(60)),
                                          duration(seconds=int(60)),

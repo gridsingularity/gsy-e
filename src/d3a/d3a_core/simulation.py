@@ -104,7 +104,7 @@ class Simulation:
 
         self.live_events = LiveEvents(self.simulation_config)
         self.kafka_connection = kafka_connection_factory()
-        self.redis_connection = RedisSimulationCommunication(self, self.live_events)
+        self.redis_connection = RedisSimulationCommunication(self, redis_job_id, self.live_events)
         self._simulation_id = redis_job_id
         self._started_from_cli = redis_job_id is None
 
