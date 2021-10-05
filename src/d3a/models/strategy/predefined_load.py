@@ -104,6 +104,10 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         self._read_or_rotate_profiles()
         super().event_activate_energy()
 
+    def event_market_cycle(self):
+        self._read_or_rotate_profiles()
+        super().event_market_cycle()
+
     def _update_energy_requirement_future_markets(self):
         """
         Update required energy values for each market slot.
