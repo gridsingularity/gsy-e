@@ -16,13 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import os
-from datetime import datetime
-from typing import Dict
 import uuid
+from datetime import datetime, timezone
+from typing import Dict
 
-import d3a.constants
+import pendulum
 import pytz
-from d3a.d3a_core.util import should_read_profile_from_db
 from d3a_interface.constants_limits import GlobalConfig, TIME_ZONE
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import generate_market_slot_list
@@ -30,6 +29,9 @@ from pendulum import DateTime
 from pendulum import instance
 from pony.orm import Database, Required, db_session, select
 from pony.orm.core import Query
+
+import d3a.constants
+from d3a.d3a_core.util import should_read_profile_from_db
 
 
 class ProfileDBConnectionHandler:
@@ -58,12 +60,17 @@ class ProfileDBConnectionHandler:
     def convert_pendulum_to_datetime(time_stamp):
         return datetime.fromtimestamp(time_stamp.timestamp(), tz=pytz.UTC)
 
+    @staticmethod
+    def strip_timezone_and_create_pendulum_instance_from_datetime(
+            time_stamp: datetime) -> pendulum.DateTime:
+        return instance(time_stamp.astimezone(timezone.utc), pytz.UTC)
+
     def connect(self):
         """ Establishes a connection to the d3a-profiles DB
         Requires a postgres DB server running
 
         """
-        self._db.bind(provider='postgres',
+        self._db.bind(provider="postgres",
                       user=os.environ.get("PROFILE_DB_USER", "d3a_web"),
                       password=os.environ.get("PROFILE_DB_PASSWORD", "d3a_web"),
                       host=os.environ.get("PROFILE_DB_HOST", "localhost"),
@@ -94,20 +101,20 @@ class ProfileDBConnectionHandler:
             if datapoint.profile_uuid == profile_uuid
         ).order_by(lambda d: d.time).limit(1)[0].time
 
-        from pendulum import duration
-
         datapoints = select(
             datapoint for datapoint in self.Profile_Database_ProfileTimeSeries
             if datapoint.profile_uuid == profile_uuid
             and datapoint.time >= first_datapoint_time
-            and datapoint.time <= first_datapoint_time + duration(days=7)
+            and datapoint.time <= first_datapoint_time + pendulum.duration(days=7)
         )
 
-        datapoint_dict = {instance(datapoint.time, TIME_ZONE).set(
-            year=current_timestamp.year,
-            month=current_timestamp.month,
-            day=current_timestamp.day
-        ): datapoint.value for datapoint in datapoints}
+        datapoint_dict = {
+            self.strip_timezone_and_create_pendulum_instance_from_datetime(datapoint.time).set(
+                year=current_timestamp.year,
+                month=current_timestamp.month,
+                day=current_timestamp.day
+            ): datapoint.value for datapoint in datapoints
+        }
 
         self._buffered_times = list(datapoint_dict.keys())
 
@@ -154,6 +161,7 @@ class ProfileDBConnectionHandler:
         start_time, end_time = self._get_start_end_time(current_timestamp)
         query_ret_val = self._get_profiles_from_db(self.convert_pendulum_to_datetime(start_time),
                                                    self.convert_pendulum_to_datetime(end_time))
+
         for profile_uuid in self._profile_uuids:
             self._user_profiles[profile_uuid] = \
                 {instance(data_point.time, TIME_ZONE): data_point.value
@@ -170,7 +178,8 @@ class ProfileDBConnectionHandler:
         else:
             self._buffered_times = []
 
-    def _get_start_end_time(self, current_timestamp: DateTime) -> (DateTime, DateTime):
+    @staticmethod
+    def _get_start_end_time(current_timestamp: DateTime) -> (DateTime, DateTime):
         """ Gets the start and end time for the to be buffered profile.
         It uses generate_market_slot_list that takes into account the PROFILE_EXPANSION_DAYS
 
@@ -243,6 +252,21 @@ class ProfilesHandler:
         if self.db:
             self.db.buffer_profiles_from_db(timestamp)
 
+    def _read_new_datapoints_from_buffer_or_rotate_profile(
+            self, profile, profile_uuid, profile_type):
+        if should_read_profile_from_db(profile_uuid):
+            db_profile = self.db.get_profile_from_db_buffer(profile_uuid)
+            if not db_profile:
+                db_profile = self.db.get_first_week_from_profile(
+                    profile_uuid, self.current_timestamp)
+            return read_arbitrary_profile(profile_type,
+                                          db_profile,
+                                          current_timestamp=min(db_profile.keys()))
+
+        return read_arbitrary_profile(profile_type,
+                                      profile,
+                                      current_timestamp=self.current_timestamp)
+
     def rotate_profile(self, profile_type: InputProfileTypes,
                        profile,
                        profile_uuid: str = None) -> Dict[DateTime, float]:
@@ -262,22 +286,11 @@ class ProfilesHandler:
         if self.should_create_profile(profile):
             return read_arbitrary_profile(profile_type,
                                           profile, current_timestamp=self.current_timestamp)
-        elif self.time_to_rotate_profile(profile):
-            if should_read_profile_from_db(profile_uuid):
-                db_profile = self.db.get_profile_from_db_buffer(profile_uuid)
-                if not db_profile:
-                    db_profile = self.db.get_first_week_from_profile(
-                        profile_uuid, self.current_timestamp)
-                return read_arbitrary_profile(profile_type,
-                                              db_profile,
-                                              current_timestamp=min(db_profile.keys()))
-            else:
-                return read_arbitrary_profile(profile_type,
-                                              profile,
-                                              current_timestamp=self.current_timestamp)
+        if self.time_to_rotate_profile(profile):
+            return self._read_new_datapoints_from_buffer_or_rotate_profile(
+                profile, profile_uuid, profile_type)
 
-        else:
-            return profile
+        return profile
 
     def time_to_rotate_profile(self, profile):
         """ Checks if current time_stamp is part of the populated profile"""

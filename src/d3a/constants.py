@@ -57,7 +57,7 @@ CN_PROFILE_EXPANSION_DAYS = 7
 
 RUN_IN_REALTIME = False
 
-CONNECT_TO_PROFILES_DB = False
+CONNECT_TO_PROFILES_DB = True
 
 
 class SettlementTemplateStrategiesConstants:
