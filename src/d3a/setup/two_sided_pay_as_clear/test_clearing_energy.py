@@ -34,36 +34,36 @@ def get_setup(config):
     ConstSettings.IAASettings.MIN_BID_AGE = 0
 
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load1', strategy=LoadHoursStrategy(
+                    Area("H1 General Load1", strategy=LoadHoursStrategy(
                         avg_power_W=100, hrs_per_day=24, hrs_of_day=list(range(24)),
                         initial_buying_rate=28.8, fit_to_limit=False,
                         energy_rate_increase_per_update=0),
                          ),
-                    Area('H1 General Load2', strategy=LoadHoursStrategy(
+                    Area("H1 General Load2", strategy=LoadHoursStrategy(
                         avg_power_W=100, hrs_per_day=24, hrs_of_day=list(range(24)),
                         initial_buying_rate=18.8, fit_to_limit=False,
                         energy_rate_increase_per_update=0),
                          ),
-                    Area('H1 General Load3', strategy=LoadHoursStrategy(
+                    Area("H1 General Load3", strategy=LoadHoursStrategy(
                         avg_power_W=100, hrs_per_day=24, hrs_of_day=list(range(24)),
                         initial_buying_rate=8.8, fit_to_limit=False,
                         energy_rate_increase_per_update=0),
                          ),
-                    Area('H1 CEP1',
+                    Area("H1 CEP1",
                          strategy=FinitePowerPlant(energy_rate=5.1, max_available_power_kW=0.1),
                          ),
-                    Area('H1 CEP2',
+                    Area("H1 CEP2",
                          strategy=FinitePowerPlant(energy_rate=15.5, max_available_power_kW=0.1),
                          ),
-                    Area('H1 CEP3',
+                    Area("H1 CEP3",
                          strategy=FinitePowerPlant(energy_rate=25.001, max_available_power_kW=0.1),
                          ),
-                    Area('H1 CEP4',
+                    Area("H1 CEP4",
                          strategy=FinitePowerPlant(energy_rate=28.001, max_available_power_kW=0.1),
                          ),
                 ]

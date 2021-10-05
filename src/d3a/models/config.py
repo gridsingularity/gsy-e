@@ -36,7 +36,7 @@ class SimulationConfig:
                  market_count: int, cloud_coverage: int,
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  pv_user_profile=None, start_date: DateTime = today(tz=TIME_ZONE),
-                 max_panel_power_W=None, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
+                 capacity_kW=None, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
                  external_connection_enabled=True, aggregator_device_mapping=None):
 
         self.sim_duration = sim_duration
@@ -66,9 +66,7 @@ class SimulationConfig:
         self.read_pv_user_profile(pv_user_profile)
         self.read_market_maker_rate(market_maker_rate)
 
-        max_panel_power_W = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W \
-            if max_panel_power_W is None else max_panel_power_W
-        self.max_panel_power_W = max_panel_power_W
+        self.capacity_kW = capacity_kW or ConstSettings.PVSettings.DEFAULT_CAPACITY_KW
         self.external_connection_enabled = external_connection_enabled
         self.external_redis_communicator = ExternalConnectionCommunicator(
             external_connection_enabled)
@@ -82,7 +80,7 @@ class SimulationConfig:
 
     def as_dict(self):
         fields = {'sim_duration', 'slot_length', 'tick_length', 'market_count', 'ticks_per_slot',
-                  'total_ticks', 'cloud_coverage', 'max_panel_power_W', 'grid_fee_type',
+                  'total_ticks', 'cloud_coverage', 'capacity_kW', 'grid_fee_type',
                   'external_connection_enabled'}
         return {
             k: format_interval(v) if isinstance(v, Duration) else v
@@ -91,15 +89,15 @@ class SimulationConfig:
         }
 
     def update_config_parameters(self, *, cloud_coverage=None, pv_user_profile=None,
-                                 market_maker_rate=None, max_panel_power_W=None):
+                                 market_maker_rate=None, capacity_kW=None):
         if cloud_coverage is not None:
             self.cloud_coverage = cloud_coverage
         if pv_user_profile is not None:
             self.read_pv_user_profile(pv_user_profile)
         if market_maker_rate is not None:
             self.read_market_maker_rate(market_maker_rate)
-        if max_panel_power_W is not None:
-            self.max_panel_power_W = max_panel_power_W
+        if capacity_kW is not None:
+            self.capacity_kW = capacity_kW
 
     def read_pv_user_profile(self, pv_user_profile=None):
         self.pv_user_profile = None \

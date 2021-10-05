@@ -31,18 +31,18 @@ fully charged in one slot bypassing the max abs battery power
 def get_setup(config):
     config.read_market_maker_rate(30)
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
+                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
                                                                            range(0, 24)),
                                                                        final_buying_rate=25)
                          ),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50,
+                    Area("H1 Storage1", strategy=StorageStrategy(initial_soc=50,
                                                                  fit_to_limit=False,
                                                                  energy_rate_increase_per_update=7,
                                                                  energy_rate_decrease_per_update=7,
@@ -55,7 +55,7 @@ def get_setup(config):
 
                 ]
             ),
-            Area('Commercial Energy Producer',
+            Area("Commercial Energy Producer",
                  strategy=CommercialStrategy(energy_rate=15)
                  ),
         ],

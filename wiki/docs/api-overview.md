@@ -49,7 +49,7 @@ To connect the API to simulations, the user needs to register and be approved fo
 To use the API locally, your script interacts with the simulation using a local Redis instance. To start the redis instance, open a new terminal and run the following command :
 
 ```
-redis-server /usr/local/etc/redis.conf`
+redis-server /usr/local/etc/redis.conf
 ```
 
 ###Open external connection to API for Assets
@@ -158,7 +158,7 @@ The API script has an *automatic* connection method to manage energy assets. If 
 The API client is launched with a **cli command**. To launch the agent, you need to open a new terminal and activate d3a-api-client environment
 
 ```
-Workon d3a-api-client
+workon d3a-api-env
 ```
 
 And go to the d3a-api-client repository

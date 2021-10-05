@@ -23,22 +23,22 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         children=[
             Area(
-                'House 1',
+                "House 1",
                 children=[
-                    Area('H2 PV', strategy=PVUserProfileStrategy(panel_count=1,
+                    Area("H2 PV", strategy=PVUserProfileStrategy(panel_count=1,
                                                                  initial_selling_rate=80,
                                                                  power_profile={0: 200,
                                                                                 12: 400,
                                                                                 19: 0}),
-                         event_list=[StrategyEvents(14, {'power_profile': {0: 200,
+                         event_list=[StrategyEvents(14, {"power_profile": {0: 200,
                                                                            14: 600,
                                                                            19: 0}})])
                 ]
             ),
-            Area('Grid Load', strategy=LoadHoursStrategy(avg_power_W=10000,
+            Area("Grid Load", strategy=LoadHoursStrategy(avg_power_W=10000,
                                                          hrs_per_day=24,
                                                          hrs_of_day=list(
                                                              range(0, 24)),

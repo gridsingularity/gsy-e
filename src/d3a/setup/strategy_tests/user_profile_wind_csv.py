@@ -31,19 +31,19 @@ user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=500,
+                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=500,
                                                                        hrs_per_day=12,
                                                                        hrs_of_day=list(
                                                                            range(7, 20)))
                          ),
                 ]
             ),
-            Area('Wind Turbine', strategy=WindUserProfileStrategy(power_profile=user_profile_path)
+            Area("Wind Turbine", strategy=WindUserProfileStrategy(power_profile=user_profile_path)
                  ),
         ],
         config=config

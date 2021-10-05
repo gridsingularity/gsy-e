@@ -26,13 +26,13 @@ def get_setup(config):
     ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR = True
 
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
 
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=100,
+                    Area("H1 Storage1", strategy=StorageStrategy(initial_soc=100,
                                                                  min_allowed_soc=10,
                                                                  battery_capacity_kWh=1.2,
                                                                  max_abs_battery_power_kW=5,
@@ -45,7 +45,7 @@ def get_setup(config):
                          ),
                 ]
             ),
-            Area('Cell Tower',
+            Area("Cell Tower",
                  strategy=LoadHoursStrategy(avg_power_W=100,
                                             hrs_per_day=24,
                                             hrs_of_day=list(range(0, 24)),

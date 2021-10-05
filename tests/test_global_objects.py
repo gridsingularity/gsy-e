@@ -15,18 +15,20 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from pendulum import duration, today
-from unittest.mock import MagicMock
 import unittest
-from d3a.models.area import Area
-from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
-from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
-from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
-from d3a.d3a_core.global_objects import ExternalConnectionGlobalStatistics
-from d3a.models.config import SimulationConfig
+from unittest.mock import MagicMock
+
+from pendulum import duration, today
+
 from d3a.constants import TIME_ZONE
+from d3a.d3a_core.global_stats import ExternalConnectionGlobalStatistics
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import \
     ExternalConnectionCommunicator
+from d3a.models.area import Area
+from d3a.models.config import SimulationConfig
+from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
+from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
+from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
 
 
 class TestGlobalObjects(unittest.TestCase):
@@ -42,7 +44,7 @@ class TestGlobalObjects(unittest.TestCase):
         self.config.grid_fee_type = 1
         self.config.end_date = self.config.start_date + self.config.sim_duration
         self.config.market_count = 1
-        self.config.max_panel_power_W = 1000
+        self.config.capacity_kW = 1
         self.config.external_redis_communicator = \
             MagicMock(spec=ExternalConnectionCommunicator(True))
         self.storage = Area("Storage", strategy=StorageExternalStrategy(), config=self.config,

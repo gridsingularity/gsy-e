@@ -42,25 +42,25 @@ user_profile_str = "{'00:00': 10, '06:00': 15, '12:00': 20, '18:00': 25, '21:00'
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load 1',
+                    Area("H1 General Load 1",
                          strategy=LoadHoursStrategy(avg_power_W=200, hrs_of_day=list(range(0, 24)),
                                                     update_interval=duration(minutes=30),
                                                     initial_buying_rate=user_profile_int,
                                                     final_buying_rate=35)
                          ),
-                    Area('H1 General Load 2',
+                    Area("H1 General Load 2",
                          strategy=LoadHoursStrategy(avg_power_W=200, hrs_of_day=list(range(0, 24)),
                                                     initial_buying_rate=user_profile_str,
                                                     final_buying_rate=35)
                          ),
                 ]
             ),
-            Area('Commercial Energy Producer',
+            Area("Commercial Energy Producer",
                  strategy=CommercialStrategy(energy_rate=9)
                  ),
         ],

@@ -25,20 +25,18 @@ import tty
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 
-import pendulum
 from click.types import ParamType
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.constants_limits import GlobalConfig, RangeLimit
+from d3a_interface.constants_limits import GlobalConfig, RangeLimit, ConstSettings
 from d3a_interface.enums import BidOfferMatchAlgoEnum
 from d3a_interface.exceptions import D3AException
 from d3a_interface.utils import iterate_over_all_modules, str_to_pendulum_datetime, \
     format_datetime, find_object_of_same_weekday_and_time
-from pendulum import duration, from_format
+from pendulum import duration, from_format, instance, DateTime
 from rex import rex
 
+import d3a
 import d3a.constants
 from d3a import setup as d3a_setup
-from d3a.constants import DATE_FORMAT, DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 
 d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
@@ -94,14 +92,14 @@ class DateType(ParamType):
     name = 'date'
 
     def __init__(self, type):
-        if type == DATE_FORMAT:
-            self.allowed_formats = DATE_FORMAT
+        if type == d3a.constants.DATE_FORMAT:
+            self.allowed_formats = d3a.constants.DATE_FORMAT
         else:
-            raise ValueError(f"Invalid type. Choices: {DATE_FORMAT} ")
+            raise ValueError(f"Invalid type. Choices: {d3a.constants.DATE_FORMAT} ")
 
     def convert(self, value, param, ctx):
         try:
-            return from_format(value, DATE_FORMAT)
+            return from_format(value, d3a.constants.DATE_FORMAT)
         except ValueError:
             self.fail(
                 "'{}' is not a valid date. Allowed formats: {}".format(
@@ -164,12 +162,12 @@ def make_iaa_name(owner):
     return f"IAA {owner.name}"
 
 
-def make_iaa_name_from_dict(owner):
-    return f"IAA {owner['name']}"
-
-
 def make_ba_name(owner):
     return f"BA {owner.name}"
+
+
+def make_sa_name(owner):
+    return f"SA {owner.name}"
 
 
 def area_name_from_area_or_iaa_name(name):
@@ -407,7 +405,7 @@ def export_default_settings_to_json_file():
             "tick_length": f"{GlobalConfig.TICK_LENGTH_S}s",
             "market_count": GlobalConfig.MARKET_COUNT,
             "cloud_coverage": GlobalConfig.CLOUD_COVERAGE,
-            "start_date": pendulum.instance(GlobalConfig.start_date).format(DATE_FORMAT),
+            "start_date": instance(GlobalConfig.start_date).format(d3a.constants.DATE_FORMAT),
     }
     all_settings = {"basic_settings": base_settings, "advanced_settings": constsettings_to_dict()}
     settings_filename = os.path.join(d3a_path, "setup", "d3a-settings.json")
@@ -459,11 +457,15 @@ class ExternalTickCounter:
     def _dispatch_tick_frequency(self) -> int:
         return int(
             self.ticks_per_slot *
-            (DISPATCH_EVENT_TICK_FREQUENCY_PERCENT / 100)
+            (d3a.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT / 100)
         )
 
     def is_it_time_for_external_tick(self, current_tick_in_slot) -> bool:
         return current_tick_in_slot % self._dispatch_tick_frequency == 0
+
+
+def should_read_profile_from_db(profile_uuid):
+    return profile_uuid is not None and d3a.constants.CONNECT_TO_PROFILES_DB
 
 
 def is_external_matching_enabled():
@@ -472,3 +474,17 @@ def is_external_matching_enabled():
     """
     return (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
             BidOfferMatchAlgoEnum.EXTERNAL.value)
+
+
+class StrategyProfileConfigurationException(Exception):
+    """Exception raised when neither a profile nor a profile_uuid are provided for a strategy."""
+    pass
+
+
+def is_time_slot_in_past_markets(time_slot: DateTime, current_time_slot: DateTime):
+    """Checks if the time_slot should be in the area.past_markets."""
+    if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
+        return (time_slot < current_time_slot.subtract(
+            hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
+    else:
+        return time_slot < current_time_slot

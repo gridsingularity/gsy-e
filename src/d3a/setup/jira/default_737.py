@@ -28,9 +28,9 @@ electrolizer_profile_file = os.path.join(d3a_path, "resources",
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
-            Area('Electrolyzer', strategy=ElectrolyzerStrategy(
+            Area("Electrolyzer", strategy=ElectrolyzerStrategy(
                                           discharge_profile=electrolizer_profile_file,
                                           conversion_factor_kg_to_kWh=50,
                                           reservoir_capacity_kg=56.0,
@@ -38,7 +38,7 @@ def get_setup(config):
                                           production_rate_kg_h=2.8
                     )),
 
-            Area('PV', strategy=PVPredefinedStrategy(panel_count=1)),
+            Area("PV", strategy=PVPredefinedStrategy(panel_count=1)),
 
             Area("Commercial Energy Producer", strategy=CommercialStrategy(),
                  )

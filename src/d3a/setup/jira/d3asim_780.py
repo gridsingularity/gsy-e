@@ -27,18 +27,18 @@ discharge_path = os.path.join(d3a_path, "resources/Electrolyzer_Discharge_Profil
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 Electrolyser',
+                    Area("H1 Electrolyser",
                          strategy=ElectrolyzerStrategy(discharge_profile=discharge_path,
                                                        production_rate_kg_h=4.0)
                          ),
                 ]
             ),
-            Area('Commercial Energy Producer',
+            Area("Commercial Energy Producer",
                  strategy=CommercialStrategy(energy_rate=20)
                  ),
 

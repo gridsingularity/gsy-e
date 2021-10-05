@@ -1,6 +1,8 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
 from pendulum import now
-from unittest.mock import MagicMock, patch
+
 from d3a.models.market import Bid, Offer
 from d3a.models.market.market_validators import (
     EnergyTypeRequirement,

@@ -1,7 +1,8 @@
-import os
+import platform
+
 from setuptools import find_packages, setup
 
-d3a_interface_branch = os.environ.get("BRANCH", "master")
+d3a_interface_branch = "master"
 
 try:
     with open("requirements/dev.txt") as req:
@@ -17,8 +18,13 @@ except OSError:
 with open("README.rst", "r") as readme:
     README = readme.read()
 
+if platform.python_implementation() == "PyPy":
+    REQUIREMENTS.append("psycopg2cffi==2.9.0")
+else:
+    REQUIREMENTS.append("psycopg2==2.9.1")
+
 # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 setup(
     name="d3a",

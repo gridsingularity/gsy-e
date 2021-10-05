@@ -33,7 +33,7 @@ in TwoSidedPayAsClearEngine._exhaust_offer_for_selected_bids is called before fi
 as part of D3ASIM-1525.
 """
 
-load_profile_path = os.path.join(d3a_path, 'resources', 'SAM_MF2_Summer.csv')
+load_profile_path = os.path.join(d3a_path, "resources", "SAM_MF2_Summer.csv")
 
 house1_pv_production = {
     0: 0,
@@ -68,47 +68,47 @@ def get_setup(config):
     ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
         BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
     area = Area(
-            'Grid',
+            "Grid",
             [
                     Area(
-                            'House 1',
+                            "House 1",
                             [
-                                    Area('H1 PV', strategy=PVUserProfileStrategy(
+                                    Area("H1 PV", strategy=PVUserProfileStrategy(
                                                 power_profile=house1_pv_production)
                                          ),
-                                    Area('H1 General Load', strategy=DefinedLoadStrategy(
+                                    Area("H1 General Load", strategy=DefinedLoadStrategy(
                                         daily_load_profile=load_profile_path,
                                         final_buying_rate=28)
                                          ),
                              ]),
                     Area(
-                            'House 2',
+                            "House 2",
                             [
-                                    Area('H2 PV', strategy=PVStrategy(30)
+                                    Area("H2 PV", strategy=PVStrategy(30)
                                          ),
-                                    Area('H2 General Load',
+                                    Area("H2 General Load",
                                          strategy=DefinedLoadStrategy(
                                              daily_load_profile=house2_load_dict),
                                          )
                              ]),
                     Area(
-                            'House 3',
+                            "House 3",
                             [
-                                    Area('H3 General Load', strategy=DefinedLoadStrategy(
+                                    Area("H3 General Load", strategy=DefinedLoadStrategy(
                                         daily_load_profile=house3_load_dict,
                                         final_buying_rate=25),
                                          )
                             ]),
                     Area(
-                            'House 4',
+                            "House 4",
                             [
-                                    Area('H4 General Load',
+                                    Area("H4 General Load",
                                          strategy=DefinedLoadStrategy(
                                              daily_load_profile=load_profile_path,
                                              final_buying_rate=24),
                                          )
                             ]),
-                    Area('Infinite Power Plant', strategy=CommercialStrategy(energy_rate=30),
+                    Area("Infinite Power Plant", strategy=CommercialStrategy(energy_rate=30),
                          )
                             ],
             config=config

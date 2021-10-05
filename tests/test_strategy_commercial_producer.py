@@ -20,7 +20,7 @@ import sys
 import pendulum
 from uuid import uuid4
 
-from d3a.models.market.market_structures import Offer, Trade, BalancingOffer
+from d3a_interface.data_classes import Offer, Trade, BalancingOffer
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.d3a_core.device_registry import DeviceRegistry
@@ -60,6 +60,10 @@ class FakeArea:
         return [self.test_market]
 
     @property
+    def next_market(self):
+        return self.test_market
+
+    @property
     def balancing_markets(self):
         return [self.test_balancing_market, self.test_balancing_market_2]
 
@@ -82,9 +86,9 @@ class FakeMarket:
         self.created_offers = []
         self.created_balancing_offers = []
 
-    def offer(self, price, energy, seller, original_offer_price=None,
+    def offer(self, price, energy, seller, original_price=None,
               seller_origin=None, seller_origin_id=None, seller_id=None):
-        offer = Offer('id', pendulum.now(), price, energy, seller, original_offer_price,
+        offer = Offer('id', pendulum.now(), price, energy, seller, original_price,
                       seller_origin=seller_origin, seller_origin_id=seller_origin_id,
                       seller_id=seller_id)
         self.created_offers.append(offer)
