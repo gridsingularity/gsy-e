@@ -113,6 +113,15 @@ class MycoExternalMatcher(MycoMatcherInterface):
         for recommendation in recommendations:
             try:
                 market = self.markets_mapping.get(recommendation["market_id"])
+                market_offers = [
+                    market.offers.get(offer["id"]) for offer in recommendation["offers"]]
+                market_bids = [market.bids.get(bid["id"]) for bid in recommendation["bids"]]
+
+                if not (all(market_offers) and all(market_bids)):
+                    # If not all offers bids exist in the market, skip the current recommendation
+                    raise InvalidBidOfferPairException(
+                        "Not all bids and offers exist in the market.")
+
                 market.match_recommendations([recommendation])
                 response_data["recommendations"].append(
                     {**recommendation, "status": "Success"})
