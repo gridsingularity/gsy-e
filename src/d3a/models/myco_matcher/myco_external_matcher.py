@@ -128,7 +128,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
             except InvalidBidOfferPairException as exception:
                 response_data["recommendations"].append(
                     {**recommendation, "status": "Fail",
-                     "message": exception})
+                     "message": str(exception)})
             except Exception:
                 response_data["recommendations"].append(
                     {**recommendation, "status": "Fail"})
