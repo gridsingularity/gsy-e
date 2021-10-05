@@ -20,13 +20,11 @@ import uuid
 from datetime import datetime, timezone
 from typing import Dict
 
-import pendulum
 import pytz
 from d3a_interface.constants_limits import GlobalConfig, TIME_ZONE
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import generate_market_slot_list
-from pendulum import DateTime
-from pendulum import instance
+from pendulum import DateTime, instance, duration
 from pony.orm import Database, Required, db_session, select
 from pony.orm.core import Query
 
@@ -62,7 +60,7 @@ class ProfileDBConnectionHandler:
 
     @staticmethod
     def strip_timezone_and_create_pendulum_instance_from_datetime(
-            time_stamp: datetime) -> pendulum.DateTime:
+            time_stamp: datetime) -> DateTime:
         return instance(time_stamp.astimezone(timezone.utc), pytz.UTC)
 
     def connect(self):
@@ -105,7 +103,7 @@ class ProfileDBConnectionHandler:
             datapoint for datapoint in self.Profile_Database_ProfileTimeSeries
             if datapoint.profile_uuid == profile_uuid
             and datapoint.time >= first_datapoint_time
-            and datapoint.time <= first_datapoint_time + pendulum.duration(days=7)
+            and datapoint.time <= first_datapoint_time + duration(days=7)
         )
 
         datapoint_dict = {
