@@ -465,3 +465,6 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
         """
         Setting demanded energy for the next slot is already done by update_energy_forecast
         """
+
+    def _read_or_rotate_profiles(self, reconfigure=False):
+        pass

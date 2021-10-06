@@ -454,3 +454,6 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
         """
         Setting produced energy for the next slot is already done by produced_energy_forecast_kWh
         """
+
+    def _read_or_rotate_profiles(self, reconfigure=False):
+        pass
