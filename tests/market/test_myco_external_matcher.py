@@ -20,9 +20,10 @@ class TestMycoExternalMatcher:
     @classmethod
     def setup_method(cls):
         cls.matcher = MycoExternalMatcher()
+        cls.market_id = "Area1"
         cls.market = TwoSidedMarket(time_slot=now())
         cls.matcher.area_markets_mapping = {
-            f"Area1-{cls.market.time_slot_str}": cls.market}
+            f"{cls.market_id}-{cls.market.time_slot_str}": cls.market}
         cls.redis_connection = d3a.models.myco_matcher.myco_external_matcher.ResettableCommunicator
         assert cls.matcher.simulation_id == d3a.constants.CONFIGURATION_ID
         cls.channel_prefix = f"external-myco/{d3a.constants.CONFIGURATION_ID}/"
@@ -171,11 +172,15 @@ class TestMycoExternalMatcher:
         self.matcher.myco_ext_conn.publish_json.reset_mock()
         mock_validate_and_report.return_value = {
             "status": "success",
-            "recommendations": [{"status": "success", "market_id": self.market.id}]}
+            "recommendations": [{"status": "success",
+                                 "market_id": self.market_id,
+                                 "time_slot": self.market.time_slot_str}]}
         self.matcher.match_recommendations(payload)
         expected_data = {
             "event": "match", "status": "success",
-            "recommendations": [{"market_id": self.market.id, "status": "success"}]}
+            "recommendations": [{"market_id": self.market_id,
+                                 "status": "success",
+                                 "time_slot": self.market.time_slot_str}]}
         assert mock_market_match_recommendations.call_count == 1
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
@@ -192,6 +197,7 @@ class TestMycoExternalMatcherValidator:
 
         recommendations = [{
                 "market_id": "market",
+                "time_slot": "time_slot1",
                 "bids": [],
                 "offers": [],
                 "trade_rate": 1,
@@ -207,6 +213,7 @@ class TestMycoExternalMatcherValidator:
         expected_data = {"status": "success",
                          "recommendations": [{
                              "market_id": "market",
+                             "time_slot": "time_slot1",
                              "bids": [],
                              "offers": [],
                              "trade_rate": 1,
@@ -228,12 +235,14 @@ class TestMycoExternalMatcherValidator:
 
     @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
     def test_validate_market_exists(self, mock_myco_external_matcher):
-        mock_myco_external_matcher.markets_mapping = {"market": MagicMock()}
-        recommendation = {"market_id": "market"}
+        market = MagicMock()
+        market.time_slot_str = "time_slot1"
+        mock_myco_external_matcher.area_markets_mapping = {"market-time_slot1": market}
+        recommendation = {"market_id": "market", "time_slot": "time_slot1"}
         assert MycoExternalMatcherValidator.validate_market_exists(
             mock_myco_external_matcher, recommendation) is None
 
-        mock_myco_external_matcher.markets_mapping = {}
+        mock_myco_external_matcher.area_markets_mapping = {}
         with pytest.raises(MycoValidationException):
             MycoExternalMatcherValidator.validate_market_exists(
                 mock_myco_external_matcher, recommendation)
@@ -241,11 +250,13 @@ class TestMycoExternalMatcherValidator:
     @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
     def test_validate_orders_exist_in_market(self, mock_myco_external_matcher):
         market = MagicMock()
+        market.time_slot_str = "time_slot1"
         market.offers = {"offer1": MagicMock()}
         market.bids = {"bid1": MagicMock()}
-        mock_myco_external_matcher.markets_mapping = {"market": market}
+        mock_myco_external_matcher.area_markets_mapping = {"market-time_slot1": market}
         recommendation = {
             "market_id": "market",
+            "time_slot": "time_slot1",
             "offers": [{"id": "offer1"}], "bids": [{"id": "bid1"}]}
         assert MycoExternalMatcherValidator.validate_orders_exist_in_market(
             mock_myco_external_matcher, recommendation) is None
