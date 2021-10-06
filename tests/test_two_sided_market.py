@@ -159,7 +159,6 @@ class TestTwoSidedMarket:
         market.offers = {"offer1": Offer("id", pendulum.now(), 2, 2, "other", 2)}
 
         market.bids = {"bid1": Bid("bid_id", pendulum.now(), 9, 10, "B", buyer_origin="S")}
-        print(market.time_slot_str)
         matched = market_matcher.get_matches_recommendations({
             "Area1": {
                 market.time_slot_str: {
