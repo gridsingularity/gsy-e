@@ -226,7 +226,7 @@ class MycoExternalMatcherValidator:
                 response["recommendations"].append(
                     {**recommendation, "status": "success"}
                 )
-            except Exception as exception:
+            except (MycoValidationException, InvalidBidOfferPairException) as exception:
                 if isinstance(exception, cls.BLOCKING_EXCEPTIONS):
                     response["status"] = "fail"
                     response[
