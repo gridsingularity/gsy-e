@@ -411,8 +411,6 @@ class Area:
                 self.dispatcher.publish_market_clearing()
             else:
                 self._update_myco_matcher()
-                bid_offer_matcher.event_tick()
-                bid_offer_matcher.match_recommendations()
 
         self.events.update_events(self.now)
 
