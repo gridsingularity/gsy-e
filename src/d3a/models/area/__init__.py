@@ -412,8 +412,6 @@ class Area:
             else:
                 self._update_myco_matcher()
                 bid_offer_matcher.event_tick()
-                from time import sleep
-                sleep(1)
                 bid_offer_matcher.match_recommendations()
 
         self.events.update_events(self.now)

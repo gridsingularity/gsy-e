@@ -112,9 +112,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
             return
         for recommendation in response_data["recommendations"]:
             try:
-                logging.error(f"len {len(recommendations)} - {len(response_data['recommendations'])}")
                 if recommendation["status"] != "success":
-                    logging.error(recommendation["message"])
                     continue
                 market = self.markets_mapping.get(recommendation["market_id"])
                 recommendation.pop("status")
@@ -141,6 +139,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
 
     def event_tick(self, **kwargs):
         """Publish the tick event to the Myco client."""
+        sleep(1)
         is_it_time_for_external_tick = kwargs.pop("is_it_time_for_external_tick", True)
         # If External matching is enabled, limit the number of ticks dispatched.
         if not is_it_time_for_external_tick:
@@ -206,7 +205,6 @@ class MycoExternalMatcherValidator:
         """Check whether all bids/offers exist in the market."""
 
         market = matcher.markets_mapping.get(recommendation.get("market_id"))
-        logging.error(f"Offers : {len(market.offers.keys())}")
         market_offers = [
             market.offers.get(offer["id"]) for offer in recommendation["offers"]]
         market_bids = [market.bids.get(bid["id"]) for bid in recommendation["bids"]]
