@@ -28,7 +28,7 @@ class BaseClassGridFees(ABC):
         pass
 
     @abstractmethod
-    def update_incoming_offer_with_fee(self, source_offer_price, original_offer_price):
+    def update_incoming_offer_with_fee(self, source_offer_price, original_price):
         pass
 
     @abstractmethod

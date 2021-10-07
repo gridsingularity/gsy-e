@@ -38,6 +38,7 @@ from d3a.events.event_structures import MarketEvent
 from d3a.models.market.balancing import BalancingMarket
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.two_sided import TwoSidedMarket
+from d3a.models.market.settlement import SettlementMarket
 
 device_registry_dict = {
     "A": {"balancing rates": (33, 35)},
@@ -66,7 +67,8 @@ def test_device_registry(market=BalancingMarket()):
 
 @pytest.mark.parametrize("market, offer", [
     (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer"),
-    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "balancing_offer")
+    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "balancing_offer"),
+    (SettlementMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer"),
 ])
 def test_market_offer(market, offer):
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
@@ -85,7 +87,8 @@ def test_market_offer_invalid(market: OneSidedMarket):
 
 @pytest.mark.parametrize("market, offer", [
     (TwoSidedMarket(), "offer"),
-    (BalancingMarket(), "balancing_offer")
+    (BalancingMarket(), "balancing_offer"),
+    (SettlementMarket(), "offer")
 ])
 def test_market_offer_readonly(market, offer):
     market.readonly = True
@@ -95,7 +98,9 @@ def test_market_offer_readonly(market, offer):
 
 @pytest.mark.parametrize("market",
                          [OneSidedMarket(bc=MagicMock()),
-                          BalancingMarket(bc=MagicMock())])
+                          BalancingMarket(bc=MagicMock()),
+                          SettlementMarket(bc=MagicMock())
+                          ])
 def test_market_offer_delete_missing(market):
     with pytest.raises(OfferNotFoundException):
         market.delete_offer("no such offer")
@@ -103,7 +108,8 @@ def test_market_offer_delete_missing(market):
 
 @pytest.mark.parametrize("market",
                          [OneSidedMarket(bc=MagicMock()),
-                          BalancingMarket(bc=MagicMock())])
+                          BalancingMarket(bc=MagicMock()),
+                          SettlementMarket(bc=MagicMock())])
 def test_market_offer_delete_readonly(market):
     market.readonly = True
     with pytest.raises(MarketReadOnlyException):
@@ -114,7 +120,9 @@ def test_market_offer_delete_readonly(market):
     (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
      "offer", "accept_offer"),
     (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
-     "balancing_offer", "accept_offer")
+     "balancing_offer", "accept_offer"),
+    (SettlementMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+     "offer", "accept_offer")
 ])
 def test_market_trade(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 10, "A", "A")
@@ -149,7 +157,9 @@ def test_balancing_market_negative_offer_trade(market=BalancingMarket(
     (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
      "offer", "accept_offer"),
     (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
-     "balancing_offer", "accept_offer")
+     "balancing_offer", "accept_offer"),
+    (SettlementMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+     "offer", "accept_offer")
 ])
 def test_market_trade_by_id(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 10, "A", "A")
@@ -163,7 +173,9 @@ def test_market_trade_by_id(market, offer, accept_offer):
     (OneSidedMarket(bc=MagicMock(), time_slot=now()),
      "offer", "accept_offer"),
     (BalancingMarket(bc=MagicMock(), time_slot=now()),
-     "balancing_offer", "accept_offer")
+     "balancing_offer", "accept_offer"),
+    (SettlementMarket(bc=MagicMock(), time_slot=now()),
+     "offer", "accept_offer")
 ])
 def test_market_trade_readonly(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 10, "A", "A")
@@ -176,7 +188,9 @@ def test_market_trade_readonly(market, offer, accept_offer):
     (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
      "offer", "accept_offer"),
     (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
-     "balancing_offer", "accept_offer")
+     "balancing_offer", "accept_offer"),
+    (SettlementMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+     "offer", "accept_offer")
 ])
 def test_market_trade_not_found(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 10, "A", "A")
@@ -190,7 +204,9 @@ def test_market_trade_not_found(market, offer, accept_offer):
     (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
      "offer", "accept_offer"),
     (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
-     "balancing_offer", "accept_offer")
+     "balancing_offer", "accept_offer"),
+    (SettlementMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+     "offer", "accept_offer")
 ])
 def test_market_trade_partial(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 20, "A", "A")
@@ -224,7 +240,11 @@ def test_market_trade_partial(market, offer, accept_offer):
      InvalidBalancingTradeException),
     (BalancingMarket(bc=MagicMock(), time_slot=now()),
      "balancing_offer", "accept_offer", 21,
-     InvalidBalancingTradeException)
+     InvalidBalancingTradeException),
+    (SettlementMarket(bc=MagicMock(), time_slot=now()),
+     "offer", "accept_offer", 0, InvalidTrade),
+    (SettlementMarket(bc=MagicMock(), time_slot=now()),
+     "offer", "accept_offer", 21, InvalidTrade),
 ])
 def test_market_trade_partial_invalid(market, offer, accept_offer, energy, exception):
     e_offer = getattr(market, offer)(20, 20, "A", "A")
@@ -263,7 +283,8 @@ def test_market_acct_multiple(market=OneSidedMarket(bc=NonBlockchainInterface(st
 
 @pytest.mark.parametrize("market, offer", [
     (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer"),
-    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "balancing_offer")
+    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "balancing_offer"),
+    (SettlementMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer"),
 ])
 def test_market_avg_offer_price(market, offer):
     getattr(market, offer)(1, 1, "A", "A")
@@ -274,14 +295,16 @@ def test_market_avg_offer_price(market, offer):
 
 @pytest.mark.parametrize("market",
                          [OneSidedMarket(bc=MagicMock(), time_slot=now()),
-                          BalancingMarket(bc=MagicMock(), time_slot=now())])
+                          BalancingMarket(bc=MagicMock(), time_slot=now()),
+                          SettlementMarket(bc=MagicMock(), time_slot=now())])
 def test_market_avg_offer_price_empty(market):
     assert market.avg_offer_price == 0
 
 
 @pytest.mark.parametrize("market, offer", [
     (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer"),
-    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "balancing_offer")
+    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "balancing_offer"),
+    (SettlementMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer")
 ])
 def test_market_sorted_offers(market, offer):
     getattr(market, offer)(5, 1, "A", "A")
@@ -295,7 +318,8 @@ def test_market_sorted_offers(market, offer):
 
 @pytest.mark.parametrize("market, offer", [
     (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer"),
-    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "balancing_offer")
+    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "balancing_offer"),
+    (SettlementMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer")
 ])
 def test_market_most_affordable_offers(market, offer):
     getattr(market, offer)(5, 1, "A", "A")
@@ -312,7 +336,8 @@ def test_market_most_affordable_offers(market, offer):
 
 @pytest.mark.parametrize("market, offer", [
     (OneSidedMarket, "offer"),
-    (BalancingMarket, "balancing_offer")
+    (BalancingMarket, "balancing_offer"),
+    (SettlementMarket, "offer")
 ])
 def test_market_listeners_init(market, offer, called):
     markt = market(bc=MagicMock(), time_slot=now(), notification_listener=called)
@@ -322,7 +347,8 @@ def test_market_listeners_init(market, offer, called):
 
 @pytest.mark.parametrize("market, offer, add_listener", [
     (OneSidedMarket(bc=MagicMock(), time_slot=now()), "offer", "add_listener"),
-    (BalancingMarket(bc=MagicMock(), time_slot=now()), "balancing_offer", "add_listener")
+    (BalancingMarket(bc=MagicMock(), time_slot=now()), "balancing_offer", "add_listener"),
+    (SettlementMarket(bc=MagicMock(), time_slot=now()), "offer", "add_listener")
 ])
 def test_market_listeners_add(market, offer, add_listener, called):
     getattr(market, add_listener)(called)
@@ -335,7 +361,9 @@ def test_market_listeners_add(market, offer, add_listener, called):
     (OneSidedMarket(bc=MagicMock(), time_slot=now()),
      "offer", "add_listener", MarketEvent.OFFER),
     (BalancingMarket(bc=MagicMock(), time_slot=now()),
-     "balancing_offer", "add_listener", MarketEvent.BALANCING_OFFER)
+     "balancing_offer", "add_listener", MarketEvent.BALANCING_OFFER),
+    (SettlementMarket(bc=MagicMock(), time_slot=now()),
+     "offer", "add_listener", MarketEvent.OFFER),
 ])
 def test_market_listeners_offer(market, offer, add_listener, event, called):
     getattr(market, add_listener)(called)
@@ -351,7 +379,10 @@ def test_market_listeners_offer(market, offer, add_listener, event, called):
      MarketEvent.OFFER_SPLIT),
     (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
      "balancing_offer", "accept_offer", "add_listener",
-     MarketEvent.BALANCING_OFFER_SPLIT)
+     MarketEvent.BALANCING_OFFER_SPLIT),
+    (SettlementMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+     "offer", "accept_offer", "add_listener",
+     MarketEvent.OFFER_SPLIT),
 ])
 def test_market_listeners_offer_split(market, offer, accept_offer, add_listener, event, called):
     getattr(market, add_listener)(called)
@@ -377,7 +408,10 @@ def test_market_listeners_offer_split(market, offer, accept_offer, add_listener,
      "add_listener", MarketEvent.OFFER_DELETED),
     (BalancingMarket(bc=MagicMock(), time_slot=now()),
      "balancing_offer", "delete_balancing_offer",
-     "add_listener", MarketEvent.BALANCING_OFFER_DELETED)
+     "add_listener", MarketEvent.BALANCING_OFFER_DELETED),
+    (SettlementMarket(bc=MagicMock(), time_slot=now()),
+     "offer", "delete_offer",
+     "add_listener", MarketEvent.OFFER_DELETED),
 ])
 def test_market_listeners_offer_deleted(market, offer, delete_offer, add_listener, event, called):
     getattr(market, add_listener)(called)
@@ -413,6 +447,8 @@ def test_market_issuance_acct_reverse(last_offer_size, traded_energy):
     (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer",
      "accept_offer"),
     (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "balancing_offer",
+     "accept_offer"),
+    (SettlementMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer",
      "accept_offer")
 ])
 def test_market_accept_offer_yields_partial_trade(market, offer, accept_offer):

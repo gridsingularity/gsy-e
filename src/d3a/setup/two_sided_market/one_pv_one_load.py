@@ -32,12 +32,12 @@ def get_setup(config):
     ConstSettings.LoadSettings.FINAL_BUYING_RATE = 30
 
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(
+                    Area("H1 General Load", strategy=LoadHoursStrategy(
                         avg_power_W=200,
                         hrs_per_day=6,
                         hrs_of_day=list(range(9, 15)),
@@ -48,9 +48,9 @@ def get_setup(config):
                 ]
             ),
             Area(
-                'House 2',
+                "House 2",
                 [
-                    Area('H2 PV',
+                    Area("H2 PV",
                          strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
                                              final_selling_rate=0, fit_to_limit=True,
                                              update_interval=duration(minutes=5))

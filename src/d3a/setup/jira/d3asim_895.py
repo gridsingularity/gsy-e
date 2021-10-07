@@ -23,19 +23,19 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
+                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
                                                                            range(0, 24)))
                          ),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50)
+                    Area("H1 Storage1", strategy=StorageStrategy(initial_soc=50)
                          ),
-                    Area('H1 PV', strategy=PVStrategy(4, 0)
+                    Area("H1 PV", strategy=PVStrategy(4, 0)
                          ),
                 ]
             ),

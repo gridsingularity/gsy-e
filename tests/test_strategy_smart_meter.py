@@ -16,22 +16,22 @@ not, see <http://www.gnu.org/licenses/>.
 import unittest
 import uuid
 from collections import OrderedDict
-from unittest.mock import call, create_autospec, patch, Mock
+from unittest.mock import Mock, patch, call, create_autospec
 
 from d3a_interface.exceptions import D3AException
-from d3a_interface.validators.home_meter_validator import HomeMeterValidator
+from d3a_interface.validators.smart_meter_validator import SmartMeterValidator
 from pendulum import datetime, duration
 
 from d3a import constants
 from d3a.models.area import Area
 from d3a.models.market.one_sided import OneSidedMarket
-from d3a.models.state import HomeMeterState
-from d3a.models.strategy.home_meter import HomeMeterStrategy
+from d3a.models.state import SmartMeterState
+from d3a.models.strategy.smart_meter import SmartMeterStrategy
 
 
 # pylint: disable=protected-access
-class HomeMeterStrategyTest(unittest.TestCase):
-    """Tests for the HomeMeterStrategy behaviour."""
+class SmartMeterStrategyTest(unittest.TestCase):
+    """Tests for the SmartMeterStrategy behaviour."""
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -48,19 +48,19 @@ class HomeMeterStrategyTest(unittest.TestCase):
 
     def setUp(self) -> None:
         """Instantiate the strategy used throughout the tests"""
-        self.strategy = HomeMeterStrategy(
-            initial_selling_rate=30, final_selling_rate=5, home_meter_profile="some_path.csv")
+        self.strategy = SmartMeterStrategy(
+            initial_selling_rate=30, final_selling_rate=5, smart_meter_profile="some_path.csv")
         self.area_mock = create_autospec(Area)
         self.strategy.area = self.area_mock
         self.strategy.owner = Mock()
-        self.strategy.validator = create_autospec(HomeMeterValidator)
+        self.strategy.validator = create_autospec(SmartMeterValidator)
 
     @staticmethod
-    @patch.object(HomeMeterValidator, "validate")
+    @patch.object(SmartMeterValidator, "validate")
     def test_init(validate_mock):
-        """Test the side-effects of the init function of the home meter strategy."""
-        strategy = HomeMeterStrategy(
-            initial_selling_rate=30, final_selling_rate=5, home_meter_profile="some_path.csv",
+        """Test the side-effects of the init function of the smart meter strategy."""
+        strategy = SmartMeterStrategy(
+            initial_selling_rate=30, final_selling_rate=5, smart_meter_profile="some_path.csv",
             update_interval=1, energy_rate_increase_per_update=2,
             energy_rate_decrease_per_update=4)
 
@@ -85,7 +85,7 @@ class HomeMeterStrategyTest(unittest.TestCase):
         self.strategy.event_activate_energy.assert_called_with()
         self.strategy.event_activate_price.assert_called_with()
 
-    @patch("d3a.models.strategy.home_meter.get_market_maker_rate_from_config")
+    @patch("d3a.models.strategy.smart_meter.get_market_maker_rate_from_config")
     def test_event_activate_price_with_market_maker_rate(
             self, get_market_maker_rate_from_config_mock):
         """If the market maker rate is used, call bid/offer updaters to replace existing rates."""
@@ -98,19 +98,19 @@ class HomeMeterStrategyTest(unittest.TestCase):
         self.strategy.event_activate_price()
         self.strategy.bid_update.set_parameters.assert_called_once()
         call_args = self.strategy.bid_update.set_parameters.call_args
-        assert set(call_args.kwargs["initial_rate_profile_buffer"].values()) == {0}
+        assert set(call_args.kwargs["initial_rate"].values()) == {0}
         # The final buying rate is the sum of the market maker rate and the fees
-        assert set(call_args.kwargs["final_rate_profile_buffer"].values()) == {16}
-        assert call_args.kwargs["energy_rate_change_per_update_profile_buffer"] == {}
+        assert set(call_args.kwargs["final_rate"].values()) == {16}
+        assert call_args.kwargs["energy_rate_change_per_update"] == {}
         assert call_args.kwargs["fit_to_limit"] is True
         assert call_args.kwargs["update_interval"] == duration(minutes=1)
 
         self.strategy.offer_update.set_parameters.assert_called_once()
         call_args = self.strategy.offer_update.set_parameters.call_args
         # The initial selling rate is the difference between the market maker rate and the fees
-        assert set(call_args.kwargs["initial_rate_profile_buffer"].values()) == {14}
-        assert set(call_args.kwargs["final_rate_profile_buffer"].values()) == {5}
-        assert call_args.kwargs["energy_rate_change_per_update_profile_buffer"] == {}
+        assert set(call_args.kwargs["initial_rate"].values()) == {14}
+        assert set(call_args.kwargs["final_rate"].values()) == {5}
+        assert call_args.kwargs["energy_rate_change_per_update"] == {}
         assert call_args.kwargs["fit_to_limit"] is True
         assert call_args.kwargs["update_interval"] == duration(minutes=1)
 
@@ -126,17 +126,17 @@ class HomeMeterStrategyTest(unittest.TestCase):
         self.strategy.bid_update.set_parameters.assert_not_called()
         self.strategy.offer_update.set_parameters.assert_not_called()
 
-    @patch("d3a.models.strategy.home_meter.read_arbitrary_profile")
-    def test_set_energy_forecast_for_future_markets(self, read_arbitrary_profile_mock):
+    @patch("d3a.models.strategy.smart_meter.global_objects.profiles_handler.rotate_profile")
+    def test_set_energy_forecast_for_future_markets(self, rotate_profile_mock):
         """The consumption/production expectations for the upcoming market slots are correctly set.
 
         This method is private, but we test it to avoid duplication and because of its complexity.
         """
-        read_arbitrary_profile_mock.return_value = self._create_profile_mock()
+        rotate_profile_mock.return_value = self._create_profile_mock()
         # We want to iterate over some area markets, so we create mocks for them
         market_mocks = self._create_market_mocks(3)
         self.strategy.area.all_markets = market_mocks
-        self.strategy.state = create_autospec(HomeMeterState)
+        self.strategy.state = create_autospec(SmartMeterState)
 
         self.strategy._set_energy_forecast_for_future_markets(reconfigure=True)
 
@@ -156,17 +156,17 @@ class HomeMeterStrategyTest(unittest.TestCase):
         self.strategy.state.update_total_demanded_energy.assert_has_calls([
             call(market_slot.time_slot) for market_slot in market_mocks])
 
-    @patch("d3a.models.strategy.home_meter.read_arbitrary_profile")
-    def test_set_energy_forecast_for_future_markets_no_profile(self, read_arbitrary_profile_mock):
+    @patch("d3a.models.strategy.smart_meter.global_objects.profiles_handler.rotate_profile")
+    def test_set_energy_forecast_for_future_markets_no_profile(self, rotate_profile_mock):
         """Consumption/production expectations can't be set without an energy profile."""
-        read_arbitrary_profile_mock.return_value = None
+        rotate_profile_mock.return_value = None
         with self.assertRaises(D3AException):
             self.strategy._set_energy_forecast_for_future_markets(reconfigure=True)
 
-    @patch("d3a.models.strategy.home_meter.read_arbitrary_profile")
-    def test_event_activate_energy(self, read_arbitrary_profile_mock):
+    @patch("d3a.models.strategy.smart_meter.global_objects.profiles_handler.rotate_profile")
+    def test_event_activate_energy(self, rotate_profile_mock):
         """event_activate_energy calls the expected state interface methods."""
-        read_arbitrary_profile_mock.return_value = self._create_profile_mock()
+        rotate_profile_mock.return_value = self._create_profile_mock()
         self.strategy._set_energy_forecast_for_future_markets = Mock()
 
         self.strategy.event_activate_energy()
@@ -184,7 +184,7 @@ class HomeMeterStrategyTest(unittest.TestCase):
         self.strategy.bid_update.delete_past_state_values = Mock()
         self.strategy.offer_update.delete_past_state_values = Mock()
         self.strategy._set_energy_forecast_for_future_markets = Mock()
-        self.strategy.set_energy_measurement_of_last_market = Mock()
+        self.strategy._set_energy_measurement_of_last_market = Mock()
         self.strategy._post_offer = Mock()
         market_mocks = self._create_market_mocks(3)
         self.strategy.area.all_markets = market_mocks
@@ -202,7 +202,7 @@ class HomeMeterStrategyTest(unittest.TestCase):
         self.strategy._set_energy_forecast_for_future_markets.assert_called_once_with(
             reconfigure=False)
         assert self.strategy._post_offer.call_count == 3
-        self.strategy.set_energy_measurement_of_last_market.assert_called_once()
+        self.strategy._set_energy_measurement_of_last_market.assert_called_once()
 
         self.strategy.state.delete_past_state_values.assert_called_once_with(
             self.area_mock.current_market.time_slot)
@@ -211,13 +211,13 @@ class HomeMeterStrategyTest(unittest.TestCase):
         self.strategy.offer_update.delete_past_state_values.assert_called_once_with(
             self.area_mock.current_market.time_slot)
 
-    @patch("d3a.models.strategy.home_meter.utils")
+    @patch("d3a.models.strategy.smart_meter.utils")
     def test_set_energy_measurement_of_last_market(self, utils_mock):
         """The real energy of the last market is set when necessary."""
         # If we are in the first market slot, the real energy is not set
         self.strategy.area.current_market = None
         self.strategy.state.set_energy_measurement_kWh = Mock()
-        self.strategy.set_energy_measurement_of_last_market()
+        self.strategy._set_energy_measurement_of_last_market()
         self.strategy.state.set_energy_measurement_kWh.assert_not_called()
 
         # When there is at least one past market, the real energy is set
@@ -225,7 +225,7 @@ class HomeMeterStrategyTest(unittest.TestCase):
         self.strategy.area.current_market = Mock()
         utils_mock.compute_altered_energy.return_value = 100
 
-        self.strategy.set_energy_measurement_of_last_market()
+        self.strategy._set_energy_measurement_of_last_market()
         self.strategy.state.set_energy_measurement_kWh.assert_called_once_with(
             100, self.strategy.area.current_market.time_slot)
 

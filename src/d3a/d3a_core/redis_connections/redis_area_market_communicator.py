@@ -97,6 +97,7 @@ class ResettableCommunicator(RedisCommunicator):
 class ExternalConnectionCommunicator(ResettableCommunicator):
     def __init__(self, is_enabled):
         self.is_enabled = is_enabled
+        self.aggregator = None
         if self.is_enabled:
             super().__init__()
             self.channel_callback_dict = {}
@@ -126,7 +127,7 @@ class ExternalConnectionCommunicator(ResettableCommunicator):
         if not self.is_enabled:
             return
         channel_callback_dict = {
-            f'external/{d3a.constants.COLLABORATION_ID}/aggregator/*/batch_commands':
+            f'external/{d3a.constants.CONFIGURATION_ID}/aggregator/*/batch_commands':
                 self.aggregator.receive_batch_commands_callback,
             'aggregator': self.aggregator.aggregator_callback
         }

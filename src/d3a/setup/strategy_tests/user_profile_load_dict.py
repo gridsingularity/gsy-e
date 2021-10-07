@@ -42,18 +42,18 @@ user_profile = {
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 DefinedLoad',
+                    Area("H1 DefinedLoad",
                          strategy=DefinedLoadStrategy(daily_load_profile=user_profile,
                                                       final_buying_rate=35)
                          ),
                 ]
             ),
-            Area('Commercial Energy Producer',
+            Area("Commercial Energy Producer",
                  strategy=CommercialStrategy()
                  ),
         ],

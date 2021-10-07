@@ -28,20 +28,20 @@ def get_setup(config):
     ConstSettings.LoadSettings.FINAL_BUYING_RATE = 35
 
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 Storage',
+                    Area("H1 Storage",
                          strategy=StorageStrategy(initial_soc=50)
                          ),
                 ]
             ),
             Area(
-                'House 2',
+                "House 2",
                 [
-                    Area('H2 General Load', strategy=LoadHoursStrategy(
+                    Area("H2 General Load", strategy=LoadHoursStrategy(
                         avg_power_W=100,
                         hrs_per_day=10,
                         hrs_of_day=list(range(8, 18)),

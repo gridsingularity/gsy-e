@@ -15,18 +15,22 @@ see <http://www.gnu.org/licenses/>.
 """
 import random
 
-from d3a.constants import DEFAULT_PRECISION, RELATIVE_STD_FROM_FORECAST_ENERGY
+from d3a_interface.constants_limits import ConstSettings
+
+from d3a.constants import DEFAULT_PRECISION
 
 
 def compute_altered_energy(
-        energy_kWh: float, relative_std: float = RELATIVE_STD_FROM_FORECAST_ENERGY,
-        random_generator: random.Random = random.Random(12)) -> float:
+    energy_kWh: float,
+    relative_std: float = ConstSettings.SettlementMarketSettings.RELATIVE_STD_FROM_FORECAST_FLOAT,
+    random_generator: random.Random = random.Random(12)
+) -> float:
     """
     Compute a new energy amount, modelling its value on a normal distribution of the old amount.
 
     Args:
         energy_kWh: the amount of energy to be altered.
-        relative_sdt: the percentage of original energy to be used to set the standard deviation
+        relative_std: the percentage of original energy to be used to set the standard deviation
             of the normal distribution.
         random_generator: a pseudo-random number generator instance. This is used to return
             reproducible results while not altering the global random seed.

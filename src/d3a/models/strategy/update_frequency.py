@@ -16,12 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.read_user_profile import InputProfileTypes
+from d3a_interface.utils import find_object_of_same_weekday_and_time
 from pendulum import duration
 
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.utils import find_object_of_same_weekday_and_time
-from d3a.d3a_core.util import write_default_to_dict
+from d3a.d3a_core.global_objects_singleton import global_objects
+from d3a.d3a_core.util import write_default_to_dict, is_time_slot_in_past_markets
 
 
 class UpdateFrequencyMixin:
@@ -30,28 +31,47 @@ class UpdateFrequencyMixin:
                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
                  rate_limit_object=max):
         self.fit_to_limit = fit_to_limit
-        self.initial_rate_profile_buffer = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                  initial_rate)
-        self.initial_rate = {}
-        self.final_rate_profile_buffer = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                final_rate)
-        self.final_rate = {}
-        if fit_to_limit is False:
-            self.energy_rate_change_per_update_profile_buffer = \
-                read_arbitrary_profile(InputProfileTypes.IDENTITY, energy_rate_change_per_update)
-        else:
-            self.energy_rate_change_per_update_profile_buffer = {}
 
+        # initial input values (currently of type float)
+        self.initial_rate_input = initial_rate
+        self.final_rate_input = final_rate
+        self.energy_rate_change_per_update_input = energy_rate_change_per_update
+
+        # buffer of populated input values Dict[DateTime, float]
+        self.initial_rate_profile_buffer = {}
+        self.final_rate_profile_buffer = {}
+        self.energy_rate_change_per_update_profile_buffer = {}
+
+        # dicts that are used for price calculations, contain only all_markets Dict[DatTime, float]
+        self.initial_rate = {}
+        self.final_rate = {}
         self.energy_rate_change_per_update = {}
+
+        self._read_or_rotate_rate_profiles()
+
         self.update_interval = update_interval
         self.update_counter = {}
         self.number_of_available_updates = 0
         self.rate_limit_object = rate_limit_object
 
+    def _read_or_rotate_rate_profiles(self):
+        """ Creates a new chunk of profiles if the current_timestamp is not in the profile buffers
+        """
+        # TODO: this needs to be implemented to except profile UUIDs and DB connection
+        self.initial_rate_profile_buffer = global_objects.profiles_handler.rotate_profile(
+            InputProfileTypes.IDENTITY, self.initial_rate_input)
+        self.final_rate_profile_buffer = global_objects.profiles_handler.rotate_profile(
+            InputProfileTypes.IDENTITY, self.final_rate_input)
+        if self.fit_to_limit is False:
+            self.energy_rate_change_per_update_profile_buffer = (
+                global_objects.profiles_handler.rotate_profile(
+                    InputProfileTypes.IDENTITY, self.energy_rate_change_per_update_input)
+            )
+
     def delete_past_state_values(self, current_market_time_slot):
         to_delete = []
         for market_slot in self.initial_rate.keys():
-            if market_slot < current_market_time_slot:
+            if is_time_slot_in_past_markets(market_slot, current_market_time_slot):
                 to_delete.append(market_slot)
         for market_slot in to_delete:
             self.initial_rate.pop(market_slot, None)
@@ -59,19 +79,22 @@ class UpdateFrequencyMixin:
             self.energy_rate_change_per_update.pop(market_slot, None)
             self.update_counter.pop(market_slot, None)
 
+    @staticmethod
+    def get_all_markets(area):
+        return area.all_markets
+
     def _populate_profiles(self, area):
-        for market in area.all_markets:
+        for market in self.get_all_markets(area):
             time_slot = market.time_slot
             if self.fit_to_limit is False:
-                self.energy_rate_change_per_update[time_slot] = \
+                self.energy_rate_change_per_update[time_slot] = (
                     find_object_of_same_weekday_and_time(
                         self.energy_rate_change_per_update_profile_buffer, time_slot)
-            self.initial_rate[time_slot] = \
-                find_object_of_same_weekday_and_time(self.initial_rate_profile_buffer,
-                                                     time_slot)
-            self.final_rate[time_slot] = \
-                find_object_of_same_weekday_and_time(self.final_rate_profile_buffer,
-                                                     time_slot)
+                )
+            self.initial_rate[time_slot] = find_object_of_same_weekday_and_time(
+                self.initial_rate_profile_buffer, time_slot)
+            self.final_rate[time_slot] = find_object_of_same_weekday_and_time(
+                self.final_rate_profile_buffer, time_slot)
             self._set_or_update_energy_rate_change_per_update(market.time_slot)
             write_default_to_dict(self.update_counter, market.time_slot, 0)
 
@@ -126,6 +149,7 @@ class UpdateFrequencyMixin:
 
         self.number_of_available_updates = \
             self._calculate_number_of_available_updates_per_slot
+
         self._populate_profiles(area)
 
     def get_updated_rate(self, time_slot):
@@ -144,7 +168,8 @@ class UpdateFrequencyMixin:
     def increment_update_counter_all_markets(self, strategy):
         should_update = [
             self.increment_update_counter(strategy, market.time_slot)
-            for market in strategy.area.all_markets]
+            for market in self.get_all_markets(strategy.area)
+        ]
         return any(should_update)
 
     def increment_update_counter(self, strategy, time_slot):
@@ -159,27 +184,35 @@ class UpdateFrequencyMixin:
         return self.elapsed_seconds(strategy) >= (
             self.update_interval.seconds * self.update_counter[time_slot])
 
-    def set_parameters(self, *, initial_rate_profile_buffer=None, final_rate_profile_buffer=None,
-                       energy_rate_change_per_update_profile_buffer=None, fit_to_limit=None,
-                       update_interval=None, ):
-        if initial_rate_profile_buffer is not None:
-            self.initial_rate_profile_buffer = initial_rate_profile_buffer
-        if final_rate_profile_buffer is not None:
-            self.final_rate_profile_buffer = final_rate_profile_buffer
-        if energy_rate_change_per_update_profile_buffer is not None:
-            self.energy_rate_change_per_update_profile_buffer = \
-                energy_rate_change_per_update_profile_buffer
+    def set_parameters(self, *, initial_rate=None, final_rate=None,
+                       energy_rate_change_per_update=None, fit_to_limit=None,
+                       update_interval=None):
+
+        should_update = False
+        if initial_rate is not None:
+            self.initial_rate_input = initial_rate
+            should_update = True
+        if final_rate is not None:
+            self.final_rate_input = final_rate
+            should_update = True
+        if energy_rate_change_per_update is not None:
+            self.energy_rate_change_per_update_input = energy_rate_change_per_update
+            should_update = True
         if fit_to_limit is not None:
             self.fit_to_limit = fit_to_limit
+            should_update = True
         if update_interval is not None:
             self.update_interval = update_interval
+            should_update = True
+        if should_update:
+            self._read_or_rotate_rate_profiles()
 
 
 class TemplateStrategyBidUpdater(UpdateFrequencyMixin):
     def reset(self, strategy):
         """Reset the price of all bids to use their initial rate."""
         # decrease energy rate for each market again, except for the newly created one
-        for market in strategy.area.all_markets[:-1]:
+        for market in self.get_all_markets(strategy.area)[:-1]:
             self.update_counter[market.time_slot] = 0
             strategy.update_bid_rates(market, self.get_updated_rate(market.time_slot))
 
@@ -193,12 +226,12 @@ class TemplateStrategyBidUpdater(UpdateFrequencyMixin):
 class TemplateStrategyOfferUpdater(UpdateFrequencyMixin):
     def reset(self, strategy):
         """Reset the price of all offers based to use their initial rate."""
-        for market in strategy.area.all_markets[:-1]:
+        for market in self.get_all_markets(strategy.area)[:-1]:
             self.update_counter[market.time_slot] = 0
-            strategy.update_energy_price(market, self.get_updated_rate(market.time_slot))
+            strategy.update_offer_rates(market, self.get_updated_rate(market.time_slot))
 
-    def update(self, strategy):
+    def update(self, market, strategy):
         """Update the price of existing offers to reflect the new rates."""
-        for market in strategy.area.all_markets:
-            if self.time_for_price_update(strategy, market.time_slot):
-                strategy.update_energy_price(market, self.get_updated_rate(market.time_slot))
+        if self.time_for_price_update(strategy, market.time_slot):
+            if strategy.are_offers_posted(market.id):
+                strategy.update_offer_rates(market, self.get_updated_rate(market.time_slot))

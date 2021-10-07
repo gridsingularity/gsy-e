@@ -24,6 +24,7 @@ from uuid import uuid4
 
 import pytest
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.enums import SpotMarketTypeEnum
 from d3a_interface.exceptions import D3ADeviceException
 from parameterized import parameterized
 from pendulum import DateTime, duration, today, now
@@ -32,7 +33,7 @@ from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import d3a_path
 from d3a.models.area import DEFAULT_CONFIG
-from d3a.models.market.market_structures import Offer, BalancingOffer, Bid, Trade
+from d3a_interface.data_classes import Offer, BalancingOffer, Bid, Trade
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 
@@ -112,11 +113,11 @@ class FakeMarket:
     def get_bids(self):
         return deepcopy(self.bids)
 
-    def bid(self, price: float, energy: float, buyer: str, original_bid_price=None,
+    def bid(self, price: float, energy: float, buyer: str, original_price=None,
             buyer_origin=None, buyer_origin_id=None, buyer_id=None,
             attributes=None, requirements=None) -> Bid:
         bid = Bid(id="bid_id", time=now(), price=price, energy=energy, buyer=buyer,
-                  original_bid_price=original_bid_price,
+                  original_price=original_price,
                   buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id,
                   buyer_id=buyer_id, attributes=attributes, requirements=requirements)
         self.bids[bid.id] = bid
@@ -303,7 +304,8 @@ def test_event_tick_updates_rates(load_hours_strategy_test1, market_test1):
 
     number_of_markets = len(load_hours_strategy_test1.area.all_markets)
     # Test for all available market types (one-sided and two-sided markets)
-    available_market_types = (1, 2, 3)
+    available_market_types = (SpotMarketTypeEnum.ONE_SIDED.value,
+                              SpotMarketTypeEnum.TWO_SIDED.value)
     # Bids' rates should be updated both when the load can buy energy and when it cannot do it
     for can_buy_energy in (True, False):
         load_hours_strategy_test1.state.can_buy_more_energy.return_value = can_buy_energy
@@ -537,27 +539,6 @@ def test_load_constructor_rejects_incorrect_rate_parameters():
                           energy_rate_increase_per_update=-1)
 
 
-@parameterized.expand([
-    [True, 40, ], [False, 40, ]
-])
-def test_predefined_load_strategy_rejects_incorrect_rate_parameters(use_mmr, initial_buying_rate):
-    user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
-    load = DefinedLoadStrategy(
-        daily_load_profile=user_profile_path,
-        initial_buying_rate=initial_buying_rate,
-        use_market_maker_rate=use_mmr)
-    load.area = FakeArea()
-    load.owner = load.area
-    with pytest.raises(D3ADeviceException):
-        load.event_activate()
-    with pytest.raises(D3ADeviceException):
-        DefinedLoadStrategy(daily_load_profile=user_profile_path, fit_to_limit=True,
-                            energy_rate_increase_per_update=1)
-    with pytest.raises(D3ADeviceException):
-        DefinedLoadStrategy(daily_load_profile=user_profile_path, fit_to_limit=False,
-                            energy_rate_increase_per_update=-1)
-
-
 def test_load_hour_strategy_increases_rate_when_fit_to_limit_is_false(market_test1):
     load = LoadHoursStrategy(avg_power_W=100, initial_buying_rate=0, final_buying_rate=30,
                              fit_to_limit=False, energy_rate_increase_per_update=10,
@@ -598,9 +579,9 @@ def test_assert_if_trade_rate_is_higher_than_bid_rate(load_hours_strategy_test3)
 
 def test_update_state(load_hours_strategy_test1):
     """update_state sends command to update the simulated real energy of the device."""
-    load_hours_strategy_test1.set_energy_measurement_of_last_market = Mock()
+    load_hours_strategy_test1._set_energy_measurement_of_last_market = Mock()
     load_hours_strategy_test1.update_state()
-    load_hours_strategy_test1.set_energy_measurement_of_last_market.assert_called_once()
+    load_hours_strategy_test1._set_energy_measurement_of_last_market.assert_called_once()
 
 
 @patch("d3a.models.strategy.load_hours.utils")
@@ -609,7 +590,7 @@ def test_set_energy_measurement_of_last_market(utils_mock, load_hours_strategy_t
     # If we are in the first market slot, the real energy is not set
     load_hours_strategy_test1.area.current_market = None
     load_hours_strategy_test1.state.set_energy_measurement_kWh = Mock()
-    load_hours_strategy_test1.set_energy_measurement_of_last_market()
+    load_hours_strategy_test1._set_energy_measurement_of_last_market()
     load_hours_strategy_test1.state.set_energy_measurement_kWh.assert_not_called()
 
     # When there is at least one past market, the real energy is set
@@ -617,6 +598,6 @@ def test_set_energy_measurement_of_last_market(utils_mock, load_hours_strategy_t
     load_hours_strategy_test1.area.current_market = Mock()
     utils_mock.compute_altered_energy.return_value = 100
 
-    load_hours_strategy_test1.set_energy_measurement_of_last_market()
+    load_hours_strategy_test1._set_energy_measurement_of_last_market()
     load_hours_strategy_test1.state.set_energy_measurement_kWh.assert_called_once_with(
         100, load_hours_strategy_test1.area.current_market.time_slot)

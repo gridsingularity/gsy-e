@@ -35,7 +35,7 @@ DISPATCH_EVENTS_BOTTOM_TO_TOP = True
 # 20% of the slot length
 DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 10
 
-COLLABORATION_ID = ""
+CONFIGURATION_ID = ""
 # Controls whether the external connection is for use with the redis api client
 # or with the d3a-web. Default is to connect via Redis.
 EXTERNAL_CONNECTION_WEB = False
@@ -56,3 +56,14 @@ IS_CANARY_NETWORK = GlobalConfig.IS_CANARY_NETWORK
 CN_PROFILE_EXPANSION_DAYS = 7
 
 RUN_IN_REALTIME = False
+
+CONNECT_TO_PROFILES_DB = False
+
+
+class SettlementTemplateStrategiesConstants:
+    INITIAL_BUYING_RATE = 0
+    FINAL_BUYING_RATE = 50
+    INITIAL_SELLING_RATE = 50
+    FINAL_SELLING_RATE = 0
+
+    UPDATE_INTERVAL_MIN = 5

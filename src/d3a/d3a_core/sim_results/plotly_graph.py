@@ -15,21 +15,23 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import plotly as py
-import plotly.graph_objs as go
-import pendulum
 import os
 
-from d3a.constants import TIME_ZONE
-from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.home_meter import HomeMeterStrategy
-from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
-from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
-from d3a.models.strategy.finite_power_plant import FinitePowerPlant
+import pendulum
+import plotly as py
+import plotly.graph_objs as go
+
 from d3a import limit_float_precision
+from d3a.constants import TIME_ZONE
+from d3a.data_classes import PlotDescription
+from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a.models.strategy.finite_power_plant import FinitePowerPlant
+from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
+from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.smart_meter import SmartMeterStrategy
+from d3a.models.strategy.storage import StorageStrategy
 
 green = 'rgba(20,150,20, alpha)'
 purple = 'rgba(156, 110, 177, alpha)'
@@ -47,7 +49,7 @@ DEVICE_YAXIS = {"trade_energy_kWh": 'Traded [kWh]',
                 "energy_buffer_kWh": 'Energy Buffer [kWh]',
                 "production_kWh": 'Power Production [kWh]',
                 "load_profile_kWh": 'Load Profile [kWh]',
-                "home_meter_profile_kWh": 'Home Meter Profile [kWh]',
+                "smart_meter_profile_kWh": 'Smart Meter Profile [kWh]',
                 "soc_history_%": 'State of Charge [%]',
                 "trade_price_eur": 'Energy Rate [EUR/kWh]'}
 
@@ -72,19 +74,18 @@ class PlotlyGraph:
         self.trade_history = dict()
 
     @staticmethod
-    def common_layout(barmode: str, title: str, ytitle: str, xtitle: str, xrange: list,
-                      showlegend=True, hovermode="x"):
+    def common_layout(data_desc: PlotDescription, xrange: list, showlegend=True, hovermode="x"):
         return go.Layout(
             autosize=False,
             width=1200,
             height=700,
-            barmode=barmode,
-            title=title,
+            barmode=data_desc.barmode,
+            title=data_desc.title,
             yaxis=dict(
-                title=ytitle
+                title=data_desc.ytitle
             ),
             xaxis=dict(
-                title=xtitle,
+                title=data_desc.xtitle,
                 range=xrange
             ),
             font=dict(
@@ -105,18 +106,18 @@ class PlotlyGraph:
                     if self.dataset[self.key][de] == "-":
                         self.umHours[self.dataset['slot'][de]] = 0.0
                     else:
-                        self.umHours[self.dataset['slot'][de]] = \
-                            round(self.dataset[self.key][de], 5) * scale_value
+                        self.umHours[self.dataset['slot'][de]] = (
+                                round(self.dataset[self.key][de], 5) * scale_value)
 
     @staticmethod
-    def modify_time_axis(data: dict, title: str):
+    def modify_time_axis(plot_desc: PlotDescription):
         """
         Changes timezone of pendulum x-values to 'UTC' and determines the list of days
         in order to return the time_range for the plot
         """
         day_set = set()
-        for di in range(len(data)):
-            time_list = data[di]["x"]
+        for di in range(len(plot_desc.data)):
+            time_list = plot_desc.data[di]["x"]
             for ti in time_list:
                 day_set.add(
                     pendulum.datetime(ti.year, ti.month, ti.day, ti.hour, ti.minute, tz=TIME_ZONE)
@@ -124,7 +125,7 @@ class PlotlyGraph:
 
         day_list = sorted(list(day_set))
         if len(day_list) == 0:
-            raise ValueError("There is no time information in plot {}".format(title))
+            raise ValueError("There is no time information in plot {}".format(plot_desc.title))
 
         start_time = pendulum.datetime(
             day_list[0].year, day_list[0].month, day_list[0].day,
@@ -134,7 +135,7 @@ class PlotlyGraph:
             day_list[-1].year, day_list[-1].month, day_list[-1].day,
             day_list[-1].hour, day_list[-1].minute, day_list[-1].second, tz=TIME_ZONE)
 
-        return [start_time, end_time], data
+        return [start_time, end_time], plot_desc.data
 
     @classmethod
     def plot_slider_graph(cls, fig, stats_plot_dir, area_name, market_slot_data_mapping):
@@ -168,25 +169,25 @@ class PlotlyGraph:
         py.offline.plot(fig, filename=output_file, auto_open=False)
 
     @classmethod
-    def plot_bar_graph(cls, barmode: str, title: str, xtitle: str, ytitle: str, data, iname: str,
+    def plot_bar_graph(cls, plot_desc: PlotDescription, iname: str,
                        time_range=None, showlegend=True, hovermode="x"):
         if time_range is None:
             try:
-                time_range, data = cls.modify_time_axis(data, title)
+                time_range, data = cls.modify_time_axis(plot_desc)
             except ValueError:
                 return
 
         layout = cls.common_layout(
-            barmode, title, ytitle, xtitle, time_range, showlegend, hovermode=hovermode
+            plot_desc, time_range, showlegend, hovermode=hovermode
         )
         fig = go.Figure(data=data, layout=layout)
         py.offline.plot(fig, filename=iname, auto_open=False)
 
     @classmethod
-    def plot_line_graph(cls, title: str, xtitle: str, ytitle: str, data, iname: str, xmax: int):
-        layout = cls.common_layout("group", title, ytitle, xtitle, [0, xmax])
+    def plot_line_graph(cls, plot_desc: PlotDescription, iname: str, xmax: int):
+        layout = cls.common_layout(plot_desc, [0, xmax])
 
-        fig = go.Figure(data=data, layout=layout)
+        fig = go.Figure(data=plot_desc.data, layout=layout)
         py.offline.plot(fig, filename=iname, auto_open=False)
 
     def arrange_data(self):
@@ -225,8 +226,8 @@ class PlotlyGraph:
     def _plot_line_time_series(cls, device_dict, var_name, invert_y=False):
         color = _get_color(var_name, OPAQUE_ALPHA)
         fill_color = _get_color(var_name, TRANSPARENT_ALPHA)
-        time, var_data, longterm_min_var_data, longterm_max_var_data = \
-            cls.prepare_input(device_dict, var_name)
+        time, var_data, longterm_min_var_data, longterm_max_var_data = (
+            cls.prepare_input(device_dict, var_name))
         yaxis = "y3"
         connectgaps = True
         line = dict(color=color,
@@ -302,8 +303,8 @@ class PlotlyGraph:
                                      expected_varname=None, invert_y=False):
         color_traded = _get_color(traded_varname, OPAQUE_ALPHA)
         fill_color_traded = _get_color(traded_varname, OPAQUE_ALPHA)
-        time_traded, energy_traded, min_energy_traded, max_energy_traded = \
-            cls.prepare_input(device_dict, traded_varname, invert_y)
+        time_traded, energy_traded, min_energy_traded, max_energy_traded = (
+            cls.prepare_input(device_dict, traded_varname, invert_y))
 
         yaxis = yaxis
         time_series_traded = go.Bar(
@@ -326,8 +327,8 @@ class PlotlyGraph:
         if expected_varname is not None:
             color_expected = _get_color(expected_varname, OPAQUE_ALPHA)
             fill_color_expected = _get_color(expected_varname, TRANSPARENT_ALPHA)
-            time_expected, energy_expected, min_energy_expected, max_energy_expected = \
-                cls.prepare_input(device_dict, expected_varname)
+            time_expected, energy_expected, min_energy_expected, max_energy_expected = (
+                cls.prepare_input(device_dict, expected_varname))
             time_series_expected = go.Bar(
                 x=time_expected,
                 y=energy_expected,
@@ -344,13 +345,12 @@ class PlotlyGraph:
                 xaxis="x",
                 yaxis=yaxis,
             )
-            return [time_series_expected, time_series_traded] + \
-                cls._hoverinfo(time_expected, min_energy_expected, max_energy_expected, yaxis,
-                               only_time=True)
+            return [time_series_expected, time_series_traded] + cls._hoverinfo(
+                time_expected, min_energy_expected, max_energy_expected, yaxis,
+                only_time=True)
         else:
-            return [time_series_traded] + \
-                cls._hoverinfo(time_traded, min_energy_traded, max_energy_traded, yaxis,
-                               only_time=True)
+            return [time_series_traded] + cls._hoverinfo(
+                time_traded, min_energy_traded, max_energy_traded, yaxis, only_time=True)
 
     @classmethod
     def _hoverinfo(cls, time, longterm_min, longterm_max, yaxis, only_time=False):
@@ -391,8 +391,8 @@ class PlotlyGraph:
     @classmethod
     def _plot_candlestick_time_series_price(cls, device_dict, var_name, yaxis):
 
-        time, trade_rate_list, longterm_min_trade_rate, longterm_max_trade_rate = \
-            cls.prepare_input(device_dict, var_name)
+        time, trade_rate_list, longterm_min_trade_rate, longterm_max_trade_rate = (
+            cls.prepare_input(device_dict, var_name))
         plot_time = []
         plot_local_min_trade_rate = []
         plot_local_max_trade_rate = []
@@ -444,9 +444,8 @@ class PlotlyGraph:
             yaxis=yaxis
         )
 
-        return [candle_stick, hoverinfo_local_max, hoverinfo_loacl_min] + \
-            cls._hoverinfo(plot_time, plot_longterm_min_trade_rate,
-                           plot_longterm_max_trade_rate, yaxis)
+        return [candle_stick, hoverinfo_local_max, hoverinfo_loacl_min] + cls._hoverinfo(
+            plot_time, plot_longterm_min_trade_rate, plot_longterm_max_trade_rate, yaxis)
 
     @classmethod
     def prepare_input(cls, device_dict, var_name, invert_y=False):
@@ -508,10 +507,10 @@ class PlotlyGraph:
             layout = cls._device_plot_layout("overlay", f"{device_name}",
                                              'Time', yaxis_caption_list)
 
-        elif isinstance(device_strategy, HomeMeterStrategy):
+        elif isinstance(device_strategy, SmartMeterStrategy):
             y1axis_key = "trade_price_eur"
             y2axis_key = trade_energy_var_name
-            y3axis_key = "home_meter_profile_kWh"
+            y3axis_key = "smart_meter_profile_kWh"
             yaxis_caption_list = [DEVICE_YAXIS[y1axis_key], DEVICE_YAXIS[y2axis_key],
                                   DEVICE_YAXIS[y3axis_key]]
 

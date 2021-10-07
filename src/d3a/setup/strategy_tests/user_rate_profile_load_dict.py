@@ -37,22 +37,22 @@ user_profile_str = "{'00:00': 32, '06:00': 35, '12:00': 35, '12:00': 35}"
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        "Grid",
         [
             Area(
-                'House 1',
+                "House 1",
                 [
-                    Area('H1 General Load 1',
+                    Area("H1 General Load 1",
                          strategy=LoadHoursStrategy(avg_power_W=200, hrs_of_day=list(range(0, 24)),
                                                     final_buying_rate=user_profile_int)
                          ),
-                    Area('H1 General Load 2',
+                    Area("H1 General Load 2",
                          strategy=LoadHoursStrategy(avg_power_W=200, hrs_of_day=list(range(0, 24)),
                                                     final_buying_rate=user_profile_str)
                          ),
                 ]
             ),
-            Area('Commercial Energy Producer',
+            Area("Commercial Energy Producer",
                  strategy=CommercialStrategy(energy_rate=34)
                  ),
         ],

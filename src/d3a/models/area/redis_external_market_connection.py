@@ -30,7 +30,7 @@ log = getLogger(__name__)
 class RedisMarketExternalConnection:
     def __init__(self, area):
         self.area = area
-        self.redis_com = None
+        self._redis_communicator = None
         self.aggregator = None
         self.connected = False
 
@@ -40,12 +40,12 @@ class RedisMarketExternalConnection:
 
     @property
     def is_aggregator_controlled(self):
-        return self.aggregator.is_controlling_device(self.area.uuid)
+        return self.aggregator and self.aggregator.is_controlling_device(self.area.uuid)
 
     @property
     def channel_prefix(self):
         if d3a.constants.EXTERNAL_CONNECTION_WEB:
-            return f"external/{d3a.constants.COLLABORATION_ID}/{self.area.uuid}"
+            return f"external/{d3a.constants.CONFIGURATION_ID}/{self.area.uuid}"
         else:
             return f"{self.area.slug}"
 
@@ -58,16 +58,16 @@ class RedisMarketExternalConnection:
             raise ValueError("transaction_id not in payload or None")
 
     def _register(self, payload):
-        self._connected = register_area(self.redis_com, self.channel_prefix, self.connected,
-                                        self._get_transaction_id(payload),
+        self._connected = register_area(self._redis_communicator, self.channel_prefix,
+                                        self.connected, self._get_transaction_id(payload),
                                         area_uuid=self.area.uuid)
 
     def _unregister(self, payload):
-        self._connected = unregister_area(self.redis_com, self.channel_prefix, self.connected,
-                                          self._get_transaction_id(payload))
+        self._connected = unregister_area(self._redis_communicator, self.channel_prefix,
+                                          self.connected, self._get_transaction_id(payload))
 
     def sub_to_external_channels(self):
-        self.redis_com = self.area.config.external_redis_communicator
+        self._redis_communicator = self.area.config.external_redis_communicator
         sub_channel_dict = {
             f"{self.channel_prefix}/dso_market_stats": self.dso_market_stats_callback,
             f"{self.channel_prefix}/grid_fees": self.set_grid_fees_callback,
@@ -75,7 +75,7 @@ class RedisMarketExternalConnection:
             f"{self.channel_prefix}/unregister_participant": self._unregister}
         if self.area.config.external_redis_communicator.is_enabled:
             self.aggregator = self.area.config.external_redis_communicator.aggregator
-        self.redis_com.sub_to_multiple_channels(sub_channel_dict)
+        self._redis_communicator.sub_to_multiple_channels(sub_channel_dict)
 
     def set_grid_fees_callback(self, payload):
         # TODO: This function should reuse the area_reconfigure_event function
@@ -118,7 +118,7 @@ class RedisMarketExternalConnection:
             return ret_val
         else:
             ret_val["transaction_id"] = payload_data.get("transaction_id", None)
-            self.redis_com.publish_json(grid_fees_response_channel, ret_val)
+            self._redis_communicator.publish_json(grid_fees_response_channel, ret_val)
 
     def dso_market_stats_callback(self, payload):
         dso_market_stats_response_channel = f"{self.channel_prefix}/response/dso_market_stats"
@@ -133,7 +133,7 @@ class RedisMarketExternalConnection:
             return ret_val
         else:
             ret_val["transaction_id"] = payload_data.get("transaction_id", None)
-            self.redis_com.publish_json(dso_market_stats_response_channel, ret_val)
+            self._redis_communicator.publish_json(dso_market_stats_response_channel, ret_val)
 
     @property
     def _progress_info(self):
@@ -153,12 +153,12 @@ class RedisMarketExternalConnection:
         if self.is_aggregator_controlled:
             deactivate_msg = {'event': 'finish'}
             self.aggregator.add_batch_finished_event(self.area.uuid, deactivate_msg)
-        else:
+        elif self._redis_communicator.is_enabled:
             deactivate_event_channel = f"{self.channel_prefix}/events/finish"
             deactivate_msg = {
                 "event": "finish"
             }
-            self.redis_com.publish_json(deactivate_event_channel, deactivate_msg)
+            self._redis_communicator.publish_json(deactivate_event_channel, deactivate_msg)
 
     def trigger_aggregator_commands(self, command):
         if "type" not in command:

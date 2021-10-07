@@ -21,7 +21,7 @@ import logging
 from enum import Enum
 from typing import Dict, List, Optional
 
-from d3a_interface.dataclasses import BidOfferMatch
+from d3a_interface.data_classes import BidOfferMatch
 
 import d3a.constants
 from d3a.d3a_core.exceptions import (
@@ -43,7 +43,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
     """Class responsible for external bids / offers matching."""
     def __init__(self):
         super().__init__()
-        self.simulation_id = d3a.constants.COLLABORATION_ID
+        self.simulation_id = d3a.constants.CONFIGURATION_ID
         self.myco_ext_conn = None
         self._channel_prefix = f"external-myco/{self.simulation_id}"
         self._events_channel = f"{self._channel_prefix}/events/"
@@ -129,14 +129,14 @@ class MycoExternalMatcher(MycoMatcherInterface):
         # If External matching is enabled, limit the number of ticks dispatched.
         if not is_it_time_for_external_tick:
             return
-        data = {"event": ExternalMatcherEventsEnum.TICK.value}
+        data = {"event": ExternalMatcherEventsEnum.TICK.value, **kwargs}
         self.myco_ext_conn.publish_json(self._events_channel, data)
 
     def event_market_cycle(self, **kwargs):
         """Publish the market event to the Myco client and clear finished markets cache.."""
 
         self.markets_mapping = {}  # clear finished markets
-        data = {"event": ExternalMatcherEventsEnum.MARKET.value}
+        data = {"event": ExternalMatcherEventsEnum.MARKET.value, **kwargs}
         self.myco_ext_conn.publish_json(self._events_channel, data)
 
     def event_finish(self, **kwargs):

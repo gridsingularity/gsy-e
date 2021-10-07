@@ -16,10 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
-from typing import List  # noqa
+from typing import List, Dict
 from uuid import uuid4
 
-from cached_property import cached_property
 from d3a_interface.area_validator import validate_area
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.enums import SpotMarketTypeEnum
@@ -28,10 +27,11 @@ from pendulum import DateTime, duration, today
 from slugify import slugify
 
 import d3a.constants
+from cached_property import cached_property
 from d3a.d3a_core.blockchain_interface import blockchain_interface_factory
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
-from d3a.d3a_core.singletons import bid_offer_matcher
+from d3a.d3a_core.myco_singleton import bid_offer_matcher
 from d3a.d3a_core.util import TaggedLogWrapper
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.area.event_dispatcher import DispatcherFactory
@@ -41,6 +41,7 @@ from d3a.models.area.redis_external_market_connection import RedisMarketExternal
 from d3a.models.area.stats import AreaStats
 from d3a.models.area.throughput_parameters import ThroughputParameters
 from d3a.models.config import SimulationConfig
+from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
 
@@ -56,7 +57,7 @@ DEFAULT_CONFIG = SimulationConfig(
     tick_length=duration(seconds=1),
     cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
     start_date=today(tz=d3a.constants.TIME_ZONE),
-    max_panel_power_W=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W
+    capacity_kW=ConstSettings.PVSettings.DEFAULT_CAPACITY_KW
 )
 
 
@@ -277,6 +278,8 @@ class Area:
                 raise AreaException(
                     f"Strategy {self.strategy.__class__.__name__} on area {self} without parent!"
                     )
+        else:
+            self._markets.activate_market_rotators()
 
         if self.budget_keeper:
             self.budget_keeper.activate()
@@ -348,15 +351,21 @@ class Area:
             self._update_descendants_strategy_prices()
             self.should_update_child_strategies = False
 
-        # Clear `current_market` cache
-        self.__dict__.pop("current_market", None)
+        # TODO: Refactor and port the future, spot, settlement and balancing market creation to
+        # AreaMarkets class, in order to create all necessary markets with one call.
 
         # Markets range from one slot to market_count into the future
-        changed = self._markets.create_future_markets(now_value, True, self)
+        changed = self._markets.create_future_markets(now_value, AvailableMarketTypes.SPOT, self)
+
+        # create new settlement market
+        if (self.last_past_market and
+                ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS):
+            self._markets.create_settlement_market(self.last_past_market.time_slot, self)
 
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
                 len(DeviceRegistry.REGISTRY.keys()) != 0:
-            changed_balancing_market = self._markets.create_future_markets(now_value, False, self)
+            changed_balancing_market = self._markets.create_future_markets(
+                now_value, AvailableMarketTypes.BALANCING, self)
         else:
             changed_balancing_market = None
 
@@ -410,12 +419,17 @@ class Area:
         """Update the markets cache that the myco matcher will request"""
         bid_offer_matcher.update_area_uuid_markets_mapping(
             area_uuid_markets_mapping={
-                self.uuid: {"markets": self.all_markets, "current_time": self.now}})
+                self.uuid: {"markets": self.all_markets,
+                            "settlement_markets": self.settlement_markets.values(),
+                            "current_time": self.now}})
 
     def update_area_current_tick(self):
         self.current_tick += 1
         if self._markets:
             for market in self._markets.markets.values():
+                market.update_clock(self.current_tick_in_slot)
+
+            for market in self._markets.settlement_markets.values():
                 market.update_clock(self.current_tick_in_slot)
         for child in self.children:
             child.update_area_current_tick()
@@ -486,11 +500,11 @@ class Area:
         return [m for m in self._markets.markets.values() if m.in_sim_duration]
 
     @property
-    def past_markets(self):
+    def past_markets(self) -> List:
         return list(self._markets.past_markets.values())
 
     def get_market(self, timeslot):
-        return self._markets.markets[timeslot]
+        return self._markets.markets.get(timeslot)
 
     def get_past_market(self, timeslot):
         return self._markets.past_markets[timeslot]
@@ -499,11 +513,11 @@ class Area:
         return self._markets.balancing_markets[timeslot]
 
     @property
-    def balancing_markets(self):
+    def balancing_markets(self) -> List:
         return list(self._markets.balancing_markets.values())
 
     @property
-    def past_balancing_markets(self):
+    def past_balancing_markets(self) -> List:
         return list(self._markets.past_balancing_markets.values())
 
     @property
@@ -547,6 +561,24 @@ class Area:
             return list(self._markets.past_markets.values())[-1]
         except IndexError:
             return None
+
+    @property
+    def settlement_markets(self) -> Dict:
+        return self._markets.settlement_markets
+
+    @property
+    def last_past_settlement_market(self):
+        try:
+            return list(self._markets.past_settlement_markets.items())[-1]
+        except IndexError:
+            return None
+
+    @property
+    def past_settlement_markets(self) -> Dict:
+        return self._markets.past_settlement_markets
+
+    def get_settlement_market(self, timeslot):
+        return self._markets.settlement_markets.get(timeslot)
 
     @cached_property
     def available_triggers(self):
