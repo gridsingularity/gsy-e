@@ -17,8 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import json
+import logging
 from enum import Enum
-from typing import Dict, Optional
+from time import sleep
+from typing import Dict, Optional, List
 
 from d3a_interface.data_classes import BidOfferMatch
 
@@ -48,13 +50,14 @@ class MycoExternalMatcher(MycoMatcherInterface):
         self._events_channel = f"{self._channel_prefix}/events/"
         self._setup_redis_connection()
         self.markets_mapping: Dict[str, TwoSidedMarket] = {}  # Dict[market_id: market] mapping
+        self.recommendations = []
 
     def _setup_redis_connection(self):
         self.myco_ext_conn = ResettableCommunicator()
         self.myco_ext_conn.sub_to_multiple_channels(
             {"external-myco/simulation-id/": self.publish_simulation_id,
              f"{self._channel_prefix}/offers-bids/": self.publish_offers_bids,
-             f"{self._channel_prefix}/recommendations/": self.match_recommendations})
+             f"{self._channel_prefix}/recommendations/": self.populate_recommendations})
 
     def publish_offers_bids(self, message):
         """Publish open offers and bids.
@@ -86,21 +89,22 @@ class MycoExternalMatcher(MycoMatcherInterface):
         channel = f"{self._channel_prefix}/offers-bids/response/"
         self.myco_ext_conn.publish_json(channel, response_data)
 
-    def match_recommendations(self, message: Optional[dict] = None) -> None:
+    def populate_recommendations(self, message):
+        data = json.loads(message.get("data"))
+        recommendations = data.get("recommended_matches", [])
+        self.recommendations.extend(recommendations)
+
+    def match_recommendations(self) -> None:
         """Receive trade recommendations and match them in the relevant market.
 
         Match in bulk, any pair that fails validation will cancel the operation
         """
-        if not message:
-            return
-
         channel = f"{self._channel_prefix}/recommendations/response/"
         response_data = {
             "event": ExternalMatcherEventsEnum.MATCH.value,
             "status": "success"}
-        data = json.loads(message.get("data"))
-        recommendations = data.get("recommended_matches", [])
 
+        recommendations = self.recommendations
         response_data.update(
             MycoExternalMatcherValidator.validate_and_report(self, recommendations))
         if response_data["status"] != "success":
@@ -108,17 +112,20 @@ class MycoExternalMatcher(MycoMatcherInterface):
             return
         for recommendation in response_data["recommendations"]:
             try:
+                logging.error(f"len {len(recommendations)} - {len(response_data['recommendations'])}")
                 if recommendation["status"] != "success":
+                    logging.error(recommendation["message"])
                     continue
                 market = self.markets_mapping.get(recommendation["market_id"])
                 recommendation.pop("status")
                 market.match_recommendations([recommendation])
                 recommendation["status"] = "success"
+                logging.error("Matched!")
             except InvalidBidOfferPairException as exception:
                 recommendation["status"] = "Fail"
                 recommendation["message"] = str(exception)
                 continue
-
+        self.recommendations = []
         self.myco_ext_conn.publish_json(channel, response_data)
 
     def publish_simulation_id(self, message):
@@ -199,6 +206,7 @@ class MycoExternalMatcherValidator:
         """Check whether all bids/offers exist in the market."""
 
         market = matcher.markets_mapping.get(recommendation.get("market_id"))
+        logging.error(f"Offers : {len(market.offers.keys())}")
         market_offers = [
             market.offers.get(offer["id"]) for offer in recommendation["offers"]]
         market_bids = [market.bids.get(bid["id"]) for bid in recommendation["bids"]]
@@ -216,7 +224,7 @@ class MycoExternalMatcherValidator:
         cls.validate_orders_exist_in_market(matcher, recommendation)
 
     @classmethod
-    def validate_and_report(cls, matcher: MycoExternalMatcher, recommendations: Dict) -> Dict:
+    def validate_and_report(cls, matcher: MycoExternalMatcher, recommendations: List) -> Dict:
         """Validate recommendations and return a detailed report."""
 
         response = {"status": "success", "recommendations": []}
