@@ -81,20 +81,25 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                          use_market_maker_rate=use_market_maker_rate)
 
         self.profile_uuid = daily_load_profile_uuid
-        self.load_profile = None
+        self._load_profile_W = None
+        self._load_profile_kWh = {}
 
-        if should_read_profile_from_db(daily_load_profile):
+        if should_read_profile_from_db(daily_load_profile_uuid):
             self._load_profile_input = None
         else:
             self._load_profile_input = daily_load_profile
 
     def _read_or_rotate_profiles(self, reconfigure=False):
         input_profile = self._load_profile_input \
-            if reconfigure or not self.load_profile else self.load_profile
-        self.load_profile = \
-            global_objects.profiles_handler.rotate_profile(profile_type=InputProfileTypes.POWER,
-                                                           profile=input_profile,
-                                                           profile_uuid=self.profile_uuid)
+            if reconfigure or not self._load_profile_W else self._load_profile_W
+
+        if global_objects.profiles_handler.should_create_profile(
+                self._load_profile_kWh) or reconfigure:
+            self._load_profile_kWh = (
+                global_objects.profiles_handler.rotate_profile(
+                    profile_type=InputProfileTypes.POWER,
+                    profile=input_profile,
+                    profile_uuid=self.profile_uuid))
 
     def event_activate_energy(self):
         """
@@ -103,6 +108,10 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         """
         self._read_or_rotate_profiles()
         super().event_activate_energy()
+
+    def event_market_cycle(self):
+        self._read_or_rotate_profiles()
+        super().event_market_cycle()
 
     def _update_energy_requirement_future_markets(self):
         """
@@ -113,12 +122,12 @@ class DefinedLoadStrategy(LoadHoursStrategy):
 
         for market in self.area.all_markets:
             slot_time = market.time_slot
-            if not self.load_profile:
+            if not self._load_profile_kWh:
                 raise D3AException(
                     f"Load {self.owner.name} tries to set its energy forecasted requirement "
                     f"without a profile.")
             load_energy_kWh = \
-                find_object_of_same_weekday_and_time(self.load_profile, slot_time)
+                find_object_of_same_weekday_and_time(self._load_profile_kWh, slot_time)
             self.state.set_desired_energy(load_energy_kWh * 1000, slot_time, overwrite=False)
             self.state.update_total_demanded_energy(slot_time)
 
