@@ -20,7 +20,7 @@ import json
 import logging
 from enum import Enum
 from time import sleep
-from typing import Dict, Optional, List
+from typing import Dict, List
 
 from d3a_interface.data_classes import BidOfferMatch
 
@@ -57,7 +57,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
         self.myco_ext_conn.sub_to_multiple_channels(
             {"external-myco/simulation-id/": self.publish_simulation_id,
              f"{self._channel_prefix}/offers-bids/": self.publish_offers_bids,
-             f"{self._channel_prefix}/recommendations/": self.populate_recommendations})
+             f"{self._channel_prefix}/recommendations/": self._populate_recommendations})
 
     def publish_offers_bids(self, message):
         """Publish open offers and bids.
@@ -89,13 +89,13 @@ class MycoExternalMatcher(MycoMatcherInterface):
         channel = f"{self._channel_prefix}/offers-bids/response/"
         self.myco_ext_conn.publish_json(channel, response_data)
 
-    def populate_recommendations(self, message):
+    def _populate_recommendations(self, message):
         data = json.loads(message.get("data"))
         recommendations = data.get("recommended_matches", [])
         self.recommendations.extend(recommendations)
 
     def match_recommendations(self) -> None:
-        """Receive trade recommendations and match them in the relevant market.
+        """Consume trade recommendations and match them in the relevant market.
 
         Match in bulk, any pair that fails validation will cancel the operation
         """

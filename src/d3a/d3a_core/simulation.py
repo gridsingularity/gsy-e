@@ -379,7 +379,6 @@ class Simulation:
                     is_it_time_for_external_tick(current_tick_in_slot),
                     slot_completion=f"{int((tick_no/config.ticks_per_slot) * 100)}%",
                     market_slot=self.progress_info.next_slot_str)
-                bid_offer_matcher.match_recommendations()
 
                 self.simulation_config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()

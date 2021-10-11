@@ -16,15 +16,24 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
-import d3a
 from logging import getLogger
 
 from d3a_interface.area_validator import validate_area
 from d3a_interface.utils import key_in_dict_and_not_none
-from d3a.models.strategy.external_strategies import CommandTypeNotSupported, register_area, \
-    unregister_area
+
+import d3a.constants
+from d3a.models.strategy.external_strategies import (
+    CommandTypeNotSupported, register_area, unregister_area)
 
 log = getLogger(__name__)
+
+
+class ExchangeSDKExternalRedisConnection:
+    pass
+
+
+class MycoSDKExternalRedisConnection:
+    pass
 
 
 class RedisMarketExternalConnection:
@@ -35,10 +44,6 @@ class RedisMarketExternalConnection:
         self.connected = False
 
     @property
-    def next_market(self):
-        return self.area.next_market
-
-    @property
     def is_aggregator_controlled(self):
         return self.aggregator and self.aggregator.is_controlling_device(self.area.uuid)
 
@@ -46,16 +51,14 @@ class RedisMarketExternalConnection:
     def channel_prefix(self):
         if d3a.constants.EXTERNAL_CONNECTION_WEB:
             return f"external/{d3a.constants.CONFIGURATION_ID}/{self.area.uuid}"
-        else:
-            return f"{self.area.slug}"
+        return f"{self.area.slug}"
 
     @staticmethod
     def _get_transaction_id(payload):
         data = json.loads(payload["data"])
         if key_in_dict_and_not_none(data, "transaction_id"):
             return data["transaction_id"]
-        else:
-            raise ValueError("transaction_id not in payload or None")
+        raise ValueError("transaction_id not in payload or None")
 
     def _register(self, payload):
         self._connected = register_area(self._redis_communicator, self.channel_prefix,
@@ -81,8 +84,8 @@ class RedisMarketExternalConnection:
         # TODO: This function should reuse the area_reconfigure_event function
         # since they share the same functionality.
         grid_fees_response_channel = f"{self.channel_prefix}/response/grid_fees"
-        payload_data = payload["data"] \
-            if isinstance(payload["data"], dict) else json.loads(payload["data"])
+        payload_data = (payload["data"] if isinstance(payload["data"], dict)
+                        else json.loads(payload["data"]))
         try:
             validate_area(grid_fee_percentage=payload_data.get("fee_percent", None),
                           grid_fee_constant=payload_data.get("fee_const", None))
@@ -92,15 +95,15 @@ class RedisMarketExternalConnection:
 
         base_dict = {"area_uuid": self.area.uuid,
                      "command": "grid_fees"}
-        if "fee_const" in payload_data and payload_data["fee_const"] is not None and \
-                self.area.config.grid_fee_type == 1:
+        if (payload_data.get("fee_const") is not None and
+                self.area.config.grid_fee_type == 1):
             self.area.grid_fee_constant = payload_data["fee_const"]
             ret_val = {
                 "status": "ready",
                 "market_fee_const": str(self.area.grid_fee_constant),
                 **base_dict}
-        elif "fee_percent" in payload_data and payload_data["fee_percent"] is not None and \
-                self.area.config.grid_fee_type == 2:
+        elif (payload_data.get("fee_percent") is not None and
+              self.area.config.grid_fee_type == 2):
             self.area.grid_fee_percentage = payload_data["fee_percent"]
             ret_val = {
                 "status": "ready",
@@ -116,16 +119,15 @@ class RedisMarketExternalConnection:
 
         if self.is_aggregator_controlled:
             return ret_val
-        else:
-            ret_val["transaction_id"] = payload_data.get("transaction_id", None)
-            self._redis_communicator.publish_json(grid_fees_response_channel, ret_val)
+        ret_val["transaction_id"] = payload_data.get("transaction_id", None)
+        self._redis_communicator.publish_json(grid_fees_response_channel, ret_val)
 
     def dso_market_stats_callback(self, payload):
         dso_market_stats_response_channel = f"{self.channel_prefix}/response/dso_market_stats"
-        payload_data = payload["data"] \
-            if isinstance(payload["data"], dict) else json.loads(payload["data"])
+        payload_data = (payload["data"] if isinstance(payload["data"], dict)
+                        else json.loads(payload["data"]))
         ret_val = {"status": "ready",
-                   'name': self.area.name,
+                   "name": self.area.name,
                    "area_uuid": self.area.uuid,
                    "command": "dso_market_stats",
                    "market_stats": self.area.stats.get_last_market_stats(dso=True)}
@@ -139,8 +141,8 @@ class RedisMarketExternalConnection:
     def _progress_info(self):
         slot_completion_percent = int((self.area.current_tick_in_slot /
                                        self.area.config.ticks_per_slot) * 100)
-        return {'slot_completion': f'{slot_completion_percent}%',
-                'market_slot': self.area.next_market.time_slot_str}
+        return {"slot_completion": f"{slot_completion_percent}%",
+                "market_slot": self.area.next_market.time_slot_str}
 
     def publish_market_cycle(self):
         if self.area.current_market is None:
@@ -151,7 +153,7 @@ class RedisMarketExternalConnection:
 
     def deactivate(self):
         if self.is_aggregator_controlled:
-            deactivate_msg = {'event': 'finish'}
+            deactivate_msg = {"event": "finish"}
             self.aggregator.add_batch_finished_event(self.area.uuid, deactivate_msg)
         elif self._redis_communicator.is_enabled:
             deactivate_event_channel = f"{self.channel_prefix}/events/finish"
