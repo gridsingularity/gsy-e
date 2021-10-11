@@ -13,7 +13,7 @@ Vagrant.configure("2") do |config|
     sudo apt-get install -yq build-essential libffi-dev redis git-core software-properties-common
     sudo add-apt-repository ppa:deadsnakes/ppa
     sudo apt-get update
-    sudo apt-get install python3.8-dev -y
+    sudo apt-get install libpq-dev python3.8-dev -y
     sudo apt-get install python3.8 -y
     sudo apt-get install git-core -y
     sudo apt-get install python3-pip -y
