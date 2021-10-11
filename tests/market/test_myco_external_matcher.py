@@ -206,7 +206,7 @@ class TestMycoExternalMatcherValidator:
         assert MycoExternalMatcherValidator.validate_and_report(
             None, recommendations) == expected_data
 
-        mock_validate.side_effect = Exception
+        mock_validate.side_effect = InvalidBidOfferPairException
         expected_data = {"status": "success",
                          "recommendations": [{
                              "market_id": "market",
