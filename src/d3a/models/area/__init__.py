@@ -419,15 +419,14 @@ class Area:
         """Update the markets cache that the myco matcher will request"""
         bid_offer_matcher.update_area_uuid_markets_mapping(
             area_uuid_markets_mapping={
-                self.uuid: {"markets": self.all_markets,
+                self.uuid: {"markets": [self.next_market],  # TODO: change key to spot market
                             "settlement_markets": self.settlement_markets.values(),
                             "current_time": self.now}})
 
     def update_area_current_tick(self):
         self.current_tick += 1
         if self._markets:
-            for market in self._markets.markets.values():
-                market.update_clock(self.current_tick_in_slot)
+            self.next_market.update_clock(self.current_tick_in_slot)
 
             for market in self._markets.settlement_markets.values():
                 market.update_clock(self.current_tick_in_slot)
@@ -448,6 +447,10 @@ class Area:
             s=self,
             markets=[t.format(d3a.constants.TIME_FORMAT) for t in self._markets.markets.keys()]
         )
+
+    @property
+    def all_markets(self):
+        return [m for m in self._markets.markets.values() if m.in_sim_duration]
 
     @property
     def current_slot(self):
@@ -494,10 +497,6 @@ class Area:
         return self.config.start_date.add(
             seconds=self.config.tick_length.seconds * self.current_tick
         )
-
-    @property
-    def all_markets(self):
-        return [m for m in self._markets.markets.values() if m.in_sim_duration]
 
     @property
     def past_markets(self) -> List:

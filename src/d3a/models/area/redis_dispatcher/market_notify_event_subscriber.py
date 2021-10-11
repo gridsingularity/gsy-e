@@ -40,25 +40,23 @@ class MarketNotifyEventSubscriber:
         self.subscribe_to_events()
 
     def subscribe_to_events(self):
-        channels_callbacks_dict = {}
-        for market in self.area.all_markets:
-            channel_name = f"market/{market.id}/notify_event"
+        market = self.area.next_market
+        channel_name = f"market/{market.id}/notify_event"
 
-            def generate_notify_callback(payload):
-                event_type, kwargs = self.parse_market_event_from_event_payload(payload)
-                data = json.loads(payload["data"])
-                kwargs["market_id"] = market.id
+        def generate_notify_callback(payload):
+            event_type, kwargs = self.parse_market_event_from_event_payload(payload)
+            data = json.loads(payload["data"])
+            kwargs["market_id"] = market.id
 
-                def executor_func():
-                    transaction_uuid = data.pop("transaction_uuid", None)
-                    assert transaction_uuid is not None
-                    self.root_dispatcher.broadcast_callback(event_type, **kwargs)
-                    self.publish_notify_event_response(market.id, event_type, transaction_uuid)
+            def executor_func():
+                transaction_uuid = data.pop("transaction_uuid", None)
+                assert transaction_uuid is not None
+                self.root_dispatcher.broadcast_callback(event_type, **kwargs)
+                self.publish_notify_event_response(market.id, event_type, transaction_uuid)
 
-                self.futures.append(self.executor.submit(executor_func))
+            self.futures.append(self.executor.submit(executor_func))
 
-            channels_callbacks_dict[channel_name] = generate_notify_callback
-        self.redis.sub_to_multiple_channels(channels_callbacks_dict)
+        self.redis.sub_to_multiple_channels({channel_name: generate_notify_callback})
 
     def parse_market_event_from_event_payload(self, payload):
         return parse_event_and_parameters_from_json_string(payload)

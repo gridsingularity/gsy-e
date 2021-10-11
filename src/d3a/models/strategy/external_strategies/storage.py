@@ -383,7 +383,7 @@ class StorageExternalMixin(ExternalMixin):
                 self.market_area.current_market.time_slot
                 if self.market_area.current_market else None,
                 self.next_market.time_slot,
-                self.future_markets_time_slots
+                [self.spot_market_time_slot]
             )
             self.state.clamp_energy_to_sell_kWh([self.next_market.time_slot])
             self.state.clamp_energy_to_buy_kWh([self.next_market.time_slot])

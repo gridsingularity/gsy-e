@@ -346,11 +346,11 @@ class StorageStrategy(BidEnabledStrategy):
 
         This method is triggered by the TICK event.
         """
-        self.state.clamp_energy_to_buy_kWh(self.future_markets_time_slots)
+        self.state.clamp_energy_to_buy_kWh([self.spot_market_time_slot])
 
         for market in self.area.all_markets:
             if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
-                self.state.clamp_energy_to_buy_kWh(self.future_markets_time_slots)
+                self.state.clamp_energy_to_buy_kWh([self.spot_market_time_slot])
                 if self.are_bids_posted(market.id):
                     self.bid_update.update(market, self)
                 else:
@@ -438,7 +438,7 @@ class StorageStrategy(BidEnabledStrategy):
         self.state.market_cycle(
             past_market.time_slot if past_market else None,
             current_market.time_slot,
-            self.future_markets_time_slots
+            [self.spot_market_time_slot]
         )
 
         if self.state.used_storage > 0:
@@ -592,7 +592,7 @@ class StorageStrategy(BidEnabledStrategy):
     def _update_profiles_with_default_values(self):
         self.offer_update.update_and_populate_price_settings(self.area)
         self.bid_update.update_and_populate_price_settings(self.area)
-        self.state.add_default_values_to_state_profiles(self.future_markets_time_slots)
+        self.state.add_default_values_to_state_profiles([self.spot_market_time_slot])
 
     def event_offer(self, *, market_id, offer):
         super().event_offer(market_id=market_id, offer=offer)
