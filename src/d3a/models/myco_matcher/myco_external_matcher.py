@@ -86,10 +86,11 @@ class MycoExternalMatcher(MycoMatcherInterface):
         channel = f"{self._channel_prefix}/offers-bids/response/"
         self.myco_ext_conn.publish_json(channel, response_data)
 
-    def match_recommendations(self, message: Optional[dict] = None) -> None:
+    def match_recommendations(self, message: Optional[Dict] = None) -> None:
         """Receive trade recommendations and match them in the relevant market.
 
-        Match in bulk, any pair that fails validation will cancel the operation
+        Validate recommendations and if any pair raised a blocking exception
+         ie. InvalidBidOfferPairException the matching will be cancelled.
         """
         if not message:
             return
