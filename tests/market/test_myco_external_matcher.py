@@ -223,22 +223,22 @@ class TestMycoExternalMatcherValidator:
     @patch("d3a.models.myco_matcher.myco_external_matcher.BidOfferMatch.is_valid_dict")
     def test_validate_valid_dict(self, mock_is_valid_dict):
         mock_is_valid_dict.return_value = True
-        assert MycoExternalMatcherValidator.validate_valid_dict(None, {}) is None
+        assert MycoExternalMatcherValidator._validate_valid_dict(None, {}) is None
 
         mock_is_valid_dict.return_value = False
         with pytest.raises(MycoValidationException):
-            MycoExternalMatcherValidator.validate_valid_dict(None, {})
+            MycoExternalMatcherValidator._validate_valid_dict(None, {})
 
     @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
     def test_validate_market_exists(self, mock_myco_external_matcher):
         mock_myco_external_matcher.markets_mapping = {"market": MagicMock()}
         recommendation = {"market_id": "market"}
-        assert MycoExternalMatcherValidator.validate_market_exists(
+        assert MycoExternalMatcherValidator._validate_market_exists(
             mock_myco_external_matcher, recommendation) is None
 
         mock_myco_external_matcher.markets_mapping = {}
         with pytest.raises(MycoValidationException):
-            MycoExternalMatcherValidator.validate_market_exists(
+            MycoExternalMatcherValidator._validate_market_exists(
                 mock_myco_external_matcher, recommendation)
 
     @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
@@ -250,11 +250,11 @@ class TestMycoExternalMatcherValidator:
         recommendation = {
             "market_id": "market",
             "offers": [{"id": "offer1"}], "bids": [{"id": "bid1"}]}
-        assert MycoExternalMatcherValidator.validate_orders_exist_in_market(
+        assert MycoExternalMatcherValidator._validate_orders_exist_in_market(
             mock_myco_external_matcher, recommendation) is None
 
         recommendation["offers"].append({"id": "offer2"})
         with pytest.raises(InvalidBidOfferPairException):
-            MycoExternalMatcherValidator.validate_orders_exist_in_market(
+            MycoExternalMatcherValidator._validate_orders_exist_in_market(
                 mock_myco_external_matcher, recommendation
             )

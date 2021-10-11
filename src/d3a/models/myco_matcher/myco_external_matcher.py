@@ -180,13 +180,13 @@ class MycoExternalMatcherValidator:
     BLOCKING_EXCEPTIONS = (MycoValidationException, )
 
     @staticmethod
-    def validate_valid_dict(matcher: MycoExternalMatcher, recommendation: Dict):
+    def _validate_valid_dict(matcher: MycoExternalMatcher, recommendation: Dict):
         """Check whether the recommendation dict is valid."""
         if not BidOfferMatch.is_valid_dict(recommendation):
             raise MycoValidationException(f"BidOfferMatch is not valid {recommendation}")
 
     @staticmethod
-    def validate_market_exists(matcher: MycoExternalMatcher, recommendation: Dict):
+    def _validate_market_exists(matcher: MycoExternalMatcher, recommendation: Dict):
         """Check whether myco matcher is keeping track of the received market id"""
         market = matcher.markets_mapping.get(recommendation.get("market_id"))
         if market is None:
@@ -196,7 +196,7 @@ class MycoExternalMatcherValidator:
                 f"{recommendation}")
 
     @staticmethod
-    def validate_orders_exist_in_market(matcher: MycoExternalMatcher, recommendation: Dict):
+    def _validate_orders_exist_in_market(matcher: MycoExternalMatcher, recommendation: Dict):
         """Check whether all bids/offers exist in the market."""
 
         market = matcher.markets_mapping.get(recommendation.get("market_id"))
@@ -212,9 +212,9 @@ class MycoExternalMatcherValidator:
     @classmethod
     def _validate(cls, matcher: MycoExternalMatcher, recommendation: Dict):
         """Call corresponding validation methods."""
-        cls.validate_valid_dict(matcher, recommendation)
-        cls.validate_market_exists(matcher, recommendation)
-        cls.validate_orders_exist_in_market(matcher, recommendation)
+        cls._validate_valid_dict(matcher, recommendation)
+        cls._validate_market_exists(matcher, recommendation)
+        cls._validate_orders_exist_in_market(matcher, recommendation)
 
     @classmethod
     def validate_and_report(cls, matcher: MycoExternalMatcher, recommendations: Dict) -> Dict:
