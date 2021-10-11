@@ -71,7 +71,6 @@ class TestAreaClass(unittest.TestCase):
         self.stats = AreaStats(self.area._markets, self.area)
 
     def tearDown(self):
-        GlobalConfig.market_count = GlobalConfig.MARKET_COUNT
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 
     def test_respective_area_grid_fee_is_applied(self):
@@ -79,25 +78,15 @@ class TestAreaClass(unittest.TestCase):
         self.area = Area(name="Street", children=[Area(name="House")],
                          grid_fee_percentage=5, config=self.config)
         self.area.parent = Area(name="GRID", config=self.config)
-        self.area.config.market_count = 1
         self.area.activate()
         assert self.area.next_market.fee_class.grid_fee_rate == 0.05
         self.area.next_market.offer(1, 1, "test", "test")
         assert list(self.area.next_market.offers.values())[0].price == 1.05
 
-    def test_markets_are_cycled_according_to_market_count(self):
-        self.area._bc = None
-        for i in range(2, 97):
-            self.config.market_count = i
-            self.config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
-            self.area.cycle_markets(False, False)
-            assert len(self.area.all_markets) == i
-
     def test_delete_past_markets_instead_of_last(self):
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
         self.area = Area(name="Street", children=[Area(name="House")],
                          config=self.config, grid_fee_percentage=5)
-        self.area.config.market_count = 1
         self.area.activate()
         self.area._bc = None
 
@@ -108,7 +97,7 @@ class TestAreaClass(unittest.TestCase):
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
-        self.area._markets.create_future_markets(
+        self.area._markets.create_new_spot_market(
             current_time, AvailableMarketTypes.SPOT, self.area)
         current_time = today(tz=constants.TIME_ZONE).add(minutes=2*self.config.slot_length.minutes)
         self.area._markets.rotate_markets(current_time)
@@ -120,7 +109,6 @@ class TestAreaClass(unittest.TestCase):
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
         self.area = Area(name="Street", children=[Area(name="House")],
                          config=self.config, grid_fee_percentage=5)
-        self.area.config.market_count = 1
         self.area.activate()
         self.area._bc = None
 
@@ -132,7 +120,7 @@ class TestAreaClass(unittest.TestCase):
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
-        self.area._markets.create_future_markets(
+        self.area._markets.create_new_spot_market(
             current_time, AvailableMarketTypes.SPOT, self.area)
         current_time = today(tz=constants.TIME_ZONE).add(
             minutes=2*self.config.slot_length.total_minutes())

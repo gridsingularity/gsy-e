@@ -52,7 +52,6 @@ log = getLogger(__name__)
 #       of this class with d3a-interface.constants_limits.GlobalConfig class:
 DEFAULT_CONFIG = SimulationConfig(
     sim_duration=duration(hours=24),
-    market_count=1,
     slot_length=duration(minutes=15),
     tick_length=duration(seconds=1),
     cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
@@ -354,8 +353,7 @@ class Area:
         # TODO: Refactor and port the future, spot, settlement and balancing market creation to
         # AreaMarkets class, in order to create all necessary markets with one call.
 
-        # Markets range from one slot to market_count into the future
-        changed = self._markets.create_future_markets(now_value, AvailableMarketTypes.SPOT, self)
+        changed = self._markets.create_new_spot_market(now_value, AvailableMarketTypes.SPOT, self)
 
         # create new settlement market
         if (self.last_past_market and
@@ -364,7 +362,7 @@ class Area:
 
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
                 len(DeviceRegistry.REGISTRY.keys()) != 0:
-            changed_balancing_market = self._markets.create_future_markets(
+            changed_balancing_market = self._markets.create_new_spot_market(
                 now_value, AvailableMarketTypes.BALANCING, self)
         else:
             changed_balancing_market = None
@@ -419,15 +417,14 @@ class Area:
         """Update the markets cache that the myco matcher will request"""
         bid_offer_matcher.update_area_uuid_markets_mapping(
             area_uuid_markets_mapping={
-                self.uuid: {"markets": self.all_markets,
+                self.uuid: {"markets": [self.next_market],  # TODO: change key to spot market
                             "settlement_markets": self.settlement_markets.values(),
                             "current_time": self.now}})
 
     def update_area_current_tick(self):
         self.current_tick += 1
-        if self._markets:
-            for market in self._markets.markets.values():
-                market.update_clock(self.current_tick_in_slot)
+        if self.children:
+            self.next_market.update_clock(self.current_tick_in_slot)
 
             for market in self._markets.settlement_markets.values():
                 market.update_clock(self.current_tick_in_slot)
@@ -448,6 +445,10 @@ class Area:
             s=self,
             markets=[t.format(d3a.constants.TIME_FORMAT) for t in self._markets.markets.keys()]
         )
+
+    @property
+    def all_markets(self):
+        return [m for m in self._markets.markets.values() if m.in_sim_duration]
 
     @property
     def current_slot(self):
@@ -496,10 +497,6 @@ class Area:
         )
 
     @property
-    def all_markets(self):
-        return [m for m in self._markets.markets.values() if m.in_sim_duration]
-
-    @property
     def past_markets(self) -> List:
         return list(self._markets.past_markets.values())
 
@@ -531,7 +528,7 @@ class Area:
     def next_market(self):
         """Returns the "current" market (i.e. the one currently "running")"""
         try:
-            return list(self._markets.markets.values())[0]
+            return self.all_markets[-1]
         except IndexError:
             return None
 

@@ -120,16 +120,15 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         """
         self._read_or_rotate_profiles()
 
-        for market in self.area.all_markets:
-            slot_time = market.time_slot
-            if not self._load_profile_kWh:
-                raise D3AException(
-                    f"Load {self.owner.name} tries to set its energy forecasted requirement "
-                    f"without a profile.")
-            load_energy_kWh = \
-                find_object_of_same_weekday_and_time(self._load_profile_kWh, slot_time)
-            self.state.set_desired_energy(load_energy_kWh * 1000, slot_time, overwrite=False)
-            self.state.update_total_demanded_energy(slot_time)
+        slot_time = self.area.next_market.time_slot
+        if not self._load_profile_kWh:
+            raise D3AException(
+                f"Load {self.owner.name} tries to set its energy forecasted requirement "
+                f"without a profile.")
+        load_energy_kWh = \
+            find_object_of_same_weekday_and_time(self._load_profile_kWh, slot_time)
+        self.state.set_desired_energy(load_energy_kWh * 1000, slot_time, overwrite=False)
+        self.state.update_total_demanded_energy(slot_time)
 
     def _operating_hours(self, energy):
         """

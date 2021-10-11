@@ -49,7 +49,6 @@ def create_config(settings={}):
         "market_maker_rate":
             settings.get("market_maker_rate",
                          str(ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE)),
-        "market_count": settings.get("market_count", GlobalConfig.market_count),
         "cloud_coverage": settings.get("cloud_coverage", GlobalConfig.cloud_coverage),
         "pv_user_profile": settings.get("pv_user_profile", None),
         "capacity_kW": settings.get("capacity_kW",

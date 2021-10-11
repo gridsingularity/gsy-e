@@ -47,7 +47,6 @@ DeviceRegistry.REGISTRY = {
 @pytest.fixture(scope="function", autouse=True)
 def auto_fixture():
     yield
-    GlobalConfig.market_count = GlobalConfig.MARKET_COUNT
     GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
     ConstSettings.IAASettings.MARKET_TYPE = 1
 
@@ -114,7 +113,6 @@ class FakeArea:
     def config(self):
         configuration = SimulationConfig(
                 sim_duration=Duration(hours=24),
-                market_count=4,
                 slot_length=Duration(minutes=15),
                 tick_length=Duration(seconds=15),
                 cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
@@ -389,7 +387,7 @@ def test_if_trades_are_handled_correctly(storage_strategy_test6, market_test6):
     storage_strategy_test6.area.get_future_market_from_id = (
         lambda _id: market_test6 if _id == market_test6.id else None)
     storage_strategy_test6.state.add_default_values_to_state_profiles(
-        storage_strategy_test6.future_markets_time_slots)
+        [storage_strategy_test6.spot_market_time_slot])
     storage_strategy_test6.event_trade(market_id=market_test6.id, trade=market_test6.trade)
     assert (market_test6.trade.offer_bid in
             storage_strategy_test6.offers.sold[market_test6.id])
@@ -715,7 +713,7 @@ def storage_strategy_test13(area_test13, called):
 
 def test_storage_event_trade(storage_strategy_test11, market_test13):
     storage_strategy_test11.state.add_default_values_to_state_profiles(
-        storage_strategy_test11.future_markets_time_slots)
+        [storage_strategy_test11.spot_market_time_slot])
     storage_strategy_test11.event_trade(market_id=market_test13.id, trade=market_test13.trade)
     assert storage_strategy_test11.state.pledged_sell_kWh[market_test13.time_slot] == \
         market_test13.trade.offer_bid.energy

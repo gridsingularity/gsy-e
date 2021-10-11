@@ -53,7 +53,6 @@ def ext_strategy_fixture(request):
     config.start_date = GlobalConfig.start_date
     config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
     config.end_date = GlobalConfig.start_date + duration(days=1)
-    config.market_count = 1
     area = Area(name="forecast_pv", config=config, strategy=strategy,
                 external_connection_available=True)
     parent = Area(name="parent_area", children=[area], config=config)

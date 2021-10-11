@@ -25,7 +25,6 @@ class TestLiveEvents(unittest.TestCase):
             sim_duration=duration(hours=12),
             slot_length=duration(minutes=15),
             tick_length=duration(seconds=15),
-            market_count=1,
             cloud_coverage=0,
             external_connection_enabled=False
         )
