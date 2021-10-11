@@ -107,10 +107,10 @@ class MycoExternalMatcher(MycoMatcherInterface):
         if response_data["status"] != "success":
             self.myco_ext_conn.publish_json(channel, response_data)
             return
-        for recommendation in response_data["recommendations"]:
+        for recommendation in list(
+                filter(lambda record: record["status"] == "success",
+                       response_data["recommendations"])):
             try:
-                if recommendation["status"] != "success":
-                    continue
                 market = self.markets_mapping.get(recommendation["market_id"])
                 recommendation.pop("status")
                 market.match_recommendations([recommendation])
