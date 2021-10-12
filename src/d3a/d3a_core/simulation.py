@@ -31,7 +31,7 @@ from d3a_interface.exceptions import D3AException
 from d3a_interface.kafka_communication.kafka_producer import kafka_connection_factory
 from d3a_interface.utils import format_datetime, str_to_pendulum_datetime
 from numpy import random
-from pendulum import now, duration
+from pendulum import now, duration, DateTime
 
 import d3a.constants
 from d3a import setup as d3a_setup  # noqa
@@ -293,6 +293,10 @@ class Simulation:
         for child in area.children:
             self.set_area_current_tick(child, current_tick)
 
+    def _get_current_market_time_slot(self, slot_number: int) -> DateTime:
+        return (self.area.config.start_date + (slot_number * self.area.config.slot_length)
+                if GlobalConfig.IS_CANARY_NETWORK else self.area.now)
+
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
         self.current_expected_tick_time = self.run_start
         config = self.simulation_config
@@ -332,8 +336,8 @@ class Simulation:
                         f"{self.progress_info.elapsed_time} elapsed, "
                         f"ETA: {self.progress_info.eta}")
 
-            # profiles have to be rotated before the rotation of markets:
-            global_objects.profiles_handler.update_time_and_buffer_profiles(self.area.now)
+            global_objects.profiles_handler.update_time_and_buffer_profiles(
+                self._get_current_market_time_slot(slot_no))
 
             self.area.cycle_markets()
 

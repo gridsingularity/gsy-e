@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import json
-import logging
 from enum import Enum
 from time import sleep
 from typing import Dict, List
@@ -90,6 +89,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
         self.myco_ext_conn.publish_json(channel, response_data)
 
     def _populate_recommendations(self, message):
+        """Receive trade recommendations and store them to be consumed in a later stage."""
         data = json.loads(message.get("data"))
         recommendations = data.get("recommended_matches", [])
         self.recommendations.extend(recommendations)
@@ -97,7 +97,8 @@ class MycoExternalMatcher(MycoMatcherInterface):
     def match_recommendations(self) -> None:
         """Consume trade recommendations and match them in the relevant market.
 
-        Match in bulk, any pair that fails validation will cancel the operation
+        Validate recommendations and if any pair raised a blocking exception
+         ie. InvalidBidOfferPairException the matching will be cancelled.
         """
         channel = f"{self._channel_prefix}/recommendations/response/"
         response_data = {
@@ -118,7 +119,6 @@ class MycoExternalMatcher(MycoMatcherInterface):
                 recommendation.pop("status")
                 market.match_recommendations([recommendation])
                 recommendation["status"] = "success"
-                logging.error("Matched!")
             except InvalidBidOfferPairException as exception:
                 recommendation["status"] = "Fail"
                 recommendation["message"] = str(exception)
@@ -185,13 +185,13 @@ class MycoExternalMatcherValidator:
     BLOCKING_EXCEPTIONS = (MycoValidationException, )
 
     @staticmethod
-    def validate_valid_dict(matcher: MycoExternalMatcher, recommendation: Dict):
+    def _validate_valid_dict(matcher: MycoExternalMatcher, recommendation: Dict):
         """Check whether the recommendation dict is valid."""
         if not BidOfferMatch.is_valid_dict(recommendation):
             raise MycoValidationException(f"BidOfferMatch is not valid {recommendation}")
 
     @staticmethod
-    def validate_market_exists(matcher: MycoExternalMatcher, recommendation: Dict):
+    def _validate_market_exists(matcher: MycoExternalMatcher, recommendation: Dict):
         """Check whether myco matcher is keeping track of the received market id"""
         market = matcher.markets_mapping.get(recommendation.get("market_id"))
         if market is None:
@@ -201,7 +201,7 @@ class MycoExternalMatcherValidator:
                 f"{recommendation}")
 
     @staticmethod
-    def validate_orders_exist_in_market(matcher: MycoExternalMatcher, recommendation: Dict):
+    def _validate_orders_exist_in_market(matcher: MycoExternalMatcher, recommendation: Dict):
         """Check whether all bids/offers exist in the market."""
 
         market = matcher.markets_mapping.get(recommendation.get("market_id"))
@@ -217,9 +217,9 @@ class MycoExternalMatcherValidator:
     @classmethod
     def _validate(cls, matcher: MycoExternalMatcher, recommendation: Dict):
         """Call corresponding validation methods."""
-        cls.validate_valid_dict(matcher, recommendation)
-        cls.validate_market_exists(matcher, recommendation)
-        cls.validate_orders_exist_in_market(matcher, recommendation)
+        cls._validate_valid_dict(matcher, recommendation)
+        cls._validate_market_exists(matcher, recommendation)
+        cls._validate_orders_exist_in_market(matcher, recommendation)
 
     @classmethod
     def validate_and_report(cls, matcher: MycoExternalMatcher, recommendations: List) -> Dict:

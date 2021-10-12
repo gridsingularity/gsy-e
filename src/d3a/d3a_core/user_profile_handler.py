@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from typing import Dict
 
 import pytz
-from d3a_interface.constants_limits import GlobalConfig, TIME_ZONE
+from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import generate_market_slot_list
 from pendulum import DateTime, instance, duration
@@ -93,7 +93,8 @@ class ProfileDBConnectionHandler:
                  values as dict values.
 
         """
-        profile_uuid = uuid.UUID(profile_uuid)
+        if not isinstance(profile_uuid, uuid.UUID):
+            profile_uuid = uuid.UUID(profile_uuid)
         first_datapoint_time = select(
             datapoint for datapoint in self.Profile_Database_ProfileTimeSeries
             if datapoint.profile_uuid == profile_uuid
@@ -161,9 +162,16 @@ class ProfileDBConnectionHandler:
                                                    self.convert_pendulum_to_datetime(end_time))
 
         for profile_uuid in self._profile_uuids:
-            self._user_profiles[profile_uuid] = \
-                {instance(data_point.time, TIME_ZONE): data_point.value
-                 for data_point in query_ret_val if data_point.profile_uuid == profile_uuid}
+            self._user_profiles[profile_uuid] = {
+                self.strip_timezone_and_create_pendulum_instance_from_datetime(
+                    data_point.time): data_point.value
+                for data_point in query_ret_val if data_point.profile_uuid == profile_uuid
+            }
+
+        for profile_uuid in self._user_profiles:
+            if not self._user_profiles[profile_uuid]:
+                self._user_profiles[profile_uuid] = self.get_first_week_from_profile(
+                    profile_uuid, current_timestamp)
 
     def _buffer_time_slots(self):
         """ Buffers a list of time_slots that are currently buffered in the user profiles.
@@ -259,8 +267,7 @@ class ProfilesHandler:
                     profile_uuid, self.current_timestamp)
             return read_arbitrary_profile(profile_type,
                                           db_profile,
-                                          current_timestamp=min(db_profile.keys()))
-
+                                          current_timestamp=self.current_timestamp)
         return read_arbitrary_profile(profile_type,
                                       profile,
                                       current_timestamp=self.current_timestamp)
