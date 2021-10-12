@@ -89,10 +89,11 @@ class MycoExternalMatcher(MycoMatcherInterface):
         channel = f"{self._channel_prefix}/offers-bids/response/"
         self.myco_ext_conn.publish_json(channel, response_data)
 
-    def match_recommendations(self, message: Optional[dict] = None) -> None:
+    def match_recommendations(self, message: Optional[Dict] = None) -> None:
         """Receive trade recommendations and match them in the relevant market.
 
-        Match in bulk, any pair that fails validation will cancel the operation
+        Validate recommendations and if any pair raised a blocking exception
+         ie. InvalidBidOfferPairException the matching will be cancelled.
         """
         if not message:
             return
@@ -183,13 +184,13 @@ class MycoExternalMatcherValidator:
     BLOCKING_EXCEPTIONS = (MycoValidationException, )
 
     @staticmethod
-    def validate_valid_dict(matcher: MycoExternalMatcher, recommendation: Dict):
+    def _validate_valid_dict(matcher: MycoExternalMatcher, recommendation: Dict):
         """Check whether the recommendation dict is valid."""
         if not BidOfferMatch.is_valid_dict(recommendation):
             raise MycoValidationException(f"BidOfferMatch is not valid {recommendation}")
 
     @staticmethod
-    def validate_market_exists(matcher: MycoExternalMatcher, recommendation: Dict):
+    def _validate_market_exists(matcher: MycoExternalMatcher, recommendation: Dict):
         """Check whether myco matcher is keeping track of the received market id"""
         market = matcher.area_markets_mapping.get(
             f"{recommendation.get('market_id')}-{recommendation.get('time_slot')}")
@@ -201,7 +202,7 @@ class MycoExternalMatcherValidator:
                 f"{recommendation}")
 
     @staticmethod
-    def validate_orders_exist_in_market(matcher: MycoExternalMatcher, recommendation: Dict):
+    def _validate_orders_exist_in_market(matcher: MycoExternalMatcher, recommendation: Dict):
         """Check whether all bids/offers exist in the market."""
 
         market = matcher.area_markets_mapping.get(
@@ -218,9 +219,9 @@ class MycoExternalMatcherValidator:
     @classmethod
     def _validate(cls, matcher: MycoExternalMatcher, recommendation: Dict):
         """Call corresponding validation methods."""
-        cls.validate_valid_dict(matcher, recommendation)
-        cls.validate_market_exists(matcher, recommendation)
-        cls.validate_orders_exist_in_market(matcher, recommendation)
+        cls._validate_valid_dict(matcher, recommendation)
+        cls._validate_market_exists(matcher, recommendation)
+        cls._validate_orders_exist_in_market(matcher, recommendation)
 
     @classmethod
     def validate_and_report(cls, matcher: MycoExternalMatcher, recommendations: Dict) -> Dict:
@@ -233,7 +234,7 @@ class MycoExternalMatcherValidator:
                 response["recommendations"].append(
                     {**recommendation, "status": "success"}
                 )
-            except Exception as exception:
+            except (MycoValidationException, InvalidBidOfferPairException) as exception:
                 if isinstance(exception, cls.BLOCKING_EXCEPTIONS):
                     response["status"] = "fail"
                     response[
