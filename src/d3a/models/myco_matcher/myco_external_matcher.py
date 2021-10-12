@@ -62,7 +62,8 @@ class MycoExternalMatcher(MycoMatcherInterface):
         """Publish open offers and bids.
 
         Published data are of the following format:
-        {"bids_offers": {'market_id' : {'time_slot': {"bids": [], "offers": [] }, filters: {}}}}
+        {"bids_offers": {'area_uuid' : {'time_slot': {"bids": [], "offers": [] }, filters: {}}}}
+
         """
         response_data = {"event": ExternalMatcherEventsEnum.OFFERS_BIDS_RESPONSE.value}
         data = json.loads(message.get("data"))
@@ -115,6 +116,8 @@ class MycoExternalMatcher(MycoMatcherInterface):
                 if recommendation["status"] != "success":
                     continue
                 recommendation.pop("status")
+                # market_id refers to the area_id (Area that has no strategy)
+                # TODO: rename market_id to area_id in the BidOfferMatch dataclass
                 market = self.area_markets_mapping.get(
                     f"{recommendation['market_id']}-{recommendation['time_slot']}")
                 market.match_recommendations([recommendation])

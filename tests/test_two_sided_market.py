@@ -451,7 +451,7 @@ class TestTwoSidedMarketMatchRecommendations:
             BidOfferMatch(
                 bids=[bid.serializable_dict()], offers=[offer.serializable_dict()],
                 trade_rate=2, selected_energy=1, market_id=market.id,
-                time_slot="time_slot").serializable_dict()
+                time_slot="20211006T12:00").serializable_dict()
         ]
         market.match_recommendations(recommendations)
         assert len(market.trades) == 1
@@ -470,7 +470,7 @@ class TestTwoSidedMarketMatchRecommendations:
                 bids=[bid.serializable_dict()],
                 offers=[offer.serializable_dict() for offer in market.offers.values()],
                 trade_rate=2, selected_energy=1, market_id=market.id,
-                time_slot="time_slot").serializable_dict()
+                time_slot="20211006T12:00").serializable_dict()
         ]
         market.match_recommendations(recommendations)
         assert len(market.trades) == 2
@@ -489,7 +489,7 @@ class TestTwoSidedMarketMatchRecommendations:
                 bids=[bid.serializable_dict() for bid in market.bids.values()],
                 offers=[offer.serializable_dict() for offer in market.offers.values()],
                 trade_rate=1, selected_energy=1, market_id=market.id,
-                time_slot="time_slot").serializable_dict()
+                time_slot="20211006T12:00").serializable_dict()
         ]
         market.match_recommendations(recommendations)
         assert len(market.trades) == 2
@@ -509,7 +509,7 @@ class TestTwoSidedMarketMatchRecommendations:
                 bids=[bid.serializable_dict() for bid in market.bids.values()],
                 offers=[offer.serializable_dict() for offer in market.offers.values()],
                 trade_rate=1, selected_energy=2, market_id=market.id,
-                time_slot="time_slot").serializable_dict()
+                time_slot="20211006T12:00").serializable_dict()
         ]
         market.match_recommendations(recommendations)
         assert len(market.trades) == 3
@@ -530,7 +530,7 @@ class TestTwoSidedMarketMatchRecommendations:
                     bids=[b.serializable_dict() for b in bids.values()],
                     offers=[o.serializable_dict() for o in offers.values()],
                     trade_rate=1, selected_energy=2, market_id=market.id,
-                    time_slot="time_slot").serializable_dict()
+                    time_slot="20211006T12:00").serializable_dict()
             ]
             market.match_recommendations(recommendations)
             assert len(market.trades) == 0
