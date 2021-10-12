@@ -62,7 +62,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
         """Publish open offers and bids.
 
         Published data are of the following format:
-        {"bids_offers": {`market_id` : {`time_slot`: {"bids": [], "offers": [] }, filters: {}}}}
+        {"bids_offers": {'market_id' : {'time_slot': {"bids": [], "offers": [] }, filters: {}}}}
         """
         response_data = {"event": ExternalMatcherEventsEnum.OFFERS_BIDS_RESPONSE.value}
         data = json.loads(message.get("data"))
