@@ -24,12 +24,12 @@ def aggregator_handler():
         yield
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="function")
 def enabled_communicator(strict_redis):
     return ExternalConnectionCommunicator(is_enabled=True)
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="function")
 def disabled_communicator(strict_redis):
     return ExternalConnectionCommunicator(is_enabled=False)
 
@@ -76,9 +76,15 @@ class TestExternalConnectionCommunicator:
     def test_sub_to_aggregator(self, enabled_communicator, disabled_communicator):
         disabled_communicator.sub_to_aggregator()
         assert not hasattr(disabled_communicator, "pubsub")
-
+        channel_callback_dict = {
+            "external//aggregator/*/batch_commands":
+                enabled_communicator.aggregator.receive_batch_commands_callback,
+            "aggregator": enabled_communicator.aggregator.aggregator_callback
+        }
         enabled_communicator.sub_to_aggregator()
-        enabled_communicator.pubsub.psubscribe.assert_called_once()
+        enabled_communicator.pubsub.psubscribe.assert_called_once_with(
+            **channel_callback_dict
+        )
 
     def test_approve_aggregator_commands(self, enabled_communicator, disabled_communicator):
         disabled_communicator.approve_aggregator_commands()
