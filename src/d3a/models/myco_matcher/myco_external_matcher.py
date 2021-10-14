@@ -52,7 +52,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
 
         # Dict[area_id-time_slot_str: market] mapping
         self.area_markets_mapping: Dict[str, TwoSidedMarket] = {}
-        self.recommendations = []
+        self._recommendations = []
 
     def _setup_redis_connection(self):
         self.myco_ext_conn = ResettableCommunicator()
@@ -97,7 +97,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
         """Receive trade recommendations and store them to be consumed in a later stage."""
         data = json.loads(message.get("data"))
         recommendations = data.get("recommended_matches", [])
-        self.recommendations.extend(recommendations)
+        self._recommendations.extend(recommendations)
 
     def match_recommendations(self) -> None:
         """Consume trade recommendations and match them in the relevant market.
@@ -110,7 +110,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
             "event": ExternalMatcherEventsEnum.MATCH.value,
             "status": "success"}
 
-        recommendations = self.recommendations
+        recommendations = self._recommendations
         response_data.update(
             MycoExternalMatcherValidator.validate_and_report(self, recommendations))
         if response_data["status"] != "success":
@@ -131,7 +131,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
                 recommendation["status"] = "Fail"
                 recommendation["message"] = str(exception)
                 continue
-        self.recommendations = []
+        self._recommendations = []
         self.myco_ext_conn.publish_json(channel, response_data)
 
     def publish_simulation_id(self, message):

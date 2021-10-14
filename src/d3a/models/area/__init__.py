@@ -412,13 +412,13 @@ class Area:
             else:
                 self._update_myco_matcher()
                 bid_offer_matcher.event_tick(
-                    **self.progress_info, current_tick_in_slot=self.current_tick_in_slot)
+                    **self._progress_info, current_tick_in_slot=self.current_tick_in_slot)
                 bid_offer_matcher.match_recommendations()
 
         self.events.update_events(self.now)
 
     @property
-    def progress_info(self):
+    def _progress_info(self):
         slot_completion_percent = int((self.current_tick_in_slot /
                                        self.config.ticks_per_slot) * 100)
         return {"slot_completion": f"{slot_completion_percent}%",
