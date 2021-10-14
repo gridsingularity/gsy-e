@@ -59,11 +59,6 @@ class RedisCommunicator:
         log.trace(f"Started thread for events: {thread}")
         return thread
 
-    @property
-    def is_subscribed_to_channels_patterns(self) -> bool:
-        """Check whether the communicator subscribed to at least 1 channel or pattern."""
-        return self.pubsub.channels or self.pubsub.patterns
-
 
 class ResettableCommunicator(RedisCommunicator):
     def __init__(self):
@@ -121,7 +116,7 @@ class ExternalConnectionCommunicator(ResettableCommunicator):
     def start_communication(self):
         if not self.is_enabled:
             return
-        if not self.is_subscribed_to_channels_patterns:
+        if not self.pubsub.subscribed:
             return
         thread = self.pubsub.run_in_thread(sleep_time=0.1, daemon=True)
         log.debug(f"Started ExternalConnectionCommunicator thread for "
