@@ -99,7 +99,7 @@ class PVPredefinedStrategy(PVStrategy):
             if self.cloud_coverage is not None else self.area.config.cloud_coverage
         if reconfigure:
             self._read_predefined_profile_for_pv()
-        market = self.area.all_markets[-1]
+        market = self.area.next_market
         slot_time = market.time_slot
         if not self.energy_profile:
             raise D3AException(

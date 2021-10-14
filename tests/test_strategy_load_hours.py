@@ -69,10 +69,6 @@ class FakeArea:
         return 0.
 
     @property
-    def all_markets(self):
-        return list(self.markets.values())
-
-    @property
     def current_tick(self):
         return 5
 
