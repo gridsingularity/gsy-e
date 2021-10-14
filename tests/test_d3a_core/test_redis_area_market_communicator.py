@@ -1,4 +1,4 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 from redis import StrictRedis
@@ -43,13 +43,15 @@ class TestExternalConnectionCommunicator:
         assert hasattr(communicator, "channel_callback_dict") is True
 
     def test_sub_to_channel(self):
-        callback = lambda x: x
+        def callback():
+            return
         communicator = ExternalConnectionCommunicator(is_enabled=True)
         communicator.sub_to_channel(channel="channel", callback=callback)
         communicator.pubsub.subscribe.assert_called_once_with(**{"channel": callback})
 
     def test_sub_to_multiple_channels(self):
-        callback = lambda x: x
+        def callback():
+            return
         communicator = ExternalConnectionCommunicator(is_enabled=True)
         communicator.sub_to_multiple_channels({"channel": callback})
         communicator.pubsub.subscribe.assert_called_once_with(**{"channel": callback})
