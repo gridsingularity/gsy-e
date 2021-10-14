@@ -137,19 +137,12 @@ class RedisMarketExternalConnection:
             ret_val["transaction_id"] = payload_data.get("transaction_id", None)
             self._redis_communicator.publish_json(dso_market_stats_response_channel, ret_val)
 
-    @property
-    def _progress_info(self):
-        slot_completion_percent = int((self.area.current_tick_in_slot /
-                                       self.area.config.ticks_per_slot) * 100)
-        return {"slot_completion": f"{slot_completion_percent}%",
-                "market_slot": self.area.next_market.time_slot_str}
-
     def publish_market_cycle(self):
         if self.area.current_market is None:
             return
 
         if self.is_aggregator_controlled:
-            self.aggregator.add_batch_market_event(self.area.uuid, self._progress_info)
+            self.aggregator.add_batch_market_event(self.area.uuid, self.area.progress_info)
 
     def deactivate(self):
         if self.is_aggregator_controlled:

@@ -52,13 +52,16 @@ class TestMycoExternalMatcher:
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, {"simulation_id": self.matcher.simulation_id})
 
-    def test_event_tick(self):
+    @patch("d3a.d3a_core.global_stats.ExternalConnectionGlobalStatistics."
+           "is_it_time_for_external_tick")
+    def test_event_tick(self, is_it_time_for_external_tick):
+        is_it_time_for_external_tick.return_value = True
         data = {"event": "tick"}
-        self.matcher.event_tick()
+        self.matcher.event_tick(current_tick_in_slot=1)
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             self.events_channel, data)
-
-        self.matcher.event_tick(is_it_time_for_external_tick=False)
+        is_it_time_for_external_tick.return_value = False
+        self.matcher.event_tick(current_tick_in_slot=2)
         # should still be == 1 as the above won't trigger the publish_json method
         assert self.matcher.myco_ext_conn.publish_json.call_count == 1
 
