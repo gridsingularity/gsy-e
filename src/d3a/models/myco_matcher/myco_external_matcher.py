@@ -152,7 +152,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
                 kwargs.pop("current_tick_in_slot"))):
             # If External matching is enabled, limit the number of ticks dispatched.
             return
-        sleep(2)
+        sleep(1)
         data = {"event": ExternalMatcherEventsEnum.TICK.value, **kwargs}
         self.myco_ext_conn.publish_json(self._events_channel, data)
 
