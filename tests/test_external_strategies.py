@@ -69,7 +69,7 @@ class TestPVForecastExternalStrategy:
     @pytest.mark.parametrize("ext_strategy_fixture", [PVForecastExternalStrategy()],
                              indirect=True)
     def test_update_energy_forecast_calls_set_available_energy(self, ext_strategy_fixture):
-        time = ext_strategy_fixture.area.next_market.time_slot
+        time = ext_strategy_fixture.area.spot_market.time_slot
         energy = 1
         ext_strategy_fixture.energy_forecast_buffer = {time: energy}
         ext_strategy_fixture.state.set_available_energy = Mock()
@@ -83,7 +83,7 @@ class TestPVForecastExternalStrategy:
             self, ext_strategy_fixture):
         # do not call set_available_energy for time_slots in the past
         ext_strategy_fixture.state.set_available_energy = Mock()
-        time = ext_strategy_fixture.area.next_market.time_slot.subtract(minutes=15)
+        time = ext_strategy_fixture.area.spot_market.time_slot.subtract(minutes=15)
         ext_strategy_fixture.energy_forecast_buffer = {time: 1}
         ext_strategy_fixture.update_energy_forecast()
         ext_strategy_fixture.state.set_available_energy.assert_not_called()
@@ -91,7 +91,7 @@ class TestPVForecastExternalStrategy:
     @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy()],
                              indirect=True)
     def test_update_energy_forecast_calls_set_desired_energy(self, ext_strategy_fixture):
-        time = ext_strategy_fixture.area.next_market.time_slot
+        time = ext_strategy_fixture.area.spot_market.time_slot
         energy = 1
         ext_strategy_fixture.energy_forecast_buffer = {time: energy}
         ext_strategy_fixture.state.set_desired_energy = Mock()
@@ -105,7 +105,7 @@ class TestPVForecastExternalStrategy:
                              indirect=True)
     def test_update_energy_forecast_doesnt_call_set_desired_energy_for_past_markets(
             self, ext_strategy_fixture):
-        time = ext_strategy_fixture.area.next_market.time_slot.subtract(minutes=15)
+        time = ext_strategy_fixture.area.spot_market.time_slot.subtract(minutes=15)
         ext_strategy_fixture.energy_forecast_buffer = {time: 1}
         ext_strategy_fixture.state.set_desired_energy = Mock()
         ext_strategy_fixture.state.update_total_demanded_energy = Mock()
@@ -117,7 +117,7 @@ class TestPVForecastExternalStrategy:
                                                       PVForecastExternalStrategy()], indirect=True)
     def test_update_energy_measurement_calls_set_energy_measurement_kWh(
             self, ext_strategy_fixture):
-        time = ext_strategy_fixture.area.next_market.time_slot.subtract(minutes=15)
+        time = ext_strategy_fixture.area.spot_market.time_slot.subtract(minutes=15)
         energy = 1
         ext_strategy_fixture.energy_measurement_buffer = {time: energy}
         ext_strategy_fixture.state.set_energy_measurement_kWh = Mock()
@@ -128,7 +128,7 @@ class TestPVForecastExternalStrategy:
                                                       PVForecastExternalStrategy()], indirect=True)
     def test_update_energy_measurement_doesnt_call_set_energy_measurement_kWh_for_future_markets(
             self, ext_strategy_fixture):
-        time = ext_strategy_fixture.area.next_market.time_slot.add(minutes=15)
+        time = ext_strategy_fixture.area.spot_market.time_slot.add(minutes=15)
         ext_strategy_fixture.energy_measurement_buffer = {time: 1}
         ext_strategy_fixture.state.set_energy_measurement_kWh = Mock()
         ext_strategy_fixture.update_energy_measurement()

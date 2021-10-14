@@ -356,20 +356,20 @@ class TestExternalMixin:
     def test_device_info_dict_for_load_strategy_reports_required_energy(self):
         strategy = LoadHoursExternalStrategy(100)
         self._create_and_activate_strategy_area(strategy)
-        strategy.state._energy_requirement_Wh[strategy.next_market.time_slot] = 0.987
+        strategy.state._energy_requirement_Wh[strategy.spot_market.time_slot] = 0.987
         assert strategy._device_info_dict["energy_requirement_kWh"] == 0.000987
 
     def test_device_info_dict_for_pv_strategy_reports_available_energy(self):
         strategy = PVExternalStrategy(2, capacity_kW=0.16)
         self._create_and_activate_strategy_area(strategy)
-        strategy.state._available_energy_kWh[strategy.next_market.time_slot] = 1.123
+        strategy.state._available_energy_kWh[strategy.spot_market.time_slot] = 1.123
         assert strategy._device_info_dict["available_energy_kWh"] == 1.123
 
     def test_device_info_dict_for_storage_strategy_reports_battery_stats(self):
         strategy = StorageExternalStrategy(battery_capacity_kWh=0.5)
         self._create_and_activate_strategy_area(strategy)
-        strategy.state.energy_to_sell_dict[strategy.next_market.time_slot] = 0.02
-        strategy.state.energy_to_buy_dict[strategy.next_market.time_slot] = 0.03
+        strategy.state.energy_to_sell_dict[strategy.spot_market.time_slot] = 0.02
+        strategy.state.energy_to_buy_dict[strategy.spot_market.time_slot] = 0.03
         strategy.state._used_storage = 0.01
         assert strategy._device_info_dict["energy_to_sell"] == 0.02
         assert strategy._device_info_dict["energy_to_buy"] == 0.03
@@ -440,11 +440,11 @@ class TestExternalMixin:
         PVExternalStrategy(2, capacity_kW=0.16),
         StorageExternalStrategy()
     ])
-    def test_get_market_from_cmd_arg_returns_next_market_if_arg_missing(self, strategy):
+    def test_get_market_from_cmd_arg_returns_spot_market_if_arg_missing(self, strategy):
         strategy.area = Mock()
-        strategy.area.next_market = Mock()
+        strategy.area.spot_market = Mock()
         market = strategy._get_market_from_command_argument({})
-        assert market == strategy.area.next_market
+        assert market == strategy.area.spot_market
 
     @pytest.mark.parametrize("strategy", [
         LoadHoursExternalStrategy(100),
@@ -453,7 +453,7 @@ class TestExternalMixin:
     ])
     def test_get_market_from_cmd_arg_returns_spot_market(self, strategy):
         strategy.area = Mock()
-        strategy.area.next_market = Mock()
+        strategy.area.spot_market = Mock()
         timeslot = format_datetime(now())
         market_mock = Mock()
         strategy.area.get_market = MagicMock(return_value=market_mock)
@@ -467,7 +467,7 @@ class TestExternalMixin:
     ])
     def test_get_market_from_cmd_arg_returns_settlement_market(self, strategy):
         strategy.area = Mock()
-        strategy.area.next_market = Mock()
+        strategy.area.spot_market = Mock()
         timeslot = format_datetime(now())
         market_mock = Mock()
         strategy.area.get_market = MagicMock(return_value=None)

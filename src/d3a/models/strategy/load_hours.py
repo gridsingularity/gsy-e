@@ -151,7 +151,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if self.use_market_maker_rate:
             self._area_reconfigure_prices(
                 final_buying_rate=get_market_maker_rate_from_config(
-                    self.area.next_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
+                    self.area.spot_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
 
         super().event_market_cycle()
         self.add_entry_in_hrs_per_day()
@@ -165,7 +165,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._settlement_market_strategy.event_market_cycle(self)
 
     def add_entry_in_hrs_per_day(self, overwrite=False):
-        current_day = self._get_day_of_timestamp(self.area.next_market.time_slot)
+        current_day = self._get_day_of_timestamp(self.area.spot_market.time_slot)
         if current_day not in self.hrs_per_day or overwrite:
             self.hrs_per_day[current_day] = self._initial_hrs_per_day
 
@@ -263,7 +263,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if self.use_market_maker_rate:
             self._area_reconfigure_prices(
                 final_buying_rate=get_market_maker_rate_from_config(
-                    self.area.next_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
+                    self.area.spot_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
 
         self._validate_rates(self.bid_update.initial_rate_profile_buffer,
                              self.bid_update.final_rate_profile_buffer,
@@ -353,7 +353,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            time_slot = self.area.next_market.time_slot
+            time_slot = self.area.spot_market.time_slot
             final_rate = self.area.config.market_maker_rate[time_slot]
             self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
                                                      final_rate=final_rate)
@@ -482,9 +482,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def _update_energy_requirement_future_markets(self):
         self.energy_per_slot_Wh = convert_W_to_Wh(self.avg_power_W, self.area.config.slot_length)
         desired_energy_Wh = (self.energy_per_slot_Wh
-                             if self._allowed_operating_hours(self.area.next_market.time_slot)
+                             if self._allowed_operating_hours(self.area.spot_market.time_slot)
                              else 0.0)
-        self.state.set_desired_energy(desired_energy_Wh, self.area.next_market.time_slot)
+        self.state.set_desired_energy(desired_energy_Wh, self.area.spot_market.time_slot)
 
         for market in self.active_markets:
             current_day = self._get_day_of_timestamp(market.time_slot)

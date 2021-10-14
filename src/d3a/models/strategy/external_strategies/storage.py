@@ -365,14 +365,14 @@ class StorageExternalMixin(ExternalMixin):
     @property
     def _device_info_dict(self):
         return {
-            "energy_to_sell": self.state.energy_to_sell_dict[self.next_market.time_slot],
-            "energy_active_in_bids": self.state.offered_sell_kWh[self.next_market.time_slot],
-            "energy_to_buy": self.state.energy_to_buy_dict[self.next_market.time_slot],
-            "energy_active_in_offers": self.state.offered_buy_kWh[self.next_market.time_slot],
-            "free_storage": self.state.free_storage(self.next_market.time_slot),
+            "energy_to_sell": self.state.energy_to_sell_dict[self.spot_market.time_slot],
+            "energy_active_in_bids": self.state.offered_sell_kWh[self.spot_market.time_slot],
+            "energy_to_buy": self.state.energy_to_buy_dict[self.spot_market.time_slot],
+            "energy_active_in_offers": self.state.offered_buy_kWh[self.spot_market.time_slot],
+            "free_storage": self.state.free_storage(self.spot_market.time_slot),
             "used_storage": self.state.used_storage,
-            "energy_traded": self.energy_traded(self.next_market.id),
-            "total_cost": self.energy_traded_costs(self.next_market.id),
+            "energy_traded": self.energy_traded(self.spot_market.id),
+            "total_cost": self.energy_traded_costs(self.spot_market.id),
         }
 
     def event_market_cycle(self):
@@ -382,14 +382,14 @@ class StorageExternalMixin(ExternalMixin):
             self.state.market_cycle(
                 self.market_area.current_market.time_slot
                 if self.market_area.current_market else None,
-                self.next_market.time_slot,
+                self.spot_market.time_slot,
                 [self.spot_market_time_slot]
             )
-            self.state.clamp_energy_to_sell_kWh([self.next_market.time_slot])
-            self.state.clamp_energy_to_buy_kWh([self.next_market.time_slot])
+            self.state.clamp_energy_to_sell_kWh([self.spot_market.time_slot])
+            self.state.clamp_energy_to_buy_kWh([self.spot_market.time_slot])
             if not self.is_aggregator_controlled:
                 market_event_channel = f"{self.channel_prefix}/events/market"
-                market_info = self.next_market.info
+                market_info = self.spot_market.info
                 if self.is_aggregator_controlled:
                     market_info.update(default_market_info)
                 market_info["device_info"] = self._device_info_dict
@@ -414,9 +414,9 @@ class StorageExternalMixin(ExternalMixin):
         if not self.connected and not self.is_aggregator_controlled:
             super().event_tick()
         else:
-            self.state.tick(self.market_area, self.next_market.time_slot)
-            self.state.clamp_energy_to_sell_kWh([self.next_market.time_slot])
-            self.state.clamp_energy_to_buy_kWh([self.next_market.time_slot])
+            self.state.tick(self.market_area, self.spot_market.time_slot)
+            self.state.clamp_energy_to_sell_kWh([self.spot_market.time_slot])
+            self.state.clamp_energy_to_buy_kWh([self.spot_market.time_slot])
 
             while self.pending_requests:
                 # We want to process requests as First-In-First-Out, so we use popleft

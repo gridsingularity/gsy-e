@@ -417,14 +417,14 @@ class Area:
         """Update the markets cache that the myco matcher will request"""
         bid_offer_matcher.update_area_uuid_markets_mapping(
             area_uuid_markets_mapping={
-                self.uuid: {"markets": [self.next_market],  # TODO: change key to spot market
+                self.uuid: {"markets": [self.spot_market],  # TODO: change key to spot market
                             "settlement_markets": self.settlement_markets.values(),
                             "current_time": self.now}})
 
     def update_area_current_tick(self):
         self.current_tick += 1
         if self.children:
-            self.next_market.update_clock(self.current_tick_in_slot)
+            self.spot_market.update_clock(self.current_tick_in_slot)
 
             for market in self._markets.settlement_markets.values():
                 market.update_clock(self.current_tick_in_slot)
@@ -525,7 +525,7 @@ class Area:
                    key=lambda m: m.sorted_offers[0].energy_rate)
 
     @property
-    def next_market(self):
+    def spot_market(self):
         """Returns the "current" market (i.e. the one currently "running")"""
         try:
             return self.all_markets[-1]

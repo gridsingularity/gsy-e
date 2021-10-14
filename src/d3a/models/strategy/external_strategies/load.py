@@ -205,10 +205,10 @@ class LoadExternalMixin(ExternalMixin):
     def _device_info_dict(self):
         return {
             "energy_requirement_kWh":
-                self.state.get_energy_requirement_Wh(self.next_market.time_slot) / 1000.0,
-            "energy_active_in_bids": self.posted_bid_energy(self.next_market.id),
-            "energy_traded": self.energy_traded(self.next_market.id),
-            "total_cost": self.energy_traded_costs(self.next_market.id),
+                self.state.get_energy_requirement_Wh(self.spot_market.time_slot) / 1000.0,
+            "energy_active_in_bids": self.posted_bid_energy(self.spot_market.id),
+            "energy_traded": self.energy_traded(self.spot_market.id),
+            "total_cost": self.energy_traded_costs(self.spot_market.id),
         }
 
     def event_market_cycle(self):
@@ -220,7 +220,7 @@ class LoadExternalMixin(ExternalMixin):
             self._update_energy_requirement_future_markets()
             if not self.is_aggregator_controlled:
                 market_event_channel = f"{self.channel_prefix}/events/market"
-                market_info = self.next_market.info
+                market_info = self.spot_market.info
                 if self.is_aggregator_controlled:
                     market_info.update(default_market_info)
                 market_info["device_info"] = self._device_info_dict
@@ -451,14 +451,14 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
     def update_energy_forecast(self) -> None:
         """Set energy forecast for future markets."""
         for slot_time, energy_kWh in self.energy_forecast_buffer.items():
-            if slot_time >= self.area.next_market.time_slot:
+            if slot_time >= self.area.spot_market.time_slot:
                 self.state.set_desired_energy(energy_kWh * 1000, slot_time, overwrite=True)
                 self.state.update_total_demanded_energy(slot_time)
 
     def update_energy_measurement(self) -> None:
         """Set energy measurement for past markets."""
         for slot_time, energy_kWh in self.energy_measurement_buffer.items():
-            if slot_time < self.area.next_market.time_slot:
+            if slot_time < self.area.spot_market.time_slot:
                 self.state.set_energy_measurement_kWh(energy_kWh, slot_time)
 
     def _update_energy_requirement_future_markets(self):

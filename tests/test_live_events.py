@@ -247,7 +247,7 @@ class TestLiveEvents(unittest.TestCase):
         assert set(self.area3.strategy.bid_update.initial_rate.values()) == {2}
         assert set(self.area3.strategy.bid_update.final_rate.values()) == {101}
         assert self.area3.strategy.bid_update.energy_rate_change_per_update[
-                   self.area_house2.next_market.time_slot] == -4
+                   self.area_house2.spot_market.time_slot] == -4
         assert self.area3.strategy.offer_update.update_interval.minutes == 14
         assert self.area3.strategy.bid_update.update_interval.minutes == 14
 

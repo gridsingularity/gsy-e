@@ -917,12 +917,12 @@ def test_infinite_plant_energy_rate(context, plant_name):
     for market in grid.past_markets:
         for trade in market.trades:
             assert trade.buyer is not finite.name
-            trade.offer_bid.next_market = market
+            trade.offer_bid.spot_market = market
             if trade.seller == finite.name:
                 trades_sold.append(trade)
 
     assert all([isclose(trade.offer_bid.energy_rate,
-                        market_maker_rate[trade.offer_bid.next_market.time_slot])
+                        market_maker_rate[trade.offer_bid.spot_market.time_slot])
                 for trade in trades_sold])
     assert len(trades_sold) > 0
 
@@ -1064,7 +1064,7 @@ def pv_selling_rate_minus_fees(context):
     for market in grid.past_markets:
         for trade in market.trades:
             assert trade.buyer is not pv.name
-            trade.offer_bid.next_market = market
+            trade.offer_bid.spot_market = market
             if trade.seller == pv.name:
                 trades_sold.append(trade)
 
@@ -1086,7 +1086,7 @@ def load_buying_rate_plus_fees(context):
     for market in grid.past_markets:
         for trade in market.trades:
             assert trade.seller is not load.name
-            trade.offer_bid.next_market = market
+            trade.offer_bid.spot_market = market
             if trade.buyer == load.name:
                 trades_bought.append(trade)
 

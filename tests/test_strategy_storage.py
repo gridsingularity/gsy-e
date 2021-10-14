@@ -61,13 +61,13 @@ class FakeArea:
         self.past_market = FakeMarket(4)
         self.current_market = FakeMarket(0)
         self._markets_return = {"Fake Market": FakeMarket(self.count)}
-        self.next_market = self.all_markets[0]
+        self.spot_market = self.all_markets[0]
         self.test_balancing_market = FakeMarket(1)
 
     log = getLogger(__name__)
 
     def get_future_market_from_id(self, id):
-        return self.next_market
+        return self.spot_market
 
     def get_balancing_market(self, time):
         return self.test_balancing_market

@@ -120,7 +120,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         """
         self._read_or_rotate_profiles()
 
-        slot_time = self.area.next_market.time_slot
+        slot_time = self.area.spot_market.time_slot
         if not self._load_profile_kWh:
             raise D3AException(
                 f"Load {self.owner.name} tries to set its energy forecasted requirement "

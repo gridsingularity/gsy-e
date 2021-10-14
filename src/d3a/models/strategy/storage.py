@@ -235,7 +235,7 @@ class StorageStrategy(BidEnabledStrategy):
                 energy_rate_decrease_per_update=offer_rate_change)
 
     def event_on_disabled_area(self):
-        self.state.calculate_soc_for_time_slot(self.area.next_market.time_slot)
+        self.state.calculate_soc_for_time_slot(self.area.spot_market.time_slot)
 
     def event_activate_price(self):
         self._validate_rates(self.offer_update.initial_rate_profile_buffer,
@@ -432,7 +432,7 @@ class StorageStrategy(BidEnabledStrategy):
         self.offer_update.reset(self)
         for market in self.area.all_markets[:-1]:
             self.bid_update.update_counter[market.time_slot] = 0
-        current_market = self.area.next_market
+        current_market = self.area.spot_market
         past_market = self.area.last_past_market
 
         self.state.market_cycle(
@@ -462,7 +462,7 @@ class StorageStrategy(BidEnabledStrategy):
         if not self.is_eligible_for_balancing_market:
             return
 
-        current_market = self.area.next_market
+        current_market = self.area.spot_market
         free_storage = self.state.free_storage(current_market.time_slot)
         if free_storage > 0:
             charge_energy = self.balancing_energy_ratio.demand * free_storage

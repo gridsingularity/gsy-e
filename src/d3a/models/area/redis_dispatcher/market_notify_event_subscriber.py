@@ -40,7 +40,7 @@ class MarketNotifyEventSubscriber:
         self.subscribe_to_events()
 
     def subscribe_to_events(self):
-        market = self.area.next_market
+        market = self.area.spot_market
         channel_name = f"market/{market.id}/notify_event"
 
         def generate_notify_callback(payload):

@@ -521,7 +521,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     @property
     def spot_market_time_slot(self):
-        return self.area.next_market.time_slot
+        return self.area.spot_market.time_slot
 
     def get_state(self):
         try:

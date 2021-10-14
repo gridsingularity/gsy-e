@@ -79,9 +79,9 @@ class TestAreaClass(unittest.TestCase):
                          grid_fee_percentage=5, config=self.config)
         self.area.parent = Area(name="GRID", config=self.config)
         self.area.activate()
-        assert self.area.next_market.fee_class.grid_fee_rate == 0.05
-        self.area.next_market.offer(1, 1, "test", "test")
-        assert list(self.area.next_market.offers.values())[0].price == 1.05
+        assert self.area.spot_market.fee_class.grid_fee_rate == 0.05
+        self.area.spot_market.offer(1, 1, "test", "test")
+        assert list(self.area.spot_market.offers.values())[0].price == 1.05
 
     def test_delete_past_markets_instead_of_last(self):
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False

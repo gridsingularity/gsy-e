@@ -185,7 +185,7 @@ class PVStrategy(BidEnabledStrategy):
         if self.use_market_maker_rate:
             self._area_reconfigure_prices(
                 initial_selling_rate=get_market_maker_rate_from_config(
-                    self.area.next_market, 0) - self.owner.get_path_to_root_fees(), validate=False)
+                    self.area.spot_market, 0) - self.owner.get_path_to_root_fees(), validate=False)
 
         self._validate_rates(self.offer_update.initial_rate_profile_buffer,
                              self.offer_update.final_rate_profile_buffer,
@@ -202,7 +202,7 @@ class PVStrategy(BidEnabledStrategy):
 
         This method is triggered by the TICK event.
         """
-        self.offer_update.update(self.area.next_market, self)
+        self.offer_update.update(self.area.spot_market, self)
         self.offer_update.increment_update_counter_all_markets(self)
 
         self._settlement_market_strategy.event_tick(self)
@@ -211,7 +211,7 @@ class PVStrategy(BidEnabledStrategy):
         # This forecast ist based on the real PV system data provided by enphase
         # They can be found in the tools folder
         # A fit of a gaussian function to those data results in a formula Energy(time)
-        market = self.area.next_market
+        market = self.area.spot_market
         slot_time = market.time_slot
         difference_to_midnight_in_minutes = \
             slot_time.diff(self.area.now.start_of("day")).in_minutes() % (60 * 24)
@@ -275,7 +275,7 @@ class PVStrategy(BidEnabledStrategy):
         self.offer_update.reset(self)
 
         # Iterate over all markets open in the future
-        market = self.area.next_market
+        market = self.area.spot_market
         offer_energy_kWh = self.state.get_available_energy_kWh(market.time_slot)
         # We need to subtract the energy from the offers that are already posted in this
         # market in order to validate that more offers need to be posted.
