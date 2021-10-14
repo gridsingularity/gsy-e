@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 import pytest
 from redis import StrictRedis
@@ -10,74 +10,88 @@ from d3a.d3a_core.redis_connections.redis_area_market_communicator import (
 
 @pytest.fixture(scope="function", autouse=True)
 def strict_redis():
-    patcher = patch("d3a.d3a_core.redis_connections.redis_area_market_communicator.StrictRedis",
-                    spec=StrictRedis)
-    patcher.start()
-    yield
-    patcher.stop()
+    with patch("d3a.d3a_core.redis_connections.redis_area_market_communicator.StrictRedis",
+               spec=StrictRedis):
+
+        yield
 
 
 @pytest.fixture(scope="function", autouse=True)
 def aggregator_handler():
-    patcher = patch(
-        "d3a.d3a_core.redis_connections.redis_area_market_communicator.AggregatorHandler",
-        spec=AggregatorHandler)
-    patcher.start()
-    yield
-    patcher.stop()
+    with patch(
+            "d3a.d3a_core.redis_connections.redis_area_market_communicator.AggregatorHandler",
+            spec=AggregatorHandler):
+        yield
+
+
+@pytest.fixture(scope="function", autouse=True)
+def enabled_communicator(strict_redis):
+    return ExternalConnectionCommunicator(is_enabled=True)
+
+
+@pytest.fixture(scope="function", autouse=True)
+def disabled_communicator(strict_redis):
+    return ExternalConnectionCommunicator(is_enabled=False)
 
 
 class TestExternalConnectionCommunicator:
 
-    def test_init(self):
-        communicator = ExternalConnectionCommunicator(is_enabled=False)
-        assert communicator.is_enabled is False
-        assert communicator.aggregator is None
-        assert hasattr(communicator, "redis_db") is False
-        assert hasattr(communicator, "channel_callback_dict") is False
+    def test_init(self, enabled_communicator, disabled_communicator):
+        assert not disabled_communicator.is_enabled
+        assert disabled_communicator.aggregator is None
+        assert not hasattr(disabled_communicator, "redis_db")
+        assert not hasattr(disabled_communicator, "channel_callback_dict")
 
-        communicator = ExternalConnectionCommunicator(is_enabled=True)
-        assert communicator.is_enabled is True
-        assert communicator.aggregator is not None
-        assert hasattr(communicator, "redis_db") is True
-        assert hasattr(communicator, "channel_callback_dict") is True
+        assert enabled_communicator.is_enabled
+        assert enabled_communicator.aggregator is not None
+        assert hasattr(enabled_communicator, "redis_db")
+        assert hasattr(enabled_communicator, "channel_callback_dict")
 
-    def test_sub_to_channel(self):
-        def callback():
-            return
-        communicator = ExternalConnectionCommunicator(is_enabled=True)
-        communicator.sub_to_channel(channel="channel", callback=callback)
-        communicator.pubsub.subscribe.assert_called_once_with(**{"channel": callback})
+    def test_sub_to_channel(self, enabled_communicator, disabled_communicator):
+        callback = Mock()
+        disabled_communicator.sub_to_channel(channel="channel", callback=callback)
+        assert not hasattr(disabled_communicator, "pubsub")
+        enabled_communicator.sub_to_channel(channel="channel", callback=callback)
+        enabled_communicator.pubsub.subscribe.assert_called_once_with(**{"channel": callback})
 
-    def test_sub_to_multiple_channels(self):
-        def callback():
-            return
-        communicator = ExternalConnectionCommunicator(is_enabled=True)
-        communicator.sub_to_multiple_channels({"channel": callback})
-        communicator.pubsub.subscribe.assert_called_once_with(**{"channel": callback})
+    def test_sub_to_multiple_channels(self, enabled_communicator, disabled_communicator):
+        callback = Mock()
+        disabled_communicator.sub_to_multiple_channels({"channel": callback})
+        assert not hasattr(disabled_communicator, "pubsub")
+        enabled_communicator.sub_to_multiple_channels({"channel": callback})
+        enabled_communicator.pubsub.subscribe.assert_called_once_with(**{"channel": callback})
 
-    def test_start_communication(self):
-        communicator = ExternalConnectionCommunicator(is_enabled=True)
-        communicator.pubsub.subscribed = False
-        communicator.start_communication()
-        assert communicator.pubsub.run_in_thread.called is False
+    def test_start_communication(self, enabled_communicator, disabled_communicator):
+        disabled_communicator.start_communication()
+        assert not hasattr(disabled_communicator, "pubsub")
 
-        communicator.pubsub.subscribed = True
-        communicator.start_communication()
-        assert communicator.pubsub.run_in_thread.called is True
+        enabled_communicator.pubsub.subscribed = False
+        enabled_communicator.start_communication()
+        enabled_communicator.pubsub.run_in_thread.assert_not_called()
 
-    def test_sub_to_aggregator(self):
-        communicator = ExternalConnectionCommunicator(is_enabled=True)
-        communicator.sub_to_aggregator()
-        communicator.pubsub.psubscribe.assert_called_once()
+        enabled_communicator.pubsub.subscribed = True
+        enabled_communicator.start_communication()
+        enabled_communicator.pubsub.run_in_thread.assert_called_once()
 
-    def test_approve_aggregator_commands(self):
-        communicator = ExternalConnectionCommunicator(is_enabled=True)
-        communicator.approve_aggregator_commands()
-        communicator.aggregator.approve_batch_commands.assert_called_once()
+    def test_sub_to_aggregator(self, enabled_communicator, disabled_communicator):
+        disabled_communicator.sub_to_aggregator()
+        assert not hasattr(disabled_communicator, "pubsub")
 
-    def test_publish_aggregator_commands_responses_events(self):
-        communicator = ExternalConnectionCommunicator(is_enabled=True)
-        communicator.publish_aggregator_commands_responses_events()
-        communicator.aggregator.publish_all_commands_responses.assert_called_once()
-        communicator.aggregator.publish_all_events.assert_called_once()
+        enabled_communicator.sub_to_aggregator()
+        enabled_communicator.pubsub.psubscribe.assert_called_once()
+
+    def test_approve_aggregator_commands(self, enabled_communicator, disabled_communicator):
+        disabled_communicator.approve_aggregator_commands()
+        assert disabled_communicator.aggregator is None
+
+        enabled_communicator.approve_aggregator_commands()
+        enabled_communicator.aggregator.approve_batch_commands.assert_called_once()
+
+    def test_publish_aggregator_commands_responses_events(
+            self, enabled_communicator, disabled_communicator):
+        disabled_communicator.publish_aggregator_commands_responses_events()
+        assert disabled_communicator.aggregator is None
+
+        enabled_communicator.publish_aggregator_commands_responses_events()
+        enabled_communicator.aggregator.publish_all_commands_responses.assert_called_once()
+        enabled_communicator.aggregator.publish_all_events.assert_called_once()
