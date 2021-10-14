@@ -100,8 +100,8 @@ class FakeAreaTimeSlot(FakeArea):
         super().__init__(0)
 
     @property
-    def all_markets(self):
-        return [self._next_market]
+    def next_market(self):
+        return self._next_market
 
     def create_next_market(self, time_slot):
         self._next_market = FakeMarketTimeSlot(time_slot)

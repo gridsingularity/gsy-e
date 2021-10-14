@@ -331,7 +331,6 @@ def pv_test66(area_test66):
 def testing_produced_energy_forecast_real_data(pv_test66):
     pv_test66.event_activate()
     # prepare whole day of energy_production_forecast_kWh:
-    print(generate_market_slot_list())
     for time_slot in generate_market_slot_list():
         pv_test66.area.create_next_market(time_slot)
         pv_test66.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
@@ -346,7 +345,6 @@ def testing_produced_energy_forecast_real_data(pv_test66):
     morning_counts = Counts('morning')
     afternoon_counts = Counts('afternoon')
     evening_counts = Counts('evening')
-    print(pv_test66.state._energy_production_forecast_kWh)
     for (time, power) in pv_test66.state._energy_production_forecast_kWh.items():
         if time < morning_time:
             morning_counts.total += 1
