@@ -16,11 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import unittest
-from collections import OrderedDict
 from unittest.mock import MagicMock
 
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.data_classes import Offer
 from parameterized import parameterized
 from pendulum import duration, today
 
@@ -30,10 +28,8 @@ from d3a.events.event_structures import AreaEvent, MarketEvent
 from d3a.models.area import Area, check_area_name_exists_in_parent_area
 from d3a.models.area.event_dispatcher import AreaDispatcher
 from d3a.models.area.events import Events
-from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.stats import AreaStats
 from d3a.models.config import SimulationConfig
-from d3a.models.market import Market
 from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.strategy.storage import StorageStrategy
 
@@ -126,51 +122,6 @@ class TestAreaClass(unittest.TestCase):
             minutes=2*self.config.slot_length.total_minutes())
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 2
-
-    def test_market_with_most_expensive_offer(self):
-        m1 = MagicMock(spec=Market)
-        m1.in_sim_duration = True
-        o1 = MagicMock(spec=Offer)
-        o1.price = 12
-        o1.energy = 1
-        o1.energy_rate = 12
-        m2 = MagicMock(spec=Market)
-        m2.in_sim_duration = True
-        o2 = MagicMock(spec=Offer)
-        o2.price = 12
-        o2.energy = 1
-        o2.energy_rate = 12
-        m3 = MagicMock(spec=Market)
-        m3.in_sim_duration = True
-        o3 = MagicMock(spec=Offer)
-        o3.price = 12
-        o3.energy = 1
-        o3.energy_rate = 12
-        markets = OrderedDict()
-        td = today(tz=constants.TIME_ZONE)
-        td1 = td + self.config.slot_length
-        m1.time_slot = td1
-        markets[m1.time_slot] = m1
-        td2 = td1 + self.config.slot_length
-        m2.time_slot = td2
-        markets[m2.time_slot] = m2
-        td3 = td2 + self.config.slot_length
-        m3.time_slot = td3
-        markets[m3.time_slot] = m3
-        self.area._markets = MagicMock(spec=AreaMarkets)
-        self.area._markets.markets = markets
-        m1.sorted_offers = [o1, o1]
-        m2.sorted_offers = [o2, o2]
-        m3.sorted_offers = [o3, o3]
-        assert self.area.market_with_most_expensive_offer is m1
-        o1.energy_rate = 19
-        o2.energy_rate = 20
-        o3.energy_rate = 18
-        assert self.area.market_with_most_expensive_offer is m2
-        o1.energy_rate = 18
-        o2.energy_rate = 19
-        o3.energy_rate = 20
-        assert self.area.market_with_most_expensive_offer is m3
 
     def test_get_restore_state_get_called_on_all_areas(self):
         strategy = MagicMock(spec=StorageStrategy)

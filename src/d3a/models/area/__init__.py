@@ -518,13 +518,6 @@ class Area:
         return list(self._markets.past_balancing_markets.values())
 
     @property
-    def market_with_most_expensive_offer(self):
-        # In case of a tie, max returns the first market occurrence in order to
-        # satisfy the most recent market slot
-        return max(self.all_markets,
-                   key=lambda m: m.sorted_offers[0].energy_rate)
-
-    @property
     def spot_market(self):
         """Returns the "current" market (i.e. the one currently "running")"""
         try:

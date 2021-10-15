@@ -92,10 +92,6 @@ class FakeArea:
         return offers[self.count]
 
     @property
-    def market_with_most_expensive_offer(self):
-        return self.current_market
-
-    @property
     def past_markets(self):
         return {"past market": self.past_market}
 
