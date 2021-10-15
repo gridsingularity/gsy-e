@@ -108,7 +108,7 @@ class TestAreaClass(unittest.TestCase):
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
-        self.area._markets.create_future_markets(
+        self.area._markets._create_future_markets(
             current_time, AvailableMarketTypes.SPOT, self.area)
         current_time = today(tz=constants.TIME_ZONE).add(minutes=2*self.config.slot_length.minutes)
         self.area._markets.rotate_markets(current_time)
@@ -132,7 +132,7 @@ class TestAreaClass(unittest.TestCase):
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
-        self.area._markets.create_future_markets(
+        self.area._markets._create_future_markets(
             current_time, AvailableMarketTypes.SPOT, self.area)
         current_time = today(tz=constants.TIME_ZONE).add(
             minutes=2*self.config.slot_length.total_minutes())

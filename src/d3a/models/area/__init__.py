@@ -44,7 +44,7 @@ from d3a.models.config import SimulationConfig
 from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
-
+from d3a.models.market.future import FutureMarket
 log = getLogger(__name__)
 
 
@@ -144,6 +144,7 @@ class Area:
             if external_connection_available and self.strategy is None else None
         self.should_update_child_strategies = False
         self.external_connection_available = external_connection_available
+        self._future_market = FutureMarket()
 
     @property
     def name(self):
@@ -280,7 +281,7 @@ class Area:
                     )
         else:
             self._markets.activate_market_rotators()
-
+            self.future_markets.rotate_future_markets(self.next_future_market_slot)
         if self.budget_keeper:
             self.budget_keeper.activate()
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
@@ -339,6 +340,7 @@ class Area:
 
         self.log.debug("Cycling markets")
         self._markets.rotate_markets(now_value)
+        self.future_markets.rotate_future_markets(self.next_future_market_slot)
         self.dispatcher._delete_past_agents(self.dispatcher._inter_area_agents)
 
         # area_market_stats have to updated when cycling market of each area:
@@ -421,6 +423,7 @@ class Area:
             area_uuid_markets_mapping={
                 self.uuid: {"markets": self.all_markets,
                             "settlement_markets": self.settlement_markets.values(),
+                            "future_markets": self.future_markets,
                             "current_time": self.now}})
 
     def update_area_current_tick(self):
@@ -561,6 +564,14 @@ class Area:
             return list(self._markets.past_markets.values())[-1]
         except IndexError:
             return None
+
+    @property
+    def future_markets(self) -> FutureMarket:
+        return self._future_market
+
+    @property
+    def next_future_market_slot(self) -> DateTime:
+        return self.current_market.time_slot.add(self.config.slot_length)
 
     @property
     def settlement_markets(self) -> Dict:

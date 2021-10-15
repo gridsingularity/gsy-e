@@ -101,7 +101,8 @@ class OneSidedMarket(Market):
     def offer(self, price: float, energy: float, seller: str, seller_origin,
               offer_id=None, original_price=None, dispatch_event=True,
               adapt_price_with_fees=True, add_to_history=True, seller_origin_id=None,
-              seller_id=None, attributes: Dict = None, requirements: List[Dict] = None) -> Offer:
+              seller_id=None, attributes: Dict = None, requirements: List[Dict] = None,
+              time_slot: DateTime = None) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
@@ -119,7 +120,8 @@ class OneSidedMarket(Market):
             offer_id = self.bc_interface.create_new_offer(energy, price, seller)
         offer = Offer(offer_id, self.now, price, energy, seller, original_price,
                       seller_origin=seller_origin, seller_origin_id=seller_origin_id,
-                      seller_id=seller_id, attributes=attributes, requirements=requirements)
+                      seller_id=seller_id, attributes=attributes, requirements=requirements,
+                      time_slot=time_slot)
 
         self.offers[offer.id] = offer
         if add_to_history is True:
@@ -136,17 +138,17 @@ class OneSidedMarket(Market):
         self._notify_listeners(MarketEvent.OFFER, offer=offer)
 
     @lock_market_action
-    def delete_offer(self, offer_or_id: Union[str, Offer]):
+    def delete_offer(self, offer_or_id: Union[str, Offer]) -> None:
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
             offer_or_id = offer_or_id.id
         offer = self.offers.pop(offer_or_id, None)
+        if not offer:
+            raise OfferNotFoundException()
         self.bc_interface.cancel_offer(offer)
 
         self._update_min_max_avg_offer_prices()
-        if not offer:
-            raise OfferNotFoundException()
         log.debug(f"{self._debug_log_market_type_identifier}[OFFER][DEL]"
                   f"[{self.name}][{self.time_slot_str}] {offer}")
         # TODO: Once we add event-driven blockchain, this should be asynchronous
@@ -168,7 +170,9 @@ class OneSidedMarket(Market):
 
     def split_offer(self, original_offer, energy, orig_offer_price):
 
-        self.offers.pop(original_offer.id, None)
+        time_slot = original_offer.time_slot
+        self.delete_offer(original_offer)
+
         # same offer id is used for the new accepted_offer
         original_accepted_price = energy / original_offer.energy * orig_offer_price
         accepted_offer = self.offer(offer_id=original_offer.id,
@@ -183,7 +187,8 @@ class OneSidedMarket(Market):
                                     adapt_price_with_fees=False,
                                     add_to_history=False,
                                     attributes=original_offer.attributes,
-                                    requirements=original_offer.requirements)
+                                    requirements=original_offer.requirements,
+                                    time_slot=time_slot)
 
         residual_price = (1 - energy / original_offer.energy) * original_offer.price
         residual_energy = original_offer.energy - energy
@@ -202,7 +207,8 @@ class OneSidedMarket(Market):
                                     adapt_price_with_fees=False,
                                     add_to_history=True,
                                     attributes=original_offer.attributes,
-                                    requirements=original_offer.requirements)
+                                    requirements=original_offer.requirements,
+                                    time_slot=time_slot)
 
         log.debug(f"{self._debug_log_market_type_identifier}[OFFER][SPLIT]"
                   f"[{self.time_slot_str}, {self.name}] "
@@ -235,7 +241,7 @@ class OneSidedMarket(Market):
             return grid_fee_price, energy * trade_rate_incl_fees
 
     @lock_market_action
-    def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
+    def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: float = None,
                      time: DateTime = None,
                      already_tracked: bool = False, trade_rate: float = None,
                      trade_bid_info=None, buyer_origin=None, buyer_origin_id=None,

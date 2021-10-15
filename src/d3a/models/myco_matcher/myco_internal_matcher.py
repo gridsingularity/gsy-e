@@ -73,7 +73,29 @@ class MycoInternalMatcher(MycoMatcherInterface):
                         if not bid_offer_pairs:
                             break
                         market.match_recommendations(bid_offer_pairs)
+
+        self._match_recommendations_future_markets()
+
         self.area_uuid_markets_mapping = {}
+
+    def _match_recommendations_future_markets(self):
+        for area_data in self.area_uuid_markets_mapping.values():
+            market = area_data["future_markets"]
+            for time_slot in market.future_market_slots:
+                while True:
+                    bids = market.slot_bid_mapping[time_slot]
+                    offers = market.slot_offer_mapping[time_slot]
+                    data = {
+                        market.id:
+                            {"bids": [bid.serializable_dict()
+                                      for bid in bids.values()],
+                             "offers": [offer.serializable_dict()
+                                        for offer in offers.values()],
+                             "current_time": area_data["current_time"]}}
+                    bid_offer_pairs = self._get_matches_recommendations(data)
+                    if not bid_offer_pairs:
+                        break
+                    market.match_recommendations(bid_offer_pairs)
 
     def event_tick(self, **kwargs) -> None:
         pass

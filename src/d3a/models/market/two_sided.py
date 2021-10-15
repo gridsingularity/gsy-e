@@ -20,11 +20,8 @@ import uuid
 from copy import deepcopy
 from logging import getLogger
 from math import isclose
-from typing import Dict, List, Union  # noqa
+from typing import Dict, List, Union, Tuple  # noqa
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Bid, Offer, Trade, TradeBidOfferInfo, BidOfferMatch
-from d3a_interface.matching_algorithms.requirements_validators import RequirementsSatisfiedChecker
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import (BidNotFoundException, InvalidBid,
                                      InvalidBidOfferPairException, InvalidTrade, MarketException)
@@ -32,6 +29,10 @@ from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market import lock_market_action
 from d3a.models.market.one_sided import OneSidedMarket
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.data_classes import Bid, Offer, Trade, TradeBidOfferInfo, BidOfferMatch
+from d3a_interface.matching_algorithms.requirements_validators import RequirementsSatisfiedChecker
+from pendulum import DateTime
 
 log = getLogger(__name__)
 
@@ -91,7 +92,8 @@ class TwoSidedMarket(OneSidedMarket):
     def bid(self, price: float, energy: float, buyer: str, buyer_origin: str,
             bid_id: str = None, original_price=None, adapt_price_with_fees=True,
             add_to_history=True, buyer_origin_id=None, buyer_id=None,
-            attributes: Dict = None, requirements: List[Dict] = None) -> Bid:
+            attributes: Dict = None, requirements: List[Dict] = None,
+            time_slot: DateTime = None) -> Bid:
         if energy <= 0:
             raise InvalidBid()
 
@@ -107,7 +109,7 @@ class TwoSidedMarket(OneSidedMarket):
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   self.now, price, energy, buyer, original_price, buyer_origin,
                   buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
-                  attributes=attributes, requirements=requirements)
+                  attributes=attributes, requirements=requirements, time_slot=time_slot)
 
         self.bids[bid.id] = bid
         if add_to_history is True:
@@ -127,9 +129,11 @@ class TwoSidedMarket(OneSidedMarket):
                   f"[{self.time_slot_str}] {bid}")
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
-    def split_bid(self, original_bid, energy, orig_bid_price):
+    def split_bid(self, original_bid: Bid, energy: float, orig_bid_price: float):
 
-        self.bids.pop(original_bid.id, None)
+        time_slot = original_bid.time_slot
+        self.delete_bid(original_bid)
+
         # same bid id is used for the new accepted_bid
         original_accepted_price = energy / original_bid.energy * orig_bid_price
         accepted_bid = self.bid(bid_id=original_bid.id,
@@ -143,7 +147,8 @@ class TwoSidedMarket(OneSidedMarket):
                                 adapt_price_with_fees=False,
                                 add_to_history=False,
                                 attributes=original_bid.attributes,
-                                requirements=original_bid.requirements)
+                                requirements=original_bid.requirements,
+                                time_slot=time_slot)
 
         residual_price = (1 - energy / original_bid.energy) * original_bid.price
         residual_energy = original_bid.energy - energy
@@ -161,7 +166,8 @@ class TwoSidedMarket(OneSidedMarket):
                                 adapt_price_with_fees=False,
                                 add_to_history=True,
                                 attributes=original_bid.attributes,
-                                requirements=original_bid.requirements)
+                                requirements=original_bid.requirements,
+                                time_slot=time_slot)
 
         log.debug(f"{self._debug_log_market_type_identifier}[BID][SPLIT]"
                   f"[{self.time_slot_str}, {self.name}] "
@@ -185,7 +191,7 @@ class TwoSidedMarket(OneSidedMarket):
     def accept_bid(self, bid: Bid, energy: float = None,
                    seller: str = None, buyer: str = None, already_tracked: bool = False,
                    trade_rate: float = None, trade_offer_info=None, seller_origin=None,
-                   seller_origin_id=None, seller_id=None):
+                   seller_origin_id=None, seller_id=None) -> Trade:
         market_bid = self.bids.pop(bid.id, None)
         if market_bid is None:
             raise BidNotFoundException("During accept bid: " + str(bid))
@@ -244,7 +250,10 @@ class TwoSidedMarket(OneSidedMarket):
         self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
         return trade
 
-    def accept_bid_offer_pair(self, bid, offer, clearing_rate, trade_bid_info, selected_energy):
+    def accept_bid_offer_pair(self, bid: Bid, offer: Offer, clearing_rate: float,
+                              trade_bid_info: TradeBidOfferInfo,
+                              selected_energy: float) -> Tuple[Trade, Trade]:
+        time_slot = offer.time_slot
         already_tracked = bid.buyer == offer.seller
         trade = self.accept_offer(offer_or_id=offer,
                                   buyer=bid.buyer,
@@ -254,7 +263,8 @@ class TwoSidedMarket(OneSidedMarket):
                                   trade_bid_info=trade_bid_info,
                                   buyer_origin=bid.buyer_origin,
                                   buyer_origin_id=bid.buyer_origin_id,
-                                  buyer_id=bid.buyer_id)
+                                  buyer_id=bid.buyer_id,
+                                  time_slot=time_slot)
 
         bid_trade = self.accept_bid(bid=bid,
                                     energy=selected_energy,
@@ -265,7 +275,8 @@ class TwoSidedMarket(OneSidedMarket):
                                     trade_offer_info=trade_bid_info,
                                     seller_origin=offer.seller_origin,
                                     seller_origin_id=offer.seller_origin_id,
-                                    seller_id=offer.seller_id)
+                                    seller_id=offer.seller_id,
+                                    time_slot=time_slot)
         return bid_trade, trade
 
     def match_recommendations(
