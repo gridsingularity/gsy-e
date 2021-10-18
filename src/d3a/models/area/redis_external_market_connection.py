@@ -35,8 +35,8 @@ class RedisMarketExternalConnection:
         self.connected = False
 
     @property
-    def next_market(self):
-        return self.area.next_market
+    def spot_market(self):
+        return self.area.spot_market
 
     @property
     def is_aggregator_controlled(self):
@@ -140,7 +140,7 @@ class RedisMarketExternalConnection:
         slot_completion_percent = int((self.area.current_tick_in_slot /
                                        self.area.config.ticks_per_slot) * 100)
         return {'slot_completion': f'{slot_completion_percent}%',
-                'market_slot': self.area.next_market.time_slot_str}
+                'market_slot': self.area.spot_market.time_slot_str}
 
     def publish_market_cycle(self):
         if self.area.current_market is None:

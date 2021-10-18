@@ -1,4 +1,4 @@
-Grid Singularity exchange engine can be used to simulate, collaborate and optimize grid-aware local energy markets (LEMs). The simulation tool is freely available through our User Interface (UI) at [map.gridsingularity](https://map.gridsingularity.com/singularity-map) and our [backend codebase](https://github.com/gridsingularity/d3a) is open source under [GNU general public license](https://github.com/gridsingularity/d3a/blob/master/LICENSE). 
+Grid Singularity exchange engine can be used to simulate, collaborate and optimize grid-aware local energy markets (LEMs). The simulation tool is freely available through our User Interface (UI) at [map.gridsingularity](https://map.gridsingularity.com/singularity-map) and our [backend codebase](https://github.com/gridsingularity/d3a) is open source under [GNU general public license](https://github.com/gridsingularity/d3a/blob/master/LICENSE).
 
 This section will focus on a step-by-step guide to create and simulate LEMs using our software, starting with an explanation and guide for the UI, followed by a more technical tutorial to reproduce in the backend.
 
@@ -110,14 +110,14 @@ def get_setup(config):
                 grid_fee_pct=0, grid_fee_const=0,
 
             ),
-            
+
         ],
         config=config
     )
     return area
 ```
 
-Additionally the user has the possibility to change the default general settings in two different ways: 
+Additionally the user has the possibility to change the default general settings in two different ways:
 
 1. Setup file (best option)
 2. d3a-setting.json
@@ -126,12 +126,12 @@ Additionally the user has the possibility to change the default general settings
 
 For a description of each grid component please see the **Modelling** section.
 
-The user can overwrite the configuration settings by changing variables of the [ConstSettings](https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py) class in the setup-file. This class defines the default values for various parameters (general simulation settings, market settings and energy asset configuration). For instance, the user can define multiple configuration parameters in the get_setup function by overwriting the[ ConstSettings](https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py) default values. For example, the following parameters can be set : 
+The user can overwrite the configuration settings by changing variables of the [ConstSettings](https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py) class in the setup-file. This class defines the default values for various parameters (general simulation settings, market settings and energy asset configuration). For instance, the user can define multiple configuration parameters in the get_setup function by overwriting the[ ConstSettings](https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py) default values. For example, the following parameters can be set :
 
 * Market_type (if equal to 1: [One-Sided Pay-as-Offer](one-sided-pay-as-offer.md), if equal to 2 : [Two-Sided Pay-as-Bid](two-sided-pay-as-bid.md), if equal to 3 : [Two-Sided Pay-as-Clear](two-sided-pay-as-clear.md))
 * Grid_fee_type (if equal to 1: [Constant grid fee](constant-fees.md), if equal to 2 : [Percentage grid fee](percentage-fees.md))
 
-Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market type, constant grid fee and default min (0cts/kWh) and max to (35cts/kWh) energy rate for all [loads](model-load.md): 
+Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market type, constant grid fee and default min (0cts/kWh) and max to (35cts/kWh) energy rate for all [loads](model-load.md):
 
 ```python
 from d3a_interface.constants_limits import ConstSettings
@@ -153,7 +153,6 @@ The following parameters are part of [Simulation Config](https://github.com/grid
 *   sim_duration
 *   slot_length
 *   tick_length
-*   market_count
 *   cloud_coverage*
 *   market_maker_rate*
 *   grid_fee_pct*
@@ -188,23 +187,22 @@ def get_setup(config):
 
 ####Simulation launch
 
-Once the entire grid architecture is modelled, including energy assets, the user can launch the trading simulation by running a command line including desired setup features: 
+Once the entire grid architecture is modelled, including energy assets, the user can launch the trading simulation by running a command line including desired setup features:
 
 *   -d, --duration: simulated duration of simulation [default: 1d]
 *   -t, --tick-length: simulated duration of a tick [default: 1s]
 *   -s, --slot-length: simulated duration of a market slot [default: 15m]
 *   -c, --cloud-coverage: Cloud coverage, 0 for sunny, 1 for partial coverage, 2 for clouds. [default: 0]
-*   -m, --market-count: Number of tradable market slots [default: 1]
 *   --slot-length-realtime: Desired duration of slot in realtime [default: 0s]
 
 Example simulation call:
 ```commandline
-d3a -l ERROR run --duration=1d --tick-length=1s --slot-length=15m --cloud-coverage=0 --market-count=5 --setup default_2a
+d3a -l ERROR run --duration=1d --tick-length=1s --slot-length=15m --cloud-coverage=0 --setup default_2a
 ```
 
 Getting help in the command line:
 
-```commandline  
+```commandline
 d3a --help returns:
 ```
 
@@ -243,8 +241,6 @@ Options:
                                   Desired duration of slot in realtime  [default: 0s]
 
   -c, --cloud-coverage INTEGER  Cloud coverage, 0 for sunny, 1 for partial coverage, 2 for clouds.  [default: 0]
-
-  -m, --market-count INTEGER    Number of tradable market slots into the future  [default: 1]
 
   --setup TEXT                  Simulation setup module use. Available modules: [1000_houses,
 
@@ -356,4 +352,3 @@ Options:
 
   --help                        Show this message and exit.
 ```
- 

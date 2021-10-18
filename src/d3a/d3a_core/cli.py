@@ -74,8 +74,6 @@ _setup_modules = available_simulation_scenarios
 @click.option('-c', '--cloud-coverage', type=int,
               default=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE, show_default=True,
               help="Cloud coverage, 0 for sunny, 1 for partial coverage, 2 for clouds.")
-@click.option('-m', '--market-count', type=int, default=1, show_default=True,
-              help="Number of tradable market slots into the future")
 @click.option('--setup', 'setup_module_name', default="default_2a",
               help="Simulation setup module use. Available modules: [{}]".format(
                   ', '.join(_setup_modules)))
@@ -101,7 +99,7 @@ _setup_modules = available_simulation_scenarios
               default=today(tz=TIME_ZONE).format(DATE_FORMAT), show_default=True,
               help=f"Start date of the Simulation ({DATE_FORMAT})")
 def run(setup_module_name, settings_file, duration, slot_length, tick_length,
-        market_count, cloud_coverage, compare_alt_pricing, enable_external_connection, start_date,
+        cloud_coverage, compare_alt_pricing, enable_external_connection, start_date,
         pause_at, slot_length_realtime, **kwargs):
 
     # Force the multiprocessing start method to be 'fork' on macOS.
@@ -119,12 +117,11 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
             global_settings = {"sim_duration": duration,
                                "slot_length": slot_length,
                                "tick_length": tick_length,
-                               "cloud_coverage": cloud_coverage,
-                               "market_count": market_count}
+                               "cloud_coverage": cloud_coverage}
 
             validate_global_settings(global_settings)
             simulation_config = \
-                SimulationConfig(duration, slot_length, tick_length, market_count,
+                SimulationConfig(duration, slot_length, tick_length,
                                  cloud_coverage, start_date=start_date,
                                  external_connection_enabled=enable_external_connection)
 

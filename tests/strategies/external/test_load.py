@@ -50,7 +50,7 @@ class TestLoadForecastExternalStrategy:
 
     def test_bid_aggregator(self, ext_load_fixture):
         ext_load_fixture.state._energy_requirement_Wh[
-            ext_load_fixture.next_market.time_slot] = 1000.0
+            ext_load_fixture.spot_market.time_slot] = 1000.0
         return_value = ext_load_fixture.trigger_aggregator_commands(
             {
                 "type": "bid",
@@ -62,7 +62,7 @@ class TestLoadForecastExternalStrategy:
         assert_bid_offer_aggregator_commands_return_value(return_value, False)
 
     def test_delete_bid_aggregator(self, ext_load_fixture):
-        bid = ext_load_fixture.post_bid(ext_load_fixture.next_market, 200.0, 1.0)
+        bid = ext_load_fixture.post_bid(ext_load_fixture.spot_market, 200.0, 1.0)
 
         return_value = ext_load_fixture.trigger_aggregator_commands(
             {
@@ -76,7 +76,7 @@ class TestLoadForecastExternalStrategy:
         assert return_value["deleted_bids"] == [bid.id]
 
     def test_list_bids_aggregator(self, ext_load_fixture):
-        bid = ext_load_fixture.post_bid(ext_load_fixture.next_market, 200.0, 1.0)
+        bid = ext_load_fixture.post_bid(ext_load_fixture.spot_market, 200.0, 1.0)
 
         return_value = ext_load_fixture.trigger_aggregator_commands(
             {

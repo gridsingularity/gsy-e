@@ -59,7 +59,7 @@ class FakeArea:
         self.uuid = str(uuid4())
         self.count = count
         self.test_market = FakeMarket(0)
-        self._next_market = FakeMarket(0)
+        self._spot_market = FakeMarket(0)
 
     def get_future_market_from_id(self, id):
         return self.test_market
@@ -69,7 +69,7 @@ class FakeArea:
         return self.test_market
 
     @property
-    def next_market(self):
+    def spot_market(self):
         return self.test_market
 
     @property
@@ -100,11 +100,11 @@ class FakeAreaTimeSlot(FakeArea):
         super().__init__(0)
 
     @property
-    def all_markets(self):
-        return [self._next_market]
+    def spot_market(self):
+        return self._spot_market
 
-    def create_next_market(self, time_slot):
-        self._next_market = FakeMarketTimeSlot(time_slot)
+    def create_spot_market(self, time_slot):
+        self._spot_market = FakeMarketTimeSlot(time_slot)
 
 
 class FakeMarket:
@@ -272,7 +272,7 @@ def testing_produced_energy_forecast_real_data(pv_test66):
     pv_test66.event_activate()
     # prepare whole day of energy_production_forecast_kWh:
     for time_slot in generate_market_slot_list():
-        pv_test66.area.create_next_market(time_slot)
+        pv_test66.area.create_spot_market(time_slot)
         pv_test66.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
 
     morning_time = pendulum.today(tz=TIME_ZONE).at(hour=5, minute=10, second=0)
