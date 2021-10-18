@@ -219,7 +219,6 @@ def read_settings_from_file(settings_file):
                 settings["basic_settings"].get('slot_length', GlobalConfig.slot_length)),
             "tick_length": IntervalType('M:S')(
                 settings["basic_settings"].get('tick_length', GlobalConfig.tick_length)),
-            "market_count": settings["basic_settings"].get('market_count', 1),
             "cloud_coverage": settings["basic_settings"].get(
                 'cloud_coverage', advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"])
         }
@@ -403,7 +402,6 @@ def export_default_settings_to_json_file():
             "sim_duration": f"{GlobalConfig.DURATION_D*24}h",
             "slot_length": f"{GlobalConfig.SLOT_LENGTH_M}m",
             "tick_length": f"{GlobalConfig.TICK_LENGTH_S}s",
-            "market_count": GlobalConfig.MARKET_COUNT,
             "cloud_coverage": GlobalConfig.CLOUD_COVERAGE,
             "start_date": instance(GlobalConfig.start_date).format(d3a.constants.DATE_FORMAT),
     }

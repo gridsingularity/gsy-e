@@ -44,7 +44,7 @@ class FinitePowerPlant(CommercialStrategy):
     def event_market_cycle(self):
         power_from_profile = \
             find_object_of_same_weekday_and_time(self.max_available_power_kW,
-                                                 self.area.next_market.time_slot)
+                                                 self.area.spot_market.time_slot)
         self.energy_per_slot_kWh = convert_kW_to_kWh(power_from_profile,
                                                      self.area.config.slot_length)
         if self.energy_per_slot_kWh <= 0.0:

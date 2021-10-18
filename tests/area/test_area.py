@@ -16,11 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import unittest
-from collections import OrderedDict
 from unittest.mock import MagicMock
 
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.data_classes import Offer
 from parameterized import parameterized
 from pendulum import duration, today
 
@@ -30,10 +28,8 @@ from d3a.events.event_structures import AreaEvent, MarketEvent
 from d3a.models.area import Area, check_area_name_exists_in_parent_area
 from d3a.models.area.event_dispatcher import AreaDispatcher
 from d3a.models.area.events import Events
-from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.stats import AreaStats
 from d3a.models.config import SimulationConfig
-from d3a.models.market import Market
 from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.strategy.storage import StorageStrategy
 
@@ -71,7 +67,6 @@ class TestAreaClass(unittest.TestCase):
         self.stats = AreaStats(self.area._markets, self.area)
 
     def tearDown(self):
-        GlobalConfig.market_count = GlobalConfig.MARKET_COUNT
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 
     def test_respective_area_grid_fee_is_applied(self):
@@ -79,25 +74,15 @@ class TestAreaClass(unittest.TestCase):
         self.area = Area(name="Street", children=[Area(name="House")],
                          grid_fee_percentage=5, config=self.config)
         self.area.parent = Area(name="GRID", config=self.config)
-        self.area.config.market_count = 1
         self.area.activate()
-        assert self.area.next_market.fee_class.grid_fee_rate == 0.05
-        self.area.next_market.offer(1, 1, "test", "test")
-        assert list(self.area.next_market.offers.values())[0].price == 1.05
-
-    def test_markets_are_cycled_according_to_market_count(self):
-        self.area._bc = None
-        for i in range(2, 97):
-            self.config.market_count = i
-            self.config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
-            self.area.cycle_markets(False, False)
-            assert len(self.area.all_markets) == i
+        assert self.area.spot_market.fee_class.grid_fee_rate == 0.05
+        self.area.spot_market.offer(1, 1, "test", "test")
+        assert list(self.area.spot_market.offers.values())[0].price == 1.05
 
     def test_delete_past_markets_instead_of_last(self):
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
         self.area = Area(name="Street", children=[Area(name="House")],
                          config=self.config, grid_fee_percentage=5)
-        self.area.config.market_count = 1
         self.area.activate()
         self.area._bc = None
 
@@ -108,7 +93,7 @@ class TestAreaClass(unittest.TestCase):
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
-        self.area._markets.create_future_markets(
+        self.area._markets.create_new_spot_market(
             current_time, AvailableMarketTypes.SPOT, self.area)
         current_time = today(tz=constants.TIME_ZONE).add(minutes=2*self.config.slot_length.minutes)
         self.area._markets.rotate_markets(current_time)
@@ -120,7 +105,6 @@ class TestAreaClass(unittest.TestCase):
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
         self.area = Area(name="Street", children=[Area(name="House")],
                          config=self.config, grid_fee_percentage=5)
-        self.area.config.market_count = 1
         self.area.activate()
         self.area._bc = None
 
@@ -132,57 +116,12 @@ class TestAreaClass(unittest.TestCase):
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 1
 
-        self.area._markets.create_future_markets(
+        self.area._markets.create_new_spot_market(
             current_time, AvailableMarketTypes.SPOT, self.area)
         current_time = today(tz=constants.TIME_ZONE).add(
             minutes=2*self.config.slot_length.total_minutes())
         self.area._markets.rotate_markets(current_time)
         assert len(self.area.past_markets) == 2
-
-    def test_market_with_most_expensive_offer(self):
-        m1 = MagicMock(spec=Market)
-        m1.in_sim_duration = True
-        o1 = MagicMock(spec=Offer)
-        o1.price = 12
-        o1.energy = 1
-        o1.energy_rate = 12
-        m2 = MagicMock(spec=Market)
-        m2.in_sim_duration = True
-        o2 = MagicMock(spec=Offer)
-        o2.price = 12
-        o2.energy = 1
-        o2.energy_rate = 12
-        m3 = MagicMock(spec=Market)
-        m3.in_sim_duration = True
-        o3 = MagicMock(spec=Offer)
-        o3.price = 12
-        o3.energy = 1
-        o3.energy_rate = 12
-        markets = OrderedDict()
-        td = today(tz=constants.TIME_ZONE)
-        td1 = td + self.config.slot_length
-        m1.time_slot = td1
-        markets[m1.time_slot] = m1
-        td2 = td1 + self.config.slot_length
-        m2.time_slot = td2
-        markets[m2.time_slot] = m2
-        td3 = td2 + self.config.slot_length
-        m3.time_slot = td3
-        markets[m3.time_slot] = m3
-        self.area._markets = MagicMock(spec=AreaMarkets)
-        self.area._markets.markets = markets
-        m1.sorted_offers = [o1, o1]
-        m2.sorted_offers = [o2, o2]
-        m3.sorted_offers = [o3, o3]
-        assert self.area.market_with_most_expensive_offer is m1
-        o1.energy_rate = 19
-        o2.energy_rate = 20
-        o3.energy_rate = 18
-        assert self.area.market_with_most_expensive_offer is m2
-        o1.energy_rate = 18
-        o2.energy_rate = 19
-        o3.energy_rate = 20
-        assert self.area.market_with_most_expensive_offer is m3
 
     def test_get_restore_state_get_called_on_all_areas(self):
         strategy = MagicMock(spec=StorageStrategy)
