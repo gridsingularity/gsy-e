@@ -104,24 +104,21 @@ class AreaMarkets:
         else:
             assert False, f"Market type not supported {market_type}"
 
-    def create_future_markets(self, current_time: DateTime,
-                              market_type: AvailableMarketTypes, area: "Area") -> bool:
+    def create_new_spot_market(self, current_time: DateTime,
+                               market_type: AvailableMarketTypes, area: "Area") -> bool:
         """Create future markets according to the market count."""
         markets = self.get_market_instances_from_class_type(market_type)
         market_class = self._select_market_class(market_type)
 
         changed = False
-        for offset in (area.config.slot_length * i
-                       for i in range(area.config.market_count)):
-            time_slot = current_time + offset
-            if not markets or time_slot not in markets:
-                markets[time_slot] = self._create_market(market_class, time_slot, area,
-                                                         market_type)
-                changed = True
-                self.log.trace("Adding {t:{format}} market".format(
-                    t=time_slot,
-                    format="%H:%M" if area.config.slot_length.seconds > 60 else "%H:%M:%S"
-                ))
+        if not markets or current_time not in markets:
+            markets[current_time] = self._create_market(
+                market_class, current_time, area, market_type)
+            changed = True
+            self.log.trace("Adding {t:{format}} market".format(
+                t=current_time,
+                format="%H:%M" if area.config.slot_length.seconds > 60 else "%H:%M:%S"
+            ))
         self._update_indexed_future_markets()
         return changed
 

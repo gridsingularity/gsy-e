@@ -520,8 +520,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         pass
 
     @property
-    def future_markets_time_slots(self):
-        return [m.time_slot for m in self.area.all_markets]
+    def spot_market_time_slot(self):
+        return self.area.spot_market.time_slot
 
     def get_state(self):
         try:
