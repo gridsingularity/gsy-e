@@ -17,18 +17,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import Union
 
-from d3a.d3a_core.exceptions import D3AException
-from d3a.d3a_core.global_objects_singleton import global_objects
-from d3a.d3a_core.util import should_read_profile_from_db
-from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.read_user_profile import InputProfileTypes
 from d3a_interface.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
 from pendulum import duration
 
-"""
-Create a load that uses a profile as input for its power values
-"""
+from d3a.d3a_core.exceptions import D3AException
+from d3a.d3a_core.global_objects_singleton import global_objects
+from d3a.d3a_core.util import should_read_profile_from_db
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 
 
 class DefinedLoadStrategy(LoadHoursStrategy):
@@ -130,7 +127,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         self.state.set_desired_energy(load_energy_kWh * 1000, slot_time, overwrite=False)
         self.state.update_total_demanded_energy(slot_time)
 
-    def _operating_hours(self, energy):
+    def _operating_hours(self, energy_kWh):
         """
         Disabled feature for this subclass
         """
@@ -145,6 +142,6 @@ class DefinedLoadStrategy(LoadHoursStrategy):
     def area_reconfigure_event(self, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
         self._area_reconfigure_prices(**kwargs)
-        if key_in_dict_and_not_none(kwargs, 'daily_load_profile'):
-            self._load_profile_input = kwargs['daily_load_profile']
+        if key_in_dict_and_not_none(kwargs, "daily_load_profile"):
+            self._load_profile_input = kwargs["daily_load_profile"]
             self._read_or_rotate_profiles(reconfigure=True)
