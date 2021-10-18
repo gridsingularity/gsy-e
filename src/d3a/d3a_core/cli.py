@@ -149,4 +149,5 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
                            slot_length_realtime, kwargs)
 
     except D3AException as ex:
-        raise click.BadOptionUsage(ex.args[0])
+        log.exception(ex)
+        raise click.ClickException(ex.args[0])
