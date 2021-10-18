@@ -1,10 +1,11 @@
 Feature: GridFee integration tests
+
   Scenario Outline: Grid fees are calculated based on the original offer rate
      Given we have a scenario named grid_fees/non_compounded_grid_fees
      And d3a is installed
      And d3a uses an one-sided market
      And the minimum offer age is <min_offer_age>
-     When we run the simulation with setup file grid_fees.non_compounded_grid_fees and parameters [24, <slot_length>, <tick_length>, 1]
+     When we run the simulation with setup file grid_fees.non_compounded_grid_fees and parameters [24, <slot_length>, <tick_length>]
      Then trades on the House 1 market clear with 12.0 cents/kWh and at grid_fee_rate with 0.0 cents/kWh
      Then trades on the Neighborhood 1 market clear with 12 cents/kWh and at grid_fee_rate with 0.5 cents/kWh
      Then trades on the Grid market clear with 11.5 cents/kWh and at grid_fee_rate with 1.0 cents/kWh
@@ -21,7 +22,7 @@ Feature: GridFee integration tests
      And d3a is installed
      And d3a uses an two-sided-pay-as-bid market
      And the minimum offer age is <min_offer_age>
-     When we run the simulation with setup file grid_fees.non_compounded_grid_fees and parameters [24, 60, 60, 1]
+     When we run the simulation with setup file grid_fees.non_compounded_grid_fees and parameters [24, 60, 60]
      Then trades on the House 1 market clear with 30.0 cents/kWh and at grid_fee_rate with 0.0 cents/kWh
      Then trades on the Neighborhood 1 market clear with 30 cents/kWh and at grid_fee_rate with 1.25 cents/kWh
      Then trades on the Grid market clear with 28.75 cents/kWh and at grid_fee_rate with 2.5 cents/kWh
@@ -39,7 +40,7 @@ Feature: GridFee integration tests
      And d3a uses an two-sided-pay-as-clear market
      And the minimum offer age is <min_offer_age>
      And d3a dispatches events from top to bottom
-     When we run the simulation with setup file grid_fees.non_compounded_grid_fees and parameters [24, 60, 60, 1]
+     When we run the simulation with setup file grid_fees.non_compounded_grid_fees and parameters [24, 60, 60]
      Then trades on the House 1 market clear with 30 cents/kWh and at grid_fee_rate with 0.0 cents/kWh
      Then trades on the Neighborhood 1 market clear with 30 cents/kWh and at grid_fee_rate with 1.25 cents/kWh
      Then trades on the Grid market clear with 28.75 cents/kWh and at grid_fee_rate with 2.5 cents/kWh
@@ -57,7 +58,7 @@ Feature: GridFee integration tests
      And d3a uses an two-sided-pay-as-clear market
      And the minimum offer age is <min_offer_age>
      And d3a dispatches events from bottom to top
-     When we run the simulation with setup file grid_fees.non_compounded_grid_fees and parameters [24, 60, 60, 1]
+     When we run the simulation with setup file grid_fees.non_compounded_grid_fees and parameters [24, 60, 60]
      Then trades on the House 1 market clear with 30 cents/kWh and at grid_fee_rate with 0.0 cents/kWh
      Then trades on the Neighborhood 1 market clear with 30 cents/kWh and at grid_fee_rate with 1.25 cents/kWh
      Then trades on the Grid market clear with 28.75 cents/kWh and at grid_fee_rate with 2.5 cents/kWh
@@ -74,7 +75,7 @@ Feature: GridFee integration tests
      And d3a is installed
      And d3a uses an one-sided market
      And the minimum offer age is <min_offer_age>
-     When we run the simulation with setup file grid_fees.constant_grid_fees and parameters [24, <slot_length>, <tick_length>, 1]
+     When we run the simulation with setup file grid_fees.constant_grid_fees and parameters [24, <slot_length>, <tick_length>]
      Then trades on the House 1 market clear with 14.0 cents/kWh and at grid_fee_rate with 0.0 cents/kWh
      Then trades on the Neighborhood 1 market clear with 14.0 cents/kWh and at grid_fee_rate with 1.0 cents/kWh
      Then trades on the Grid market clear with 13.0 cents/kWh and at grid_fee_rate with 2.0 cents/kWh
@@ -91,7 +92,7 @@ Feature: GridFee integration tests
      And d3a is installed
      And d3a uses an two-sided-pay-as-bid market
      And the minimum offer age is <min_offer_age>
-     When we run the simulation with setup file grid_fees.constant_grid_fees and parameters [24, 60, 60, 1]
+     When we run the simulation with setup file grid_fees.constant_grid_fees and parameters [24, 60, 60]
      Then trades on the House 1 market clear with 30.0 cents/kWh and at grid_fee_rate with 0.0 cents/kWh
      Then trades on the Neighborhood 1 market clear with 30.0 cents/kWh and at grid_fee_rate with 1.0 cents/kWh
      Then trades on the Grid market clear with 29 cents/kWh and at grid_fee_rate with 2.0 cents/kWh
@@ -109,7 +110,7 @@ Feature: GridFee integration tests
      And d3a uses an two-sided-pay-as-clear market
      And the minimum offer age is <min_offer_age>
      And d3a dispatches events from top to bottom
-     When we run the simulation with setup file grid_fees.constant_grid_fees and parameters [24, 60, 60, 1]
+     When we run the simulation with setup file grid_fees.constant_grid_fees and parameters [24, 60, 60]
      Then trades on the House 1 market clear with 30.0 cents/kWh and at grid_fee_rate with 0.0 cents/kWh
      Then trades on the Neighborhood 1 market clear with 30.0 cents/kWh and at grid_fee_rate with 1.0 cents/kWh
      Then trades on the Grid market clear with 29 cents/kWh and at grid_fee_rate with 2.0 cents/kWh
@@ -125,5 +126,5 @@ Feature: GridFee integration tests
      Given we have a scenario named grid_fees/no_trades_high_fees
      And d3a is installed
      And d3a uses an two-sided-pay-as-bid market
-     When we run the simulation with setup file grid_fees.no_trades_high_fees and parameters [24, 60, 60, 1]
+     When we run the simulation with setup file grid_fees.no_trades_high_fees and parameters [24, 60, 60]
      Then no trades are performed in all markets

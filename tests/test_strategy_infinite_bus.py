@@ -66,7 +66,7 @@ class FakeArea:
         return [self.test_market]
 
     @property
-    def next_market(self):
+    def spot_market(self):
         return self.test_market
 
     @property

@@ -46,7 +46,7 @@ class TestPVForecastExternalStrategy:
                                                                       "delete_offer", {})
 
     def test_offer_aggregator(self, ext_pv_fixture):
-        ext_pv_fixture.state._available_energy_kWh[ext_pv_fixture.next_market.time_slot] = 1.0
+        ext_pv_fixture.state._available_energy_kWh[ext_pv_fixture.spot_market.time_slot] = 1.0
         return_value = ext_pv_fixture.trigger_aggregator_commands(
             {
                 "type": "offer",
@@ -59,7 +59,7 @@ class TestPVForecastExternalStrategy:
 
     def test_delete_offer_aggregator(self, ext_pv_fixture):
         offer = ext_pv_fixture.post_offer(
-            ext_pv_fixture.next_market, False, price=200.0, energy=1.0)
+            ext_pv_fixture.spot_market, False, price=200.0, energy=1.0)
         return_value = ext_pv_fixture.trigger_aggregator_commands(
             {
                 "type": "delete_offer",
@@ -73,7 +73,7 @@ class TestPVForecastExternalStrategy:
 
     def test_list_offers_aggregator(self, ext_pv_fixture):
         offer = ext_pv_fixture.post_offer(
-            ext_pv_fixture.next_market, False, price=200.0, energy=1.0)
+            ext_pv_fixture.spot_market, False, price=200.0, energy=1.0)
 
         return_value = ext_pv_fixture.trigger_aggregator_commands(
             {

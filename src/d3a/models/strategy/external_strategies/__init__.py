@@ -213,12 +213,12 @@ class ExternalMixin:
             }
 
     @property
-    def next_market(self):
-        return self.market_area.next_market
+    def spot_market(self):
+        return self.market_area.spot_market
 
     def _get_market_from_command_argument(self, arguments: Dict):
         if arguments.get("timeslot") is None:
-            return self.next_market
+            return self.spot_market
         timeslot = str_to_pendulum_datetime(arguments["timeslot"])
         return self._get_market_from_timeslot(timeslot)
 
@@ -253,7 +253,7 @@ class ExternalMixin:
         slot_completion_percent = int((self.device.current_tick_in_slot /
                                        self.device.config.ticks_per_slot) * 100)
         return {"slot_completion": f"{slot_completion_percent}%",
-                "market_slot": self.area.next_market.time_slot_str}
+                "market_slot": self.area.spot_market.time_slot_str}
 
     def _dispatch_event_tick_to_external_agent(self):
         if global_objects.external_global_stats.\
