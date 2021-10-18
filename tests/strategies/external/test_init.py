@@ -244,7 +244,8 @@ class TestExternalMixin:
                           "test_area", "parent_area", fee_price=0.23, buyer_id=self.area.uuid,
                           seller_id=self.parent.uuid)
 
-        strategy.event_trade(market_id="test_market", trade=trade)
+        strategy.event_offer_traded(market_id="test_market", trade=trade)
+        print(strategy.redis.aggregator.add_batch_trade_event.call_args_list)
         assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
             self.area.uuid
 
@@ -291,7 +292,7 @@ class TestExternalMixin:
         current_time = now()
         trade = Trade("id", current_time, Offer("offer_id", now(), 20, 1.0, "test_area"),
                       "test_area", "parent_area", fee_price=0.23)
-        strategy.event_trade(market_id="test_market", trade=trade)
+        strategy.event_offer_traded(market_id="test_market", trade=trade)
         assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/events/trade"
         call_args = strategy.redis.publish_json.call_args_list[0][0][1]
         assert call_args["trade_id"] == trade.id
@@ -327,13 +328,13 @@ class TestExternalMixin:
             skipped_trade = (
                 Trade("id", current_time, bid, "test_area", "parent_area", fee_price=0.23))
 
-            strategy.event_trade(market_id=market.id, trade=skipped_trade)
+            strategy.event_offer_traded(market_id=market.id, trade=skipped_trade)
             call_args = strategy.redis.aggregator.add_batch_trade_event.call_args_list
             assert call_args == []
 
             published_trade = (
                 Trade("id", current_time, bid, "parent_area", "test_area", fee_price=0.23))
-            strategy.event_trade(market_id=market.id, trade=published_trade)
+            strategy.event_offer_traded(market_id=market.id, trade=published_trade)
             assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
                 self.area.uuid
         else:
@@ -343,13 +344,13 @@ class TestExternalMixin:
                 Trade("id", current_time, offer, "parent_area", "test_area", fee_price=0.23))
             strategy.offers.sold_offer(offer, market.id)
 
-            strategy.event_trade(market_id=market.id, trade=skipped_trade)
+            strategy.event_offer_traded(market_id=market.id, trade=skipped_trade)
             call_args = strategy.redis.aggregator.add_batch_trade_event.call_args_list
             assert call_args == []
 
             published_trade = (
                 Trade("id", current_time, offer, "test_area", "parent_area", fee_price=0.23))
-            strategy.event_trade(market_id=market.id, trade=published_trade)
+            strategy.event_offer_traded(market_id=market.id, trade=published_trade)
             assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
                 self.area.uuid
 

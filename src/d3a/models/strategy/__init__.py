@@ -222,7 +222,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         super(BaseStrategy, self).__init__()
         self.offers = Offers(self)
         self.enabled = True
-        self._allowed_disable_events = [AreaEvent.ACTIVATE, MarketEvent.TRADE]
+        self._allowed_disable_events = [AreaEvent.ACTIVATE, MarketEvent.OFFER_TRADED]
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             self.redis = BlockingCommunicator()
             self.trade_buffer = None
@@ -471,8 +471,10 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         if self.enabled or event_type in self._allowed_disable_events:
             super().event_listener(event_type, **kwargs)
 
-    def event_trade(self, *, market_id, trade):
-        """React to offer trades. This method is triggered by the MarketEvent.TRADE event."""
+    def event_offer_traded(self, *, market_id, trade):
+        """
+        React to offer trades. This method is triggered by the MarketEvent.OFFER_TRADED event.
+        """
         self.offers.on_trade(market_id, trade)
 
     def event_offer_split(self, *, market_id, original_offer, accepted_offer, residual_offer):

@@ -399,13 +399,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
             if self.hrs_per_day != {} and market_day in self.hrs_per_day:
                 self.hrs_per_day[market_day] -= self._operating_hours(bid_trade.offer_bid.energy)
 
-    def event_trade(self, *, market_id, trade):
+    def event_offer_traded(self, *, market_id, trade):
         """Register the offer traded by the device and its effects. Extends the superclass method.
 
-        This method is triggered by the MarketEvent.TRADE event.
+        This method is triggered by the MarketEvent.OFFER_TRADED event.
         """
         # settlement market event_trade has to be triggered before the early return:
-        self._settlement_market_strategy.event_trade(self, market_id, trade)
+        self._settlement_market_strategy.event_offer_traded(self, market_id, trade)
 
         market = self.area.get_future_market_from_id(market_id)
         if not market:
@@ -416,7 +416,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if ConstSettings.BalancingSettings.FLEXIBLE_LOADS_SUPPORT:
             # Load can only put supply_balancing_offers only when there is a trade in spot_market
             self._supply_balancing_offer(market, trade)
-        super().event_trade(market_id=market_id, trade=trade)
+        super().event_offer_traded(market_id=market_id, trade=trade)
 
     # committing to increase its consumption when required
     def _demand_balancing_offer(self, market):

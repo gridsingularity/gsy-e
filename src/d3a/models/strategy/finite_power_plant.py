@@ -36,7 +36,7 @@ class FinitePowerPlant(CommercialStrategy):
         self.max_available_power_kW = \
             read_arbitrary_profile(InputProfileTypes.IDENTITY, self.max_available_power_kW)
 
-    def event_trade(self, *, market_id, trade):
+    def event_offer_traded(self, *, market_id, trade):
         # Disable offering more energy than the initial offer, in order to adhere to the max
         # available power.
         pass
