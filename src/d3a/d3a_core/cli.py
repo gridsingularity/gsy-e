@@ -16,35 +16,36 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-import platform
 import multiprocessing
-import click
+import platform
+from multiprocessing import Process
 
+import click
 from click.types import Choice
 from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
-from logging import getLogger
-from multiprocessing import Process
 from pendulum import DateTime, today
 
-from d3a_interface.exceptions import D3AException
-from d3a.models.config import SimulationConfig
 from d3a_interface.constants_limits import ConstSettings
-from d3a.d3a_core.util import IntervalType, read_settings_from_file, \
-    update_advanced_settings, convert_str_to_pause_after_interval,\
-    DateType, available_simulation_scenarios
-from d3a.d3a_core.simulation import run_simulation
-from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, DATE_FORMAT, TIME_FORMAT
+from d3a_interface.exceptions import D3AException
 from d3a_interface.settings_validators import validate_global_settings
 
-log = getLogger(__name__)
+from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, TIME_FORMAT, TIME_ZONE
+from d3a.d3a_core.simulation import run_simulation
+from d3a.d3a_core.util import (
+    DateType, IntervalType, available_simulation_scenarios, convert_str_to_pause_after_interval,
+    read_settings_from_file, update_advanced_settings)
+from d3a.models.config import SimulationConfig
+
+log = logging.getLogger(__name__)
 
 
-@click.group(name='d3a', cls=DefaultGroup, default='run', default_if_no_args=True,
-             context_settings={'max_content_width': 120})
-@click.option('-l', '--log-level', type=Choice(list(logging._nameToLevel.keys())), default='INFO',
+@click.group(name="d3a", cls=DefaultGroup, default="run", default_if_no_args=True,
+             context_settings={"max_content_width": 120})
+@click.option("-l", "--log-level", type=Choice(logging._nameToLevel.keys()), default="INFO",
               show_default=True, help="Log level")
 def main(log_level):
+    """Entrypoint for command-line interface interaction."""
     handler = logging.StreamHandler()
     handler.setLevel(log_level)
     handler.setFormatter(
@@ -63,48 +64,48 @@ _setup_modules = available_simulation_scenarios
 
 
 @main.command()
-@click.option('-d', '--duration', type=IntervalType('D:H'), default="1d", show_default=True,
+@click.option("-d", "--duration", type=IntervalType("D:H"), default="1d", show_default=True,
               help="Duration of simulation")
-@click.option('-t', '--tick-length', type=IntervalType('M:S'), default="1s", show_default=True,
+@click.option("-t", "--tick-length", type=IntervalType("M:S"), default="1s", show_default=True,
               help="Length of a tick")
-@click.option('-s', '--slot-length', type=IntervalType('M:S'), default="15m", show_default=True,
+@click.option("-s", "--slot-length", type=IntervalType("M:S"), default="15m", show_default=True,
               help="Length of a market slot")
-@click.option('--slot-length-realtime', type=IntervalType('M:S'), default="0m",
+@click.option("--slot-length-realtime", type=IntervalType("M:S"), default="0m",
               show_default=True, help="Desired duration of slot in realtime")
-@click.option('-c', '--cloud-coverage', type=int,
+@click.option("-c", "--cloud-coverage", type=int,
               default=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE, show_default=True,
               help="Cloud coverage, 0 for sunny, 1 for partial coverage, 2 for clouds.")
-@click.option('--setup', 'setup_module_name', default="default_2a",
-              help="Simulation setup module use. Available modules: [{}]".format(
-                  ', '.join(_setup_modules)))
-@click.option('-g', '--settings-file', default=None,
+@click.option("--setup", "setup_module_name", default="default_2a",
+              help=("Simulation setup module use. "
+                    f"Available modules: [{', '.join(_setup_modules)}]"))
+@click.option("-g", "--settings-file", default=None,
               help="Settings file path")
-@click.option('--seed', help="Manually specify random seed")
-@click.option('--paused', is_flag=True, default=False, show_default=True,
+@click.option("--seed", help="Manually specify random seed")
+@click.option("--paused", is_flag=True, default=False, show_default=True,
               help="Start simulation in paused state")
-@click.option('--pause-at', type=str, default=None,
-              help=f"Automatically pause at a certain time. "
+@click.option("--pause-at", type=str, default=None,
+              help="Automatically pause at a certain time. "
               f"Accepted Input formats: ({DATE_FORMAT}, {TIME_FORMAT}) [default: disabled]")
-@click.option('--repl/--no-repl', default=False, show_default=True,
+@click.option("--repl/--no-repl", default=False, show_default=True,
               help="Start REPL after simulation run.")
-@click.option('--no-export', is_flag=True, default=False, help="Skip export of simulation data")
-@click.option('--export-path',  type=str, default=None, show_default=False,
+@click.option("--no-export", is_flag=True, default=False, help="Skip export of simulation data")
+@click.option("--export-path",  type=str, default=None, show_default=False,
               help="Specify a path for the csv export files (default: ~/d3a-simulation)")
-@click.option('--enable-bc', is_flag=True, default=False, help="Run simulation on Blockchain")
-@click.option('--compare-alt-pricing', is_flag=True, default=False,
+@click.option("--enable-bc", is_flag=True, default=False, help="Run simulation on Blockchain")
+@click.option("--compare-alt-pricing", is_flag=True, default=False,
               help="Compare alternative pricing schemes")
-@click.option('--enable-external-connection', is_flag=True, default=False,
+@click.option("--enable-external-connection", is_flag=True, default=False,
               help="External Agents interaction to simulation during runtime")
-@click.option('--start-date', type=DateType(DATE_FORMAT),
+@click.option("--start-date", type=DateType(DATE_FORMAT),
               default=today(tz=TIME_ZONE).format(DATE_FORMAT), show_default=True,
               help=f"Start date of the Simulation ({DATE_FORMAT})")
 def run(setup_module_name, settings_file, duration, slot_length, tick_length,
         cloud_coverage, compare_alt_pricing, enable_external_connection, start_date,
         pause_at, slot_length_realtime, **kwargs):
-
+    """Configure settings and run a simulation."""
     # Force the multiprocessing start method to be 'fork' on macOS.
-    if platform.system() == 'Darwin':
-        multiprocessing.set_start_method('fork')
+    if platform.system() == "Darwin":
+        multiprocessing.set_start_method("fork")
 
     try:
         if settings_file is not None:
@@ -120,10 +121,9 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
                                "cloud_coverage": cloud_coverage}
 
             validate_global_settings(global_settings)
-            simulation_config = \
-                SimulationConfig(duration, slot_length, tick_length,
-                                 cloud_coverage, start_date=start_date,
-                                 external_connection_enabled=enable_external_connection)
+            simulation_config = SimulationConfig(
+                duration, slot_length, tick_length, cloud_coverage, start_date=start_date,
+                external_connection_enabled=enable_external_connection)
 
         if compare_alt_pricing is True:
             ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
