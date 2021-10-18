@@ -17,5 +17,5 @@ Feature: Settlement Market Tests
   Scenario: D3ASIM-3653: Trade events are correctly triggered in the settlement load
     Given we have a scenario named settlement_market/simple_load_cell_tower
     And d3a is installed
-    When we run the simulation with setup file settlement_market.simple_load_cell_tower and parameters [6, 15, 15, 1]
+    When we run the simulation with setup file settlement_market.simple_load_cell_tower and parameters [6, 15, 15]
     Then maximal one trade per market in the settlement market has been executed on grid level
