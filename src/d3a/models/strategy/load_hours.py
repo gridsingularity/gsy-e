@@ -386,6 +386,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         This method is triggered by the MarketEvent.BID_TRADED event.
         """
+        # settlement market event_bid_traded has to be triggered before the early return:
+        self._settlement_market_strategy.event_bid_traded(self, market_id, bid_trade)
+
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
         market = self.area.get_future_market_from_id(market_id)
         if not market:
@@ -397,10 +400,14 @@ class LoadHoursStrategy(BidEnabledStrategy):
             market_day = self._get_day_of_timestamp(market.time_slot)
             if self.hrs_per_day != {} and market_day in self.hrs_per_day:
                 self.hrs_per_day[market_day] -= self._operating_hours(bid_trade.offer_bid.energy)
-        self._settlement_market_strategy.event_bid_traded(self, market_id, bid_trade)
 
     def event_trade(self, *, market_id, trade):
-        self._settlement_market_strategy.event_bid_traded(self, market_id, trade)
+        """Register the offer traded by the device and its effects. Extends the superclass method.
+
+        This method is triggered by the MarketEvent.TRADE event.
+        """
+        # settlement market event_trade has to be triggered before the early return:
+        self._settlement_market_strategy.event_trade(self, market_id, trade)
 
         market = self.area.get_future_market_from_id(market_id)
         if not market:
