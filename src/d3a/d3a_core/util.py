@@ -214,13 +214,13 @@ def read_settings_from_file(settings_file):
         advanced_settings = settings["advanced_settings"]
         simulation_settings = {
             "sim_duration": IntervalType('H:M')(
-                settings["basic_settings"].get('sim_duration', GlobalConfig.sim_duration)),
-            "slot_length": IntervalType('M:S')(
-                settings["basic_settings"].get('slot_length', GlobalConfig.slot_length)),
-            "tick_length": IntervalType('M:S')(
-                settings["basic_settings"].get('tick_length', GlobalConfig.tick_length)),
+                settings["basic_settings"].get("sim_duration", GlobalConfig.sim_duration)),
+            "slot_length": IntervalType("M:S")(
+                settings["basic_settings"].get("slot_length", GlobalConfig.slot_length)),
+            "tick_length": IntervalType("M:S")(
+                settings["basic_settings"].get("tick_length", GlobalConfig.tick_length)),
             "cloud_coverage": settings["basic_settings"].get(
-                'cloud_coverage', advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"])
+                "cloud_coverage", advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"])
         }
         return simulation_settings, advanced_settings
     else:
