@@ -417,7 +417,7 @@ class Area:
         """Update the markets cache that the myco matcher will request"""
         bid_offer_matcher.update_area_uuid_markets_mapping(
             area_uuid_markets_mapping={
-                self.uuid: {"markets": [self.spot_market],  # TODO: change key to spot market
+                self.uuid: {"markets": [self.spot_market],
                             "settlement_markets": self.settlement_markets.values(),
                             "current_time": self.now}})
 
