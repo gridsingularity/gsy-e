@@ -234,7 +234,7 @@ class Market:
         self.current_tick_in_slot = current_tick_in_slot
 
     @property
-    def now(self) -> DateTime:
+    def now(self, **kwargs) -> DateTime:
         return self.time_slot.add(
             seconds=GlobalConfig.tick_length.seconds * self.current_tick_in_slot)
 

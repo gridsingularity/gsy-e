@@ -105,9 +105,9 @@ class TwoSidedMarket(OneSidedMarket):
 
         if price < 0.0:
             raise MarketException("Negative price after taxes, bid cannot be posted.")
-
+        now = self.now if self.time_slot else time_slot
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
-                  self.now, price, energy, buyer, original_price, buyer_origin,
+                  now, price, energy, buyer, original_price, buyer_origin,
                   buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
                   attributes=attributes, requirements=requirements, time_slot=time_slot)
 
@@ -130,9 +130,9 @@ class TwoSidedMarket(OneSidedMarket):
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
     def split_bid(self, original_bid: Bid, energy: float, orig_bid_price: float):
-
+        """Split bit into two, one with provided energy, the other with the residual."""
         time_slot = original_bid.time_slot
-        self.delete_bid(original_bid)
+        self.bids.pop(original_bid.id, None)
 
         # same bid id is used for the new accepted_bid
         original_accepted_price = energy / original_bid.energy * orig_bid_price
@@ -233,13 +233,14 @@ class TwoSidedMarket(OneSidedMarket):
             trade_offer_info, ignore_fees=True
         )
 
-        trade = Trade(str(uuid.uuid4()), self.now, bid, seller,
+        now = self.now if self.time_slot else bid.time_slot
+        trade = Trade(str(uuid.uuid4()), now, bid, seller,
                       buyer, residual_bid, already_tracked=already_tracked,
                       offer_bid_trade_info=updated_bid_trade_info,
                       buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
                       fee_price=fee_price, seller_origin_id=seller_origin_id,
                       buyer_origin_id=bid.buyer_origin_id, seller_id=seller_id,
-                      buyer_id=bid.buyer_id
+                      buyer_id=bid.buyer_id, time_slot=bid.time_slot
                       )
 
         if already_tracked is False:
@@ -253,7 +254,6 @@ class TwoSidedMarket(OneSidedMarket):
     def accept_bid_offer_pair(self, bid: Bid, offer: Offer, clearing_rate: float,
                               trade_bid_info: TradeBidOfferInfo,
                               selected_energy: float) -> Tuple[Trade, Trade]:
-        time_slot = offer.time_slot
         already_tracked = bid.buyer == offer.seller
         trade = self.accept_offer(offer_or_id=offer,
                                   buyer=bid.buyer,
@@ -263,8 +263,7 @@ class TwoSidedMarket(OneSidedMarket):
                                   trade_bid_info=trade_bid_info,
                                   buyer_origin=bid.buyer_origin,
                                   buyer_origin_id=bid.buyer_origin_id,
-                                  buyer_id=bid.buyer_id,
-                                  time_slot=time_slot)
+                                  buyer_id=bid.buyer_id)
 
         bid_trade = self.accept_bid(bid=bid,
                                     energy=selected_energy,
@@ -275,8 +274,7 @@ class TwoSidedMarket(OneSidedMarket):
                                     trade_offer_info=trade_bid_info,
                                     seller_origin=offer.seller_origin,
                                     seller_origin_id=offer.seller_origin_id,
-                                    seller_id=offer.seller_id,
-                                    time_slot=time_slot)
+                                    seller_id=offer.seller_id)
         return bid_trade, trade
 
     def match_recommendations(

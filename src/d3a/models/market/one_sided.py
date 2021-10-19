@@ -118,7 +118,8 @@ class OneSidedMarket(Market):
 
         if offer_id is None:
             offer_id = self.bc_interface.create_new_offer(energy, price, seller)
-        offer = Offer(offer_id, self.now, price, energy, seller, original_price,
+        now = self.now if self.time_slot else time_slot
+        offer = Offer(offer_id, now, price, energy, seller, original_price,
                       seller_origin=seller_origin, seller_origin_id=seller_origin_id,
                       seller_id=seller_id, attributes=attributes, requirements=requirements,
                       time_slot=time_slot)
@@ -171,7 +172,7 @@ class OneSidedMarket(Market):
     def split_offer(self, original_offer, energy, orig_offer_price):
 
         time_slot = original_offer.time_slot
-        self.delete_offer(original_offer)
+        self.offers.pop(original_offer.id, None)
 
         # same offer id is used for the new accepted_offer
         original_accepted_price = energy / original_offer.energy * orig_offer_price
@@ -268,7 +269,7 @@ class OneSidedMarket(Market):
 
         try:
             if time is None:
-                time = self.now
+                time = self.now if self.time_slot else offer.time_slot
 
             if energy == 0:
                 raise InvalidTrade("Energy can not be zero.")
@@ -312,7 +313,7 @@ class OneSidedMarket(Market):
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
                       fee_price=fee_price, buyer_origin_id=buyer_origin_id,
                       seller_origin_id=offer.seller_origin_id,
-                      seller_id=offer.seller_id, buyer_id=buyer_id
+                      seller_id=offer.seller_id, buyer_id=buyer_id, time_slot=offer.time_slot
                       )
         self.bc_interface.track_trade_event(self.time_slot, trade)
 
