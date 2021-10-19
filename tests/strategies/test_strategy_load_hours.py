@@ -604,6 +604,27 @@ def test_set_energy_measurement_of_last_market(utils_mock, load_hours_strategy_t
         100, load_hours_strategy_test1.area.current_market.time_slot)
 
 
+@parameterized.expand([
+    [True, 40, ], [False, 40, ]
+])
+def test_predefined_load_strategy_rejects_incorrect_rate_parameters(use_mmr, initial_buying_rate):
+    user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
+    load = DefinedLoadStrategy(
+        daily_load_profile=user_profile_path,
+        initial_buying_rate=initial_buying_rate,
+        use_market_maker_rate=use_mmr)
+    load.area = FakeArea()
+    load.owner = load.area
+    with pytest.raises(D3ADeviceException):
+        load.event_activate()
+    with pytest.raises(D3ADeviceException):
+        DefinedLoadStrategy(daily_load_profile=user_profile_path, fit_to_limit=True,
+                            energy_rate_increase_per_update=1)
+    with pytest.raises(D3ADeviceException):
+        DefinedLoadStrategy(daily_load_profile=user_profile_path, fit_to_limit=False,
+                            energy_rate_increase_per_update=-1)
+
+
 @pytest.fixture(name="load_hours_fixture")
 def load_hours_for_settlement_tests(area_test1: Area) -> LoadHoursStrategy:
     """Return LoadHoursStrategy object for testing of the interaction with settlement market."""
