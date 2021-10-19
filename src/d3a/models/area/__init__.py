@@ -402,7 +402,7 @@ class Area:
         updates cached myco matcher markets and match trades recommendations.
         """
         self._consume_commands_from_aggregator()
-
+        print()
         if (ConstSettings.IAASettings.MARKET_TYPE != SpotMarketTypeEnum.ONE_SIDED.value
                 and not self.strategy):
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:

@@ -32,7 +32,7 @@ from pendulum import DateTime, duration, today, now
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import d3a_path
-from d3a.models.area import DEFAULT_CONFIG
+from d3a.models.area import DEFAULT_CONFIG, Area
 from d3a_interface.data_classes import Offer, BalancingOffer, Bid, Trade
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
@@ -602,3 +602,36 @@ def test_set_energy_measurement_of_last_market(utils_mock, load_hours_strategy_t
     load_hours_strategy_test1._set_energy_measurement_of_last_market()
     load_hours_strategy_test1.state.set_energy_measurement_kWh.assert_called_once_with(
         100, load_hours_strategy_test1.area.current_market.time_slot)
+
+
+@pytest.fixture(name="load_hours_fixture")
+def load_hours_for_settlement_tests(area_test1: Area) -> LoadHoursStrategy:
+    """Return LoadHoursStrategy object for testing of the interaction with settlement market."""
+    orig_market_type = ConstSettings.IAASettings.MARKET_TYPE
+    ConstSettings.IAASettings.MARKET_TYPE = 2
+    load = LoadHoursStrategy(avg_power_W=100)
+    area = FakeArea()
+    load.area = area
+    load.owner = area
+    yield load
+    ConstSettings.IAASettings.MARKET_TYPE = orig_market_type
+
+
+def test_event_bid_traded_calls_settlement_market_event_bid_traded(load_hours_fixture):
+    """Test if _settlement_market_strategy.event_bid_traded was called
+    although no spot market can be found by event_bid_traded."""
+    load_hours_fixture._settlement_market_strategy = Mock()
+    bid = Bid("bid", None, 1, 1, "buyer")
+    trade = Trade('idt', None, bid, 'B', load_hours_fixture.owner.name)
+    load_hours_fixture.event_bid_traded(market_id="not existing", bid_trade=trade)
+    load_hours_fixture._settlement_market_strategy.event_bid_traded.assert_called_once()
+
+
+def test_event_offer_traded_calls_settlement_market_event_offer_traded(load_hours_fixture):
+    """Test if _settlement_market_strategy.event_offer_traded was called
+    although no spot market can be found by event_offer_traded."""
+    load_hours_fixture._settlement_market_strategy = Mock()
+    offer = Offer("oid", None, 1, 1, "seller")
+    trade = Trade('idt', None, offer, 'B', load_hours_fixture.owner.name)
+    load_hours_fixture.event_offer_traded(market_id="not existing", trade=trade)
+    load_hours_fixture._settlement_market_strategy.event_offer_traded.assert_called_once()
