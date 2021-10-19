@@ -44,6 +44,8 @@ from d3a.models.config import SimulationConfig
 from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
+from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.strategy.pv import PVStrategy
 
 log = getLogger(__name__)
 
@@ -319,7 +321,6 @@ class Area:
 
         current_tick_in_slot = int(self.current_tick % self.config.ticks_per_slot)
         tick_at_the_slot_start = self.current_tick - current_tick_in_slot
-        self._calculate_energy_deviances()
         if tick_at_the_slot_start == 0:
             now_value = self.now
         else:
@@ -332,6 +333,7 @@ class Area:
         self.events.update_events(now_value)
 
         if not self.children:
+            self._calculate_energy_deviances()
             # Since children trade in markets we only need to populate them if there are any
             return
 
@@ -377,6 +379,7 @@ class Area:
         if (changed_balancing_market or len(self._markets.past_balancing_markets.keys()) == 0) \
                 and _trigger_event and ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.dispatcher.broadcast_balancing_market_cycle()
+        self._calculate_energy_deviances()
 
     def publish_market_cycle_to_external_clients(self):
         if self.strategy and isinstance(self.strategy, ExternalMixin):
@@ -577,17 +580,23 @@ class Area:
         If area is a device - Get its forecated deviance
         Else accumulate energy deviances of connected children
         """
-        if self.current_market is None:
+        current_market = (getattr(self, "current_market", None) or
+                          getattr(self.parent, "current_market", None))
+        if (current_market is None or
+                ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS is False):
             return
-        time_slot = self.current_market.time_slot
+        time_slot = current_market.time_slot
         if self.strategy is None:
             # Accumulating energy deviance of connected children
-            self.total_energy_deviance_kWh[time_slot] = sum(
-                [child.total_energy_deviance_kWh[time_slot] for child in self.children])
+            self.total_energy_deviance_kWh[time_slot] = {
+                child.uuid: child.total_energy_deviance_kWh[time_slot] for child in self.children}
+        elif isinstance(self.strategy, (PVStrategy, LoadHoursStrategy)):
+            # Energy deviance of PV/LOAD
+            self.total_energy_deviance_kWh[time_slot] = {
+                self.uuid: self.strategy.state.get_forecast_measurement_deviation_kWh(time_slot)}
         else:
-            # Energy deviance of Device
-            self.total_energy_deviance_kWh[time_slot] = (
-                self.child.strategy.state.get_forecast_measurement_deviation_kWh(time_slot))
+            # Zero energy deviances of non-fluctuating devices
+            self.total_energy_deviance_kWh[time_slot] = {self.uuid: 0.}
 
     @cached_property
     def available_triggers(self):
