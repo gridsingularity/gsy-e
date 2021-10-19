@@ -190,10 +190,10 @@ class PVExternalMixin(ExternalMixin):
     def _device_info_dict(self):
         return {
             "available_energy_kWh":
-                self.state.get_available_energy_kWh(self.next_market.time_slot),
-            "energy_active_in_offers": self.offers.open_offer_energy(self.next_market.id),
-            "energy_traded": self.energy_traded(self.next_market.id),
-            "total_cost": self.energy_traded_costs(self.next_market.id),
+                self.state.get_available_energy_kWh(self.spot_market.time_slot),
+            "energy_active_in_offers": self.offers.open_offer_energy(self.spot_market.id),
+            "energy_traded": self.energy_traded(self.spot_market.id),
+            "total_cost": self.energy_traded_costs(self.spot_market.id),
         }
 
     def event_market_cycle(self):
@@ -203,7 +203,7 @@ class PVExternalMixin(ExternalMixin):
             self.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
             if not self.is_aggregator_controlled:
                 market_event_channel = f"{self.channel_prefix}/events/market"
-                market_info = self.next_market.info
+                market_info = self.spot_market.info
                 if self.is_aggregator_controlled:
                     market_info.update(default_market_info)
                 market_info["device_info"] = self._device_info_dict
@@ -441,16 +441,19 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
     def update_energy_forecast(self) -> None:
         """Set energy forecast for future markets."""
         for slot_time, energy_kWh in self.energy_forecast_buffer.items():
-            if slot_time >= self.area.next_market.time_slot:
+            if slot_time >= self.area.spot_market.time_slot:
                 self.state.set_available_energy(energy_kWh, slot_time, overwrite=True)
 
     def update_energy_measurement(self) -> None:
         """Set energy measurement for past markets."""
         for slot_time, energy_kWh in self.energy_measurement_buffer.items():
-            if slot_time < self.area.next_market.time_slot:
+            if slot_time < self.area.spot_market.time_slot:
                 self.state.set_energy_measurement_kWh(energy_kWh, slot_time)
 
     def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=False):
         """
         Setting produced energy for the next slot is already done by produced_energy_forecast_kWh
         """
+
+    def _read_or_rotate_profiles(self, reconfigure=False):
+        pass

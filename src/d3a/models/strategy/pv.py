@@ -153,17 +153,20 @@ class PVStrategy(BidEnabledStrategy):
             return
 
         self.offer_update.set_parameters(
-            initial_rate_profile_buffer=initial_rate,
-            final_rate_profile_buffer=final_rate,
-            energy_rate_change_per_update_profile_buffer=energy_rate_change_per_update,
+            initial_rate=initial_rate,
+            final_rate=final_rate,
+            energy_rate_change_per_update=energy_rate_change_per_update,
             fit_to_limit=fit_to_limit,
             update_interval=update_interval
         )
 
-    @staticmethod
-    def _validate_rates(initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
+    def _validate_rates(self, initial_rate, final_rate, energy_rate_change_per_update,
+                        fit_to_limit):
         # all parameters have to be validated for each time slot here
         for time_slot in initial_rate.keys():
+            if self.area and self.area.current_market \
+                    and time_slot < self.area.current_market.time_slot:
+                continue
             rate_change = None if fit_to_limit else \
                 find_object_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
             PVValidator.validate_rate(
@@ -182,7 +185,7 @@ class PVStrategy(BidEnabledStrategy):
         if self.use_market_maker_rate:
             self._area_reconfigure_prices(
                 initial_selling_rate=get_market_maker_rate_from_config(
-                    self.area.next_market, 0) - self.owner.get_path_to_root_fees(), validate=False)
+                    self.area.spot_market, 0) - self.owner.get_path_to_root_fees(), validate=False)
 
         self._validate_rates(self.offer_update.initial_rate_profile_buffer,
                              self.offer_update.final_rate_profile_buffer,
@@ -199,8 +202,7 @@ class PVStrategy(BidEnabledStrategy):
 
         This method is triggered by the TICK event.
         """
-        for market in self.area.all_markets:
-            self.offer_update.update(market, self)
+        self.offer_update.update(self.area.spot_market, self)
         self.offer_update.increment_update_counter_all_markets(self)
 
         self._settlement_market_strategy.event_tick(self)
@@ -209,13 +211,13 @@ class PVStrategy(BidEnabledStrategy):
         # This forecast ist based on the real PV system data provided by enphase
         # They can be found in the tools folder
         # A fit of a gaussian function to those data results in a formula Energy(time)
-        for market in self.area.all_markets:
-            slot_time = market.time_slot
-            difference_to_midnight_in_minutes = \
-                slot_time.diff(self.area.now.start_of("day")).in_minutes() % (60 * 24)
-            available_energy_kWh = self.gaussian_energy_forecast_kWh(
-                difference_to_midnight_in_minutes) * self.panel_count
-            self.state.set_available_energy(available_energy_kWh, slot_time, reconfigure)
+        market = self.area.spot_market
+        slot_time = market.time_slot
+        difference_to_midnight_in_minutes = \
+            slot_time.diff(self.area.now.start_of("day")).in_minutes() % (60 * 24)
+        available_energy_kWh = self.gaussian_energy_forecast_kWh(
+            difference_to_midnight_in_minutes) * self.panel_count
+        self.state.set_available_energy(available_energy_kWh, slot_time, reconfigure)
 
     def gaussian_energy_forecast_kWh(self, time_in_minutes=0):
         # The sun rises at approx 6:30 and sets at 18hr
@@ -273,27 +275,27 @@ class PVStrategy(BidEnabledStrategy):
         self.offer_update.reset(self)
 
         # Iterate over all markets open in the future
-        for market in self.area.all_markets:
-            offer_energy_kWh = self.state.get_available_energy_kWh(market.time_slot)
-            # We need to subtract the energy from the offers that are already posted in this
-            # market in order to validate that more offers need to be posted.
-            offer_energy_kWh -= self.offers.open_offer_energy(market.id)
-            if offer_energy_kWh > 0:
-                offer_price = \
-                    self.offer_update.initial_rate[market.time_slot] * offer_energy_kWh
-                try:
-                    offer = market.offer(
-                        offer_price,
-                        offer_energy_kWh,
-                        self.owner.name,
-                        original_price=offer_price,
-                        seller_origin=self.owner.name,
-                        seller_origin_id=self.owner.uuid,
-                        seller_id=self.owner.uuid
-                    )
-                    self.offers.post(offer, market.id)
-                except MarketException:
-                    pass
+        market = self.area.spot_market
+        offer_energy_kWh = self.state.get_available_energy_kWh(market.time_slot)
+        # We need to subtract the energy from the offers that are already posted in this
+        # market in order to validate that more offers need to be posted.
+        offer_energy_kWh -= self.offers.open_offer_energy(market.id)
+        if offer_energy_kWh > 0:
+            offer_price = \
+                self.offer_update.initial_rate[market.time_slot] * offer_energy_kWh
+            try:
+                offer = market.offer(
+                    offer_price,
+                    offer_energy_kWh,
+                    self.owner.name,
+                    original_price=offer_price,
+                    seller_origin=self.owner.name,
+                    seller_origin_id=self.owner.uuid,
+                    seller_id=self.owner.uuid
+                )
+                self.offers.post(offer, market.id)
+            except MarketException:
+                pass
 
     def event_trade(self, *, market_id, trade):
         super().event_trade(market_id=market_id, trade=trade)

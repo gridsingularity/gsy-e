@@ -21,7 +21,7 @@ from typing import List, Dict
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 
-from d3a.d3a_core.singletons import bid_offer_matcher
+from d3a.d3a_core.myco_singleton import bid_offer_matcher
 from d3a.models.area import Area
 from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.strategy.load_hours import LoadHoursStrategy
@@ -167,13 +167,14 @@ class FileExportEndpoints:
         """Decide which data acquisition class to use."""
         if past_market_type == AvailableMarketTypes.SPOT:
             return (UpperLevelDataExporter(area.past_markets)
-                    if len(area.children) > 0 else LeafDataExporter(area, area.past_markets))
+                    if len(area.children) > 0
+                    else LeafDataExporter(area, area.parent.past_markets))
         if past_market_type == AvailableMarketTypes.BALANCING:
             return BalancingDataExporter(area.past_balancing_markets)
         if past_market_type == AvailableMarketTypes.SETTLEMENT:
-            past_markets = area.past_settlement_markets.values()
-            return (UpperLevelDataExporter(past_markets)
-                    if len(area.children) > 0 else LeafDataExporter(area, past_markets))
+            return (UpperLevelDataExporter(area.past_settlement_markets.values())
+                    if len(area.children) > 0
+                    else LeafDataExporter(area, area.parent.past_settlement_markets.values()))
 
     def _get_stats_from_market_data(self, out_dict: Dict, area: Area,
                                     past_market_type: AvailableMarketTypes) -> None:

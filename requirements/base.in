@@ -12,5 +12,6 @@ redis
 rq
 pytz
 sortedcontainers
+pony
 urllib3==1.26.4
 -e git+https://github.com/gridsingularity/d3a-interface@master#egg=d3a_interface

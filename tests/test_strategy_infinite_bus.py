@@ -17,13 +17,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import os
 import sys
+from math import isclose
 from uuid import uuid4
 
 import pendulum
 import pytest
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.utils import find_object_of_same_weekday_and_time
 
+from d3a import constants
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import d3a_path
@@ -36,7 +37,10 @@ TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 @pytest.fixture(scope="function", autouse=True)
 def auto_fixture():
+    constants.CONNECT_TO_PROFILES_DB = False
+    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
     yield
+    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
     ConstSettings.IAASettings.MARKET_TYPE = 1
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
     DeviceRegistry.REGISTRY = {}
@@ -60,6 +64,10 @@ class FakeArea:
     @property
     def all_markets(self):
         return [self.test_market]
+
+    @property
+    def spot_market(self):
+        return self.test_market
 
     @property
     def balancing_markets(self):
@@ -146,11 +154,15 @@ def bus_test1(area_test1):
 
 def test_global_market_maker_rate_set_at_instantiation(area_test1):
     strategy = InfiniteBusStrategy(energy_sell_rate=35)
-    assert strategy.energy_rate == GlobalConfig.market_maker_rate
+    strategy.area = area_test1
+    strategy.event_activate()
+    for time, value in strategy.energy_rate.items():
+        assert value == GlobalConfig.market_maker_rate[time]
     strategy = InfiniteBusStrategy(energy_rate_profile={"01:15": 40})
+    strategy.area = area_test1
+    strategy.event_activate()
     timestamp_key = pendulum.today("utc").set(hour=1, minute=15)
-    rate = find_object_of_same_weekday_and_time(GlobalConfig.market_maker_rate, timestamp_key)
-    assert rate == 40
+    assert GlobalConfig.market_maker_rate[timestamp_key] == 40
 
 
 def testing_offer_is_created_at_first_market_not_on_activate(bus_test1, area_test1):
@@ -313,7 +325,7 @@ def testing_event_market_cycle_post_offers(bus_test3, area_test3):
     bus_test3.event_market_cycle()
     assert len(area_test3.test_market.created_offers) == 1
     assert area_test3.test_market.created_offers[-1].energy == sys.maxsize
-    assert area_test3.test_market.created_offers[-1].price == 30 * sys.maxsize
+    assert area_test3.test_market.created_offers[-1].price == float(30 * sys.maxsize)
 
 
 """TEST4"""
@@ -340,13 +352,14 @@ def testing_event_market_cycle_posting_bids(bus_test4, area_test1):
     bus_test4.event_market_cycle()
     assert len(bus_test4._bids) == 1
     assert bus_test4._bids[area_test1.test_market.id][-1].energy == sys.maxsize
-    assert bus_test4._bids[area_test1.test_market.id][-1].price == 25 * sys.maxsize
+    assert isclose(bus_test4._bids[area_test1.test_market.id][-1].price, 25 * sys.maxsize)
 
 
 def test_global_market_maker_rate_single_value(bus_test4):
-    assert isinstance(GlobalConfig.market_maker_rate, int)
-    assert (GlobalConfig.market_maker_rate ==
-            ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE)
+    assert isinstance(GlobalConfig.market_maker_rate, dict)
+    assert all(
+        v == ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+        for v in GlobalConfig.market_maker_rate.values())
 
 
 """TEST5"""

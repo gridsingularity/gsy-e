@@ -116,7 +116,7 @@ class ExternalConnectionCommunicator(ResettableCommunicator):
     def start_communication(self):
         if not self.is_enabled:
             return
-        if not self.pubsub.channels:
+        if not self.pubsub.subscribed:
             return
         thread = self.pubsub.run_in_thread(sleep_time=0.1, daemon=True)
         log.debug(f"Started ExternalConnectionCommunicator thread for "
@@ -127,7 +127,7 @@ class ExternalConnectionCommunicator(ResettableCommunicator):
         if not self.is_enabled:
             return
         channel_callback_dict = {
-            f'external/{d3a.constants.COLLABORATION_ID}/aggregator/*/batch_commands':
+            f'external/{d3a.constants.CONFIGURATION_ID}/aggregator/*/batch_commands':
                 self.aggregator.receive_batch_commands_callback,
             'aggregator': self.aggregator.aggregator_callback
         }

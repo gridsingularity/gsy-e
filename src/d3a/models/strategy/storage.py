@@ -188,16 +188,16 @@ class StorageStrategy(BidEnabledStrategy):
             return
 
         self.offer_update.set_parameters(
-            initial_rate_profile_buffer=initial_selling_rate,
-            final_rate_profile_buffer=final_selling_rate,
-            energy_rate_change_per_update_profile_buffer=energy_rate_decrease_per_update,
+            initial_rate=initial_selling_rate,
+            final_rate=final_selling_rate,
+            energy_rate_change_per_update=energy_rate_decrease_per_update,
             fit_to_limit=offer_fit_to_limit,
             update_interval=update_interval
         )
         self.bid_update.set_parameters(
-            initial_rate_profile_buffer=initial_buying_rate,
-            final_rate_profile_buffer=final_buying_rate,
-            energy_rate_change_per_update_profile_buffer=energy_rate_increase_per_update,
+            initial_rate=initial_buying_rate,
+            final_rate=final_buying_rate,
+            energy_rate_change_per_update=energy_rate_increase_per_update,
             fit_to_limit=bid_fit_to_limit,
             update_interval=update_interval
         )
@@ -207,13 +207,16 @@ class StorageStrategy(BidEnabledStrategy):
         self._area_reconfigure_prices(**kwargs)
         self._update_profiles_with_default_values()
 
-    @staticmethod
-    def _validate_rates(initial_selling_rate, final_selling_rate,
+    def _validate_rates(self, initial_selling_rate, final_selling_rate,
                         initial_buying_rate, final_buying_rate,
                         energy_rate_increase_per_update, energy_rate_decrease_per_update,
                         bid_fit_to_limit, offer_fit_to_limit):
 
         for time_slot in initial_selling_rate.keys():
+            if self.area and \
+                    self.area.current_market and time_slot < self.area.current_market.time_slot:
+                continue
+
             bid_rate_change = (None if bid_fit_to_limit else
                                find_object_of_same_weekday_and_time(
                                    energy_rate_increase_per_update, time_slot))
@@ -232,7 +235,7 @@ class StorageStrategy(BidEnabledStrategy):
                 energy_rate_decrease_per_update=offer_rate_change)
 
     def event_on_disabled_area(self):
-        self.state.calculate_soc_for_time_slot(self.area.next_market.time_slot)
+        self.state.calculate_soc_for_time_slot(self.area.spot_market.time_slot)
 
     def event_activate_price(self):
         self._validate_rates(self.offer_update.initial_rate_profile_buffer,
@@ -343,11 +346,11 @@ class StorageStrategy(BidEnabledStrategy):
 
         This method is triggered by the TICK event.
         """
-        self.state.clamp_energy_to_buy_kWh(self.future_markets_time_slots)
+        self.state.clamp_energy_to_buy_kWh([self.spot_market_time_slot])
 
         for market in self.area.all_markets:
             if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
-                self.state.clamp_energy_to_buy_kWh(self.future_markets_time_slots)
+                self.state.clamp_energy_to_buy_kWh([self.spot_market_time_slot])
                 if self.are_bids_posted(market.id):
                     self.bid_update.update(market, self)
                 else:
@@ -429,13 +432,13 @@ class StorageStrategy(BidEnabledStrategy):
         self.offer_update.reset(self)
         for market in self.area.all_markets[:-1]:
             self.bid_update.update_counter[market.time_slot] = 0
-        current_market = self.area.next_market
+        current_market = self.area.spot_market
         past_market = self.area.last_past_market
 
         self.state.market_cycle(
             past_market.time_slot if past_market else None,
             current_market.time_slot,
-            self.future_markets_time_slots
+            [self.spot_market_time_slot]
         )
 
         if self.state.used_storage > 0:
@@ -459,7 +462,7 @@ class StorageStrategy(BidEnabledStrategy):
         if not self.is_eligible_for_balancing_market:
             return
 
-        current_market = self.area.next_market
+        current_market = self.area.spot_market
         free_storage = self.state.free_storage(current_market.time_slot)
         if free_storage > 0:
             charge_energy = self.balancing_energy_ratio.demand * free_storage
@@ -589,7 +592,7 @@ class StorageStrategy(BidEnabledStrategy):
     def _update_profiles_with_default_values(self):
         self.offer_update.update_and_populate_price_settings(self.area)
         self.bid_update.update_and_populate_price_settings(self.area)
-        self.state.add_default_values_to_state_profiles(self.future_markets_time_slots)
+        self.state.add_default_values_to_state_profiles([self.spot_market_time_slot])
 
     def event_offer(self, *, market_id, offer):
         super().event_offer(market_id=market_id, offer=offer)

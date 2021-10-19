@@ -27,7 +27,7 @@ from d3a_interface.utils import (key_in_dict_and_not_none, convert_str_to_pendul
 from pendulum import DateTime
 
 import d3a.constants
-from d3a.d3a_core.singletons import external_global_statistics
+from d3a.d3a_core.global_objects_singleton import global_objects
 
 IncomingRequest = namedtuple("IncomingRequest", ("request_type", "arguments", "response_channel"))
 
@@ -126,7 +126,7 @@ class ExternalMixin:
     @property
     def channel_prefix(self):
         if d3a.constants.EXTERNAL_CONNECTION_WEB:
-            return f"external/{d3a.constants.COLLABORATION_ID}/{self.device.uuid}"
+            return f"external/{d3a.constants.CONFIGURATION_ID}/{self.device.uuid}"
         else:
             return f"{self.device.name}"
 
@@ -213,12 +213,12 @@ class ExternalMixin:
             }
 
     @property
-    def next_market(self):
-        return self.market_area.next_market
+    def spot_market(self):
+        return self.market_area.spot_market
 
     def _get_market_from_command_argument(self, arguments: Dict):
         if arguments.get("timeslot") is None:
-            return self.next_market
+            return self.spot_market
         timeslot = str_to_pendulum_datetime(arguments["timeslot"])
         return self._get_market_from_timeslot(timeslot)
 
@@ -253,10 +253,11 @@ class ExternalMixin:
         slot_completion_percent = int((self.device.current_tick_in_slot /
                                        self.device.config.ticks_per_slot) * 100)
         return {"slot_completion": f"{slot_completion_percent}%",
-                "market_slot": self.area.next_market.time_slot_str}
+                "market_slot": self.area.spot_market.time_slot_str}
 
     def _dispatch_event_tick_to_external_agent(self):
-        if external_global_statistics.is_it_time_for_external_tick(self.device.current_tick):
+        if global_objects.external_global_stats.\
+                is_it_time_for_external_tick(self.device.current_tick):
             if self.is_aggregator_controlled:
                 self.redis.aggregator.add_batch_tick_event(self.device.uuid, self._progress_info)
             elif self.connected:
@@ -304,11 +305,13 @@ class ExternalMixin:
                                    "local_market_fee":
                                        self.area.current_market.fee_class.grid_fee_rate
                                        if self.area.current_market is not None else "None",
-                                   "attributes": {},
+                                   "attributes": trade.offer_bid.attributes,
                                    "seller": trade.seller
                                    if trade.seller_id == self.device.uuid else "anonymous",
                                    "buyer": trade.buyer
                                    if trade.buyer_id == self.device.uuid else "anonymous",
+                                   "seller_origin": trade.seller_origin,
+                                   "buyer_origin": trade.buyer_origin,
                                    "bid_id": trade.offer_bid.id
                                    if trade.is_bid_trade else "None",
                                    "offer_id": trade.offer_bid.id
@@ -320,7 +323,7 @@ class ExternalMixin:
                                    if trade.residual is not None and trade.is_offer_trade
                                    else "None"}
 
-            external_global_statistics.update()
+            global_objects.external_global_stats.update()
             self.redis.aggregator.add_batch_trade_event(self.device.uuid, event_response_dict)
         elif self.connected:
             event_response_dict = {"device_info": self._device_info_dict,

@@ -56,7 +56,7 @@ class ElectrolyzerStrategy(StorageStrategy):
 
     def event_market_cycle(self):
         super().event_market_cycle()
-        current_market = self.area.next_market
+        current_market = self.area.spot_market
 
         if (self.state.used_storage - self.load_profile_kWh[current_market.time_slot]) >= 0:
             self.state._used_storage -= self.load_profile_kWh[current_market.time_slot]

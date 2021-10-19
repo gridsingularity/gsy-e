@@ -1,19 +1,18 @@
-import logging
 import ast
 import json
+import logging
 import pickle
 from datetime import datetime, date
-
-from pendulum import duration, instance
 from zlib import decompress
 
-from d3a.models.config import SimulationConfig
-from d3a.d3a_core.simulation import run_simulation
 from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 from d3a_interface.settings_validators import validate_global_settings
-import d3a.constants
-from d3a.d3a_core.util import available_simulation_scenarios, update_advanced_settings
+from pendulum import duration, instance
 
+import d3a.constants
+from d3a.d3a_core.simulation import run_simulation
+from d3a.d3a_core.util import available_simulation_scenarios, update_advanced_settings
+from d3a.models.config import SimulationConfig
 
 log = logging.getLogger()
 
@@ -26,8 +25,8 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
                                   saved_state, job_id):
     logging.getLogger().setLevel(logging.ERROR)
     scenario = decompress_and_decode_queued_strings(scenario)
+    d3a.constants.CONFIGURATION_ID = scenario.pop("configuration_uuid")
     if "collaboration_uuid" in scenario:
-        d3a.constants.COLLABORATION_ID = scenario.pop("collaboration_uuid")
         d3a.constants.EXTERNAL_CONNECTION_WEB = True
         GlobalConfig.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
         d3a.constants.RUN_IN_REALTIME = GlobalConfig.IS_CANARY_NETWORK
@@ -64,7 +63,6 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
             "market_maker_rate":
                 settings.get("market_maker_rate",
                              str(ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE)),
-            "market_count": settings.get("market_count", GlobalConfig.market_count),
             "cloud_coverage": settings.get("cloud_coverage", GlobalConfig.cloud_coverage),
             "pv_user_profile": settings.get("pv_user_profile", None),
             "capacity_kW": settings.get("capacity_kW",
@@ -115,6 +113,8 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
         kwargs = {"no_export": True,
                   "pricing_scheme": 0,
                   "seed": settings.get('random_seed', 0)}
+
+        d3a.constants.CONNECT_TO_PROFILES_DB = True
 
         run_simulation(setup_module_name=scenario_name,
                        simulation_config=config,

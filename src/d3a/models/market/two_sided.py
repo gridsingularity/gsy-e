@@ -24,14 +24,13 @@ from typing import Dict, List, Union  # noqa
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.data_classes import Bid, Offer, Trade, TradeBidOfferInfo, BidOfferMatch
-
+from d3a_interface.matching_algorithms.requirements_validators import RequirementsSatisfiedChecker
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import (BidNotFoundException, InvalidBid,
                                      InvalidBidOfferPairException, InvalidTrade, MarketException)
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market import lock_market_action
-from d3a.models.market.market_validators import RequirementsSatisfiedChecker
 from d3a.models.market.one_sided import OneSidedMarket
 
 log = getLogger(__name__)
@@ -349,15 +348,20 @@ class TwoSidedMarket(OneSidedMarket):
         # All combinations of bids and offers [(bid, offer), (bid, offer)...]
         # Example List1: [A, B], List2: [C, D] -> combinations: [(A, C), (A, D), (B, C), (B, D)]
         bids_offers_combinations = itertools.product(bids, offers)
-        if not (
-                bids_total_energy >= selected_energy and
-                offers_total_energy >= selected_energy
-                and all(
-                    (bid.energy_rate + FLOATING_POINT_TOLERANCE) >= clearing_rate for bid in bids)
-                and all(
-                    (offer.energy_rate <= clearing_rate + FLOATING_POINT_TOLERANCE
-                        for offer in offers))):
-            raise InvalidBidOfferPairException
+        if selected_energy > bids_total_energy:
+            raise InvalidBidOfferPairException(
+                f"Energy traded {selected_energy} is higher than bids energy {bids_total_energy}.")
+        if selected_energy > offers_total_energy:
+            raise InvalidBidOfferPairException(
+                f"Energy traded {selected_energy} is higher than offers energy"
+                f" {offers_total_energy}.")
+        if any((bid.energy_rate + FLOATING_POINT_TOLERANCE) < clearing_rate for bid in bids):
+            raise InvalidBidOfferPairException(
+                f"Trade rate {clearing_rate} is higher than bid energy rate.")
+        if any((offer.energy_rate > clearing_rate + FLOATING_POINT_TOLERANCE for offer in offers)):
+            raise InvalidBidOfferPairException(
+                f"Trade rate {clearing_rate} is higher than offer energy rate.")
+
         for combination in bids_offers_combinations:
             cls._validate_requirements_satisfied(
                 bid=combination[0], offer=combination[1], clearing_rate=clearing_rate,

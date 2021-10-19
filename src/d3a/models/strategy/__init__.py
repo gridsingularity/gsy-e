@@ -231,6 +231,9 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     parameters = None
 
+    def _read_or_rotate_profiles(self, reconfigure=False):
+        pass
+
     def energy_traded(self, market_id):
         return self.offers.sold_offer_energy(market_id)
 
@@ -517,8 +520,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         pass
 
     @property
-    def future_markets_time_slots(self):
-        return [m.time_slot for m in self.area.all_markets]
+    def spot_market_time_slot(self):
+        return self.area.spot_market.time_slot
 
     def get_state(self):
         try:

@@ -155,7 +155,6 @@ def pv_profile_scenario(context):
     context._settings = SimulationConfig(tick_length=duration(seconds=60),
                                          slot_length=duration(minutes=60),
                                          sim_duration=duration(hours=23),
-                                         market_count=4,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
                                          external_connection_enabled=False)
@@ -202,7 +201,6 @@ def load_profile_scenario(context):
     context._settings = SimulationConfig(tick_length=duration(seconds=60),
                                          slot_length=duration(minutes=60),
                                          sim_duration=duration(hours=24),
-                                         market_count=4,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
                                          external_connection_enabled=False)
@@ -301,16 +299,6 @@ def run_sim_console_alt_price(context, scenario):
               "--compare-alt-pricing".format(export_path=context.export_path, scenario=scenario))
 
 
-@when('we run the d3a simulation on console with {scenario} for {hours} hrs slot_length: '
-      '{slot_length}m, tick_length: {tick_length}s and markets: {market_count}')
-def run_simulation_via_console(context, scenario, hours, slot_length,
-                               tick_length, market_count):
-    context.export_path = os.path.join(context.simdir, scenario)
-    os.makedirs(context.export_path, exist_ok=True)
-    os.system(f"d3a -l FATAL run -d {hours}h -t {tick_length}s -s {slot_length}m "
-              f"-m {market_count} --seed 0 --setup={scenario} --export-path={context.export_path}")
-
-
 @when('we run the d3a simulation with cloud_coverage [{cloud_coverage}] and {scenario}')
 def run_sim_with_config_setting(context, cloud_coverage, scenario):
 
@@ -320,7 +308,6 @@ def run_sim_with_config_setting(context, cloud_coverage, scenario):
     simulation_config = SimulationConfig(duration(hours=int(24)),
                                          duration(minutes=int(60)),
                                          duration(seconds=int(60)),
-                                         market_count=4,
                                          cloud_coverage=int(cloud_coverage),
                                          external_connection_enabled=False)
 
@@ -492,8 +479,7 @@ def test_simulation_config_parameters(context, cloud_coverage):
     assert context.simulation.simulation_config.cloud_coverage == int(cloud_coverage)
     day_factor = 24 * 7 if GlobalConfig.IS_CANARY_NETWORK else 24
     assert len(context.simulation.simulation_config.market_maker_rate) == \
-        day_factor / context.simulation.simulation_config.slot_length.hours + \
-        context.simulation.simulation_config.market_count
+        day_factor / context.simulation.simulation_config.slot_length.hours
     assert len(default_profile_dict().keys()) == len(context.simulation.simulation_config.
                                                      market_maker_rate.keys())
     assert context.simulation.simulation_config.market_maker_rate[
@@ -511,7 +497,6 @@ def create_sim_object(context, scenario):
     simulation_config = SimulationConfig(duration(hours=int(12)),
                                          duration(minutes=int(60)),
                                          duration(seconds=int(60)),
-                                         market_count=1,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
                                          start_date=today(tz=TIME_ZONE),
@@ -602,7 +587,6 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
     simulation_config = SimulationConfig(duration(hours=int(total_duration)),
                                          duration(minutes=int(slot_length)),
                                          duration(seconds=int(tick_length)),
-                                         market_count=1,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
                                          start_date=start_date,
@@ -629,15 +613,6 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
     context.simulation.run()
 
 
-@when("we run the simulation with setup file {scenario} with two different market_counts")
-def run_sim_market_count(context, scenario):
-    run_sim(context, scenario, 24, 60, 60, market_count=1)
-    context.simulation_1 = context.simulation
-
-    run_sim(context, scenario, 24, 60, 60, market_count=4)
-    context.simulation_4 = context.simulation
-
-
 @given('export {flag}')
 @when('export {flag}')
 def export_logic(context, flag):
@@ -645,10 +620,10 @@ def export_logic(context, flag):
 
 
 @when('we run the simulation with setup file {scenario} and parameters '
-      '[{total_duration}, {slot_length}, {tick_length}, {market_count}]')
+      '[{total_duration}, {slot_length}, {tick_length}]')
 @then('we run the simulation with setup file {scenario} and parameters '
-      '[{total_duration}, {slot_length}, {tick_length}, {market_count}]')
-def run_sim(context, scenario, total_duration, slot_length, tick_length, market_count):
+      '[{total_duration}, {slot_length}, {tick_length}]')
+def run_sim(context, scenario, total_duration, slot_length, tick_length):
 
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.ERROR)
@@ -656,7 +631,6 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
     simulation_config = SimulationConfig(duration(hours=int(total_duration)),
                                          duration(minutes=int(slot_length)),
                                          duration(seconds=int(tick_length)),
-                                         market_count=int(market_count),
                                          cloud_coverage=0,
                                          market_maker_rate=30,
                                          external_connection_enabled=False)
@@ -943,12 +917,12 @@ def test_infinite_plant_energy_rate(context, plant_name):
     for market in grid.past_markets:
         for trade in market.trades:
             assert trade.buyer is not finite.name
-            trade.offer_bid.next_market = market
+            trade.offer_bid.spot_market = market
             if trade.seller == finite.name:
                 trades_sold.append(trade)
 
     assert all([isclose(trade.offer_bid.energy_rate,
-                        market_maker_rate[trade.offer_bid.next_market.time_slot])
+                        market_maker_rate[trade.offer_bid.spot_market.time_slot])
                 for trade in trades_sold])
     assert len(trades_sold) > 0
 
@@ -968,18 +942,6 @@ def test_finite_plant_max_power(context, plant_name):
         assert sum([trade.offer_bid.energy for trade in trades_sold]) <= \
             convert_kW_to_kWh(finite.strategy.max_available_power_kW[market.time_slot],
                               finite.config.slot_length)
-
-
-@then("the results are the same for each simulation run")
-def test_sim_market_count(context):
-    if GlobalConfig.IS_CANARY_NETWORK:
-        return
-    grid_1 = context.simulation_1.area
-    grid_4 = context.simulation_4.area
-    for market_1 in grid_1.past_markets:
-        market_4 = grid_4.get_past_market(market_1.time_slot)
-        for area in market_1.traded_energy.keys():
-            assert isclose(market_1.traded_energy[area], market_4.traded_energy[area])
 
 
 @then("we test the config parameters")
@@ -1102,7 +1064,7 @@ def pv_selling_rate_minus_fees(context):
     for market in grid.past_markets:
         for trade in market.trades:
             assert trade.buyer is not pv.name
-            trade.offer_bid.next_market = market
+            trade.offer_bid.spot_market = market
             if trade.seller == pv.name:
                 trades_sold.append(trade)
 
@@ -1124,7 +1086,7 @@ def load_buying_rate_plus_fees(context):
     for market in grid.past_markets:
         for trade in market.trades:
             assert trade.seller is not load.name
-            trade.offer_bid.next_market = market
+            trade.offer_bid.spot_market = market
             if trade.buyer == load.name:
                 trades_bought.append(trade)
 

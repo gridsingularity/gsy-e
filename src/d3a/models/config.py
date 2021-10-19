@@ -33,7 +33,7 @@ from d3a.d3a_core.util import format_interval
 
 class SimulationConfig:
     def __init__(self, sim_duration: duration, slot_length: duration, tick_length: duration,
-                 market_count: int, cloud_coverage: int,
+                 cloud_coverage: int,
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  pv_user_profile=None, start_date: DateTime = today(tz=TIME_ZONE),
                  capacity_kW=None, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
@@ -44,7 +44,6 @@ class SimulationConfig:
         self.end_date = start_date + sim_duration
         self.slot_length = slot_length
         self.tick_length = tick_length
-        self.market_count = market_count
         self.grid_fee_type = grid_fee_type
         self.ticks_per_slot = self.slot_length / self.tick_length
         if self.ticks_per_slot != int(self.ticks_per_slot):
@@ -79,7 +78,7 @@ class SimulationConfig:
         return json.dumps(self.as_dict())
 
     def as_dict(self):
-        fields = {'sim_duration', 'slot_length', 'tick_length', 'market_count', 'ticks_per_slot',
+        fields = {'sim_duration', 'slot_length', 'tick_length', 'ticks_per_slot',
                   'total_ticks', 'cloud_coverage', 'capacity_kW', 'grid_fee_type',
                   'external_connection_enabled'}
         return {

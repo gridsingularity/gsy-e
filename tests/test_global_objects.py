@@ -21,7 +21,7 @@ from unittest.mock import MagicMock
 from pendulum import duration, today
 
 from d3a.constants import TIME_ZONE
-from d3a.d3a_core.global_objects import ExternalConnectionGlobalStatistics
+from d3a.d3a_core.global_stats import ExternalConnectionGlobalStatistics
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import \
     ExternalConnectionCommunicator
 from d3a.models.area import Area
@@ -43,7 +43,6 @@ class TestGlobalObjects(unittest.TestCase):
         self.config.sim_duration = duration(days=1)
         self.config.grid_fee_type = 1
         self.config.end_date = self.config.start_date + self.config.sim_duration
-        self.config.market_count = 1
         self.config.capacity_kW = 1
         self.config.external_redis_communicator = \
             MagicMock(spec=ExternalConnectionCommunicator(True))

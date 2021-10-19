@@ -31,18 +31,19 @@ from d3a_interface.exceptions import D3AException
 from d3a_interface.kafka_communication.kafka_producer import kafka_connection_factory
 from d3a_interface.utils import format_datetime, str_to_pendulum_datetime
 from numpy import random
-from pendulum import now, duration
+from pendulum import now, duration, DateTime
 
 import d3a.constants
 from d3a import setup as d3a_setup  # noqa
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, SIMULATION_PAUSE_TIMEOUT
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.d3a_core.export import ExportAndPlot
+from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.d3a_core.live_events import LiveEvents
+from d3a.d3a_core.myco_singleton import bid_offer_matcher
 from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCommunication
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
-from d3a.d3a_core.singletons import external_global_statistics, bid_offer_matcher
 from d3a.d3a_core.util import (
     NonBlockingConsole, validate_const_settings_for_simulation,
     get_market_slot_time_str)
@@ -157,9 +158,12 @@ class Simulation:
             self.initial_params["seed"] = random_seed
             log.info("Random seed: {}".format(random_seed))
 
+        # has to be called before get_setup():
+        global_objects.profiles_handler.activate()
+
         self.area = self.setup_module.get_setup(self.simulation_config)
         bid_offer_matcher.activate()
-        external_global_statistics(self.area, self.simulation_config.ticks_per_slot)
+        global_objects.external_global_stats(self.area, self.simulation_config.ticks_per_slot)
 
         self.endpoint_buffer = SimulationEndpointBuffer(
             redis_job_id, self.initial_params,
@@ -289,6 +293,10 @@ class Simulation:
         for child in area.children:
             self.set_area_current_tick(child, current_tick)
 
+    def _get_current_market_time_slot(self, slot_number: int) -> DateTime:
+        return (self.area.config.start_date + (slot_number * self.area.config.slot_length)
+                if GlobalConfig.IS_CANARY_NETWORK else self.area.now)
+
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
         self.current_expected_tick_time = self.run_start
         config = self.simulation_config
@@ -328,12 +336,18 @@ class Simulation:
                         f"{self.progress_info.elapsed_time} elapsed, "
                         f"ETA: {self.progress_info.eta}")
 
+            global_objects.profiles_handler.update_time_and_buffer_profiles(
+                self._get_current_market_time_slot(slot_no))
+
             self.area.cycle_markets()
 
             if self.simulation_config.external_connection_enabled:
-                external_global_statistics.update(market_cycle=True)
+                global_objects.external_global_stats.update(market_cycle=True)
                 self.area.publish_market_cycle_to_external_clients()
-                bid_offer_matcher.event_market_cycle()
+
+            bid_offer_matcher.event_market_cycle(
+                slot_completion="0%",
+                market_slot=self.progress_info.next_slot_str)
 
             self._update_and_send_results()
             self.live_events.handle_all_events(self.area)
@@ -357,16 +371,18 @@ class Simulation:
                     approve_aggregator_commands()
 
                 current_tick_in_slot = tick_no % config.ticks_per_slot
-                if self.simulation_config.external_connection_enabled:
-                    if external_global_statistics.is_it_time_for_external_tick(
+                if self.simulation_config.external_connection_enabled and \
+                        global_objects.external_global_stats.is_it_time_for_external_tick(
                             current_tick_in_slot):
-                        external_global_statistics.update()
+                    global_objects.external_global_stats.update()
 
                 self.area.tick_and_dispatch()
                 self.area.update_area_current_tick()
                 bid_offer_matcher.event_tick(
-                    is_it_time_for_external_tick=external_global_statistics.
-                    is_it_time_for_external_tick(current_tick_in_slot))
+                    is_it_time_for_external_tick=global_objects.external_global_stats.
+                    is_it_time_for_external_tick(current_tick_in_slot),
+                    slot_completion=f"{int((tick_no/config.ticks_per_slot) * 100)}%",
+                    market_slot=self.progress_info.next_slot_str)
                 self.simulation_config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()
 
@@ -506,7 +522,6 @@ class Simulation:
             "  Duration: %(sim_duration)s\n"
             "  Slot length: %(slot_length)s\n"
             "  Tick length: %(tick_length)s\n"
-            "  Market count: %(market_count)d\n"
             "  Ticks per slot: %(ticks_per_slot)d\n"
             "Status:\n"
             "  Slot: %(slot)d / %(slot_count)d\n"
