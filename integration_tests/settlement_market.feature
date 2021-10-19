@@ -13,7 +13,6 @@ Feature: Settlement Market Tests
     Then settlement markets are created
     And settlement market trades have been executed
 
-
   Scenario: D3ASIM-3653: Trade events are correctly triggered in the settlement load
     Given we have a scenario named settlement_market/simple_load_cell_tower
     And d3a is installed

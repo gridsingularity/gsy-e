@@ -59,9 +59,9 @@ class OneSidedAgent(InterAreaAgent):
         for engine in sorted(self.engines, key=lambda _: random()):
             engine.tick(area=area)
 
-    def event_trade(self, *, market_id, trade):
+    def event_offer_traded(self, *, market_id, trade):
         for engine in sorted(self.engines, key=lambda _: random()):
-            engine.event_trade(trade=trade)
+            engine.event_offer_traded(trade=trade)
 
     def event_offer_deleted(self, *, market_id, offer):
         for engine in sorted(self.engines, key=lambda _: random()):

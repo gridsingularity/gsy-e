@@ -133,7 +133,7 @@ class TestSettlementMarketStrategy:
         self._setup_strategy_fixture(strategy_fixture, False, True)
         strategy_fixture.state.set_energy_measurement_kWh(10, self.time_slot)
         self.settlement_strategy.event_market_cycle(strategy_fixture)
-        self.settlement_strategy.event_trade(
+        self.settlement_strategy.event_offer_traded(
             strategy_fixture, self.market_mock.id,
             Trade("456", self.time_slot, self.test_offer, self.area_mock.name, self.area_mock.name)
         )

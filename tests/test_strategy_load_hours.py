@@ -479,12 +479,13 @@ def test_balancing_offers_are_created_if_device_in_registry(
     selected_offer = area_test2.current_market.sorted_offers[0]
     balancing_fixture.state._energy_requirement_Wh[area_test2.current_market.time_slot] = \
         selected_offer.energy * 1000.0
-    balancing_fixture.event_trade(market_id=area_test2.current_market.id,
-                                  trade=Trade(id='id',
-                                              time=area_test2.now,
-                                              offer_bid=selected_offer,
-                                              seller='B',
-                                              buyer='FakeArea'))
+    balancing_fixture.event_offer_traded(market_id=area_test2.current_market.id,
+                                         trade=Trade(id='id',
+                                                     time=area_test2.now,
+                                                     offer_bid=selected_offer,
+                                                     seller='B',
+                                                     buyer='FakeArea')
+                                         )
     assert len(area_test2.test_balancing_market.created_balancing_offers) == 2
     actual_balancing_supply_energy = \
         area_test2.test_balancing_market.created_balancing_offers[1].energy
@@ -574,7 +575,7 @@ def test_assert_if_trade_rate_is_higher_than_bid_rate(load_hours_strategy_test3)
     trade = Trade("trade_id", "time", expensive_bid, load_hours_strategy_test3, "buyer")
 
     with pytest.raises(AssertionError):
-        load_hours_strategy_test3.event_trade(market_id=market_id, trade=trade)
+        load_hours_strategy_test3.event_offer_traded(market_id=market_id, trade=trade)
 
 
 def test_update_state(load_hours_strategy_test1):
