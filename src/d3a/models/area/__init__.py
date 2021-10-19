@@ -144,6 +144,7 @@ class Area:
             if external_connection_available and self.strategy is None else None
         self.should_update_child_strategies = False
         self.external_connection_available = external_connection_available
+        self.total_energy_deviance_kWh: Dict[DateTime, float] = {}
 
     @property
     def name(self):
@@ -319,6 +320,7 @@ class Area:
 
         current_tick_in_slot = int(self.current_tick % self.config.ticks_per_slot)
         tick_at_the_slot_start = self.current_tick - current_tick_in_slot
+        self._calculate_energy_deviances()
         if tick_at_the_slot_start == 0:
             now_value = self.now
         else:
@@ -580,26 +582,22 @@ class Area:
     def get_settlement_market(self, timeslot):
         return self._markets.settlement_markets.get(timeslot)
 
-    def _accumulate_energy_deviances_of_children(self, area, total_energy_deviance_kWh):
-        for child in area.children:
-            print(f"child: {child.name} | STRATEGY: {child.strategy}")
-            if child.strategy:
-                last_past_settlement_market = (
-                    self.last_past_settlement_market[0]
-                    if self.last_past_settlement_market is not None
-                    else None)
-                if last_past_settlement_market is not None:
-                    total_energy_deviance_kWh += (
-                        child.strategy.state.get_forecast_measurement_deviation_kWh(
-                            self.last_past_settlement_market[0]))
-            if child.children:
-                self._accumulate_energy_deviances_of_children(child, total_energy_deviance_kWh)
-
-    def get_energy_deviances(self):
-        total_energy_deviance_kWh = 0.
+    def _calculate_energy_deviances(self):
+        """
+        If area is a device - Get its forecated deviance
+        Else accumulate energy deviances of connected children
+        """
+        if self.current_market is None:
+            return
+        time_slot = self.current_market.time_slot
         if self.strategy is None:
-            self._accumulate_energy_deviances_of_children(self, total_energy_deviance_kWh)
-        return total_energy_deviance_kWh
+            # Accumulating energy deviance of connected children
+            self.total_energy_deviance_kWh[time_slot] = sum(
+                [child.total_energy_deviance_kWh[time_slot] for child in self.children])
+        else:
+            # Energy deviance of Device
+            self.total_energy_deviance_kWh[time_slot] = (
+                self.child.strategy.state.get_forecast_measurement_deviation_kWh(time_slot))
 
     @cached_property
     def available_triggers(self):
