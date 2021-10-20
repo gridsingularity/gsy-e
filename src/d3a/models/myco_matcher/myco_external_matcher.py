@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import json
 from enum import Enum
-from time import sleep
 from typing import Dict, List
 
 from d3a_interface.data_classes import BidOfferMatch
@@ -26,7 +25,6 @@ from d3a_interface.data_classes import BidOfferMatch
 import d3a.constants
 from d3a.d3a_core.exceptions import (
     InvalidBidOfferPairException, MycoValidationException)
-from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
 from d3a.models.market.two_sided import TwoSidedMarket
 from d3a.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
@@ -147,12 +145,10 @@ class MycoExternalMatcher(MycoMatcherInterface):
 
     def event_tick(self, **kwargs):
         """Publish the tick event to the Myco client."""
-        if (kwargs.get("current_tick_in_slot")
-                and not global_objects.external_global_stats.is_it_time_for_external_tick(
-                kwargs.pop("current_tick_in_slot"))):
-            # If External matching is enabled, limit the number of ticks dispatched.
+        is_it_time_for_external_tick = kwargs.pop("is_it_time_for_external_tick", True)
+        # If External matching is enabled, limit the number of ticks dispatched.
+        if not is_it_time_for_external_tick:
             return
-        sleep(1)
         data = {"event": ExternalMatcherEventsEnum.TICK.value, **kwargs}
         self.myco_ext_conn.publish_json(self._events_channel, data)
 

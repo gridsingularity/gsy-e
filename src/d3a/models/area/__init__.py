@@ -401,26 +401,17 @@ class Area:
         Invoke aggregator commands consumer, publishes market clearing, updates events,
         updates cached myco matcher markets and match trades recommendations.
         """
-        self._consume_commands_from_aggregator()
-
         if (ConstSettings.IAASettings.MARKET_TYPE != SpotMarketTypeEnum.ONE_SIDED.value
                 and not self.strategy):
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+                self._consume_commands_from_aggregator()
                 self.dispatcher.publish_market_clearing()
             else:
-                self._update_myco_matcher()
-                bid_offer_matcher.event_tick(
-                    **self._progress_info, current_tick_in_slot=self.current_tick_in_slot)
                 bid_offer_matcher.match_recommendations()
+                self._consume_commands_from_aggregator()
+                self._update_myco_matcher()
 
         self.events.update_events(self.now)
-
-    @property
-    def _progress_info(self):
-        slot_completion_percent = int((self.current_tick_in_slot /
-                                       self.config.ticks_per_slot) * 100)
-        return {"slot_completion": f"{slot_completion_percent}%",
-                "market_slot": self.next_market.time_slot_str}
 
     def _update_myco_matcher(self) -> None:
         """Update the markets cache that the myco matcher will request"""
