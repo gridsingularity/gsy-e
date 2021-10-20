@@ -106,7 +106,6 @@ def db_profile_scenario(context):
     context._settings = SimulationConfig(sim_duration=duration(days=3),
                                          tick_length=duration(seconds=60),
                                          slot_length=GlobalConfig.slot_length,
-                                         market_count=1,
                                          cloud_coverage=0,
                                          external_connection_enabled=False)
     context._settings.area = predefined_load_scenario

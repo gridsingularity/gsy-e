@@ -53,7 +53,7 @@ class FakeArea:
         self.name = 'FakeArea'
         self.uuid = str(uuid4())
 
-        self._next_market = FakeMarket(0)
+        self._spot_market = FakeMarket(0)
         self.current_market = FakeMarket(0)
         self._bids = {}
         self.markets = {TIME: self.current_market,
@@ -63,7 +63,7 @@ class FakeArea:
         self.test_balancing_market_2 = FakeMarket(2)
 
     def get_future_market_from_id(self, id):
-        return self._next_market
+        return self._spot_market
 
     def get_path_to_root_fees(self):
         return 0.
@@ -91,14 +91,14 @@ class FakeArea:
 
     @property
     def balancing_markets(self):
-        return {self._next_market.time_slot: self.test_balancing_market}
+        return {self._spot_market.time_slot: self.test_balancing_market}
 
     def get_balancing_market(self, time):
         return self.test_balancing_market
 
     @property
-    def next_market(self):
-        return self._next_market
+    def spot_market(self):
+        return self._spot_market
 
 
 class FakeMarket:
@@ -397,7 +397,7 @@ def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strat
                                                                 partial):
     ConstSettings.IAASettings.MARKET_TYPE = 2
 
-    trade_market = load_hours_strategy_test5.area.next_market
+    trade_market = load_hours_strategy_test5.area.spot_market
     load_hours_strategy_test5.remove_bid_from_pending = called
     load_hours_strategy_test5.event_activate()
     load_hours_strategy_test5.area.markets = {TIME: trade_market}
@@ -421,7 +421,7 @@ def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_st
                                                                    called):
     ConstSettings.IAASettings.MARKET_TYPE = 2
 
-    trade_market = load_hours_strategy_test5.area.next_market
+    trade_market = load_hours_strategy_test5.area.spot_market
     load_hours_strategy_test5.remove_bid_from_pending = called
     load_hours_strategy_test5.event_activate()
     load_hours_strategy_test5.area.markets = {TIME: trade_market}
