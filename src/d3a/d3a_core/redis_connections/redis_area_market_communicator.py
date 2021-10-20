@@ -116,7 +116,7 @@ class ExternalConnectionCommunicator(ResettableCommunicator):
     def start_communication(self):
         if not self.is_enabled:
             return
-        if not self.pubsub.channels:
+        if not self.pubsub.subscribed:
             return
         thread = self.pubsub.run_in_thread(sleep_time=0.1, daemon=True)
         log.debug(f"Started ExternalConnectionCommunicator thread for "

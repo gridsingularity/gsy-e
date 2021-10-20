@@ -522,7 +522,6 @@ class Simulation:
             "  Duration: %(sim_duration)s\n"
             "  Slot length: %(slot_length)s\n"
             "  Tick length: %(tick_length)s\n"
-            "  Market count: %(market_count)d\n"
             "  Ticks per slot: %(ticks_per_slot)d\n"
             "Status:\n"
             "  Slot: %(slot)d / %(slot_count)d\n"

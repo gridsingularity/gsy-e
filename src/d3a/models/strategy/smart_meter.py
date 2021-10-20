@@ -499,12 +499,12 @@ class SmartMeterStrategy(BidEnabledStrategy):
         # Reconfigure the final buying rate (for energy consumption)
         self._area_reconfigure_consumption_prices(
             final_buying_rate=get_market_maker_rate_from_config(
-                self.area.next_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
+                self.area.spot_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
 
         # Reconfigure the initial selling rate (for energy production)
         self._area_reconfigure_production_prices(
             initial_selling_rate=get_market_maker_rate_from_config(
-                self.area.next_market, 0) - self.owner.get_path_to_root_fees(), validate=False)
+                self.area.spot_market, 0) - self.owner.get_path_to_root_fees(), validate=False)
 
     def _validate_consumption_rates(
             self, initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):

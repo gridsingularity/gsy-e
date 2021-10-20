@@ -99,15 +99,15 @@ class PVPredefinedStrategy(PVStrategy):
             if self.cloud_coverage is not None else self.area.config.cloud_coverage
         if reconfigure:
             self._read_predefined_profile_for_pv()
-        for market in self.area.all_markets:
-            slot_time = market.time_slot
-            if not self.energy_profile:
-                raise D3AException(
-                    f"PV {self.owner.name} tries to set its available energy forecast without a "
-                    f"power profile.")
-            available_energy_kWh = find_object_of_same_weekday_and_time(
-                self.energy_profile, slot_time) * self.panel_count
-            self.state.set_available_energy(available_energy_kWh, slot_time, reconfigure)
+        market = self.area.spot_market
+        slot_time = market.time_slot
+        if not self.energy_profile:
+            raise D3AException(
+                f"PV {self.owner.name} tries to set its available energy forecast without a "
+                f"power profile.")
+        available_energy_kWh = find_object_of_same_weekday_and_time(
+            self.energy_profile, slot_time) * self.panel_count
+        self.state.set_available_energy(available_energy_kWh, slot_time, reconfigure)
 
     def _read_predefined_profile_for_pv(self):
         """
