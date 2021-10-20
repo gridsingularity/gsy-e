@@ -17,11 +17,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from copy import copy
 from statistics import mean, median
+from typing import Dict
+
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
+from pendulum import DateTime
 
 from d3a import limit_float_precision
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name, add_or_create_key, \
     area_sells_to_child, child_buys_from_area
-from d3a_interface.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
+from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.strategy.pv import PVStrategy
 
 default_trade_stats_dict = {
     "min_trade_rate": None,
@@ -41,6 +47,7 @@ class AreaStats:
         self.kpi = {}
         self.exported_traded_energy_kwh = {}
         self.imported_traded_energy_kwh = {}
+        self.total_energy_deviance_kWh: Dict[DateTime, float] = {}
 
     def get_state(self):
         return {
@@ -160,3 +167,29 @@ class AreaStats:
             self.imported_traded_energy_kwh[self.current_market.time_slot] = 0.
         if self.current_market.time_slot not in self.exported_traded_energy_kwh:
             self.exported_traded_energy_kwh[self.current_market.time_slot] = 0.
+
+    def calculate_energy_deviances(self):
+        """
+        If area is a device - Get its forecated deviance
+        Else accumulate energy deviances of connected children
+        """
+        current_market = (getattr(self._area, "current_market", None) or
+                          getattr(self._area.parent, "current_market", None))
+        if (current_market is None or
+                ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS is False):
+            return
+        time_slot = current_market.time_slot
+        if self._area.strategy is None:
+            # Accumulating energy deviance of connected children
+            self.total_energy_deviance_kWh[time_slot] = {
+                child.uuid: child.stats.total_energy_deviance_kWh[time_slot]
+                for child in self._area.children}
+        elif isinstance(self._area.strategy, (PVStrategy, LoadHoursStrategy)):
+            # Energy deviance of PV/LOAD
+            self.total_energy_deviance_kWh[time_slot] = {
+                self._area.uuid: self._area.strategy.state.get_forecast_measurement_deviation_kWh(
+                    time_slot)
+            }
+        else:
+            # Zero energy deviances of non-fluctuating devices
+            self.total_energy_deviance_kWh[time_slot] = {self._area.uuid: 0.}

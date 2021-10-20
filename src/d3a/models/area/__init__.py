@@ -44,8 +44,6 @@ from d3a.models.config import SimulationConfig
 from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.pv import PVStrategy
 
 log = getLogger(__name__)
 
@@ -145,7 +143,6 @@ class Area:
             if external_connection_available and self.strategy is None else None
         self.should_update_child_strategies = False
         self.external_connection_available = external_connection_available
-        self.total_energy_deviance_kWh: Dict[DateTime, float] = {}
 
     @property
     def name(self):
@@ -333,7 +330,7 @@ class Area:
         self.events.update_events(now_value)
 
         if not self.children:
-            self._calculate_energy_deviances()
+            self.stats.calculate_energy_deviances()
             # Since children trade in markets we only need to populate them if there are any
             return
 
@@ -379,7 +376,7 @@ class Area:
         if (changed_balancing_market or len(self._markets.past_balancing_markets.keys()) == 0) \
                 and _trigger_event and ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.dispatcher.broadcast_balancing_market_cycle()
-        self._calculate_energy_deviances()
+        self.stats.calculate_energy_deviances()
 
     def publish_market_cycle_to_external_clients(self):
         if self.strategy and isinstance(self.strategy, ExternalMixin):
@@ -574,29 +571,6 @@ class Area:
 
     def get_settlement_market(self, timeslot):
         return self._markets.settlement_markets.get(timeslot)
-
-    def _calculate_energy_deviances(self):
-        """
-        If area is a device - Get its forecated deviance
-        Else accumulate energy deviances of connected children
-        """
-        current_market = (getattr(self, "current_market", None) or
-                          getattr(self.parent, "current_market", None))
-        if (current_market is None or
-                ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS is False):
-            return
-        time_slot = current_market.time_slot
-        if self.strategy is None:
-            # Accumulating energy deviance of connected children
-            self.total_energy_deviance_kWh[time_slot] = {
-                child.uuid: child.total_energy_deviance_kWh[time_slot] for child in self.children}
-        elif isinstance(self.strategy, (PVStrategy, LoadHoursStrategy)):
-            # Energy deviance of PV/LOAD
-            self.total_energy_deviance_kWh[time_slot] = {
-                self.uuid: self.strategy.state.get_forecast_measurement_deviation_kWh(time_slot)}
-        else:
-            # Zero energy deviances of non-fluctuating devices
-            self.total_energy_deviance_kWh[time_slot] = {self.uuid: 0.}
 
     @cached_property
     def available_triggers(self):
