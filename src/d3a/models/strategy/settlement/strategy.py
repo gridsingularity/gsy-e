@@ -58,7 +58,7 @@ class SettlementMarketStrategyInterface:
     def event_bid_traded(self, strategy, market_id, bid_trade):
         pass
 
-    def event_trade(self, strategy, market_id, trade):
+    def event_offer_traded(self, strategy, market_id, trade):
         pass
 
 
@@ -179,7 +179,8 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
             strategy.state.decrement_unsettled_deviation(
                 bid_trade.offer_bid.energy, market.time_slot)
 
-    def event_trade(self, strategy: BidEnabledStrategy, market_id: str, trade: Trade) -> None:
+    def event_offer_traded(self, strategy: BidEnabledStrategy,
+                           market_id: str, trade: Trade) -> None:
         """
         Updates the unsettled deviation with the traded energy from the market
         Args:
