@@ -197,7 +197,7 @@ class TestMycoExternalMatcherValidator:
 
         recommendations = [{
                 "market_id": "market",
-                "time_slot": "20211006T12:00",
+                "time_slot": "2021-10-06T12:00",
                 "bids": [],
                 "offers": [],
                 "trade_rate": 1,
@@ -213,7 +213,7 @@ class TestMycoExternalMatcherValidator:
         expected_data = {"status": "success",
                          "recommendations": [{
                              "market_id": "market",
-                             "time_slot": "20211006T12:00",
+                             "time_slot": "2021-10-06T12:00",
                              "bids": [],
                              "offers": [],
                              "trade_rate": 1,
@@ -236,9 +236,9 @@ class TestMycoExternalMatcherValidator:
     @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
     def test_validate_market_exists(self, mock_myco_external_matcher):
         market = MagicMock()
-        market.time_slot_str = "20211006T12:00"
-        mock_myco_external_matcher.area_markets_mapping = {"market-20211006T12:00": market}
-        recommendation = {"market_id": "market", "time_slot": "20211006T12:00"}
+        market.time_slot_str = "2021-10-06T12:00"
+        mock_myco_external_matcher.area_markets_mapping = {"market-2021-10-06T12:00": market}
+        recommendation = {"market_id": "market", "time_slot": "2021-10-06T12:00"}
         assert MycoExternalMatcherValidator._validate_market_exists(
             mock_myco_external_matcher, recommendation) is None
 
@@ -250,13 +250,13 @@ class TestMycoExternalMatcherValidator:
     @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
     def test_validate_orders_exist_in_market(self, mock_myco_external_matcher):
         market = MagicMock()
-        market.time_slot_str = "20211006T12:00"
+        market.time_slot_str = "2021-10-06T12:00"
         market.offers = {"offer1": MagicMock()}
         market.bids = {"bid1": MagicMock()}
-        mock_myco_external_matcher.area_markets_mapping = {"market-20211006T12:00": market}
+        mock_myco_external_matcher.area_markets_mapping = {"market-2021-10-06T12:00": market}
         recommendation = {
             "market_id": "market",
-            "time_slot": "20211006T12:00",
+            "time_slot": "2021-10-06T12:00",
             "offers": [{"id": "offer1"}], "bids": [{"id": "bid1"}]}
         assert MycoExternalMatcherValidator._validate_orders_exist_in_market(
             mock_myco_external_matcher, recommendation) is None
