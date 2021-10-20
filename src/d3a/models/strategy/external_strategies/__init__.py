@@ -354,8 +354,8 @@ class ExternalMixin:
         if self.connected or self.is_aggregator_controlled:
             self._publish_trade_event(bid_trade, True)
 
-    def event_trade(self, market_id, trade):
-        super().event_trade(market_id=market_id, trade=trade)
+    def event_offer_traded(self, market_id, trade):
+        super().event_offer_traded(market_id=market_id, trade=trade)
         if self.connected or self.is_aggregator_controlled:
             self._publish_trade_event(trade, False)
 

@@ -92,8 +92,8 @@ def test_baa_event_trade(baa):
                   'IAA owner')
     fake_spot_market = FakeMarket([])
     fake_spot_market.set_time_slot(baa.lower_market.time_slot)
-    baa.event_trade(trade=trade,
-                    market_id=fake_spot_market.id)
+    baa.event_offer_traded(trade=trade,
+                           market_id=fake_spot_market.id)
     assert baa.lower_market.unmatched_energy_upward == 0
     assert baa.lower_market.unmatched_energy_downward == 0
 
@@ -117,7 +117,7 @@ def test_baa_unmatched_event_trade(baa2):
     fake_spot_market = FakeMarket([])
     fake_spot_market.set_time_slot(baa2.lower_market.time_slot)
     baa2.owner._fake_spot_market = fake_spot_market
-    baa2.event_trade(trade=trade,
-                     market_id=fake_spot_market.id)
+    baa2.event_offer_traded(trade=trade,
+                            market_id=fake_spot_market.id)
     assert baa2.lower_market.unmatched_energy_upward != 0
     assert baa2.lower_market.unmatched_energy_downward != 0

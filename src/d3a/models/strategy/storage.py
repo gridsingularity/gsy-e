@@ -372,9 +372,9 @@ class StorageStrategy(BidEnabledStrategy):
             for market in self.area.all_markets:
                 self.buy_energy(market)
 
-    def event_trade(self, *, market_id, trade):
+    def event_offer_traded(self, *, market_id, trade):
         market = self.area.get_future_market_from_id(market_id)
-        super().event_trade(market_id=market_id, trade=trade)
+        super().event_offer_traded(market_id=market_id, trade=trade)
 
         self.assert_if_trade_bid_price_is_too_high(market, trade)
         self.assert_if_trade_offer_price_is_too_low(market_id, trade)

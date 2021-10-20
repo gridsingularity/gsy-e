@@ -239,10 +239,10 @@ class SmartMeterStrategy(BidEnabledStrategy):
         self._event_tick_consumption()
         self._event_tick_production()
 
-    def event_trade(self, *, market_id, trade):
+    def event_offer_traded(self, *, market_id, trade):
         """Validate the trade for both offers and bids. Extends the superclass method.
 
-        This method is triggered by the MarketEvent.TRADE event.
+        This method is triggered by the MarketEvent.OFFER_TRADED event.
         """
         market = self.area.get_future_market_from_id(market_id)
         if not market:
@@ -251,7 +251,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         if self.owner.name not in (trade.seller, trade.buyer):
             return  # Only react to trades in which the device took part
 
-        super().event_trade(market_id=market_id, trade=trade)
+        super().event_offer_traded(market_id=market_id, trade=trade)
 
         is_buyer = self.owner.name == trade.buyer
         if is_buyer:
