@@ -26,7 +26,6 @@ import pytest
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.enums import SpotMarketTypeEnum
 from d3a_interface.exceptions import D3ADeviceException
-from parameterized import parameterized
 from pendulum import DateTime, duration, today, now
 
 from d3a.constants import TIME_ZONE, TIME_FORMAT
@@ -498,7 +497,7 @@ def test_balancing_offers_are_created_if_device_in_registry(
     DeviceRegistry.REGISTRY = {}
 
 
-@parameterized.expand([
+@pytest.mark.parametrize("use_mmr, expected_rate", [
     [True, 9, ], [False, 33, ]
 ])
 def test_use_market_maker_rate_parameter_is_respected(use_mmr, expected_rate):
@@ -510,7 +509,7 @@ def test_use_market_maker_rate_parameter_is_respected(use_mmr, expected_rate):
     assert all(v == expected_rate for v in load.bid_update.final_rate.values())
 
 
-@parameterized.expand([
+@pytest.mark.parametrize("use_mmr, expected_rate", [
     [True, 9, ], [False, 33, ]
 ])
 def test_use_market_maker_rate_parameter_is_respected_for_load_profiles(use_mmr, expected_rate):
@@ -604,9 +603,8 @@ def test_set_energy_measurement_of_last_market(utils_mock, load_hours_strategy_t
         100, load_hours_strategy_test1.area.current_market.time_slot)
 
 
-@parameterized.expand([
-    [True, 40, ], [False, 40, ]
-])
+@pytest.mark.parametrize("use_mmr, initial_buying_rate", [
+    (True, 40), (False, 40)])
 def test_predefined_load_strategy_rejects_incorrect_rate_parameters(use_mmr, initial_buying_rate):
     user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
     load = DefinedLoadStrategy(

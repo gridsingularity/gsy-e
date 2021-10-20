@@ -385,12 +385,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
         This method is triggered by the MarketEvent.BID_TRADED event.
         """
         # settlement market event_bid_traded has to be triggered before the early return:
-
         self._settlement_market_strategy.event_bid_traded(self, market_id, bid_trade)
 
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
         market = self.area.get_future_market_from_id(market_id)
-        print(market)
         if not market:
             return
         if bid_trade.offer_bid.buyer == self.owner.name:

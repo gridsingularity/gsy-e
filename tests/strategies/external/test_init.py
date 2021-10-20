@@ -245,7 +245,6 @@ class TestExternalMixin:
                           seller_id=self.parent.uuid)
 
         strategy.event_offer_traded(market_id="test_market", trade=trade)
-        print(strategy.redis.aggregator.add_batch_trade_event.call_args_list)
         assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
             self.area.uuid
 
