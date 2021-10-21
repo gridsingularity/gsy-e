@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
-from typing import Union, Dict  # noqa
+from typing import Union, Dict, TYPE_CHECKING, Callable, List  # noqa
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.enums import SpotMarketTypeEnum
@@ -26,7 +26,6 @@ from pendulum import DateTime  # noqa
 from d3a import constants
 from d3a.d3a_core.exceptions import WrongMarketTypeException
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import RedisCommunicator
-from d3a.d3a_core.util import create_subdict_or_update
 from d3a.events.event_structures import MarketEvent, AreaEvent
 from d3a.models.market import Market
 from d3a.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
@@ -42,6 +41,10 @@ from d3a.models.strategy.area_agents.one_sided_alternative_pricing_agent import 
 from d3a.models.strategy.area_agents.settlement_agent import SettlementAgent
 from d3a.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
 
+if TYPE_CHECKING:
+    from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent
+    from d3a.models.area import Area
+
 log = getLogger(__name__)
 
 EVENT_DISPATCHING_VIA_REDIS = ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS
@@ -49,10 +52,11 @@ EVENT_DISPATCHING_VIA_REDIS = ConstSettings.GeneralSettings.EVENT_DISPATCHING_VI
 
 class AreaDispatcher:
     def __init__(self, area):
-        self._inter_area_agents: Dict[DateTime, Dict[str, OneSidedAgent]] = {}
-        self._balancing_agents: Dict[DateTime, Dict[str, BalancingAgent]] = {}
-        self._settlement_agents: Dict[DateTime, Dict[str, SettlementAgent]] = {}
+        self._inter_area_agents: Dict[DateTime, OneSidedAgent] = {}
+        self._balancing_agents: Dict[DateTime, BalancingAgent] = {}
+        self._settlement_agents: Dict[DateTime, SettlementAgent] = {}
         self.area = area
+        self.children_agents = {}
 
     @property
     def interarea_agents(self):
@@ -79,21 +83,43 @@ class AreaDispatcher:
         return self._broadcast_notification(AreaEvent.BALANCING_MARKET_CYCLE, **kwargs)
 
     @property
-    def broadcast_callback(self):
+    def parent_area_dispatcher(self) -> Union["AreaDispatcher", None]:
+        if not self.area.parent:
+            return None
+        return self.area.parent.dispatcher
+
+    @property
+    def broadcast_callback(self) -> Callable:
         return self._broadcast_notification
 
-    def _broadcast_notification_to_agents_of_market_type(
-            self, market_type: AvailableMarketTypes, event_type: AreaEvent, **kwargs):
-        for time_slot, agents in self._get_agents_for_market_type(self, market_type).items():
-            if time_slot not in self.area._markets.get_market_instances_from_class_type(
+    @staticmethod
+    def _broadcast_notification_to_single_agent(
+            agent_area: "Area", agent_dict: Dict, market_type: AvailableMarketTypes,
+            event_type: AreaEvent, **kwargs):
+        for time_slot, agent in agent_dict.items():
+            if time_slot not in agent_area._markets.get_market_instances_from_class_type(
                     market_type):
                 # exclude past IAAs
                 continue
 
-            if not self.area.events.is_connected:
-                break
-            for area_name in sorted(agents, key=lambda _: random()):
-                agents[area_name].event_listener(event_type, **kwargs)
+            agent.event_listener(event_type, **kwargs)
+
+    def _broadcast_notification_to_area_and_child_agents(
+            self, market_type: AvailableMarketTypes, event_type: AreaEvent, **kwargs):
+
+        if not self.area.events.is_connected:
+            return
+
+        agent_dict = self._get_agents_for_market_type(self, market_type)
+        self._broadcast_notification_to_single_agent(
+            self.area, agent_dict, market_type, event_type, **kwargs)
+
+        for child in sorted(self.area.children, key=lambda _: random()):
+            if not child.children:
+                continue
+            child_agent_dict = self._get_agents_for_market_type(child.dispatcher, market_type)
+            self._broadcast_notification_to_single_agent(
+                child, child_agent_dict, market_type, event_type, **kwargs)
 
     def _broadcast_notification(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         if (not self.area.events.is_enabled and
@@ -103,20 +129,20 @@ class AreaDispatcher:
         # Broadcast to children in random order to ensure fairness
         for child in sorted(self.area.children, key=lambda _: random()):
             child.dispatcher.event_listener(event_type, **kwargs)
-        self._broadcast_notification_to_agents_of_market_type(
+        self._broadcast_notification_to_area_and_child_agents(
             AvailableMarketTypes.SPOT, event_type, **kwargs)
-        self._broadcast_notification_to_agents_of_market_type(
+        self._broadcast_notification_to_area_and_child_agents(
             AvailableMarketTypes.BALANCING, event_type, **kwargs)
-        self._broadcast_notification_to_agents_of_market_type(
+        self._broadcast_notification_to_area_and_child_agents(
             AvailableMarketTypes.SETTLEMENT, event_type, **kwargs)
 
-    def _should_dispatch_to_strategies(self, event_type, **kwargs):
+    def _should_dispatch_to_strategies(self, event_type: Union[AreaEvent, MarketEvent]) -> bool:
         if event_type is AreaEvent.ACTIVATE:
             return True
         else:
             return self.area.events.is_connected and self.area.events.is_enabled
 
-    def event_listener(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
+    def event_listener(self, event_type: Union[MarketEvent, AreaEvent], **kwargs) -> None:
         if event_type is AreaEvent.TICK and \
                 self._should_dispatch_to_strategies(event_type):
             self.area.tick_and_dispatch()
@@ -124,7 +150,7 @@ class AreaDispatcher:
             self.area.cycle_markets(_trigger_event=True)
         elif event_type is AreaEvent.ACTIVATE:
             self.area.activate(**kwargs)
-        if self._should_dispatch_to_strategies(event_type, **kwargs):
+        if self._should_dispatch_to_strategies(event_type):
             if self.area.strategy:
                 self.area.strategy.event_listener(event_type, **kwargs)
         elif (not self.area.events.is_enabled or not self.area.events.is_connected) \
@@ -133,7 +159,8 @@ class AreaDispatcher:
 
     @staticmethod
     def create_agent_object(owner: "AreaDispatcher", higher_market: Market,
-                            lower_market: Market, market_type: AvailableMarketTypes):
+                            lower_market: Market, market_type: AvailableMarketTypes
+                            ) -> "InterAreaAgent":
         agent_constructor_arguments = {
             "owner": owner,
             "higher_market": higher_market,
@@ -173,7 +200,8 @@ class AreaDispatcher:
         else:
             assert False, f"Market type not supported {market_type}"
 
-    def _create_area_agents_for_market_type(self, market, market_type: AvailableMarketTypes):
+    def _create_area_agents_for_market_type(self, market: Market,
+                                            market_type: AvailableMarketTypes) -> None:
         interarea_agents = self._get_agents_for_market_type(self, market_type)
         parent_markets = self.area.parent._markets.get_market_instances_from_class_type(
             market_type)
@@ -187,15 +215,10 @@ class AreaDispatcher:
             market_type=market_type
         )
 
-        # Attach agent to own IAA list
-        create_subdict_or_update(interarea_agents, market.time_slot, {self.area.name: iaa})
+        # Attach agent to own IAA dict
+        interarea_agents[market.time_slot] = iaa
 
-        parent_interarea_agents = self._get_agents_for_market_type(
-            self.area.parent.dispatcher, market_type)
-        # And also to parents to allow events to flow from both markets
-        create_subdict_or_update(parent_interarea_agents, market.time_slot, {self.area.name: iaa})
-
-    def create_area_agents(self, market_type, market):
+    def create_area_agents(self, market_type: AvailableMarketTypes, market: Market) -> None:
         if not self.area.parent:
             return
         if self.area.strategy:
@@ -207,29 +230,32 @@ class AreaDispatcher:
 
         self._create_area_agents_for_market_type(market, market_type)
 
-    def _delete_past_agents(self, area_agent_member):
+    def event_market_cycle(self):
         if not constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
-            delete_agents = [pm for pm in area_agent_member.keys() if
-                             self.area.current_market and pm < self.area.current_market.time_slot]
-            for pm in delete_agents:
-                for area_name in area_agent_member[pm]:
-                    agent = area_agent_member[pm][area_name]
-                    if hasattr(agent, "offers"):
-                        del agent.offers
-                    if hasattr(agent, "engines"):
-                        for engine in agent.engines:
-                            del engine.forwarded_offers
-                            del engine.offer_age
-                            del engine.trade_residual
-                            del engine.ignored_offers
-                            if hasattr(engine, "forwarded_bids"):
-                                del engine.forwarded_bids
-                                del engine.bid_age
-                                del engine.bid_trade_residual
-                        del agent.engines
-                    agent.higher_market = None
-                    agent.lower_market = None
-                del area_agent_member[pm]
+            self._delete_past_agents(self.interarea_agents)
+            self._delete_past_agents(self.balancing_agents)
+            self._delete_past_agents(self.settlement_agents)
+
+    def _delete_past_agents(self, area_agent_member):
+        delete_agents = [(pm, agents_list) for pm, agents_list in area_agent_member.items() if
+                         self.area.current_market and pm < self.area.current_market.time_slot]
+        for pm, agent in delete_agents:
+            if hasattr(agent, "offers"):
+                del agent.offers
+            if hasattr(agent, "engines"):
+                for engine in agent.engines:
+                    del engine.forwarded_offers
+                    del engine.offer_age
+                    del engine.trade_residual
+                    del engine.ignored_offers
+                    if hasattr(engine, "forwarded_bids"):
+                        del engine.forwarded_bids
+                        del engine.bid_age
+                        del engine.bid_trade_residual
+                del agent.engines
+            agent.higher_market = None
+            agent.lower_market = None
+            del area_agent_member[pm]
 
 
 class RedisAreaDispatcher(AreaDispatcher):
@@ -247,16 +273,16 @@ class RedisAreaDispatcher(AreaDispatcher):
         self._broadcast_events(AreaEvent.ACTIVATE, **kwargs)
 
     def broadcast_tick(self, **kwargs):
-        return self._broadcast_events(AreaEvent.TICK, **kwargs)
+        self._broadcast_events(AreaEvent.TICK, **kwargs)
 
-    def broadcast_market_cycle(self, **kwargs):
+    def broadcast_market_cycle(self, **kwargs) -> None:
         self.market_notify_event_dispatcher.cycle_market_channels()
-        return self._broadcast_events(AreaEvent.MARKET_CYCLE, **kwargs)
+        self._broadcast_events(AreaEvent.MARKET_CYCLE, **kwargs)
 
-    def broadcast_balancing_market_cycle(self, **kwargs):
-        return self._broadcast_events(AreaEvent.BALANCING_MARKET_CYCLE, **kwargs)
+    def broadcast_balancing_market_cycle(self, **kwargs) -> None:
+        self._broadcast_events(AreaEvent.BALANCING_MARKET_CYCLE, **kwargs)
 
-    def _broadcast_events(self, event_type, **kwargs):
+    def _broadcast_events(self, event_type: Union[AreaEvent, MarketEvent], **kwargs) -> None:
         if isinstance(event_type, AreaEvent):
             self.area_event_dispatcher.broadcast_event_redis(event_type, **kwargs)
         elif isinstance(event_type, MarketEvent):
@@ -265,7 +291,7 @@ class RedisAreaDispatcher(AreaDispatcher):
             assert False, f"Event type {event_type} is not an Area or Market event."
 
     @property
-    def broadcast_callback(self):
+    def broadcast_callback(self) -> Callable:
         return self._broadcast_events
 
 

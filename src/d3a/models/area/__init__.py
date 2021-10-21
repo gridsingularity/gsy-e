@@ -338,7 +338,7 @@ class Area:
 
         self.log.debug("Cycling markets")
         self._markets.rotate_markets(now_value)
-        self.dispatcher._delete_past_agents(self.dispatcher._inter_area_agents)
+        self.dispatcher.event_market_cycle()
 
         # area_market_stats have to updated when cycling market of each area:
         self.stats.update_area_market_stats()
