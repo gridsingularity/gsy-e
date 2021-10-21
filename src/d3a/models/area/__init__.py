@@ -428,15 +428,20 @@ class Area:
                             "future_markets": self.future_markets,
                             "current_time": self.now}})
 
-    def update_area_current_tick(self):
+    def update_clock_on_markets(self) -> None:
+        """
+        Update clock on markets with self.now member.
+        Returns:
+
+        """
         self.current_tick += 1
         if self.children:
-            self.spot_market.update_clock(self.current_tick_in_slot)
+            self.spot_market.update_clock(self.now)
 
             for market in self._markets.settlement_markets.values():
-                market.update_clock(self.current_tick_in_slot)
+                market.update_clock(self.now)
         for child in self.children:
-            child.update_area_current_tick()
+            child.update_clock_on_markets()
 
     def tick_and_dispatch(self):
         """Invoke tick handler and broadcast the event to children."""

@@ -118,8 +118,7 @@ class OneSidedMarket(Market):
 
         if offer_id is None:
             offer_id = self.bc_interface.create_new_offer(energy, price, seller)
-        now = self.now if self.time_slot else time_slot
-        offer = Offer(offer_id, now, price, energy, seller, original_price,
+        offer = Offer(offer_id, self.now, price, energy, seller, original_price,
                       seller_origin=seller_origin, seller_origin_id=seller_origin_id,
                       seller_id=seller_id, attributes=attributes, requirements=requirements,
                       time_slot=time_slot)
@@ -269,7 +268,7 @@ class OneSidedMarket(Market):
 
         try:
             if time is None:
-                time = self.now if self.time_slot else offer.time_slot
+                time = self.now
 
             if energy == 0:
                 raise InvalidTrade("Energy can not be zero.")
