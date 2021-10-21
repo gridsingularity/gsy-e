@@ -109,6 +109,8 @@ class MycoExternalMatcher(MycoMatcherInterface):
             "status": "success"}
 
         recommendations = self._recommendations
+        if len(recommendations) == 0:
+            return
         response_data.update(
             MycoExternalMatcherValidator.validate_and_report(self, recommendations))
         if response_data["status"] != "success":

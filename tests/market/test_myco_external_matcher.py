@@ -144,29 +144,28 @@ class TestMycoExternalMatcher:
     def test_match_recommendations(
             self, mock_market_match_recommendations, mock_validate_and_report):
         channel = f"{self.channel_prefix}recommendations/response/"
-        expected_data = {"event": "match", "status": "success", "recommendations": []}
         payload = {"data": json.dumps({})}
         # Empty recommendations list should pass
         mock_validate_and_report.return_value = {
             "status": "success", "recommendations": []}
         self.matcher._populate_recommendations(payload)
         self.matcher.match_recommendations()
-        assert mock_market_match_recommendations.call_count == 0
-        self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
-            channel, expected_data)
+        mock_market_match_recommendations.assert_not_called()
+        self.matcher.myco_ext_conn.publish_json.assert_not_called()
 
         self.matcher.myco_ext_conn.publish_json.reset_mock()
         mock_validate_and_report.return_value = {
             "status": "fail",
             "message": "Validation Error, matching will be skipped: Invalid Bid Offer Pair",
             "recommendations": []}
+        payload = {"data": json.dumps({"recommended_matches": [{}, {}]})}
         self.matcher._populate_recommendations(payload)
         self.matcher.match_recommendations()
         expected_data = {
             "event": "match", "status": "fail",
             "recommendations": [],
             "message": "Validation Error, matching will be skipped: Invalid Bid Offer Pair"}
-        assert mock_market_match_recommendations.call_count == 0
+        mock_market_match_recommendations.assert_not_called()
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
 
