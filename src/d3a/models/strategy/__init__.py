@@ -37,6 +37,7 @@ from d3a.events import EventMixin
 from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
+from d3a.models.config import SimulationConfig
 
 log = getLogger(__name__)
 
@@ -230,6 +231,14 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             self.event_response_uuids = []
 
     parameters = None
+
+    @property
+    def simulation_config(self) -> SimulationConfig:
+        """Return the SimulationConfiguration used by the current market area.
+
+        NOTE: this configuration is unique and shared across all areas.
+        """
+        return self.area.config
 
     def _read_or_rotate_profiles(self, reconfigure=False):
         pass

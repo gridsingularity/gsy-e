@@ -297,6 +297,18 @@ class PVExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id")}
 
     def _offer_aggregator(self, arguments):
+        response_message = ""
+        if self.simulation_config.enable_degrees_of_freedom is False:
+            # Remove Degrees of Freedom (attributes and requirements)
+            DEGREES_OF_FREEDOM_KEYS = ("requirements", "arguments")
+            if any(key in arguments for key in DEGREES_OF_FREEDOM_KEYS):
+                for degrees_of_freedom_key in DEGREES_OF_FREEDOM_KEYS:
+                    arguments.pop(degrees_of_freedom_key, None)
+
+                response_message = (
+                    "The following arguments are not supported for this market and have been "
+                    f"removed from your order: {DEGREES_OF_FREEDOM_KEYS}.")
+
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
                                             "time_slot",
@@ -331,8 +343,8 @@ class PVExternalMixin(ExternalMixin):
                 "status": "ready",
                 "offer": offer.to_json_string(replace_existing=replace_existing),
                 "transaction_id": arguments.get("transaction_id"),
-                "area_uuid": self.device.uuid
-            }
+                "area_uuid": self.device.uuid,
+                "message": response_message}
         except Exception:
             logging.exception("Failed to post PV offer.")
             return {

@@ -335,6 +335,18 @@ class StorageExternalMixin(ExternalMixin):
 
     def _bid_impl(self, arguments, bid_response_channel):
         try:
+            response_message = ""
+            if self.simulation_config.enable_degrees_of_freedom is False:
+                # Remove Degrees of Freedom (attributes and requirements)
+                DEGREES_OF_FREEDOM_KEYS = ("requirements", "arguments")
+                if any(key in arguments for key in DEGREES_OF_FREEDOM_KEYS):
+                    for degrees_of_freedom_key in DEGREES_OF_FREEDOM_KEYS:
+                        arguments.pop(degrees_of_freedom_key, None)
+
+                    response_message = (
+                        "The following arguments are not supported for this market and have been "
+                        f"removed from your order: {DEGREES_OF_FREEDOM_KEYS}.")
+
             replace_existing = arguments.get("replace_existing", True)
             market = self._get_market_from_command_argument(arguments)
             assert self.can_bid_be_posted(market.time_slot, **arguments)
@@ -353,7 +365,8 @@ class StorageExternalMixin(ExternalMixin):
                 bid_response_channel, {
                     "command": "bid", "status": "ready",
                     "bid": bid.to_json_string(replace_existing=replace_existing),
-                    "transaction_id": arguments.get("transaction_id")})
+                    "transaction_id": arguments.get("transaction_id"),
+                    "message": response_message})
         except Exception:
             logging.exception(f"Error when handling bid create on area {self.device.name}: "
                               f"Bid Arguments: {arguments}")
@@ -490,6 +503,18 @@ class StorageExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id")}
 
     def _offer_aggregator(self, arguments):
+        response_message = ""
+        if self.simulation_config.enable_degrees_of_freedom is False:
+            # Remove Degrees of Freedom (attributes and requirements)
+            DEGREES_OF_FREEDOM_KEYS = ("requirements", "arguments")
+            if any(key in arguments for key in DEGREES_OF_FREEDOM_KEYS):
+                for degrees_of_freedom_key in DEGREES_OF_FREEDOM_KEYS:
+                    arguments.pop(degrees_of_freedom_key, None)
+
+                response_message = (
+                    "The following arguments are not supported for this market and have been "
+                    f"removed from your order: {DEGREES_OF_FREEDOM_KEYS}.")
+
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
                                             "time_slot",
@@ -525,7 +550,7 @@ class StorageExternalMixin(ExternalMixin):
                     "status": "ready",
                     "offer": offer.to_json_string(replace_existing=replace_existing),
                     "transaction_id": arguments.get("transaction_id"),
-                }
+                    "message": response_message}
             except Exception:
                 return {
                     "command": "offer", "status": "error",
@@ -535,6 +560,18 @@ class StorageExternalMixin(ExternalMixin):
                     "transaction_id": arguments.get("transaction_id")}
 
     def _bid_aggregator(self, arguments: Dict):
+        response_message = ""
+        if self.simulation_config.enable_degrees_of_freedom is False:
+            # Remove Degrees of Freedom (attributes and requirements)
+            DEGREES_OF_FREEDOM_KEYS = ("requirements", "arguments")
+            if any(key in arguments for key in DEGREES_OF_FREEDOM_KEYS):
+                for degrees_of_freedom_key in DEGREES_OF_FREEDOM_KEYS:
+                    arguments.pop(degrees_of_freedom_key, None)
+
+                response_message = (
+                    "The following arguments are not supported for this market and have been "
+                    f"removed from your order: {DEGREES_OF_FREEDOM_KEYS}.")
+
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
                                             "time_slot",
@@ -567,7 +604,8 @@ class StorageExternalMixin(ExternalMixin):
                 "command": "bid", "status": "ready",
                 "bid": bid.to_json_string(replace_existing=replace_existing),
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id")}
+                "transaction_id": arguments.get("transaction_id"),
+                "message": response_message}
         except Exception:
             return {
                 "command": "bid", "status": "error",
