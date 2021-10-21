@@ -279,13 +279,12 @@ def pv_test4(area_test3, called):
 
 def testing_event_trade(area_test3, pv_test4):
     pv_test4.state._available_energy_kWh[area_test3.test_market.time_slot] = 1
-    pv_test4.event_trade(market_id=area_test3.test_market.id,
-                         trade=Trade(id="id", time="time",
-                                     offer_bid=Offer(id="id", time=pendulum.now(), price=20,
-                                                     energy=1, seller="FakeArea"),
-                                     seller=area_test3.name, buyer="buyer"
-                                     )
-                         )
+    pv_test4.event_offer_traded(market_id=area_test3.test_market.id,
+                                trade=Trade(id="id", time="time",
+                                            offer_bid=Offer(id="id", time=pendulum.now(), price=20,
+                                                            energy=1, seller="FakeArea"),
+                                            seller=area_test3.name, buyer="buyer")
+                                )
     assert len(pv_test4.offers.open) == 0
 
 
@@ -391,7 +390,7 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
         pv_test6.state._energy_production_forecast_kWh[TIME]
     fake_trade = FakeTrade(market_test3.created_offers[0])
     fake_trade.seller = pv_test6.owner.name
-    pv_test6.event_trade(market_id=market_test3.id, trade=fake_trade)
+    pv_test6.event_offer_traded(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []
     assert not market_test3.created_offers
 
@@ -554,7 +553,7 @@ def test_assert_if_trade_rate_is_lower_than_offer_rate(pv_test11):
     trade = Trade("trade_id", "time", to_cheap_offer, pv_test11, "buyer")
 
     with pytest.raises(AssertionError):
-        pv_test11.event_trade(market_id=market_id, trade=trade)
+        pv_test11.event_offer_traded(market_id=market_id, trade=trade)
 
 
 @pytest.fixture(name="pv_strategy")
