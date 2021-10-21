@@ -22,3 +22,11 @@ def check_settlement_market_trades(context):
         for market in house.past_settlement_markets.values()
         for t in market.trades
     )
+
+
+@then("maximal one trade per market in the settlement market has been executed on grid level")
+def check_settlement_market_trades_grid_level(context):
+    grid_area = context.simulation.area
+    assert any(len(market.trades) > 0 for market in grid_area.past_settlement_markets.values())
+    assert all(0 <= len(market.trades) <= 1
+               for market in grid_area.past_settlement_markets.values())

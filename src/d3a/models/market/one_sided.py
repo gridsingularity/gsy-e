@@ -312,10 +312,10 @@ class OneSidedMarket(Market):
 
         if already_tracked is False:
             self._update_stats_after_trade(trade, offer)
-            log.info(f"{self._debug_log_market_type_identifier}[TRADE] "
+            log.info(f"{self._debug_log_market_type_identifier}[TRADE][OFFER] "
                      f"[{self.name}] [{self.time_slot_str}] {trade}")
 
         # TODO: Use non-blockchain non-event-driven version for now for both blockchain and
         # normal runs.
-        self._notify_listeners(MarketEvent.TRADE, trade=trade)
+        self._notify_listeners(MarketEvent.OFFER_TRADED, trade=trade)
         return trade

@@ -203,14 +203,13 @@ def test_event_trade(area_test2, commercial_test2):
     commercial_test2.event_activate()
     commercial_test2.event_market_cycle()
     traded_offer = Offer(id="id", time=pendulum.now(), price=20, energy=1, seller="FakeArea",)
-    commercial_test2.event_trade(market_id=area_test2.test_market.id,
-                                 trade=Trade(id="id",
-                                             time="time",
-                                             offer_bid=traded_offer,
-                                             seller="FakeArea",
-                                             buyer="buyer"
-                                             )
-                                 )
+    commercial_test2.event_offer_traded(market_id=area_test2.test_market.id,
+                                        trade=Trade(id="id",
+                                                    time="time",
+                                                    offer_bid=traded_offer,
+                                                    seller="FakeArea",
+                                                    buyer="buyer")
+                                        )
     assert len(area_test2.test_market.created_offers) == 1
     assert area_test2.test_market.created_offers[-1].energy == sys.maxsize
 
@@ -245,13 +244,13 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, commercial_te
                                        residual_offer=residual_offer)
     assert original_offer.id in commercial_test2.offers.split
     assert commercial_test2.offers.split[original_offer.id] == accepted_offer
-    commercial_test2.event_trade(market_id=area_test2.test_market.id,
-                                 trade=Trade(id="id",
-                                             time="time",
-                                             offer_bid=original_offer,
-                                             seller="FakeArea",
-                                             buyer="buyer")
-                                 )
+    commercial_test2.event_offer_traded(market_id=area_test2.test_market.id,
+                                        trade=Trade(id="id",
+                                                    time="time",
+                                                    offer_bid=original_offer,
+                                                    seller="FakeArea",
+                                                    buyer="buyer")
+                                        )
 
     assert residual_offer in commercial_test2.offers.posted
     assert commercial_test2.offers.posted[residual_offer] == area_test2.test_market.id
