@@ -17,15 +17,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from copy import copy
 from statistics import mean, median
-from typing import Dict
+from typing import Dict, List, Optional
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
+from d3a_interface.data_classes import Offer
 from pendulum import DateTime
 
 from d3a import limit_float_precision
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name, add_or_create_key, \
     area_sells_to_child, child_buys_from_area
+from d3a.models.market import Market
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 
@@ -38,6 +40,9 @@ default_trade_stats_dict = {
 
 
 class AreaStats:
+    """
+    Placeholder for targeted area statistics
+    """
     def __init__(self, area_markets, area):
         self._markets = area_markets
         self._area = area
@@ -58,7 +63,7 @@ class AreaStats:
             "imported_energy": convert_pendulum_to_str_in_dict(self.imported_traded_energy_kwh),
         }
 
-    def restore_state(self, saved_state):
+    def restore_state(self, saved_state: Dict) -> None:
         """Restoration of simulation from its last known state"""
         self.rate_stats_market.update(
             convert_str_to_pendulum_in_dict(saved_state["rate_stats_market"]))
@@ -67,11 +72,11 @@ class AreaStats:
         self.imported_traded_energy_kwh.update(
             convert_str_to_pendulum_in_dict(saved_state["imported_energy"]))
 
-    def update_aggregated_stats(self, area_stats):
+    def update_aggregated_stats(self, area_stats: Dict) -> None:
         """Update area's aggregated_stats"""
         self.aggregated_stats = area_stats
 
-    def _extract_from_bills(self, trade_key):
+    def _extract_from_bills(self, trade_key: str) -> Dict:
         if self.current_market is None:
             return {}
         return {key: self.aggregated_stats["bills"][trade_key][key]
@@ -79,7 +84,7 @@ class AreaStats:
             if "bills" in self.aggregated_stats \
                and trade_key in self.aggregated_stats["bills"] else {}
 
-    def update_area_market_stats(self):
+    def update_area_market_stats(self) -> None:
         """Update Area Market stats"""
         if self.current_market is not None:
             self.market_bills = \
@@ -91,34 +96,32 @@ class AreaStats:
             }
             self._aggregate_exported_imported_energy()
 
-    def get_last_market_bills(self):
+    def get_last_market_bills(self) -> Dict:
         """Get energy bill statistics of last market"""
         return {key.lower().replace(" ", "_"): self._extract_from_bills(key)
                 for key in ["Accumulated Trades", "External Trades"]}
 
     @property
-    def cheapest_offers(self):
+    def cheapest_offers(self) -> List[Offer]:
         """Extract the cheapest offer from the market"""
         cheapest_offers = []
         for market in self._markets.markets.values():
             cheapest_offers.extend(market.sorted_offers[0:1])
         return cheapest_offers
 
-    def _get_current_market_bills(self):
+    def _get_current_market_bills(self) -> Dict:
         return self.market_bills.get(self.current_market.time_slot, None)
 
-    def _get_current_market_area_throughput(self):
+    def _get_current_market_area_throughput(self) -> Dict:
         return {"import": self.imported_traded_energy_kwh.get(self.current_market.time_slot, None),
                 "export": self.exported_traded_energy_kwh.get(self.current_market.time_slot, None)}
 
-    def get_price_stats_current_market(self):
+    def get_price_stats_current_market(self) -> Optional[Dict]:
         """Get the price and energy traded statistics of current market"""
-        if self.current_market is None:
-            return None
-        else:
-            return self.rate_stats_market.get(self.current_market.time_slot, None)
+        return (self.rate_stats_market.get(self.current_market.time_slot, None)
+                if self.current_market is not None else None)
 
-    def min_max_avg_median_rate_current_market(self):
+    def min_max_avg_median_rate_current_market(self) -> Dict:
         """Get min, max, average & median energy traded rate as well as
         total volume of energy traded"""
         out_dict = copy(default_trade_stats_dict)
@@ -134,12 +137,12 @@ class AreaStats:
         return out_dict
 
     @property
-    def current_market(self):
+    def current_market(self) -> Market:
         """Return the current market object"""
         past_markets = list(self._markets.past_markets.values())
         return past_markets[-1] if len(past_markets) > 0 else None
 
-    def get_last_market_stats(self, dso=False):
+    def get_last_market_stats(self, dso: bool = False) -> Dict:
         """Get statistics of last market"""
         out_dict = {}
         if self.current_market is None:
@@ -157,15 +160,15 @@ class AreaStats:
 
         return out_dict
 
-    def _aggregate_exported_imported_energy(self):
+    def _aggregate_exported_imported_energy(self) -> None:
         if self._area.current_market is None:
-            return None
+            return
 
         self.imported_traded_energy_kwh = {}
         self.exported_traded_energy_kwh = {}
 
         child_names = [area_name_from_area_or_iaa_name(c.name) for c in self._area.children]
-        if getattr(self.current_market, 'trades', None) is not None:
+        if getattr(self.current_market, "trades", None) is not None:
             for trade in self.current_market.trades:
                 if child_buys_from_area(trade, self._area.name, child_names):
                     add_or_create_key(self.exported_traded_energy_kwh,
@@ -180,7 +183,7 @@ class AreaStats:
         if self.current_market.time_slot not in self.exported_traded_energy_kwh:
             self.exported_traded_energy_kwh[self.current_market.time_slot] = 0.
 
-    def calculate_energy_deviances(self):
+    def calculate_energy_deviances(self) -> None:
         """
         If area is a device - Get its forecated deviance
         Else accumulate energy deviances of connected children
