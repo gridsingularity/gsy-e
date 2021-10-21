@@ -17,12 +17,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import logging
-from typing import List, Dict
+from typing import Dict, List
 
-from d3a.models.strategy.external_strategies import IncomingRequest, default_market_info
-from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
 from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a.models.strategy.external_strategies import (
+    ExternalMixin, IncomingRequest, check_for_connected_and_reply, default_market_info)
+from d3a.models.strategy.storage import StorageStrategy
 
 
 class StorageExternalMixin(ExternalMixin):

@@ -19,13 +19,14 @@ import json
 import logging
 from collections import deque
 
-from d3a.d3a_core.util import get_market_maker_rate_from_config
-from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
-from d3a.models.strategy.external_strategies import IncomingRequest, default_market_info
-from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
-from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
 from pendulum import duration
+
+from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a.models.strategy.external_strategies import (
+    ExternalMixin, IncomingRequest, check_for_connected_and_reply, default_market_info)
+from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
+from d3a.models.strategy.pv import PVStrategy
 
 
 class PVExternalMixin(ExternalMixin):
