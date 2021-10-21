@@ -50,6 +50,8 @@ class AreaStats:
         self.total_energy_deviance_kWh: Dict[DateTime, float] = {}
 
     def get_state(self):
+        """Get the current area state to be saved in DB and used as reference point for simulation
+        restoration from last know state in case of simulation crash"""
         return {
             "rate_stats_market": convert_pendulum_to_str_in_dict(self.rate_stats_market),
             "exported_energy": convert_pendulum_to_str_in_dict(self.exported_traded_energy_kwh),
@@ -57,6 +59,7 @@ class AreaStats:
         }
 
     def restore_state(self, saved_state):
+        """Restoration of simulation from its last known state"""
         self.rate_stats_market.update(
             convert_str_to_pendulum_in_dict(saved_state["rate_stats_market"]))
         self.exported_traded_energy_kwh.update(
@@ -65,6 +68,7 @@ class AreaStats:
             convert_str_to_pendulum_in_dict(saved_state["imported_energy"]))
 
     def update_aggregated_stats(self, area_stats):
+        """Update area's aggregated_stats"""
         self.aggregated_stats = area_stats
 
     def _extract_from_bills(self, trade_key):
@@ -76,6 +80,7 @@ class AreaStats:
                and trade_key in self.aggregated_stats["bills"] else {}
 
     def update_area_market_stats(self):
+        """Update Area Market stats"""
         if self.current_market is not None:
             self.market_bills = \
                 {self.current_market.time_slot: {
@@ -86,12 +91,14 @@ class AreaStats:
             }
             self._aggregate_exported_imported_energy()
 
-    def get_last_market_stats_for_grid_tree(self):
+    def get_last_market_bills(self):
+        """Get energy bill statistics of last market"""
         return {key.lower().replace(" ", "_"): self._extract_from_bills(key)
                 for key in ["Accumulated Trades", "External Trades"]}
 
     @property
     def cheapest_offers(self):
+        """Extract the cheapest offer from the market"""
         cheapest_offers = []
         for market in self._markets.markets.values():
             cheapest_offers.extend(market.sorted_offers[0:1])
@@ -105,12 +112,15 @@ class AreaStats:
                 "export": self.exported_traded_energy_kwh.get(self.current_market.time_slot, None)}
 
     def get_price_stats_current_market(self):
+        """Get the price and energy traded statistics of current market"""
         if self.current_market is None:
             return None
         else:
             return self.rate_stats_market.get(self.current_market.time_slot, None)
 
     def min_max_avg_median_rate_current_market(self):
+        """Get min, max, average & median energy traded rate as well as
+        total volume of energy traded"""
         out_dict = copy(default_trade_stats_dict)
         trade_volumes = [trade.offer_bid.energy for trade in self.current_market.trades]
         trade_rates = [trade.offer_bid.price/trade.offer_bid.energy
@@ -125,10 +135,12 @@ class AreaStats:
 
     @property
     def current_market(self):
+        """Return the current market object"""
         past_markets = list(self._markets.past_markets.values())
         return past_markets[-1] if len(past_markets) > 0 else None
 
     def get_last_market_stats(self, dso=False):
+        """Get statistics of last market"""
         out_dict = {}
         if self.current_market is None:
             return out_dict
@@ -181,9 +193,9 @@ class AreaStats:
         time_slot = current_market.time_slot
         if self._area.strategy is None:
             # Accumulating energy deviance of connected children
-            self.total_energy_deviance_kWh[time_slot] = {
-                child.uuid: child.stats.total_energy_deviance_kWh[time_slot]
-                for child in self._area.children}
+            self.total_energy_deviance_kWh[time_slot] = [
+                child.stats.total_energy_deviance_kWh[time_slot]
+                for child in self._area.children]
         elif isinstance(self._area.strategy, (PVStrategy, LoadHoursStrategy)):
             # Energy deviance of PV/LOAD
             self.total_energy_deviance_kWh[time_slot] = {
