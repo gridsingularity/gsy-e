@@ -99,12 +99,12 @@ _setup_modules = available_simulation_scenarios
 @click.option("--start-date", type=DateType(DATE_FORMAT),
               default=today(tz=TIME_ZONE).format(DATE_FORMAT), show_default=True,
               help=f"Start date of the Simulation ({DATE_FORMAT})")
-@click.option("--enable-dof",
-              is_flag=True, default=True,
-              help="Enable Degrees of Freedom (orders can contain attributes and requirements).")
+@click.option("--disable-dof",
+              is_flag=True, default=False,
+              help="Disable Degrees of Freedom (orders can't contain attributes/requirements).")
 def run(setup_module_name, settings_file, duration, slot_length, tick_length,
         cloud_coverage, compare_alt_pricing, enable_external_connection, start_date,
-        pause_at, slot_length_realtime, enable_dof: bool, **kwargs):
+        pause_at, slot_length_realtime, disable_dof: bool, **kwargs):
     """Configure settings and run a simulation."""
     # Force the multiprocessing start method to be 'fork' on macOS.
     if platform.system() == "Darwin":
@@ -122,13 +122,13 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
                                "slot_length": slot_length,
                                "tick_length": tick_length,
                                "cloud_coverage": cloud_coverage,
-                               "enable_degrees_of_freedom": enable_dof}
+                               "enable_degrees_of_freedom": not disable_dof}
 
             validate_global_settings(global_settings)
             simulation_config = SimulationConfig(
                 duration, slot_length, tick_length, cloud_coverage, start_date=start_date,
                 external_connection_enabled=enable_external_connection,
-                enable_degrees_of_freedom=enable_dof)
+                enable_degrees_of_freedom=not disable_dof)
 
         if compare_alt_pricing is True:
             ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
