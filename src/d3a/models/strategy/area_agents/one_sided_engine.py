@@ -137,7 +137,7 @@ class IAAEngine:
                 self.owner.log.debug(f"Forwarded offer to {self.markets.source.name} "
                                      f"{self.owner.name}, {self.name} {forwarded_offer}")
 
-    def event_trade(self, *, trade):
+    def event_offer_traded(self, *, trade):
         offer_info = self.forwarded_offers.get(trade.offer_bid.id)
         if not offer_info:
             # Trade doesn't concern us
