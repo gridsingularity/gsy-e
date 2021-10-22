@@ -25,7 +25,7 @@ from pendulum import duration
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.strategy.external_strategies import (
     ExternalMixin, IncomingRequest, check_for_connected_and_reply, default_market_info)
-from d3a.models.strategy.external_strategies.order_validators import IncomingOrderValidator
+from d3a.models.strategy.external_strategies.dof_filter import DegreesOfFreedomFilter
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from d3a.models.strategy.pv import PVStrategy
 
@@ -299,11 +299,12 @@ class PVExternalMixin(ExternalMixin):
 
     def _offer_aggregator(self, arguments):
         response_message = ""
-        validator = IncomingOrderValidator(
-            accept_degrees_of_freedom=self.simulation_config.enable_degrees_of_freedom)
-        validator.validate(arguments)
-        if validator.warnings:
-            response_message = ". ".join(warning.message for warning in validator.warnings)
+        if not self.simulation_config.enable_degrees_of_freedom:
+            arguments, filtered_fields = DegreesOfFreedomFilter.apply(arguments)
+            if filtered_fields:
+                response_message = (
+                    "The following arguments are not supported for this market and have been "
+                    f"removed from your order: {filtered_fields}.")
 
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
