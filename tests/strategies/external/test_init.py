@@ -454,10 +454,10 @@ class TestExternalMixin:
     def test_get_market_from_cmd_arg_returns_spot_market(self, strategy):
         strategy.area = Mock()
         strategy.area.spot_market = Mock()
-        timeslot = format_datetime(now())
+        time_slot = format_datetime(now())
         market_mock = Mock()
         strategy.area.get_market = MagicMock(return_value=market_mock)
-        market = strategy._get_market_from_command_argument({"timeslot": timeslot})
+        market = strategy._get_market_from_command_argument({"time_slot": time_slot})
         assert market == market_mock
 
     @pytest.mark.parametrize("strategy", [
@@ -468,11 +468,11 @@ class TestExternalMixin:
     def test_get_market_from_cmd_arg_returns_settlement_market(self, strategy):
         strategy.area = Mock()
         strategy.area.spot_market = Mock()
-        timeslot = format_datetime(now())
+        time_slot = format_datetime(now())
         market_mock = Mock()
         strategy.area.get_market = MagicMock(return_value=None)
         strategy.area.get_settlement_market = MagicMock(return_value=market_mock)
-        market = strategy._get_market_from_command_argument({"timeslot": timeslot})
+        market = strategy._get_market_from_command_argument({"time_slot": time_slot})
         assert market == market_mock
 
 

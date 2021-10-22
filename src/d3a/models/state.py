@@ -125,7 +125,7 @@ class ProsumptionInterface(StateInterface, ABC):
         Args:
             time_slot: Time slot that the energy forecast/measurement refers to
 
-        Returns: Deviation between the forecast and measurement for this timeslot, in kWh
+        Returns: Deviation between the forecast and measurement for this time_slot, in kWh
 
         """
         return self._forecast_measurement_deviation_kWh.get(time_slot)
