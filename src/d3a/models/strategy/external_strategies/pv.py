@@ -125,7 +125,7 @@ class PVExternalMixin(ExternalMixin):
         transaction_id = self._get_transaction_id(payload)
         required_args = {"price", "energy", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
-                                            "timeslot",
+                                            "time_slot",
                                             "attributes",
                                             "requirements"})
 
@@ -167,7 +167,7 @@ class PVExternalMixin(ExternalMixin):
                 replace_existing=replace_existing)
 
             offer_arguments = {
-                k: v for k, v in arguments.items() if k not in ["transaction_id", "timeslot"]}
+                k: v for k, v in arguments.items() if k not in ["transaction_id", "time_slot"]}
             offer = self.post_offer(
                 market, replace_existing=replace_existing, **offer_arguments)
 
@@ -298,7 +298,7 @@ class PVExternalMixin(ExternalMixin):
     def _offer_aggregator(self, arguments):
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
-                                            "timeslot",
+                                            "time_slot",
                                             "attributes",
                                             "requirements"})
 
@@ -320,7 +320,7 @@ class PVExternalMixin(ExternalMixin):
 
             offer_arguments = {k: v
                                for k, v in arguments.items()
-                               if k not in ["transaction_id", "type", "timeslot"]}
+                               if k not in ["transaction_id", "type", "time_slot"]}
 
             offer = self.post_offer(
                 market, replace_existing=replace_existing, **offer_arguments)
