@@ -44,7 +44,6 @@ class InterAreaAgent(BaseStrategy):
     @property
     def time_slot_str(self) -> Optional[str]:
         """Return time_slot of the inter area agent. For future markets it is None."""
-        print(self.higher_market)
         return (self.higher_market.time_slot.format(TIME_FORMAT)
                 if self.higher_market.time_slot else None)
 

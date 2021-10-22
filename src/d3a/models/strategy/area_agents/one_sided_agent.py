@@ -48,7 +48,7 @@ class OneSidedAgent(InterAreaAgent):
         return all(offer.id not in engine.forwarded_offers.keys() for engine in self.engines)
 
     def get_market_from_market_id(self, market_id: str) -> Optional[Market]:
-        """Return Market object."""
+        """Return Market object from market_id."""
         if self.lower_market.id == market_id:
             return self.lower_market
         if self.higher_market.id == market_id:
@@ -57,6 +57,7 @@ class OneSidedAgent(InterAreaAgent):
             return self.owner.get_future_market_from_id(market_id)
         if self.owner.parent.get_future_market_from_id(market_id) is not None:
             return self.owner.parent.get_future_market_from_id(market_id)
+
         return None
 
     def event_tick(self):

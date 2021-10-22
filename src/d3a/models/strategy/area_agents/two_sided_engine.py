@@ -195,7 +195,8 @@ class TwoSidedEngine(IAAEngine):
         self._delete_forwarded_bid_entries(bid_info.source_bid)
         self.bid_age.pop(bid_info.source_bid.id, None)
 
-    def event_bid_split(self, *, market_id, original_bid, accepted_bid, residual_bid):
+    def event_bid_split(self, *, market_id: str, original_bid: Bid,
+                        accepted_bid: Bid, residual_bid: Bid) -> None:
         """Perform actions that need to be done when BID_SPLIT event is triggered."""
         market = self.owner.get_market_from_market_id(market_id)
         if market is None:
