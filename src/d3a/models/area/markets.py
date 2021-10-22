@@ -18,6 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from collections import OrderedDict
 from typing import Dict, TYPE_CHECKING
 
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.enums import SpotMarketTypeEnum
+from pendulum import DateTime
+
 from d3a.d3a_core.util import is_timeslot_in_simulation_duration
 from d3a.models.area.market_rotators import (BaseRotator, DefaultMarketRotator,
                                              SettlementMarketRotator, FutureMarketRotator)
@@ -28,9 +32,6 @@ from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.settlement import SettlementMarket
 from d3a.models.market.two_sided import TwoSidedMarket
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.enums import SpotMarketTypeEnum
-from pendulum import DateTime
 
 if TYPE_CHECKING:
     from d3a.models.area import Area
@@ -60,13 +61,15 @@ class AreaMarkets:
         self.future_market_rotator = BaseRotator()
 
     def activate_future_markets(self, area: "Area") -> None:
-        self.future_markets = FutureMarkets(
+        market = FutureMarkets(
             bc=area.bc,
             notification_listener=area.dispatcher.broadcast_callback,
             grid_fee_type=area.config.grid_fee_type,
             grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
                               grid_fee_const=area.grid_fee_constant),
             name=area.name)
+        self.future_markets = market
+        area.dispatcher.create_area_agents_for_future_markets(market)
 
     def activate_market_rotators(self):
         """The user specific ConstSettings are not available when the class is constructed,

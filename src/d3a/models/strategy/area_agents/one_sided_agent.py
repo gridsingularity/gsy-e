@@ -75,4 +75,4 @@ class OneSidedAgent(InterAreaAgent):
                                      residual_offer=residual_offer)
 
     def __repr__(self):
-        return "<OneSidedAgent {s.name} {s.time_slot}>".format(s=self)
+        return f"<OneSidedAgent {self.name} {self.time_slot_str}>"

@@ -16,31 +16,35 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
-from typing import Union, Dict  # noqa
+from typing import Union, Dict, TYPE_CHECKING
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.enums import SpotMarketTypeEnum
 from numpy.random import random
-from pendulum import DateTime  # noqa
+from pendulum import DateTime
 
 from d3a import constants
 from d3a.d3a_core.exceptions import WrongMarketTypeException
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import RedisCommunicator
 from d3a.d3a_core.util import create_subdict_or_update
 from d3a.events.event_structures import MarketEvent, AreaEvent
-from d3a.models.market import Market
 from d3a.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
 from d3a.models.area.redis_dispatcher.area_to_market_publisher import AreaToMarketEventPublisher
 from d3a.models.area.redis_dispatcher.market_event_dispatcher import AreaRedisMarketEventDispatcher
 from d3a.models.area.redis_dispatcher.market_notify_event_subscriber import (
     MarketNotifyEventSubscriber)
+from d3a.models.market import Market
 from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
+from d3a.models.strategy.area_agents.future_agent import FutureAgent
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.one_sided_alternative_pricing_agent import (
     OneSidedAlternativePricingAgent)
 from d3a.models.strategy.area_agents.settlement_agent import SettlementAgent
 from d3a.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
+
+if TYPE_CHECKING:
+    from d3a.models.area import Area
 
 log = getLogger(__name__)
 
@@ -48,22 +52,27 @@ EVENT_DISPATCHING_VIA_REDIS = ConstSettings.GeneralSettings.EVENT_DISPATCHING_VI
 
 
 class AreaDispatcher:
+    """Handle dispatching of area and market events between areas via inter area agents."""
     def __init__(self, area):
         self._inter_area_agents: Dict[DateTime, Dict[str, OneSidedAgent]] = {}
         self._balancing_agents: Dict[DateTime, Dict[str, BalancingAgent]] = {}
         self._settlement_agents: Dict[DateTime, Dict[str, SettlementAgent]] = {}
+        self.future_agents: Dict[FutureAgent] = {}
         self.area = area
 
     @property
-    def interarea_agents(self):
+    def interarea_agents(self) -> Dict[DateTime, Dict[str, OneSidedAgent]]:
+        """Return dict of inter area agents for spot markets."""
         return self._inter_area_agents
 
     @property
-    def balancing_agents(self):
+    def balancing_agents(self) -> Dict[DateTime, Dict[str, BalancingAgent]]:
+        """Return dict of inter area agents for balancing markets."""
         return self._balancing_agents
 
     @property
-    def settlement_agents(self):
+    def settlement_agents(self) -> Dict[DateTime, Dict[str, SettlementAgent]]:
+        """Return dict of inter area agents for settlement markets."""
         return self._settlement_agents
 
     def broadcast_activate(self, **kwargs):
@@ -81,6 +90,12 @@ class AreaDispatcher:
     @property
     def broadcast_callback(self):
         return self._broadcast_notification
+
+    def _broadcast_notification_to_agents_of_future_markets(self, event_type: AreaEvent, **kwargs):
+        for agent in self.future_agents.values():
+            if not self.area.events.is_connected:
+                break
+            agent.event_listener(event_type, **kwargs)
 
     def _broadcast_notification_to_agents_of_market_type(
             self, market_type: AvailableMarketTypes, event_type: AreaEvent, **kwargs):
@@ -109,6 +124,7 @@ class AreaDispatcher:
             AvailableMarketTypes.BALANCING, event_type, **kwargs)
         self._broadcast_notification_to_agents_of_market_type(
             AvailableMarketTypes.SETTLEMENT, event_type, **kwargs)
+        self._broadcast_notification_to_agents_of_future_markets(event_type, **kwargs)
 
     def _should_dispatch_to_strategies(self, event_type, **kwargs):
         if event_type is AreaEvent.ACTIVATE:
@@ -132,7 +148,7 @@ class AreaDispatcher:
             self.area.strategy.event_on_disabled_area()
 
     @staticmethod
-    def create_agent_object(owner: "AreaDispatcher", higher_market: Market,
+    def create_agent_object(owner: "Area", higher_market: Market,
                             lower_market: Market, market_type: AvailableMarketTypes):
         agent_constructor_arguments = {
             "owner": owner,
@@ -159,11 +175,15 @@ class AreaDispatcher:
             return SettlementAgent(**agent_constructor_arguments)
         elif market_type == AvailableMarketTypes.BALANCING:
             return BalancingAgent(**agent_constructor_arguments)
+        elif market_type == AvailableMarketTypes.FUTURE:
+            return FutureAgent(**agent_constructor_arguments,
+                               min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE)
         else:
             assert False, f"Market type not supported {market_type}"
 
     @staticmethod
-    def _get_agents_for_market_type(dispatcher_object, market_type: AvailableMarketTypes):
+    def _get_agents_for_market_type(dispatcher_object: "AreaDispatcher",
+                                    market_type: AvailableMarketTypes):
         if market_type == AvailableMarketTypes.SPOT:
             return dispatcher_object.interarea_agents
         elif market_type == AvailableMarketTypes.BALANCING:
@@ -173,7 +193,8 @@ class AreaDispatcher:
         else:
             assert False, f"Market type not supported {market_type}"
 
-    def _create_area_agents_for_market_type(self, market, market_type: AvailableMarketTypes):
+    def _create_area_agents_for_market_type(self, market: Market,
+                                            market_type: AvailableMarketTypes) -> None:
         interarea_agents = self._get_agents_for_market_type(self, market_type)
         parent_markets = self.area.parent._markets.get_market_instances_from_class_type(
             market_type)
@@ -195,7 +216,23 @@ class AreaDispatcher:
         # And also to parents to allow events to flow from both markets
         create_subdict_or_update(parent_interarea_agents, market.time_slot, {self.area.name: iaa})
 
-    def create_area_agents(self, market_type, market):
+    def create_area_agents_for_future_markets(self, market: Market) -> None:
+        """Create area agents for future markets There should only be one per Area at any time."""
+        if self.area.name in self.future_agents or not self.area.parent:
+            return
+
+        iaa = self.create_agent_object(
+            owner=self.area,
+            higher_market=self.area.parent._markets.future_markets,
+            lower_market=market,
+            market_type=AvailableMarketTypes.FUTURE
+        )
+
+        self.future_agents[self.area.name] = iaa
+        self.area.parent.dispatcher.future_agents[self.area.name] = iaa
+
+    def create_area_agents(self, market_type: AvailableMarketTypes, market: Market):
+        """Create area agents dependent on the market type."""
         if not self.area.parent:
             return
         if self.area.strategy:
@@ -207,7 +244,7 @@ class AreaDispatcher:
 
         self._create_area_agents_for_market_type(market, market_type)
 
-    def _delete_past_agents(self, area_agent_member):
+    def _delete_past_agents(self, area_agent_member: Dict) -> None:
         if not constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
             delete_agents = [pm for pm in area_agent_member.keys() if
                              self.area.current_market and pm < self.area.current_market.time_slot]
@@ -221,7 +258,6 @@ class AreaDispatcher:
                             del engine.forwarded_offers
                             del engine.offer_age
                             del engine.trade_residual
-                            del engine.ignored_offers
                             if hasattr(engine, "forwarded_bids"):
                                 del engine.forwarded_bids
                                 del engine.bid_age

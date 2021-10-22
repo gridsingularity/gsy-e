@@ -25,7 +25,7 @@ from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.constants import FLOATING_POINT_TOLERANCE
 
 
-BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
+BidInfo = namedtuple("BidInfo", ("source_bid", "target_bid"))
 
 
 class TwoSidedEngine(IAAEngine):
@@ -35,7 +35,7 @@ class TwoSidedEngine(IAAEngine):
         self.forwarded_bids = {}  # type: Dict[str, BidInfo]
         self.bid_trade_residual = {}  # type: Dict[str, Bid]
         self.min_bid_age = min_bid_age
-        self.bid_age = {}
+        self.bid_age = {}  # type: Dict[str, int]
 
     def __repr__(self):
         return "<TwoSidedPayAsBidEngine [{s.owner.name}] {s.name} " \
@@ -51,6 +51,7 @@ class TwoSidedEngine(IAAEngine):
             self.owner.log.debug("Bid is not forwarded because price < 0")
             return
         try:
+            print(self.markets.target.bid)
             forwarded_bid = self.markets.target.bid(
                 price=(self.markets.source.fee_class.update_forwarded_bid_with_fee(
                     bid.energy_rate, bid.original_price / bid.energy)) * bid.energy,
@@ -59,7 +60,8 @@ class TwoSidedEngine(IAAEngine):
                 original_price=bid.original_price,
                 buyer_origin=bid.buyer_origin,
                 buyer_origin_id=bid.buyer_origin_id,
-                buyer_id=self.owner.uuid
+                buyer_id=self.owner.uuid,
+                time_slot=bid.time_slot
             )
         except MarketException:
             self.owner.log.debug("Bid is not forwarded because grid fees of the target market "
@@ -76,6 +78,8 @@ class TwoSidedEngine(IAAEngine):
             return
         self.forwarded_bids.pop(bid_info.target_bid.id, None)
         self.forwarded_bids.pop(bid_info.source_bid.id, None)
+        self.bid_age.pop(bid_info.source_bid.id, None)
+        self.bid_age.pop(bid_info.target_bid.id, None)
 
     def should_forward_bid(self, bid, current_tick):
 

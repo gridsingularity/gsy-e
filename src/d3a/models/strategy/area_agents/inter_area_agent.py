@@ -15,10 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from typing import Optional
+
+from d3a_interface.constants_limits import ConstSettings, TIME_FORMAT
 from numpy.random import random
+
 from d3a.models.strategy import BaseStrategy, _TradeLookerUpper
-from d3a.constants import TIME_FORMAT
-from d3a_interface.constants_limits import ConstSettings
 
 
 class InterAreaAgent(BaseStrategy):
@@ -33,12 +35,17 @@ class InterAreaAgent(BaseStrategy):
         self.owner = owner
         self._validate_constructor_arguments(min_offer_age)
 
-        self.time_slot = higher_market.time_slot.format(TIME_FORMAT)
-
         # serialization parameters
         self.higher_market = higher_market
         self.lower_market = lower_market
         self.min_offer_age = min_offer_age
+
+    @property
+    def time_slot_str(self) -> Optional[str]:
+        """Return time_slot of the inter area agent. For future markets it is None."""
+        print(self.higher_market)
+        return (self.higher_market.time_slot.format(TIME_FORMAT)
+                if self.higher_market.time_slot else None)
 
     @staticmethod
     def _validate_constructor_arguments(min_offer_age):
@@ -56,4 +63,4 @@ class InterAreaAgent(BaseStrategy):
         return _TradeLookerUpper(self.name)
 
     def __repr__(self):
-        return "<InterAreaAgent {s.name} {s.time_slot}>".format(s=self)
+        return f"<InterAreaAgent {self.name} {self.time_slot_str}>"

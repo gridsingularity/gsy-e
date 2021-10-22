@@ -22,22 +22,25 @@ from d3a_interface.constants_limits import ConstSettings
 
 
 class TwoSidedAgent(OneSidedAgent):
+    """Handles order forwarding between two sided markets."""
 
     def __init__(self, *, owner, higher_market, lower_market,
                  min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
-                 min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE):
-        self.engines = [
-            TwoSidedEngine('High -> Low', higher_market, lower_market, min_offer_age,
-                           min_bid_age, self),
-            TwoSidedEngine('Low -> High', lower_market, higher_market, min_offer_age,
-                           min_bid_age, self),
-        ]
+                 min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE,
+                 do_create_engine=True):
+        if do_create_engine:
+            self.engines = [
+                TwoSidedEngine("High -> Low", higher_market, lower_market, min_offer_age,
+                               min_bid_age, self),
+                TwoSidedEngine("Low -> High", lower_market, higher_market, min_offer_age,
+                               min_bid_age, self),
+            ]
         super().__init__(owner=owner,
                          higher_market=higher_market, lower_market=lower_market,
                          min_offer_age=min_offer_age, do_create_engine=False)
 
     def usable_bid(self, bid):
-        """Prevent IAAEngines from trading their counterpart's bids"""
+        """Prevent IAAEngines from trading their counterparts bids."""
         return all(bid.id not in engine.forwarded_bids.keys() for engine in self.engines)
 
     def event_bid_traded(self, *, market_id, bid_trade):
@@ -56,4 +59,4 @@ class TwoSidedAgent(OneSidedAgent):
                                    residual_bid=residual_bid)
 
     def __repr__(self):
-        return "<TwoSidedPayAsBidAgent {s.name} {s.time_slot}>".format(s=self)
+        return f"<TwoSidedPayAsBidAgent {self.name} {self.time_slot_str}>"

@@ -25,9 +25,9 @@ from d3a_interface.data_classes import Offer
 from d3a_interface.enums import SpotMarketTypeEnum
 
 
-OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
-Markets = namedtuple('Markets', ('source', 'target'))
-ResidualInfo = namedtuple('ResidualInfo', ('forwarded', 'age'))
+OfferInfo = namedtuple("OfferInfo", ("source_offer", "target_offer"))
+Markets = namedtuple("Markets", ("source", "target"))
+ResidualInfo = namedtuple("ResidualInfo", ("forwarded", "age"))
 
 
 class IAAEngine:
@@ -41,8 +41,7 @@ class IAAEngine:
         self.offer_age = {}  # type: Dict[str, int]
         # Offer.id -> OfferInfo
         self.forwarded_offers = {}  # type: Dict[str, OfferInfo]
-        self.trade_residual = {}  # type Dict[str, Offer]
-        self.ignored_offers = set()  # type: Set[str]
+        self.trade_residual = {}  # type: Dict[str, Offer]
 
     def __repr__(self):
         return "<IAAEngine [{s.owner.name}] {s.name} {s.markets.source.time_slot:%H:%M}>".format(
@@ -61,7 +60,8 @@ class IAAEngine:
             "dispatch_event": False,
             "seller_origin": offer.seller_origin,
             "seller_origin_id": offer.seller_origin_id,
-            "seller_id": self.owner.uuid
+            "seller_id": self.owner.uuid,
+            "time_slot": offer.time_slot
         }
 
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
@@ -95,6 +95,8 @@ class IAAEngine:
             return
         self.forwarded_offers.pop(offer_info.target_offer.id, None)
         self.forwarded_offers.pop(offer_info.source_offer.id, None)
+        self.offer_age.pop(offer_info.target_offer.id, None)
+        self.offer_age.pop(offer_info.source_offer.id, None)
 
     def tick(self, *, area):
         self.propagate_offer(area.current_tick)
