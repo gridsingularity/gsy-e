@@ -338,7 +338,7 @@ class StorageExternalMixin(ExternalMixin):
         try:
             response_message = ""
             validator = IncomingOrderValidator(
-                enable_degrees_of_freedom=self.simulation_config.enable_degrees_of_freedom)
+                accept_degrees_of_freedom=self.simulation_config.enable_degrees_of_freedom)
             validator.validate(arguments)
             if validator.warnings:
                 response_message = ". ".join(warning.message for warning in validator.warnings)
@@ -501,7 +501,7 @@ class StorageExternalMixin(ExternalMixin):
     def _offer_aggregator(self, arguments):
         response_message = ""
         validator = IncomingOrderValidator(
-            enable_degrees_of_freedom=self.simulation_config.enable_degrees_of_freedom)
+            accept_degrees_of_freedom=self.simulation_config.enable_degrees_of_freedom)
         validator.validate(arguments)
         if validator.warnings:
             response_message = ". ".join(warning.message for warning in validator.warnings)
@@ -553,7 +553,7 @@ class StorageExternalMixin(ExternalMixin):
     def _bid_aggregator(self, arguments: Dict):
         response_message = ""
         validator = IncomingOrderValidator(
-            enable_degrees_of_freedom=self.simulation_config.enable_degrees_of_freedom)
+            accept_degrees_of_freedom=self.simulation_config.enable_degrees_of_freedom)
         validator.validate(arguments)
         if validator.warnings:
             response_message = ". ".join(warning.message for warning in validator.warnings)
