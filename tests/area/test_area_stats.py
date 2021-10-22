@@ -57,15 +57,14 @@ class TestAreaStats:
             child.stats.calculate_energy_deviances()
         area_fixture.stats.calculate_energy_deviances()
         actual_total_energy_deviance_kWh = area_fixture.stats.total_energy_deviance_kWh
-        expected_total_energy_deviance_kWh = {area_fixture.now: [
-            {
-                str(area_fixture.children[0].uuid):
-                    area_fixture.children[0].strategy.state._forecast_measurement_deviation_kWh[
-                        area_fixture.now]},
-            {
-                str(area_fixture.children[1].uuid):
-                    area_fixture.children[1].strategy.state._forecast_measurement_deviation_kWh[
-                        area_fixture.now]
+
+        expected_total_energy_deviance_kWh = {area_fixture.now: {
+            str(area_fixture.children[0].uuid):
+                area_fixture.children[0].strategy.state._forecast_measurement_deviation_kWh[
+                    area_fixture.now],
+            str(area_fixture.children[1].uuid):
+                area_fixture.children[1].strategy.state._forecast_measurement_deviation_kWh[
+                    area_fixture.now]
             }
-        ]}
+        }
         assert actual_total_energy_deviance_kWh == expected_total_energy_deviance_kWh

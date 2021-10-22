@@ -52,7 +52,7 @@ class AreaStats:
         self.kpi = {}
         self.exported_traded_energy_kwh = {}
         self.imported_traded_energy_kwh = {}
-        self.total_energy_deviance_kWh: Dict[DateTime, float] = {}
+        self.total_energy_deviance_kWh: Dict[DateTime, Dict[str, float]] = {}
 
     def get_state(self):
         """Get the current area state to be saved in DB and used as reference point for simulation
@@ -196,9 +196,9 @@ class AreaStats:
         time_slot = current_market.time_slot
         if self._area.strategy is None:
             # Accumulating energy deviance of connected children
-            self.total_energy_deviance_kWh[time_slot] = [
-                child.stats.total_energy_deviance_kWh[time_slot]
-                for child in self._area.children]
+            self.total_energy_deviance_kWh[time_slot] = {
+                child.uuid: child.stats.total_energy_deviance_kWh[time_slot][child.uuid]
+                for child in self._area.children}
         elif isinstance(self._area.strategy, (PVStrategy, LoadHoursStrategy)):
             # Energy deviance of PV/LOAD
             self.total_energy_deviance_kWh[time_slot] = {
