@@ -570,6 +570,17 @@ class Area:
     def get_settlement_market(self, timeslot):
         return self._markets.settlement_markets.get(timeslot)
 
+    def get_market_instances_from_class_type(self, market_type: AvailableMarketTypes) -> Dict:
+        """
+        Return market dicts for the selected market type
+        Args:
+            market_type: Selected market type (spot/balancing/settlement/future)
+
+        Returns: Dicts with market objects for the selected market type
+
+        """
+        return self._markets.get_market_instances_from_class_type(market_type)
+
     @cached_property
     def available_triggers(self):
         triggers = []
