@@ -1,8 +1,10 @@
 """Test module for order validators used in external strategies."""
 
+from typing import Dict
+
 import pytest
-from d3a.models.strategy.external_strategies.order_validators import (
-    DegreesOfFreedomValidator, OrderValidationWarning)
+
+from d3a.models.strategy.external_strategies.dof_filter import DegreesOfFreedomFilter
 
 
 @pytest.fixture(name="order_with_dof")
@@ -23,26 +25,24 @@ def order_without_dof_fixture():
         "timeslot": None, "transaction_id": "4f676895-32b5-42ce-9f7b-8c54a8f8b64f"}
 
 
-class TestDegreesOfFreedomValidator:
-    """Tests for the DegreesOfFreedomValidator class."""
+class TestDegreesOfFreedomFilter:
+    """Tests for the DegreesOfFreedomFilter class."""
 
     @staticmethod
-    @pytest.mark.parametrize("order", ["order_with_dof", "order_without_dof"])
-    def test_validate_succeeds_with_order_with_dof_if_enabled(order, request):
+    def test_filter_succeeds_with_order_with_dof(order_with_dof: Dict):
         """The validation succeeds if DoF are enabled."""
-        validator = DegreesOfFreedomValidator(accept_degrees_of_freedom=True)
-        order = request.getfixturevalue(order)
-        validator.validate(order)  # The validation is successful with no exceptions
+        filtered_order, filtered_fields = DegreesOfFreedomFilter.apply(order_with_dof)
+        expected_order = {
+            "type": "bid", "energy": 0.025, "price": 30, "replace_existing": True,
+            "timeslot": None, "transaction_id": "4f676895-32b5-42ce-9f7b-8c54a8f8b64f"}
+
+        assert filtered_order == expected_order
+        assert filtered_fields == {"requirements", "attributes"}
 
     @staticmethod
-    def test_validate_succeeds_with_order_without_dof_if_disabled(order_without_dof):
+    def test_filter_succeeds_with_order_without_dof(order_without_dof: Dict):
         """The validation succeeds if DoF are disabled and the order does not contain them."""
-        validator = DegreesOfFreedomValidator(accept_degrees_of_freedom=False)
-        validator.validate(order_without_dof)  # The validation is successful with no exceptions
+        filtered_order, filtered_fields = DegreesOfFreedomFilter.apply(order_without_dof)
 
-    @staticmethod
-    def test_validate_raises_warning_with_order_with_dof_if_disabled(order_with_dof):
-        """The validation fails when DoF are disabled but the order contains them."""
-        validator = DegreesOfFreedomValidator(accept_degrees_of_freedom=False)
-        with pytest.raises(OrderValidationWarning):
-            validator.validate(order_with_dof)
+        assert filtered_order == order_without_dof
+        assert filtered_fields == set()
