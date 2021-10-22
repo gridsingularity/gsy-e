@@ -41,7 +41,7 @@ default_trade_stats_dict = {
 
 class AreaStats:
     """
-    Placeholder for targeted area statistics
+    Handle tracking and updating for targeted area statistics
     """
     def __init__(self, area_markets, area):
         self._markets = area_markets
@@ -197,7 +197,7 @@ class AreaStats:
         if self._area.strategy is None:
             # Accumulating energy deviance of connected children
             self.total_energy_deviance_kWh[time_slot] = {
-                child.uuid: child.stats.total_energy_deviance_kWh[time_slot][child.uuid]
+                child.uuid: child.stats.total_energy_deviance_kWh[time_slot]
                 for child in self._area.children}
         elif isinstance(self._area.strategy, (PVStrategy, LoadHoursStrategy)):
             # Energy deviance of PV/LOAD
