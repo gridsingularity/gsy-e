@@ -130,10 +130,10 @@ def pv_produces_same_amount_of_energy_day(context):
     house2 = [child for child in context.simulation.area.children if child.name == "House 2"][0]
 
     for base_market in house2.past_markets:
-        timeslot = base_market.time_slot
+        time_slot = base_market.time_slot
         same_time_markets = [market for market in house2.past_markets
-                             if market.time_slot.hour == timeslot.hour and
-                             market.time_slot.minute == timeslot.minute]
+                             if market.time_slot.hour == time_slot.hour and
+                             market.time_slot.minute == time_slot.minute]
         same_time_markets_energy = [sum(trade.offer_bid.energy
                                         for trade in market.trades
                                         if trade.seller == "H2 PV")
@@ -144,10 +144,10 @@ def pv_produces_same_amount_of_energy_day(context):
 
 def _assert_sum_of_energy_is_same_for_same_time(area, load_name):
     for base_market in area.past_markets:
-        timeslot = base_market.time_slot
+        time_slot = base_market.time_slot
         same_time_markets = [market for market in area.past_markets
-                             if market.time_slot.hour == timeslot.hour and
-                             market.time_slot.minute == timeslot.minute]
+                             if market.time_slot.hour == time_slot.hour and
+                             market.time_slot.minute == time_slot.minute]
         same_time_markets_energy = [sum(trade.offer_bid.energy
                                         for trade in market.trades
                                         if trade.buyer == load_name)
