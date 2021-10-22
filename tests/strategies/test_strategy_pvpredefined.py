@@ -379,12 +379,12 @@ def test_correct_time_expansion_read_arbitrary_profile():
     market_maker_rate = 30
     if GlobalConfig.IS_CANARY_NETWORK:
         GlobalConfig.sim_duration = duration(hours=3)
-        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS-1,
+        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS - 1,
                                                           hours=23, minutes=45)
         mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
         assert list(mmr.keys())[-1] == expected_last_time_slot
         GlobalConfig.sim_duration = duration(hours=30)
-        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS-1,
+        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS - 1,
                                                           hours=23, minutes=45)
         mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
         assert list(mmr.keys())[-1] == expected_last_time_slot

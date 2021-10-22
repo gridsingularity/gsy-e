@@ -217,18 +217,18 @@ class ExternalMixin:
         return self.market_area.spot_market
 
     def _get_market_from_command_argument(self, arguments: Dict):
-        if arguments.get("timeslot") is None:
+        if arguments.get("time_slot") is None:
             return self.spot_market
-        timeslot = str_to_pendulum_datetime(arguments["timeslot"])
-        return self._get_market_from_timeslot(timeslot)
+        time_slot = str_to_pendulum_datetime(arguments["time_slot"])
+        return self._get_market_from_time_slot(time_slot)
 
-    def _get_market_from_timeslot(self, timeslot: DateTime):
-        market = self.market_area.get_market(timeslot)
+    def _get_market_from_time_slot(self, time_slot: DateTime):
+        market = self.market_area.get_market(time_slot)
         if market:
             return market
-        market = self.market_area.get_settlement_market(timeslot)
+        market = self.market_area.get_settlement_market(time_slot)
         if not market:
-            raise Exception(f"Timeslot {timeslot} is not currently in the spot, future or "
+            raise Exception(f"Timeslot {time_slot} is not currently in the spot, future or "
                             f"settlement markets")
         return market
 
