@@ -140,7 +140,7 @@ class StorageExternalMixin(ExternalMixin):
         transaction_id = self._get_transaction_id(payload)
         required_args = {"price", "energy", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
-                                            "timeslot",
+                                            "time_slot",
                                             "attributes",
                                             "requirements"})
 
@@ -187,7 +187,7 @@ class StorageExternalMixin(ExternalMixin):
     def _offer_impl(self, arguments, response_channel):
         try:
             offer_arguments = {
-                k: v for k, v in arguments.items() if k not in ["transaction_id", "timeslot"]}
+                k: v for k, v in arguments.items() if k not in ["transaction_id", "time_slot"]}
 
             replace_existing = offer_arguments.pop("replace_existing", True)
             market = self._get_market_from_command_argument(arguments)
@@ -291,7 +291,7 @@ class StorageExternalMixin(ExternalMixin):
         transaction_id = self._get_transaction_id(payload)
         required_args = {"price", "energy", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
-                                            "timeslot",
+                                            "time_slot",
                                             "attributes",
                                             "requirements"})
 
@@ -490,7 +490,7 @@ class StorageExternalMixin(ExternalMixin):
     def _offer_aggregator(self, arguments):
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
-                                            "timeslot",
+                                            "time_slot",
                                             "attributes",
                                             "requirements"})
 
@@ -504,7 +504,7 @@ class StorageExternalMixin(ExternalMixin):
             try:
                 offer_arguments = {
                     k: v for k, v in arguments.items()
-                    if k not in ["transaction_id", "type", "timeslot"]}
+                    if k not in ["transaction_id", "type", "time_slot"]}
 
                 assert self.can_offer_be_posted(market.time_slot, **offer_arguments)
 
@@ -535,7 +535,7 @@ class StorageExternalMixin(ExternalMixin):
     def _bid_aggregator(self, arguments: Dict):
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
-                                            "timeslot",
+                                            "time_slot",
                                             "attributes",
                                             "requirements"})
 

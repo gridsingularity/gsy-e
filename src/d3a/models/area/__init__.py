@@ -512,14 +512,14 @@ class Area:
     def past_markets(self) -> List:
         return list(self._markets.past_markets.values())
 
-    def get_market(self, timeslot):
-        return self._markets.markets.get(timeslot)
+    def get_market(self, time_slot):
+        return self._markets.markets.get(time_slot)
 
-    def get_past_market(self, timeslot):
-        return self._markets.past_markets[timeslot]
+    def get_past_market(self, time_slot):
+        return self._markets.past_markets[time_slot]
 
-    def get_balancing_market(self, timeslot):
-        return self._markets.balancing_markets[timeslot]
+    def get_balancing_market(self, time_slot):
+        return self._markets.balancing_markets[time_slot]
 
     @property
     def balancing_markets(self) -> List:
@@ -587,8 +587,8 @@ class Area:
     def past_settlement_markets(self) -> Dict:
         return self._markets.past_settlement_markets
 
-    def get_settlement_market(self, timeslot):
-        return self._markets.settlement_markets.get(timeslot)
+    def get_settlement_market(self, time_slot):
+        return self._markets.settlement_markets.get(time_slot)
 
     @cached_property
     def available_triggers(self):
