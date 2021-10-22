@@ -16,19 +16,25 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
-from typing import Dict  # NOQA
-from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent  # NOQA
-from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
-from d3a.d3a_core.exceptions import BidNotFoundException, MarketException
-from d3a_interface.data_classes import Bid
-from d3a.d3a_core.util import short_offer_bid_log_str
-from d3a.constants import FLOATING_POINT_TOLERANCE
+from typing import Dict, TYPE_CHECKING
 
+from d3a_interface.data_classes import Bid
+
+from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.d3a_core.exceptions import BidNotFoundException, MarketException
+from d3a.d3a_core.util import short_offer_bid_log_str
+from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
+
+if TYPE_CHECKING:
+    from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent
 
 BidInfo = namedtuple("BidInfo", ("source_bid", "target_bid"))
 
 
 class TwoSidedEngine(IAAEngine):
+    """Handle forwarding offers and bids to the connected two-sided market."""
+    # pylint: disable = too-many-arguments
+
     def __init__(self, name: str, market_1, market_2, min_offer_age: int, min_bid_age: int,
                  owner: "InterAreaAgent"):
         super().__init__(name, market_1, market_2, min_offer_age, owner)
@@ -43,15 +49,14 @@ class TwoSidedEngine(IAAEngine):
 
     def _forward_bid(self, bid):
         if bid.buyer == self.markets.target.name:
-            return
+            return None
         if self.owner.name == self.markets.target.name:
-            return
+            return None
 
         if bid.price < 0.0:
             self.owner.log.debug("Bid is not forwarded because price < 0")
-            return
+            return None
         try:
-            print(self.markets.target.bid)
             forwarded_bid = self.markets.target.bid(
                 price=(self.markets.source.fee_class.update_forwarded_bid_with_fee(
                     bid.energy_rate, bid.original_price / bid.energy)) * bid.energy,
@@ -66,7 +71,7 @@ class TwoSidedEngine(IAAEngine):
         except MarketException:
             self.owner.log.debug("Bid is not forwarded because grid fees of the target market "
                                  "lead to a negative bid price.")
-            return
+            return None
 
         self._add_to_forward_bids(bid, forwarded_bid)
         self.owner.log.trace(f"Forwarding bid {bid} to {forwarded_bid}")
@@ -81,7 +86,7 @@ class TwoSidedEngine(IAAEngine):
         self.bid_age.pop(bid_info.source_bid.id, None)
         self.bid_age.pop(bid_info.target_bid.id, None)
 
-    def should_forward_bid(self, bid, current_tick):
+    def _should_forward_bid(self, bid, current_tick):
 
         if bid.id in self.forwarded_bids:
             return False
@@ -97,17 +102,18 @@ class TwoSidedEngine(IAAEngine):
 
         return True
 
+    # pylint: disable=unused-argument
     def tick(self, *, area):
         super().tick(area=area)
 
-        for bid_id, bid in self.markets.source.get_bids().items():
+        for bid in self.markets.source.get_bids().values():
             if bid.id not in self.bid_age:
                 self.bid_age[bid.id] = area.current_tick
 
-            if self.should_forward_bid(bid, area.current_tick):
+            if self._should_forward_bid(bid, area.current_tick):
                 self._forward_bid(bid)
 
-    def delete_forwarded_bids(self, bid_info):
+    def _delete_forwarded_bids(self, bid_info):
         try:
             self.markets.target.delete_bid(bid_info.target_bid)
         except BidNotFoundException:
@@ -116,6 +122,7 @@ class TwoSidedEngine(IAAEngine):
         self._delete_forwarded_bid_entries(bid_info.source_bid)
 
     def event_bid_traded(self, *, bid_trade):
+        """Perform actions that need to be done when BID_TRADED event is triggered."""
         bid_info = self.forwarded_bids.get(bid_trade.offer_bid.id)
         if not bid_info:
             return
@@ -158,18 +165,19 @@ class TwoSidedEngine(IAAEngine):
                 seller_origin_id=bid_trade.seller_origin_id,
                 seller_id=self.owner.uuid
             )
-            self.delete_forwarded_bids(bid_info)
+            self._delete_forwarded_bids(bid_info)
             self.bid_age.pop(bid_info.source_bid.id, None)
 
         elif bid_trade.offer_bid.id == bid_info.source_bid.id:
             # Bid was traded in the source market by someone else
-            self.delete_forwarded_bids(bid_info)
+            self._delete_forwarded_bids(bid_info)
             self.bid_age.pop(bid_info.source_bid.id, None)
         else:
             raise Exception(f"Invalid bid state for IAA {self.owner.name}: "
                             f"traded bid {bid_trade} was not in offered bids tuple {bid_info}")
 
     def event_bid_deleted(self, *, bid):
+        """Perform actions that need to be done when BID_DELETED event is triggered."""
         bid_id = bid.id if isinstance(bid, Bid) else bid
         bid_info = self.forwarded_bids.get(bid_id)
 
@@ -181,14 +189,15 @@ class TwoSidedEngine(IAAEngine):
             # Bid in source market of an bid we're already bidding the target market
             # was deleted - also delete in target market
             try:
-                self.delete_forwarded_bids(bid_info)
+                self._delete_forwarded_bids(bid_info)
             except MarketException:
                 self.owner.log.exception("Error deleting InterAreaAgent bid")
         self._delete_forwarded_bid_entries(bid_info.source_bid)
         self.bid_age.pop(bid_info.source_bid.id, None)
 
     def event_bid_split(self, *, market_id, original_bid, accepted_bid, residual_bid):
-        market = self.owner._get_market_from_market_id(market_id)
+        """Perform actions that need to be done when BID_SPLIT event is triggered."""
+        market = self.owner.get_market_from_market_id(market_id)
         if market is None:
             return
 

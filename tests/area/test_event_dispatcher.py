@@ -62,8 +62,8 @@ class TestAreaDispatcher:
         """"""
         original_matching_type = ConstSettings.IAASettings.MARKET_TYPE
         ConstSettings.IAASettings.MARKET_TYPE = matching_type
-        agent = area_dispatcher.create_agent_object(area_dispatcher.area, HIGHER_MARKET_MOCK,
-                                                    LOWER_MARKET_MOCK, market_type)
+        agent = area_dispatcher._create_agent_object(area_dispatcher.area, HIGHER_MARKET_MOCK,
+                                                     LOWER_MARKET_MOCK, market_type)
         assert isinstance(agent, expected_agent_type)
         assert agent.higher_market == HIGHER_MARKET_MOCK
         assert agent.lower_market == LOWER_MARKET_MOCK

@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from collections import OrderedDict
 from typing import Dict, TYPE_CHECKING
 
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, TIME_FORMAT
 from d3a_interface.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
@@ -39,6 +39,7 @@ if TYPE_CHECKING:
 
 class AreaMarkets:
     """Class that holds all markets for areas."""
+    # pylint: disable = too-many-instance-attributes
 
     def __init__(self, area_log):
         self.log = area_log
@@ -50,7 +51,7 @@ class AreaMarkets:
         self.past_markets:  Dict[DateTime, Market] = OrderedDict()
         self.past_balancing_markets:  Dict[DateTime, BalancingMarket] = OrderedDict()
         self.past_settlement_markets: Dict[DateTime, TwoSidedMarket] = OrderedDict()
-        # TODO: rename and refactor:
+        # TODO: rename and refactor in the frame of D3ASIM-3633:
         self.indexed_future_markets = {}
         # Future markets:
         self.future_markets = None
@@ -61,6 +62,9 @@ class AreaMarkets:
         self.future_market_rotator = BaseRotator()
 
     def activate_future_markets(self, area: "Area") -> None:
+        """
+        Create FutureMarkets instance and create IAAs that communicate to the parent FutureMarkets
+        """
         market = FutureMarkets(
             bc=area.bc,
             notification_listener=area.dispatcher.broadcast_callback,
@@ -103,25 +107,25 @@ class AreaMarkets:
         if market_type == AvailableMarketTypes.SPOT:
             if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                 return OneSidedMarket
-            elif ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
+            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
                 return TwoSidedMarket
-        elif market_type == AvailableMarketTypes.SETTLEMENT:
+        if market_type == AvailableMarketTypes.SETTLEMENT:
             return SettlementMarket
-        elif market_type == AvailableMarketTypes.BALANCING:
+        if market_type == AvailableMarketTypes.BALANCING:
             return BalancingMarket
-        else:
-            assert False, f"Market type not supported {market_type}"
+
+        assert False, f"Market type not supported {market_type}"
 
     def get_market_instances_from_class_type(self, market_type: AvailableMarketTypes) -> Dict:
         """Select market dict based on the market class type."""
         if market_type == AvailableMarketTypes.SPOT:
             return self.markets
-        elif market_type == AvailableMarketTypes.SETTLEMENT:
+        if market_type == AvailableMarketTypes.SETTLEMENT:
             return self.settlement_markets
-        elif market_type == AvailableMarketTypes.BALANCING:
+        if market_type == AvailableMarketTypes.BALANCING:
             return self.balancing_markets
-        else:
-            assert False, f"Market type not supported {market_type}"
+
+        assert False, f"Market type not supported {market_type}"
 
     def create_new_spot_market(self, current_time: DateTime,
                                market_type: AvailableMarketTypes, area: "Area") -> bool:
@@ -134,10 +138,7 @@ class AreaMarkets:
             markets[current_time] = self._create_market(
                 market_class, current_time, area, market_type)
             changed = True
-            self.log.trace("Adding {t:{format}} market".format(
-                t=current_time,
-                format="%H:%M" if area.config.slot_length.seconds > 60 else "%H:%M:%S"
-            ))
+            self.log.trace("Adding %s market", current_time.format(TIME_FORMAT))
         self._update_indexed_future_markets()
         return changed
 
@@ -147,10 +148,7 @@ class AreaMarkets:
             self._create_market(market_class=SettlementMarket,
                                 time_slot=time_slot,
                                 area=area, market_type=AvailableMarketTypes.SETTLEMENT))
-        self.log.trace(
-            "Adding Settlement {t:{format}} market".format(
-                t=time_slot,
-                format="%H:%M" if area.config.slot_length.seconds > 60 else "%H:%M:%S"))
+        self.log.trace("Adding %s market", time_slot.format(TIME_FORMAT))
 
     @staticmethod
     def _create_market(market_class: Market,

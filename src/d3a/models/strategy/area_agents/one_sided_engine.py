@@ -16,14 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
-from typing import Dict, Set  # noqa
-from d3a.constants import FLOATING_POINT_TOLERANCE
+from typing import Dict, Optional
+
 from d3a_interface.constants_limits import ConstSettings
-from d3a.d3a_core.util import short_offer_bid_log_str
-from d3a.d3a_core.exceptions import MarketException, OfferNotFoundException
 from d3a_interface.data_classes import Offer
 from d3a_interface.enums import SpotMarketTypeEnum
 
+from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.d3a_core.exceptions import MarketException, OfferNotFoundException
+from d3a.d3a_core.util import short_offer_bid_log_str
 
 OfferInfo = namedtuple("OfferInfo", ("source_offer", "target_offer"))
 Markets = namedtuple("Markets", ("source", "target"))
@@ -31,8 +32,10 @@ ResidualInfo = namedtuple("ResidualInfo", ("forwarded", "age"))
 
 
 class IAAEngine:
-    def __init__(self, name: str, market_1, market_2, min_offer_age: int,
-                 owner):
+    """Handle forwarding offers to the connected one-sided market."""
+    # pylint: disable = too-many-arguments
+
+    def __init__(self, name: str, market_1, market_2, min_offer_age: int, owner):
         self.name = name
         self.markets = Markets(market_1, market_2)
         self.min_offer_age = min_offer_age
@@ -66,21 +69,21 @@ class IAAEngine:
 
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             return self.owner.offer(market_id=self.markets.target, offer_args=kwargs)
-        else:
-            return self.markets.target.offer(**kwargs)
 
-    def _forward_offer(self, offer):
+        return self.markets.target.offer(**kwargs)
+
+    def _forward_offer(self, offer: Offer) -> Optional[Offer]:
         # TODO: This is an ugly solution. After the december release this check needs to
         #  implemented after grid fee being incorporated while forwarding in target market
         if offer.price < 0.0:
             self.owner.log.debug("Offer is not forwarded because price < 0")
-            return
+            return None
         try:
             forwarded_offer = self._offer_in_market(offer)
         except MarketException:
             self.owner.log.debug("Offer is not forwarded because grid fees of the target market "
                                  "lead to a negative offer price.")
-            return
+            return None
 
         self._add_to_forward_offers(offer, forwarded_offer)
         self.owner.log.trace(f"Forwarding offer {offer} to {forwarded_offer}")
@@ -99,9 +102,10 @@ class IAAEngine:
         self.offer_age.pop(offer_info.source_offer.id, None)
 
     def tick(self, *, area):
-        self.propagate_offer(area.current_tick)
+        """Perform actions that need to be done when TICK event is triggered."""
+        self._propagate_offer(area.current_tick)
 
-    def propagate_offer(self, current_tick):
+    def _propagate_offer(self, current_tick):
         # Store age of offer
         for offer in self.markets.source.offers.values():
             if offer.id not in self.offer_age:
@@ -140,6 +144,7 @@ class IAAEngine:
                                      f"{self.owner.name}, {self.name} {forwarded_offer}")
 
     def event_offer_traded(self, *, trade):
+        """Perform actions that need to be done when OFFER_TRADED event is triggered."""
         offer_info = self.forwarded_offers.get(trade.offer_bid.id)
         if not offer_info:
             # Trade doesn't concern us
@@ -176,8 +181,8 @@ class IAAEngine:
                     buyer_id=self.owner.uuid
                 )
 
-            except OfferNotFoundException:
-                raise OfferNotFoundException()
+            except OfferNotFoundException as ex:
+                raise OfferNotFoundException() from ex
             self.owner.log.debug(
                 f"[{self.markets.source.time_slot_str}] Offer accepted {trade_source}")
 
@@ -191,7 +196,7 @@ class IAAEngine:
             except OfferNotFoundException:
                 pass
             except MarketException as ex:
-                self.owner.log.error("Error deleting InterAreaAgent offer: {}".format(ex))
+                self.owner.log.error("Error deleting InterAreaAgent offer: %s", ex)
 
             self._delete_forwarded_offer_entries(offer_info.source_offer)
             self.offer_age.pop(offer_info.source_offer.id, None)
@@ -202,6 +207,7 @@ class IAAEngine:
         assert offer_info.target_offer.id not in self.forwarded_offers
 
     def event_offer_deleted(self, *, offer):
+        """Perform actions that need to be done when OFFER_DELETED event is triggered."""
         if offer.id in self.offer_age:
             # Offer we're watching in source market was deleted - remove
             del self.offer_age[offer.id]
@@ -223,7 +229,8 @@ class IAAEngine:
         # but by deleting the offered_offers entries
 
     def event_offer_split(self, *, market_id, original_offer, accepted_offer, residual_offer):
-        market = self.owner._get_market_from_market_id(market_id)
+        """Perform actions that need to be done when OFFER_SPLIT event is triggered."""
+        market = self.owner.get_market_from_market_id(market_id)
         if market is None:
             return
 
@@ -278,6 +285,7 @@ class IAAEngine:
 
 
 class BalancingEngine(IAAEngine):
+    """Handle forwarding offers to the connected balancing market."""
 
     def _forward_offer(self, offer):
         forwarded_balancing_offer = self.markets.target.balancing_offer(

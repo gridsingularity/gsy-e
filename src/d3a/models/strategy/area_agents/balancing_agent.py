@@ -44,7 +44,7 @@ class BalancingAgent(OneSidedAgent):
                                            self.lower_market.unmatched_energy_downward)
 
     def event_offer_traded(self, *, market_id, trade):
-        market = self._get_market_from_market_id(market_id)
+        market = self.get_market_from_market_id(market_id)
         if market is None:
             return
 
@@ -55,7 +55,7 @@ class BalancingAgent(OneSidedAgent):
         if bid_trade.already_tracked:
             return
 
-        market = self._get_market_from_market_id(market_id)
+        market = self.get_market_from_market_id(market_id)
         if market is None:
             return
 

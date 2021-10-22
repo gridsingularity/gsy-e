@@ -24,7 +24,8 @@ from d3a.models.strategy import BaseStrategy, _TradeLookerUpper
 
 
 class InterAreaAgent(BaseStrategy):
-    parameters = ('owner', 'higher_market', 'lower_market', 'min_offer_age')
+    """Base class for inter area agents implementations."""
+    parameters = ("owner", "higher_market", "lower_market", "min_offer_age")
 
     def __init__(self, *, owner, higher_market, lower_market,
                  min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE):
@@ -51,12 +52,14 @@ class InterAreaAgent(BaseStrategy):
     def _validate_constructor_arguments(min_offer_age):
         assert 0 <= min_offer_age <= 360
 
-    def area_reconfigure_event(self, min_offer_age):
+    def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the minimum offer age at runtime with the given value."""
-        self._validate_constructor_arguments(min_offer_age)
-        self.min_offer_age = min_offer_age
-        for engine in sorted(self.engines, key=lambda _: random()):
-            engine.min_offer_age = min_offer_age
+        if "min_offer_age" in kwargs:
+            min_offer_age = kwargs["min_offer_age"]
+            self._validate_constructor_arguments(min_offer_age)
+            self.min_offer_age = min_offer_age
+            for engine in sorted(self.engines, key=lambda _: random()):
+                engine.min_offer_age = min_offer_age
 
     @property
     def trades(self):
