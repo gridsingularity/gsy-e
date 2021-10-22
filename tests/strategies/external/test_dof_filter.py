@@ -1,4 +1,4 @@
-"""Test module for order validators used in external strategies."""
+"""Test the module for the Degrees of Freedom filter used in external strategies."""
 
 from typing import Dict
 
