@@ -407,10 +407,12 @@ class Area:
                 self._consume_commands_from_aggregator()
                 self.dispatcher.publish_market_clearing()
             elif is_external_matching_enabled():
+                # If external matching is enabled, clear before placing orders
                 bid_offer_matcher.match_recommendations()
                 self._consume_commands_from_aggregator()
                 self._update_myco_matcher()
             else:
+                # If internal matching is enabled, place orders before clearing
                 self._consume_commands_from_aggregator()
                 self._update_myco_matcher()
                 bid_offer_matcher.match_recommendations()
