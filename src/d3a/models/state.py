@@ -21,10 +21,10 @@ from enum import Enum
 from math import isclose
 from typing import Dict
 
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.utils import (
     convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict, convert_kW_to_kWh)
-from pendulum import DateTime
+from pendulum import DateTime, duration
 
 from d3a import limit_float_precision
 from d3a.constants import FLOATING_POINT_TOLERANCE
@@ -221,6 +221,16 @@ class ConsumptionState(ProsumptionInterface):
         self._energy_requirement_Wh[time_slot] = energy
         self._desired_energy_Wh[time_slot] = energy
 
+    def set_future_desired_energy(self, energy_Wh, start_time: DateTime, duration: duration):
+        """Distributes the desired energy equally among time_slots in range of start_time till
+        the duration that energy is required"""
+        slot_length = GlobalConfig.slot_length
+        end_time = start_time + duration
+        energy_Wh_per_slot = (end_time - start_time) / slot_length
+        for time_slot in range(start_time, end_time, slot_length):
+            self._energy_requirement_Wh[time_slot] = energy_Wh_per_slot
+            self._desired_energy_Wh[time_slot] = energy_Wh_per_slot
+
     def update_total_demanded_energy(self, time_slot):
         self._total_energy_demanded_Wh += self._desired_energy_Wh.get(time_slot, 0.)
 
@@ -298,6 +308,16 @@ class ProductionState(ProsumptionInterface):
         self._available_energy_kWh[time_slot] = energy_kWh
 
         assert self._energy_production_forecast_kWh[time_slot] >= 0.0
+
+    def set_future_available_energy(self, energy_kWh, start_time: DateTime, duration: duration):
+        """Distributes the available energy equally among time_slots in range of start_time till
+        the duration that energy is required"""
+        slot_length = GlobalConfig.slot_length
+        end_time = start_time + duration
+        energy_kWh_per_slot = (end_time - start_time) / slot_length
+        for time_slot in range(start_time, end_time, slot_length):
+            self._energy_production_forecast_kWh[time_slot] = energy_kWh_per_slot
+            self._available_energy_kWh[time_slot] = energy_kWh_per_slot
 
     def get_available_energy_kWh(self, time_slot, default_value=0.0):
         available_energy = self._available_energy_kWh.get(time_slot, default_value)
