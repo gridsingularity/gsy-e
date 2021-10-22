@@ -330,6 +330,7 @@ class Area:
         self.events.update_events(now_value)
 
         if not self.children:
+            self.stats.calculate_energy_deviances()
             # Since children trade in markets we only need to populate them if there are any
             return
 
@@ -375,6 +376,7 @@ class Area:
         if (changed_balancing_market or len(self._markets.past_balancing_markets.keys()) == 0) \
                 and _trigger_event and ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.dispatcher.broadcast_balancing_market_cycle()
+        self.stats.calculate_energy_deviances()
 
     def publish_market_cycle_to_external_clients(self):
         if self.strategy and isinstance(self.strategy, ExternalMixin):
