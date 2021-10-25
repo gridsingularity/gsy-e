@@ -15,21 +15,25 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import uuid
 
+from d3a_interface.constants_limits import ConstSettings
 import pytest
 
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
 from tests.strategies.external.utils import (
     check_external_command_endpoint_with_correct_payload_succeeds,
-    create_areas_markets_for_strategy_fixture)
+    create_areas_markets_for_strategy_fixture, assert_bid_offer_aggregator_commands_return_value)
 
 
 @pytest.fixture(name="external_storage")
 def external_storage_fixture():
-    return create_areas_markets_for_strategy_fixture(StorageExternalStrategy())
+    ConstSettings.IAASettings.MARKET_TYPE = 2
+    yield create_areas_markets_for_strategy_fixture(StorageExternalStrategy())
+    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
-class TestPVForecastExternalStrategy:
+class TestStorageExternalStrategy:
 
     @staticmethod
     def test_offer_succeeds(external_storage):
@@ -62,3 +66,47 @@ class TestPVForecastExternalStrategy:
     def test_delete_bid_succeeds(external_storage):
         check_external_command_endpoint_with_correct_payload_succeeds(
             external_storage, "delete_bid", {})
+
+    @staticmethod
+    def test_bid_aggregator_succeeds_with_warning_if_dof_are_disabled(external_storage):
+        """
+        The _bid_aggregator command succeeds, but it shows a warning if Degrees of Freedom are
+        disabled and nevertheless provided.
+        """
+        external_storage.simulation_config.enable_degrees_of_freedom = False
+        external_storage.state.energy_to_buy_dict[
+            external_storage.spot_market.time_slot] = 1000.0
+        return_value = external_storage.trigger_aggregator_commands({
+            "type": "bid",
+            "price": 200.0,
+            "energy": 0.5,
+            "attributes": {"energy_type": "PV"},
+            "requirements": [{"price": 12}],
+            "transaction_id": str(uuid.uuid4())})
+
+        assert_bid_offer_aggregator_commands_return_value(return_value, False)
+        assert return_value["message"] == (
+            "The following arguments are not supported for this market and have been removed from "
+            "your order: ['requirements', 'attributes'].")
+
+    @staticmethod
+    def test_offer_aggregator_succeeds_with_warning_if_dof_are_disabled(external_storage):
+        """
+        The _offer_aggregator command succeeds, but it shows a warning if Degrees of Freedom are
+        disabled and nevertheless provided.
+        """
+        external_storage.simulation_config.enable_degrees_of_freedom = False
+        external_storage.state.energy_to_sell_dict[
+            external_storage.spot_market.time_slot] = 1000.0
+        return_value = external_storage.trigger_aggregator_commands({
+            "type": "offer",
+            "price": 200.0,
+            "energy": 0.5,
+            "attributes": {"energy_type": "Green"},
+            "requirements": [{"price": 12}],
+            "transaction_id": str(uuid.uuid4())})
+
+        assert_bid_offer_aggregator_commands_return_value(return_value, True)
+        assert return_value["message"] == (
+            "The following arguments are not supported for this market and have been removed from "
+            "your order: ['requirements', 'attributes'].")

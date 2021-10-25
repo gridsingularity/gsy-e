@@ -67,9 +67,30 @@ class TestLoadForecastExternalStrategy:
         assert_bid_offer_aggregator_commands_return_value(return_value, False)
 
     @staticmethod
+    def test_bid_aggregator_succeeds_with_warning_if_dof_are_disabled(external_load):
+        """
+        The bid_aggregator command succeeds, but it shows a warning if Degrees of Freedom are
+        disabled and nevertheless provided.
+        """
+        external_load.simulation_config.enable_degrees_of_freedom = False
+        external_load.state._energy_requirement_Wh[
+            external_load.spot_market.time_slot] = 1000.0
+        return_value = external_load.trigger_aggregator_commands({
+            "type": "bid",
+            "price": 200.0,
+            "energy": 0.5,
+            "attributes": {"energy_type": "PV"},
+            "requirements": [{"price": 12}],
+            "transaction_id": str(uuid.uuid4())})
+
+        assert_bid_offer_aggregator_commands_return_value(return_value, False)
+        assert return_value["message"] == (
+            "The following arguments are not supported for this market and have been removed from "
+            "your order: ['requirements', 'attributes'].")
+
+    @staticmethod
     def test_delete_bid_aggregator(external_load):
         bid = external_load.post_bid(external_load.spot_market, 200.0, 1.0)
-
         return_value = external_load.trigger_aggregator_commands(
             {
                 "type": "delete_bid",

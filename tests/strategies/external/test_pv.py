@@ -62,6 +62,29 @@ class TestPVForecastExternalStrategy:
         assert_bid_offer_aggregator_commands_return_value(return_value, True)
 
     @staticmethod
+    def test_offer_aggregator_succeeds_with_warning_if_dof_are_disabled(external_pv):
+        """
+        The _offer_aggregator command succeeds, but it shows a warning if Degrees of Freedom are
+        disabled and nevertheless provided.
+        """
+        external_pv.simulation_config.enable_degrees_of_freedom = False
+        external_pv.state._available_energy_kWh[external_pv.spot_market.time_slot] = 1.0
+        return_value = external_pv.trigger_aggregator_commands(
+            {
+                "type": "offer",
+                "price": 200.0,
+                "energy": 0.5,
+                "attributes": {"energy_type": "Green"},
+                "requirements": [{"price": 12}],
+                "transaction_id": str(uuid.uuid4())
+            }
+        )
+        assert_bid_offer_aggregator_commands_return_value(return_value, True)
+        assert return_value["message"] == (
+            "The following arguments are not supported for this market and have been removed from "
+            "your order: ['requirements', 'attributes'].")
+
+    @staticmethod
     def test_delete_offer_aggregator(external_pv):
         offer = external_pv.post_offer(
             external_pv.spot_market, False, price=200.0, energy=1.0)
