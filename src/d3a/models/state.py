@@ -50,6 +50,9 @@ StorageSettings = ConstSettings.StorageSettings
 class StateInterface(ABC):
     """Interface containing methods that need to be defined by each State class."""
 
+    def __init__(self, area):
+        self._area = area
+
     @abstractmethod
     def get_state(self) -> Dict:
         """Return the current state of the device."""
@@ -66,11 +69,17 @@ class StateInterface(ABC):
     def __str__(self):
         return self.__class__.__name__
 
+    @property
+    def spot_market_time_slot(self):
+        """Return timeslot of spot market"""
+        return self._area.spot_market.time_slot
+
 
 class ProsumptionInterface(StateInterface, ABC):
     """Interface with common methods/variables shared by consumption and production devices."""
 
-    def __init__(self):
+    def __init__(self, area):
+        super().__init__(self, area)
         # Actual energy consumed/produced by the device at specific market slots
         self._energy_measurement_kWh: Dict[DateTime, float] = {}
         self._unsettled_deviation_kWh: Dict[DateTime, float] = {}
@@ -184,8 +193,8 @@ class ProsumptionInterface(StateInterface, ABC):
 class ConsumptionState(ProsumptionInterface):
     """State for devices that can consume energy."""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, area):
+        super().__init__(self, area)
         # Energy that the load wants to consume (given by the profile or live energy requirements)
         self._desired_energy_Wh = {}
         # Energy that the load needs to consume. It's reduced when new energy is bought
@@ -215,11 +224,14 @@ class ConsumptionState(ProsumptionInterface):
     def get_energy_requirement_Wh(self, time_slot, default_value=0.0):
         return self._energy_requirement_Wh.get(time_slot, default_value)
 
-    def set_desired_energy(self, energy, time_slot, overwrite=False):
-        if overwrite is False and time_slot in self._energy_requirement_Wh:
+    def set_desired_energy(self, energy, overwrite=False):
+        if overwrite is False:
             return
-        self._energy_requirement_Wh[time_slot] = energy
-        self._desired_energy_Wh[time_slot] = energy
+        # un traded energy of future market to be added to be traded in spot market
+        self._energy_requirement_Wh[self.spot_market_time_slot] = (
+                energy + self._energy_requirement_Wh.get(self.spot_market_time_slot, 0.0))
+        self._desired_energy_Wh[self.spot_market_time_slot] = (
+                energy + self._desired_energy_Wh.get(self.spot_market_time_slot, 0.0))
 
     def set_future_desired_energy(self, energy_Wh, start_time: DateTime, duration: duration):
         """Distributes the desired energy equally among time_slots in range of start_time till
@@ -274,8 +286,8 @@ class ConsumptionState(ProsumptionInterface):
 class ProductionState(ProsumptionInterface):
     """State for devices that can produce energy."""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, area):
+        super().__init__(self, area)
         self._available_energy_kWh = {}
         self._energy_production_forecast_kWh = {}
 
@@ -301,13 +313,16 @@ class ProductionState(ProsumptionInterface):
         self._energy_production_forecast_kWh.update(
             convert_str_to_pendulum_in_dict(state_dict["energy_production_forecast_kWh"]))
 
-    def set_available_energy(self, energy_kWh, time_slot, overwrite=False):
-        if overwrite is False and time_slot in self._energy_production_forecast_kWh:
+    def set_available_energy(self, energy_kWh, overwrite=False):
+        if overwrite is False:
             return
-        self._energy_production_forecast_kWh[time_slot] = energy_kWh
-        self._available_energy_kWh[time_slot] = energy_kWh
+        # un traded energy of future market to be added to be traded in spot market
+        self._energy_production_forecast_kWh[self.spot_market_time_slot] = (
+            energy_kWh + self._energy_production_forecast_kWh.get(self.spot_market_time_slot, 0.0))
+        self._available_energy_kWh[self.spot_market_time_slot] = (
+            energy_kWh + self._available_energy_kWh.get(self.spot_market_time_slot, 0.0))
 
-        assert self._energy_production_forecast_kWh[time_slot] >= 0.0
+        assert self._energy_production_forecast_kWh[self.spot_market_time_slot] >= 0.0
 
     def set_future_available_energy(self, energy_kWh, start_time: DateTime, duration: duration):
         """Distributes the available energy equally among time_slots in range of start_time till
@@ -371,8 +386,6 @@ class PVState(ProductionState):
 
 
 class LoadState(ConsumptionState):
-    def __init__(self):
-        super().__init__()
 
     @property
     def total_energy_demanded_Wh(self):
@@ -398,9 +411,6 @@ class LoadState(ConsumptionState):
 
 class SmartMeterState(ConsumptionState, ProductionState):
     """State for the Smart Meter device."""
-
-    def __init__(self):
-        super().__init__()
 
     @property
     def market_slots(self):
@@ -446,7 +456,7 @@ EnergyOrigin = namedtuple("EnergyOrigin", ("origin", "value"))
 
 
 class StorageState(StateInterface):
-    def __init__(self,
+    def __init__(self, area,
                  initial_soc=StorageSettings.MIN_ALLOWED_SOC,
                  initial_energy_origin=ESSEnergyOrigin.EXTERNAL,
                  capacity=StorageSettings.CAPACITY,
@@ -454,7 +464,7 @@ class StorageState(StateInterface):
                  loss_per_hour=0.01,
                  loss_function=1,
                  min_allowed_soc=StorageSettings.MIN_ALLOWED_SOC):
-
+        super().__init__(area)
         self.initial_soc = initial_soc
         self.initial_capacity_kWh = capacity * initial_soc / 100
 
