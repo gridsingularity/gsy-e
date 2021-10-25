@@ -49,11 +49,11 @@ class FakeBalancingMarket:
         self.area = FakeArea("fake_area")
         self.unmatched_energy_upward = 0
         self.unmatched_energy_downward = 0
-        self._timeslot = pendulum.now(tz=TIME_ZONE)
+        self._time_slot = pendulum.now(tz=TIME_ZONE)
 
     @property
     def time_slot(self):
-        return self._timeslot
+        return self._time_slot
 
     def accept_offer(self, offer_or_id, buyer, energy=None, time=None,
                      trade_rate: float = None):

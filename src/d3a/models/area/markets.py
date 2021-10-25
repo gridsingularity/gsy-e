@@ -22,7 +22,7 @@ from d3a_interface.constants_limits import ConstSettings, TIME_FORMAT
 from d3a_interface.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
-from d3a.d3a_core.util import is_timeslot_in_simulation_duration
+from d3a.d3a_core.util import is_time_slot_in_simulation_duration
 from d3a.models.area.market_rotators import (BaseRotator, DefaultMarketRotator,
                                              SettlementMarketRotator, FutureMarketRotator)
 from d3a.models.market import GridFee, Market
@@ -158,12 +158,12 @@ class AreaMarkets:
         market = market_class(
             time_slot=time_slot,
             bc=area.bc,
-            notification_listener=area.dispatcher.broadcast_callback,
+            notification_listener=area.dispatcher.broadcast_notification,
             grid_fee_type=area.config.grid_fee_type,
             grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
                               grid_fee_const=area.grid_fee_constant),
             name=area.name,
-            in_sim_duration=is_timeslot_in_simulation_duration(area.config, time_slot)
+            in_sim_duration=is_time_slot_in_simulation_duration(area.config, time_slot)
         )
 
         area.dispatcher.create_area_agents(market_type, market)

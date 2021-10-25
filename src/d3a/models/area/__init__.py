@@ -331,6 +331,7 @@ class Area:
         self.events.update_events(now_value)
 
         if not self.children:
+            self.stats.calculate_energy_deviances()
             # Since children trade in markets we only need to populate them if there are any
             return
 
@@ -344,7 +345,7 @@ class Area:
         if self.future_markets:
             self.future_markets.create_future_markets(now_value, self.config.slot_length)
 
-        self.dispatcher._delete_past_agents(self.dispatcher._inter_area_agents)
+        self.dispatcher.event_market_cycle()
 
         # area_market_stats have to updated when cycling market of each area:
         self.stats.update_area_market_stats()
@@ -381,6 +382,7 @@ class Area:
         if (changed_balancing_market or len(self._markets.past_balancing_markets.keys()) == 0) \
                 and _trigger_event and ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.dispatcher.broadcast_balancing_market_cycle()
+        self.stats.calculate_energy_deviances()
 
     def publish_market_cycle_to_external_clients(self):
         if self.strategy and isinstance(self.strategy, ExternalMixin):
@@ -512,14 +514,14 @@ class Area:
     def past_markets(self) -> List:
         return list(self._markets.past_markets.values())
 
-    def get_market(self, timeslot):
-        return self._markets.markets.get(timeslot)
+    def get_market(self, time_slot):
+        return self._markets.markets.get(time_slot)
 
-    def get_past_market(self, timeslot):
-        return self._markets.past_markets[timeslot]
+    def get_past_market(self, time_slot):
+        return self._markets.past_markets[time_slot]
 
-    def get_balancing_market(self, timeslot):
-        return self._markets.balancing_markets[timeslot]
+    def get_balancing_market(self, time_slot):
+        return self._markets.balancing_markets[time_slot]
 
     @property
     def balancing_markets(self) -> List:
@@ -587,8 +589,19 @@ class Area:
     def past_settlement_markets(self) -> Dict:
         return self._markets.past_settlement_markets
 
-    def get_settlement_market(self, timeslot):
-        return self._markets.settlement_markets.get(timeslot)
+    def get_settlement_market(self, time_slot):
+        return self._markets.settlement_markets.get(time_slot)
+
+    def get_market_instances_from_class_type(self, market_type: AvailableMarketTypes) -> Dict:
+        """
+        Return market dicts for the selected market type
+        Args:
+            market_type: Selected market type (spot/balancing/settlement/future)
+
+        Returns: Dicts with market objects for the selected market type
+
+        """
+        return self._markets.get_market_instances_from_class_type(market_type)
 
     @cached_property
     def available_triggers(self):

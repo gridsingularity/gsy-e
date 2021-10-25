@@ -69,9 +69,6 @@ class Market:
         self.bc_interface = bc
         self.id = str(uuid.uuid4())
         self.time_slot = time_slot
-        self.time_slot_str = time_slot.format(DATE_TIME_FORMAT) \
-            if self.time_slot is not None \
-            else None
         self.readonly = readonly
         # offer-id -> Offer
         self.offers = {}  # type: Dict[str, Offer]
@@ -107,6 +104,11 @@ class Market:
                 if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
                 else TwoSidedMarketRedisEventSubscriber(self))
         setattr(self, RLOCK_MEMBER_NAME, RLock())
+
+    @property
+    def time_slot_str(self):
+        """A string representation of the market slot."""
+        return self.time_slot.format(DATE_TIME_FORMAT) if self.time_slot else None
 
     def _create_fee_handler(self, grid_fee_type, grid_fees):
         if not grid_fees:

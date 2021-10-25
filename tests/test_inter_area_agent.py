@@ -90,8 +90,8 @@ class FakeMarket:
     def get_bids(self):
         return self.bids
 
-    def set_time_slot(self, timeslot):
-        self.time_slot = timeslot
+    def set_time_slot(self, time_slot):
+        self.time_slot = time_slot
 
     def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
                      trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
