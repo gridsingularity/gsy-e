@@ -63,7 +63,7 @@ class AreaMarkets:
     def activate_future_markets(self, area: "Area") -> None:
         self.future_markets = FutureMarkets(
             bc=area.bc,
-            notification_listener=area.dispatcher.broadcast_callback,
+            notification_listener=area.dispatcher.broadcast_notification,
             grid_fee_type=area.config.grid_fee_type,
             grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
                               grid_fee_const=area.grid_fee_constant),

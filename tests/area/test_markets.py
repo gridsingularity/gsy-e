@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from unittest.mock import Mock, patch
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings, TIME_ZONE
+from d3a_interface.constants_limits import ConstSettings, TIME_ZONE, GlobalConfig
 from pendulum import duration, today
 
 import d3a
@@ -81,15 +81,17 @@ class TestMarketRotation:
         ticks_per_slot = area_fixture.config.slot_length / area_fixture.config.tick_length
         area_fixture.current_tick = ticks_per_slot
         area_fixture.cycle_markets()
+        expected_number_of_future_markets = (
+                GlobalConfig.future_market_duration / area_fixture.config.slot_length + 1)
         assert len(area_fixture.past_markets) == 1
         assert len(area_fixture.all_markets) == 1
-        assert len(area_fixture.future_market_time_slots) == 5
+        assert len(area_fixture.future_market_time_slots) == expected_number_of_future_markets
 
         area_fixture.current_tick = ticks_per_slot * 2
         area_fixture.cycle_markets()
         assert len(area_fixture.past_markets) == 2
         assert len(area_fixture.all_markets) == 1
-        assert len(area_fixture.future_market_time_slots) == 5
+        assert len(area_fixture.future_market_time_slots) == expected_number_of_future_markets
 
     @patch("d3a_interface.constants_limits.ConstSettings.BalancingSettings."
            "ENABLE_BALANCING_MARKET", True)
