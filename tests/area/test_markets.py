@@ -83,13 +83,13 @@ class TestMarketRotation:
         area_fixture.cycle_markets()
         assert len(area_fixture.past_markets) == 1
         assert len(area_fixture.all_markets) == 1
-        assert len(area_fixture.future_market_slots) == 5
+        assert len(area_fixture.future_market_time_slots) == 5
 
         area_fixture.current_tick = ticks_per_slot * 2
         area_fixture.cycle_markets()
         assert len(area_fixture.past_markets) == 2
         assert len(area_fixture.all_markets) == 1
-        assert len(area_fixture.future_market_slots) == 5
+        assert len(area_fixture.future_market_time_slots) == 5
 
     @patch("d3a_interface.constants_limits.ConstSettings.BalancingSettings."
            "ENABLE_BALANCING_MARKET", True)

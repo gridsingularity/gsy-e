@@ -83,7 +83,7 @@ class MycoInternalMatcher(MycoMatcherInterface):
         """Loop over all future markets and match bids and offers."""
         for area_data in self.area_uuid_markets_mapping.values():
             future_markets = area_data["future_markets"]
-            for time_slot in future_markets.future_market_slots:
+            for time_slot in future_markets.future_market_time_slots:
                 while True:
                     bids = future_markets.slot_bid_mapping[time_slot]
                     offers = future_markets.slot_offer_mapping[time_slot]

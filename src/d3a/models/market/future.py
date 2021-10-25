@@ -65,23 +65,26 @@ class FutureMarkets(TwoSidedMarket):
         return "[FUTURE]"
 
     @property
-    def future_market_slots(self) -> List[DateTime]:
+    def future_market_time_slots(self) -> List[DateTime]:
         """Return list of all time_stamps of future markets."""
         return list(self.slot_bid_mapping.keys())
 
-    def delete_old_future_markets(self, current_time: DateTime) -> None:
+    def delete_old_future_markets(self, current_market_time_slot: DateTime) -> None:
         """Delete order adn trade buffers."""
-        self._delete_order_buffer_market_slot(current_time, self.slot_bid_mapping, Bid)
-        self._delete_order_buffer_market_slot(current_time, self.slot_offer_mapping, Offer)
-        self._delete_order_buffer_market_slot(current_time, self.slot_trade_mapping, Trade)
+        self._delete_order_buffer_market_slot(current_market_time_slot,
+                                              self.slot_bid_mapping, Bid)
+        self._delete_order_buffer_market_slot(current_market_time_slot,
+                                              self.slot_offer_mapping, Offer)
+        self._delete_order_buffer_market_slot(current_market_time_slot,
+                                              self.slot_trade_mapping, Trade)
 
-    def _delete_order_buffer_market_slot(self, current_market_slot: DateTime,
+    def _delete_order_buffer_market_slot(self, current_market_time_slot: DateTime,
                                          order_buffer: Dict[DateTime, List],
                                          order_type: Union[BaseBidOffer, Trade]) -> None:
         """Empty buffers of order and trades for non-future time_stamps."""
         delete_time_slots = []
         for time_slot, orders in order_buffer.items():
-            if time_slot <= current_market_slot:
+            if time_slot <= current_market_time_slot:
                 self._delete_orders_from_list(orders, order_type)
                 delete_time_slots.append(time_slot)
         for time_slot in delete_time_slots:
