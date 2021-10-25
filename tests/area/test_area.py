@@ -208,7 +208,7 @@ class TestEventDispatcher(unittest.TestCase):
         return area
 
     @parameterized.expand([(MarketEvent.OFFER, ),
-                           (MarketEvent.TRADE, ),
+                           (MarketEvent.OFFER_TRADED,),
                            (MarketEvent.OFFER_SPLIT, ),
                            (MarketEvent.BID_TRADED, ),
                            (MarketEvent.BID_DELETED, ),
@@ -223,7 +223,7 @@ class TestEventDispatcher(unittest.TestCase):
         assert area.strategy.event_listener.call_count == 1
 
     @parameterized.expand([(MarketEvent.OFFER, ),
-                           (MarketEvent.TRADE, ),
+                           (MarketEvent.OFFER_TRADED,),
                            (MarketEvent.OFFER_SPLIT, ),
                            (MarketEvent.BID_TRADED, ),
                            (MarketEvent.BID_DELETED, ),
@@ -236,7 +236,7 @@ class TestEventDispatcher(unittest.TestCase):
         assert area.strategy.event_listener.call_count == 0
 
     @parameterized.expand([(MarketEvent.OFFER, ),
-                           (MarketEvent.TRADE, ),
+                           (MarketEvent.OFFER_TRADED,),
                            (MarketEvent.OFFER_SPLIT, ),
                            (MarketEvent.BID_TRADED, ),
                            (MarketEvent.BID_DELETED, ),

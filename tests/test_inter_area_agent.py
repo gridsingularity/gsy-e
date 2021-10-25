@@ -90,8 +90,8 @@ class FakeMarket:
     def get_bids(self):
         return self.bids
 
-    def set_time_slot(self, timeslot):
-        self.time_slot = timeslot
+    def set_time_slot(self, time_slot):
+        self.time_slot = time_slot
 
     def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
                      trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
@@ -569,22 +569,22 @@ class TestIAAOffer:
 
     def test_iaa_event_trade_deletes_forwarded_offer_when_sold(self, iaa, called):
         iaa.lower_market.delete_offer = called
-        iaa.event_trade(trade=Trade('trade_id',
-                                    pendulum.now(tz=TIME_ZONE),
-                                    iaa.higher_market.offers['id3'],
-                                    'owner',
-                                    'someone_else'),
-                        market_id=iaa.higher_market.id)
+        iaa.event_offer_traded(trade=Trade('trade_id',
+                                           pendulum.now(tz=TIME_ZONE),
+                                           iaa.higher_market.offers['id3'],
+                                           'owner',
+                                           'someone_else'),
+                               market_id=iaa.higher_market.id)
         assert len(iaa.lower_market.delete_offer.calls) == 1
 
     def test_iaa_event_trade_buys_accepted_offer(self, iaa2):
-        iaa2.event_trade(trade=Trade('trade_id',
-                                     pendulum.now(tz=TIME_ZONE),
-                                     iaa2.higher_market.forwarded_offer,
-                                     'owner',
-                                     'someone_else',
-                                     fee_price=0.0),
-                         market_id=iaa2.higher_market.id)
+        iaa2.event_offer_traded(trade=Trade('trade_id',
+                                            pendulum.now(tz=TIME_ZONE),
+                                            iaa2.higher_market.forwarded_offer,
+                                            'owner',
+                                            'someone_else',
+                                            fee_price=0.0),
+                                market_id=iaa2.higher_market.id)
         assert len(iaa2.lower_market.calls_energy) == 1
 
     def test_iaa_event_trade_buys_partial_accepted_offer(self, iaa2):
@@ -592,14 +592,14 @@ class TestIAAOffer:
         accepted_offer = Offer(
             total_offer.id, total_offer.time, total_offer.price, 1, total_offer.seller
         )
-        iaa2.event_trade(trade=Trade('trade_id',
-                                     pendulum.now(tz=TIME_ZONE),
-                                     accepted_offer,
-                                     'owner',
-                                     'someone_else',
-                                     'residual_offer',
-                                     fee_price=0.0),
-                         market_id=iaa2.higher_market.id)
+        iaa2.event_offer_traded(trade=Trade('trade_id',
+                                            pendulum.now(tz=TIME_ZONE),
+                                            accepted_offer,
+                                            'owner',
+                                            'someone_else',
+                                            'residual_offer',
+                                            fee_price=0.0),
+                                market_id=iaa2.higher_market.id)
         assert iaa2.lower_market.calls_energy[0] == 1
 
     def test_iaa_event_offer_split_and_trade_correctly_populate_forwarded_offer_entries(
@@ -627,14 +627,14 @@ class TestIAAOffer:
         # and the residual offer was added
         assert engine.forwarded_offers[residual_offer_id].target_offer.energy == accepted.energy
 
-        iaa2.event_trade(trade=Trade('trade_id',
-                                     pendulum.now(tz=TIME_ZONE),
-                                     accepted,
-                                     'owner',
-                                     'someone_else',
-                                     residual,
-                                     fee_price=0.0),
-                         market_id=iaa2.lower_market.id)
+        iaa2.event_offer_traded(trade=Trade('trade_id',
+                                            pendulum.now(tz=TIME_ZONE),
+                                            accepted,
+                                            'owner',
+                                            'someone_else',
+                                            residual,
+                                            fee_price=0.0),
+                                market_id=iaa2.lower_market.id)
 
         # after the trade event:
         # the forwarded_offers only contain the residual offer

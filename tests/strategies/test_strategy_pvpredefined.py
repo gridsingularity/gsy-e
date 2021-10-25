@@ -325,7 +325,7 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
         pv_test6.state._energy_production_forecast_kWh[TIME]
     fake_trade = FakeTrade(market_test3.created_offers[0])
     fake_trade.seller = pv_test6.owner.name
-    pv_test6.event_trade(market_id=market_test3.id, trade=fake_trade)
+    pv_test6.event_offer_traded(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []
     pv_test6.event_tick()
     assert not market_test3.created_offers
@@ -379,12 +379,12 @@ def test_correct_time_expansion_read_arbitrary_profile():
     market_maker_rate = 30
     if GlobalConfig.IS_CANARY_NETWORK:
         GlobalConfig.sim_duration = duration(hours=3)
-        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS-1,
+        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS - 1,
                                                           hours=23, minutes=45)
         mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
         assert list(mmr.keys())[-1] == expected_last_time_slot
         GlobalConfig.sim_duration = duration(hours=30)
-        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS-1,
+        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS - 1,
                                                           hours=23, minutes=45)
         mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
         assert list(mmr.keys())[-1] == expected_last_time_slot

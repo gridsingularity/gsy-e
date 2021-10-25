@@ -297,9 +297,9 @@ class PVStrategy(BidEnabledStrategy):
             except MarketException:
                 pass
 
-    def event_trade(self, *, market_id, trade):
-        super().event_trade(market_id=market_id, trade=trade)
-        self._settlement_market_strategy.event_trade(self, market_id, trade)
+    def event_offer_traded(self, *, market_id, trade):
+        super().event_offer_traded(market_id=market_id, trade=trade)
+        self._settlement_market_strategy.event_offer_traded(self, market_id, trade)
         market = self.area.get_future_market_from_id(market_id)
         if market is None:
             return
