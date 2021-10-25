@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from copy import deepcopy
 from logging import getLogger
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Union, Optional, Tuple
 
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.data_classes import Bid, Offer, Trade, BaseBidOffer, TradeBidOfferInfo
@@ -65,12 +65,19 @@ class FutureMarkets(TwoSidedMarket):
         return "[FUTURE]"
 
     @property
-    def future_market_time_slots(self) -> List[DateTime]:
-        """Return list of all time_stamps of future markets."""
+    def market_time_slots(self) -> List[DateTime]:
+        """Return list of all time slots of future markets."""
         return list(self.slot_bid_mapping.keys())
 
+    def open_bids_and_offers(self, **kwargs) -> Tuple[List, List]:
+        if "time_slot" not in kwargs or kwargs["time_slot"] is None:
+            return [], []
+
+        return (self.slot_bid_mapping[kwargs["time_slot"]],
+                self.slot_offer_mapping[kwargs["time_slot"]])
+
     def delete_old_future_markets(self, current_market_time_slot: DateTime) -> None:
-        """Delete order adn trade buffers."""
+        """Delete order and trade buffers."""
         self._delete_order_buffer_market_slot(current_market_time_slot,
                                               self.slot_bid_mapping, Bid)
         self._delete_order_buffer_market_slot(current_market_time_slot,

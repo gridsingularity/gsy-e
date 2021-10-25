@@ -566,7 +566,7 @@ class Area:
 
     @property
     def future_market_time_slots(self) -> List[DateTime]:
-        return self._markets.future_markets.future_market_time_slots
+        return self._markets.future_markets.market_time_slots
 
     @property
     def future_markets(self) -> FutureMarkets:
