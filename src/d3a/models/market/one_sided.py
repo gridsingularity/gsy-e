@@ -18,15 +18,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from copy import deepcopy
 from logging import getLogger
 from math import isclose
-from typing import Union, Dict, List  # noqa
+from typing import Union, Dict, List, Optional
 
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Offer, Trade
+from d3a_interface.data_classes import Offer, Trade, TradeBidOfferInfo
 from d3a_interface.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
-from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
-    OfferNotFoundException, InvalidTrade, MarketException
+from d3a.d3a_core.exceptions import (InvalidOffer, MarketReadOnlyException, OfferNotFoundException,
+                                     InvalidTrade, MarketException)
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market import Market, lock_market_action
@@ -98,11 +98,17 @@ class OneSidedMarket(Market):
         return deepcopy(self.offers)
 
     @lock_market_action
-    def offer(self, price: float, energy: float, seller: str, seller_origin,
-              offer_id=None, original_price=None, dispatch_event=True,
-              adapt_price_with_fees=True, add_to_history=True, seller_origin_id=None,
-              seller_id=None, attributes: Dict = None, requirements: List[Dict] = None,
-              time_slot: DateTime = None) -> Offer:
+    def offer(self, price: float, energy: float, seller: str, seller_origin: str,
+              offer_id: Optional[str] = None,
+              original_price: Optional[float] = None,
+              dispatch_event: bool = True,
+              adapt_price_with_fees: bool = True,
+              add_to_history: bool = True,
+              seller_origin_id: Optional[str] = None,
+              seller_id: Optional[str] = None,
+              attributes: Optional[Dict] = None,
+              requirements: Optional[List[Dict]] = None,
+              time_slot: Optional[DateTime] = None) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
@@ -241,11 +247,15 @@ class OneSidedMarket(Market):
             return grid_fee_price, energy * trade_rate_incl_fees
 
     @lock_market_action
-    def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: float = None,
-                     time: DateTime = None,
-                     already_tracked: bool = False, trade_rate: float = None,
-                     trade_bid_info=None, buyer_origin=None, buyer_origin_id=None,
-                     buyer_id=None) -> Trade:
+    def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *,
+                     energy: Optional[float] = None,
+                     time: Optional[DateTime] = None,
+                     already_tracked: bool = False,
+                     trade_rate: Optional[float] = None,
+                     trade_bid_info: Optional[TradeBidOfferInfo] = None,
+                     buyer_origin: Optional[str] = None,
+                     buyer_origin_id: Optional[str] = None,
+                     buyer_id: Optional[str] = None) -> Trade:
         if self.readonly:
             raise MarketReadOnlyException()
 

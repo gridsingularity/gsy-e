@@ -20,7 +20,7 @@ import uuid
 from copy import deepcopy
 from logging import getLogger
 from math import isclose
-from typing import Dict, List, Union, Tuple  # noqa
+from typing import Dict, List, Union, Tuple, Optional
 
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import (BidNotFoundException, InvalidBid,
@@ -90,10 +90,15 @@ class TwoSidedMarket(OneSidedMarket):
 
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, buyer_origin: str,
-            bid_id: str = None, original_price=None, adapt_price_with_fees=True,
-            add_to_history=True, buyer_origin_id=None, buyer_id=None,
-            attributes: Dict = None, requirements: List[Dict] = None,
-            time_slot: DateTime = None) -> Bid:
+            bid_id: Optional[str] = None,
+            original_price: Optional[float] = None,
+            adapt_price_with_fees: bool = True,
+            add_to_history: bool = True,
+            buyer_origin_id: Optional[str] = None,
+            buyer_id: Optional[str] = None,
+            attributes: Optional[Dict] = None,
+            requirements: Optional[List[Dict]] = None,
+            time_slot: Optional[DateTime] = None) -> Bid:
         if energy <= 0:
             raise InvalidBid()
 
@@ -188,10 +193,16 @@ class TwoSidedMarket(OneSidedMarket):
         return grid_fee_rate * energy, energy * final_trade_rate
 
     @lock_market_action
-    def accept_bid(self, bid: Bid, energy: float = None,
-                   seller: str = None, buyer: str = None, already_tracked: bool = False,
-                   trade_rate: float = None, trade_offer_info=None, seller_origin=None,
-                   seller_origin_id=None, seller_id=None) -> Trade:
+    def accept_bid(self, bid: Bid,
+                   energy: Optional[float] = None,
+                   seller: Optional[str] = None,
+                   buyer: Optional[str] = None,
+                   already_tracked: bool = False,
+                   trade_rate: Optional[float] = None,
+                   trade_offer_info: Optional[TradeBidOfferInfo] = None,
+                   seller_origin: Optional[str] = None,
+                   seller_origin_id: Optional[str] = None,
+                   seller_id: Optional[str] = None) -> Trade:
         market_bid = self.bids.pop(bid.id, None)
         if market_bid is None:
             raise BidNotFoundException("During accept bid: " + str(bid))

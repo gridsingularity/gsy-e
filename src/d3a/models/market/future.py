@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from copy import deepcopy
 from logging import getLogger
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional
 
 from d3a.d3a_core.exceptions import (BidNotFoundException, MarketReadOnlyException,
                                      OfferNotFoundException)
@@ -26,7 +26,7 @@ from d3a.events.event_structures import MarketEvent
 from d3a.models.market import lock_market_action
 from d3a.models.market.two_sided import TwoSidedMarket
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.data_classes import Bid, Offer, Trade, BaseBidOffer
+from d3a_interface.data_classes import Bid, Offer, Trade, BaseBidOffer, TradeBidOfferInfo
 from pendulum import DateTime, duration
 
 log = getLogger(__name__)
@@ -119,10 +119,15 @@ class FutureMarkets(TwoSidedMarket):
 
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, buyer_origin: str,
-            bid_id: str = None, original_price=None, adapt_price_with_fees=True,
-            add_to_history=True, buyer_origin_id=None, buyer_id=None,
-            attributes: Dict = None, requirements: List[Dict] = None,
-            time_slot: DateTime = None) -> Bid:
+            bid_id: Optional[str] = None,
+            original_price: Optional[float] = None,
+            adapt_price_with_fees: bool = True,
+            add_to_history: bool = True,
+            buyer_origin_id: Optional[str] = None,
+            buyer_id: Optional[str] = None,
+            attributes: Optional[Dict] = None,
+            requirements: Optional[List[Dict]] = None,
+            time_slot: Optional[DateTime] = None) -> Bid:
         """Call superclass bid and buffer returned bid object."""
         if not time_slot:
             raise FutureMarketException("time_slot parameter was not provided for bid "
@@ -137,10 +142,16 @@ class FutureMarkets(TwoSidedMarket):
 
     @lock_market_action
     def offer(self, price: float, energy: float, seller: str, seller_origin: str,
-              offer_id=None, original_price=None, dispatch_event=True,
-              adapt_price_with_fees=True, add_to_history=True, seller_origin_id=None,
-              seller_id=None, attributes: Dict = None, requirements: List[Dict] = None,
-              time_slot: DateTime = None) -> Offer:
+              offer_id: Optional[str] = None,
+              original_price: Optional[float] = None,
+              dispatch_event: bool = True,
+              adapt_price_with_fees: bool = True,
+              add_to_history: bool = True,
+              seller_origin_id: Optional[str] = None,
+              seller_id: Optional[str] = None,
+              attributes: Optional[Dict] = None,
+              requirements: Optional[List[Dict]] = None,
+              time_slot: Optional[DateTime] = None) -> Offer:
         """Call superclass offer and buffer returned offer object."""
         if not time_slot:
             raise FutureMarketException("time_slot parameter was not provided for offer "
@@ -188,10 +199,16 @@ class FutureMarkets(TwoSidedMarket):
 
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
-    def accept_bid(self, bid: Bid, energy: float = None,
-                   seller: str = None, buyer: str = None, already_tracked: bool = False,
-                   trade_rate: float = None, trade_offer_info=None, seller_origin=None,
-                   seller_origin_id=None, seller_id=None) -> Trade:
+    def accept_bid(self, bid: Bid,
+                   energy: Optional[float] = None,
+                   seller: Optional[str] = None,
+                   buyer: Optional[str] = None,
+                   already_tracked: bool = False,
+                   trade_rate: Optional[float] = None,
+                   trade_offer_info: Optional[TradeBidOfferInfo] = None,
+                   seller_origin: Optional[str] = None,
+                   seller_origin_id: Optional[str] = None,
+                   seller_id: Optional[str] = None) -> Trade:
         """Call superclass accept_bid and buffer returned trade object."""
         trade = super().accept_bid(bid=bid, energy=energy, seller=seller, buyer=buyer,
                                    already_tracked=already_tracked, trade_rate=trade_rate,
@@ -201,11 +218,15 @@ class FutureMarkets(TwoSidedMarket):
             self.slot_trade_mapping[trade.time_slot].append(trade)
         return trade
 
-    def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
-                     time: DateTime = None,
-                     already_tracked: bool = False, trade_rate: float = None,
-                     trade_bid_info=None, buyer_origin=None, buyer_origin_id=None,
-                     buyer_id=None) -> Trade:
+    def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *,
+                     energy: Optional[float] = None,
+                     time: Optional[DateTime] = None,
+                     already_tracked: bool = False,
+                     trade_rate: Optional[float] = None,
+                     trade_bid_info: Optional[TradeBidOfferInfo] = None,
+                     buyer_origin: Optional[str] = None,
+                     buyer_origin_id: Optional[str] = None,
+                     buyer_id: Optional[str] = None) -> Trade:
         """Call superclass accept_offer and buffer returned trade object."""
         trade = super().accept_offer(offer_or_id=offer_or_id,
                                      buyer=buyer, energy=energy, time=time,
