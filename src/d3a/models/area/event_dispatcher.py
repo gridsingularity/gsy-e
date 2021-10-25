@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
-from typing import Union, Dict, TYPE_CHECKING, Callable  # noqa
+from typing import Union, Dict, TYPE_CHECKING  # noqa
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.enums import SpotMarketTypeEnum
@@ -81,37 +81,28 @@ class AreaDispatcher:
         Send activate event to the event listener of the area, and the event listeners of the
         child areas.
         """
-        self._broadcast_notification(AreaEvent.ACTIVATE, **kwargs)
+        self.broadcast_notification(AreaEvent.ACTIVATE, **kwargs)
 
     def broadcast_tick(self, **kwargs) -> None:
         """
         Send tick event to the event listener of the area, and the event listeners of the
         child areas.
         """
-        self._broadcast_notification(AreaEvent.TICK, **kwargs)
+        self.broadcast_notification(AreaEvent.TICK, **kwargs)
 
     def broadcast_market_cycle(self, **kwargs) -> None:
         """
         Send market cycle event to the event listener of the area, and the event listeners of the
         child areas.
         """
-        self._broadcast_notification(AreaEvent.MARKET_CYCLE, **kwargs)
+        self.broadcast_notification(AreaEvent.MARKET_CYCLE, **kwargs)
 
     def broadcast_balancing_market_cycle(self, **kwargs) -> None:
         """
         Send balancing market cycle event to the event listener of the area, and the event
         listeners of the child areas.
         """
-        self._broadcast_notification(AreaEvent.BALANCING_MARKET_CYCLE, **kwargs)
-
-    @property
-    def broadcast_callback(self) -> Callable:
-        """
-        Return the callback that broadcasts all market and area events to the event listeners
-        Returns: Callback function that will trigger the event broadcast
-
-        """
-        return self._broadcast_notification
+        self.broadcast_notification(AreaEvent.BALANCING_MARKET_CYCLE, **kwargs)
 
     def _broadcast_notification_to_single_agent(
             self, agent_area: "Area", market_type: AvailableMarketTypes,
@@ -140,8 +131,20 @@ class AreaDispatcher:
         self._broadcast_notification_to_single_agent(
             self.area, market_type, event_type, **kwargs)
 
-    def _broadcast_notification(
+    def broadcast_notification(
             self, event_type: Union[MarketEvent, AreaEvent], **kwargs) -> None:
+        """
+        Broadcast all market and area events to the event_listener methods of the
+        child dispatcher classes first (in order to propagate the event to the children of the
+        area) and then to the Inter Area Agents of the children and this dispatcher's area.
+
+        Args:
+            event_type: Type of the event that will be broadcasted
+            **kwargs: Arguments associated with the event
+
+        Returns: None
+
+        """
         if (not self.area.events.is_enabled and
                 event_type not in [AreaEvent.ACTIVATE, AreaEvent.MARKET_CYCLE]):
             return
@@ -314,22 +317,31 @@ class RedisAreaDispatcher(AreaDispatcher):
 
     def broadcast_activate(self, **kwargs) -> None:
         """Broadcast activate event through Redis"""
-        self._broadcast_notification(AreaEvent.ACTIVATE, **kwargs)
+        self.broadcast_notification(AreaEvent.ACTIVATE, **kwargs)
 
     def broadcast_tick(self, **kwargs) -> None:
         """Broadcast tick event through Redis"""
-        self._broadcast_notification(AreaEvent.TICK, **kwargs)
+        self.broadcast_notification(AreaEvent.TICK, **kwargs)
 
     def broadcast_market_cycle(self, **kwargs) -> None:
         """Broadcast market cycle event through Redis"""
         self.market_notify_event_dispatcher.cycle_market_channels()
-        self._broadcast_notification(AreaEvent.MARKET_CYCLE, **kwargs)
+        self.broadcast_notification(AreaEvent.MARKET_CYCLE, **kwargs)
 
     def broadcast_balancing_market_cycle(self, **kwargs) -> None:
         """Broadcast balancing market cycle event through Redis"""
-        self._broadcast_notification(AreaEvent.BALANCING_MARKET_CYCLE, **kwargs)
+        self.broadcast_notification(AreaEvent.BALANCING_MARKET_CYCLE, **kwargs)
 
-    def _broadcast_notification(self, event_type: Union[AreaEvent, MarketEvent], **kwargs) -> None:
+    def broadcast_notification(self, event_type: Union[AreaEvent, MarketEvent], **kwargs) -> None:
+        """
+        Broadcast notification of the event via Redis
+        Args:
+            event_type: Type of the event that will be broadcasted
+            **kwargs: Arguments associated with the event
+
+        Returns: None
+
+        """
         if isinstance(event_type, AreaEvent):
             self.area_event_dispatcher.broadcast_event_redis(event_type, **kwargs)
         elif isinstance(event_type, MarketEvent):
