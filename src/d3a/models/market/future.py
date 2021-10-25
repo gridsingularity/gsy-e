@@ -20,14 +20,18 @@ from copy import deepcopy
 from logging import getLogger
 from typing import Dict, List, Union, Optional
 
-from d3a.d3a_core.exceptions import (BidNotFoundException, MarketReadOnlyException,
-                                     OfferNotFoundException)
-from d3a.events.event_structures import MarketEvent
-from d3a.models.market import lock_market_action
-from d3a.models.market.two_sided import TwoSidedMarket
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.data_classes import Bid, Offer, Trade, BaseBidOffer, TradeBidOfferInfo
 from pendulum import DateTime, duration
+
+from d3a.d3a_core.blockchain_interface import NonBlockchainInterface
+from d3a.d3a_core.exceptions import (BidNotFoundException, MarketReadOnlyException,
+                                     OfferNotFoundException)
+from d3a.events.event_structures import MarketEvent
+from d3a.models.area.event_dispatcher import AreaDispatcher
+from d3a.models.market import GridFee
+from d3a.models.market import lock_market_action
+from d3a.models.market.two_sided import TwoSidedMarket
 
 log = getLogger(__name__)
 
@@ -39,16 +43,19 @@ class FutureMarketException(Exception):
 class FutureMarkets(TwoSidedMarket):
     """Class responsible for future markets."""
 
-    def __init__(self, bc=None, notification_listener=None, readonly=False,
-                 grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
-                 grid_fees=None, name=None):
+    def __init__(self, bc: Optional[NonBlockchainInterface] = None,
+                 notification_listener: Optional[AreaDispatcher] = None,
+                 readonly: bool = False,
+                 grid_fee_type: int = ConstSettings.IAASettings.GRID_FEE_TYPE,
+                 grid_fees: Optional[GridFee] = None,
+                 name: Optional[str] = None) -> None:
         super().__init__(time_slot=None, bc=bc, notification_listener=notification_listener,
                          readonly=readonly, grid_fee_type=grid_fee_type,
                          grid_fees=grid_fees, name=name, in_sim_duration=True)
 
-        self.slot_bid_mapping = {}  # type: Dict[DateTime, List[Bid]]
-        self.slot_offer_mapping = {}  # type: Dict[DateTime, List[Offer]]
-        self.slot_trade_mapping = {}  # type: Dict[DateTime, List[Trade]]
+        self.slot_bid_mapping: Dict[DateTime, List[Bid]] = {}
+        self.slot_offer_mapping: Dict[DateTime, List[Offer]] = {}
+        self.slot_trade_mapping: Dict[DateTime, List[Trade]] = {}
 
     def __repr__(self):  # pragma: no cover
         return f"<{self._class_name}"

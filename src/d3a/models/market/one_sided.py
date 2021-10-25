@@ -175,8 +175,7 @@ class OneSidedMarket(Market):
             else offer.price
 
     def split_offer(self, original_offer, energy, orig_offer_price):
-
-        time_slot = original_offer.time_slot
+        """Split offer into two, one with provided energy, the other with the residual."""
         self.offers.pop(original_offer.id, None)
 
         # same offer id is used for the new accepted_offer
@@ -194,7 +193,7 @@ class OneSidedMarket(Market):
                                     add_to_history=False,
                                     attributes=original_offer.attributes,
                                     requirements=original_offer.requirements,
-                                    time_slot=time_slot)
+                                    time_slot=original_offer.time_slot)
 
         residual_price = (1 - energy / original_offer.energy) * original_offer.price
         residual_energy = original_offer.energy - energy
@@ -214,7 +213,7 @@ class OneSidedMarket(Market):
                                     add_to_history=True,
                                     attributes=original_offer.attributes,
                                     requirements=original_offer.requirements,
-                                    time_slot=time_slot)
+                                    time_slot=original_offer.time_slot)
 
         log.debug(f"{self._debug_log_market_type_identifier}[OFFER][SPLIT]"
                   f"[{self.time_slot_str}, {self.name}] "

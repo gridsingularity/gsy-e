@@ -22,6 +22,11 @@ from logging import getLogger
 from math import isclose
 from typing import Dict, List, Union, Tuple, Optional
 
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.data_classes import Bid, Offer, Trade, TradeBidOfferInfo, BidOfferMatch
+from d3a_interface.matching_algorithms.requirements_validators import RequirementsSatisfiedChecker
+from pendulum import DateTime
+
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import (BidNotFoundException, InvalidBid,
                                      InvalidBidOfferPairException, InvalidTrade, MarketException)
@@ -29,10 +34,6 @@ from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market import lock_market_action
 from d3a.models.market.one_sided import OneSidedMarket
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Bid, Offer, Trade, TradeBidOfferInfo, BidOfferMatch
-from d3a_interface.matching_algorithms.requirements_validators import RequirementsSatisfiedChecker
-from pendulum import DateTime
 
 log = getLogger(__name__)
 
@@ -136,7 +137,7 @@ class TwoSidedMarket(OneSidedMarket):
 
     def split_bid(self, original_bid: Bid, energy: float, orig_bid_price: float):
         """Split bit into two, one with provided energy, the other with the residual."""
-        time_slot = original_bid.time_slot
+
         self.bids.pop(original_bid.id, None)
 
         # same bid id is used for the new accepted_bid
@@ -153,7 +154,7 @@ class TwoSidedMarket(OneSidedMarket):
                                 add_to_history=False,
                                 attributes=original_bid.attributes,
                                 requirements=original_bid.requirements,
-                                time_slot=time_slot)
+                                time_slot=original_bid.time_slot)
 
         residual_price = (1 - energy / original_bid.energy) * original_bid.price
         residual_energy = original_bid.energy - energy
@@ -172,7 +173,7 @@ class TwoSidedMarket(OneSidedMarket):
                                 add_to_history=True,
                                 attributes=original_bid.attributes,
                                 requirements=original_bid.requirements,
-                                time_slot=time_slot)
+                                time_slot=original_bid.time_slot)
 
         log.debug(f"{self._debug_log_market_type_identifier}[BID][SPLIT]"
                   f"[{self.time_slot_str}, {self.name}] "
