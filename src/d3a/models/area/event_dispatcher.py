@@ -137,7 +137,14 @@ class AreaDispatcher:
         Broadcast all market and area events to the event_listener methods of the
         child dispatcher classes first (in order to propagate the event to the children of the
         area) and then to the Inter Area Agents of the children and this dispatcher's area.
-
+        Strategy event methods (e.g. event_offer) should have precedence over IAA's event methods.
+        Reason for that is that the IAA offer / bid  forwarding with MIN_BID/OFFER_AGE=0 setting
+        enabled is expected to forward the offer / bid on the same tick that the offer is posted.
+        If the IAA event method is called before the strategy event method, then the offer / bid
+        will not be forwarded on the same tick, but on the next one.
+        For a similar reason (a market area should clear all offers and bids posted by its children
+        before forwarding) the IAA event method is called after all children event methods have
+        been called.
         Args:
             event_type: Type of the event that will be broadcasted
             **kwargs: Arguments associated with the event
