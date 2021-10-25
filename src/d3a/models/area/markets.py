@@ -141,7 +141,7 @@ class AreaMarkets:
         market = market_class(
             time_slot=time_slot,
             bc=area.bc,
-            notification_listener=area.dispatcher.broadcast_callback,
+            notification_listener=area.dispatcher.broadcast_notification,
             grid_fee_type=area.config.grid_fee_type,
             grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
                               grid_fee_const=area.grid_fee_constant),

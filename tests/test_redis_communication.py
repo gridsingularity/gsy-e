@@ -97,7 +97,7 @@ class TestRedisEventDispatching(unittest.TestCase):
                            (AreaEvent.ACTIVATE, ),
                            (AreaEvent.BALANCING_MARKET_CYCLE, )])
     def tests_broadcast(self, area_event):
-        self.area.dispatcher.broadcast_callback(area_event)
+        self.area.dispatcher.broadcast_notification(area_event)
         for child in self.area.children:
             dispatch_chanel = f"{child.uuid}/area_event"
             send_data = json.dumps({"event_type": area_event.value, "kwargs": {}})
@@ -201,7 +201,7 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
                            (MarketEvent.OFFER_SPLIT, ),
                            (MarketEvent.OFFER_DELETED, )])
     def tests_broadcast(self, market_event):
-        self.area.dispatcher.broadcast_callback(market_event)
+        self.area.dispatcher.broadcast_notification(market_event)
         for child in self.area.children:
             dispatch_channel = f"{child.uuid}/market_event"
             send_data = json.dumps({"event_type": market_event.value, "kwargs": {}})

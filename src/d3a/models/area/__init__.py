@@ -339,7 +339,7 @@ class Area:
 
         self.log.debug("Cycling markets")
         self._markets.rotate_markets(now_value)
-        self.dispatcher._delete_past_agents(self.dispatcher._inter_area_agents)
+        self.dispatcher.event_market_cycle()
 
         # area_market_stats have to updated when cycling market of each area:
         self.stats.update_area_market_stats()
@@ -571,6 +571,17 @@ class Area:
 
     def get_settlement_market(self, time_slot):
         return self._markets.settlement_markets.get(time_slot)
+
+    def get_market_instances_from_class_type(self, market_type: AvailableMarketTypes) -> Dict:
+        """
+        Return market dicts for the selected market type
+        Args:
+            market_type: Selected market type (spot/balancing/settlement/future)
+
+        Returns: Dicts with market objects for the selected market type
+
+        """
+        return self._markets.get_market_instances_from_class_type(market_type)
 
     @cached_property
     def available_triggers(self):
