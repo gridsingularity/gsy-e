@@ -37,7 +37,7 @@ class TestDegreesOfFreedomFilter:
             "timeslot": None, "transaction_id": "4f676895-32b5-42ce-9f7b-8c54a8f8b64f"}
 
         assert filtered_order == expected_order
-        assert filtered_fields == {"requirements", "attributes"}
+        assert filtered_fields == ["requirements", "attributes"]
 
     @staticmethod
     def test_filter_succeeds_with_order_without_dof(order_without_dof: Dict):
@@ -45,4 +45,4 @@ class TestDegreesOfFreedomFilter:
         filtered_order, filtered_fields = DegreesOfFreedomFilter.apply(order_without_dof)
 
         assert filtered_order == order_without_dof
-        assert filtered_fields == set()
+        assert filtered_fields == []

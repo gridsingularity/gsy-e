@@ -15,10 +15,10 @@ class DegreesOfFreedomFilter:
         Args:
             order: a dictionary of arguments describing a bid or an offer.
         """
-        filtered_fields = set()
+        filtered_fields = []
         for field in cls.FIELDS:
             if order.get(field):
                 order.pop(field)
-                filtered_fields.add(field)
+                filtered_fields.append(field)
 
         return order, filtered_fields
