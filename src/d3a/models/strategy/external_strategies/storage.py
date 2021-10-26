@@ -172,7 +172,7 @@ class StorageExternalMixin(ExternalMixin):
 
     def can_offer_be_posted(self, time_slot: DateTime, offer_arguments: Dict):
         """Check that the energy being offered is <= than the energy available to be sold."""
-
+        # TODO: Should be removed within D3ASIM-3671
         replace_existing = offer_arguments.get("replace_existing", True)
         if replace_existing:
             # Do not consider previously offered energy, since those offers would be deleted
@@ -321,7 +321,7 @@ class StorageExternalMixin(ExternalMixin):
 
     def can_bid_be_posted(self, time_slot: DateTime, bid_arguments: Dict) -> bool:
         """Check that the energy being bid is <= than the energy available to be bought."""
-
+        # TODO: Should be removed within D3ASIM-3671
         replace_existing = bid_arguments.get("replace_existing", True)
         if replace_existing:
             # Do not consider previously bid energy, since those bids would be deleted
