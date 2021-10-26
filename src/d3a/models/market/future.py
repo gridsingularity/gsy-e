@@ -76,45 +76,44 @@ class FutureMarkets(TwoSidedMarket):
         return (self.slot_bid_mapping[kwargs["time_slot"]],
                 self.slot_offer_mapping[kwargs["time_slot"]])
 
-    def delete_old_future_markets(self, current_market_time_slot: DateTime) -> None:
+    def delete_orders_in_old_future_markets(self, current_market_time_slot: DateTime) -> None:
         """Delete order and trade buffers."""
-        self._delete_order_buffer_market_slot(current_market_time_slot,
-                                              self.slot_bid_mapping, Bid)
-        self._delete_order_buffer_market_slot(current_market_time_slot,
-                                              self.slot_offer_mapping, Offer)
-        self._delete_order_buffer_market_slot(current_market_time_slot,
-                                              self.slot_trade_mapping, Trade)
+        self._delete_order_dict_market_slot(current_market_time_slot,
+                                            self.slot_bid_mapping, Bid)
+        self._delete_order_dict_market_slot(current_market_time_slot,
+                                            self.slot_offer_mapping, Offer)
+        self._delete_order_dict_market_slot(current_market_time_slot,
+                                            self.slot_trade_mapping, Trade)
 
-    def _delete_order_buffer_market_slot(self, current_market_time_slot: DateTime,
-                                         order_buffer: Dict[DateTime, List],
-                                         order_type: Union[BaseBidOffer, Trade]) -> None:
-        """Empty buffers of order and trades for non-future time_stamps."""
+    def _delete_order_dict_market_slot(self, current_market_time_slot: DateTime,
+                                       order_dict:
+                                       Dict[DateTime, List[Union[BaseBidOffer, Trade]]],
+                                       order_type: Union[BaseBidOffer, Trade]) -> None:
+        """Empty order_dicts of order and trades for non-future time_stamps."""
         delete_time_slots = []
-        for time_slot, orders in order_buffer.items():
+        for time_slot, orders in order_dict.items():
             if time_slot <= current_market_time_slot:
-                self._delete_orders_from_list(orders, order_type)
+                self._delete_list_of_orders_from_market(orders, order_type)
                 delete_time_slots.append(time_slot)
         for time_slot in delete_time_slots:
-            del order_buffer[time_slot]
+            del order_dict[time_slot]
 
-    def _delete_orders_from_list(self, orders: List,
-                                 order_type: Union[BaseBidOffer, Trade]) -> None:
-        """Delete orders/trades from traditional market buffers."""
+    def _delete_list_of_orders_from_market(self, delete_orders: List,
+                                           order_type: Union[BaseBidOffer, Trade]) -> None:
+        """Delete orders/trades from traditional market order dicts."""
         if order_type == Trade:
-            buffer = self.trades
-            for trade in orders:
-                buffer.remove(trade)
+            current_market_trades = self.trades
+            for trade in delete_orders:
+                current_market_trades.remove(trade)
                 del trade
         else:
-            buffer = self.offers if order_type is Offer else self.bids
-            for order in orders:
-                buffer.pop(order.id)
-                # TODO: check whether this is needed in order to prevent a memory leak:
-                del order
+            current_market_orders = self.offers if order_type is Offer else self.bids
+            for order in delete_orders:
+                current_market_orders.pop(order.id)
 
     def create_future_markets(self, current_market_time_slot: DateTime,
                               slot_length: duration) -> None:
-        """Add sub dicts in order buffers for future market slots."""
+        """Add sub dicts in order dictionaries for future market slots."""
         future_time_slot = current_market_time_slot.add(minutes=slot_length.total_minutes())
         most_future_slot = future_time_slot + GlobalConfig.future_market_duration
         while future_time_slot <= most_future_slot:

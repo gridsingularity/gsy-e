@@ -99,7 +99,7 @@ class TestFutureMarkets:
 
         count_orders_in_buffers(future_market, 5)
         first_future_market = next(iter(future_market.slot_bid_mapping))
-        future_market.delete_old_future_markets(first_future_market)
+        future_market.delete_orders_in_old_future_markets(first_future_market)
         count_orders_in_buffers(future_market, 4)
 
     @staticmethod

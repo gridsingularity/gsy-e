@@ -40,7 +40,7 @@ class FutureMarketRotator:
         self.markets = markets
 
     def rotate(self, current_time: DateTime) -> None:
-        self.markets.delete_old_future_markets(current_market_time_slot=current_time)
+        self.markets.delete_orders_in_old_future_markets(current_market_time_slot=current_time)
 
 
 class DefaultMarketRotator(BaseRotator):
