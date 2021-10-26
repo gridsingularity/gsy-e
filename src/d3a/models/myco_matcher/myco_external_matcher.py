@@ -80,7 +80,6 @@ class MycoExternalMatcher(MycoMatcherInterface):
             markets = area_data["markets"] + (area_data.get("future_markets") or [])
             for market in markets:
                 # Cache the market (needed while matching)
-                self.area_markets_mapping[f"{area_uuid}-{market.time_slot_str}"] = market
                 self.area_markets_mapping.update(
                     {f"{area_uuid}-{market.time_slot_str}": market} if market.time_slot else
                     # In the future market case, map all time_slots to the same market
