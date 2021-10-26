@@ -28,7 +28,7 @@ from d3a_interface.matching_algorithms.requirements_validators import Requiremen
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import (BidNotFoundException, InvalidBid,
                                      InvalidBidOfferPairException, InvalidTrade, MarketException)
-from d3a.d3a_core.util import short_offer_bid_log_str
+from d3a.d3a_core.util import short_offer_bid_log_str, is_external_matching_enabled
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market import lock_market_action
 from d3a.models.market.one_sided import OneSidedMarket
@@ -284,9 +284,14 @@ class TwoSidedMarket(OneSidedMarket):
                 # If not all offers bids exist in the market, skip the current recommendation
                 continue
 
-            self.validate_bid_offer_match(
-                market_bids, market_offers,
-                clearing_rate, selected_energy)
+            try:
+                self.validate_bid_offer_match(
+                    market_bids, market_offers,
+                    clearing_rate, selected_energy)
+            except InvalidBidOfferPairException as invalid_bop_exception:
+                if is_external_matching_enabled():
+                    # re-raise exception to be handled by the external matcher
+                    raise InvalidBidOfferPairException from invalid_bop_exception
 
             market_offers = iter(market_offers)
             market_bids = iter(market_bids)
@@ -345,9 +350,6 @@ class TwoSidedMarket(OneSidedMarket):
         """
         bids_total_energy = sum([bid.energy for bid in bids])
         offers_total_energy = sum([offer.energy for offer in offers])
-        # All combinations of bids and offers [(bid, offer), (bid, offer)...]
-        # Example List1: [A, B], List2: [C, D] -> combinations: [(A, C), (A, D), (B, C), (B, D)]
-        bids_offers_combinations = itertools.product(bids, offers)
         if selected_energy > bids_total_energy:
             raise InvalidBidOfferPairException(
                 f"Energy traded {selected_energy} is higher than bids energy {bids_total_energy}.")
@@ -362,6 +364,9 @@ class TwoSidedMarket(OneSidedMarket):
             raise InvalidBidOfferPairException(
                 f"Trade rate {clearing_rate} is higher than offer energy rate.")
 
+        # All combinations of bids and offers [(bid, offer), (bid, offer)...]
+        # Example List1: [A, B], List2: [C, D] -> combinations: [(A, C), (A, D), (B, C), (B, D)]
+        bids_offers_combinations = itertools.product(bids, offers)
         for combination in bids_offers_combinations:
             cls._validate_requirements_satisfied(
                 bid=combination[0], offer=combination[1], clearing_rate=clearing_rate,
