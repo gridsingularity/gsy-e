@@ -22,7 +22,7 @@ from copy import copy
 from functools import wraps
 from logging import getLogger
 from threading import RLock
-from typing import Dict, List, Union  # noqa
+from typing import Dict, List, Union, Tuple
 
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.data_classes import Offer, Trade, Bid
@@ -133,9 +133,8 @@ class Market:
     def _is_constant_fees(self):
         return isinstance(self.fee_class, ConstantGridFees)
 
-    @property
-    def open_bids_and_offers(self):
-        return self.bids, self.offers
+    def open_bids_and_offers(self, **kwargs) -> Tuple[List, List]:
+        return list(self.bids.values()), list(self.offers.values())
 
     def add_listener(self, listener):
         self.notification_listeners.append(listener)
