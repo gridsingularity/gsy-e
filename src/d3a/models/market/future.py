@@ -58,7 +58,8 @@ class FutureMarkets(TwoSidedMarket):
         self.slot_trade_mapping: Dict[DateTime, List[Trade]] = {}
 
     def __repr__(self):  # pragma: no cover
-        return f"<{self._class_name}"
+        return (f"<{self._class_name} bids:{self.slot_bid_mapping}"
+                f"offer: {self.slot_offer_mapping} trades: {self.slot_trade_mapping}>")
 
     @property
     def _debug_log_market_type_identifier(self) -> str:
@@ -70,7 +71,7 @@ class FutureMarkets(TwoSidedMarket):
         return list(self.slot_bid_mapping.keys())
 
     def open_bids_and_offers(self, **kwargs) -> Tuple[List, List]:
-        if "time_slot" not in kwargs or kwargs["time_slot"] is None:
+        if kwargs.get("time_slot") is None:
             return [], []
 
         return (self.slot_bid_mapping[kwargs["time_slot"]],
