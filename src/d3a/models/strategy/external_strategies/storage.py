@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import logging
 from typing import List, Dict
+from pendulum import DateTime
 
 from d3a.models.strategy.external_strategies import IncomingRequest, default_market_info
 from d3a.models.strategy.storage import StorageStrategy
@@ -169,9 +170,9 @@ class StorageExternalMixin(ExternalMixin):
             self.pending_requests.append(
                 IncomingRequest("offer", arguments, offer_response_channel))
 
-    def can_offer_be_posted(self, time_slot, **offer_arguments):
+    def can_offer_be_posted(self, time_slot: DateTime, offer_arguments: Dict):
         """Check that the energy being offered is <= than the energy available to be sold."""
-
+        # TODO: Should be removed within D3ASIM-3671
         replace_existing = offer_arguments.get("replace_existing", True)
         if replace_existing:
             # Do not consider previously offered energy, since those offers would be deleted
@@ -191,7 +192,7 @@ class StorageExternalMixin(ExternalMixin):
 
             replace_existing = offer_arguments.pop("replace_existing", True)
             market = self._get_market_from_command_argument(arguments)
-            assert self.can_offer_be_posted(market.time_slot, **arguments)
+            assert self.can_offer_be_posted(market.time_slot, arguments)
             offer = self.post_offer(
                 market, replace_existing=replace_existing, **offer_arguments)
 
@@ -318,9 +319,9 @@ class StorageExternalMixin(ExternalMixin):
             self.pending_requests.append(
                 IncomingRequest("bid", arguments, bid_response_channel))
 
-    def can_bid_be_posted(self, time_slot, **bid_arguments):
+    def can_bid_be_posted(self, time_slot: DateTime, bid_arguments: Dict) -> bool:
         """Check that the energy being bid is <= than the energy available to be bought."""
-
+        # TODO: Should be removed within D3ASIM-3671
         replace_existing = bid_arguments.get("replace_existing", True)
         if replace_existing:
             # Do not consider previously bid energy, since those bids would be deleted
@@ -506,7 +507,7 @@ class StorageExternalMixin(ExternalMixin):
                     k: v for k, v in arguments.items()
                     if k not in ["transaction_id", "type", "time_slot"]}
 
-                assert self.can_offer_be_posted(market.time_slot, **offer_arguments)
+                assert self.can_offer_be_posted(market.time_slot, offer_arguments)
 
                 replace_existing = offer_arguments.pop("replace_existing", True)
 
@@ -546,7 +547,7 @@ class StorageExternalMixin(ExternalMixin):
             assert all(arg in allowed_args for arg in arguments.keys())
 
             market = self._get_market_from_command_argument(arguments)
-            assert self.can_bid_be_posted(market.time_slot, **arguments)
+            assert self.can_bid_be_posted(market.time_slot, arguments)
 
             replace_existing = arguments.pop("replace_existing", True)
             bid = self.post_bid(
