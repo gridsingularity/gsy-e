@@ -20,7 +20,12 @@ import uuid
 from copy import deepcopy
 from logging import getLogger
 from math import isclose
-from typing import Dict, List, Union, Tuple  # noqa
+from typing import Dict, List, Union, Tuple, Optional
+
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.data_classes import Bid, Offer, Trade, TradeBidOfferInfo, BidOfferMatch
+from d3a_interface.matching_algorithms.requirements_validators import RequirementsSatisfiedChecker
+from pendulum import DateTime
 
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import (BidNotFoundException, InvalidBid,
@@ -29,10 +34,6 @@ from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market import lock_market_action
 from d3a.models.market.one_sided import OneSidedMarket
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Bid, Offer, Trade, TradeBidOfferInfo, BidOfferMatch
-from d3a_interface.matching_algorithms.requirements_validators import RequirementsSatisfiedChecker
-from pendulum import DateTime
 
 log = getLogger(__name__)
 
@@ -90,10 +91,15 @@ class TwoSidedMarket(OneSidedMarket):
 
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, buyer_origin: str,
-            bid_id: str = None, original_price=None, adapt_price_with_fees=True,
-            add_to_history=True, buyer_origin_id=None, buyer_id=None,
-            attributes: Dict = None, requirements: List[Dict] = None,
-            time_slot: DateTime = None) -> Bid:
+            bid_id: Optional[str] = None,
+            original_price: Optional[float] = None,
+            adapt_price_with_fees: bool = True,
+            add_to_history: bool = True,
+            buyer_origin_id: Optional[str] = None,
+            buyer_id: Optional[str] = None,
+            attributes: Optional[Dict] = None,
+            requirements: Optional[List[Dict]] = None,
+            time_slot: Optional[DateTime] = None) -> Bid:
         if energy <= 0:
             raise InvalidBid()
 
@@ -131,7 +137,7 @@ class TwoSidedMarket(OneSidedMarket):
 
     def split_bid(self, original_bid: Bid, energy: float, orig_bid_price: float):
         """Split bit into two, one with provided energy, the other with the residual."""
-        time_slot = original_bid.time_slot
+
         self.bids.pop(original_bid.id, None)
 
         # same bid id is used for the new accepted_bid
@@ -148,7 +154,7 @@ class TwoSidedMarket(OneSidedMarket):
                                 add_to_history=False,
                                 attributes=original_bid.attributes,
                                 requirements=original_bid.requirements,
-                                time_slot=time_slot)
+                                time_slot=original_bid.time_slot)
 
         residual_price = (1 - energy / original_bid.energy) * original_bid.price
         residual_energy = original_bid.energy - energy
@@ -167,7 +173,7 @@ class TwoSidedMarket(OneSidedMarket):
                                 add_to_history=True,
                                 attributes=original_bid.attributes,
                                 requirements=original_bid.requirements,
-                                time_slot=time_slot)
+                                time_slot=original_bid.time_slot)
 
         log.debug(f"{self._debug_log_market_type_identifier}[BID][SPLIT]"
                   f"[{self.time_slot_str}, {self.name}] "
@@ -188,10 +194,16 @@ class TwoSidedMarket(OneSidedMarket):
         return grid_fee_rate * energy, energy * final_trade_rate
 
     @lock_market_action
-    def accept_bid(self, bid: Bid, energy: float = None,
-                   seller: str = None, buyer: str = None, already_tracked: bool = False,
-                   trade_rate: float = None, trade_offer_info=None, seller_origin=None,
-                   seller_origin_id=None, seller_id=None) -> Trade:
+    def accept_bid(self, bid: Bid,
+                   energy: Optional[float] = None,
+                   seller: Optional[str] = None,
+                   buyer: Optional[str] = None,
+                   already_tracked: bool = False,
+                   trade_rate: Optional[float] = None,
+                   trade_offer_info: Optional[TradeBidOfferInfo] = None,
+                   seller_origin: Optional[str] = None,
+                   seller_origin_id: Optional[str] = None,
+                   seller_id: Optional[str] = None) -> Trade:
         market_bid = self.bids.pop(bid.id, None)
         if market_bid is None:
             raise BidNotFoundException("During accept bid: " + str(bid))
