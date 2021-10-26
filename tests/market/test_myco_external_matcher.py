@@ -40,7 +40,7 @@ class TestMycoExternalMatcher:
         self.matcher.myco_ext_conn.sub_to_multiple_channels.assert_called_once_with(
             {
                 "external-myco/simulation-id/": self.matcher.publish_simulation_id,
-                f"{self.channel_prefix}offers-bids/": self.matcher.publish_offers_bids,
+                f"{self.channel_prefix}offers-bids/": self.matcher.publish_orders,
                 f"{self.channel_prefix}recommendations/":
                     self.matcher._populate_recommendations
             }
@@ -82,30 +82,27 @@ class TestMycoExternalMatcher:
         self.matcher.update_area_uuid_markets_mapping({"areax": {"markets": [self.market]}})
         assert mapping_dict == self.matcher.area_uuid_markets_mapping
 
-    def test_get_bids_offers(self):
+    def test_get_orders(self):
         self._populate_market_bids_offers()
-        bids, offers = self.market.open_bids_and_offers()
-        expected_bids_list = list(bid.serializable_dict() for bid in bids)
-        expected_offers_list = list(offer.serializable_dict() for offer in offers)
+        expected_orders = self.market.orders_per_slot()
 
-        actual_bids_list, actual_offers_list = self.matcher._get_bids_offers(self.market, {})
-        assert (expected_bids_list, expected_offers_list) == (actual_bids_list, actual_offers_list)
+        actual_orders = self.matcher._get_orders(self.market, {})
+        assert actual_orders == expected_orders
 
         filters = {"energy_type": "Green"}
+        expected_orders[self.market.time_slot_str]["offers"] = []
         # Offers which don't have attributes or of different energy type will be filtered out
-        actual_bids_list, actual_offers_list = self.matcher._get_bids_offers(self.market, filters)
-        assert (expected_bids_list, []) == (actual_bids_list, actual_offers_list)
+        actual_orders = self.matcher._get_orders(self.market, filters)
+        assert actual_orders == expected_orders
 
-        offers[0].attributes = {"energy_type": "Green"}
-        actual_bids_list, actual_offers_list = self.matcher._get_bids_offers(self.market, filters)
-        bids, offers = self.market.open_bids_and_offers()
-        expected_offers_list = list(
-            offer.serializable_dict() for offer in offers
-            if offer.attributes and offer.attributes.get("energy_type") == "Green")
-        assert (expected_bids_list, expected_offers_list) == (actual_bids_list, actual_offers_list)
+        list(self.market.offers.values())[0].attributes = {"energy_type": "Green"}
+        expected_orders = self.market.orders_per_slot()
+        expected_orders[self.market.time_slot_str]["offers"].pop(1)
+        actual_orders = self.matcher._get_orders(self.market, filters)
+        assert actual_orders == expected_orders
 
     @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcher."
-           "_get_bids_offers", MagicMock(return_value=([], [])))
+           "_get_orders", MagicMock(return_value=({})))
     def test_publish_offers_bids(self):
         channel = f"{self.channel_prefix}offers-bids/response/"
         payload = {
@@ -115,10 +112,10 @@ class TestMycoExternalMatcher:
         }
         expected_data = {
             "event": "offers_bids_response",
-            "bids_offers": {"area1": {self.market.time_slot_str: {"bids": [], "offers": []}}}
+            "bids_offers": {"area1": {}}
         }
         self.matcher.update_area_uuid_markets_mapping({"area1": {"markets": [self.market]}})
-        self.matcher.publish_offers_bids(payload)
+        self.matcher.publish_orders(payload)
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
         self.matcher.myco_ext_conn.publish_json.reset_mock()
@@ -133,7 +130,7 @@ class TestMycoExternalMatcher:
             "event": "offers_bids_response",
             "bids_offers": {}
         }
-        self.matcher.publish_offers_bids(payload)
+        self.matcher.publish_orders(payload)
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
 
