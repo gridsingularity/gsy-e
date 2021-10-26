@@ -169,14 +169,12 @@ class AggregatorHandler:
             )
 
     def _create_aggregator(self, message):
-        print(message)
         if message["transaction_id"] not in self.aggregator_device_mapping:
             with self.lock:
                 self.aggregator_device_mapping[message["transaction_id"]] = []
             success_response_message = {
                 "status": "ready", "name": message["name"],
                 "transaction_id": message["transaction_id"]}
-            print("aggregator_response", json.dumps(success_response_message))
             self.redis_db.publish(
                 "aggregator_response", json.dumps(success_response_message)
             )
