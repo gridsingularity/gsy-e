@@ -51,7 +51,7 @@ class MarketNotifyEventSubscriber:
             def executor_func():
                 transaction_uuid = data.pop("transaction_uuid", None)
                 assert transaction_uuid is not None
-                self.root_dispatcher.broadcast_callback(event_type, **kwargs)
+                self.root_dispatcher.broadcast_notification(event_type, **kwargs)
                 self.publish_notify_event_response(market.id, event_type, transaction_uuid)
 
             self.futures.append(self.executor.submit(executor_func))
