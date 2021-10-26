@@ -136,6 +136,12 @@ class Market:
     def open_bids_and_offers(self, **kwargs) -> Tuple[List, List]:
         return list(self.bids.values()), list(self.offers.values())
 
+    def orders_per_slot(self) -> Dict[str, Dict]:
+        """Return all orders in the market per time slot."""
+        bids = [bid.serializable_dict() for bid in self.bids.values()]
+        offers = [offer.serializable_dict() for offer in self.offers.values()]
+        return {self.time_slot_str: {"bids": bids, "offers": offers}}
+
     def add_listener(self, listener):
         self.notification_listeners.append(listener)
 
