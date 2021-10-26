@@ -289,6 +289,8 @@ class TwoSidedMarket(OneSidedMarket):
                     market_bids, market_offers,
                     clearing_rate, selected_energy)
             except InvalidBidOfferPairException as invalid_bop_exception:
+                # TODO: Refactor this. The behaviour of the market should not be dependant
+                #  on a matching algorithm setting
                 if is_external_matching_enabled():
                     # re-raise exception to be handled by the external matcher
                     raise InvalidBidOfferPairException from invalid_bop_exception
