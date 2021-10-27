@@ -171,17 +171,17 @@ class MycoExternalMatcher(MycoMatcherInterface):
     def _get_bids_offers(market: TwoSidedMarket, filters: Dict):
         """Get bids and offers from market, apply filters and return serializable lists."""
 
-        bids, offers = market.open_bids_and_offers
-        bids_list = list(bid.serializable_dict() for bid in bids.values())
+        bids, offers = market.open_bids_and_offers()
+        bids_list = list(bid.serializable_dict() for bid in bids)
         filtered_offers_energy_type = filters.get("energy_type")
         if filtered_offers_energy_type:
             offers_list = list(
-                offer.serializable_dict() for offer in offers.values()
+                offer.serializable_dict() for offer in offers
                 if offer.attributes and
                 offer.attributes.get("energy_type") == filtered_offers_energy_type)
         else:
             offers_list = list(
-                offer.serializable_dict() for offer in offers.values())
+                offer.serializable_dict() for offer in offers)
         return bids_list, offers_list
 
 

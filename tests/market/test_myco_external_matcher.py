@@ -84,9 +84,9 @@ class TestMycoExternalMatcher:
 
     def test_get_bids_offers(self):
         self._populate_market_bids_offers()
-        bids, offers = self.market.open_bids_and_offers
-        expected_bids_list = list(bid.serializable_dict() for bid in bids.values())
-        expected_offers_list = list(offer.serializable_dict() for offer in offers.values())
+        bids, offers = self.market.open_bids_and_offers()
+        expected_bids_list = list(bid.serializable_dict() for bid in bids)
+        expected_offers_list = list(offer.serializable_dict() for offer in offers)
 
         actual_bids_list, actual_offers_list = self.matcher._get_bids_offers(self.market, {})
         assert (expected_bids_list, expected_offers_list) == (actual_bids_list, actual_offers_list)
@@ -96,11 +96,11 @@ class TestMycoExternalMatcher:
         actual_bids_list, actual_offers_list = self.matcher._get_bids_offers(self.market, filters)
         assert (expected_bids_list, []) == (actual_bids_list, actual_offers_list)
 
-        list(offers.values())[0].attributes = {"energy_type": "Green"}
+        offers[0].attributes = {"energy_type": "Green"}
         actual_bids_list, actual_offers_list = self.matcher._get_bids_offers(self.market, filters)
-        bids, offers = self.market.open_bids_and_offers
+        bids, offers = self.market.open_bids_and_offers()
         expected_offers_list = list(
-            offer.serializable_dict() for offer in offers.values()
+            offer.serializable_dict() for offer in offers
             if offer.attributes and offer.attributes.get("energy_type") == "Green")
         assert (expected_bids_list, expected_offers_list) == (actual_bids_list, actual_offers_list)
 
