@@ -23,7 +23,6 @@ from d3a_interface.enums import SpotMarketTypeEnum
 from numpy.random import random
 from pendulum import DateTime
 
-from d3a import constants
 from d3a.d3a_core.exceptions import WrongMarketTypeException
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import RedisCommunicator
 from d3a.events.event_structures import MarketEvent, AreaEvent
@@ -312,10 +311,9 @@ class AreaDispatcher:
 
     def event_market_cycle(self) -> None:
         """Called every market cycle. Recycles old area agents."""
-        if not constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
-            self._delete_past_agents(self.interarea_agents)
-            self._delete_past_agents(self.balancing_agents)
-            self._delete_past_agents(self.settlement_agents)
+        self._delete_past_agents(self.interarea_agents)
+        self._delete_past_agents(self.balancing_agents)
+        self._delete_past_agents(self.settlement_agents)
 
     def _delete_past_agents(
             self, area_agent_member: Dict[DateTime,
