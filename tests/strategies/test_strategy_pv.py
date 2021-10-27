@@ -113,7 +113,8 @@ class FakeMarket:
         self.count = count
         self.id = str(count)
         self.created_offers = []
-        self.offers = {'id': Offer(id='id', time=pendulum.now(), price=10, energy=0.5, seller='A')}
+        self.offers = {
+            'id': Offer(id='id', creation_time=pendulum.now(), price=10, energy=0.5, seller='A')}
 
     def offer(self, price, energy, seller, original_price=None, seller_origin=None,
               seller_origin_id=None, seller_id=None, time_slot=None):
@@ -271,7 +272,7 @@ def pv_test4(area_test3, called):
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {
-        Offer(id='id', time=pendulum.now(), price=20,
+        Offer(id='id', creation_time=pendulum.now(), price=20,
               energy=1, seller='FakeArea'): area_test3.test_market.id
     }
     return p
@@ -280,8 +281,9 @@ def pv_test4(area_test3, called):
 def testing_event_trade(area_test3, pv_test4):
     pv_test4.state._available_energy_kWh[area_test3.test_market.time_slot] = 1
     pv_test4.event_offer_traded(market_id=area_test3.test_market.id,
-                                trade=Trade(id="id", time="time",
-                                            offer_bid=Offer(id="id", time=pendulum.now(), price=20,
+                                trade=Trade(id="id", creation_time="time",
+                                            offer_bid=Offer(id="id", creation_time=pendulum.now(),
+                                                            price=20,
                                                             energy=1, seller="FakeArea"),
                                             seller=area_test3.name, buyer="buyer")
                                 )
