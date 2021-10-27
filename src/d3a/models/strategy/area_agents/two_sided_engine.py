@@ -38,10 +38,10 @@ class TwoSidedEngine(IAAEngine):
     def __init__(self, name: str, market_1, market_2, min_offer_age: int, min_bid_age: int,
                  owner: "InterAreaAgent"):
         super().__init__(name, market_1, market_2, min_offer_age, owner)
-        self.forwarded_bids = {}  # type: Dict[str, BidInfo]
-        self.bid_trade_residual = {}  # type: Dict[str, Bid]
+        self.forwarded_bids: Dict[str, BidInfo] = {}
+        self.bid_trade_residual: Dict[str, Bid] = {}
         self.min_bid_age = min_bid_age
-        self.bid_age = {}  # type: Dict[str, int]
+        self.bid_age: Dict[str, int] = {}
 
     def __repr__(self):
         return "<TwoSidedPayAsBidEngine [{s.owner.name}] {s.name} " \

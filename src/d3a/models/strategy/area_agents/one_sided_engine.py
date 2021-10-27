@@ -41,10 +41,10 @@ class IAAEngine:
         self.min_offer_age = min_offer_age
         self.owner = owner
 
-        self.offer_age = {}  # type: Dict[str, int]
+        self.offer_age: Dict[str, int] = {}
         # Offer.id -> OfferInfo
-        self.forwarded_offers = {}  # type: Dict[str, OfferInfo]
-        self.trade_residual = {}  # type: Dict[str, Offer]
+        self.forwarded_offers: Dict[str, OfferInfo] = {}
+        self.trade_residual: Dict[str, Offer] = {}
 
     def __repr__(self):
         return "<IAAEngine [{s.owner.name}] {s.name} {s.markets.source.time_slot:%H:%M}>".format(
