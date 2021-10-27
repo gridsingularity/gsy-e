@@ -19,7 +19,7 @@ from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.gsy_core.device_registry import DeviceRegistry
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 
 
 device_registry_dict = {

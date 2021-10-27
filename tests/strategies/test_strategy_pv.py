@@ -23,16 +23,16 @@ from uuid import uuid4
 
 import pendulum
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.exceptions import D3ADeviceException
-from d3a_interface.utils import generate_market_slot_list
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.exceptions import D3ADeviceException
+from gsy_framework.utils import generate_market_slot_list
 from parameterized import parameterized
 
 from d3a.constants import TIME_FORMAT
 from d3a.constants import TIME_ZONE
 from d3a.gsy_core.util import d3a_path
 from d3a.models.area import DEFAULT_CONFIG
-from d3a_interface.data_classes import Offer, Trade
+from gsy_framework.data_classes import Offer, Trade
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from d3a.models.strategy.pv import PVStrategy
 

@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from abc import ABC, abstractmethod
 from typing import List, Dict
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 
 from d3a.gsy_core.myco_singleton import bid_offer_matcher
 from d3a.models.area import Area

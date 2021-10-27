@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from math import isclose
-from d3a_interface.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import GlobalConfig
 
 
 @then('all trades are using the market maker rate from the strategy ({energy_rate})')

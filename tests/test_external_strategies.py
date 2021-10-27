@@ -25,7 +25,7 @@ from d3a.models.strategy.external_strategies.load import (LoadForecastExternalSt
 from d3a.models.strategy.external_strategies.pv import (PVForecastExternalStrategy,
                                                         PVExternalStrategy)
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from pendulum import now, duration
 from collections import deque
 from d3a.models.strategy.external_strategies import IncomingRequest

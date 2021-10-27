@@ -23,11 +23,11 @@ from uuid import uuid4
 
 import pendulum
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig, PROFILE_EXPANSION_DAYS
-from d3a_interface.data_classes import Offer
-from d3a_interface.exceptions import D3ADeviceException
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.utils import generate_market_slot_list
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig, PROFILE_EXPANSION_DAYS
+from gsy_framework.data_classes import Offer
+from gsy_framework.exceptions import D3ADeviceException
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.utils import generate_market_slot_list
 from pendulum import DateTime, duration, today, datetime
 
 from d3a.constants import TIME_ZONE, TIME_FORMAT

@@ -21,8 +21,8 @@ from collections import deque, namedtuple
 from threading import Lock
 from typing import Dict
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.utils import (key_in_dict_and_not_none, convert_str_to_pendulum_in_dict,
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.utils import (key_in_dict_and_not_none, convert_str_to_pendulum_in_dict,
                                  str_to_pendulum_datetime)
 from pendulum import DateTime
 

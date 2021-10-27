@@ -16,12 +16,12 @@ from logging import getLogger
 from pathlib import Path
 from typing import Dict, Union
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Offer
-from d3a_interface.enums import SpotMarketTypeEnum
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.utils import find_object_of_same_weekday_and_time
-from d3a_interface.validators.smart_meter_validator import SmartMeterValidator
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Offer
+from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.utils import find_object_of_same_weekday_and_time
+from gsy_framework.validators.smart_meter_validator import SmartMeterValidator
 from numpy import random
 from pendulum import duration
 from pendulum.datetime import DateTime

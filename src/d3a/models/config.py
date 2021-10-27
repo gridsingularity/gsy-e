@@ -18,9 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import ast
 import json
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.exceptions import D3AException
-from d3a_interface.read_user_profile import (
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.exceptions import D3AException
+from gsy_framework.read_user_profile import (
     InputProfileTypes, read_and_convert_identity_profile_to_float, read_arbitrary_profile)
 from pendulum import DateTime, Duration, duration, today
 

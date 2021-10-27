@@ -20,7 +20,7 @@ import json
 from enum import Enum
 from typing import Dict, List
 
-from d3a_interface.data_classes import BidOfferMatch
+from gsy_framework.data_classes import BidOfferMatch
 
 import d3a.constants
 from d3a.gsy_core.exceptions import (

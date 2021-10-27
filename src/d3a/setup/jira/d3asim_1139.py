@@ -1,7 +1,7 @@
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 
 
 def get_setup(config):

@@ -19,8 +19,8 @@ import uuid
 from unittest.mock import Mock, MagicMock
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Bid, Offer, Trade
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Bid, Offer, Trade
 from pendulum import today, duration
 
 from d3a.constants import TIME_ZONE

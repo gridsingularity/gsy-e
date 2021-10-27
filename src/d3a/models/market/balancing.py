@@ -20,17 +20,17 @@ from typing import Union, Dict, List, Optional  # noqa
 from pendulum import DateTime
 from logging import getLogger
 
-from d3a_interface.data_classes import Offer
+from gsy_framework.data_classes import Offer
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.events.event_structures import MarketEvent
-from d3a_interface.data_classes import BalancingOffer, BalancingTrade
+from gsy_framework.data_classes import BalancingOffer, BalancingTrade
 from d3a.gsy_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidBalancingTradeException, \
     DeviceNotInRegistryError
 from d3a.gsy_core.util import short_offer_bid_log_str
 from d3a.gsy_core.device_registry import DeviceRegistry
 from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 
 log = getLogger(__name__)
 

@@ -6,7 +6,6 @@
 #
 -e git+https://github.com/gridsingularity/d3a-blockchain@master#egg=d3a_blockchain
     # via -r requirements/blockchain.in
--e git+https://github.com/gridsingularity/d3a-interface@master#egg=d3a_interface
     # via -r requirements/base.txt
 appdirs==1.4.4
     # via

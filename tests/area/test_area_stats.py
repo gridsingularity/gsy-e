@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 
 from d3a.models.area import Area
 from d3a.models.market.two_sided import TwoSidedMarket

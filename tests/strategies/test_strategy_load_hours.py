@@ -23,16 +23,16 @@ from unittest.mock import MagicMock, Mock, patch
 from uuid import uuid4
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.enums import SpotMarketTypeEnum
-from d3a_interface.exceptions import D3ADeviceException
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.exceptions import D3ADeviceException
 from pendulum import DateTime, duration, today, now
 
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.gsy_core.device_registry import DeviceRegistry
 from d3a.gsy_core.util import d3a_path
 from d3a.models.area import DEFAULT_CONFIG, Area
-from d3a_interface.data_classes import Offer, BalancingOffer, Bid, Trade
+from gsy_framework.data_classes import Offer, BalancingOffer, Bid, Trade
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 

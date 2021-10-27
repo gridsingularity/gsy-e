@@ -26,10 +26,10 @@ from time import sleep, time, mktime
 
 import click
 import psutil
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.exceptions import D3AException
-from d3a_interface.kafka_communication.kafka_producer import kafka_connection_factory
-from d3a_interface.utils import format_datetime, str_to_pendulum_datetime
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.exceptions import D3AException
+from gsy_framework.kafka_communication.kafka_producer import kafka_connection_factory
+from gsy_framework.utils import format_datetime, str_to_pendulum_datetime
 from numpy import random
 from pendulum import now, duration, DateTime
 

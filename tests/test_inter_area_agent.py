@@ -21,17 +21,17 @@ import pendulum
 from math import isclose
 from uuid import uuid4
 
-from d3a_interface.data_classes import MarketClearingState
+from gsy_framework.data_classes import MarketClearingState
 
 from d3a.constants import TIME_FORMAT
 from d3a.constants import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
-from d3a_interface.data_classes import Offer, Trade, Bid
+from gsy_framework.data_classes import Offer, Trade, Bid
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
 from d3a.models.strategy.area_agents.settlement_agent import SettlementAgent
 from d3a.models.strategy.area_agents.two_sided_engine import BidInfo
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 from d3a.models.market import GridFee
 from d3a.models.market.grid_fees.base_model import GridFees
 
@@ -342,7 +342,7 @@ def iaa_bid(request):
 
 @pytest.fixture
 def iaa_double_sided():
-    from d3a_interface.constants_limits import ConstSettings
+    from gsy_framework.constants_limits import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket(offers=[Offer('id', pendulum.now(), 2, 2, 'other', 2)],
                               bids=[Bid('bid_id', pendulum.now(), 10, 10, 'B', 10)],

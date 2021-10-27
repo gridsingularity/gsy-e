@@ -22,9 +22,9 @@ from math import isclose
 from uuid import uuid4
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.exceptions import D3ADeviceException
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.exceptions import D3ADeviceException
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from pendulum import Duration, DateTime, now
 
 from d3a.constants import TIME_FORMAT, FLOATING_POINT_TOLERANCE
@@ -32,7 +32,7 @@ from d3a.constants import TIME_ZONE
 from d3a.gsy_core.device_registry import DeviceRegistry
 from d3a.gsy_core.util import change_global_config
 from d3a.models.config import SimulationConfig
-from d3a_interface.data_classes import Offer, Trade, BalancingOffer, Bid
+from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid
 from d3a.models.state import EnergyOrigin, ESSEnergyOrigin
 from d3a.models.strategy.storage import StorageStrategy
 

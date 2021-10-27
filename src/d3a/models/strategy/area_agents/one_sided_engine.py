@@ -18,11 +18,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from collections import namedtuple
 from typing import Dict, Set  # noqa
 from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 from d3a.gsy_core.util import short_offer_bid_log_str
 from d3a.gsy_core.exceptions import MarketException, OfferNotFoundException
-from d3a_interface.data_classes import Offer
-from d3a_interface.enums import SpotMarketTypeEnum
+from gsy_framework.data_classes import Offer
+from gsy_framework.enums import SpotMarketTypeEnum
 
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))

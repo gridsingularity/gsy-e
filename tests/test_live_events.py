@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock
 
-from d3a_interface.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import GlobalConfig
 from pendulum import duration
 
 from d3a.gsy_core.live_events import CreateAreaEvent, UpdateAreaEvent

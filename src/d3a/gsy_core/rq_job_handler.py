@@ -5,8 +5,8 @@ import pickle
 from datetime import datetime, date
 from zlib import decompress
 
-from d3a_interface.constants_limits import GlobalConfig, ConstSettings
-from d3a_interface.settings_validators import validate_global_settings
+from gsy_framework.constants_limits import GlobalConfig, ConstSettings
+from gsy_framework.settings_validators import validate_global_settings
 from pendulum import duration, instance
 
 import d3a.constants

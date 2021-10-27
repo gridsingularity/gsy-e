@@ -17,11 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 from typing import Dict, TYPE_CHECKING
-from d3a_interface.constants_limits import (ConstSettings, DATE_TIME_UI_FORMAT, DATE_TIME_FORMAT,
+from gsy_framework.constants_limits import (ConstSettings, DATE_TIME_UI_FORMAT, DATE_TIME_FORMAT,
                                             GlobalConfig)
-from d3a_interface.results_validator import results_validator
-from d3a_interface.sim_results.all_results import ResultsHandler
-from d3a_interface.utils import get_json_dict_memory_allocation_size
+from gsy_framework.results_validator import results_validator
+from gsy_framework.sim_results.all_results import ResultsHandler
+from gsy_framework.utils import get_json_dict_memory_allocation_size
 
 from d3a.gsy_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
 from d3a.gsy_core.util import get_market_maker_rate_from_config

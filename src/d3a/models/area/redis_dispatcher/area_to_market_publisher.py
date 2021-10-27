@@ -1,10 +1,10 @@
 from uuid import uuid4
 import json
 from d3a.gsy_core.exceptions import D3ARedisException
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 from d3a.gsy_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
-from d3a_interface.enums import SpotMarketTypeEnum
+from gsy_framework.enums import SpotMarketTypeEnum
 
 
 class AreaToMarketEventPublisher:

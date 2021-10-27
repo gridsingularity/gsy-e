@@ -14,4 +14,4 @@ pytz
 sortedcontainers
 pony
 urllib3==1.26.4
--e git+https://github.com/gridsingularity/d3a-interface@master#egg=d3a_interface
+-e git+https://github.com/faizan2590/gsy-framework@feature/D3ASIM-3669#egg=gsy_framework

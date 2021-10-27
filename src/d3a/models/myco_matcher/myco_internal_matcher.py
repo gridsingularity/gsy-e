@@ -16,9 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from d3a_interface.enums import BidOfferMatchAlgoEnum
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.matching_algorithms import (
+from gsy_framework.enums import BidOfferMatchAlgoEnum
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.matching_algorithms import (
     PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
 )
 from d3a.gsy_core.exceptions import WrongMarketTypeException

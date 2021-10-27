@@ -20,8 +20,8 @@ from copy import deepcopy
 from logging import getLogger
 from typing import Dict, List, Union, Optional, Tuple
 
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.data_classes import Bid, Offer, Trade, BaseBidOffer, TradeBidOfferInfo
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.data_classes import Bid, Offer, Trade, BaseBidOffer, TradeBidOfferInfo
 from pendulum import DateTime, duration
 
 from d3a.gsy_core.blockchain_interface import NonBlockchainInterface

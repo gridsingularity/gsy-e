@@ -22,7 +22,7 @@ import ast
 from behave import then
 from math import isclose
 
-from d3a_interface.utils import get_area_name_uuid_mapping
+from gsy_framework.utils import get_area_name_uuid_mapping
 
 
 @then('{kpi} of {expected_kpis} are correctly reported')

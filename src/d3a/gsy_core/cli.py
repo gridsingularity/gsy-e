@@ -26,9 +26,9 @@ from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
 from pendulum import DateTime, today
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.exceptions import D3AException
-from d3a_interface.settings_validators import validate_global_settings
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.exceptions import D3AException
+from gsy_framework.settings_validators import validate_global_settings
 
 from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, TIME_FORMAT, TIME_ZONE
 from d3a.gsy_core.simulation import run_simulation

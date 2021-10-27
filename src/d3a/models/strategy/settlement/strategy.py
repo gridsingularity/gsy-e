@@ -14,8 +14,8 @@ see <http://www.gnu.org/licenses/>.
 """
 from typing import Optional
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Offer, Bid, Trade
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Offer, Bid, Trade
 from pendulum import duration
 
 from d3a.constants import SettlementTemplateStrategiesConstants

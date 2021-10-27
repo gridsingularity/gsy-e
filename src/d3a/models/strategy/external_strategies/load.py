@@ -20,7 +20,7 @@ import logging
 from collections import deque
 from typing import Dict, List, Union
 
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 from pendulum import duration
 
 from d3a.gsy_core.util import get_market_maker_rate_from_config

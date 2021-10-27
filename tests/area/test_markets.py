@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from unittest.mock import Mock, patch
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings, TIME_ZONE, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings, TIME_ZONE, GlobalConfig
 from pendulum import duration, today
 
 import d3a
@@ -93,7 +93,7 @@ class TestMarketRotation:
         assert len(area_fixture.all_markets) == 1
         assert len(area_fixture.future_market_time_slots) == expected_number_of_future_markets
 
-    @patch("d3a_interface.constants_limits.ConstSettings.BalancingSettings."
+    @patch("gsy_framework.constants_limits.ConstSettings.BalancingSettings."
            "ENABLE_BALANCING_MARKET", True)
     def test_balancing_market_rotation_is_successful(self, area_fixture):
         area_fixture.activate()
@@ -109,7 +109,7 @@ class TestMarketRotation:
         assert len(area_fixture.past_balancing_markets) == 1
         assert len(area_fixture.balancing_markets) == 1
 
-    @patch("d3a_interface.constants_limits.ConstSettings.SettlementMarketSettings."
+    @patch("gsy_framework.constants_limits.ConstSettings.SettlementMarketSettings."
            "ENABLE_SETTLEMENT_MARKETS", True)
     def test_settlement_market_rotation_is_successful(self, area_fixture):
         """

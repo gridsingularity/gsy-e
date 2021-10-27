@@ -21,9 +21,9 @@ from logging import getLogger
 from typing import List, Dict, Any, Union, Optional  # noqa
 from uuid import uuid4
 
-from d3a_interface.data_classes import (
+from gsy_framework.data_classes import (
     Offer, Bid, Trade)
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 
 from d3a import constants
 from d3a.constants import FLOATING_POINT_TOLERANCE

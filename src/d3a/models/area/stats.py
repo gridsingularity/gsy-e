@@ -19,9 +19,9 @@ from copy import copy
 from statistics import mean, median
 from typing import Dict, List, Optional
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
-from d3a_interface.data_classes import Offer
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
+from gsy_framework.data_classes import Offer
 from pendulum import DateTime
 
 from d3a import limit_float_precision

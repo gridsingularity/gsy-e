@@ -21,9 +21,9 @@ from collections import deque
 from unittest.mock import MagicMock, Mock
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.data_classes import Trade, Offer, Bid
-from d3a_interface.utils import format_datetime
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.data_classes import Trade, Offer, Bid
+from gsy_framework.utils import format_datetime
 from parameterized import parameterized
 from pendulum import now, duration, datetime
 

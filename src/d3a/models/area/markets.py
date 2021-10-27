@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from collections import OrderedDict
 from typing import Dict, TYPE_CHECKING, Optional
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.enums import SpotMarketTypeEnum
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
 from d3a.gsy_core.util import is_time_slot_in_simulation_duration

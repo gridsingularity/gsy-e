@@ -22,14 +22,14 @@ from uuid import uuid4
 
 import pendulum
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 
 from d3a import constants
 from d3a.constants import TIME_ZONE
 from d3a.gsy_core.device_registry import DeviceRegistry
 from d3a.gsy_core.util import d3a_path
 from d3a.models.area import DEFAULT_CONFIG
-from d3a_interface.data_classes import Offer, Trade, BalancingOffer, Bid
+from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)

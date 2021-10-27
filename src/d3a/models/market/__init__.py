@@ -23,9 +23,9 @@ from logging import getLogger
 from threading import RLock
 from typing import Dict, List, Union, Tuple
 
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.data_classes import Offer, Trade, Bid
-from d3a_interface.enums import SpotMarketTypeEnum
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.data_classes import Offer, Trade, Bid
+from gsy_framework.enums import SpotMarketTypeEnum
 from numpy.random import random
 from pendulum import DateTime
 

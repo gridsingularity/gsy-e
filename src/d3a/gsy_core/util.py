@@ -26,10 +26,10 @@ from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 
 from click.types import ParamType
-from d3a_interface.constants_limits import GlobalConfig, RangeLimit, ConstSettings
-from d3a_interface.enums import BidOfferMatchAlgoEnum
-from d3a_interface.exceptions import D3AException
-from d3a_interface.utils import iterate_over_all_modules, str_to_pendulum_datetime, \
+from gsy_framework.constants_limits import GlobalConfig, RangeLimit, ConstSettings
+from gsy_framework.enums import BidOfferMatchAlgoEnum
+from gsy_framework.exceptions import D3AException
+from gsy_framework.utils import iterate_over_all_modules, str_to_pendulum_datetime, \
     format_datetime, find_object_of_same_weekday_and_time
 from pendulum import duration, from_format, instance, DateTime
 from rex import rex
@@ -315,7 +315,7 @@ def change_global_config(**kwargs):
 
 
 def validate_const_settings_for_simulation():
-    from d3a_interface.constants_limits import ConstSettings
+    from gsy_framework.constants_limits import ConstSettings
     # If schemes are not compared and an individual scheme is selected
     # And the market type is not single sided market
     # This is a wrong configuration and an exception is raised

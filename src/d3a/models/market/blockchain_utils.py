@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
 
-from d3a_interface.exceptions import D3AException
+from gsy_framework.exceptions import D3AException
 from d3a.gsy_core.util import retry_function
 
 log = getLogger(__name__)

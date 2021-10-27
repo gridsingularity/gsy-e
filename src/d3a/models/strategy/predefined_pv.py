@@ -17,10 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pathlib
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.utils import convert_kW_to_kWh
-from d3a_interface.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.utils import convert_kW_to_kWh
+from gsy_framework.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
 from pendulum import duration
 
 from d3a.gsy_core.exceptions import D3AException

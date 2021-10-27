@@ -5,7 +5,7 @@ from threading import Lock
 
 import d3a.constants
 from d3a.gsy_core.global_objects_singleton import global_objects
-from d3a_interface.utils import create_subdict_or_update
+from gsy_framework.utils import create_subdict_or_update
 from redis import StrictRedis
 
 

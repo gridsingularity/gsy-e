@@ -23,7 +23,7 @@ from unittest.mock import MagicMock, Mock
 
 from d3a.models.area import Area
 from d3a.models.strategy.external_strategies import IncomingRequest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from pendulum import duration
 
 
