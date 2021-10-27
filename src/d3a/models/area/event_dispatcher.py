@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
-from typing import Union, Dict, TYPE_CHECKING  # noqa
+from typing import Union, Dict, TYPE_CHECKING, Optional
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.enums import SpotMarketTypeEnum
@@ -60,7 +60,7 @@ class AreaDispatcher:
         self._inter_area_agents: Dict[DateTime, OneSidedAgent] = {}
         self._balancing_agents: Dict[DateTime, BalancingAgent] = {}
         self._settlement_agents: Dict[DateTime, SettlementAgent] = {}
-        self.future_agents: Dict[FutureAgent] = {}
+        self._future_agent: Optional[FutureAgent] = None
         self.area = area
 
     @property
@@ -72,6 +72,11 @@ class AreaDispatcher:
     def balancing_agents(self) -> Dict[DateTime, BalancingAgent]:
         """Return balancing market inter area agents"""
         return self._balancing_agents
+
+    @property
+    def future_agent(self):
+        """Return the future agent."""
+        return self._future_agent
 
     @property
     def settlement_agents(self) -> Dict[DateTime, SettlementAgent]:
@@ -108,10 +113,9 @@ class AreaDispatcher:
 
     def _broadcast_notification_to_agents_of_future_markets(self, event_type: AreaEvent,
                                                             **kwargs) -> None:
-        for agent in self.future_agents.values():
-            if not self.area.events.is_connected:
-                break
-            agent.event_listener(event_type, **kwargs)
+        if not self.area.events.is_connected or not self.future_agent:
+            return
+        self.future_agent.event_listener(event_type, **kwargs)
 
     def _broadcast_notification_to_single_agent(
             self, agent_area: "Area", market_type: AvailableMarketTypes,
@@ -250,20 +254,32 @@ class AreaDispatcher:
             return dispatcher_object.settlement_agents
         assert False, f"Market type not supported {market_type}"
 
+    @property
+    def _should_agent_be_created(self) -> bool:
+        if not self.area.parent:
+            return False
+        if self.area.strategy:
+            return False
+        if not self.area.parent.events.is_connected:
+            return False
+        if not self.area.children:
+            return False
+        return True
+
     def create_area_agents_for_future_markets(self, market: Market) -> None:
         """Create area agents for future markets There should only be one per Area at any time."""
-        if self.area.name in self.future_agents or not self.area.parent:
+        if not self._should_agent_be_created:
+            print("early return")
             return
 
         iaa = self._create_agent_object(
             owner=self.area,
-            higher_market=self.area.parent._markets.future_markets,
+            higher_market=self.area.parent.future_markets,
             lower_market=market,
             market_type=AvailableMarketTypes.FUTURE
         )
 
-        self.future_agents[self.area.name] = iaa
-        self.area.parent.dispatcher.future_agents[self.area.name] = iaa
+        self._future_agent = iaa
 
     def create_area_agents(self, market_type: AvailableMarketTypes, market: Market) -> None:
         """
@@ -276,13 +292,7 @@ class AreaDispatcher:
         Returns: None
 
         """
-        if not self.area.parent:
-            return
-        if self.area.strategy:
-            return
-        if not self.area.parent.events.is_connected:
-            return
-        if not self.area.children:
+        if not self._should_agent_be_created:
             return
 
         interarea_agents = self._get_agents_for_market_type(self, market_type)

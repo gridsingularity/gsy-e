@@ -102,7 +102,7 @@ class AreaMarkets:
         self._update_indexed_future_markets()
 
     @staticmethod
-    def _select_market_class(market_type: AvailableMarketTypes) -> Market:
+    def _select_market_class(market_type: AvailableMarketTypes) -> type(Market):
         """Select market class dependent on the global config."""
         if market_type == AvailableMarketTypes.SPOT:
             if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
