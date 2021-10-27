@@ -269,12 +269,12 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
             assert dispatcher.redis.publish.call_count == 1
             payload = json.loads(dispatcher.redis.publish.call_args_list[0][0][1])
             assert isinstance(payload["kwargs"]["offer"], str)
-            assert Offer.from_json(payload["kwargs"]["offer"], offer.time) == offer
+            assert Offer.from_json(payload["kwargs"]["offer"], offer.creation_time) == offer
             assert isinstance(payload["kwargs"]["trade"], str)
-            assert Trade.from_json(payload["kwargs"]["trade"], trade.time) == trade
+            assert Trade.from_json(payload["kwargs"]["trade"], trade.creation_time) == trade
             assert isinstance(payload["kwargs"]["new_offer"], str)
             assert Offer.from_json(payload["kwargs"]["new_offer"],
-                                   new_offer.time) == new_offer
+                                   new_offer.creation_time) == new_offer
             assert isinstance(payload["kwargs"]["existing_offer"], str)
             assert Offer.from_json(payload["kwargs"]["existing_offer"],
-                                   existing_offer.time) == existing_offer
+                                   existing_offer.creation_time) == existing_offer
