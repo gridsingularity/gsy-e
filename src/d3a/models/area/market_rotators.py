@@ -22,6 +22,7 @@ from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from pendulum import DateTime
 
 from d3a import constants
+from d3a.models.market.future import FutureMarkets
 
 log = getLogger(__name__)
 
@@ -30,7 +31,16 @@ class BaseRotator:
     """Base implementation of the market rotator."""
 
     def rotate(self, current_time_slot: DateTime):
-        pass
+        """Deletion/move to past of unneeded markets."""
+
+
+class FutureMarketRotator:
+
+    def __init__(self, markets: FutureMarkets):
+        self.markets = markets
+
+    def rotate(self, current_time: DateTime) -> None:
+        self.markets.delete_orders_in_old_future_markets(current_market_time_slot=current_time)
 
 
 class DefaultMarketRotator(BaseRotator):
@@ -40,7 +50,7 @@ class DefaultMarketRotator(BaseRotator):
         self.markets = markets
         self.past_markets = past_markets
 
-    def rotate(self, current_time_slot: DateTime) -> None:
+    def rotate(self, current_time_slot: DateTime, **kwargs) -> None:
         """Move markets to past and delete old past markets."""
         self._move_markets_to_past(self.markets, self.past_markets, current_time_slot)
         self._delete_past_markets(self.past_markets, current_time_slot)

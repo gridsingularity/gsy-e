@@ -32,7 +32,7 @@ from d3a.d3a_core.blockchain_interface import blockchain_interface_factory
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
 from d3a.d3a_core.myco_singleton import bid_offer_matcher
-from d3a.d3a_core.util import TaggedLogWrapper
+from d3a.d3a_core.util import TaggedLogWrapper, is_external_matching_enabled
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.events import Events
@@ -44,7 +44,7 @@ from d3a.models.config import SimulationConfig
 from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
-
+from d3a.models.market.future import FutureMarkets
 log = getLogger(__name__)
 
 
@@ -278,6 +278,7 @@ class Area:
                     f"Strategy {self.strategy.__class__.__name__} on area {self} without parent!"
                     )
         else:
+            self._markets.activate_future_markets(self)
             self._markets.activate_market_rotators()
 
         if self.budget_keeper:
@@ -339,6 +340,11 @@ class Area:
 
         self.log.debug("Cycling markets")
         self._markets.rotate_markets(now_value)
+
+        # create new future markets:
+        if self.future_markets:
+            self.future_markets.create_future_markets(now_value, self.config.slot_length)
+
         self.dispatcher.event_market_cycle()
 
         # area_market_stats have to updated when cycling market of each area:
@@ -400,18 +406,26 @@ class Area:
     def tick(self):
         """Tick event handler.
 
-        Invoke aggregator commands consumer, publishes market clearing, updates events,
-        updates cached myco matcher markets and match trades recommendations.
+        Invoke aggregator commands consumer, publish market clearing, update events,
+        update cached myco matcher markets and match trades recommendations.
         """
-        self._consume_commands_from_aggregator()
-
-        if (ConstSettings.IAASettings.MARKET_TYPE != SpotMarketTypeEnum.ONE_SIDED.value
+        if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
                 and not self.strategy):
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+                self._consume_commands_from_aggregator()
                 self.dispatcher.publish_market_clearing()
+            elif is_external_matching_enabled():
+                # If external matching is enabled, clear before placing orders
+                bid_offer_matcher.match_recommendations()
+                self._consume_commands_from_aggregator()
+                self._update_myco_matcher()
             else:
+                # If internal matching is enabled, place orders before clearing
+                self._consume_commands_from_aggregator()
                 self._update_myco_matcher()
                 bid_offer_matcher.match_recommendations()
+        else:
+            self._consume_commands_from_aggregator()
 
         self.events.update_events(self.now)
 
@@ -421,17 +435,23 @@ class Area:
             area_uuid_markets_mapping={
                 self.uuid: {"markets": [self.spot_market],
                             "settlement_markets": self.settlement_markets.values(),
+                            "future_markets": self.future_markets,
                             "current_time": self.now}})
 
-    def update_area_current_tick(self):
+    def update_clock_on_markets(self) -> None:
+        """
+        Update clock on markets with self.now member.
+        Returns:
+
+        """
         self.current_tick += 1
         if self.children:
-            self.spot_market.update_clock(self.current_tick_in_slot)
+            self.spot_market.update_clock(self.now)
 
             for market in self._markets.settlement_markets.values():
-                market.update_clock(self.current_tick_in_slot)
+                market.update_clock(self.now)
         for child in self.children:
-            child.update_area_current_tick()
+            child.update_clock_on_markets()
 
     def tick_and_dispatch(self):
         """Invoke tick handler and broadcast the event to children."""
@@ -553,6 +573,14 @@ class Area:
             return list(self._markets.past_markets.values())[-1]
         except IndexError:
             return None
+
+    @property
+    def future_market_time_slots(self) -> List[DateTime]:
+        return self._markets.future_markets.market_time_slots
+
+    @property
+    def future_markets(self) -> FutureMarkets:
+        return self._markets.future_markets
 
     @property
     def settlement_markets(self) -> Dict:
