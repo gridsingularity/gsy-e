@@ -102,10 +102,10 @@ class FakeMarket:
 
     def offer(self, price, energy, seller, original_price=None,
               seller_origin=None, seller_origin_id=None, seller_id=None,
-              attributes=None, requirements=None):
+              attributes=None, requirements=None, time_slot=None):
         offer = Offer("id", pendulum.now(), price, energy, seller, seller_origin=seller_origin,
                       seller_origin_id=seller_origin_id, seller_id=seller_id,
-                      attributes=attributes, requirements=requirements)
+                      attributes=attributes, requirements=requirements, time_slot=time_slot)
         self.created_offers.append(offer)
         offer.id = "id"
         return offer
@@ -128,10 +128,10 @@ class FakeMarket:
 
     def bid(self, price, energy, buyer, original_price=None,
             buyer_origin=None, buyer_origin_id=None, buyer_id=None,
-            attributes=None, requirements=None):
+            attributes=None, requirements=None, time_slot=None):
         bid = Bid("bid_id", pendulum.now(), price, energy, buyer, buyer_origin=buyer_origin,
                   buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
-                  attributes=attributes, requirements=requirements)
+                  attributes=attributes, requirements=requirements, time_slot=time_slot)
         return bid
 
 

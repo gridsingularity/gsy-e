@@ -116,10 +116,10 @@ class FakeMarket:
         self.offers = {'id': Offer(id='id', time=pendulum.now(), price=10, energy=0.5, seller='A')}
 
     def offer(self, price, energy, seller, original_price=None, seller_origin=None,
-              seller_origin_id=None, seller_id=None):
+              seller_origin_id=None, seller_id=None, time_slot=None):
         offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy, seller,
                       original_price, seller_origin=seller_origin,
-                      seller_origin_id=seller_origin_id, seller_id=seller_id)
+                      seller_origin_id=seller_origin_id, seller_id=seller_id, time_slot=time_slot)
         self.created_offers.append(offer)
         self.offers[offer.id] = offer
         return offer

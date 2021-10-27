@@ -92,6 +92,7 @@ class FakeMarket:
         self.transfer_fee_ratio = 0
         self.bids = {}
         self.id = id
+        self.time_slot = pendulum.now()
 
     def accept_offer(self, offer_or_id, *, buyer="", energy=None, time=None, already_tracked=False,
                      trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
@@ -109,10 +110,11 @@ class FakeMarket:
 
     def bid(self, price, energy, buyer, original_price=None,
             buyer_origin=None, buyer_origin_id=None, buyer_id=None,
-            attributes=None, requirements=None):
+            attributes=None, requirements=None, time_slot=None):
         return Bid(123, pendulum.now(), price, energy, buyer, original_price,
                    buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id,
-                   buyer_id=buyer_id, attributes=attributes, requirements=requirements)
+                   buyer_id=buyer_id, attributes=attributes, requirements=requirements,
+                   time_slot=time_slot)
 
 
 @pytest.fixture
@@ -256,8 +258,8 @@ def test_add_bid_to_bought(base):
 
     base.add_bid_to_bought(bid, market.id)
     assert not base.are_bids_posted(market.id)
-    assert len(base.get_traded_bids_from_market(market)) == 1
-    assert base.get_traded_bids_from_market(market) == [bid]
+    assert len(base._get_traded_bids_from_market(market.id)) == 1
+    assert base._get_traded_bids_from_market(market.id) == [bid]
 
 
 def test_bid_events_fail_for_one_sided_market(base):
@@ -306,7 +308,7 @@ def test_bid_traded_moves_bid_from_posted_to_traded(base):
     base._bids[market.id] = [test_bid]
     base.event_bid_traded(market_id=21, bid_trade=trade)
     assert base.get_posted_bids(market) == []
-    assert base.get_traded_bids_from_market(market) == [test_bid]
+    assert base._get_traded_bids_from_market(market.id) == [test_bid]
 
 
 @pytest.mark.parametrize('market_class', [OneSidedMarket, TwoSidedMarket])
