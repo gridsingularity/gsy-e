@@ -16,9 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch, Mock, call
 
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.enums import SpotMarketTypeEnum, BidOfferMatchAlgoEnum
 from parameterized import parameterized
 from pendulum import duration, today
 
@@ -34,9 +35,9 @@ from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.strategy.storage import StorageStrategy
 
 
-class TestAreaClass(unittest.TestCase):
-
-    def setUp(self):
+class TestArea:
+    """Test the Area class behavior and state controllers."""
+    def setup_method(self):
         ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
         DeviceRegistry.REGISTRY = {
             "H1 General Load": (33, 35),
@@ -66,7 +67,10 @@ class TestAreaClass(unittest.TestCase):
         self.dispatcher = AreaDispatcher(self.area)
         self.stats = AreaStats(self.area._markets, self.area)
 
-    def tearDown(self):
+    def teardown_method(self):
+        ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
+        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
+        ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS = False
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 
     def test_respective_area_grid_fee_is_applied(self):
@@ -149,6 +153,35 @@ class TestAreaClass(unittest.TestCase):
 
         bat.get_state()
         strategy.get_state.assert_called_once()
+
+    @patch("d3a.models.area.Area._consume_commands_from_aggregator", Mock())
+    @patch("d3a.models.area.Area._update_myco_matcher", Mock())
+    @patch("d3a.models.area.bid_offer_matcher.match_recommendations")
+    def test_tick(self, mock_match_recommendations):
+        """Test the correct chain of function calls in the Area's tick function."""
+        manager = Mock()
+        manager.attach_mock(self.area._consume_commands_from_aggregator, "consume_commands")
+        manager.attach_mock(self.area._update_myco_matcher, "update_matcher")
+        manager.attach_mock(mock_match_recommendations, "match")
+
+        ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
+        self.area.tick()
+        assert manager.mock_calls == [call.consume_commands()]
+
+        # TWO Sided markets with internal matching, the order should be ->
+        # consume commands from aggregator -> update myco cache -> call myco clearing
+        manager.reset_mock()
+        ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
+        self.area.strategy = None
+        self.area.tick()
+        assert manager.mock_calls == [call.consume_commands(), call.update_matcher(), call.match()]
+
+        # TWO Sided markets with external matching, the order should be ->
+        # call myco clearing -> consume commands from aggregator -> update myco cache
+        manager.reset_mock()
+        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.EXTERNAL.value
+        self.area.tick()
+        assert manager.mock_calls == [call.match(), call.consume_commands(), call.update_matcher()]
 
 
 class TestEventDispatcher(unittest.TestCase):
