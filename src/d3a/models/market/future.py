@@ -78,19 +78,19 @@ class FutureMarkets(TwoSidedMarket):
 
     def orders_per_slot(self) -> Dict[str, Dict]:
         """Return all orders in the market per time slot."""
-        orders = {}
+        orders_dict = {}
         for time_slot, bids_list in self.slot_bid_mapping.items():
             time_slot = time_slot.format(DATE_TIME_FORMAT)
-            if time_slot not in orders:
-                orders[time_slot] = {"bids": [], "offers": []}
-            orders[time_slot]["bids"].extend([bid.serializable_dict() for bid in bids_list])
+            if time_slot not in orders_dict:
+                orders_dict[time_slot] = {"bids": [], "offers": []}
+            orders_dict[time_slot]["bids"].extend([bid.serializable_dict() for bid in bids_list])
         for time_slot, offers_list in self.slot_offer_mapping.items():
             time_slot = time_slot.format(DATE_TIME_FORMAT)
-            if time_slot not in orders:
-                orders[time_slot] = {"bids": [], "offers": []}
-            orders[time_slot]["offers"].extend(
+            if time_slot not in orders_dict:
+                orders_dict[time_slot] = {"bids": [], "offers": []}
+            orders_dict[time_slot]["offers"].extend(
                 [offer.serializable_dict() for offer in offers_list])
-        return orders
+        return orders_dict
 
     def delete_orders_in_old_future_markets(self, current_market_time_slot: DateTime) -> None:
         """Delete order and trade buffers."""
