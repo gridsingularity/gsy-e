@@ -34,12 +34,34 @@ class AreaBehaviorBase:
 
     @cached_property
     def _log(self):
-        return TaggedLogWrapper(log, "{s.owner.name}:{s.__class__.__name__}".format(s=self))
+        return TaggedLogWrapper(log, f"{self.owner.name}:{self.__class__.__name__}")
 
     @property
     def log(self):
+        """Select the appropriate logger for the strategy logs"""
         if not self.owner:
             log.warning("Logging without area in %s, using default logger",
                         self.__class__.__name__)
             return log
         return self._log
+
+    def event_on_disabled_area(self):
+        """Override to execute actions on disabled areas on every market cycle"""
+
+    def read_config_event(self):
+        """Override to deal with events that update the SimulationConfig object"""
+
+    def _read_or_rotate_profiles(self, reconfigure=False):
+        """Override to define how the strategy will read or rotate its profiles"""
+        raise NotImplementedError
+
+    def deactivate(self):
+        """Handles deactivate event"""
+
+    def area_reconfigure_event(self, *args, **kwargs):
+        """Reconfigure the strategy properties at runtime using the provided arguments.
+
+        This method is triggered when the strategy is updated while the simulation is
+        running. The update can happen via live events (triggered by the user) or scheduled events.
+        """
+        raise NotImplementedError
