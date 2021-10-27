@@ -18,43 +18,57 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import ast
 import json
 
-from pendulum import duration, Duration, DateTime, today
-
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
-    read_and_convert_identity_profile_to_float
 from d3a_interface.exceptions import D3AException
-from d3a.d3a_core.util import change_global_config
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import \
-    ExternalConnectionCommunicator
+from d3a_interface.read_user_profile import (
+    InputProfileTypes, read_and_convert_identity_profile_to_float, read_arbitrary_profile)
+from pendulum import DateTime, Duration, duration, today
+
 from d3a.constants import TIME_ZONE
-from d3a.d3a_core.util import format_interval
+from d3a.d3a_core.redis_connections.redis_area_market_communicator import (
+    ExternalConnectionCommunicator)
+from d3a.d3a_core.util import change_global_config, format_interval
 
 
 class SimulationConfig:
+    """Class defining parameters that describe the behavior of a simulation."""
     def __init__(self, sim_duration: duration, slot_length: duration, tick_length: duration,
                  cloud_coverage: int,
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  pv_user_profile=None, start_date: DateTime = today(tz=TIME_ZONE),
                  capacity_kW=None, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
-                 external_connection_enabled=True, aggregator_device_mapping=None):
-
+                 external_connection_enabled: bool = True, aggregator_device_mapping=None):
+        """
+        Args:
+            sim_duration: The total duration of the simulation
+            slot_length: The duration of each market slot
+            tick_length: The duration of each slot tick
+            cloud_coverage: An integer to define the sky conditions
+                (see ConstSettings.PVSettings.DEFAULT_POWER_PROFILE)
+            market_maker_rate: The cost to buy electricity from the utility
+            pv_user_profile: A custom PV profile provided by the user
+            start_date: The start date of the simulation
+            capacity_kW: The capacity of PV panels in kW
+            grid_fee_type: An integer describing the type of grid fees to be applied
+            external_connection_enabled: A flag to allow receiving orders from an external client
+            aggregator_device_mapping: A dictionary that maps each aggregator to its devices
+        """
         self.sim_duration = sim_duration
         self.start_date = start_date
         self.end_date = start_date + sim_duration
         self.slot_length = slot_length
         self.tick_length = tick_length
         self.grid_fee_type = grid_fee_type
+
         self.ticks_per_slot = self.slot_length / self.tick_length
         if self.ticks_per_slot != int(self.ticks_per_slot):
             raise D3AException(
-                "Non integer ticks per slot ({}) are not supported. "
-                "Adjust simulation parameters.".format(self.ticks_per_slot))
+                f"Non integer ticks per slot ({self.ticks_per_slot}) are not supported. "
+                "Adjust simulation parameters.")
         self.ticks_per_slot = int(self.ticks_per_slot)
         if self.ticks_per_slot < 10:
-            raise D3AException("Too few ticks per slot ({}). Adjust simulation parameters".format(
-                self.ticks_per_slot
-            ))
+            raise D3AException(
+                f"Too few ticks per slot ({self.ticks_per_slot}). Adjust simulation parameters")
         self.total_ticks = self.sim_duration // self.slot_length * self.ticks_per_slot
 
         self.cloud_coverage = cloud_coverage
@@ -78,9 +92,9 @@ class SimulationConfig:
         return json.dumps(self.as_dict())
 
     def as_dict(self):
-        fields = {'sim_duration', 'slot_length', 'tick_length', 'ticks_per_slot',
-                  'total_ticks', 'cloud_coverage', 'capacity_kW', 'grid_fee_type',
-                  'external_connection_enabled'}
+        fields = {"sim_duration", "slot_length", "tick_length", "ticks_per_slot",
+                  "total_ticks", "cloud_coverage", "capacity_kW", "grid_fee_type",
+                  "external_connection_enabled"}
         return {
             k: format_interval(v) if isinstance(v, Duration) else v
             for k, v in self.__dict__.items()

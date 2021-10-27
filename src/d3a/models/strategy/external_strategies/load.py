@@ -18,15 +18,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import logging
 from collections import deque
-from typing import List, Dict, Union
+from typing import Dict, List, Union
 
-from d3a.d3a_core.util import get_market_maker_rate_from_config
-from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
-from d3a.models.strategy.external_strategies import IncomingRequest, default_market_info
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a_interface.constants_limits import ConstSettings
 from pendulum import duration
+
+from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a.models.strategy.external_strategies import (
+    ExternalMixin, IncomingRequest, check_for_connected_and_reply, default_market_info)
+from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 
 
 class LoadExternalMixin(ExternalMixin):
