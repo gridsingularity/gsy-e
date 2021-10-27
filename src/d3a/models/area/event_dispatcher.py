@@ -267,9 +267,8 @@ class AreaDispatcher:
         return True
 
     def create_area_agents_for_future_markets(self, market: Market) -> None:
-        """Create area agents for future markets There should only be one per Area at any time."""
+        """Create area agents for future markets; There should only be one per Area at any time."""
         if not self._should_agent_be_created:
-            print("early return")
             return
 
         iaa = self._create_agent_object(
@@ -325,18 +324,8 @@ class AreaDispatcher:
         delete_agents = [(pm, agents_list) for pm, agents_list in area_agent_member.items() if
                          self.area.current_market and pm < self.area.current_market.time_slot]
         for pm, agent in delete_agents:
-            if hasattr(agent, "offers"):
-                del agent.offers
             if hasattr(agent, "engines"):
-                for engine in agent.engines:
-                    del engine.forwarded_offers
-                    del engine.offer_age
-                    del engine.trade_residual
-                    del engine.ignored_offers
-                    if hasattr(engine, "forwarded_bids"):
-                        del engine.forwarded_bids
-                        del engine.bid_age
-                        del engine.bid_trade_residual
+                agent.delete_engines()
                 del agent.engines
             agent.higher_market = None
             agent.lower_market = None
