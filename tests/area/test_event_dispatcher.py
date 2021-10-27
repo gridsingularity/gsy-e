@@ -42,6 +42,7 @@ HIGHER_MARKET_MOCK = MagicMock(autospec=Market)
 def area_dispatcher_fixture():
     area = Area("name")
     area.parent = Area("parent")
+    area.children = [Area("child1"), Area("child2")]
     return AreaDispatcher(area)
 
 
@@ -74,7 +75,4 @@ class TestAreaDispatcher:
     def test_create_area_agents_for_future_markets(self, area_dispatcher):
         area_dispatcher.area.parent._markets.future_markets = MagicMock(autospec=FutureMarkets)
         area_dispatcher.create_area_agents_for_future_markets(LOWER_MARKET_MOCK)
-        assert isinstance(area_dispatcher.future_agents[area_dispatcher.area.name], FutureAgent)
-        assert isinstance(
-            area_dispatcher.area.parent.dispatcher.future_agents[area_dispatcher.area.name],
-            FutureAgent)
+        assert isinstance(area_dispatcher.future_agent, FutureAgent)
