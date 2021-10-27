@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from copy import deepcopy
 from logging import getLogger
-from typing import Dict, List, Union, Optional, Tuple
+from typing import Dict, List, Union, Optional, Tuple, TYPE_CHECKING
 
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.data_classes import Bid, Offer, Trade, BaseBidOffer, TradeBidOfferInfo
@@ -28,10 +28,12 @@ from d3a.d3a_core.blockchain_interface import NonBlockchainInterface
 from d3a.d3a_core.exceptions import (BidNotFoundException, MarketReadOnlyException,
                                      OfferNotFoundException)
 from d3a.events.event_structures import MarketEvent
-from d3a.models.area.event_dispatcher import AreaDispatcher
 from d3a.models.market import GridFee
 from d3a.models.market import lock_market_action
 from d3a.models.market.two_sided import TwoSidedMarket
+
+if TYPE_CHECKING:
+    from d3a.models.area.event_dispatcher import AreaDispatcher
 
 log = getLogger(__name__)
 
@@ -44,7 +46,7 @@ class FutureMarkets(TwoSidedMarket):
     """Class responsible for future markets."""
 
     def __init__(self, bc: Optional[NonBlockchainInterface] = None,
-                 notification_listener: Optional[AreaDispatcher] = None,
+                 notification_listener: Optional["AreaDispatcher"] = None,
                  readonly: bool = False,
                  grid_fee_type: int = ConstSettings.IAASettings.GRID_FEE_TYPE,
                  grid_fees: Optional[GridFee] = None,
