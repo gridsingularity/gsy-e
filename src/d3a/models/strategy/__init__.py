@@ -35,7 +35,7 @@ from d3a.d3a_core.exceptions import SimulationException, D3AException, MarketExc
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
 from d3a.d3a_core.util import append_or_create_key
 from d3a.events import EventMixin
-from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
+from d3a.events.event_structures import AreaEvent, MarketEvent
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
 
@@ -239,11 +239,7 @@ class Offers:
                 self.replace(original_offer, accepted_offer, market_id)
 
 
-class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
-    available_triggers = [
-        Trigger('enable', state_getter=lambda s: s.enabled, help="Enable trading"),
-        Trigger('disable', state_getter=lambda s: not s.enabled, help="Disable trading")
-    ]
+class BaseStrategy(EventMixin, AreaBehaviorBase):
 
     def __init__(self):
         super(BaseStrategy, self).__init__()
@@ -448,19 +444,6 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             raise D3ARedisException(
                 f"Error when receiving response on channel {payload['channel']}:: "
                 f"{data['exception']}:  {data['error_message']} {data}")
-
-    def trigger_enable(self, **kw):
-        self.enabled = True
-        self.log.info("Trading has been enabled")
-
-    def trigger_disable(self):
-        self.enabled = False
-        self.log.info("Trading has been disabled")
-        # We've been disabled - remove all future open offers
-        for market in self.area.markets.values():
-            for offer in list(market.offers.values()):
-                if offer.seller == self.owner.name:
-                    self.delete_offer(market, offer)
 
     def delete_offer(self, market_or_id, offer):
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
