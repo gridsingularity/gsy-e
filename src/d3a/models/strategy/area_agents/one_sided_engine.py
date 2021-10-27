@@ -67,10 +67,7 @@ class IAAEngine:
             "time_slot": offer.time_slot
         }
 
-        if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-            return self.owner.offer(market_id=self.markets.target, offer_args=kwargs)
-
-        return self.markets.target.offer(**kwargs)
+        return self.owner.post_offer(market=self.markets.target, replace_existing=False, **kwargs)
 
     def _forward_offer(self, offer: Offer) -> Optional[Offer]:
         # TODO: This is an ugly solution. After the december release this check needs to
@@ -170,7 +167,7 @@ class IAAEngine:
                         trade.offer_bid_trade_info, offer_info.source_offer)
 
                 trade_source = self.owner.accept_offer(
-                    market_or_id=self.markets.source,
+                    market=self.markets.source,
                     offer=offer_info.source_offer,
                     energy=trade.offer_bid.energy,
                     buyer=self.owner.name,

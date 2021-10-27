@@ -32,8 +32,7 @@ from d3a.d3a_core.blockchain_interface import blockchain_interface_factory
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
 from d3a.d3a_core.myco_singleton import bid_offer_matcher
-from d3a.d3a_core.util import TaggedLogWrapper
-from d3a.events.event_structures import TriggerMixin
+from d3a.d3a_core.util import TaggedLogWrapper, is_external_matching_enabled
 from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.events import Events
 from d3a.models.area.markets import AreaMarkets
@@ -406,18 +405,26 @@ class Area:
     def tick(self):
         """Tick event handler.
 
-        Invoke aggregator commands consumer, publishes market clearing, updates events,
-        updates cached myco matcher markets and match trades recommendations.
+        Invoke aggregator commands consumer, publish market clearing, update events,
+        update cached myco matcher markets and match trades recommendations.
         """
-        self._consume_commands_from_aggregator()
-
-        if (ConstSettings.IAASettings.MARKET_TYPE != SpotMarketTypeEnum.ONE_SIDED.value
+        if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
                 and not self.strategy):
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+                self._consume_commands_from_aggregator()
                 self.dispatcher.publish_market_clearing()
+            elif is_external_matching_enabled():
+                # If external matching is enabled, clear before placing orders
+                bid_offer_matcher.match_recommendations()
+                self._consume_commands_from_aggregator()
+                self._update_myco_matcher()
             else:
+                # If internal matching is enabled, place orders before clearing
+                self._consume_commands_from_aggregator()
                 self._update_myco_matcher()
                 bid_offer_matcher.match_recommendations()
+        else:
+            self._consume_commands_from_aggregator()
 
         self.events.update_events(self.now)
 
@@ -602,13 +609,6 @@ class Area:
 
         """
         return self._markets.get_market_instances_from_class_type(market_type)
-
-    @cached_property
-    def available_triggers(self):
-        triggers = []
-        if isinstance(self.strategy, TriggerMixin):
-            triggers.extend(self.strategy.available_triggers)
-        return {t.name: t for t in triggers}
 
     def update_config(self, **kwargs):
         if not self.config:

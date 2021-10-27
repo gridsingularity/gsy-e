@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import uuid
 from collections import namedtuple
-from copy import copy
 from functools import wraps
 from logging import getLogger
 from threading import RLock
@@ -243,7 +242,7 @@ class Market:
         Returns:
 
         """
-        self.now = copy(now)
+        self.now = now
 
     def bought_energy(self, buyer):
         return sum(trade.offer_bid.energy for trade in self.trades if trade.buyer == buyer)

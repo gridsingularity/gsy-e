@@ -114,11 +114,12 @@ class FakeMarket:
 
     def bid(self, price: float, energy: float, buyer: str, original_price=None,
             buyer_origin=None, buyer_origin_id=None, buyer_id=None,
-            attributes=None, requirements=None) -> Bid:
-        bid = Bid(id="bid_id", time=now(), price=price, energy=energy, buyer=buyer,
+            attributes=None, requirements=None, time_slot=None) -> Bid:
+        bid = Bid(id="bid_id", creation_time=now(), price=price, energy=energy, buyer=buyer,
                   original_price=original_price,
                   buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id,
-                  buyer_id=buyer_id, attributes=attributes, requirements=requirements)
+                  buyer_id=buyer_id, attributes=attributes, requirements=requirements,
+                  time_slot=time_slot)
         self.bids[bid.id] = bid
         return bid
 
@@ -480,7 +481,7 @@ def test_balancing_offers_are_created_if_device_in_registry(
         selected_offer.energy * 1000.0
     balancing_fixture.event_offer_traded(market_id=area_test2.current_market.id,
                                          trade=Trade(id='id',
-                                                     time=area_test2.now,
+                                                     creation_time=area_test2.now,
                                                      offer_bid=selected_offer,
                                                      seller='B',
                                                      buyer='FakeArea')

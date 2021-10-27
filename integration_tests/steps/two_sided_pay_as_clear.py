@@ -35,8 +35,8 @@ def test_traded_energy_rate(context):
                    for market in child.past_markets
                    for trade in market.trades
                    if trade.buyer == make_iaa_name(child) and
-                   trade.time in match_algo.state.clearing and
-                   match_algo.state.clearing[trade.time] != 0)
+                   trade.creation_time in match_algo.state.clearing and
+                   match_algo.state.clearing[trade.creation_time] != 0)
 
 
 @then('buyers and sellers are not same')

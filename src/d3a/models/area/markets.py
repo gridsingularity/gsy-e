@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import OrderedDict
-from typing import Dict, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING, Optional
 
 from d3a_interface.constants_limits import ConstSettings, TIME_FORMAT
 from d3a_interface.enums import SpotMarketTypeEnum
@@ -54,7 +54,7 @@ class AreaMarkets:
         # TODO: rename and refactor in the frame of D3ASIM-3633:
         self.indexed_future_markets = {}
         # Future markets:
-        self.future_markets = None
+        self.future_markets: Optional[FutureMarkets] = None
 
         self.spot_market_rotator = BaseRotator()
         self.balancing_market_rotator = BaseRotator()
