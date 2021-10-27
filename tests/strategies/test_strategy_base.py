@@ -209,7 +209,7 @@ def test_accept_offer(base, offer_to_accept):
     market = FakeMarket(raises=False)
     base.accept_offer(market, offer_to_accept)
     assert offer_to_accept in base.offers.bought.keys()
-    assert market.id == base.offers.bought[offer_to_accept].id
+    assert market.id == base.offers.bought[offer_to_accept]
 
 
 def test_accept_partial_offer(base, offer_to_accept):
@@ -391,8 +391,8 @@ def test_post_offer_creates_offer_with_correct_parameters(market_class):
     # The offer is created with the expected parameters
     assert offer.price == 1
     assert offer.energy == 1
-    assert offer.seller == strategy.owner.name
-    assert offer.seller_origin == strategy.owner.name
+    assert offer.seller == 'seller-name'
+    assert offer.seller_origin == 'seller-origin-name'
 
 
 @pytest.mark.parametrize('market_class', [OneSidedMarket, TwoSidedMarket])
