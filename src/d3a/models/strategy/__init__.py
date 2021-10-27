@@ -18,10 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import logging
 import sys
+from dataclasses import dataclass
 from logging import getLogger
 from typing import List, Dict, Any, Union, Optional, Generator, Callable, TYPE_CHECKING  # noqa
 from uuid import uuid4
-from dataclasses import dataclass
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.data_classes import (Offer, Bid, Trade)
@@ -847,13 +847,13 @@ class BidEnabledStrategy(BaseStrategy):
                                  if bid.id not in deleted_bid_ids]
         return deleted_bid_ids
 
-    def add_bid_to_posted(self, market_id, bid):
+    def add_bid_to_posted(self, market_id: str, bid: Bid) -> None:
         """Add bid to posted bids dict"""
         if market_id not in self._bids.keys():
             self._bids[market_id] = []
         self._bids[market_id].append(bid)
 
-    def add_bid_to_bought(self, bid, market_id, remove_bid=True):
+    def add_bid_to_bought(self, bid: Bid, market_id: str, remove_bid: bool = True) -> None:
         """Add bid to traded bids dict"""
         if market_id not in self._traded_bids:
             self._traded_bids[market_id] = []
@@ -861,7 +861,7 @@ class BidEnabledStrategy(BaseStrategy):
         if remove_bid:
             self.remove_bid_from_pending(market_id, bid.id)
 
-    def _get_traded_bids_from_market(self, market_id):
+    def _get_traded_bids_from_market(self, market_id: str) -> List[Bid]:
         if market_id not in self._traded_bids:
             return []
         return self._traded_bids[market_id]
@@ -896,7 +896,7 @@ class BidEnabledStrategy(BaseStrategy):
             return []
         return [b for b in self._bids[market.id] if time_slot is None or b.time_slot == time_slot]
 
-    def event_bid_deleted(self, *, market_id, bid):
+    def event_bid_deleted(self, *, market_id: str, bid: Bid) -> None:
         assert ConstSettings.IAASettings.MARKET_TYPE != 1, ("Invalid state, cannot receive a bid "
                                                             "if single sided market is "
                                                             "globally configured.")
@@ -905,7 +905,8 @@ class BidEnabledStrategy(BaseStrategy):
             return
         self.remove_bid_from_pending(market_id, bid.id)
 
-    def event_bid_split(self, *, market_id, _, accepted_bid, residual_bid):
+    def event_bid_split(self, *, market_id: str, original_bid: Bid, accepted_bid: Bid,
+                        residual_bid: Bid) -> None:  # pylint: disable=unused-argument
         assert ConstSettings.IAASettings.MARKET_TYPE != 1, ("Invalid state, cannot receive a bid "
                                                             "if single sided market is "
                                                             "globally configured.")
@@ -914,7 +915,7 @@ class BidEnabledStrategy(BaseStrategy):
         self.add_bid_to_posted(market_id, bid=accepted_bid)
         self.add_bid_to_posted(market_id, bid=residual_bid)
 
-    def event_bid_traded(self, *, market_id, bid_trade):
+    def event_bid_traded(self, *, market_id: str, bid_trade: Trade) -> None:
         """Register a successful bid when a trade is concluded for it.
 
         This method is triggered by the MarketEvent.BID_TRADED event.
