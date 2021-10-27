@@ -20,19 +20,19 @@ from typing import TYPE_CHECKING
 from d3a_interface.constants_limits import ConstSettings
 
 from d3a.d3a_core.util import make_sa_name
-from d3a.models.market.future import FutureMarkets
 from d3a.models.strategy.area_agents.future_engine import FutureEngine
 from d3a.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
 
 if TYPE_CHECKING:
     from d3a.models.area import Area
+    from d3a.models.market.future import FutureMarkets
 
 
 class FutureAgent(TwoSidedAgent):
     """Handler for IAAEngines for the future markets."""
 
-    def __init__(self, *, owner: "Area", higher_market: FutureMarkets,
-                 lower_market: FutureMarkets,
+    def __init__(self, *, owner: "Area", higher_market: "FutureMarkets",
+                 lower_market: "FutureMarkets",
                  min_offer_age: int = ConstSettings.IAASettings.MIN_OFFER_AGE,
                  min_bid_age: int = ConstSettings.IAASettings.MIN_BID_AGE):
 

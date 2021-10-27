@@ -138,14 +138,18 @@ class UpdateFrequencyMixin:
         self.energy_rate_change_per_update.update(energy_rate_change_per_update)
 
     @property
+    def _time_slot_duration_in_seconds(self):
+        return GlobalConfig.slot_length.seconds
+
+    @property
     def _calculate_number_of_available_updates_per_slot(self):
         number_of_available_updates = \
-            max(int((GlobalConfig.slot_length.seconds / self.update_interval.seconds) - 1), 1)
+            max(int((self._time_slot_duration_in_seconds / self.update_interval.seconds) - 1), 1)
         return number_of_available_updates
 
     def update_and_populate_price_settings(self, area):
         assert ConstSettings.GeneralSettings.MIN_UPDATE_INTERVAL * 60 <= \
-               self.update_interval.seconds < GlobalConfig.slot_length.seconds
+               self.update_interval.seconds < self._time_slot_duration_in_seconds
 
         self.number_of_available_updates = \
             self._calculate_number_of_available_updates_per_slot
