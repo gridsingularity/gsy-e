@@ -123,6 +123,7 @@ class TestAreaDispatcher:
     @staticmethod
     def test_create_area_agents_for_future_markets(area_dispatcher):
         """Test if the future agent is correctly created."""
+        area_dispatcher.area.parent = Mock()
         area_dispatcher.area.parent.future_markets = MagicMock(autospec=FutureMarkets)
         area_dispatcher.create_area_agents_for_future_markets(MagicMock(autospec=FutureMarkets))
         assert isinstance(area_dispatcher.future_agent, FutureAgent)
