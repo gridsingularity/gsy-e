@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.d3a_core.util import convert_area_throughput_kVA_to_kWh
+from d3a.gsy_core.util import convert_area_throughput_kVA_to_kWh
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.area_validator import validate_area
 

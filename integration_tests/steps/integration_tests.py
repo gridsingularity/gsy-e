@@ -38,8 +38,8 @@ from pendulum import duration, today, from_format
 
 from d3a import constants
 from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
-from d3a.d3a_core.simulation import Simulation
-from d3a.d3a_core.util import d3a_path
+from d3a.gsy_core.simulation import Simulation
+from d3a.gsy_core.util import d3a_path
 from d3a.models.config import SimulationConfig
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
@@ -387,7 +387,7 @@ def test_export_supply_demand_curve(context):
 @then('we test the export of with compare-alt-pricing flag')
 def test_export_data_csv_alt_pricing(context):
     data_fn = "grid.csv"
-    from d3a.d3a_core.export import alternative_pricing_subdirs
+    from d3a.gsy_core.export import alternative_pricing_subdirs
     for subdir in alternative_pricing_subdirs.values():
         sim_data_csv = glob.glob(os.path.join(context.export_path, "*", subdir, data_fn))
         if len(sim_data_csv) != 1:

@@ -19,7 +19,7 @@ from d3a_interface.data_classes import Offer, Bid, Trade
 from pendulum import duration
 
 from d3a.constants import SettlementTemplateStrategiesConstants
-from d3a.d3a_core.exceptions import MarketException
+from d3a.gsy_core.exceptions import MarketException
 from d3a.models.market import Market  # NOQA
 from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.strategy.update_frequency import (TemplateStrategyBidUpdater,

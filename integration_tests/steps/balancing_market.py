@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from behave import given, then
 from math import isclose
 from functools import reduce
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.d3a_core.util import make_ba_name
+from d3a.gsy_core.device_registry import DeviceRegistry
+from d3a.gsy_core.util import make_ba_name
 from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import FLOATING_POINT_TOLERANCE
 

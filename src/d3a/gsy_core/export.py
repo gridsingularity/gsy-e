@@ -38,9 +38,9 @@ from slugify import slugify
 from sortedcontainers import SortedDict
 
 import d3a.constants
-from d3a.d3a_core.myco_singleton import bid_offer_matcher
-from d3a.d3a_core.sim_results.plotly_graph import PlotlyGraph
-from d3a.d3a_core.util import constsettings_to_dict, round_floats_for_ui
+from d3a.gsy_core.myco_singleton import bid_offer_matcher
+from d3a.gsy_core.sim_results.plotly_graph import PlotlyGraph
+from d3a.gsy_core.util import constsettings_to_dict, round_floats_for_ui
 from d3a.data_classes import PlotDescription
 from d3a.models.area import Area
 from d3a.models.market.market_structures import (AvailableMarketTypes,

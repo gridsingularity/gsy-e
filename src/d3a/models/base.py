@@ -19,7 +19,7 @@ from logging import getLogger
 
 from cached_property import cached_property
 
-from d3a.d3a_core.util import TaggedLogWrapper
+from d3a.gsy_core.util import TaggedLogWrapper
 
 log = getLogger(__name__)
 

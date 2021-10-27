@@ -23,10 +23,10 @@ from d3a_interface.utils import convert_kW_to_kWh
 from d3a_interface.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
 from pendulum import duration
 
-from d3a.d3a_core.exceptions import D3AException
-from d3a.d3a_core.global_objects_singleton import global_objects
-from d3a.d3a_core.util import d3a_path
-from d3a.d3a_core.util import should_read_profile_from_db
+from d3a.gsy_core.exceptions import D3AException
+from d3a.gsy_core.global_objects_singleton import global_objects
+from d3a.gsy_core.util import d3a_path
+from d3a.gsy_core.util import should_read_profile_from_db
 from d3a.models.strategy.pv import PVStrategy
 
 """

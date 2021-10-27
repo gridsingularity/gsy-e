@@ -5,9 +5,9 @@ from unittest.mock import Mock
 from d3a_interface.constants_limits import GlobalConfig
 from pendulum import duration
 
-from d3a.d3a_core.live_events import CreateAreaEvent, UpdateAreaEvent
-from d3a.d3a_core.live_events import LiveEvents
-from d3a.d3a_core.util import d3a_path
+from d3a.gsy_core.live_events import CreateAreaEvent, UpdateAreaEvent
+from d3a.gsy_core.live_events import LiveEvents
+from d3a.gsy_core.util import d3a_path
 from d3a.models.area import Area
 from d3a.models.config import SimulationConfig
 from d3a.models.strategy.smart_meter import SmartMeterStrategy

@@ -19,9 +19,9 @@ from behave import then, given
 from math import isclose
 from pendulum import today
 import os
-from d3a.d3a_core.util import d3a_path
+from d3a.gsy_core.util import d3a_path
 from d3a.constants import TIME_ZONE
-from d3a.d3a_core.export import EXPORT_DEVICE_VARIABLES
+from d3a.gsy_core.export import EXPORT_DEVICE_VARIABLES
 from d3a_interface.sim_results.market_price_energy_day import MarketPriceEnergyDay
 from d3a_interface.sim_results.bills import CumulativeBills
 from d3a_interface.sim_results.cumulative_grid_trades import CumulativeGridTrades
@@ -260,7 +260,7 @@ def device_statistics(context):
 
 @then("an AreaException is raised")
 def area_exception_is_raised(context):
-    from d3a.d3a_core.exceptions import AreaException
+    from d3a.gsy_core.exceptions import AreaException
     assert type(context.sim_error) == AreaException
 
 

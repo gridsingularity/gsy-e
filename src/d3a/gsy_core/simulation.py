@@ -36,15 +36,15 @@ from pendulum import now, duration, DateTime
 import d3a.constants
 from d3a import setup as d3a_setup  # noqa
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, SIMULATION_PAUSE_TIMEOUT
-from d3a.d3a_core.exceptions import SimulationException
-from d3a.d3a_core.export import ExportAndPlot
-from d3a.d3a_core.global_objects_singleton import global_objects
-from d3a.d3a_core.live_events import LiveEvents
-from d3a.d3a_core.myco_singleton import bid_offer_matcher
-from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCommunication
-from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
-from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
-from d3a.d3a_core.util import (
+from d3a.gsy_core.exceptions import SimulationException
+from d3a.gsy_core.export import ExportAndPlot
+from d3a.gsy_core.global_objects_singleton import global_objects
+from d3a.gsy_core.live_events import LiveEvents
+from d3a.gsy_core.myco_singleton import bid_offer_matcher
+from d3a.gsy_core.redis_connections.redis_communication import RedisSimulationCommunication
+from d3a.gsy_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
+from d3a.gsy_core.sim_results.file_export_endpoints import FileExportEndpoints
+from d3a.gsy_core.util import (
     NonBlockingConsole, validate_const_settings_for_simulation,
     get_market_slot_time_str)
 from d3a.models.area.event_deserializer import deserialize_events_to_areas

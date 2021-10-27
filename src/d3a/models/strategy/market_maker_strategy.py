@@ -22,8 +22,8 @@ from d3a_interface.read_user_profile import read_and_convert_identity_profile_to
 from d3a_interface.utils import key_in_dict_and_not_none
 from d3a_interface.validators import MarketMakerValidator
 
-from d3a.d3a_core.global_objects_singleton import global_objects
-from d3a.d3a_core.util import should_read_profile_from_db
+from d3a.gsy_core.global_objects_singleton import global_objects
+from d3a.gsy_core.util import should_read_profile_from_db
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 
 

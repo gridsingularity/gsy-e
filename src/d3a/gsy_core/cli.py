@@ -31,8 +31,8 @@ from d3a_interface.exceptions import D3AException
 from d3a_interface.settings_validators import validate_global_settings
 
 from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, TIME_FORMAT, TIME_ZONE
-from d3a.d3a_core.simulation import run_simulation
-from d3a.d3a_core.util import (
+from d3a.gsy_core.simulation import run_simulation
+from d3a.gsy_core.util import (
     DateType, IntervalType, available_simulation_scenarios, convert_str_to_pause_after_interval,
     read_settings_from_file, update_advanced_settings)
 from d3a.models.config import SimulationConfig

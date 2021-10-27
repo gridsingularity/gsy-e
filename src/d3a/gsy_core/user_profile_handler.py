@@ -29,7 +29,7 @@ from pony.orm import Database, Required, db_session, select
 from pony.orm.core import Query
 
 import d3a.constants
-from d3a.d3a_core.util import should_read_profile_from_db
+from d3a.gsy_core.util import should_read_profile_from_db
 
 
 class ProfileDBConnectionHandler:

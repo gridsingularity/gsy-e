@@ -20,8 +20,8 @@ from threading import Event, Lock
 import logging
 import json
 from time import time
-from d3a.d3a_core.redis_connections.redis_communication import REDIS_URL
-from d3a.d3a_core.redis_connections.aggregator_connection import AggregatorHandler
+from d3a.gsy_core.redis_connections.redis_communication import REDIS_URL
+from d3a.gsy_core.redis_connections.aggregator_connection import AggregatorHandler
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 import d3a.constants
 

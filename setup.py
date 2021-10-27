@@ -40,7 +40,7 @@ setup(
     install_requires=REQUIREMENTS,
     entry_points={
         "console_scripts": [
-            "d3a = d3a.d3a_core.cli:main",
+            "d3a = d3a.gsy_core.cli:main",
         ]
     },
     zip_safe=False,

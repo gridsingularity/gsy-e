@@ -21,7 +21,7 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.matching_algorithms import (
     PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
 )
-from d3a.d3a_core.exceptions import WrongMarketTypeException
+from d3a.gsy_core.exceptions import WrongMarketTypeException
 from d3a.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
 
 

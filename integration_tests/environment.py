@@ -22,8 +22,8 @@ from time import sleep
 
 import d3a.constants
 from d3a import constants
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.d3a_core.util import update_advanced_settings, constsettings_to_dict
+from d3a.gsy_core.device_registry import DeviceRegistry
+from d3a.gsy_core.util import update_advanced_settings, constsettings_to_dict
 from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 
 """

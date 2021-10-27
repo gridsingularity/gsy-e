@@ -24,7 +24,7 @@ from d3a_interface.constants_limits import ConstSettings, TIME_ZONE, GlobalConfi
 from pendulum import duration, today
 
 import d3a
-from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.gsy_core.device_registry import DeviceRegistry
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
 

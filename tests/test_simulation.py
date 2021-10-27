@@ -24,8 +24,8 @@ from d3a_interface.kafka_communication.kafka_producer import (DisabledKafkaConne
 from d3a_interface.sim_results.all_results import ResultsHandler
 from pendulum import duration, today
 
-from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
-from d3a.d3a_core.simulation import Simulation
+from d3a.gsy_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
+from d3a.gsy_core.simulation import Simulation
 from d3a.models.config import SimulationConfig
 
 

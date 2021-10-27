@@ -24,8 +24,8 @@ from numpy.random import random
 from pendulum import DateTime  # noqa
 
 from d3a import constants
-from d3a.d3a_core.exceptions import WrongMarketTypeException
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import RedisCommunicator
+from d3a.gsy_core.exceptions import WrongMarketTypeException
+from d3a.gsy_core.redis_connections.redis_area_market_communicator import RedisCommunicator
 from d3a.events.event_structures import MarketEvent, AreaEvent
 from d3a.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
 from d3a.models.area.redis_dispatcher.area_to_market_publisher import AreaToMarketEventPublisher

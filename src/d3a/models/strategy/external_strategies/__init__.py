@@ -27,7 +27,7 @@ from d3a_interface.utils import (key_in_dict_and_not_none, convert_str_to_pendul
 from pendulum import DateTime
 
 import d3a.constants
-from d3a.d3a_core.global_objects_singleton import global_objects
+from d3a.gsy_core.global_objects_singleton import global_objects
 
 IncomingRequest = namedtuple("IncomingRequest", ("request_type", "arguments", "response_channel"))
 

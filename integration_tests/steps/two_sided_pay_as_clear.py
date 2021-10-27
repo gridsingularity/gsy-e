@@ -19,8 +19,8 @@ import os
 import glob
 from math import isclose
 from behave import then
-from d3a.d3a_core.myco_singleton import bid_offer_matcher
-from d3a.d3a_core.util import make_iaa_name
+from d3a.gsy_core.myco_singleton import bid_offer_matcher
+from d3a.gsy_core.util import make_iaa_name
 
 
 @then('all trades are equal to market_clearing_rate')

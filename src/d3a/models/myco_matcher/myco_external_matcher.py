@@ -23,9 +23,9 @@ from typing import Dict, List
 from d3a_interface.data_classes import BidOfferMatch
 
 import d3a.constants
-from d3a.d3a_core.exceptions import (
+from d3a.gsy_core.exceptions import (
     InvalidBidOfferPairException, MycoValidationException)
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
+from d3a.gsy_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
 from d3a.models.market.two_sided import TwoSidedMarket
 from d3a.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
 

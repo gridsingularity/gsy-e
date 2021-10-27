@@ -20,7 +20,7 @@ from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.smart_meter import SmartMeterStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.d3a_core.util import d3a_path
+from d3a.gsy_core.util import d3a_path
 
 
 def get_setup(config):

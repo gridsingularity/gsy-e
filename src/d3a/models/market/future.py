@@ -24,8 +24,8 @@ from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.data_classes import Bid, Offer, Trade, BaseBidOffer, TradeBidOfferInfo
 from pendulum import DateTime, duration
 
-from d3a.d3a_core.blockchain_interface import NonBlockchainInterface
-from d3a.d3a_core.exceptions import (BidNotFoundException, MarketReadOnlyException,
+from d3a.gsy_core.blockchain_interface import NonBlockchainInterface
+from d3a.gsy_core.exceptions import (BidNotFoundException, MarketReadOnlyException,
                                      OfferNotFoundException)
 from d3a.events.event_structures import MarketEvent
 from d3a.models.area.event_dispatcher import AreaDispatcher
