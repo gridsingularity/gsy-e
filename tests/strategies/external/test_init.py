@@ -388,10 +388,10 @@ class TestExternalMixin:
         self.device.strategy.owner = self.device
         assert self.device.strategy.connected is False
         self.device.strategy._register(payload)
-        self.device.strategy.register_on_market_cycle()
+        self.device.strategy._update_connection_status()
         assert self.device.strategy.connected is True
         self.device.strategy._unregister(payload)
-        self.device.strategy.register_on_market_cycle()
+        self.device.strategy._update_connection_status()
         assert self.device.strategy.connected is False
 
         payload = {"data": json.dumps({"transaction_id": None})}
@@ -422,7 +422,7 @@ class TestExternalMixin:
     def test_restore_state(self, strategy):
         strategy.state.restore_state = MagicMock()
         strategy.connected = True
-        strategy._connected = True
+        strategy._is_registered = True
         strategy._use_template_strategy = True
         state_dict = {
             "connected": False,
@@ -431,7 +431,7 @@ class TestExternalMixin:
         }
         strategy.restore_state(state_dict)
         assert strategy.connected is False
-        assert strategy._connected is False
+        assert strategy._is_registered is False
         assert strategy._use_template_strategy is False
         strategy.state.restore_state.assert_called_once_with(state_dict)
 
@@ -484,7 +484,7 @@ class TestForecastRelatedFeatures:
                      "energy_forecast": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
         payload = {"data": json.dumps(arguments)}
         assert ext_strategy_fixture.pending_requests == deque([])
-        ext_strategy_fixture.set_energy_forecast(payload)
+        ext_strategy_fixture._set_energy_forecast(payload)
         assert len(ext_strategy_fixture.pending_requests) > 0
         energy_forecast_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
                                            "response/set_energy_forecast"
@@ -498,7 +498,7 @@ class TestForecastRelatedFeatures:
         ext_strategy_fixture.redis.publish_json = Mock()
         ext_strategy_fixture.pending_requests = deque([])
         payload = {"data": json.dumps({"transaction_id": transaction_id})}
-        ext_strategy_fixture.set_energy_forecast(payload)
+        ext_strategy_fixture._set_energy_forecast(payload)
         energy_forecast_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
                                            "response/set_energy_forecast"
         ext_strategy_fixture.redis.publish_json.assert_called_with(
@@ -515,7 +515,7 @@ class TestForecastRelatedFeatures:
                      "energy_measurement": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
         payload = {"data": json.dumps(arguments)}
         assert ext_strategy_fixture.pending_requests == deque([])
-        ext_strategy_fixture.set_energy_measurement(payload)
+        ext_strategy_fixture._set_energy_measurement(payload)
         assert len(ext_strategy_fixture.pending_requests) > 0
         energy_measurement_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
                                               "response/set_energy_measurement"
@@ -530,7 +530,7 @@ class TestForecastRelatedFeatures:
         ext_strategy_fixture.redis.publish_json = Mock()
         ext_strategy_fixture.pending_requests = deque([])
         payload = {"data": json.dumps({"transaction_id": transaction_id})}
-        ext_strategy_fixture.set_energy_measurement(payload)
+        ext_strategy_fixture._set_energy_measurement(payload)
         energy_measurement_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
                                               "response/set_energy_measurement"
         ext_strategy_fixture.redis.publish_json.assert_called_with(
@@ -548,7 +548,7 @@ class TestForecastRelatedFeatures:
         arguments = {"transaction_id": transaction_id,
                      "energy_forecast": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
         response_channel = "response_channel"
-        ext_strategy_fixture.set_energy_forecast_impl(arguments, response_channel)
+        ext_strategy_fixture._set_energy_forecast_impl(arguments, response_channel)
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
             response_channel, {"command": "set_energy_forecast",
                                "status": "ready",
@@ -562,7 +562,7 @@ class TestForecastRelatedFeatures:
         response_channel = "response_channel"
         arguments = {"transaction_id": transaction_id,
                      "energy_forecast": {"wrong:time:format": 1}}
-        ext_strategy_fixture.set_energy_forecast_impl(arguments, response_channel)
+        ext_strategy_fixture._set_energy_forecast_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_forecast_impl "
                          f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
@@ -579,7 +579,7 @@ class TestForecastRelatedFeatures:
         response_channel = "response_channel"
         arguments = {"transaction_id": transaction_id,
                      "energy_forecast": {now().format(d3a.constants.DATE_TIME_FORMAT): -1}}
-        ext_strategy_fixture.set_energy_forecast_impl(arguments, response_channel)
+        ext_strategy_fixture._set_energy_forecast_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_forecast_impl "
                          f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
@@ -596,7 +596,7 @@ class TestForecastRelatedFeatures:
         arguments = {"transaction_id": transaction_id,
                      "energy_measurement": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
         response_channel = "response_channel"
-        ext_strategy_fixture.set_energy_measurement_impl(arguments, response_channel)
+        ext_strategy_fixture._set_energy_measurement_impl(arguments, response_channel)
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
             response_channel, {"command": "set_energy_measurement",
                                "status": "ready",
@@ -610,7 +610,7 @@ class TestForecastRelatedFeatures:
         ext_strategy_fixture.redis.publish_json.reset_mock()
         arguments = {"transaction_id": transaction_id,
                      "energy_measurement": {"wrong:time:format": 1}}
-        ext_strategy_fixture.set_energy_measurement_impl(arguments, response_channel)
+        ext_strategy_fixture._set_energy_measurement_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_measurement_impl "
                          f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
@@ -627,7 +627,7 @@ class TestForecastRelatedFeatures:
         ext_strategy_fixture.redis.publish_json.reset_mock()
         arguments = {"transaction_id": transaction_id,
                      "energy_measurement": {now().format(d3a.constants.DATE_TIME_FORMAT): -1}}
-        ext_strategy_fixture.set_energy_measurement_impl(arguments, response_channel)
+        ext_strategy_fixture._set_energy_measurement_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_measurement_impl "
                          f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
