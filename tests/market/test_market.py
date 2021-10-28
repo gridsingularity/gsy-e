@@ -132,7 +132,7 @@ def test_market_trade(market, offer, accept_offer):
     assert trade
     assert trade == market.trades[0]
     assert trade.id
-    assert trade.time == now
+    assert trade.creation_time == now
     assert trade.offer_bid == e_offer
     assert trade.seller == "A"
     assert trade.buyer == "B"
@@ -147,7 +147,7 @@ def test_balancing_market_negative_offer_trade(market=BalancingMarket(
     assert trade
     assert trade == market.trades[0]
     assert trade.id
-    assert trade.time == now
+    assert trade.creation_time == now
     assert trade.offer_bid is offer
     assert trade.seller == "A"
     assert trade.buyer == "B"
