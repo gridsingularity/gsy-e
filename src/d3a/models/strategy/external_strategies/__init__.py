@@ -19,7 +19,7 @@ import json
 import logging
 from collections import deque, namedtuple
 from threading import Lock
-from typing import Dict
+from typing import Dict, List, Tuple
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.utils import (key_in_dict_and_not_none, convert_str_to_pendulum_in_dict,
@@ -28,6 +28,7 @@ from pendulum import DateTime
 
 import d3a.constants
 from d3a.d3a_core.global_objects_singleton import global_objects
+from d3a.models.strategy.external_strategies.dof_filter import DegreesOfFreedomFilter
 
 IncomingRequest = namedtuple("IncomingRequest", ("request_type", "arguments", "response_channel"))
 
@@ -570,3 +571,12 @@ class ExternalMixin:
                 "total_cost": self.energy_traded_costs(self.area.current_market.id)
                 if self.area.current_market else None,
                 }
+
+    def filter_degrees_of_freedom_arguments(self, order_arguments: Dict) -> Tuple[Dict, List[str]]:
+        """Filter the arguments of an incoming order to remove Degrees of Freedom if necessary."""
+        if self.simulation_config.enable_degrees_of_freedom:
+            return order_arguments, []
+
+        order_arguments, filtered_fields = DegreesOfFreedomFilter.apply(order_arguments)
+
+        return order_arguments, filtered_fields
