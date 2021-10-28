@@ -21,11 +21,12 @@ import sys
 from abc import ABC
 from dataclasses import dataclass
 from logging import getLogger
-from typing import List, Dict, Union, Optional, Generator, Callable, TYPE_CHECKING  # noqa
+from typing import List, Dict, Union, Optional, Generator, Callable, TYPE_CHECKING
 from uuid import uuid4
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.data_classes import (Offer, Bid, Trade)
+from d3a_interface.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
 from d3a import constants
@@ -308,19 +309,19 @@ class Offers:
         """Get all open offers in market"""
         open_offers = []
         sold_offer_ids = self._get_sold_offer_ids_in_market(market_id)
-        for offer, _market in self.posted.items():
+        for offer, _market_id in self.posted.items():
             if (offer.id not in sold_offer_ids
-                    and market_id == _market
+                    and market_id == _market_id
                     and (time_slot is None or offer.time_slot == time_slot)):
                 open_offers.append(offer)
         return open_offers
 
     def open_offer_energy(self, market_id: str, time_slot: DateTime = None) -> float:
-        """Get energy of open offers in market"""
+        """Get sum of open offers' energy in market"""
         return sum(o.energy for o in self.open_in_market(market_id, time_slot))
 
     def posted_in_market(self, market_id: str, time_slot: DateTime = None) -> List[Offer]:
-        """Get posted offers in market"""
+        """Get list of posted offers in market"""
         return [offer
                 for offer, _market in self.posted.items()
                 if market_id == _market and (time_slot is None or offer.time_slot == time_slot)]
@@ -338,7 +339,7 @@ class Offers:
                    if time_slot is None or o.time_slot == time_slot)
 
     def sold_offer_price(self, market_id: str, time_slot: DateTime = None) -> float:
-        """Get price of all sold offers"""
+        """Get sum of all sold offers' price"""
         return sum(o.price
                    for o in self.sold_in_market(market_id)
                    if time_slot is None or o.time_slot == time_slot)
@@ -468,7 +469,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
 
     @property
     def _is_eligible_for_balancing_market(self) -> bool:
-        """Check if strategy cab participate in the balancing market"""
+        """Check if strategy can participate in the balancing market"""
         return (self.owner.name in DeviceRegistry.REGISTRY and
                 ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET)
 
@@ -504,7 +505,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
                          initial_energy_rate: float) -> Optional[Offer]:
         """Post first and only offer for the strategy. Will fail if another offer already
          exists."""
-        if any(offer.seller == self.owner.name for offer in market.get_offers().values()):
+        if any(offer.seller_id == self.owner.uuid for offer in market.get_offers().values()):
             self.owner.log.debug("There is already another offer posted on the market, therefore"
                                  " do not repost another first offer.")
             return None
@@ -670,8 +671,8 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
 
 class BidEnabledStrategy(BaseStrategy):
     """
-    Base strategy for all areas / assets that want to post bids and interact with a two sided
-    market
+    Base strategy for all areas / assets that are eligible to post bids and interact with a
+    two sided market
     """
     def __init__(self):
         super().__init__()
@@ -870,15 +871,14 @@ class BidEnabledStrategy(BaseStrategy):
         )
 
     def get_posted_bids(self, market: "Market", time_slot: Optional[DateTime] = None) -> List[Bid]:
-        """Get all posted bids from a market"""
+        """Get list of posted bids from a market"""
         if market.id not in self._bids:
             return []
         return [b for b in self._bids[market.id] if time_slot is None or b.time_slot == time_slot]
 
     def event_bid_deleted(self, *, market_id: str, bid: Bid) -> None:
-        assert ConstSettings.IAASettings.MARKET_TYPE != 1, ("Invalid state, cannot receive a bid "
-                                                            "if single sided market is "
-                                                            "globally configured.")
+        assert ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value, (
+            "Invalid state, cannot receive a bid if single sided market is globally configured.")
 
         if bid.buyer != self.owner.name:
             return
