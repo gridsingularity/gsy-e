@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import uuid
 from collections import deque
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
@@ -33,7 +33,7 @@ import d3a.models.strategy.external_strategies
 from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.models.area import Area
 from d3a.models.strategy import BidEnabledStrategy
-from d3a.models.strategy.external_strategies import IncomingRequest
+from d3a.models.strategy.external_strategies import IncomingRequest, AreaExternalConnectionManager
 from d3a.models.strategy.external_strategies.load import (LoadHoursExternalStrategy,
                                                           LoadForecastExternalStrategy)
 from d3a.models.strategy.external_strategies.pv import (PVExternalStrategy,
@@ -667,3 +667,79 @@ class TestForecastRelatedFeatures:
         assert command_name in return_value
         assert argument_name in return_value[command_name]
         assert list(return_value[command_name][argument_name].values())[0] == 1234.0
+
+
+class TestAreaExternalConnectionManager:
+    """Test the AreaExternalConnectionManager class."""
+    def test_register(self):
+        """Test the register method of AreaExternalConnectionManager."""
+        redis_communicator = MagicMock()
+        # is_connected=True
+        assert AreaExternalConnectionManager.register(
+            redis_communicator, "channel1", is_connected=True,
+            transaction_id="transaction1", area_uuid="area1") is True
+        redis_communicator.publish_json.assert_not_called()
+
+        # is_connected=False
+        assert AreaExternalConnectionManager.register(
+            redis_communicator, "channel1", is_connected=False,
+            transaction_id="transaction1", area_uuid="area1") is True
+        redis_communicator.publish_json.assert_called_once_with(
+            "channel1/response/register_participant",
+            {"command": "register", "status": "ready", "registered": True,
+             "transaction_id": "transaction1", "device_uuid": "area1"}
+        )
+
+        # Exception raised
+        redis_communicator.reset_mock()
+        redis_communicator.publish_json.side_effect = Exception
+        assert AreaExternalConnectionManager.register(
+            redis_communicator, "channel1", is_connected=False,
+            transaction_id="transaction1", area_uuid="area1") is False
+
+    @patch("d3a.models.strategy.external_strategies.AreaExternalConnectionManager."
+           "check_for_connected_and_reply")
+    def test_unregister(self, check_for_connected_mock):
+        """Test the unregister method of AreaExternalConnectionManager."""
+        redis_communicator = MagicMock()
+
+        # is_connected=False
+        check_for_connected_mock.return_value = False
+        assert AreaExternalConnectionManager.unregister(
+            redis_communicator, "channel1", is_connected=False,
+            transaction_id="transaction1") is False
+        redis_communicator.publish_json.assert_not_called()
+
+        # is_connected=True
+        check_for_connected_mock.return_value = True
+        assert AreaExternalConnectionManager.unregister(
+            redis_communicator, "channel1", is_connected=True,
+            transaction_id="transaction1") is False
+        redis_communicator.publish_json.assert_called_once_with(
+            "channel1/response/unregister_participant",
+            {"command": "unregister", "status": "ready", "unregistered": True,
+             "transaction_id": "transaction1"}
+        )
+
+        # Exception raised
+        redis_communicator.reset_mock()
+        redis_communicator.publish_json.side_effect = Exception
+        assert AreaExternalConnectionManager.unregister(
+            redis_communicator, "channel1", is_connected=False,
+            transaction_id="transaction1") is False
+
+    def test_check_for_connected_and_reply(self):
+        """Test the check_for_connected_and_reply method of AreaExternalConnectionManager."""
+        redis_communicator = MagicMock()
+
+        assert AreaExternalConnectionManager.check_for_connected_and_reply(
+            redis_communicator, "channel1", is_connected=True) is True
+        redis_communicator.publish_json.assert_not_called()
+
+        assert AreaExternalConnectionManager.check_for_connected_and_reply(
+            redis_communicator, "channel1", is_connected=False) is False
+        redis_communicator.publish_json.assert_called_once_with(
+            "channel1",
+            {"status": "error",
+             "error_message": "Client should be registered in order to access this area."}
+        )

@@ -93,7 +93,8 @@ class AreaExternalConnectionManager:
         return True
 
     @staticmethod
-    def unregister(redis, channel_prefix, is_connected, transaction_id):
+    def unregister(redis: ResettableCommunicator, channel_prefix: str,
+                   is_connected: bool, transaction_id: str) -> bool:
         """Unregister the client to deny future actions on behalf of an asset and return the status.
 
             Side effects:
