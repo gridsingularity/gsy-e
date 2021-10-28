@@ -26,7 +26,7 @@ from pendulum import duration, DateTime
 
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.strategy.external_strategies import (
-    ExternalMixin, IncomingRequest, check_for_connected_and_reply, default_market_info)
+    ExternalMixin, IncomingRequest, AreaExternalConnectionManager, default_market_info)
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from d3a.models.strategy.pv import PVStrategy
 
@@ -54,8 +54,8 @@ class PVExternalMixin(ExternalMixin):
         """Callback for list offers Redis endpoint."""
         self._get_transaction_id(payload)
         list_offers_response_channel = f"{self.channel_prefix}/response/list_offers"
-        if not check_for_connected_and_reply(self.redis, list_offers_response_channel,
-                                             self.connected):
+        if not AreaExternalConnectionManager.check_for_connected_and_reply(
+                self.redis, list_offers_response_channel, self.connected):
             return
         arguments = json.loads(payload["data"])
         self.pending_requests.append(
@@ -83,8 +83,8 @@ class PVExternalMixin(ExternalMixin):
         """Callback for delete offer Redis endpoint."""
         transaction_id = self._get_transaction_id(payload)
         delete_offer_response_channel = f"{self.channel_prefix}/response/delete_offer"
-        if not check_for_connected_and_reply(self.redis, delete_offer_response_channel,
-                                             self.connected):
+        if not AreaExternalConnectionManager.check_for_connected_and_reply(
+                self.redis, delete_offer_response_channel, self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
@@ -132,8 +132,8 @@ class PVExternalMixin(ExternalMixin):
                                             "requirements"})
 
         offer_response_channel = f"{self.channel_prefix}/response/offer"
-        if not check_for_connected_and_reply(self.redis, offer_response_channel,
-                                             self.connected):
+        if not AreaExternalConnectionManager.check_for_connected_and_reply(
+                self.redis, offer_response_channel, self.connected):
             return
         try:
             arguments = json.loads(payload["data"])

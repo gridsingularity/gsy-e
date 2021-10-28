@@ -26,7 +26,7 @@ from pendulum import duration
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.market import Market
 from d3a.models.strategy.external_strategies import (
-    ExternalMixin, IncomingRequest, check_for_connected_and_reply, default_market_info)
+    ExternalMixin, IncomingRequest, default_market_info, AreaExternalConnectionManager)
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 
@@ -70,8 +70,8 @@ class LoadExternalMixin(ExternalMixin):
         """Callback for list bids Redis endpoint."""
         self._get_transaction_id(payload)
         list_bids_response_channel = f"{self.channel_prefix}/response/list_bids"
-        if not check_for_connected_and_reply(self.redis, list_bids_response_channel,
-                                             self.connected):
+        if not AreaExternalConnectionManager.check_for_connected_and_reply(
+                self.redis, list_bids_response_channel, self.connected):
             return
         arguments = json.loads(payload["data"])
         self.pending_requests.append(
@@ -97,8 +97,8 @@ class LoadExternalMixin(ExternalMixin):
         """Callback for delete bid Redis endpoint."""
         transaction_id = self._get_transaction_id(payload)
         delete_bid_response_channel = f"{self.channel_prefix}/response/delete_bid"
-        if not check_for_connected_and_reply(self.redis,
-                                             delete_bid_response_channel, self.connected):
+        if not AreaExternalConnectionManager.check_for_connected_and_reply(
+                self.redis, delete_bid_response_channel, self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
@@ -144,7 +144,8 @@ class LoadExternalMixin(ExternalMixin):
                                             "requirements"})
 
         bid_response_channel = f"{self.channel_prefix}/response/bid"
-        if not check_for_connected_and_reply(self.redis, bid_response_channel, self.connected):
+        if not AreaExternalConnectionManager.check_for_connected_and_reply(
+                self.redis, bid_response_channel, self.connected):
             return
         arguments = json.loads(payload["data"])
         if (  # Check that all required arguments have been provided

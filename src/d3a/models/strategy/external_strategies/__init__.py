@@ -48,66 +48,70 @@ class CommandTypeNotSupported(Exception):
     """Exception raised when a unsupported command is received."""
 
 
-def check_for_connected_and_reply(
-        redis: ResettableCommunicator, channel_name: str, is_connected: bool) -> bool:
-    """Return whether the external client is registered to access the area.
+class AreaExternalConnectionManager:
+    """Manage the area's strategy external communication."""
+    @staticmethod
+    def check_for_connected_and_reply(
+            redis: ResettableCommunicator, channel_name: str, is_connected: bool) -> bool:
+        """Return whether the external client is registered to access the area.
 
-    Side effect: Publish an error message to client if it isn't registered (is_connected: False)
+        Side effect: Publish an error message to client if it isn't registered is_connected: False
 
-    Args:
-        redis: Redis communicator that will be used to publish the error message
-        channel_name: Channel that the error message will be published to
-        is_connected: Flag indicating whether the client is allowed to act on behalf of the asset
-    """
-    if not is_connected:
-        redis.publish_json(
-            channel_name, {
-                "status": "error",
-                "error_message": "Client should be registered in order to access this area."})
-        return False
-    return True
-
-
-def register_area(
-        redis: ResettableCommunicator, channel_prefix: str,
-        is_connected: bool, transaction_id: str, area_uuid: str) -> bool:
-    """Register the client to act on behalf of an asset and return the status.
-
-    Side effects:
-        - Publish a success message to the client
-        - Log the error traceback if registration failed
-    """
-    if not is_connected:
-        register_response_channel = f"{channel_prefix}/response/register_participant"
-        try:
+        Args:
+            redis: Redis communicator that will be used to publish the error message
+            channel_name: Channel that the error message will be published to
+            is_connected: Indicate whether the client is allowed to act on behalf of the asset
+        """
+        if not is_connected:
             redis.publish_json(
-                register_response_channel,
-                {"command": "register", "status": "ready", "registered": True,
-                 "transaction_id": transaction_id, "device_uuid": area_uuid})
-        except Exception:
-            logging.exception("Error when registering to area %s", channel_prefix)
+                channel_name, {
+                    "status": "error",
+                    "error_message": "Client should be registered in order to access this area."})
             return False
-    return True
+        return True
 
-
-def unregister_area(redis, channel_prefix, is_connected, transaction_id):
-    """Unregister the client to deny future actions on behalf of an asset and return the status.
+    @staticmethod
+    def register(
+            redis: ResettableCommunicator, channel_prefix: str,
+            is_connected: bool, transaction_id: str, area_uuid: str) -> bool:
+        """Register the client to act on behalf of an asset and return the status.
 
         Side effects:
             - Publish a success message to the client
-            - Log the error traceback if un-registration failed
+            - Log the error traceback if registration failed
         """
-    unregister_response_channel = f"{channel_prefix}/response/unregister_participant"
-    if check_for_connected_and_reply(redis, unregister_response_channel, is_connected):
-        try:
-            redis.publish_json(
-                unregister_response_channel,
-                {"command": "unregister", "status": "ready", "unregistered": True,
-                 "transaction_id": transaction_id})
-        except Exception:
-            logging.exception("Error when registering to area %s", channel_prefix)
-            return is_connected
-    return False
+        if not is_connected:
+            register_response_channel = f"{channel_prefix}/response/register_participant"
+            try:
+                redis.publish_json(
+                    register_response_channel,
+                    {"command": "register", "status": "ready", "registered": True,
+                     "transaction_id": transaction_id, "device_uuid": area_uuid})
+            except Exception:
+                logging.exception("Error when registering to area %s", channel_prefix)
+                return False
+        return True
+
+    @staticmethod
+    def unregister(redis, channel_prefix, is_connected, transaction_id):
+        """Unregister the client to deny future actions on behalf of an asset and return the status.
+
+            Side effects:
+                - Publish a success message to the client
+                - Log the error traceback if un-registration failed
+            """
+        unregister_response_channel = f"{channel_prefix}/response/unregister_participant"
+        if AreaExternalConnectionManager.check_for_connected_and_reply(
+                redis, unregister_response_channel, is_connected):
+            try:
+                redis.publish_json(
+                    unregister_response_channel,
+                    {"command": "unregister", "status": "ready", "unregistered": True,
+                     "transaction_id": transaction_id})
+            except Exception:
+                logging.exception("Error when registering to area %s", channel_prefix)
+                return is_connected
+        return False
 
 
 class ExternalMixin:
@@ -193,14 +197,16 @@ class ExternalMixin:
 
     def _register(self, payload: Dict) -> None:
         """Callback for the register redis command."""
-        self._is_registered = register_area(self.redis, self.channel_prefix, self.connected,
-                                            self._get_transaction_id(payload),
-                                            area_uuid=self.device.uuid)
+        self._is_registered = AreaExternalConnectionManager.register(
+            self.redis, self.channel_prefix, self.connected,
+            self._get_transaction_id(payload),
+            area_uuid=self.device.uuid)
 
     def _unregister(self, payload: Dict) -> None:
         """Callback for the unregister redis command."""
-        self._is_registered = unregister_area(self.redis, self.channel_prefix, self.connected,
-                                              self._get_transaction_id(payload))
+        self._is_registered = AreaExternalConnectionManager.unregister(
+            self.redis, self.channel_prefix, self.connected,
+            self._get_transaction_id(payload))
 
     def _update_connection_status(self) -> None:
         """Update the connected flag to sync it with the _registered flag.
@@ -217,8 +223,8 @@ class ExternalMixin:
         Return the selected asset info and stats.
         """
         device_info_response_channel = f"{self.channel_prefix}/response/device_info"
-        if not check_for_connected_and_reply(self.redis, device_info_response_channel,
-                                             self.connected):
+        if not AreaExternalConnectionManager.check_for_connected_and_reply(
+                self.redis, device_info_response_channel, self.connected):
             return
         arguments = json.loads(payload["data"])
         self.pending_requests.append(
