@@ -474,6 +474,21 @@ class ExternalMixin:
         raise CommandTypeNotSupported(
             f"List offers command not supported on device {self.device.uuid}")
 
+    @property
+    def _command_callback_mapping(self) -> Dict:
+        """Map the command types to their adjacent callbacks."""
+        return {
+            "bid": self._bid_aggregator,
+            "delete_bid": self._delete_bid_aggregator,
+            "list_bids": self._list_bids_aggregator,
+            "offer": self._offer_aggregator,
+            "delete_offer": self._delete_offer_aggregator,
+            "list_offers": self._list_offers_aggregator,
+            "device_info": self._device_info,
+            "set_energy_forecast": self._set_energy_forecast_aggregator,
+            "set_energy_measurement": self._set_energy_measurement_aggregator
+        }
+
     def trigger_aggregator_commands(self, command: Dict) -> Dict:
         """Receive an aggregator command and call the corresponding callback.
 
@@ -481,34 +496,20 @@ class ExternalMixin:
             CommandTypeNotSupported: The client sent a unsupported command
         """
         try:
-            if "type" not in command:
-                response = {
+            command_type = command.get("type")
+            if command_type is None:
+                return {
                     "status": "error",
                     "area_uuid": self.device.uuid,
                     "message": "Invalid command type"}
-            elif command["type"] == "bid":
-                response = self._bid_aggregator(command)
-            elif command["type"] == "delete_bid":
-                response = self._delete_bid_aggregator(command)
-            elif command["type"] == "list_bids":
-                response = self._list_bids_aggregator(command)
-            elif command["type"] == "offer":
-                response = self._offer_aggregator(command)
-            elif command["type"] == "delete_offer":
-                response = self._delete_offer_aggregator(command)
-            elif command["type"] == "list_offers":
-                response = self._list_offers_aggregator(command)
-            elif command["type"] == "device_info":
-                response = self._device_info_aggregator(command)
-            elif command["type"] == "set_energy_forecast":
-                response = self._set_energy_forecast_aggregator(command)
-            elif command["type"] == "set_energy_measurement":
-                response = self._set_energy_measurement_aggregator(command)
-            else:
-                response = {
+
+            callback = self._command_callback_mapping.get(command["type"])
+            if callback is None:
+                return {
                     "command": command["type"], "status": "error",
                     "area_uuid": self.device.uuid,
                     "message": f"Command type not supported for device {self.device.uuid}"}
+            response = callback(command)
         except CommandTypeNotSupported as e:
             response = {
                 "command": command["type"], "status": "error",
