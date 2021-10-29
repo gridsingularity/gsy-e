@@ -32,6 +32,9 @@ class AreaBehaviorBase:
         # `owner` is the area of which we are the strategy, usually a child of `area`
         self.owner = None
 
+    def get_area(self):
+        return self.area
+
     @cached_property
     def _log(self):
         return TaggedLogWrapper(log, "{s.owner.name}:{s.__class__.__name__}".format(s=self))

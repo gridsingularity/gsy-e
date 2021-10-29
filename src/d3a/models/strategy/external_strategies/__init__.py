@@ -234,7 +234,7 @@ class ExternalMixin:
 
     @property
     def market_area(self):
-        return self.area
+        return self.get_area()
 
     @property
     def device(self):
@@ -253,7 +253,7 @@ class ExternalMixin:
         slot_completion_percent = int((self.device.current_tick_in_slot /
                                        self.device.config.ticks_per_slot) * 100)
         return {"slot_completion": f"{slot_completion_percent}%",
-                "market_slot": self.area.spot_market.time_slot_str}
+                "market_slot": self.get_area().spot_market.time_slot_str}
 
     def _dispatch_event_tick_to_external_agent(self):
         if global_objects.external_global_stats.\
@@ -303,8 +303,8 @@ class ExternalMixin:
                                    "traded_energy": trade.offer_bid.energy,
                                    "total_fee": trade.fee_price,
                                    "local_market_fee":
-                                       self.area.current_market.fee_class.grid_fee_rate
-                                       if self.area.current_market is not None else "None",
+                                       self.get_area().current_market.fee_class.grid_fee_rate
+                                       if self.get_area().current_market is not None else "None",
                                    "attributes": trade.offer_bid.attributes,
                                    "seller": trade.seller
                                    if trade.seller_id == self.device.uuid else "anonymous",
@@ -565,8 +565,17 @@ class ExternalMixin:
     @property
     def last_slot_asset_info(self):
         return {
-                "energy_traded": self.energy_traded(self.area.current_market.id)
-                if self.area.current_market else None,
-                "total_cost": self.energy_traded_costs(self.area.current_market.id)
-                if self.area.current_market else None,
+                "energy_traded": self.energy_traded(self.get_area().current_market.id)
+                if self.get_area().current_market else None,
+                "total_cost": self.energy_traded_costs(self.get_area().current_market.id)
+                if self.get_area().current_market else None,
                 }
+
+    def get_area(self):
+        raise NotImplementedError
+
+    def energy_traded(self, market_id):
+        raise NotImplementedError
+
+    def energy_traded_costs(self, market_id):
+        raise NotImplementedError
