@@ -475,8 +475,8 @@ class ExternalMixin:
             f"List offers command not supported on device {self.device.uuid}")
 
     @property
-    def _command_callback_mapping(self) -> Dict:
-        """Map the command types to their adjacent callbacks."""
+    def _aggregator_command_callback_mapping(self) -> Dict:
+        """Map the aggregator command types to their adjacent callbacks."""
         return {
             "bid": self._bid_aggregator,
             "delete_bid": self._delete_bid_aggregator,
@@ -503,7 +503,7 @@ class ExternalMixin:
                     "area_uuid": self.device.uuid,
                     "message": "Invalid command type"}
 
-            callback = self._command_callback_mapping.get(command["type"])
+            callback = self._aggregator_command_callback_mapping.get(command["type"])
             if callback is None:
                 return {
                     "command": command["type"], "status": "error",
