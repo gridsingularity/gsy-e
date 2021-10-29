@@ -115,13 +115,17 @@ class SmartMeterStrategy(BidEnabledStrategy):
             energy_rate_increase_per_update=energy_rate_increase_per_update,
             energy_rate_decrease_per_update=energy_rate_decrease_per_update)
 
-        self.state = SmartMeterState()
+        self._state = SmartMeterState()
         self._simulation_start_timestamp = None
 
         # Instances to update the Smart Meter's bids and offers across all market slots
         self.bid_update = None
         self.offer_update = None
         self._init_price_update()
+
+    @property
+    def state(self) -> SmartMeterState:
+        return self._state
 
     def _init_price_update(self):
         """Initialize the bid and offer updaters."""
@@ -262,7 +266,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
                 # self._supply_balancing_offer(market, trade)
                 pass
         else:
-            self.assert_if_trade_offer_price_is_too_low(market_id, trade)
+            self._assert_if_trade_offer_price_is_too_low(market_id, trade)
             self.state.decrement_available_energy(
                 trade.offer_bid.energy, market.time_slot, self.owner.name)
 
@@ -432,7 +436,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
 
         bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
         # TODO: balancing market support not yet implemented
-        # if self.is_eligible_for_balancing_market:
+        # if self._is_eligible_for_balancing_market:
         #     bid_energy -= self.state.get_desired_energy(market.time_slot) * \
         #                   self.balancing_energy_ratio.demand
         try:

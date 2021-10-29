@@ -62,8 +62,6 @@ class AreaEncoder(json.JSONEncoder):
         result = {"type": obj.__class__.__name__}
         kwargs = {key: getattr(obj, key) for key in getattr(obj, 'parameters', [])
                   if hasattr(obj, key)}
-        if getattr(obj, 'non_attr_parameters', None):
-            kwargs.update(obj.non_attr_parameters())
         if kwargs:
             kwargs = _convert_member_dt_to_string(kwargs)
             result['kwargs'] = kwargs

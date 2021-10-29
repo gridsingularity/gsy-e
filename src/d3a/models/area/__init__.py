@@ -33,7 +33,6 @@ from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
 from d3a.d3a_core.myco_singleton import bid_offer_matcher
 from d3a.d3a_core.util import TaggedLogWrapper, is_external_matching_enabled
-from d3a.events.event_structures import TriggerMixin
 from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.events import Events
 from d3a.models.area.markets import AreaMarkets
@@ -612,13 +611,6 @@ class Area:
 
         """
         return self._markets.get_market_instances_from_class_type(market_type)
-
-    @cached_property
-    def available_triggers(self):
-        triggers = []
-        if isinstance(self.strategy, TriggerMixin):
-            triggers.extend(self.strategy.available_triggers)
-        return {t.name: t for t in triggers}
 
     def update_config(self, **kwargs):
         if not self.config:
