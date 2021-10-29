@@ -83,13 +83,15 @@ class TestSettlementMarketStrategy:
             self.market_mock.bid.assert_called_once_with(
                 10.0, 1.0, self.area_mock.name, original_price=10.0,
                 buyer_origin=self.area_mock.name, buyer_origin_id=self.area_mock.uuid,
-                buyer_id=self.area_mock.uuid, attributes=None, requirements=None
+                buyer_id=self.area_mock.uuid, attributes=None, requirements=None,
+                time_slot=self.time_slot
             )
         if can_post_settlement_offer:
             self.market_mock.offer.assert_called_once_with(
                 price=50.0, energy=1.0, seller=self.area_mock.name,
                 seller_origin=self.area_mock.name,
-                seller_origin_id=self.area_mock.uuid, seller_id=self.area_mock.uuid
+                seller_origin_id=self.area_mock.uuid, seller_id=self.area_mock.uuid,
+                time_slot=self.time_slot
             )
 
     @pytest.mark.parametrize(
@@ -119,12 +121,14 @@ class TestSettlementMarketStrategy:
             self.market_mock.bid.assert_called_once_with(
                 30.0, 1.0, self.area_mock.name, original_price=30.0,
                 buyer_origin=self.area_mock.name, buyer_origin_id=self.area_mock.uuid,
-                buyer_id=self.area_mock.uuid, attributes=None, requirements=None
+                buyer_id=self.area_mock.uuid, attributes=None, requirements=None,
+                time_slot=self.time_slot
             )
         if can_post_settlement_offer:
             self.market_mock.offer.assert_called_once_with(
                 35, 1, self.area_mock.name, original_price=35,
-                seller_origin=None, seller_origin_id=None, seller_id=self.area_mock.uuid
+                seller_origin=None, seller_origin_id=None, seller_id=self.area_mock.uuid,
+                time_slot=self.time_slot
             )
 
     @pytest.mark.parametrize(

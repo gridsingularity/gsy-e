@@ -69,12 +69,16 @@ class PVStrategy(BidEnabledStrategy):
 
         self.panel_count = panel_count
         self.capacity_kW = capacity_kW
-        self.state = PVState()
+        self._state = PVState()
 
         self._init_price_update(update_interval, initial_selling_rate, final_selling_rate,
                                 use_market_maker_rate, fit_to_limit,
                                 energy_rate_decrease_per_update)
         self._settlement_market_strategy = settlement_market_strategy_factory()
+
+    @property
+    def state(self) -> PVState:
+        return self._state
 
     def _init_price_update(self, update_interval, initial_selling_rate, final_selling_rate,
                            use_market_maker_rate, fit_to_limit, energy_rate_decrease_per_update):
@@ -304,7 +308,7 @@ class PVStrategy(BidEnabledStrategy):
         if market is None:
             return
 
-        self.assert_if_trade_offer_price_is_too_low(market_id, trade)
+        self._assert_if_trade_offer_price_is_too_low(market_id, trade)
 
         if trade.seller == self.owner.name:
             self.state.decrement_available_energy(
