@@ -23,6 +23,7 @@ from typing import Dict, TYPE_CHECKING
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.data_classes import Trade
+from d3a_interface.enums import SpotMarketTypeEnum
 from d3a_interface.utils import (convert_str_to_pendulum_in_dict,
                                  str_to_pendulum_datetime)
 from pendulum import DateTime
@@ -80,39 +81,41 @@ class AreaExternalConnectionManager:
             - Publish a success message to the client
             - Log the error traceback if registration failed
         """
-        if not is_connected:
-            register_response_channel = f"{channel_prefix}/response/register_participant"
-            try:
-                redis.publish_json(
-                    register_response_channel,
-                    {"command": "register", "status": "ready", "registered": True,
-                     "transaction_id": transaction_id, "device_uuid": area_uuid})
-            except Exception:
-                logging.exception("Error when registering to area %s", channel_prefix)
-                return False
-        return True
+        if is_connected:
+            return True
+        register_response_channel = f"{channel_prefix}/response/register_participant"
+        try:
+            redis.publish_json(
+                register_response_channel,
+                {"command": "register", "status": "ready", "registered": True,
+                 "transaction_id": transaction_id, "device_uuid": area_uuid})
+            return True
+        except Exception:
+            logging.exception("Error when registering to area %s", channel_prefix)
+            return False
 
     @staticmethod
     def unregister(redis: ResettableCommunicator, channel_prefix: str,
                    is_connected: bool, transaction_id: str) -> bool:
-        """Unregister the client to deny future actions on behalf of an asset and return the status.
+        """Unregister the client to deny future actions on behalf of an asset + return the status.
 
             Side effects:
                 - Publish a success message to the client
                 - Log the error traceback if un-registration failed
             """
         unregister_response_channel = f"{channel_prefix}/response/unregister_participant"
-        if AreaExternalConnectionManager.check_for_connected_and_reply(
+        if not AreaExternalConnectionManager.check_for_connected_and_reply(
                 redis, unregister_response_channel, is_connected):
-            try:
-                redis.publish_json(
-                    unregister_response_channel,
-                    {"command": "unregister", "status": "ready", "unregistered": True,
-                     "transaction_id": transaction_id})
-            except Exception:
-                logging.exception("Error when registering to area %s", channel_prefix)
-                return is_connected
-        return False
+            return False
+        try:
+            redis.publish_json(
+                unregister_response_channel,
+                {"command": "unregister", "status": "ready", "unregistered": True,
+                 "transaction_id": transaction_id})
+            return False
+        except Exception:
+            logging.exception("Error when registering to area %s", channel_prefix)
+            return is_connected
 
 
 class ExternalMixin:
@@ -269,6 +272,7 @@ class ExternalMixin:
     @property
     def spot_market(self):
         """Return the spot_market member of the area."""
+        # TODO: remove this property and resort to the AreaBehaviorBase spot_market member
         return self.area.spot_market
 
     def _get_market_from_command_argument(self, arguments: Dict) -> Market:
@@ -349,7 +353,7 @@ class ExternalMixin:
             # Trade does not concern this device, skip it.
             return
 
-        if (ConstSettings.IAASettings.MARKET_TYPE != 1 and
+        if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
                 ((trade.buyer == self.device.name and trade.is_offer_trade) or
                  (trade.seller == self.device.name and trade.is_bid_trade))):
             # Do not track a 2-sided market trade that is originating from an Offer to a
