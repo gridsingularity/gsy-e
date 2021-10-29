@@ -18,13 +18,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import logging
 import sys
+from abc import ABC
 from dataclasses import dataclass
 from logging import getLogger
-from typing import List, Dict, Any, Union, Optional, Generator, Callable, TYPE_CHECKING  # noqa
+from typing import List, Dict, Union, Optional, Generator, Callable, TYPE_CHECKING
 from uuid import uuid4
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.data_classes import (Offer, Bid, Trade)
+from d3a_interface.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
 from d3a import constants
@@ -32,7 +34,7 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import D3ARedisException
-from d3a.d3a_core.exceptions import SimulationException, D3AException, MarketException
+from d3a.d3a_core.exceptions import SimulationException, MarketException
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
 from d3a.d3a_core.util import append_or_create_key
 from d3a.events import EventMixin
@@ -47,7 +49,6 @@ if TYPE_CHECKING:
     from d3a_interface.data_classes import TradeBidOfferInfo
     from d3a.models.market.one_sided import OneSidedMarket
     from d3a.models.market.two_sided import TwoSidedMarket
-    from d3a.models.state import StateInterface
 
 INF_ENERGY = int(sys.maxsize)
 
@@ -65,6 +66,30 @@ class AcceptOfferParameters:
     buyer_origin: str
     buyer_origin_id: str
     buyer_id: str
+
+    def to_dict(self) -> dict:
+        """Convert dataclass to dict in order to be able to send these arguments via Redis."""
+        return {"offer_or_id": self.offer.to_json_string(),
+                "buyer": self.buyer,
+                "energy": self.energy,
+                "trade_rate": self.trade_rate,
+                "already_tracked": self.already_tracked,
+                "trade_bid_info": self.trade_bid_info,
+                "buyer_origin": self.buyer_origin,
+                "buyer_origin_id": self.buyer_origin_id,
+                "buyer_id": self.buyer_id}
+
+    def accept_offer_using_market_object(self) -> Trade:
+        """Calls accept offer on the market object that is contained in the dataclass,
+         using the arguments from the other dataclass members"""
+        return self.market.accept_offer(
+            offer_or_id=self.offer, buyer=self.buyer,
+            energy=self.energy, trade_rate=self.trade_rate,
+            already_tracked=self.already_tracked,
+            trade_bid_info=self.trade_bid_info,
+            buyer_origin=self.buyer_origin,
+            buyer_origin_id=self.buyer_origin_id,
+            buyer_id=self.buyer_id)
 
 
 class _TradeLookerUpper:
@@ -101,9 +126,9 @@ class MarketStrategyConnectionRedisAdapter:
     """
     def __init__(self):
         self.redis = BlockingCommunicator()
-        self.trade_buffer = None
-        self.offer_buffer = None
-        self.event_response_uuids = []
+        self._trade_buffer: Optional[Trade] = None
+        self._offer_buffer: Optional[Offer] = None
+        self._event_response_uuids: List[str] = []
 
     def offer(self, market: Union["OneSidedMarket", str], offer_args: dict) -> Offer:
         """
@@ -119,9 +144,9 @@ class MarketStrategyConnectionRedisAdapter:
         market_id = market.id if not isinstance(market, str) else market
         self._send_events_to_market("OFFER", market_id, offer_args,
                                     self._redis_offer_response)
-        offer = self.offer_buffer
+        offer = self._offer_buffer
         assert offer is not None
-        self.offer_buffer = None
+        self._offer_buffer = None
         return offer
 
     def accept_offer(self, offer_parameters: AcceptOfferParameters) -> Trade:
@@ -129,29 +154,19 @@ class MarketStrategyConnectionRedisAdapter:
         market_id = (offer_parameters.market.id
                      if not isinstance(offer_parameters.market, str)
                      else offer_parameters.market)
-        data = {"offer_or_id": offer_parameters.offer.to_json_string(),
-                "buyer": offer_parameters.buyer,
-                "energy": offer_parameters.energy,
-                "trade_rate": offer_parameters.trade_rate,
-                "already_tracked": offer_parameters.already_tracked,
-                "trade_bid_info": (offer_parameters.trade_bid_info
-                                   if offer_parameters.trade_bid_info is not None else None),
-                "buyer_origin": offer_parameters.buyer_origin,
-                "buyer_origin_id": offer_parameters.buyer_origin_id,
-                "buyer_id": offer_parameters.buyer_id}
 
-        self._send_events_to_market("ACCEPT_OFFER", market_id, data,
+        self._send_events_to_market("ACCEPT_OFFER", market_id, offer_parameters.to_dict(),
                                     self._redis_accept_offer_response)
-        trade = self.trade_buffer
-        self.trade_buffer = None
+        trade = self._trade_buffer
+        self._trade_buffer = None
         assert trade is not None
         return trade
 
     def _redis_accept_offer_response(self, payload: dict):
         data = json.loads(payload["data"])
         if data["status"] == "ready":
-            self.trade_buffer = Trade.from_json(data["trade"])
-            self.event_response_uuids.append(data["transaction_uuid"])
+            self._trade_buffer = Trade.from_json(data["trade"])
+            self._event_response_uuids.append(data["transaction_uuid"])
         else:
             raise D3ARedisException(
                 f"Error when receiving response on channel {payload['channel']}:: "
@@ -176,20 +191,20 @@ class MarketStrategyConnectionRedisAdapter:
         self.redis.publish(market_channel, json.dumps(data))
 
         def event_response_was_received_callback():
-            return data["transaction_uuid"] in self.event_response_uuids
+            return data["transaction_uuid"] in self._event_response_uuids
 
         self.redis.poll_until_response_received(event_response_was_received_callback)
 
-        if data["transaction_uuid"] not in self.event_response_uuids:
+        if data["transaction_uuid"] not in self._event_response_uuids:
             logging.error("Transaction ID not found after %s seconds: %s",
                           REDIS_PUBLISH_RESPONSE_TIMEOUT, data)
         else:
-            self.event_response_uuids.remove(data["transaction_uuid"])
+            self._event_response_uuids.remove(data["transaction_uuid"])
 
     def _redis_delete_offer_response(self, payload: dict) -> None:
         data = json.loads(payload["data"])
         if data["status"] == "ready":
-            self.event_response_uuids.append(data["transaction_uuid"])
+            self._event_response_uuids.append(data["transaction_uuid"])
 
         else:
             raise D3ARedisException(
@@ -199,8 +214,8 @@ class MarketStrategyConnectionRedisAdapter:
     def _redis_offer_response(self, payload):
         data = json.loads(payload["data"])
         if data["status"] == "ready":
-            self.offer_buffer = Offer.from_json(data["offer"])
-            self.event_response_uuids.append(data["transaction_uuid"])
+            self._offer_buffer = Offer.from_json(data["offer"])
+            self._event_response_uuids.append(data["transaction_uuid"])
         else:
             raise D3ARedisException(
                 f"Error when receiving response on channel {payload['channel']}:: "
@@ -215,22 +230,15 @@ class MarketStrategyConnectionAdapter:
     @staticmethod
     def accept_offer(offer_parameters: AcceptOfferParameters) -> Trade:
         """Accept an offer on a market."""
-        return offer_parameters.market.accept_offer(
-            offer_or_id=offer_parameters.offer, buyer=offer_parameters.buyer,
-            energy=offer_parameters.energy, trade_rate=offer_parameters.trade_rate,
-            already_tracked=offer_parameters.already_tracked,
-            trade_bid_info=offer_parameters.trade_bid_info,
-            buyer_origin=offer_parameters.buyer_origin,
-            buyer_origin_id=offer_parameters.buyer_origin_id,
-            buyer_id=offer_parameters.buyer_id)
+        return offer_parameters.accept_offer_using_market_object()
 
     @staticmethod
-    def delete_offer(market, offer):
+    def delete_offer(market: "OneSidedMarket", offer: Offer) -> None:
         """Delete offer from a market"""
         market.delete_offer(offer)
 
     @staticmethod
-    def offer(market, **offer_kwargs):
+    def offer(market: "OneSidedMarket", **offer_kwargs) -> Offer:
         """Post offer to the market"""
         return market.offer(**offer_kwargs)
 
@@ -262,7 +270,7 @@ class Offers:
         return offers
 
     def delete_past_markets_offers(self) -> None:
-        """Removes offers from past markets to decrease memory utilization"""
+        """Remove offers from past markets to decrease memory utilization"""
         self.posted = self._delete_past_offers(self.posted)
         self.bought = self._delete_past_offers(self.bought)
         self.split = {}
@@ -301,19 +309,19 @@ class Offers:
         """Get all open offers in market"""
         open_offers = []
         sold_offer_ids = self._get_sold_offer_ids_in_market(market_id)
-        for offer, _market in self.posted.items():
+        for offer, _market_id in self.posted.items():
             if (offer.id not in sold_offer_ids
-                    and market_id == _market
+                    and market_id == _market_id
                     and (time_slot is None or offer.time_slot == time_slot)):
                 open_offers.append(offer)
         return open_offers
 
     def open_offer_energy(self, market_id: str, time_slot: DateTime = None) -> float:
-        """Get energy of open offers in market"""
+        """Get sum of open offers' energy in market"""
         return sum(o.energy for o in self.open_in_market(market_id, time_slot))
 
     def posted_in_market(self, market_id: str, time_slot: DateTime = None) -> List[Offer]:
-        """Get posted offers in market"""
+        """Get list of posted offers in market"""
         return [offer
                 for offer, _market in self.posted.items()
                 if market_id == _market and (time_slot is None or offer.time_slot == time_slot)]
@@ -331,7 +339,7 @@ class Offers:
                    if time_slot is None or o.time_slot == time_slot)
 
     def sold_offer_price(self, market_id: str, time_slot: DateTime = None) -> float:
-        """Get price of all sold offers"""
+        """Get sum of all sold offers' price"""
         return sum(o.price
                    for o in self.sold_in_market(market_id)
                    if time_slot is None or o.time_slot == time_slot)
@@ -430,7 +438,7 @@ class Offers:
                 self.replace(original_offer, accepted_offer, market_id)
 
 
-class BaseStrategy(EventMixin, AreaBehaviorBase):
+class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
     """
     Should be inherited by every strategy class. Keep track of the offers posted to the different
     markets, thus removing the need to access the market to view the offers that the strategy
@@ -461,7 +469,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase):
 
     @property
     def _is_eligible_for_balancing_market(self) -> bool:
-        """Check if strategy cab participate in the balancing market"""
+        """Check if strategy can participate in the balancing market"""
         return (self.owner.name in DeviceRegistry.REGISTRY and
                 ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET)
 
@@ -497,7 +505,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase):
                          initial_energy_rate: float) -> Optional[Offer]:
         """Post first and only offer for the strategy. Will fail if another offer already
          exists."""
-        if any(offer.seller == self.owner.name for offer in market.get_offers().values()):
+        if any(offer.seller_id == self.owner.uuid for offer in market.get_offers().values()):
             self.owner.log.debug("There is already another offer posted on the market, therefore"
                                  " do not repost another first offer.")
             return None
@@ -632,29 +640,6 @@ class BaseStrategy(EventMixin, AreaBehaviorBase):
         """Time slot of the current spot market"""
         return self.area.spot_market.time_slot
 
-    @property
-    def state(self) -> "StateInterface":
-        """Get the state class of the strategy. Needs to be implemented by all strategies"""
-        raise NotImplementedError
-
-    def get_state(self) -> Dict:
-        """Retrieve the current state object of the strategy in dict format."""
-        try:
-            return self.state.get_state()
-        except AttributeError as ex:
-            raise D3AException(
-                "Strategy does not have a state. "
-                "State is required to support save state functionality.") from ex
-
-    def restore_state(self, saved_state: Dict) -> None:
-        """Restore the current state object of the strategy from dict format."""
-        try:
-            self.state.restore_state(saved_state)
-        except AttributeError as ex:
-            raise D3AException(
-                "Strategy does not have a state. "
-                "State is required to support load state functionality.") from ex
-
     def update_offer_rates(self, market: "OneSidedMarket", updated_rate: float) -> None:
         """Update the total price of all offers in the specified market based on their new rate."""
         if market.id not in self.offers.open.values():
@@ -686,18 +671,13 @@ class BaseStrategy(EventMixin, AreaBehaviorBase):
 
 class BidEnabledStrategy(BaseStrategy):
     """
-    Base strategy for all areas / assets that want to post bids and interact with a two sided
-    market
+    Base strategy for all areas / assets that are eligible to post bids and interact with a
+    two sided market
     """
     def __init__(self):
         super().__init__()
         self._bids = {}
         self._traded_bids = {}
-
-    @property
-    def state(self) -> "StateInterface":
-        """Get the state class of the strategy. Needs to be implemented by all strategies"""
-        raise NotImplementedError
 
     def energy_traded(self, market_id: str, time_slot: Optional[DateTime] = None) -> float:
         # TODO: Potential bug when used for the storage strategy. Does not really make sense to
@@ -750,7 +730,7 @@ class BidEnabledStrategy(BaseStrategy):
             buyer_id=self.owner.uuid,
             attributes=attributes,
             requirements=requirements,
-            time_slot=time_slot if time_slot else market.time_slot
+            time_slot=time_slot or market.time_slot
         )
         self.add_bid_to_posted(market.id, bid)
         return bid
@@ -891,22 +871,22 @@ class BidEnabledStrategy(BaseStrategy):
         )
 
     def get_posted_bids(self, market: "Market", time_slot: Optional[DateTime] = None) -> List[Bid]:
-        """Get all posted bids from a market"""
+        """Get list of posted bids from a market"""
         if market.id not in self._bids:
             return []
         return [b for b in self._bids[market.id] if time_slot is None or b.time_slot == time_slot]
 
     def event_bid_deleted(self, *, market_id: str, bid: Bid) -> None:
-        assert ConstSettings.IAASettings.MARKET_TYPE != 1, ("Invalid state, cannot receive a bid "
-                                                            "if single sided market is "
-                                                            "globally configured.")
+        assert ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value, (
+            "Invalid state, cannot receive a bid if single sided market is globally configured.")
 
         if bid.buyer != self.owner.name:
             return
         self.remove_bid_from_pending(market_id, bid.id)
 
+    # pylint: disable=unused-argument
     def event_bid_split(self, *, market_id: str, original_bid: Bid, accepted_bid: Bid,
-                        residual_bid: Bid) -> None:  # pylint: disable=unused-argument
+                        residual_bid: Bid) -> None:
         assert ConstSettings.IAASettings.MARKET_TYPE != 1, ("Invalid state, cannot receive a bid "
                                                             "if single sided market is "
                                                             "globally configured.")
@@ -946,5 +926,5 @@ class BidEnabledStrategy(BaseStrategy):
 
         """
         if trade.is_bid_trade and trade.offer_bid.buyer == self.owner.name:
-            bid = [b for b in self.get_posted_bids(market) if b.id == trade.offer_bid.id][0]
+            bid = [bid for bid in self.get_posted_bids(market) if bid.id == trade.offer_bid.id][0]
             assert trade.offer_bid.energy_rate <= bid.energy_rate + FLOATING_POINT_TOLERANCE
