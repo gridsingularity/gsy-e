@@ -22,7 +22,7 @@ from logging import getLogger
 from d3a_interface.area_validator import validate_area
 from d3a_interface.utils import key_in_dict_and_not_none
 from d3a.models.strategy.external_strategies import (
-    CommandTypeNotSupported, AreaExternalConnectionManager)
+    CommandTypeNotSupported, ExternalStrategyConnectionManager)
 
 log = getLogger(__name__)
 
@@ -58,13 +58,13 @@ class RedisMarketExternalConnection:
             raise ValueError("transaction_id not in payload or None")
 
     def _register(self, payload):
-        self._connected = AreaExternalConnectionManager.register(
+        self._connected = ExternalStrategyConnectionManager.register(
             self._redis_communicator, self.channel_prefix,
             self.connected, self._get_transaction_id(payload),
             area_uuid=self.area.uuid)
 
     def _unregister(self, payload):
-        self._connected = AreaExternalConnectionManager.unregister(
+        self._connected = ExternalStrategyConnectionManager.unregister(
             self._redis_communicator, self.channel_prefix,
             self.connected, self._get_transaction_id(payload))
 

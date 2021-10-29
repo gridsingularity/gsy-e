@@ -49,7 +49,7 @@ class CommandTypeNotSupported(Exception):
     """Exception raised when a unsupported command is received."""
 
 
-class AreaExternalConnectionManager:
+class ExternalStrategyConnectionManager:
     """Manage the area's strategy external communication."""
     @staticmethod
     def check_for_connected_and_reply(
@@ -104,7 +104,7 @@ class AreaExternalConnectionManager:
                 - Log the error traceback if un-registration failed
             """
         unregister_response_channel = f"{channel_prefix}/response/unregister_participant"
-        if not AreaExternalConnectionManager.check_for_connected_and_reply(
+        if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
                 redis, unregister_response_channel, is_connected):
             return False
         try:
@@ -201,14 +201,14 @@ class ExternalMixin:
 
     def _register(self, payload: Dict) -> None:
         """Callback for the register redis command."""
-        self._is_registered = AreaExternalConnectionManager.register(
+        self._is_registered = ExternalStrategyConnectionManager.register(
             self.redis, self.channel_prefix, self.connected,
             self._get_transaction_id(payload),
             area_uuid=self.device.uuid)
 
     def _unregister(self, payload: Dict) -> None:
         """Callback for the unregister redis command."""
-        self._is_registered = AreaExternalConnectionManager.unregister(
+        self._is_registered = ExternalStrategyConnectionManager.unregister(
             self.redis, self.channel_prefix, self.connected,
             self._get_transaction_id(payload))
 
@@ -227,7 +227,7 @@ class ExternalMixin:
         Return the selected asset info and stats.
         """
         device_info_response_channel = f"{self.channel_prefix}/response/device_info"
-        if not AreaExternalConnectionManager.check_for_connected_and_reply(
+        if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
                 self.redis, device_info_response_channel, self.connected):
             return
         arguments = json.loads(payload["data"])
