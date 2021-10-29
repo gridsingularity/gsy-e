@@ -42,7 +42,8 @@ class UpdateFrequencyMixin:
         self.final_rate_profile_buffer = {}
         self.energy_rate_change_per_update_profile_buffer = {}
 
-        # dicts that are used for price calculations, contain only all_markets Dict[DatTime, float]
+        # dicts that are used for price calculations, contain only
+        # all_markets Dict[DateTime, float]
         self.initial_rate = {}
         self.final_rate = {}
         self.energy_rate_change_per_update = {}

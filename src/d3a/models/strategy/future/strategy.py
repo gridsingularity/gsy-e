@@ -14,10 +14,11 @@ see <http://www.gnu.org/licenses/>.
 """
 
 from d3a_interface.constants_limits import GlobalConfig
-from d3a_interface.data_classes import Trade
+from d3a_interface.data_classes import Trade, Offer
 from pendulum import duration
 
 from d3a.constants import FutureTemplateStrategiesConstants
+from d3a.models.base import AssetType
 from d3a.models.market import Market  # NOQA
 from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.strategy.update_frequency import (TemplateStrategyBidUpdater,
@@ -109,32 +110,35 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         Returns: None
 
         """
+        if not strategy.area.future_markets:
+            return
         self._bid_updater.update_and_populate_price_settings(strategy.area)
         self._offer_updater.update_and_populate_price_settings(strategy.area)
-        # market = strategy.area.future_markets
-        # for time_slot in strategy.area.future_markets.market_time_slots:
-        #     bids, offers = strategy.area.future_markets.market_time_slots(time_slot=time_slot)
-        #
-        # energy_deviation_kWh = strategy.state.get_unsettled_deviation_kWh(market.time_slot)
-        #
-        # if strategy.state.can_post_settlement_bid(market.time_slot):
-        #     try:
-        #         strategy.post_first_bid(
-        #             market, energy_deviation_kWh * 1000.0,
-        #             self._bid_updater.initial_rate[market.time_slot]
-        #         )
-        #     except MarketException:
-        #         pass
-        #
-        # if strategy.state.can_post_settlement_offer(market.time_slot):
-        #     try:
-        #         strategy.post_first_offer(
-        #             market, energy_deviation_kWh,
-        #             self._offer_updater.initial_rate[market.time_slot]
-        #         )
-        #     except MarketException:
-        #         pass
-        # has to be called in order not to update the initial bid/offer in the first tick
+        for time_slot in strategy.area.future_markets.market_time_slots:
+            if strategy.asset_type == AssetType.CONSUMER:
+                required_energy_Wh = strategy.state.get_energy_requirement_Wh(time_slot)
+                if required_energy_Wh <= 0.0:
+                    continue
+                if strategy.get_posted_bids(strategy.area.future_markets, time_slot):
+                    continue
+                strategy.post_bid(
+                    market=strategy.area.future_markets,
+                    energy=required_energy_Wh,
+                    price=self._bid_updater.initial_rate[time_slot]
+                )
+            if strategy.asset_type == AssetType.PRODUCER:
+                required_energy_Wh = strategy.state.get_available_energy_kWh(time_slot)
+                if required_energy_Wh <= 0.0:
+                    continue
+                if strategy.get_posted_offers(strategy.area.future_markets, time_slot):
+                    continue
+                strategy.post_offer(
+                    market=strategy.area.future_markets,
+                    replace_existing=False,
+                    energy=required_energy_Wh,
+                    price=self._bid_updater.initial_rate[time_slot]
+                )
+
         self._bid_updater.increment_update_counter_all_markets(strategy)
         self._offer_updater.increment_update_counter_all_markets(strategy)
 
@@ -150,14 +154,16 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         Returns: None
 
         """
+        if not strategy.area.future_markets:
+            return
         self._bid_updater.update(strategy.area.future_markets, strategy)
         self._offer_updater.update(strategy.area.future_markets, strategy)
 
         self._bid_updater.increment_update_counter_all_markets(strategy)
         self._offer_updater.increment_update_counter_all_markets(strategy)
 
-    def event_bid_traded(self, strategy: BidEnabledStrategy, market_id: str,
-                         bid_trade: Trade) -> None:
+    def event_bid_traded(self, strategy: BidEnabledStrategy,
+                         market_id: str, bid_trade: Trade) -> None:
         """
         Updates the unsettled deviation with the traded energy from the market
         Args:
@@ -168,14 +174,15 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         Returns: None
 
         """
-        # if isinstance(bid_trade.offer_bid, Offer):
-        #     return
-        # market = self._get_settlement_market_by_id(strategy, market_id)
-        # if not market:
-        #     return
-        # if bid_trade.offer_bid.buyer == strategy.owner.name:
-        #     strategy.state.decrement_unsettled_deviation(
-        #         bid_trade.offer_bid.energy, market.time_slot)
+        if isinstance(bid_trade.offer_bid, Offer):
+            return
+        if not strategy.area.future_markets:
+            return
+        if strategy.asset_type == AssetType.PRODUCER:
+            return
+        if bid_trade.offer_bid.buyer == strategy.owner.name:
+            strategy.state.set_desired_energy(
+                bid_trade.offer_bid.energy, bid_trade.offer_bid.time_slot)
 
     def event_offer_traded(self, strategy: BidEnabledStrategy,
                            market_id: str, trade: Trade) -> None:
