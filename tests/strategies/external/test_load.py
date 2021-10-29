@@ -72,7 +72,7 @@ class TestLoadForecastExternalStrategy:
         The bid_aggregator command succeeds, but it shows a warning if Degrees of Freedom are
         disabled and nevertheless provided.
         """
-        external_load.simulation_config.enable_degrees_of_freedom = False
+        external_load._simulation_config.enable_degrees_of_freedom = False
         external_load.state._energy_requirement_Wh[
             external_load.spot_market.time_slot] = 1000.0
         return_value = external_load.trigger_aggregator_commands({

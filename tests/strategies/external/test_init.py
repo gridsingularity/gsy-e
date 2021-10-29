@@ -480,7 +480,7 @@ class TestExternalMixin:
     def fixture_external_mixin():
         """Create an ExternalMixin with a mocked SimulationConfig."""
         external_mixin = ExternalMixin()
-        external_mixin.simulation_config = Mock(spec=SimulationConfig)
+        external_mixin._simulation_config = Mock(spec=SimulationConfig)
 
         return external_mixin
 
@@ -493,13 +493,13 @@ class TestExternalMixin:
             "timeslot": None, "transaction_id": "some-id"}
 
         # Arguments are preserved when required
-        type(external_mixin.simulation_config).enable_degrees_of_freedom = PropertyMock(
+        type(external_mixin._simulation_config).enable_degrees_of_freedom = PropertyMock(
             return_value=True)
         result = external_mixin.filter_degrees_of_freedom_arguments(order_arguments)
         assert result == (order_arguments, [])
 
         # Arguments are removed when required
-        type(external_mixin.simulation_config).enable_degrees_of_freedom = PropertyMock(
+        type(external_mixin._simulation_config).enable_degrees_of_freedom = PropertyMock(
             return_value=False)
         result = external_mixin.filter_degrees_of_freedom_arguments(order_arguments)
         assert result == ({

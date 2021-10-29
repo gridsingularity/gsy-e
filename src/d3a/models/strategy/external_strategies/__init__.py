@@ -574,7 +574,7 @@ class ExternalMixin:
 
     def filter_degrees_of_freedom_arguments(self, order_arguments: Dict) -> Tuple[Dict, List[str]]:
         """Filter the arguments of an incoming order to remove Degrees of Freedom if necessary."""
-        if self.simulation_config.enable_degrees_of_freedom:
+        if self._simulation_config.enable_degrees_of_freedom:
             return order_arguments, []
 
         order_arguments, filtered_fields = DegreesOfFreedomFilter.apply(order_arguments)

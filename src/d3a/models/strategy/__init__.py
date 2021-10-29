@@ -233,10 +233,11 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     parameters = None
 
     @property
-    def simulation_config(self) -> SimulationConfig:
+    def _simulation_config(self) -> SimulationConfig:
         """Return the SimulationConfiguration used by the current market area.
 
-        NOTE: this configuration is unique and shared across all areas.
+        NOTE: this configuration is currently unique and shared across all areas, but this might
+        change in the future (each area could have its own configuration).
         """
         return self.area.config
 

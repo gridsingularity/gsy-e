@@ -73,7 +73,7 @@ class TestStorageExternalStrategy:
         The _bid_aggregator command succeeds, but it shows a warning if Degrees of Freedom are
         disabled and nevertheless provided.
         """
-        external_storage.simulation_config.enable_degrees_of_freedom = False
+        external_storage._simulation_config.enable_degrees_of_freedom = False
         external_storage.state.energy_to_buy_dict[
             external_storage.spot_market.time_slot] = 1000.0
         return_value = external_storage.trigger_aggregator_commands({
@@ -95,7 +95,7 @@ class TestStorageExternalStrategy:
         The _offer_aggregator command succeeds, but it shows a warning if Degrees of Freedom are
         disabled and nevertheless provided.
         """
-        external_storage.simulation_config.enable_degrees_of_freedom = False
+        external_storage._simulation_config.enable_degrees_of_freedom = False
         external_storage.state.energy_to_sell_dict[
             external_storage.spot_market.time_slot] = 1000.0
         return_value = external_storage.trigger_aggregator_commands({
