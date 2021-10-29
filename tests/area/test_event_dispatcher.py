@@ -17,13 +17,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from typing import Dict, Union
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, call
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.enums import SpotMarketTypeEnum
 from pendulum import DateTime, datetime
+from pendulum import duration
 
+from d3a.events.event_structures import MarketEvent, AreaEvent
 from d3a.models.area import Area
 from d3a.models.area.event_dispatcher import AreaDispatcher
 from d3a.models.market import Market
@@ -41,12 +43,38 @@ from d3a.models.strategy.area_agents.settlement_agent import SettlementAgent
 from d3a.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
 
 
+# pylint: disable=W0212
+
+
 @pytest.fixture(name="area_dispatcher")
 def area_dispatcher_fixture():
     """Return fixture for AreaDispatcher object."""
     area = Area("name")
     area.children = [Area("child1"), Area("child2")]
     area.parent = Area("parent")
+    return AreaDispatcher(area)
+
+
+@pytest.fixture(name="area_dispatcher_area_markets")
+def area_dispatcher_area_markets_fixture():
+    """Return fixture for AreaDispatcher object."""
+    config = Mock()
+    config.slot_length = duration(minutes=15)
+    config.tick_length = duration(seconds=15)
+    config.ticks_per_slot = 60
+    config.start_date = GlobalConfig.start_date
+    config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
+    config.end_date = GlobalConfig.start_date + duration(days=1)
+
+    area = Area("name", config=config)
+    area.children = [Area("child1"), Area("child2")]
+    area.parent = Area("parent")
+    area.activate()
+    area.cycle_markets()
+    area._markets.settlement_markets = {config.start_date: MagicMock(autospec=SettlementMarket)}
+    area._markets.balancing_markets = {config.start_date: MagicMock(autospec=BalancingMarket)}
+    area._markets.update_area_market_id_lists()
+
     return AreaDispatcher(area)
 
 
@@ -155,3 +183,71 @@ class TestAreaDispatcher:
         area_dispatcher.event_market_cycle()
         assert first_time_slot not in agent_dict
         assert second_time_slot in agent_dict
+
+    @staticmethod
+    @pytest.mark.parametrize("event_type", [
+        AreaEvent.TICK,
+        AreaEvent.MARKET_CYCLE,
+        AreaEvent.ACTIVATE,
+        AreaEvent.BALANCING_MARKET_CYCLE,
+    ])
+    def test_broadcast_notification_triggers_correct_methods_area_events(
+            event_type: Union[AreaEvent, MarketEvent], area_dispatcher_area_markets):
+        """Test if broadcast_notification triggers correct dispatcher methods for area events."""
+        kwargs = {"market_id": area_dispatcher_area_markets.area.spot_market.id}
+        for child in area_dispatcher_area_markets.area.children:
+            child.dispatcher.event_listener = Mock()
+        area_dispatcher_area_markets._broadcast_notification_to_area_and_child_agents = Mock()
+
+        area_dispatcher_area_markets.broadcast_notification(event_type, **kwargs)
+
+        for child in area_dispatcher_area_markets.area.children:
+            child.dispatcher.event_listener.assert_called_once()
+
+        (area_dispatcher_area_markets._broadcast_notification_to_area_and_child_agents.
+            assert_has_calls([
+                call(AvailableMarketTypes.SPOT, event_type, **kwargs),
+                call(AvailableMarketTypes.BALANCING, event_type, **kwargs),
+                call(AvailableMarketTypes.SETTLEMENT, event_type, **kwargs),
+                call(AvailableMarketTypes.FUTURE, event_type, **kwargs)]))
+
+    @staticmethod
+    @pytest.mark.parametrize("event_type, expected_market_type", [
+        [MarketEvent.OFFER, AvailableMarketTypes.SPOT],
+        [MarketEvent.BID_TRADED, AvailableMarketTypes.SPOT],
+        [MarketEvent.OFFER, AvailableMarketTypes.FUTURE],
+        [MarketEvent.BID_TRADED, AvailableMarketTypes.FUTURE],
+        [MarketEvent.OFFER, AvailableMarketTypes.SETTLEMENT],
+        [MarketEvent.BID_TRADED, AvailableMarketTypes.SETTLEMENT],
+        [MarketEvent.OFFER, AvailableMarketTypes.BALANCING],
+        [MarketEvent.BID_TRADED, AvailableMarketTypes.BALANCING],
+    ])
+    def test_broadcast_notification_triggers_correct_methods_market_events(
+            event_type: Union[AreaEvent, MarketEvent],
+            expected_market_type: AvailableMarketTypes,
+            area_dispatcher_area_markets):
+        """Test if broadcast_notification triggers correct dispatcher methods for market events."""
+
+        market_id = None
+        if expected_market_type == AvailableMarketTypes.SPOT:
+            market_id = area_dispatcher_area_markets.area.spot_market.id
+        if expected_market_type == AvailableMarketTypes.FUTURE:
+            market_id = area_dispatcher_area_markets.area.future_markets.id
+        if expected_market_type == AvailableMarketTypes.SETTLEMENT:
+            market_id = list(area_dispatcher_area_markets.area.settlement_markets.values())[0].id
+        if expected_market_type == AvailableMarketTypes.BALANCING:
+            market_id = area_dispatcher_area_markets.area.balancing_markets[0].id
+
+        kwargs = {"market_id": market_id}
+
+        for child in area_dispatcher_area_markets.area.children:
+            child.dispatcher.event_listener = Mock()
+        area_dispatcher_area_markets._broadcast_notification_to_area_and_child_agents = Mock()
+
+        area_dispatcher_area_markets.broadcast_notification(event_type, **kwargs)
+
+        for child in area_dispatcher_area_markets.area.children:
+            child.dispatcher.event_listener.assert_called_once()
+
+        (area_dispatcher_area_markets._broadcast_notification_to_area_and_child_agents.
+            assert_called_once_with(expected_market_type, event_type, **kwargs))
