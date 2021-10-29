@@ -651,6 +651,9 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             return
 
         for offer, iterated_market_id in self.offers.open.items():
+            updated_price = round(offer.energy * updated_rate, 10)
+            if offer.price == updated_price:
+                continue
             iterated_market = self.get_market_from_id(iterated_market_id)
             # Skip offers that don't belong to the specified market slot
             if market is None or iterated_market is None or iterated_market.id != market.id:
@@ -658,7 +661,6 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             try:
                 # Delete the old offer and create a new equivalent one with an updated price
                 iterated_market.delete_offer(offer.id)
-                updated_price = round(offer.energy * updated_rate, 10)
                 new_offer = iterated_market.offer(
                     updated_price,
                     offer.energy,
