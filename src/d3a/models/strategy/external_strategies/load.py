@@ -471,4 +471,4 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
         """
 
     def _read_or_rotate_profiles(self, reconfigure=False):
-        """Read profile from DB."""
+        """Overridden with empty implementation to disable reading profile from DB."""

@@ -461,4 +461,4 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
         """
 
     def _read_or_rotate_profiles(self, reconfigure=False) -> None:
-        """Read profile from DB."""
+        """Overridden with empty implementation to disable reading profile from DB."""
