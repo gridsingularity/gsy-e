@@ -80,7 +80,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         LoadValidator.validate_energy(
             avg_power_W=avg_power_W, hrs_per_day=hrs_per_day, hrs_of_day=hrs_of_day)
-        self.state = LoadState()
+        self._state = LoadState()
         self.avg_power_W = avg_power_W
 
         # consolidated_cycle is KWh energy consumed for the entire year
@@ -99,6 +99,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._cycled_market = set()
         self._simulation_start_timestamp = None
         self._settlement_market_strategy = settlement_market_strategy_factory()
+
+    @property
+    def state(self) -> LoadState:
+        return self._state
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
                            use_market_maker_rate, initial_buying_rate, final_buying_rate):
@@ -366,7 +370,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                     self.state.can_buy_more_energy(market.time_slot)
                     and not self.are_bids_posted(market.id)):
                 bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
-                if self.is_eligible_for_balancing_market:
+                if self._is_eligible_for_balancing_market:
                     bid_energy -= (self.state.get_desired_energy(market.time_slot) *
                                    self.balancing_energy_ratio.demand)
                 try:
@@ -420,7 +424,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     # committing to increase its consumption when required
     def _demand_balancing_offer(self, market):
-        if not self.is_eligible_for_balancing_market:
+        if not self._is_eligible_for_balancing_market:
             return
 
         ramp_up_energy = (self.balancing_energy_ratio.demand *
@@ -433,7 +437,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     # committing to reduce its consumption when required
     def _supply_balancing_offer(self, market, trade):
-        if not self.is_eligible_for_balancing_market:
+        if not self._is_eligible_for_balancing_market:
             return
         if trade.buyer != self.owner.name:
             return
