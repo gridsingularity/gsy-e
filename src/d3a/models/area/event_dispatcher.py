@@ -110,26 +110,26 @@ class AreaDispatcher:
         """
         self.broadcast_notification(AreaEvent.BALANCING_MARKET_CYCLE, **kwargs)
 
-    def _broadcast_notification_to_agents_of_future_markets(self, event_type: AreaEvent,
-                                                            **kwargs) -> None:
-        if not self.area.events.is_connected or not self.future_agent:
-            return
-        self.future_agent.event_listener(event_type, **kwargs)
-
     def _broadcast_notification_to_single_agent(
             self, agent_area: "Area", market_type: AvailableMarketTypes,
             event_type: AreaEvent, **kwargs) -> None:
-        agent_dict = self._get_agents_for_market_type(agent_area.dispatcher, market_type)
-        for time_slot, agent in agent_dict.items():
-            if time_slot not in agent_area.get_market_instances_from_class_type(
-                    market_type):
-                # exclude past IAAs
-                continue
 
-            agent.event_listener(event_type, **kwargs)
+        if market_type == AvailableMarketTypes.FUTURE:
+            if self.future_agent:
+                self.future_agent.event_listener(event_type, **kwargs)
+        else:
+            agent_dict = self._get_agents_for_market_type(agent_area.dispatcher, market_type)
+            for time_slot, agent in agent_dict.items():
+                if time_slot not in agent_area.get_market_instances_from_class_type(
+                        market_type):
+                    # exclude past IAAs
+                    continue
+
+                agent.event_listener(event_type, **kwargs)
 
     def _broadcast_notification_to_area_and_child_agents(
-            self, market_type: AvailableMarketTypes, event_type: AreaEvent, **kwargs) -> None:
+            self, market_type: AvailableMarketTypes,
+            event_type: Union[MarketEvent, AreaEvent], **kwargs) -> None:
 
         if not self.area.events.is_connected:
             return
@@ -171,13 +171,23 @@ class AreaDispatcher:
         # Broadcast to children in random order to ensure fairness
         for child in sorted(self.area.children, key=lambda _: random()):
             child.dispatcher.event_listener(event_type, **kwargs)
-        self._broadcast_notification_to_area_and_child_agents(
-            AvailableMarketTypes.SPOT, event_type, **kwargs)
-        self._broadcast_notification_to_area_and_child_agents(
-            AvailableMarketTypes.BALANCING, event_type, **kwargs)
-        self._broadcast_notification_to_area_and_child_agents(
-            AvailableMarketTypes.SETTLEMENT, event_type, **kwargs)
-        self._broadcast_notification_to_agents_of_future_markets(event_type, **kwargs)
+
+        market_id = kwargs.get("market_id")
+        if not market_id and isinstance(event_type, MarketEvent):
+            assert False, "MarketEvent should always provide a market_id."
+
+        if isinstance(event_type, AreaEvent) or self.area.is_market_spot(market_id):
+            self._broadcast_notification_to_area_and_child_agents(
+                AvailableMarketTypes.SPOT, event_type, **kwargs)
+        if isinstance(event_type, AreaEvent) or self.area.is_market_balancing(market_id):
+            self._broadcast_notification_to_area_and_child_agents(
+                AvailableMarketTypes.BALANCING, event_type, **kwargs)
+        if isinstance(event_type, AreaEvent) or self.area.is_market_settlement(market_id):
+            self._broadcast_notification_to_area_and_child_agents(
+                AvailableMarketTypes.SETTLEMENT, event_type, **kwargs)
+        if isinstance(event_type, AreaEvent) or self.area.is_market_future(market_id):
+            self._broadcast_notification_to_area_and_child_agents(
+                AvailableMarketTypes.FUTURE, event_type, **kwargs)
 
     def _should_dispatch_to_strategies(self, event_type: Union[AreaEvent, MarketEvent]) -> bool:
         if event_type is AreaEvent.ACTIVATE:
