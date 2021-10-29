@@ -67,7 +67,7 @@ class TestPVForecastExternalStrategy:
         The _offer_aggregator command succeeds, but it shows a warning if Degrees of Freedom are
         disabled and nevertheless provided.
         """
-        external_pv._simulation_config.enable_degrees_of_freedom = False
+        external_pv.simulation_config.enable_degrees_of_freedom = False
         external_pv.state._available_energy_kWh[external_pv.spot_market.time_slot] = 1.0
         return_value = external_pv.trigger_aggregator_commands(
             {

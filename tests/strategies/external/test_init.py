@@ -31,13 +31,13 @@ import d3a.constants
 import d3a.d3a_core.util
 from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.models.area import Area
-from d3a.models.config import SimulationConfig
 from d3a.models.strategy import BidEnabledStrategy
-from d3a.models.strategy.external_strategies import ExternalMixin, IncomingRequest
+from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.external_strategies.load import (
-    LoadForecastExternalStrategy, LoadHoursExternalStrategy)
+    LoadForecastExternalStrategy, LoadHoursExternalStrategy, LoadProfileExternalStrategy)
 from d3a.models.strategy.external_strategies.pv import (
-    PVExternalStrategy, PVForecastExternalStrategy)
+    PVExternalStrategy, PVForecastExternalStrategy, PVPredefinedExternalStrategy,
+    PVUserProfileExternalStrategy)
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
 
 transaction_id = str(uuid.uuid4())
@@ -476,32 +476,31 @@ class TestExternalMixin:
         assert market == market_mock
 
     @staticmethod
-    @pytest.fixture(name="external_mixin")
-    def fixture_external_mixin():
-        """Create an ExternalMixin with a mocked SimulationConfig."""
-        external_mixin = ExternalMixin()
-        external_mixin._simulation_config = Mock(spec=SimulationConfig)
-
-        return external_mixin
-
-    @staticmethod
-    def test_filter_degrees_of_freedom_arguments(external_mixin):
-        """Degrees of Freedom are correctly filtered."""
+    @pytest.mark.parametrize("strategy", [
+        LoadHoursExternalStrategy(100),
+        LoadProfileExternalStrategy(),
+        PVExternalStrategy(2, capacity_kW=0.16),
+        PVUserProfileExternalStrategy(),
+        PVPredefinedExternalStrategy(),
+        StorageExternalStrategy()])
+    def test_filter_degrees_of_freedom_arguments(strategy):
+        """Degrees of Freedom are correctly filtered in all external strategies."""
         order_arguments = {
             "type": "bid", "energy": 0.025, "price": 30, "replace_existing": True,
             "attributes": {"energy_type": "PV"}, "requirements": [{"price": 12}],
             "timeslot": None, "transaction_id": "some-id"}
 
+        strategy.area = Mock(spec=Area)
         # Arguments are preserved when required
-        type(external_mixin._simulation_config).enable_degrees_of_freedom = PropertyMock(
+        type(strategy.simulation_config).enable_degrees_of_freedom = PropertyMock(
             return_value=True)
-        result = external_mixin.filter_degrees_of_freedom_arguments(order_arguments)
+        result = strategy.filter_degrees_of_freedom_arguments(order_arguments)
         assert result == (order_arguments, [])
 
         # Arguments are removed when required
-        type(external_mixin._simulation_config).enable_degrees_of_freedom = PropertyMock(
+        type(strategy.simulation_config).enable_degrees_of_freedom = PropertyMock(
             return_value=False)
-        result = external_mixin.filter_degrees_of_freedom_arguments(order_arguments)
+        result = strategy.filter_degrees_of_freedom_arguments(order_arguments)
         assert result == ({
             "type": "bid", "energy": 0.025, "price": 30, "replace_existing": True,
             "timeslot": None, "transaction_id": "some-id"},
