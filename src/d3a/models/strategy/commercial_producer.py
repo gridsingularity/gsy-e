@@ -38,6 +38,10 @@ class CommercialStrategy(BaseStrategy):
         self.energy_rate = None
         self.energy_per_slot_kWh = INF_ENERGY
 
+    @property
+    def state(self):
+        raise AttributeError("Commercial Producer has no state.")
+
     def event_activate(self, **kwargs):
         self._read_or_rotate_profiles()
 
@@ -93,7 +97,7 @@ class CommercialStrategy(BaseStrategy):
                           f"Posting offer with zero energy rate instead.")
 
     def _offer_balancing_energy(self, market):
-        if not self.is_eligible_for_balancing_market:
+        if not self._is_eligible_for_balancing_market:
             return
 
         # The second tuple member in the device registry is the balancing supply rate

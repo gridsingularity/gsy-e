@@ -122,13 +122,17 @@ class StorageStrategy(BidEnabledStrategy):
                 initial_buying_rate=self.bid_update.initial_rate_profile_buffer[time_slot],
                 final_buying_rate=find_object_of_same_weekday_and_time(
                     self.bid_update.final_rate_profile_buffer, time_slot))
-        self.state = StorageState(
+        self._state = StorageState(
             initial_soc=initial_soc, initial_energy_origin=initial_energy_origin,
             capacity=battery_capacity_kWh, max_abs_battery_power_kW=max_abs_battery_power_kW,
             loss_per_hour=loss_per_hour, loss_function=loss_function,
             min_allowed_soc=min_allowed_soc)
         self.cap_price_strategy = cap_price_strategy
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
+
+    @property
+    def state(self) -> StorageState:
+        return self._state
 
     def _area_reconfigure_prices(self, **kwargs):
         if key_in_dict_and_not_none(kwargs, 'initial_selling_rate'):
@@ -377,7 +381,7 @@ class StorageStrategy(BidEnabledStrategy):
         super().event_offer_traded(market_id=market_id, trade=trade)
 
         self.assert_if_trade_bid_price_is_too_high(market, trade)
-        self.assert_if_trade_offer_price_is_too_low(market_id, trade)
+        self._assert_if_trade_offer_price_is_too_low(market_id, trade)
 
         if trade.buyer == self.owner.name:
             if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
@@ -459,7 +463,7 @@ class StorageStrategy(BidEnabledStrategy):
         self._delete_past_state()
 
     def event_balancing_market_cycle(self):
-        if not self.is_eligible_for_balancing_market:
+        if not self._is_eligible_for_balancing_market:
             return
 
         current_market = self.area.spot_market
