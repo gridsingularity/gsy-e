@@ -356,7 +356,7 @@ class Offers:
         Check whether an offer with the specified parameters can be posted on the market
         Args:
             offer_energy: Energy of the offer, in kWh
-            offer_price: Price of the offer, in cents/kWh
+            offer_price: Price of the offer, in cents
             available_energy: Available energy of the strategy for trading, in kWh
             market: Market that the offer will be posted to
             replace_existing: Set to True if the posted and unsold offers should be replaced
@@ -515,6 +515,11 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             price=energy_kWh * initial_energy_rate,
             energy=energy_kWh,
         )
+
+    def get_posted_offers(self, market: "OneSidedMarket",
+                          time_slot: Optional[DateTime] = None) -> List[Offer]:
+        """Get list of posted bids from a market"""
+        return self.offers.posted_in_market(market.id, time_slot)
 
     def get_market_from_id(self, market_id: str) -> Optional[Market]:
         """Retrieve a market object from the market_id."""

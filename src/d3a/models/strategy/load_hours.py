@@ -38,7 +38,9 @@ from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.market import Market
 from d3a_interface.data_classes import Offer
 from d3a.models.state import LoadState
+from d3a.models.base import AssetType
 from d3a.models.strategy import BidEnabledStrategy, utils
+from d3a.models.strategy.future.strategy import future_market_strategy_factory
 from d3a.models.strategy.settlement.strategy import settlement_market_strategy_factory
 from d3a.models.strategy.update_frequency import TemplateStrategyBidUpdater
 
@@ -99,6 +101,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._cycled_market = set()
         self._simulation_start_timestamp = None
         self._settlement_market_strategy = settlement_market_strategy_factory()
+        self._future_market_strategy = future_market_strategy_factory()
 
     @property
     def state(self) -> LoadState:
@@ -167,6 +170,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._set_alternative_pricing_scheme()
         self.update_state()
         self._settlement_market_strategy.event_market_cycle(self)
+        self._future_market_strategy.event_market_cycle(self)
 
     def add_entry_in_hrs_per_day(self, overwrite=False):
         current_day = self._get_day_of_timestamp(self.area.spot_market.time_slot)
@@ -328,6 +332,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         self.bid_update.increment_update_counter_all_markets(self)
         self._settlement_market_strategy.event_tick(self)
+        self._future_market_strategy.event_tick(self)
 
     def event_offer(self, *, market_id, offer):
         """Automatically react to offers in single-sided markets.
@@ -390,6 +395,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         """
         # settlement market event_bid_traded has to be triggered before the early return:
         self._settlement_market_strategy.event_bid_traded(self, market_id, bid_trade)
+        self._future_market_strategy.event_bid_traded(self, market_id, bid_trade)
 
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
         market = self.area.get_future_market_from_id(market_id)
@@ -410,6 +416,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         """
         # settlement market event_trade has to be triggered before the early return:
         self._settlement_market_strategy.event_offer_traded(self, market_id, trade)
+        self._future_market_strategy.event_offer_traded(self, market_id, trade)
 
         market = self.area.get_future_market_from_id(market_id)
         if not market:
@@ -519,3 +526,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if self._simulation_start_timestamp is None:
             return 0
         return (time_slot - self._simulation_start_timestamp).days
+
+    @property
+    def asset_type(self):
+        return AssetType.CONSUMER

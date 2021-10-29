@@ -31,6 +31,7 @@ from d3a import constants
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.state import PVState
+from d3a.models.base import AssetType
 from d3a.models.strategy import BidEnabledStrategy, utils
 from d3a.models.strategy.settlement.strategy import settlement_market_strategy_factory
 from d3a.models.strategy.update_frequency import TemplateStrategyOfferUpdater
@@ -338,3 +339,7 @@ class PVStrategy(BidEnabledStrategy):
                                                                final_rate=rate)
                 else:
                     raise MarketException
+
+    @property
+    def asset_type(self):
+        return AssetType.PRODUCER

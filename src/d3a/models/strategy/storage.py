@@ -34,6 +34,7 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
+from d3a.models.base import AssetType
 from d3a.models.state import StorageState, ESSEnergyOrigin, EnergyOrigin
 from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.strategy.update_frequency import (
@@ -619,3 +620,7 @@ class StorageStrategy(BidEnabledStrategy):
         self.offer_update.delete_past_state_values(self.area.current_market.time_slot)
         self.bid_update.delete_past_state_values(self.area.current_market.time_slot)
         self.state.delete_past_state_values(self.area.current_market.time_slot)
+
+    @property
+    def asset_type(self):
+        return AssetType.PROSUMER

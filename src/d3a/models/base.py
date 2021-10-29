@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from enum import Enum
 from logging import getLogger
 from typing import Dict, Optional, TYPE_CHECKING
 
@@ -29,6 +30,12 @@ log = getLogger(__name__)
 if TYPE_CHECKING:
     from d3a.models.area import Area
     from d3a.models.state import StateInterface
+
+
+class AssetType(Enum):
+    PRODUCER = 0
+    CONSUMER = 1
+    PROSUMER = 2
 
 
 class AreaBehaviorBase:
@@ -95,3 +102,7 @@ class AreaBehaviorBase:
             raise D3AException(
                 "Strategy does not have a state. "
                 "State is required to support load state functionality.") from ex
+
+    @property
+    def asset_type(self):
+        raise NotImplementedError

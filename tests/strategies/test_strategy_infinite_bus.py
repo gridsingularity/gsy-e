@@ -62,6 +62,10 @@ class FakeArea:
         return self.test_market
 
     @property
+    def future_markets(self):
+        return None
+
+    @property
     def all_markets(self):
         return [self.test_market]
 
