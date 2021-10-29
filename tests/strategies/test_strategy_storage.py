@@ -445,7 +445,7 @@ def test_calculate_initial_sell_energy_rate_upper_bound(storage_strategy_test7_1
     storage_strategy_test7_1.event_activate()
     market = storage_strategy_test7_1.area.current_market
     market_maker_rate = \
-        storage_strategy_test7_1.area.config.market_maker_rate[market.time_slot]
+        storage_strategy_test7_1.simulation_config.market_maker_rate[market.time_slot]
     assert storage_strategy_test7_1.calculate_selling_rate(market) == market_maker_rate
 
 

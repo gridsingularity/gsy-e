@@ -358,7 +358,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             time_slot = self.area.spot_market.time_slot
-            final_rate = self.area.config.market_maker_rate[time_slot]
+            final_rate = self.simulation_config.market_maker_rate[time_slot]
             self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
                                                      final_rate=final_rate)
 
@@ -491,7 +491,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
             raise ValueError("Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
 
     def _update_energy_requirement_future_markets(self):
-        self.energy_per_slot_Wh = convert_W_to_Wh(self.avg_power_W, self.area.config.slot_length)
+        self.energy_per_slot_Wh = convert_W_to_Wh(
+            self.avg_power_W, self.simulation_config.slot_length)
         desired_energy_Wh = (self.energy_per_slot_Wh
                              if self._allowed_operating_hours(self.area.spot_market.time_slot)
                              else 0.0)
@@ -512,7 +513,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def _operating_hours(self, energy_kWh):
         return (((energy_kWh * 1000) / self.energy_per_slot_Wh)
-                * (self.area.config.slot_length / duration(hours=1)))
+                * (self.simulation_config.slot_length / duration(hours=1)))
 
     def _get_day_of_timestamp(self, time_slot: DateTime):
         """Return the number of days passed from the simulation start date to the time slot."""

@@ -251,7 +251,7 @@ class StorageStrategy(BidEnabledStrategy):
                              self.bid_update.fit_to_limit, self.offer_update.fit_to_limit)
 
     def event_activate_energy(self):
-        self.state.set_battery_energy_per_slot(self.area.config.slot_length)
+        self.state.set_battery_energy_per_slot(self.simulation_config.slot_length)
 
     def event_activate(self, **kwargs):
         self._update_profiles_with_default_values()
@@ -268,7 +268,7 @@ class StorageStrategy(BidEnabledStrategy):
                     self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=0,
                                                                final_rate=0)
                 elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
-                    rate = (self.area.config.market_maker_rate[time_slot] *
+                    rate = (self.simulation_config.market_maker_rate[time_slot] *
                             ConstSettings.IAASettings.AlternativePricing.
                             FEED_IN_TARIFF_PERCENTAGE / 100)
                     self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
@@ -277,7 +277,7 @@ class StorageStrategy(BidEnabledStrategy):
                                                                initial_rate=rate,
                                                                final_rate=rate)
                 elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
-                    rate = self.area.config.market_maker_rate[time_slot]
+                    rate = self.simulation_config.market_maker_rate[time_slot]
                     self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
                                                              final_rate=rate)
                     self.offer_update.reassign_mixin_arguments(time_slot,

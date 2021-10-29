@@ -385,9 +385,10 @@ def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy
     # load_hours_strategy_test5.area.past_markets = {TIME: market_test2}
     load_hours_strategy_test5.event_market_cycle()
     load_hours_strategy_test5.event_tick()
-    assert round(((float(load_hours_strategy_test5.accept_offer.call_args[0][1].energy) *
-                   1000 / load_hours_strategy_test5.energy_per_slot_Wh) *
-                  (load_hours_strategy_test5.area.config.slot_length / duration(hours=1))), 2) == \
+    assert round(((
+        float(load_hours_strategy_test5.accept_offer.call_args[0][1].energy) *
+        1000 / load_hours_strategy_test5.energy_per_slot_Wh) *
+        (load_hours_strategy_test5.simulation_config.slot_length / duration(hours=1))), 2) == \
         round(((0.1/0.155) * 0.25), 2)
 
 

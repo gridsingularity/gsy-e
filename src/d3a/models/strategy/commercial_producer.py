@@ -47,7 +47,7 @@ class CommercialStrategy(BaseStrategy):
 
     def _read_or_rotate_profiles(self, reconfigure=False):
         if self.energy_rate_input is None:
-            self.energy_rate = self.area.config.market_maker_rate
+            self.energy_rate = self.simulation_config.market_maker_rate
         else:
             self.energy_rate = \
                 global_objects.profiles_handler.rotate_profile(

@@ -114,7 +114,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             self.energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                       self.energy_rate)
         else:
-            self.energy_rate = self.area.config.market_maker_rate
+            self.energy_rate = self.simulation_config.market_maker_rate
 
     def _populate_buying_rate(self):
         if self.buying_rate_profile is not None:
@@ -126,7 +126,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             self.energy_buy_rate = read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, self.energy_buy_rate)
         else:
-            self.energy_buy_rate = self.area.config.market_maker_rate
+            self.energy_buy_rate = self.simulation_config.market_maker_rate
 
     def event_activate(self, **kwargs):
         self._populate_selling_rate()
