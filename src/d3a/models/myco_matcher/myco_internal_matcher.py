@@ -19,9 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a_interface.enums import BidOfferMatchAlgoEnum
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.matching_algorithms import (
-    PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
-)
+    PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm)
 from d3a.d3a_core.exceptions import WrongMarketTypeException
+from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
 
 
@@ -59,8 +59,9 @@ class MycoInternalMatcher(MycoMatcherInterface):
         """Request trade recommendations and match them in the relevant market."""
         for area_uuid, area_data in self.area_uuid_markets_mapping.items():
             # TODO: we don't always want to clear future markets
-            markets = [*area_data["markets"], *area_data["settlement_markets"],
-                       area_data["future_markets"]]
+            markets = [*area_data["markets"], *area_data["settlement_markets"]]
+            if global_objects.future_market_counter.is_it_time_for_clearing:
+                markets.append(area_data["future_markets"])
             for market in markets:
                 while True:
                     orders = market.orders_per_slot()

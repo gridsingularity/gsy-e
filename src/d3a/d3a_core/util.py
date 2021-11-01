@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import datetime
 import inspect
 import json
 import os
@@ -486,3 +487,27 @@ def is_time_slot_in_past_markets(time_slot: DateTime, current_time_slot: DateTim
             hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
     else:
         return time_slot < current_time_slot
+
+
+class FutureMarketCounter:
+    """Hold a time counter for the future market.
+
+    In the future market, we only want to clear in a predefined interval.
+    """
+    def __init__(self):
+        self.last_time_dispatched = datetime.datetime.now()
+
+    @property
+    def is_it_time_for_clearing(self) -> bool:
+        """Compare current time with the latest time clearing was dispatched.
+
+        Returns True if the CLEAR_FUTURE_MARKET_INTERVAL_MINUTE interval has
+        already passed since the last dispatch time.
+        """
+        current_time = datetime.datetime.now()
+        duration_in_s = (current_time - self.last_time_dispatched).total_seconds()
+        duration_in_min = duration_in_s // 60
+        if duration_in_min > d3a.constants.CLEAR_FUTURE_MARKET_INTERVAL_MINUTE:
+            self.last_time_dispatched = current_time
+            return True
+        return False

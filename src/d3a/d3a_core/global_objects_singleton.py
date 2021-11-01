@@ -17,11 +17,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.d3a_core.user_profile_handler import ProfilesHandler
 from d3a.d3a_core.global_stats import ExternalConnectionGlobalStatistics
+from d3a.d3a_core.util import FutureMarketCounter
 
 
 class GlobalObjects:
     profiles_handler = ProfilesHandler()
     external_global_stats = ExternalConnectionGlobalStatistics()
+    future_market_counter = FutureMarketCounter()
 
 
 global_objects = GlobalObjects()
