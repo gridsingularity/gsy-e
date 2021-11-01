@@ -15,15 +15,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from unittest.mock import Mock
-
 import pytest
+from d3a_interface.constants_limits import GlobalConfig
+from d3a_interface.data_classes import Bid, Offer, Trade, TradeBidOfferInfo
+from pendulum import datetime, duration
+
 from d3a.models.area import Area
 from d3a.models.market import GridFee
 from d3a.models.market.future import FutureMarkets, FutureMarketException
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.data_classes import Bid, Offer, Trade, TradeBidOfferInfo
-from pendulum import datetime, duration
 
 DEFAULT_CURRENT_MARKET_SLOT = datetime(2021, 10, 19, 0, 0)
 DEFAULT_SLOT_LENGTH = duration(minutes=15)
@@ -34,13 +33,6 @@ def active_future_market() -> FutureMarkets:
     """Return future market object."""
     orig_future_market_duration = GlobalConfig.future_market_duration
     GlobalConfig.future_market_duration = duration(hours=1)
-    config = Mock()
-    config.slot_length = duration(minutes=15)
-    config.tick_length = duration(seconds=15)
-    config.ticks_per_slot = 60
-    config.start_date = DEFAULT_CURRENT_MARKET_SLOT
-    config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
-    config.end_date = config.start_date + duration(days=1)
     area = Area("test_area")
     area.activate()
     future_market = FutureMarkets(
@@ -191,7 +183,8 @@ class TestFutureMarkets:
         """Test if trade is added to trade buffers when accept_offer is called."""
         first_future_market = next(iter(future_market.slot_bid_mapping))
         offer = future_market.offer(1, 1, "seller", "seller_origin", time_slot=first_future_market)
-        trade = future_market.accept_offer(offer, "buyer")
+        trade = future_market.accept_offer(offer, "buyer",
+                                           trade_bid_info=TradeBidOfferInfo(1, 1, 1, 1, 1))
 
         assert len(future_market.trades) == 1
         assert trade in future_market.trades

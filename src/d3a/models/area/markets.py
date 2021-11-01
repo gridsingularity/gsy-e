@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import OrderedDict
-from typing import Dict, TYPE_CHECKING, Optional
+from typing import Dict, TYPE_CHECKING, Optional, List
 
 from d3a_interface.constants_limits import ConstSettings, TIME_FORMAT
 from d3a_interface.enums import SpotMarketTypeEnum
@@ -56,10 +56,23 @@ class AreaMarkets:
         # Future markets:
         self.future_markets: Optional[FutureMarkets] = None
 
-        self.spot_market_rotator = BaseRotator()
-        self.balancing_market_rotator = BaseRotator()
-        self.settlement_market_rotator = BaseRotator()
-        self.future_market_rotator = BaseRotator()
+        self._spot_market_rotator = BaseRotator()
+        self._balancing_market_rotator = BaseRotator()
+        self._settlement_market_rotator = BaseRotator()
+        self._future_market_rotator = BaseRotator()
+
+        self.spot_market_ids: List = []
+        self.balancing_market_ids: List = []
+        self.settlement_market_ids: List = []
+
+    def update_area_market_id_lists(self) -> None:
+        """Populates lists of market ids that are currently in the market dicts."""
+        self.spot_market_ids: List = [market.id
+                                      for market in self.markets.values()]
+        self.balancing_market_ids: List = [market.id
+                                           for market in self.balancing_markets.values()]
+        self.settlement_market_ids: List = [market.id
+                                            for market in self.settlement_markets.values()]
 
     def activate_future_markets(self, area: "Area") -> None:
         """
@@ -78,15 +91,15 @@ class AreaMarkets:
     def activate_market_rotators(self):
         """The user specific ConstSettings are not available when the class is constructed,
         so we need to have a two-stage initialization here."""
-        self.spot_market_rotator = DefaultMarketRotator(self.markets, self.past_markets)
+        self._spot_market_rotator = DefaultMarketRotator(self.markets, self.past_markets)
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
-            self.balancing_market_rotator = (
+            self._balancing_market_rotator = (
                 DefaultMarketRotator(self.balancing_markets, self.past_balancing_markets))
         if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
-            self.settlement_market_rotator = (
+            self._settlement_market_rotator = (
                 SettlementMarketRotator(self.settlement_markets, self.past_settlement_markets))
         if self.future_markets:
-            self.future_market_rotator = FutureMarketRotator(self.future_markets)
+            self._future_market_rotator = FutureMarketRotator(self.future_markets)
 
     def _update_indexed_future_markets(self) -> None:
         """Update the indexed_future_markets mapping."""
@@ -94,15 +107,15 @@ class AreaMarkets:
 
     def rotate_markets(self, current_time: DateTime) -> None:
         """Deal with market rotation of different types."""
-        self.spot_market_rotator.rotate(current_time)
-        self.balancing_market_rotator.rotate(current_time)
-        self.settlement_market_rotator.rotate(current_time)
-        self.future_market_rotator.rotate(current_time)
+        self._spot_market_rotator.rotate(current_time)
+        self._balancing_market_rotator.rotate(current_time)
+        self._settlement_market_rotator.rotate(current_time)
+        self._future_market_rotator.rotate(current_time)
 
         self._update_indexed_future_markets()
 
     @staticmethod
-    def _select_market_class(market_type: AvailableMarketTypes) -> Market:
+    def _select_market_class(market_type: AvailableMarketTypes) -> type(Market):
         """Select market class dependent on the global config."""
         if market_type == AvailableMarketTypes.SPOT:
             if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:

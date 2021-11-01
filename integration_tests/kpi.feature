@@ -53,8 +53,8 @@ Feature: KPI integration tests
      Given we have a scenario named kpi.d3asim_2103_nopv1
      And d3a is installed
      When we run the d3a simulation on console with kpi.d3asim_2103_nopv1 for 24 hrs (30, 30)
-     Then self_sufficiency of {'Grid': 1.0, 'Community': 0.666, 'House 1': 0.0, 'House 2': 0.5, 'House 3': 1.0} are correctly reported
-     And self_consumption of {'Grid': 1.0, 'Community': 0.8, 'House 1': None, 'House 2': 1.0, 'House 3': 0.5} are correctly reported
+     Then self_sufficiency of {'Grid': 1.0, 'Community': 0.833, 'House 1': 0.0, 'House 2': 0.5, 'House 3': 1.0} are correctly reported
+     And self_consumption of {'Grid': 1.0, 'Community': 1.0, 'House 1': None, 'House 2': 1.0, 'House 3': 0.5} are correctly reported
 
   Scenario: D3ASIM-2103, self sufficiency reports correct values on levels higher than houses with energy deficit for PAB
      Given we have a scenario named kpi.d3asim_2103_nopv1_2_sided_pab
