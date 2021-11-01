@@ -6,40 +6,43 @@
 #
 -e git+https://github.com/gridsingularity/d3a-interface@master#egg=d3a_interface
     # via -r requirements/base.txt
-appdirs==1.4.4
-    # via
-    #   -r requirements/base.txt
-    #   d3a-interface
-    #   virtualenv
-attrs==20.3.0
+attrs==21.2.0
     # via
     #   -r requirements/base.txt
     #   d3a-interface
     #   jsonschema
 awesome-slugify==1.6.5
     # via -r requirements/base.txt
+backports.entry-points-selectable==1.1.0
+    # via
+    #   -r requirements/base.txt
+    #   d3a-interface
+    #   virtualenv
 bcrypt==3.2.0
     # via paramiko
 cached-property==1.5.2
     # via -r requirements/base.txt
-certifi==2020.12.5
+certifi==2021.10.8
     # via
     #   -r requirements/base.txt
     #   d3a-interface
     #   requests
-cffi==1.14.6
+cffi==1.15.0
     # via
     #   bcrypt
     #   cryptography
     #   pynacl
-cfgv==3.3.0
-    # via pre-commit
-chardet==3.0.4
+cfgv==3.3.1
+    # via
+    #   -r requirements/base.txt
+    #   d3a-interface
+    #   pre-commit
+chardet==4.0.0
     # via
     #   -r requirements/base.txt
     #   d3a-interface
     #   requests
-click==7.1.2
+click==8.0.3
     # via
     #   -r requirements/base.txt
     #   click-default-group
@@ -48,29 +51,46 @@ click-default-group==1.2.2
     # via -r requirements/base.txt
 colorlog==4.7.2
     # via -r requirements/base.txt
-cryptography==3.4.7
+cryptography==35.0.0
     # via paramiko
-distlib==0.3.1
+distlib==0.3.3
     # via
     #   -r requirements/base.txt
     #   d3a-interface
     #   virtualenv
+entrypoints==0.3
+    # via
+    #   -r requirements/base.txt
+    #   d3a-interface
+    #   flake8
 fabric3==1.14.post1
     # via -r requirements/dev.in
-filelock==3.0.12
+filelock==3.3.2
     # via
     #   -r requirements/base.txt
     #   d3a-interface
     #   tox
     #   virtualenv
-identify==2.2.13
-    # via pre-commit
+flake8==3.7.9
+    # via
+    #   -r requirements/base.txt
+    #   d3a-interface
+    #   flake8-tuple
+flake8-tuple==0.4.1
+    # via
+    #   -r requirements/base.txt
+    #   d3a-interface
+identify==2.3.3
+    # via
+    #   -r requirements/base.txt
+    #   d3a-interface
+    #   pre-commit
 idna==2.10
     # via
     #   -r requirements/base.txt
     #   d3a-interface
     #   requests
-jsonschema==3.2.0
+jsonschema==4.1.2
     # via
     #   -r requirements/base.txt
     #   d3a-interface
@@ -78,41 +98,66 @@ kafka-python==2.0.2
     # via
     #   -r requirements/base.txt
     #   d3a-interface
+mccabe==0.6.1
+    # via
+    #   -r requirements/base.txt
+    #   d3a-interface
+    #   flake8
 nodeenv==1.6.0
-    # via pre-commit
+    # via
+    #   -r requirements/base.txt
+    #   d3a-interface
+    #   pre-commit
 numpy==1.20.3
     # via -r requirements/base.txt
-packaging==20.7
+packaging==21.2
     # via
     #   -r requirements/base.txt
     #   d3a-interface
     #   tox
-paramiko==2.7.2
+paramiko==2.8.0
     # via fabric3
 pendulum==2.1.2
     # via
     #   -r requirements/base.txt
     #   d3a-interface
-plotly==5.2.1
+platformdirs==2.4.0
+    # via
+    #   -r requirements/base.txt
+    #   d3a-interface
+    #   virtualenv
+plotly==5.3.1
     # via -r requirements/base.txt
-pluggy==0.13.1
+pluggy==1.0.0
     # via
     #   -r requirements/base.txt
     #   d3a-interface
     #   tox
 pony==0.7.14
     # via -r requirements/base.txt
-pre-commit==2.14.0
-    # via -r requirements/dev.in
+pre-commit==2.15.0
+    # via
+    #   -r requirements/base.txt
+    #   d3a-interface
 psutil==5.8.0
     # via -r requirements/dev.in
-py==1.9.0
+py==1.10.0
     # via
     #   -r requirements/base.txt
     #   d3a-interface
     #   tox
+pycodestyle==2.5.0
+    # via
+    #   -r requirements/base.txt
+    #   d3a-interface
+    #   flake8
 pycparser==2.20
     # via cffi
+pyflakes==2.1.1
+    # via
+    #   -r requirements/base.txt
+    #   d3a-interface
+    #   flake8
 pynacl==1.4.0
     # via paramiko
 pyparsing==2.4.7
@@ -120,35 +165,37 @@ pyparsing==2.4.7
     #   -r requirements/base.txt
     #   d3a-interface
     #   packaging
-pyrsistent==0.17.3
+pyrsistent==0.18.0
     # via
     #   -r requirements/base.txt
     #   d3a-interface
     #   jsonschema
-python-dateutil==2.8.1
+python-dateutil==2.8.2
     # via
     #   -r requirements/base.txt
     #   d3a-interface
     #   pendulum
 python-rex==0.4
     # via -r requirements/base.txt
-pytz==2021.1
+pytz==2021.3
     # via -r requirements/base.txt
 pytzdata==2020.1
     # via
     #   -r requirements/base.txt
     #   d3a-interface
     #   pendulum
-pyyaml==5.4.1
+pyyaml==6.0
     # via
+    #   -r requirements/base.txt
     #   -r requirements/dev.in
+    #   d3a-interface
     #   pre-commit
 redis==3.5.3
     # via
     #   -r requirements/base.txt
     #   d3a-interface
     #   rq
-regex==2021.8.3
+regex==2021.10.23
     # via
     #   -r requirements/base.txt
     #   awesome-slugify
@@ -156,15 +203,15 @@ requests==2.25.1
     # via
     #   -r requirements/base.txt
     #   d3a-interface
-rq==1.9.0
+rq==1.10.0
     # via -r requirements/base.txt
-six==1.15.0
+six==1.16.0
     # via
     #   -r requirements/base.txt
     #   bcrypt
     #   d3a-interface
     #   fabric3
-    #   jsonschema
+    #   flake8-tuple
     #   plotly
     #   pynacl
     #   python-dateutil
@@ -173,6 +220,10 @@ six==1.15.0
     #   virtualenv
 sortedcontainers==2.4.0
     # via -r requirements/base.txt
+tabulate==0.8.9
+    # via
+    #   -r requirements/base.txt
+    #   d3a-interface
 tenacity==8.0.1
     # via
     #   -r requirements/base.txt
@@ -183,30 +234,26 @@ toml==0.10.2
     #   d3a-interface
     #   pre-commit
     #   tox
-tox==3.20.1
+tox==3.24.4
     # via
     #   -r requirements/base.txt
-    #   -r requirements/dev.in
     #   d3a-interface
 unidecode==0.4.21
     # via
     #   -r requirements/base.txt
     #   awesome-slugify
-urllib3==1.26.4
+urllib3==1.26.7
     # via
     #   -r requirements/base.txt
     #   d3a-interface
     #   requests
-virtualenv==20.2.2
+virtualenv==20.10.0
     # via
     #   -r requirements/base.txt
     #   d3a-interface
     #   pre-commit
     #   tox
-websockets==8.1
+websockets==10.0
     # via
     #   -r requirements/base.txt
     #   d3a-interface
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools

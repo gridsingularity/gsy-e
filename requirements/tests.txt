@@ -6,12 +6,7 @@
 #
 -e git+https://github.com/gridsingularity/d3a-interface@master#egg=d3a_interface
     # via -r requirements/dev.txt
-appdirs==1.4.4
-    # via
-    #   -r requirements/dev.txt
-    #   d3a-interface
-    #   virtualenv
-attrs==20.3.0
+attrs==21.2.0
     # via
     #   -r requirements/dev.txt
     #   d3a-interface
@@ -20,6 +15,11 @@ attrs==20.3.0
     #   pytest
 awesome-slugify==1.6.5
     # via -r requirements/dev.txt
+backports.entry-points-selectable==1.1.0
+    # via
+    #   -r requirements/dev.txt
+    #   d3a-interface
+    #   virtualenv
 bcrypt==3.2.0
     # via
     #   -r requirements/dev.txt
@@ -28,27 +28,28 @@ behave==1.2.6
     # via -r requirements/tests.in
 cached-property==1.5.2
     # via -r requirements/dev.txt
-certifi==2020.12.5
+certifi==2021.10.8
     # via
     #   -r requirements/dev.txt
     #   d3a-interface
     #   requests
-cffi==1.14.6
+cffi==1.15.0
     # via
     #   -r requirements/dev.txt
     #   bcrypt
     #   cryptography
     #   pynacl
-cfgv==3.3.0
+cfgv==3.3.1
     # via
     #   -r requirements/dev.txt
+    #   d3a-interface
     #   pre-commit
-chardet==3.0.4
+chardet==4.0.0
     # via
     #   -r requirements/dev.txt
     #   d3a-interface
     #   requests
-click==7.1.2
+click==8.0.3
     # via
     #   -r requirements/dev.txt
     #   click-default-group
@@ -57,24 +58,27 @@ click-default-group==1.2.2
     # via -r requirements/dev.txt
 colorlog==4.7.2
     # via -r requirements/dev.txt
-coverage==5.5
+coverage==6.1.1
     # via -r requirements/tests.in
-cryptography==3.4.7
+cryptography==35.0.0
     # via
     #   -r requirements/dev.txt
     #   paramiko
-deepdiff==5.5.0
+deepdiff==5.6.0
     # via -r requirements/tests.in
-distlib==0.3.1
+distlib==0.3.3
     # via
     #   -r requirements/dev.txt
     #   d3a-interface
     #   virtualenv
 entrypoints==0.3
-    # via flake8
+    # via
+    #   -r requirements/dev.txt
+    #   d3a-interface
+    #   flake8
 fabric3==1.14.post1
     # via -r requirements/dev.txt
-filelock==3.0.12
+filelock==3.3.2
     # via
     #   -r requirements/dev.txt
     #   d3a-interface
@@ -82,15 +86,19 @@ filelock==3.0.12
     #   virtualenv
 flake8==3.7.9
     # via
-    #   -r requirements/tests.in
+    #   -r requirements/dev.txt
+    #   d3a-interface
     #   flake8-tuple
 flake8-tuple==0.4.1
-    # via -r requirements/tests.in
-hypothesis==4.38.0
-    # via -r requirements/tests.in
-identify==2.2.13
     # via
     #   -r requirements/dev.txt
+    #   d3a-interface
+hypothesis==4.38.0
+    # via -r requirements/tests.in
+identify==2.3.3
+    # via
+    #   -r requirements/dev.txt
+    #   d3a-interface
     #   pre-commit
 idna==2.10
     # via
@@ -101,7 +109,7 @@ iniconfig==1.1.1
     # via pytest
 isort==5.9.3
     # via -r requirements/tests.in
-jsonschema==3.2.0
+jsonschema==4.1.2
     # via
     #   -r requirements/dev.txt
     #   d3a-interface
@@ -110,16 +118,20 @@ kafka-python==2.0.2
     #   -r requirements/dev.txt
     #   d3a-interface
 mccabe==0.6.1
-    # via flake8
+    # via
+    #   -r requirements/dev.txt
+    #   d3a-interface
+    #   flake8
 nodeenv==1.6.0
     # via
     #   -r requirements/dev.txt
+    #   d3a-interface
     #   pre-commit
 numpy==1.20.3
     # via -r requirements/dev.txt
 ordered-set==4.0.2
     # via deepdiff
-packaging==20.7
+packaging==21.2
     # via
     #   -r requirements/dev.txt
     #   d3a-interface
@@ -127,7 +139,7 @@ packaging==20.7
     #   tox
 parameterized==0.8.1
     # via -r requirements/tests.in
-paramiko==2.7.2
+paramiko==2.8.0
     # via
     #   -r requirements/dev.txt
     #   fabric3
@@ -141,9 +153,14 @@ pendulum==2.1.2
     # via
     #   -r requirements/dev.txt
     #   d3a-interface
-plotly==5.2.1
+platformdirs==2.4.0
+    # via
+    #   -r requirements/dev.txt
+    #   d3a-interface
+    #   virtualenv
+plotly==5.3.1
     # via -r requirements/dev.txt
-pluggy==0.13.1
+pluggy==1.0.0
     # via
     #   -r requirements/dev.txt
     #   d3a-interface
@@ -151,24 +168,32 @@ pluggy==0.13.1
     #   tox
 pony==0.7.14
     # via -r requirements/dev.txt
-pre-commit==2.14.0
-    # via -r requirements/dev.txt
+pre-commit==2.15.0
+    # via
+    #   -r requirements/dev.txt
+    #   d3a-interface
 psutil==5.8.0
     # via -r requirements/dev.txt
-py==1.9.0
+py==1.10.0
     # via
     #   -r requirements/dev.txt
     #   d3a-interface
     #   pytest
     #   tox
 pycodestyle==2.5.0
-    # via flake8
+    # via
+    #   -r requirements/dev.txt
+    #   d3a-interface
+    #   flake8
 pycparser==2.20
     # via
     #   -r requirements/dev.txt
     #   cffi
 pyflakes==2.1.1
-    # via flake8
+    # via
+    #   -r requirements/dev.txt
+    #   d3a-interface
+    #   flake8
 pynacl==1.4.0
     # via
     #   -r requirements/dev.txt
@@ -178,41 +203,42 @@ pyparsing==2.4.7
     #   -r requirements/dev.txt
     #   d3a-interface
     #   packaging
-pyrsistent==0.17.3
+pyrsistent==0.18.0
     # via
     #   -r requirements/dev.txt
     #   d3a-interface
     #   jsonschema
-pytest==6.2.4
+pytest==6.2.5
     # via
     #   -r requirements/tests.in
     #   pytest-random-order
 pytest-random-order==1.0.4
     # via -r requirements/tests.in
-python-dateutil==2.8.1
+python-dateutil==2.8.2
     # via
     #   -r requirements/dev.txt
     #   d3a-interface
     #   pendulum
 python-rex==0.4
     # via -r requirements/dev.txt
-pytz==2021.1
+pytz==2021.3
     # via -r requirements/dev.txt
 pytzdata==2020.1
     # via
     #   -r requirements/dev.txt
     #   d3a-interface
     #   pendulum
-pyyaml==5.4.1
+pyyaml==6.0
     # via
     #   -r requirements/dev.txt
+    #   d3a-interface
     #   pre-commit
 redis==3.5.3
     # via
     #   -r requirements/dev.txt
     #   d3a-interface
     #   rq
-regex==2021.8.3
+regex==2021.10.23
     # via
     #   -r requirements/dev.txt
     #   awesome-slugify
@@ -223,9 +249,9 @@ requests==2.25.1
     #   requests-mock
 requests-mock==1.9.3
     # via -r requirements/tests.in
-rq==1.9.0
+rq==1.10.0
     # via -r requirements/dev.txt
-six==1.15.0
+six==1.16.0
     # via
     #   -r requirements/dev.txt
     #   bcrypt
@@ -233,7 +259,6 @@ six==1.15.0
     #   d3a-interface
     #   fabric3
     #   flake8-tuple
-    #   jsonschema
     #   parse-type
     #   plotly
     #   pynacl
@@ -244,6 +269,10 @@ six==1.15.0
     #   virtualenv
 sortedcontainers==2.4.0
     # via -r requirements/dev.txt
+tabulate==0.8.9
+    # via
+    #   -r requirements/dev.txt
+    #   d3a-interface
 tenacity==8.0.1
     # via
     #   -r requirements/dev.txt
@@ -255,7 +284,7 @@ toml==0.10.2
     #   pre-commit
     #   pytest
     #   tox
-tox==3.20.1
+tox==3.24.4
     # via
     #   -r requirements/dev.txt
     #   d3a-interface
@@ -263,21 +292,18 @@ unidecode==0.4.21
     # via
     #   -r requirements/dev.txt
     #   awesome-slugify
-urllib3==1.26.4
+urllib3==1.26.7
     # via
     #   -r requirements/dev.txt
     #   d3a-interface
     #   requests
-virtualenv==20.2.2
+virtualenv==20.10.0
     # via
     #   -r requirements/dev.txt
     #   d3a-interface
     #   pre-commit
     #   tox
-websockets==8.1
+websockets==10.0
     # via
     #   -r requirements/dev.txt
     #   d3a-interface
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
