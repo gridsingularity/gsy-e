@@ -57,8 +57,15 @@ class FakeArea:
         self.test_market = FakeMarket(0)
         self._spot_market = FakeMarket(0)
 
-    def get_future_market_from_id(self, id):
+    def get_spot_or_future_market_by_id(self, _):
         return self.test_market
+
+    def is_market_spot_or_future(self, _):
+        return True
+
+    @property
+    def future_markets(self):
+        return None
 
     @property
     def current_market(self):
@@ -285,7 +292,8 @@ def testing_event_trade(area_test3, pv_test4):
                                             offer_bid=Offer(id="id", creation_time=pendulum.now(),
                                                             price=20,
                                                             energy=1, seller="FakeArea"),
-                                            seller=area_test3.name, buyer="buyer")
+                                            seller=area_test3.name, buyer="buyer",
+                                            time_slot=area_test3.test_market.time_slot)
                                 )
     assert len(pv_test4.offers.open) == 0
 
@@ -392,6 +400,7 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
         pv_test6.state._energy_production_forecast_kWh[TIME]
     fake_trade = FakeTrade(market_test3.created_offers[0])
     fake_trade.seller = pv_test6.owner.name
+    fake_trade.time_slot = market_test3.time_slot
     pv_test6.event_offer_traded(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []
     assert not market_test3.created_offers

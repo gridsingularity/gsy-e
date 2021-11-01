@@ -31,6 +31,7 @@ from d3a.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
 from d3a.d3a_core.exceptions import D3AException, MarketException
 from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.d3a_core.util import (get_market_maker_rate_from_config, should_read_profile_from_db)
+from d3a.models.base import AssetType
 from d3a.models.market import Market
 from d3a.models.state import SmartMeterState
 from d3a.models.strategy import BidEnabledStrategy, utils
@@ -232,7 +233,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         if ConstSettings.IAASettings.MARKET_TYPE != 1:
             return
 
-        market = self.area.get_future_market_from_id(market_id)
+        market = self.area.get_spot_or_future_market_by_id(market_id)
         if self._offer_comes_from_different_seller(offer):
             self._one_sided_market_event_tick(market, offer)
 
@@ -248,7 +249,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
 
         This method is triggered by the MarketEvent.OFFER_TRADED event.
         """
-        market = self.area.get_future_market_from_id(market_id)
+        market = self.area.get_spot_or_future_market_by_id(market_id)
         if not market:
             return
 
@@ -280,7 +281,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
 
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
 
-        market = self.area.get_future_market_from_id(market_id)
+        market = self.area.get_spot_or_future_market_by_id(market_id)
         self.state.decrement_energy_requirement(
             bid_trade.offer_bid.energy * 1000, market.time_slot, self.owner.name)
 
@@ -597,6 +598,10 @@ class SmartMeterStrategy(BidEnabledStrategy):
 
     def _offer_comes_from_different_seller(self, offer):
         return offer.seller != self.owner.name and offer.seller != self.area.name
+
+    @property
+    def asset_type(self):
+        return AssetType.PRODUCER
 
 
 class InconsistentEnergyException(Exception):

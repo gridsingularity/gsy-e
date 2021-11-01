@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
-from typing import List, Dict
+from typing import List, Dict, Optional, TYPE_CHECKING
 from uuid import uuid4
 
 from d3a_interface.area_validator import validate_area
@@ -45,6 +45,10 @@ from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
 from d3a.models.market.future import FutureMarkets
 log = getLogger(__name__)
+
+
+if TYPE_CHECKING:
+    from d3a.models.market import Market
 
 
 # TODO: As this is only used in the unittests, please remove it here and replace the usages
@@ -567,6 +571,16 @@ class Area:
 
     def get_future_market_from_id(self, _id):
         return self._markets.indexed_future_markets.get(_id, None)
+
+    def get_spot_or_future_market_by_id(self, market_id: str) -> Optional["Market"]:
+        if self.is_market_spot(market_id):
+            return self.spot_market
+        if self.is_market_future(market_id):
+            return self.future_markets
+        return None
+
+    def is_market_spot_or_future(self, market_id):
+        return self.is_market_spot(market_id) or self.is_market_future(market_id)
 
     @property
     def last_past_market(self):

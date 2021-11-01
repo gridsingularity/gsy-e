@@ -526,7 +526,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         # Look in spot and future markets first
         if not self.area:
             return None
-        market = self.area.get_future_market_from_id(market_id)
+        market = self.area.get_spot_or_future_market_by_id(market_id)
         if market is not None:
             return market
         # Then check settlement markets
