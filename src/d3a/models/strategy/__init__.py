@@ -853,11 +853,12 @@ class BidEnabledStrategy(BaseStrategy):
             return []
         return self._traded_bids[market_id]
 
-    def are_bids_posted(self, market_id: str) -> bool:
+    def are_bids_posted(self, market_id: str, time_slot: DateTime = None) -> bool:
         """Checks if any bids have been posted in the market slot with the given ID."""
         if market_id not in self._bids:
             return False
-        return len(self._bids[market_id]) > 0
+        return len([bid for bid in self._bids[market_id]
+                    if time_slot is None or bid.time_slot == time_slot]) > 0
 
     def post_first_bid(self, market: "Market", energy_Wh: float,
                        initial_energy_rate: float) -> Optional[Bid]:
