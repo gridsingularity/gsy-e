@@ -481,6 +481,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         self.offers.on_offer_split(original_offer, accepted_offer, residual_offer, market_id)
 
     def event_market_cycle(self):
+        if getattr(self, "state", None):
+            self.state.update_spot_market_time(self.owner.parent.spot_market.time_slot)
         if not constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
             self.offers.delete_past_markets_offers()
         self.event_responses = []

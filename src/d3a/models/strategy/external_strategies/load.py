@@ -452,7 +452,7 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
         """Set energy forecast for future markets."""
         for slot_time, energy_kWh in self.energy_forecast_buffer.items():
             if slot_time >= self.area.spot_market.time_slot:
-                self.state.set_desired_energy(energy_kWh * 1000, slot_time, overwrite=True)
+                self.state.set_future_desired_energy(energy_kWh * 1000, slot_time, overwrite=True)
                 self.state.update_total_demanded_energy(slot_time)
 
     def update_energy_measurement(self) -> None:

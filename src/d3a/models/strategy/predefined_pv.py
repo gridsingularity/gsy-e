@@ -107,7 +107,7 @@ class PVPredefinedStrategy(PVStrategy):
                 f"power profile.")
         available_energy_kWh = find_object_of_same_weekday_and_time(
             self.energy_profile, slot_time) * self.panel_count
-        self.state.set_available_energy(available_energy_kWh, slot_time, reconfigure)
+        self.state.set_future_available_energy(available_energy_kWh, slot_time, reconfigure)
 
     def _read_predefined_profile_for_pv(self):
         """

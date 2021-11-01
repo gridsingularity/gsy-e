@@ -491,7 +491,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         desired_energy_Wh = (self.energy_per_slot_Wh
                              if self._allowed_operating_hours(self.area.spot_market.time_slot)
                              else 0.0)
-        self.state.set_desired_energy(desired_energy_Wh, self.area.spot_market.time_slot)
+        self.state.set_future_desired_energy(desired_energy_Wh, self.area.spot_market.time_slot)
 
         for market in self.active_markets:
             current_day = self._get_day_of_timestamp(market.time_slot)
@@ -499,7 +499,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                     self.hrs_per_day[current_day] <= FLOATING_POINT_TOLERANCE):
                 # Overwrite desired energy to 0 in case the previous step has populated the
                 # desired energy by the hrs_per_day have been exhausted.
-                self.state.set_desired_energy(0.0, market.time_slot, True)
+                self.state.set_future_desired_energy(0.0, market.time_slot, True)
         if self.area.current_market:
             self.state.update_total_demanded_energy(self.area.current_market.time_slot)
 

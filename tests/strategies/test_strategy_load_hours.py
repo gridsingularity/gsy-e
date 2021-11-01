@@ -201,6 +201,7 @@ class TestLoadHoursStrategyInput(unittest.TestCase):
 @pytest.fixture()
 def area_test1(market_test1):
     area = FakeArea()
+    area.parent = FakeArea()
     area.current_market = market_test1
     return area
 
@@ -208,6 +209,7 @@ def area_test1(market_test1):
 @pytest.fixture
 def area_test2(market_test2):
     area = FakeArea()
+    area.parent = FakeArea()
     area.current_market = market_test2
     area.markets = {TIME: market_test2}
     return area

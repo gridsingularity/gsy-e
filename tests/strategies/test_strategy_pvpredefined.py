@@ -184,7 +184,9 @@ def test_activation(pv_test1):
 
 @pytest.fixture()
 def area_test3():
-    return FakeArea(0)
+    fa = FakeArea(0)
+    fa.parent = FakeArea(0)
+    return fa
 
 
 @pytest.fixture()

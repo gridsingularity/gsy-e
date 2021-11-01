@@ -217,7 +217,7 @@ class PVStrategy(BidEnabledStrategy):
             slot_time.diff(self.area.now.start_of("day")).in_minutes() % (60 * 24)
         available_energy_kWh = self.gaussian_energy_forecast_kWh(
             difference_to_midnight_in_minutes) * self.panel_count
-        self.state.set_available_energy(available_energy_kWh, slot_time, reconfigure)
+        self.state.set_future_available_energy(available_energy_kWh, slot_time, reconfigure)
 
     def gaussian_energy_forecast_kWh(self, time_in_minutes=0):
         # The sun rises at approx 6:30 and sets at 18hr

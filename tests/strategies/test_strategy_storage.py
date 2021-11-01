@@ -54,6 +54,7 @@ def auto_fixture():
 class FakeArea:
     def __init__(self, count):
         self.appliance = None
+        self.parent = None
         self.name = 'FakeArea'
         self.uuid = str(uuid4())
         self.count = count
@@ -61,7 +62,6 @@ class FakeArea:
         self.past_market = FakeMarket(4)
         self.current_market = FakeMarket(0)
         self._markets_return = {"Fake Market": FakeMarket(self.count)}
-        self.spot_market = self.all_markets[0]
         self.test_balancing_market = FakeMarket(1)
 
     log = getLogger(__name__)
@@ -117,6 +117,14 @@ class FakeArea:
                 )
         change_global_config(**configuration.__dict__)
         return configuration
+
+    @property
+    def spot_market(self):
+        """Returns the "current" market (i.e. the one currently "running")"""
+        try:
+            return self.all_markets[-1]
+        except IndexError:
+            return None
 
 
 class FakeMarket:
@@ -324,7 +332,9 @@ def test_if_storage_pays_respect_to_capacity_limits(storage_strategy_test4, area
 
 @pytest.fixture()
 def area_test5():
-    return FakeArea(4)
+    fa = FakeArea(4)
+    fa.parent = FakeArea(4)
+    return fa
 
 
 @pytest.fixture()
@@ -503,18 +513,26 @@ def area_test8():
 
 
 @pytest.fixture()
-def storage_strategy_test8(area_test8):
+def device_area_test8():
+    fa = FakeArea(4)
+    fa.parent = FakeArea(4)
+    return fa
+
+
+@pytest.fixture()
+def storage_strategy_test8(device_area_test8):
     s = StorageStrategy(initial_soc=99, battery_capacity_kWh=101,
                         max_abs_battery_power_kW=401)
-    s.owner = area_test8
-    s.area = area_test8
+    s.owner = device_area_test8
+    s.area = device_area_test8
     return s
 
 
-def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_test8: FakeArea):
+def test_sell_energy_function_with_stored_capacity(storage_strategy_test8,
+                                                   device_area_test8: FakeArea):
     storage_strategy_test8.event_activate()
     storage_strategy_test8.sell_energy()
-    sell_market = area_test8.all_markets[0]
+    sell_market = device_area_test8.all_markets[0]
     assert abs(storage_strategy_test8.state.used_storage
                - storage_strategy_test8.state.offered_sell_kWh[sell_market.time_slot] -
                storage_strategy_test8.state.capacity *
@@ -523,11 +541,11 @@ def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_
                    100 - storage_strategy_test8.state.capacity *
                    storage_strategy_test8.state.min_allowed_soc_ratio, rel_tol=1e-02))
 
-    assert(isclose(area_test8._markets_return["Fake Market"].created_offers[0].energy,
+    assert(isclose(device_area_test8._markets_return["Fake Market"].created_offers[0].energy,
                    100 - storage_strategy_test8.state.capacity *
                    storage_strategy_test8.state.min_allowed_soc_ratio, rel_tol=1e-02))
     assert len(storage_strategy_test8.offers.posted_in_market(
-        area_test8._markets_return["Fake Market"].id)
+        device_area_test8._markets_return["Fake Market"].id)
     ) > 0
 
 
@@ -536,15 +554,15 @@ def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_
 
 # Test if initial capacity is sold
 def test_first_market_cycle_with_initial_capacity(storage_strategy_test8: StorageStrategy,
-                                                  area_test8: FakeArea):
+                                                  device_area_test8: FakeArea):
     storage_strategy_test8.event_activate()
     storage_strategy_test8.event_market_cycle()
-    sell_market = area_test8.all_markets[0]
+    sell_market = device_area_test8.all_markets[0]
     assert(isclose(storage_strategy_test8.state.offered_sell_kWh[sell_market.time_slot],
                    100.0 - storage_strategy_test8.state.capacity *
                    storage_strategy_test8.state.min_allowed_soc_ratio, rel_tol=1e-02))
     assert len(storage_strategy_test8.offers.posted_in_market(
-        area_test8._markets_return["Fake Market"].id)
+        device_area_test8._markets_return["Fake Market"].id)
     ) > 0
 
 
@@ -688,7 +706,9 @@ def test_storage_capacity_dependant_sell_rate(storage_strategy_test12, market_te
 
 @pytest.fixture()
 def area_test13():
-    return FakeArea(0)
+    fa = FakeArea(0)
+    fa.parent = FakeArea(0)
+    return fa
 
 
 @pytest.fixture

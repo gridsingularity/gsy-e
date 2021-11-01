@@ -442,7 +442,7 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
         """Set energy forecast for future markets."""
         for slot_time, energy_kWh in self.energy_forecast_buffer.items():
             if slot_time >= self.area.spot_market.time_slot:
-                self.state.set_available_energy(energy_kWh, slot_time, overwrite=True)
+                self.state.set_future_available_energy(energy_kWh, slot_time, overwrite=True)
 
     def update_energy_measurement(self) -> None:
         """Set energy measurement for past markets."""

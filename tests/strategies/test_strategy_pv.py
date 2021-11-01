@@ -222,7 +222,9 @@ def testing_event_tick(pv_test2, market_test2, area_test2):
 
 @pytest.fixture()
 def area_test3():
-    return FakeArea()
+    fa = FakeArea()
+    fa.parent = FakeArea()
+    return fa
 
 
 @pytest.fixture()
@@ -438,7 +440,9 @@ def pv_test8(area_test3):
 
 @pytest.fixture()
 def area_test9():
-    return FakeArea()
+    fa = FakeArea()
+    fa.parent = FakeArea()
+    return fa
 
 
 @pytest.fixture()
@@ -468,7 +472,9 @@ def testing_number_of_pv_sell_offers(pv_test9, market_test9, area_test9):
 
 @pytest.fixture()
 def area_test10():
-    return FakeArea()
+    fa = FakeArea()
+    fa.parent = FakeArea()
+    return fa
 
 
 @pytest.fixture

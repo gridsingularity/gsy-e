@@ -140,14 +140,15 @@ class SmartMeterStrategyTest(unittest.TestCase):
 
         self.strategy._set_energy_forecast_for_future_markets(reconfigure=True)
 
-        assert self.strategy.state.set_desired_energy.call_count == 3  # One call for each slot
-        self.strategy.state.set_desired_energy.assert_has_calls([
+        # One call for each slot
+        assert self.strategy.state.set_future_desired_energy.call_count == 3
+        self.strategy.state.set_future_desired_energy.assert_has_calls([
             call(1 * 1000, market_mocks[0].time_slot, overwrite=False),
             call(0, market_mocks[1].time_slot, overwrite=False),
             call(0, market_mocks[2].time_slot, overwrite=False)])
 
-        assert self.strategy.state.set_available_energy.call_count == 3
-        self.strategy.state.set_available_energy.assert_has_calls([
+        assert self.strategy.state.set_future_available_energy.call_count == 3
+        self.strategy.state.set_future_available_energy.assert_has_calls([
             call(0, market_mocks[0].time_slot, True),
             call(0.5, market_mocks[1].time_slot, True),
             call(0.1, market_mocks[2].time_slot, True)])

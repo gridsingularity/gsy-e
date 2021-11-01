@@ -124,7 +124,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                 f"without a profile.")
         load_energy_kWh = \
             find_object_of_same_weekday_and_time(self._load_profile_kWh, slot_time)
-        self.state.set_desired_energy(load_energy_kWh * 1000, slot_time, overwrite=False)
+        self.state.set_future_desired_energy(load_energy_kWh * 1000, slot_time, overwrite=False)
         self.state.update_total_demanded_energy(slot_time)
 
     def _operating_hours(self, energy_kWh):
