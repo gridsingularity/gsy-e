@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import logging
-from typing import Dict
+from typing import Dict, Callable, TYPE_CHECKING
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.data_classes import Offer
@@ -30,8 +30,20 @@ from d3a.models.strategy.external_strategies.forecast_mixin import ForecastExter
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from d3a.models.strategy.pv import PVStrategy
 
+if TYPE_CHECKING:
+    from d3a.models.state import PVState
+    from d3a.models.strategy import Offers
+
 
 class PVExternalMixin(ExternalMixin):
+
+    state: "PVState"
+    offers: Offers
+    can_offer_be_posted: Callable
+    post_offer: Callable
+    set_produced_energy_forecast_kWh_future_markets: Callable
+    _delete_past_state: Callable
+
     """
     Mixin for enabling an external api for the PV strategies.
     Should always be inherited together with a superclass of PVStrategy.
@@ -215,7 +227,7 @@ class PVExternalMixin(ExternalMixin):
                 market_info["last_market_maker_rate"] = (
                     get_market_maker_rate_from_config(self.area.current_market))
                 market_info["last_market_stats"] = (
-                    self.market_area.stats.get_price_stats_current_market())
+                    self.area.stats.get_price_stats_current_market())
                 self.redis.publish_json(market_event_channel, market_info)
             self._delete_past_state()
         else:
