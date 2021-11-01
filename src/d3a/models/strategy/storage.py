@@ -51,6 +51,7 @@ BalancingSettings = ConstSettings.BalancingSettings
 
 
 class StorageStrategy(BidEnabledStrategy):
+
     parameters = ('initial_soc', 'min_allowed_soc', 'battery_capacity_kWh',
                   'max_abs_battery_power_kW', 'cap_price_strategy', 'initial_selling_rate',
                   'final_selling_rate', 'initial_buying_rate', 'final_buying_rate', 'fit_to_limit',
@@ -353,33 +354,36 @@ class StorageStrategy(BidEnabledStrategy):
         """
         self.state.clamp_energy_to_buy_kWh([self.spot_market_time_slot])
 
-        for market in self.area.all_markets:
-            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
-                self.state.clamp_energy_to_buy_kWh([self.spot_market_time_slot])
-                if self.are_bids_posted(market.id):
-                    self.bid_update.update(market, self)
-                else:
-                    energy_kWh = self.state.energy_to_buy_dict[market.time_slot]
-                    if energy_kWh > 0:
-                        try:
-                            first_bid = self.post_first_bid(market, energy_kWh * 1000.0)
-                            if first_bid is not None:
-                                self.state.offered_buy_kWh[market.time_slot] += first_bid.energy
-                        except MarketException:
-                            pass
+        market = self.area.spot_market
+        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
+            self.state.clamp_energy_to_buy_kWh([self.spot_market_time_slot])
+            if self.are_bids_posted(market.id):
+                self.bid_update.update(market, self)
+            else:
+                energy_kWh = self.state.energy_to_buy_dict[market.time_slot]
+                if energy_kWh > 0:
+                    try:
+                        first_bid = self.post_first_bid(market, energy_kWh * 1000.0)
+                        if first_bid is not None:
+                            self.state.offered_buy_kWh[market.time_slot] += first_bid.energy
+                    except MarketException:
+                        pass
 
-            self.state.tick(self.area, market.time_slot)
-            if self.cap_price_strategy is False:
-                self.offer_update.update(market, self)
+        self.state.tick(self.area, market.time_slot)
+        if self.cap_price_strategy is False:
+            self.offer_update.update(market, self)
 
         self.bid_update.increment_update_counter_all_markets(self)
         if self.offer_update.increment_update_counter_all_markets(self):
-            for market in self.area.all_markets:
-                self.buy_energy(market)
+            self.buy_energy(market)
 
     def event_offer_traded(self, *, market_id, trade):
-        market = self.area.get_future_market_from_id(market_id)
+
         super().event_offer_traded(market_id=market_id, trade=trade)
+
+        market = self.area.get_spot_or_future_market_by_id(market_id)
+        if not market:
+            return
 
         self.assert_if_trade_bid_price_is_too_high(market, trade)
         self._assert_if_trade_offer_price_is_too_low(market_id, trade)
@@ -390,8 +394,8 @@ class StorageStrategy(BidEnabledStrategy):
                 self._track_energy_bought_type(trade)
         if trade.seller == self.owner.name:
             self._track_energy_sell_type(trade)
-            self.state.pledged_sell_kWh[market.time_slot] += trade.offer_bid.energy
-            self.state.offered_sell_kWh[market.time_slot] -= trade.offer_bid.energy
+            self.state.pledged_sell_kWh[trade.time_slot] += trade.offer_bid.energy
+            self.state.offered_sell_kWh[trade.time_slot] -= trade.offer_bid.energy
 
     def _is_local(self, trade):
         for child in self.area.children:
@@ -423,20 +427,21 @@ class StorageStrategy(BidEnabledStrategy):
 
     def event_bid_traded(self, *, market_id, bid_trade):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
-        market = self.area.get_future_market_from_id(market_id)
+
+        if not self.area.is_market_spot_or_future(market_id):
+            return
 
         if bid_trade.buyer == self.owner.name:
             self._track_energy_bought_type(bid_trade)
-            self.state.pledged_buy_kWh[market.time_slot] += bid_trade.offer_bid.energy
-            self.state.offered_buy_kWh[market.time_slot] -= bid_trade.offer_bid.energy
+            self.state.pledged_buy_kWh[bid_trade.time_slot] += bid_trade.offer_bid.energy
+            self.state.offered_buy_kWh[bid_trade.time_slot] -= bid_trade.offer_bid.energy
 
     def event_market_cycle(self):
         super().event_market_cycle()
         self._set_alternative_pricing_scheme()
         self._update_profiles_with_default_values()
         self.offer_update.reset(self)
-        for market in self.area.all_markets[:-1]:
-            self.bid_update.update_counter[market.time_slot] = 0
+        self.bid_update.update_counter[self.area.spot_market.time_slot] = 0
         current_market = self.area.spot_market
         past_market = self.area.last_past_market
 
@@ -502,7 +507,7 @@ class StorageStrategy(BidEnabledStrategy):
             return
 
         try:
-            self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
+            self.state.clamp_energy_to_buy_kWh([market.time_slot])
             max_energy = min(offer.energy, self.state.energy_to_buy_dict[market.time_slot])
             if not self.state.has_battery_reached_max_power(-max_energy, market.time_slot):
                 self.state.pledged_buy_kWh[market.time_slot] += max_energy
@@ -533,7 +538,7 @@ class StorageStrategy(BidEnabledStrategy):
                     return
 
     def sell_energy(self):
-        markets_to_sell = self.select_market_to_sell()
+        markets_to_sell = [self.area.spot_market]
         energy_sell_dict = self.state.clamp_energy_to_sell_kWh(
             [ma.time_slot for ma in markets_to_sell])
         for market in markets_to_sell:
@@ -555,26 +560,6 @@ class StorageStrategy(BidEnabledStrategy):
                         self.state.offered_sell_kWh[market.time_slot] += offer.energy
                     except MarketException:
                         pass
-
-    def select_market_to_sell(self):
-        if StorageSettings.SELL_ON_MOST_EXPENSIVE_MARKET:
-            # Sell on the most expensive market
-            try:
-                max_rate = 0.0
-                most_expensive_market = self.area.all_markets[0]
-                for market in self.area.all_markets:
-                    if (len(market.sorted_offers) > 0 and
-                            market.sorted_offers[0].energy_rate > max_rate):
-                        max_rate = market.sorted_offers[0].energy_rate
-                        most_expensive_market = market
-            except IndexError:
-                try:
-                    most_expensive_market = self.area.current_market
-                except StopIteration:
-                    return
-            return [most_expensive_market]
-        else:
-            return self.area.all_markets
 
     def calculate_selling_rate(self, market):
         if self.cap_price_strategy is True:
@@ -602,7 +587,7 @@ class StorageStrategy(BidEnabledStrategy):
     def event_offer(self, *, market_id, offer):
         super().event_offer(market_id=market_id, offer=offer)
         if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
-            market = self.area.get_future_market_from_id(market_id)
+            market = self.area.get_spot_or_future_market_by_id(market_id)
             if not market:
                 return
             # sometimes the offer event arrives earlier than the market_cycle event,

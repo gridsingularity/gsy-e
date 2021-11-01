@@ -25,6 +25,7 @@ from d3a_interface.validators import CommercialProducerValidator
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.global_objects_singleton import global_objects
+from d3a.models.base import AssetType
 from d3a.models.strategy import BaseStrategy, INF_ENERGY
 
 
@@ -117,3 +118,7 @@ class CommercialStrategy(BaseStrategy):
 
     def restore_state(self, saved_state):
         self.energy_rate.update(convert_str_to_pendulum_in_dict(saved_state["energy_rate"]))
+
+    @property
+    def asset_type(self):
+        return AssetType.PRODUCER

@@ -82,7 +82,7 @@ class UpdateFrequencyMixin:
 
     @staticmethod
     def get_all_markets(area):
-        return area.all_markets
+        return [area.spot_market]
 
     def _populate_profiles(self, area):
         for market in self.get_all_markets(area):

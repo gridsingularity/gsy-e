@@ -344,7 +344,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if ConstSettings.IAASettings.MARKET_TYPE != 1:
             return
 
-        market = self.area.get_future_market_from_id(market_id)
+        market = self.area.get_spot_or_future_market_by_id(market_id)
         if not market:
             return
         if market.time_slot not in self._cycled_market:
@@ -395,17 +395,17 @@ class LoadHoursStrategy(BidEnabledStrategy):
         """
         # settlement market event_bid_traded has to be triggered before the early return:
         self._settlement_market_strategy.event_bid_traded(self, market_id, bid_trade)
-        self._future_market_strategy.event_bid_traded(self, market_id, bid_trade)
 
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
-        market = self.area.get_future_market_from_id(market_id)
-        if not market:
+
+        if not self.area.is_market_spot_or_future(market_id):
             return
+
         if bid_trade.offer_bid.buyer == self.owner.name:
             self.state.decrement_energy_requirement(
                 bid_trade.offer_bid.energy * 1000,
-                market.time_slot, self.owner.name)
-            market_day = self._get_day_of_timestamp(market.time_slot)
+                bid_trade.time_slot, self.owner.name)
+            market_day = self._get_day_of_timestamp(bid_trade.time_slot)
             if self.hrs_per_day != {} and market_day in self.hrs_per_day:
                 self.hrs_per_day[market_day] -= self._operating_hours(bid_trade.offer_bid.energy)
 
@@ -416,9 +416,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         """
         # settlement market event_trade has to be triggered before the early return:
         self._settlement_market_strategy.event_offer_traded(self, market_id, trade)
-        self._future_market_strategy.event_offer_traded(self, market_id, trade)
 
-        market = self.area.get_future_market_from_id(market_id)
+        market = self.area.get_spot_or_future_market_by_id(market_id)
         if not market:
             return
 

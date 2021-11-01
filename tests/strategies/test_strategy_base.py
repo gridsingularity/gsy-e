@@ -59,7 +59,7 @@ class FakeArea:
         self._market = market
         self.uuid = str(uuid4())
 
-    def get_future_market_from_id(self, market_id):
+    def get_spot_or_future_market_by_id(self, _):
         return self._market
 
     @property

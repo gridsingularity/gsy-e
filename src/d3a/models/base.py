@@ -36,10 +36,13 @@ class AssetType(Enum):
     PRODUCER = 0
     CONSUMER = 1
     PROSUMER = 2
+    UNDEFINED = 3
 
 
 class AreaBehaviorBase:
     """Base class used by area behaviour defining classes `BaseStrategy`"""
+    asset_type: AssetType = AssetType.UNDEFINED
+
     def __init__(self):
         # `area` is the area we trade in
         self.area: Optional["Area"] = None

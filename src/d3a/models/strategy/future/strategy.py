@@ -14,7 +14,6 @@ see <http://www.gnu.org/licenses/>.
 """
 
 from d3a_interface.constants_limits import GlobalConfig
-from d3a_interface.data_classes import Trade, Offer
 from pendulum import duration
 
 from d3a.constants import FutureTemplateStrategiesConstants
@@ -60,12 +59,6 @@ class FutureMarketStrategyInterface:
         pass
 
     def event_tick(self, strategy):
-        pass
-
-    def event_bid_traded(self, strategy, market_id, bid_trade):
-        pass
-
-    def event_offer_traded(self, strategy, market_id, trade):
         pass
 
 
@@ -126,7 +119,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
                     energy=required_energy_Wh,
                     price=self._bid_updater.initial_rate[time_slot]
                 )
-            if strategy.asset_type == AssetType.PRODUCER:
+            elif strategy.asset_type == AssetType.PRODUCER:
                 required_energy_Wh = strategy.state.get_available_energy_kWh(time_slot)
                 if required_energy_Wh <= 0.0:
                     continue
@@ -138,6 +131,9 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
                     energy=required_energy_Wh,
                     price=self._bid_updater.initial_rate[time_slot]
                 )
+            else:
+                assert False, ("Strategy %s has to be producer, consumer or prosumer to "
+                               "participate in the future market.", strategy.owner.name)
 
         self._bid_updater.increment_update_counter_all_markets(strategy)
         self._offer_updater.increment_update_counter_all_markets(strategy)
@@ -161,49 +157,6 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
 
         self._bid_updater.increment_update_counter_all_markets(strategy)
         self._offer_updater.increment_update_counter_all_markets(strategy)
-
-    def event_bid_traded(self, strategy: BidEnabledStrategy,
-                         market_id: str, bid_trade: Trade) -> None:
-        """
-        Updates the unsettled deviation with the traded energy from the market
-        Args:
-            strategy: Strategy object of the asset
-            market_id: Id of the market that the trade took place
-            bid_trade: Trade object
-
-        Returns: None
-
-        """
-        if isinstance(bid_trade.offer_bid, Offer):
-            return
-        if not strategy.area.future_markets:
-            return
-        if strategy.asset_type == AssetType.PRODUCER:
-            return
-        if bid_trade.offer_bid.buyer == strategy.owner.name:
-            strategy.state.set_desired_energy(
-                bid_trade.offer_bid.energy, bid_trade.offer_bid.time_slot)
-
-    def event_offer_traded(self, strategy: BidEnabledStrategy,
-                           market_id: str, trade: Trade) -> None:
-        """
-        Updates the unsettled deviation with the traded energy from the market
-        Args:
-            strategy: Strategy object of the asset
-            market_id: Id of the market that the trade took place
-            trade: Trade object
-
-        Returns: None
-
-        """
-        # if isinstance(trade.offer_bid, Bid):
-        #     return
-        # market = self._get_settlement_market_by_id(strategy, market_id)
-        # if not market:
-        #     return
-        # if trade.offer_bid.seller == strategy.owner.name:
-        #     strategy.state.decrement_unsettled_deviation(
-        #         trade.offer_bid.energy, market.time_slot)
 
 
 def future_market_strategy_factory(

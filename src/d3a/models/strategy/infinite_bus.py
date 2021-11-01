@@ -25,6 +25,7 @@ from d3a_interface.utils import find_object_of_same_weekday_and_time
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.d3a_core.util import should_read_profile_from_db
+from d3a.models.base import AssetType
 from d3a.models.strategy import BidEnabledStrategy, INF_ENERGY
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 
@@ -177,3 +178,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             saved_state["energy_buy_rate"]))
         self.energy_rate.update(convert_str_to_pendulum_in_dict(
             saved_state["energy_rate"]))
+
+    @property
+    def asset_type(self):
+        return AssetType.PROSUMER

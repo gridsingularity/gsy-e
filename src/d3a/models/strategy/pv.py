@@ -33,6 +33,7 @@ from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.state import PVState
 from d3a.models.base import AssetType
 from d3a.models.strategy import BidEnabledStrategy, utils
+from d3a.models.strategy.future.strategy import future_market_strategy_factory
 from d3a.models.strategy.settlement.strategy import settlement_market_strategy_factory
 from d3a.models.strategy.update_frequency import TemplateStrategyOfferUpdater
 
@@ -76,6 +77,7 @@ class PVStrategy(BidEnabledStrategy):
                                 use_market_maker_rate, fit_to_limit,
                                 energy_rate_decrease_per_update)
         self._settlement_market_strategy = settlement_market_strategy_factory()
+        self._future_market_strategy = future_market_strategy_factory()
 
     @property
     def state(self) -> PVState:
@@ -211,6 +213,7 @@ class PVStrategy(BidEnabledStrategy):
         self.offer_update.increment_update_counter_all_markets(self)
 
         self._settlement_market_strategy.event_tick(self)
+        self._future_market_strategy.event_tick(self)
 
     def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
         # This forecast ist based on the real PV system data provided by enphase
@@ -254,6 +257,7 @@ class PVStrategy(BidEnabledStrategy):
         self.event_market_cycle_price()
         self._delete_past_state()
         self._settlement_market_strategy.event_market_cycle(self)
+        self._future_market_strategy.event_market_cycle(self)
 
     def _set_energy_measurement_of_last_market(self):
         """Set the (simulated) actual energy of the device in the previous market slot."""
@@ -305,15 +309,15 @@ class PVStrategy(BidEnabledStrategy):
     def event_offer_traded(self, *, market_id, trade):
         super().event_offer_traded(market_id=market_id, trade=trade)
         self._settlement_market_strategy.event_offer_traded(self, market_id, trade)
-        market = self.area.get_future_market_from_id(market_id)
-        if market is None:
+
+        if not self.area.is_market_spot_or_future(market_id):
             return
 
         self._assert_if_trade_offer_price_is_too_low(market_id, trade)
 
         if trade.seller == self.owner.name:
             self.state.decrement_available_energy(
-                trade.offer_bid.energy, market.time_slot, self.owner.name)
+                trade.offer_bid.energy, trade.time_slot, self.owner.name)
 
     def event_bid_traded(self, *, market_id, bid_trade):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
