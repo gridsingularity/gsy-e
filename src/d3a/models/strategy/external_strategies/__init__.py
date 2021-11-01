@@ -215,7 +215,7 @@ class ExternalMixin:
     def _update_connection_status(self) -> None:
         """Update the connected flag to sync it with the _registered flag.
 
-        If the client unregistered (_registered=False), pop the asset from the aggregator mapping
+        Change assets' connection status including the connection to the aggregator.
         """
         if self.connected and not self._is_registered:
             self.redis.aggregator.device_aggregator_mapping.pop(self.device.uuid, None)
