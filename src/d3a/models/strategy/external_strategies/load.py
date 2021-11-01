@@ -17,18 +17,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import logging
-from typing import Dict, List, Union
+from typing import Dict, List, Union, TYPE_CHECKING, Callable
 
 from d3a_interface.constants_limits import ConstSettings
 from pendulum import duration
 
 from d3a.d3a_core.util import get_market_maker_rate_from_config
-from d3a.models.market import Market
 from d3a.models.strategy.external_strategies import (
     ExternalMixin, IncomingRequest, default_market_info, ExternalStrategyConnectionManager)
 from d3a.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
+
+if TYPE_CHECKING:
+    from d3a.models.state import LoadState
+    from d3a.models.market.two_sided import TwoSidedMarket
 
 
 class LoadExternalMixin(ExternalMixin):
@@ -36,6 +39,17 @@ class LoadExternalMixin(ExternalMixin):
     Mixin for enabling an external api for the load strategies.
     Should always be inherited together with a superclass of LoadHoursStrategy.
     """
+
+    state: "LoadState"
+    is_bid_posted: Callable
+    can_bid_be_posted: Callable
+    remove_bid_from_pending: Callable
+    post_bid: Callable
+    add_entry_in_hrs_per_day: Callable
+    posted_bid_energy: Callable
+    _delete_past_state: Callable
+    _calculate_active_markets: Callable
+    _update_energy_requirement_future_markets: Callable
 
     @property
     def channel_dict(self) -> Dict:
@@ -46,7 +60,7 @@ class LoadExternalMixin(ExternalMixin):
                 f"{self.channel_prefix}/list_bids": self.list_bids,
                 }
 
-    def filtered_market_bids(self, market: Market) -> List[Dict]:
+    def filtered_market_bids(self, market: "TwoSidedMarket") -> List[Dict]:
         """
         Get a representation of each of the asset's bids from the market.
         Args:

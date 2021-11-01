@@ -19,7 +19,7 @@ import json
 import logging
 from collections import deque, namedtuple
 from threading import Lock
-from typing import Dict, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING, Callable
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.data_classes import Trade
@@ -123,6 +123,18 @@ class ExternalMixin:
     Although that the direct device connection is disabled (only aggregators can connect),
     we still have the remnants functionality of when we used to have this feature.
     """
+
+    # Due to the dependencies of these mixins (they need to have more precedence in the MRO than
+    # the strategy class methods in order to override them) this class cannot be abstract, because
+    # it would expose unimplemented abstract methods to the concrete class. Therefore the best
+    # alternative is to include here the mixed-in class dependencies as type annotations
+    area: "Area"
+    owner: "Area"
+    deactivate: Callable
+    get_state: Callable
+    restore_state: Callable
+    energy_traded: Callable
+    energy_traded_costs: Callable
 
     def __init__(self, *args, **kwargs):
         self._is_registered: bool = False  # The client asked to get connected
