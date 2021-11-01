@@ -1,5 +1,6 @@
+-e git+https://github.com/gridsingularity/d3a-interface@update_dependencies#egg=d3a_interface
 attrs
-awesome-slugify
+awesome-slugify==1.6.5
 cached_property
 click
 click-default-group
@@ -13,5 +14,4 @@ rq
 pytz
 sortedcontainers
 pony
-urllib3==1.26.4
--e git+https://github.com/gridsingularity/d3a-interface@master#egg=d3a_interface
+urllib3==1.26.7
