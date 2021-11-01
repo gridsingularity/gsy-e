@@ -29,11 +29,15 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
 
     @property
     def _time_slot_duration_in_seconds(self):
-        return GlobalConfig.FUTURE_MARKET_DURATION_HOURS
+        return GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 * 60
 
     @staticmethod
     def get_all_markets(area):
         return [area.future_markets]
+
+    @staticmethod
+    def get_all_time_slots(area):
+        return area.future_markets.market_time_slots
 
 
 class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
@@ -41,11 +45,15 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
 
     @property
     def _time_slot_duration_in_seconds(self):
-        return GlobalConfig.FUTURE_MARKET_DURATION_HOURS
+        return GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 * 60
 
     @staticmethod
     def get_all_markets(area):
         return [area.future_markets]
+
+    @staticmethod
+    def get_all_time_slots(area):
+        return area.future_markets.market_time_slots
 
 
 class FutureMarketStrategyInterface:
@@ -109,30 +117,32 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         self._offer_updater.update_and_populate_price_settings(strategy.area)
         for time_slot in strategy.area.future_markets.market_time_slots:
             if strategy.asset_type == AssetType.CONSUMER:
-                required_energy_Wh = strategy.state.get_energy_requirement_Wh(time_slot)
-                if required_energy_Wh <= 0.0:
+                required_energy_kWh = strategy.state.get_energy_requirement_Wh(time_slot) / 1000.0
+                if required_energy_kWh <= 0.0:
                     continue
                 if strategy.get_posted_bids(strategy.area.future_markets, time_slot):
                     continue
                 strategy.post_bid(
                     market=strategy.area.future_markets,
-                    energy=required_energy_Wh,
-                    price=self._bid_updater.initial_rate[time_slot]
+                    energy=required_energy_kWh,
+                    price=self._bid_updater.initial_rate[time_slot],
+                    time_slot=time_slot
                 )
             elif strategy.asset_type == AssetType.PRODUCER:
-                required_energy_Wh = strategy.state.get_available_energy_kWh(time_slot)
-                if required_energy_Wh <= 0.0:
+                available_energy_kWh = strategy.state.get_available_energy_kWh(time_slot)
+                if available_energy_kWh <= 0.0:
                     continue
                 if strategy.get_posted_offers(strategy.area.future_markets, time_slot):
                     continue
                 strategy.post_offer(
                     market=strategy.area.future_markets,
                     replace_existing=False,
-                    energy=required_energy_Wh,
-                    price=self._bid_updater.initial_rate[time_slot]
+                    energy=available_energy_kWh,
+                    price=self._offer_updater.initial_rate[time_slot],
+                    time_slot=time_slot
                 )
             else:
-                assert False, ("Strategy %s has to be producer, consumer or prosumer to "
+                assert False, ("Strategy %s has to be producer or consumer to be able to "
                                "participate in the future market.", strategy.owner.name)
 
         self._bid_updater.increment_update_counter_all_markets(strategy)

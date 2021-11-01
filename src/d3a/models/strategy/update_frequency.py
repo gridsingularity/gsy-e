@@ -84,9 +84,12 @@ class UpdateFrequencyMixin:
     def get_all_markets(area):
         return [area.spot_market]
 
+    @staticmethod
+    def get_all_time_slots(area):
+        return [area.spot_market.time_slot]
+
     def _populate_profiles(self, area):
-        for market in self.get_all_markets(area):
-            time_slot = market.time_slot
+        for time_slot in self.get_all_time_slots(area):
             if self.fit_to_limit is False:
                 self.energy_rate_change_per_update[time_slot] = (
                     find_object_of_same_weekday_and_time(
@@ -96,8 +99,8 @@ class UpdateFrequencyMixin:
                 self.initial_rate_profile_buffer, time_slot)
             self.final_rate[time_slot] = find_object_of_same_weekday_and_time(
                 self.final_rate_profile_buffer, time_slot)
-            self._set_or_update_energy_rate_change_per_update(market.time_slot)
-            write_default_to_dict(self.update_counter, market.time_slot, 0)
+            self._set_or_update_energy_rate_change_per_update(time_slot)
+            write_default_to_dict(self.update_counter, time_slot, 0)
 
     def reassign_mixin_arguments(self, time_slot, initial_rate=None, final_rate=None,
                                  fit_to_limit=None, energy_rate_change_per_update=None,
@@ -172,8 +175,8 @@ class UpdateFrequencyMixin:
 
     def increment_update_counter_all_markets(self, strategy):
         should_update = [
-            self.increment_update_counter(strategy, market.time_slot)
-            for market in self.get_all_markets(strategy.area)
+            self.increment_update_counter(strategy, time_slot)
+            for time_slot in self.get_all_time_slots(strategy.area)
         ]
         return any(should_update)
 
@@ -217,7 +220,7 @@ class TemplateStrategyBidUpdater(UpdateFrequencyMixin):
     def reset(self, strategy):
         """Reset the price of all bids to use their initial rate."""
         # decrease energy rate for each market again, except for the newly created one
-        for market in self.get_all_markets(strategy.area)[:-1]:
+        for market in self.get_all_markets(strategy.area):
             self.update_counter[market.time_slot] = 0
             strategy.update_bid_rates(market, self.get_updated_rate(market.time_slot))
 
@@ -231,7 +234,7 @@ class TemplateStrategyBidUpdater(UpdateFrequencyMixin):
 class TemplateStrategyOfferUpdater(UpdateFrequencyMixin):
     def reset(self, strategy):
         """Reset the price of all offers based to use their initial rate."""
-        for market in self.get_all_markets(strategy.area)[:-1]:
+        for market in self.get_all_markets(strategy.area):
             self.update_counter[market.time_slot] = 0
             strategy.update_offer_rates(market, self.get_updated_rate(market.time_slot))
 
