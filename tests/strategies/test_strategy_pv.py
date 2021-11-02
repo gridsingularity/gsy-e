@@ -28,13 +28,13 @@ from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.utils import generate_market_slot_list
 from parameterized import parameterized
 
-from d3a.constants import TIME_FORMAT
-from d3a.constants import TIME_ZONE
-from d3a.gsy_e_core.util import d3a_path
-from d3a.models.area import DEFAULT_CONFIG
+from gsy_e.constants import TIME_FORMAT
+from gsy_e.constants import TIME_ZONE
+from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.models.area import DEFAULT_CONFIG
 from gsy_framework.data_classes import Offer, Trade
-from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
-from d3a.models.strategy.pv import PVStrategy
+from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
+from gsy_e.models.strategy.pv import PVStrategy
 
 ENERGY_FORECAST = {}  # type: Dict[pendulum.DateTime, float]
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
@@ -566,7 +566,7 @@ def fixture_pv_strategy():
     return pv_strategy
 
 
-@patch("d3a.models.strategy.pv.utils")
+@patch("gsy_e.models.strategy.pv.utils")
 def test_set_energy_measurement_of_last_market(utils_mock, pv_strategy):
     """The real energy of the last market is set when necessary."""
     # If we are in the first market slot, the real energy is not set

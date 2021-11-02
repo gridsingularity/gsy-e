@@ -21,9 +21,9 @@ from math import isclose
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
     _str_to_datetime
 from gsy_framework.utils import convert_W_to_Wh, find_object_of_same_weekday_and_time
-from d3a.setup.strategy_tests import user_profile_load_csv  # NOQA
-from d3a.setup.strategy_tests import user_profile_load_csv_multiday  # NOQA
-from d3a.constants import FLOATING_POINT_TOLERANCE, DATE_TIME_FORMAT
+from gsy_e.setup.strategy_tests import user_profile_load_csv  # NOQA
+from gsy_e.setup.strategy_tests import user_profile_load_csv_multiday  # NOQA
+from gsy_e.constants import FLOATING_POINT_TOLERANCE, DATE_TIME_FORMAT
 
 
 @then('the DefinedLoadStrategy follows the {single_or_multi} day Load profile provided as csv')
@@ -55,7 +55,7 @@ def check_traded_energy_rate(context):
 def check_user_pv_dict_profile(context):
     house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     load = next(filter(lambda x: x.name == "H1 DefinedLoad", house.children))
-    from d3a.setup.strategy_tests.user_profile_load_dict import user_profile
+    from gsy_e.setup.strategy_tests.user_profile_load_dict import user_profile
 
     for market in house.past_markets:
         slot = market.time_slot

@@ -1,9 +1,9 @@
 import uuid
 
-import d3a.constants
+import gsy_e.constants
 from behave import given, then
-from d3a.gsy_e_core.util import d3a_path
-from d3a.models.config import SimulationConfig
+from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.models.config import SimulationConfig
 from gsy_framework.constants_limits import GlobalConfig
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import convert_W_to_kWh
@@ -109,7 +109,7 @@ def db_profile_scenario(context):
                                          cloud_coverage=0,
                                          external_connection_enabled=False)
     context._settings.area = predefined_load_scenario
-    d3a.constants.CONFIGURATION_ID = context.config_uuid
+    gsy_e.constants.CONFIGURATION_ID = context.config_uuid
 
 
 @then('the predefined PV follows the profile from DB')

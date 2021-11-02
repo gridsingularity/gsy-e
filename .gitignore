@@ -104,7 +104,7 @@ d3a-simulation
 
 # Ink contract builds
 
-src/d3a/blockchain/contracts/ink/target
+src/gsy_e/blockchain/contracts/ink/target
 
 # Cargo.lock files
 

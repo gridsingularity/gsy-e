@@ -1,4 +1,4 @@
-name: d3a-ci-cd-staging
+name: gsy_e-ci-cd-staging
 on:
   push:
     branches:

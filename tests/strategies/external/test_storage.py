@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
 
-from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
+from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 from tests.strategies.external.utils import (
     check_external_command_endpoint_with_correct_payload_succeeds,
     create_areas_markets_for_strategy_fixture)

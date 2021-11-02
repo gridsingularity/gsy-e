@@ -28,13 +28,13 @@ from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyDeviceException
 from pendulum import DateTime, duration, today, now
 
-from d3a.constants import TIME_ZONE, TIME_FORMAT
-from d3a.gsy_e_core.device_registry import DeviceRegistry
-from d3a.gsy_e_core.util import d3a_path
-from d3a.models.area import DEFAULT_CONFIG, Area
+from gsy_e.constants import TIME_ZONE, TIME_FORMAT
+from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.models.area import DEFAULT_CONFIG, Area
 from gsy_framework.data_classes import Offer, BalancingOffer, Bid, Trade
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.predefined_load import DefinedLoadStrategy
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 
 TIME = today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
@@ -585,7 +585,7 @@ def test_update_state(load_hours_strategy_test1):
     load_hours_strategy_test1._set_energy_measurement_of_last_market.assert_called_once()
 
 
-@patch("d3a.models.strategy.load_hours.utils")
+@patch("gsy_e.models.strategy.load_hours.utils")
 def test_set_energy_measurement_of_last_market(utils_mock, load_hours_strategy_test1):
     """The real energy of the last market is set when necessary."""
     # If we are in the first market slot, the real energy is not set

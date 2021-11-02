@@ -23,11 +23,11 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Bid, Offer, Trade
 from pendulum import today, duration
 
-from d3a.constants import TIME_ZONE
-from d3a.models.market.two_sided import TwoSidedMarket
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.settlement.strategy import SettlementMarketStrategy
+from gsy_e.constants import TIME_ZONE
+from gsy_e.models.market.two_sided import TwoSidedMarket
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.pv import PVStrategy
+from gsy_e.models.strategy.settlement.strategy import SettlementMarketStrategy
 
 
 class TestSettlementMarketStrategy:

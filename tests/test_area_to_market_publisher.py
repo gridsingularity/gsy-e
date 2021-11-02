@@ -2,14 +2,14 @@ import unittest
 from unittest.mock import MagicMock
 import json
 from gsy_framework.constants_limits import ConstSettings
-from d3a.gsy_e_core.exceptions import D3ARedisException
-from d3a.models.market.one_sided import OneSidedMarket
-from d3a.models.area import Area
-import d3a.models.area.redis_dispatcher.area_to_market_publisher
-from d3a.models.area.redis_dispatcher.area_to_market_publisher import \
+from gsy_e.gsy_e_core.exceptions import D3ARedisException
+from gsy_e.models.market.one_sided import OneSidedMarket
+from gsy_e.models.area import Area
+import gsy_e.models.area.redis_dispatcher.area_to_market_publisher
+from gsy_e.models.area.redis_dispatcher.area_to_market_publisher import \
     AreaToMarketEventPublisher
 
-d3a.models.area.redis_dispatcher.area_to_market_publisher.BlockingCommunicator = MagicMock
+gsy_e.models.area.redis_dispatcher.area_to_market_publisher.BlockingCommunicator = MagicMock
 
 
 class TestAreaToMarketPublisher(unittest.TestCase):

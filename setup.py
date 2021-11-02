@@ -31,16 +31,16 @@ setup(
     description="decentralised energy exchange developed by Grid Singularity",
     long_description=README,
     author="GridSingularity",
-    author_email="d3a@gridsingularity.com",
+    author_email="gsy_e@gridsingularity.com",
     url="https://github.com/faizan2590/gsy-e",
     version=VERSION,
     packages=find_packages(where="src", exclude=["tests"]),
     package_dir={"": "src"},
-    package_data={"d3a": ["resources/*.csv"]},
+    package_data={"gsy_e": ["resources/*.csv"]},
     install_requires=REQUIREMENTS,
     entry_points={
         "console_scripts": [
-            "d3a = d3a.gsy_e_core.cli:main",
+            "gsy_e = gsy_e.gsy_e_core.cli:main",
         ]
     },
     zip_safe=False,

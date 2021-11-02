@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
-from d3a.constants import DEFAULT_PRECISION
+from gsy_e.constants import DEFAULT_PRECISION
 
 
 @then('the storage devices buy and sell energy respecting the break even prices')
@@ -42,7 +42,7 @@ def check_storage_prices(context):
 
 @then('the storage devices buy and sell energy respecting the hourly break even prices')
 def step_impl(context):
-    from d3a.setup.strategy_tests.storage_strategy_break_even_hourly import \
+    from gsy_e.setup.strategy_tests.storage_strategy_break_even_hourly import \
         final_buying_rate_profile, final_selling_rate_profile, final_buying_rate_profile_2, \
         final_selling_rate_profile_2
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]

@@ -1,6 +1,6 @@
 [run]
 branch = True
-source = d3a
+source = gsy_e
 parallel = True
 
 omit =
@@ -8,11 +8,11 @@ omit =
 
 [paths]
 source =
-    src/d3a
-    */site-packages/d3a
-    */site-packages/*.egg/d3a
-    */dist-packages/d3a
-    */dist-packages/*.egg/d3a
+    src/gsy_e
+    */site-packages/gsy_e
+    */site-packages/*.egg/gsy_e
+    */dist-packages/gsy_e
+    */dist-packages/*.egg/gsy_e
 
 [report]
 show_missing = true

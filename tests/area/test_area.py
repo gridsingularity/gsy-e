@@ -23,16 +23,16 @@ from gsy_framework.enums import SpotMarketTypeEnum, BidOfferMatchAlgoEnum
 from parameterized import parameterized
 from pendulum import duration, today
 
-from d3a import constants
-from d3a.gsy_e_core.device_registry import DeviceRegistry
-from d3a.events.event_structures import AreaEvent, MarketEvent
-from d3a.models.area import Area, check_area_name_exists_in_parent_area
-from d3a.models.area.event_dispatcher import AreaDispatcher
-from d3a.models.area.events import Events
-from d3a.models.area.stats import AreaStats
-from d3a.models.config import SimulationConfig
-from d3a.models.market.market_structures import AvailableMarketTypes
-from d3a.models.strategy.storage import StorageStrategy
+from gsy_e import constants
+from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.events.event_structures import AreaEvent, MarketEvent
+from gsy_e.models.area import Area, check_area_name_exists_in_parent_area
+from gsy_e.models.area.event_dispatcher import AreaDispatcher
+from gsy_e.models.area.events import Events
+from gsy_e.models.area.stats import AreaStats
+from gsy_e.models.config import SimulationConfig
+from gsy_e.models.market.market_structures import AvailableMarketTypes
+from gsy_e.models.strategy.storage import StorageStrategy
 
 
 class TestArea:
@@ -154,9 +154,9 @@ class TestArea:
         bat.get_state()
         strategy.get_state.assert_called_once()
 
-    @patch("d3a.models.area.Area._consume_commands_from_aggregator", Mock())
-    @patch("d3a.models.area.Area._update_myco_matcher", Mock())
-    @patch("d3a.models.area.bid_offer_matcher.match_recommendations")
+    @patch("gsy_e.models.area.Area._consume_commands_from_aggregator", Mock())
+    @patch("gsy_e.models.area.Area._update_myco_matcher", Mock())
+    @patch("gsy_e.models.area.bid_offer_matcher.match_recommendations")
     def test_tick(self, mock_match_recommendations):
         """Test the correct chain of function calls in the Area's tick function."""
         manager = Mock()

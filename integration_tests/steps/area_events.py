@@ -1,7 +1,7 @@
 from math import isclose
 from behave import then
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import d3a_path
 
 
 sunny_hourly_pv_profile = {

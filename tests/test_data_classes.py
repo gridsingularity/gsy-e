@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
 
-from d3a.data_classes import PlotDescription
+from gsy_e.data_classes import PlotDescription
 
 
 class TestPlotDescription:

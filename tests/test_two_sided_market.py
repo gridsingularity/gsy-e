@@ -12,12 +12,12 @@ from gsy_framework.matching_algorithms import (
 )
 from pendulum import now
 
-from d3a.gsy_e_core.blockchain_interface import NonBlockchainInterface
-from d3a.gsy_e_core.exceptions import (
+from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
+from gsy_e.gsy_e_core.exceptions import (
     BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade, MarketException)
-from d3a.events import MarketEvent
-from d3a.models.market import Bid, Offer
-from d3a.models.market.two_sided import TwoSidedMarket
+from gsy_e.events import MarketEvent
+from gsy_e.models.market import Bid, Offer
+from gsy_e.models.market.two_sided import TwoSidedMarket
 
 
 @pytest.fixture
@@ -77,7 +77,7 @@ class TestTwoSidedMarket:
         }
         assert market.get_offers() == market.offers
 
-    @patch("d3a.models.market.two_sided.TwoSidedMarket._update_new_bid_price_with_fee",
+    @patch("gsy_e.models.market.two_sided.TwoSidedMarket._update_new_bid_price_with_fee",
            MagicMock(return_value=5))
     def test_bid(self, market):
         """Test the bid() method of TwoSidedMarket."""
@@ -396,9 +396,9 @@ class TestTwoSidedMarket:
 @pytest.fixture()
 def two_sided_market_matching():
     patches = [
-        patch("d3a.models.market.two_sided.TwoSidedMarket.validate_bid_offer_match"),
-        patch("d3a.models.market.two_sided.TwoSidedMarket.accept_bid_offer_pair"),
-        patch("d3a.models.market.two_sided.TwoSidedMarket."
+        patch("gsy_e.models.market.two_sided.TwoSidedMarket.validate_bid_offer_match"),
+        patch("gsy_e.models.market.two_sided.TwoSidedMarket.accept_bid_offer_pair"),
+        patch("gsy_e.models.market.two_sided.TwoSidedMarket."
               "_replace_offers_bids_with_residual_in_recommendations_list"),
     ]
     for p in patches:

@@ -27,14 +27,14 @@ from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from pendulum import Duration, DateTime, now
 
-from d3a.constants import TIME_FORMAT, FLOATING_POINT_TOLERANCE
-from d3a.constants import TIME_ZONE
-from d3a.gsy_e_core.device_registry import DeviceRegistry
-from d3a.gsy_e_core.util import change_global_config
-from d3a.models.config import SimulationConfig
+from gsy_e.constants import TIME_FORMAT, FLOATING_POINT_TOLERANCE
+from gsy_e.constants import TIME_ZONE
+from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.gsy_e_core.util import change_global_config
+from gsy_e.models.config import SimulationConfig
 from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid
-from d3a.models.state import EnergyOrigin, ESSEnergyOrigin
-from d3a.models.strategy.storage import StorageStrategy
+from gsy_e.models.state import EnergyOrigin, ESSEnergyOrigin
+from gsy_e.models.strategy.storage import StorageStrategy
 
 DeviceRegistry.REGISTRY = {
     "A": (23, 25),

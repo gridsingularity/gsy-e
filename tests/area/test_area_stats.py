@@ -19,10 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 from gsy_framework.constants_limits import ConstSettings
 
-from d3a.models.area import Area
-from d3a.models.market.two_sided import TwoSidedMarket
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.pv import PVStrategy
+from gsy_e.models.area import Area
+from gsy_e.models.market.two_sided import TwoSidedMarket
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.pv import PVStrategy
 
 
 class FakeArea(Area):

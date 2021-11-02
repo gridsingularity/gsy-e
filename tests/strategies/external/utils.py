@@ -21,8 +21,8 @@ from collections import deque
 from typing import Dict
 from unittest.mock import MagicMock, Mock
 
-from d3a.models.area import Area
-from d3a.models.strategy.external_strategies import IncomingRequest
+from gsy_e.models.area import Area
+from gsy_e.models.strategy.external_strategies import IncomingRequest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from pendulum import duration
 

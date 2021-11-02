@@ -5,7 +5,7 @@ from gsy_framework.constants_limits import GlobalConfig, PROFILE_EXPANSION_DAYS
 from gsy_framework.read_user_profile import copy_profile_to_multiple_days, \
     _read_from_different_sources_todict, time_str
 
-from d3a.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import d3a_path
 
 
 class TestReadUserProfile(unittest.TestCase):

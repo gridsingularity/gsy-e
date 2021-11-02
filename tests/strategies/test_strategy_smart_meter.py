@@ -22,11 +22,11 @@ from gsy_framework.exceptions import GSyException
 from gsy_framework.validators.smart_meter_validator import SmartMeterValidator
 from pendulum import datetime, duration
 
-from d3a import constants
-from d3a.models.area import Area
-from d3a.models.market.one_sided import OneSidedMarket
-from d3a.models.state import SmartMeterState
-from d3a.models.strategy.smart_meter import SmartMeterStrategy
+from gsy_e import constants
+from gsy_e.models.area import Area
+from gsy_e.models.market.one_sided import OneSidedMarket
+from gsy_e.models.state import SmartMeterState
+from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 
 
 # pylint: disable=protected-access
@@ -85,7 +85,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
         self.strategy.event_activate_energy.assert_called_with()
         self.strategy.event_activate_price.assert_called_with()
 
-    @patch("d3a.models.strategy.smart_meter.get_market_maker_rate_from_config")
+    @patch("gsy_e.models.strategy.smart_meter.get_market_maker_rate_from_config")
     def test_event_activate_price_with_market_maker_rate(
             self, get_market_maker_rate_from_config_mock):
         """If the market maker rate is used, call bid/offer updaters to replace existing rates."""
@@ -126,7 +126,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
         self.strategy.bid_update.set_parameters.assert_not_called()
         self.strategy.offer_update.set_parameters.assert_not_called()
 
-    @patch("d3a.models.strategy.smart_meter.global_objects.profiles_handler.rotate_profile")
+    @patch("gsy_e.models.strategy.smart_meter.global_objects.profiles_handler.rotate_profile")
     def test_set_energy_forecast_for_future_markets(self, rotate_profile_mock):
         """The consumption/production expectations for the upcoming market slots are correctly set.
 
@@ -156,14 +156,14 @@ class SmartMeterStrategyTest(unittest.TestCase):
         self.strategy.state.update_total_demanded_energy.assert_has_calls([
             call(market_slot.time_slot) for market_slot in market_mocks])
 
-    @patch("d3a.models.strategy.smart_meter.global_objects.profiles_handler.rotate_profile")
+    @patch("gsy_e.models.strategy.smart_meter.global_objects.profiles_handler.rotate_profile")
     def test_set_energy_forecast_for_future_markets_no_profile(self, rotate_profile_mock):
         """Consumption/production expectations can't be set without an energy profile."""
         rotate_profile_mock.return_value = None
         with self.assertRaises(GSyException):
             self.strategy._set_energy_forecast_for_future_markets(reconfigure=True)
 
-    @patch("d3a.models.strategy.smart_meter.global_objects.profiles_handler.rotate_profile")
+    @patch("gsy_e.models.strategy.smart_meter.global_objects.profiles_handler.rotate_profile")
     def test_event_activate_energy(self, rotate_profile_mock):
         """event_activate_energy calls the expected state interface methods."""
         rotate_profile_mock.return_value = self._create_profile_mock()
@@ -173,7 +173,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
         self.strategy._set_energy_forecast_for_future_markets.assert_called_once_with(
             reconfigure=True)
 
-    @patch("d3a.models.strategy.BidEnabledStrategy.event_market_cycle")
+    @patch("gsy_e.models.strategy.BidEnabledStrategy.event_market_cycle")
     def test_event_market_cycle(self, super_method_mock):
         """event_market_cycle calls the expected interfaces."""
         self.strategy.bid_update.update_and_populate_price_settings = Mock()
@@ -211,7 +211,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
         self.strategy.offer_update.delete_past_state_values.assert_called_once_with(
             self.area_mock.current_market.time_slot)
 
-    @patch("d3a.models.strategy.smart_meter.utils")
+    @patch("gsy_e.models.strategy.smart_meter.utils")
     def test_set_energy_measurement_of_last_market(self, utils_mock):
         """The real energy of the last market is set when necessary."""
         # If we are in the first market slot, the real energy is not set

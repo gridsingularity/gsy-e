@@ -19,7 +19,7 @@ import uuid
 
 import pytest
 
-from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
+from gsy_e.models.strategy.external_strategies.pv import PVExternalStrategy
 from tests.strategies.external.utils import (
     check_external_command_endpoint_with_correct_payload_succeeds,
     create_areas_markets_for_strategy_fixture, assert_bid_offer_aggregator_commands_return_value)
