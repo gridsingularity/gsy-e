@@ -180,10 +180,5 @@ class ForecastExternalMixin(ExternalMixin):
             if energy < 0.0:
                 raise ValueError(f"Energy is not positive for time stamp {time_str}.")
 
-    def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=False) -> None:
-        """
-        Setting produced energy for the next slot is already done by produced_energy_forecast_kWh
-        """
-
     def _read_or_rotate_profiles(self, reconfigure=False) -> None:
         """Overridden with empty implementation to disable reading profile from DB."""

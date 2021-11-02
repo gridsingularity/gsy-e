@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 class StorageExternalMixin(ExternalMixin):
 
     state: "StorageState"
-    offers: Offers
+    offers: "Offers"
     post_offer: Callable
     is_bid_posted: Callable
     remove_bid_from_pending: Callable

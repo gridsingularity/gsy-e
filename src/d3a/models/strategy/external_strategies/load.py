@@ -422,3 +422,8 @@ class LoadForecastExternalStrategy(ForecastExternalMixin, LoadProfileExternalStr
         for slot_time, energy_kWh in self.energy_measurement_buffer.items():
             if slot_time < self.area.spot_market.time_slot:
                 self.state.set_energy_measurement_kWh(energy_kWh, slot_time)
+
+    def _update_energy_requirement_future_markets(self):
+        """
+        Setting demanded energy for the next slot is already done by update_energy_forecast
+        """

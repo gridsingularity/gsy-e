@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 class PVExternalMixin(ExternalMixin):
 
     state: "PVState"
-    offers: Offers
+    offers: "Offers"
     can_offer_be_posted: Callable
     post_offer: Callable
     set_produced_energy_forecast_kWh_future_markets: Callable
@@ -410,3 +410,8 @@ class PVForecastExternalStrategy(ForecastExternalMixin, PVPredefinedExternalStra
         for slot_time, energy_kWh in self.energy_measurement_buffer.items():
             if slot_time < self.area.spot_market.time_slot:
                 self.state.set_energy_measurement_kWh(energy_kWh, slot_time)
+
+    def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=False) -> None:
+        """
+        Setting produced energy for the next slot is already done by produced_energy_forecast_kWh
+        """
