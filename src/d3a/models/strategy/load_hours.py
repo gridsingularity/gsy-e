@@ -364,8 +364,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             time_slot = self.area.spot_market.time_slot
             final_rate = self.area.config.market_maker_rate[time_slot]
-            self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
-                                                     final_rate=final_rate)
+            self.bid_update.set_parameters(initial_rate=0,
+                                           final_rate=final_rate)
 
     def _post_first_bid(self):
         if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:

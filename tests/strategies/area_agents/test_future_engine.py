@@ -16,9 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from typing import Generator
 from unittest.mock import MagicMock
 
 import pytest
+from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.data_classes import Offer, Bid
 from pendulum import datetime, now
 
@@ -32,21 +34,24 @@ CURRENT_TIME_SLOT = datetime(2021, 10, 21, 0, 0)
 
 
 @pytest.fixture(name="future_engine")
-def future_engine_fixture():
+def future_engine_fixture() -> Generator[FutureEngine, None, None]:
     """Return FutureAgent object"""
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
     iaa = MagicMock(autospec=FutureAgent)
     higher_market = MagicMock(autospec=FutureMarkets)
     lower_market = MagicMock(autospec=FutureMarkets)
     future_engine = FutureEngine(name="test_engine", min_bid_age=1, min_offer_age=1,
                                  owner=iaa, market_1=higher_market, market_2=lower_market)
-    return future_engine
+    yield future_engine
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
 
 
 class TestFutureEngine:
     """Collects tests for the FutureEngine."""
 
     @staticmethod
-    def test_clean_up_order_buffers_removes_all_traces_of_unneeded_bids(future_engine):
+    def test_clean_up_order_buffers_removes_all_traces_of_unneeded_bids(
+            future_engine: FutureEngine) -> None:
         """
         Test if all traces of old bids are removed and future bids traces are kept in buffers.
         """
@@ -74,7 +79,8 @@ class TestFutureEngine:
         assert future_engine.bid_age == {future_bid.id: 1}
 
     @staticmethod
-    def test_clean_up_order_buffers_removes_all_traces_of_unneeded_offers(future_engine):
+    def test_clean_up_order_buffers_removes_all_traces_of_unneeded_offers(
+            future_engine: FutureEngine) -> None:
         """
         Test if all traces of old offers are removed and future offers traces are kept in buffers.
         """

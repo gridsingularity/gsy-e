@@ -103,6 +103,9 @@ class TwoSidedMarket(OneSidedMarket):
         if energy <= 0:
             raise InvalidBid()
 
+        if time_slot is None:
+            time_slot = self.time_slot
+
         if original_price is None:
             original_price = price
 

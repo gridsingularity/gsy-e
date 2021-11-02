@@ -16,11 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
+from typing import TYPE_CHECKING
 from unittest.mock import Mock, MagicMock
 
 import pytest
-from pendulum import today, duration
 from d3a_interface.constants_limits import GlobalConfig
+from pendulum import today, duration
 
 from d3a.constants import TIME_ZONE, FutureTemplateStrategiesConstants
 from d3a.models.market.future import FutureMarkets
@@ -28,10 +29,16 @@ from d3a.models.strategy.future.strategy import FutureMarketStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 
+if TYPE_CHECKING:
+    from d3a.models.strategy import BaseStrategy
+
 
 class TestFutureMarketStrategy:
+    """Test the FutureMarketStrategy class."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
+        """Preparation for the tests execution"""
+        GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
         self.future_strategy = FutureMarketStrategy(10, 50, 50, 20)
         self.time_slot = today(tz=TIME_ZONE).at(hour=12, minute=0, second=0)
         self.area_mock = Mock()
@@ -41,7 +48,11 @@ class TestFutureMarketStrategy:
         self.future_markets.market_time_slots = [self.time_slot]
         self.future_markets.id = str(uuid.uuid4())
 
-    def _setup_strategy_fixture(self, future_strategy_fixture):
+    def teardown_method(self) -> None:
+        """Test cleanup"""
+        GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
+
+    def _setup_strategy_fixture(self, future_strategy_fixture: "BaseStrategy") -> None:
         future_strategy_fixture.owner = self.area_mock
         future_strategy_fixture.update_bid_rates = Mock()
         future_strategy_fixture.update_offer_rates = Mock()
@@ -54,7 +65,10 @@ class TestFutureMarketStrategy:
 
     @pytest.mark.parametrize(
         "future_strategy_fixture", [LoadHoursStrategy(100), PVStrategy()])
-    def test_event_market_cycle_posts_bids_and_offers(self, future_strategy_fixture):
+    def test_event_market_cycle_posts_bids_and_offers(
+            self, future_strategy_fixture: "BaseStrategy") -> None:
+        """Validate that market cycle event posts bids and offers according to the strategy
+        type"""
         self._setup_strategy_fixture(future_strategy_fixture)
         if isinstance(future_strategy_fixture, LoadHoursStrategy):
             future_strategy_fixture.state.set_desired_energy(1234.0, self.time_slot)
@@ -77,7 +91,10 @@ class TestFutureMarketStrategy:
 
     @pytest.mark.parametrize(
         "future_strategy_fixture", [LoadHoursStrategy(100), PVStrategy()])
-    def test_event_tick_updates_bids_and_offers(self, future_strategy_fixture):
+    def test_event_tick_updates_bids_and_offers(
+            self, future_strategy_fixture: "BaseStrategy") -> None:
+        """Validate that tick event updates existing bids and offers to the expected energy
+        rate"""
         self._setup_strategy_fixture(future_strategy_fixture)
         future_strategy_fixture.are_bids_posted = MagicMock(return_value=True)
         future_strategy_fixture.are_offers_posted = MagicMock(return_value=True)

@@ -116,6 +116,9 @@ class OneSidedMarket(Market):
         if original_price is None:
             original_price = price
 
+        if time_slot is None:
+            time_slot = self.time_slot
+
         if adapt_price_with_fees:
             price = self._update_new_offer_price_with_fee(price, original_price, energy)
 
@@ -323,6 +326,7 @@ class OneSidedMarket(Market):
                       seller_origin_id=offer.seller_origin_id,
                       seller_id=offer.seller_id, buyer_id=buyer_id, time_slot=offer.time_slot
                       )
+
         self.bc_interface.track_trade_event(self.time_slot, trade)
 
         if already_tracked is False:

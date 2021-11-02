@@ -13,33 +13,40 @@ You should have received a copy of the GNU General Public License along with thi
 see <http://www.gnu.org/licenses/>.
 """
 
+from typing import TYPE_CHECKING, List
+
 from d3a_interface.constants_limits import GlobalConfig
-from pendulum import duration
+from pendulum import duration, DateTime
 
 from d3a.constants import FutureTemplateStrategiesConstants
 from d3a.models.base import AssetType
-from d3a.models.market import Market  # NOQA
-from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.strategy.update_frequency import (TemplateStrategyBidUpdater,
                                                   TemplateStrategyOfferUpdater)
+
+if TYPE_CHECKING:
+    from d3a.models.area import Area
+    from d3a.models.strategy import BidEnabledStrategy
+    from d3a.models.market.future import FutureMarkets
 
 
 class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
     """Version of TemplateStrategyBidUpdater class for future markets"""
 
     @property
-    def _time_slot_duration_in_seconds(self):
+    def _time_slot_duration_in_seconds(self) -> int:
         return GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 * 60
 
     @staticmethod
-    def get_all_markets(area):
+    def get_all_markets(area: "Area") -> List["FutureMarkets"]:
+        """Override to return list of future markets"""
         return [area.future_markets]
 
     @staticmethod
-    def get_all_time_slots(area):
+    def get_all_time_slots(area: "Area") -> List[DateTime]:
+        """Override to return all future market available time slots"""
         return area.future_markets.market_time_slots
 
-    def update(self, market, strategy):
+    def update(self, market: "FutureMarkets", strategy: "BidEnabledStrategy") -> None:
         """Update the price of existing bids to reflect the new rates."""
         for time_slot in strategy.area.future_markets.market_time_slots:
             if self.time_for_price_update(strategy, time_slot):
@@ -51,18 +58,20 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
     """Version of TemplateStrategyOfferUpdater class for future markets"""
 
     @property
-    def _time_slot_duration_in_seconds(self):
+    def _time_slot_duration_in_seconds(self) -> int:
         return GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 * 60
 
     @staticmethod
-    def get_all_markets(area):
+    def get_all_markets(area: "Area") -> List["FutureMarkets"]:
+        """Override to return list of future markets"""
         return [area.future_markets]
 
     @staticmethod
-    def get_all_time_slots(area):
+    def get_all_time_slots(area: "Area") -> List[DateTime]:
+        """Override to return all future market available time slots"""
         return area.future_markets.market_time_slots
 
-    def update(self, market, strategy):
+    def update(self, market: "FutureMarkets", strategy: "BidEnabledStrategy") -> None:
         """Update the price of existing offers to reflect the new rates."""
         for time_slot in strategy.area.future_markets.market_time_slots:
             if self.time_for_price_update(strategy, time_slot):
@@ -77,19 +86,19 @@ class FutureMarketStrategyInterface:
     def __init__(self, *args, **kwargs):
         pass
 
-    def event_market_cycle(self, strategy):
-        pass
+    def event_market_cycle(self, strategy: "BidEnabledStrategy") -> None:
+        """Base class method for handling the market cycle"""
 
-    def event_tick(self, strategy):
-        pass
+    def event_tick(self, strategy: "BidEnabledStrategy") -> None:
+        """Base class method for handling the tick"""
 
 
 class FutureMarketStrategy(FutureMarketStrategyInterface):
+    """Manages bid/offer trading strategy for the future markets, for a single asset."""
     def __init__(self,
                  initial_buying_rate: float, final_buying_rate: float,
                  initial_selling_rate: float, final_selling_rate: float):
         """
-        Manages bid/offer trading strategy for the future markets, for a single asset.
         Args:
             initial_buying_rate: Initial rate of the future bids
             final_buying_rate: Final rate of the future bids
@@ -115,7 +124,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
                 update_interval=duration(minutes=self._update_interval),
                 rate_limit_object=max)
 
-    def event_market_cycle(self, strategy: BidEnabledStrategy) -> None:
+    def event_market_cycle(self, strategy: "BidEnabledStrategy") -> None:
         """
         Should be called by the event_market_cycle of the asset strategy class, posts
         settlement bids and offers on markets that do not have posted bids and offers yet
@@ -162,7 +171,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         self._bid_updater.increment_update_counter_all_markets(strategy)
         self._offer_updater.increment_update_counter_all_markets(strategy)
 
-    def event_tick(self, strategy: BidEnabledStrategy) -> None:
+    def event_tick(self, strategy: "BidEnabledStrategy") -> None:
         """
         Update posted settlement bids and offers on market tick.
         Order matters here:
@@ -206,8 +215,7 @@ def future_market_strategy_factory(
         return FutureMarketStrategy(
             initial_buying_rate, final_buying_rate,
             initial_selling_rate, final_selling_rate)
-    else:
-        return FutureMarketStrategyInterface(
-            initial_buying_rate, final_buying_rate,
-            initial_selling_rate, final_selling_rate
-        )
+    return FutureMarketStrategyInterface(
+        initial_buying_rate, final_buying_rate,
+        initial_selling_rate, final_selling_rate
+    )
