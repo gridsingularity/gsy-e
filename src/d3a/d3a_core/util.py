@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import datetime
 import inspect
 import json
 import os
@@ -26,6 +25,7 @@ import tty
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 
+import pendulum
 from click.types import ParamType
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit, ConstSettings
 from d3a_interface.enums import BidOfferMatchAlgoEnum
@@ -495,7 +495,7 @@ class FutureMarketCounter:
     In the future market, we only want to clear in a predefined interval.
     """
     def __init__(self):
-        self.last_time_dispatched = datetime.datetime.now()
+        self.last_time_dispatched = pendulum.now()
 
     @property
     def is_time_for_clearing(self) -> bool:
@@ -504,9 +504,10 @@ class FutureMarketCounter:
         Returns True if the FUTURE_MARKET_CLEARING_INTERVAL has
         already passed since the last dispatch time.
         """
-        current_time = datetime.datetime.now()
-        duration_in_s = (current_time - self.last_time_dispatched).total_seconds()
+        current_time = pendulum.now()
+        duration_in_s = (current_time - self.last_time_dispatched).seconds
         duration_in_min = duration_in_s // 60
+        x = ConstSettings.FutureMarketSettings.FUTURE_MARKET_CLEARING_INTERVAL
         if duration_in_min >= ConstSettings.FutureMarketSettings.FUTURE_MARKET_CLEARING_INTERVAL:
             self.last_time_dispatched = current_time
             return True

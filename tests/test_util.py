@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import os
 import tempfile
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
@@ -32,7 +32,7 @@ from d3a.d3a_core.cli import available_simulation_scenarios
 from d3a.d3a_core.util import (validate_const_settings_for_simulation, retry_function,
                                get_simulation_queue_name, get_market_maker_rate_from_config,
                                export_default_settings_to_json_file, constsettings_to_dict,
-                               convert_str_to_pause_after_interval)
+                               convert_str_to_pause_after_interval, FutureMarketCounter)
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -161,3 +161,18 @@ class TestD3ACoreUtil:
                 ConstSettings.IAASettings.MARKET_TYPE)
         assert (settings_dict["IAASettings"]["AlternativePricing"]["COMPARE_PRICING_SCHEMES"] ==
                 ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES)
+
+    @patch("d3a.d3a_core.util.pendulum")
+    def test_future_market_counter(self, mock_datetime):
+        """Test the counter of future market clearing."""
+        with patch("d3a.d3a_core.util.ConstSettings.FutureMarketSettings."
+                   "FUTURE_MARKET_CLEARING_INTERVAL", 15):
+            current_time = datetime(year=2021, month=11, day=2,
+                                    hour=1, minute=1, second=0)
+            mock_datetime.now.return_value = current_time
+            future_market_counter = FutureMarketCounter()
+            assert future_market_counter.is_time_for_clearing is False
+
+            # Skip the 15 minutes duration
+            mock_datetime.now.return_value = current_time.add(minutes=15)
+            assert future_market_counter.is_time_for_clearing is True
