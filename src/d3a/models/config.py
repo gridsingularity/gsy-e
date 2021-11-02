@@ -18,9 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import ast
 import json
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.exceptions import D3AException
-from d3a_interface.read_user_profile import (
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.exceptions import GSyException
+from gsy_framework.read_user_profile import (
     InputProfileTypes, read_and_convert_identity_profile_to_float, read_arbitrary_profile)
 from pendulum import DateTime, Duration, duration, today
 
@@ -62,12 +62,12 @@ class SimulationConfig:
 
         self.ticks_per_slot = self.slot_length / self.tick_length
         if self.ticks_per_slot != int(self.ticks_per_slot):
-            raise D3AException(
+            raise GSyException(
                 f"Non integer ticks per slot ({self.ticks_per_slot}) are not supported. "
                 "Adjust simulation parameters.")
         self.ticks_per_slot = int(self.ticks_per_slot)
         if self.ticks_per_slot < 10:
-            raise D3AException(
+            raise GSyException(
                 f"Too few ticks per slot ({self.ticks_per_slot}). Adjust simulation parameters")
         self.total_ticks = self.sim_duration // self.slot_length * self.ticks_per_slot
 

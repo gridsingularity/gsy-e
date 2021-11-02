@@ -19,10 +19,10 @@ from logging import getLogger
 from typing import List, Dict
 from uuid import uuid4
 
-from d3a_interface.area_validator import validate_area
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.enums import SpotMarketTypeEnum
-from d3a_interface.utils import key_in_dict_and_not_none
+from gsy_framework.area_validator import validate_area
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.utils import key_in_dict_and_not_none
 from pendulum import DateTime, duration, today
 from slugify import slugify
 

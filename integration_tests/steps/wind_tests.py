@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
-from d3a_interface.read_user_profile import _readCSV
-from d3a_interface.utils import convert_W_to_kWh
+from gsy_framework.read_user_profile import _readCSV
+from gsy_framework.utils import convert_W_to_kWh
 
 
 @then('the UserProfileWind follows the Wind profile of csv')

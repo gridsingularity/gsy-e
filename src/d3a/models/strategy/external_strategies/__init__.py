@@ -21,10 +21,10 @@ from collections import deque, namedtuple
 from threading import Lock
 from typing import Dict, TYPE_CHECKING
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Trade
-from d3a_interface.enums import SpotMarketTypeEnum
-from d3a_interface.utils import (convert_str_to_pendulum_in_dict,
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Trade
+from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.utils import (convert_str_to_pendulum_in_dict,
                                  str_to_pendulum_datetime)
 from pendulum import DateTime
 

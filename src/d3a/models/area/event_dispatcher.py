@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from logging import getLogger
 from typing import Union, Dict, TYPE_CHECKING  # noqa
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.enums import SpotMarketTypeEnum
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import SpotMarketTypeEnum
 from numpy.random import random
 from pendulum import DateTime  # noqa
 

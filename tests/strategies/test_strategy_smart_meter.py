@@ -18,8 +18,8 @@ import uuid
 from collections import OrderedDict
 from unittest.mock import Mock, patch, call, create_autospec
 
-from d3a_interface.exceptions import D3AException
-from d3a_interface.validators.smart_meter_validator import SmartMeterValidator
+from gsy_framework.exceptions import GSyException
+from gsy_framework.validators.smart_meter_validator import SmartMeterValidator
 from pendulum import datetime, duration
 
 from d3a import constants
@@ -160,7 +160,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
     def test_set_energy_forecast_for_future_markets_no_profile(self, rotate_profile_mock):
         """Consumption/production expectations can't be set without an energy profile."""
         rotate_profile_mock.return_value = None
-        with self.assertRaises(D3AException):
+        with self.assertRaises(GSyException):
             self.strategy._set_energy_forecast_for_future_markets(reconfigure=True)
 
     @patch("d3a.models.strategy.smart_meter.global_objects.profiles_handler.rotate_profile")
@@ -229,7 +229,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
         self.strategy.state.set_energy_measurement_kWh.assert_called_once_with(
             100, self.strategy.area.current_market.time_slot)
 
-    @patch("d3a_interface.constants_limits.ConstSettings.IAASettings")
+    @patch("gsy_framework.constants_limits.ConstSettings.IAASettings")
     def test_event_offer_two_sided_market(self, iaa_settings_mock):
         """The device does not automatically react to offers in two-sided markets."""
         iaa_settings_mock.MARKET_TYPE = 2

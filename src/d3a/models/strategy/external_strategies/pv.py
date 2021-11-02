@@ -20,8 +20,8 @@ import logging
 from collections import deque
 from typing import Dict
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Offer
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Offer
 from pendulum import duration, DateTime
 
 from d3a.d3a_core.util import get_market_maker_rate_from_config

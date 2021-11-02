@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from unittest.mock import MagicMock, patch, Mock, call
 
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.enums import SpotMarketTypeEnum, BidOfferMatchAlgoEnum
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.enums import SpotMarketTypeEnum, BidOfferMatchAlgoEnum
 from parameterized import parameterized
 from pendulum import duration, today
 

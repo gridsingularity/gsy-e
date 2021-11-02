@@ -19,7 +19,7 @@ from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy import INF_ENERGY
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 
 
 class OneSidedAlternativePricingAgent(OneSidedAgent):

@@ -126,7 +126,7 @@ Additionally the user has the possibility to change the default general settings
 
 For a description of each grid component please see the **Modelling** section.
 
-The user can overwrite the configuration settings by changing variables of the [ConstSettings](https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py) class in the setup-file. This class defines the default values for various parameters (general simulation settings, market settings and energy asset configuration). For instance, the user can define multiple configuration parameters in the get_setup function by overwriting the[ ConstSettings](https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py) default values. For example, the following parameters can be set :
+The user can overwrite the configuration settings by changing variables of the [ConstSettings](https://github.com/gridsingularity/d3a-interface/blob/master/gsy_framework/constants_limits.py) class in the setup-file. This class defines the default values for various parameters (general simulation settings, market settings and energy asset configuration). For instance, the user can define multiple configuration parameters in the get_setup function by overwriting the[ ConstSettings](https://github.com/gridsingularity/d3a-interface/blob/master/gsy_framework/constants_limits.py) default values. For example, the following parameters can be set :
 
 * Market_type (if equal to 1: [One-Sided Pay-as-Offer](one-sided-pay-as-offer.md), if equal to 2 : [Two-Sided Pay-as-Bid](two-sided-pay-as-bid.md), if equal to 3 : [Two-Sided Pay-as-Clear](two-sided-pay-as-clear.md))
 * Grid_fee_type (if equal to 1: [Constant grid fee](constant-fees.md), if equal to 2 : [Percentage grid fee](percentage-fees.md))
@@ -134,7 +134,7 @@ The user can overwrite the configuration settings by changing variables of the [
 Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market type, constant grid fee and default min (0cts/kWh) and max to (35cts/kWh) energy rate for all [loads](model-load.md):
 
 ```python
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.LoadSettings.MIN_ENERGY_RATE = 0
@@ -148,7 +148,7 @@ These general settings can also be parsed via a settings file in JSON format, wh
 
 ####Setting General Configuration Parameters
 
-The following parameters are part of [Simulation Config](https://github.com/gridsingularity/d3a/blob/master/src/d3a/models/config.py#L32) and are initialised before updating any [ConstSettings](https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py):
+The following parameters are part of [Simulation Config](https://github.com/gridsingularity/d3a/blob/master/src/d3a/models/config.py#L32) and are initialised before updating any [ConstSettings](https://github.com/gridsingularity/d3a-interface/blob/master/gsy_framework/constants_limits.py):
 
 *   sim_duration
 *   slot_length

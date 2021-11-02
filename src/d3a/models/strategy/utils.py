@@ -15,7 +15,7 @@ see <http://www.gnu.org/licenses/>.
 """
 import random
 
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 
 from d3a.constants import DEFAULT_PRECISION
 

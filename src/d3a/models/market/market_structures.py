@@ -19,7 +19,7 @@ import json
 from enum import Enum
 from typing import Dict, List, Tuple, Union  # noqa
 
-from d3a_interface.data_classes import Trade, BaseBidOffer
+from gsy_framework.data_classes import Trade, BaseBidOffer
 
 from d3a.events import MarketEvent
 

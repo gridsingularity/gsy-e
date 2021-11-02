@@ -8,7 +8,7 @@ import os
 from d3a.models.area import Area
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy

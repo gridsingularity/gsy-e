@@ -19,7 +19,7 @@ from d3a.models.area import Area
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 
 
 def get_setup(config):

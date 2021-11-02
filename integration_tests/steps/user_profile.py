@@ -4,9 +4,9 @@ import d3a.constants
 from behave import given, then
 from d3a.d3a_core.util import d3a_path
 from d3a.models.config import SimulationConfig
-from d3a_interface.constants_limits import GlobalConfig
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.utils import convert_W_to_kWh
+from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.utils import convert_W_to_kWh
 from pendulum import duration
 
 

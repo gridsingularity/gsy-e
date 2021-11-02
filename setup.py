@@ -2,14 +2,14 @@ import platform
 
 from setuptools import find_packages, setup
 
-d3a_interface_branch = "master"
+gsy_framework_branch = "feature/D3ASIM-3669"
 
 try:
     with open("requirements/dev.txt") as req:
         REQUIREMENTS = [r.partition("#")[0] for r in req if not r.startswith("-e")]
         REQUIREMENTS.extend(
-            [f"d3a-interface @ "
-             f"git+https://github.com/gridsingularity/d3a-interface.git@{d3a_interface_branch}"
+            [f"gsy-framework @ "
+             f"git+https://github.com/faizan2590/gsy-framework.git@{gsy_framework_branch}"
              ])
 except OSError:
     # Shouldn't happen
@@ -27,12 +27,12 @@ else:
 VERSION = "1.1.0"
 
 setup(
-    name="d3a",
+    name="gsy-e",
     description="decentralised energy exchange developed by Grid Singularity",
     long_description=README,
     author="GridSingularity",
     author_email="d3a@gridsingularity.com",
-    url="https://github.com/gridsingularity/d3a",
+    url="https://github.com/faizan2590/gsy-e",
     version=VERSION,
     packages=find_packages(where="src", exclude=["tests"]),
     package_dir={"": "src"},

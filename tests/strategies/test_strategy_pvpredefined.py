@@ -23,11 +23,11 @@ from uuid import uuid4
 
 import pendulum
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig, PROFILE_EXPANSION_DAYS
-from d3a_interface.data_classes import Offer
-from d3a_interface.exceptions import D3ADeviceException
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.utils import generate_market_slot_list
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig, PROFILE_EXPANSION_DAYS
+from gsy_framework.data_classes import Offer
+from gsy_framework.exceptions import GSyDeviceException
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.utils import generate_market_slot_list
 from pendulum import DateTime, duration, today, datetime
 
 from d3a.constants import TIME_ZONE, TIME_FORMAT
@@ -399,29 +399,29 @@ def test_correct_time_expansion_read_arbitrary_profile():
 
 
 def test_predefined_pv_constructor_rejects_incorrect_parameters():
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         PVPredefinedStrategy(panel_count=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         pv = PVPredefinedStrategy(initial_selling_rate=5, final_selling_rate=15)
         pv.event_activate()
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         PVPredefinedStrategy(fit_to_limit=True, energy_rate_decrease_per_update=1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         PVPredefinedStrategy(fit_to_limit=False, energy_rate_decrease_per_update=-1)
 
 
 def test_pv_user_profile_constructor_rejects_incorrect_parameters():
     user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         PVUserProfileStrategy(power_profile=user_profile_path, panel_count=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         pv = PVUserProfileStrategy(power_profile=user_profile_path,
                                    initial_selling_rate=5, final_selling_rate=15)
         pv.event_activate()
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         PVUserProfileStrategy(power_profile=user_profile_path,
                               fit_to_limit=True, energy_rate_decrease_per_update=1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         PVUserProfileStrategy(power_profile=user_profile_path,
                               fit_to_limit=False, energy_rate_decrease_per_update=-1)
 

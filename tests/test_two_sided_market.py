@@ -4,10 +4,10 @@ from uuid import uuid4
 
 import pendulum
 import pytest
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import BidOfferMatch
-from d3a_interface.data_classes import TradeBidOfferInfo, Trade
-from d3a_interface.matching_algorithms import (
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import BidOfferMatch
+from gsy_framework.data_classes import TradeBidOfferInfo, Trade
+from gsy_framework.matching_algorithms import (
     PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
 )
 from pendulum import now

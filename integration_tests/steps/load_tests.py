@@ -18,9 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from behave import then
 from math import isclose
 
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
     _str_to_datetime
-from d3a_interface.utils import convert_W_to_Wh, find_object_of_same_weekday_and_time
+from gsy_framework.utils import convert_W_to_Wh, find_object_of_same_weekday_and_time
 from d3a.setup.strategy_tests import user_profile_load_csv  # NOQA
 from d3a.setup.strategy_tests import user_profile_load_csv_multiday  # NOQA
 from d3a.constants import FLOATING_POINT_TOLERANCE, DATE_TIME_FORMAT

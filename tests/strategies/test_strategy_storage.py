@@ -22,9 +22,9 @@ from math import isclose
 from uuid import uuid4
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.exceptions import D3ADeviceException
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.exceptions import GSyDeviceException
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from pendulum import Duration, DateTime, now
 
 from d3a.constants import TIME_FORMAT, FLOATING_POINT_TOLERANCE
@@ -32,7 +32,7 @@ from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import change_global_config
 from d3a.models.config import SimulationConfig
-from d3a_interface.data_classes import Offer, Trade, BalancingOffer, Bid
+from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid
 from d3a.models.state import EnergyOrigin, ESSEnergyOrigin
 from d3a.models.strategy.storage import StorageStrategy
 
@@ -559,33 +559,33 @@ def test_initial_charge(caplog):
 
 
 def test_storage_constructor_rejects_incorrect_parameters():
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(battery_capacity_kWh=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(initial_soc=101)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(initial_soc=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(initial_selling_rate=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(final_selling_rate=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(initial_selling_rate=1, final_selling_rate=5)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(initial_buying_rate=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(final_buying_rate=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(initial_buying_rate=10, final_buying_rate=1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(initial_selling_rate=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(fit_to_limit=True, energy_rate_decrease_per_update=1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(fit_to_limit=False, energy_rate_decrease_per_update=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(fit_to_limit=True, energy_rate_increase_per_update=1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(fit_to_limit=False, energy_rate_increase_per_update=-1)
 
 

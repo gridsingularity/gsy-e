@@ -21,9 +21,9 @@ from datetime import datetime, timezone
 from typing import Dict
 
 import pytz
-from d3a_interface.constants_limits import GlobalConfig
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.utils import generate_market_slot_list
+from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.utils import generate_market_slot_list
 from pendulum import DateTime, instance, duration
 from pony.orm import Database, Required, db_session, select
 from pony.orm.core import Query

@@ -21,8 +21,8 @@ import pytest
 from d3a.models.area import Area
 from d3a.models.market import GridFee
 from d3a.models.market.future import FutureMarkets, FutureMarketException
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.data_classes import Bid, Offer, Trade, TradeBidOfferInfo
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo
 from pendulum import datetime, duration
 
 DEFAULT_CURRENT_MARKET_SLOT = datetime(2021, 10, 19, 0, 0)

@@ -22,8 +22,8 @@ from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 
 from d3a.models.strategy.pv import PVStrategy
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.enums import BidOfferMatchAlgoEnum
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import BidOfferMatchAlgoEnum
 
 
 def get_setup(config):

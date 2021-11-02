@@ -17,10 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from math import isclose
-from d3a_interface.read_user_profile import _str_to_datetime
+from gsy_framework.read_user_profile import _str_to_datetime
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a_interface.constants_limits import DATE_TIME_FORMAT
-from d3a_interface.utils import scenario_representation_traversal
+from gsy_framework.constants_limits import DATE_TIME_FORMAT
+from gsy_framework.utils import scenario_representation_traversal
 
 
 @then('all load demands in setup was fulfilled on every market slot')

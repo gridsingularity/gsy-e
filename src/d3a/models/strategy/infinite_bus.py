@@ -15,12 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.enums import SpotMarketTypeEnum
-from d3a_interface.read_user_profile import convert_identity_profile_to_float
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
-from d3a_interface.utils import find_object_of_same_weekday_and_time
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.read_user_profile import convert_identity_profile_to_float
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
+from gsy_framework.utils import find_object_of_same_weekday_and_time
 
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.global_objects_singleton import global_objects
