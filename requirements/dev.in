@@ -1,7 +1,5 @@
 -r base.txt
 
 fabric3
-pre-commit
 psutil
 pyyaml>=4.2b1
-tox
