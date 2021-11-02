@@ -498,16 +498,16 @@ class FutureMarketCounter:
         self.last_time_dispatched = datetime.datetime.now()
 
     @property
-    def is_it_time_for_clearing(self) -> bool:
+    def is_time_for_clearing(self) -> bool:
         """Compare current time with the latest time clearing was dispatched.
 
-        Returns True if the CLEAR_FUTURE_MARKET_INTERVAL_MINUTE interval has
+        Returns True if the FUTURE_MARKET_CLEARING_INTERVAL has
         already passed since the last dispatch time.
         """
         current_time = datetime.datetime.now()
         duration_in_s = (current_time - self.last_time_dispatched).total_seconds()
         duration_in_min = duration_in_s // 60
-        if duration_in_min > d3a.constants.CLEAR_FUTURE_MARKET_INTERVAL_MINUTE:
+        if duration_in_min >= ConstSettings.FutureMarketSettings.FUTURE_MARKET_CLEARING_INTERVAL:
             self.last_time_dispatched = current_time
             return True
         return False

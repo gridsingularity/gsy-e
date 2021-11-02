@@ -67,7 +67,3 @@ class SettlementTemplateStrategiesConstants:
     FINAL_SELLING_RATE = 0
 
     UPDATE_INTERVAL_MIN = 5
-
-
-# Control the interval of clearing orders in the future markets
-CLEAR_FUTURE_MARKET_INTERVAL_MINUTE = 15
