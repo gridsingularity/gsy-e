@@ -28,11 +28,11 @@ from slugify import slugify
 
 import d3a.constants
 from cached_property import cached_property
-from d3a.d3a_core.blockchain_interface import blockchain_interface_factory
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.d3a_core.exceptions import AreaException
-from d3a.d3a_core.myco_singleton import bid_offer_matcher
-from d3a.d3a_core.util import TaggedLogWrapper, is_external_matching_enabled
+from d3a.gsy_e_core.blockchain_interface import blockchain_interface_factory
+from d3a.gsy_e_core.device_registry import DeviceRegistry
+from d3a.gsy_e_core.exceptions import AreaException
+from d3a.gsy_e_core.myco_singleton import bid_offer_matcher
+from d3a.gsy_e_core.util import TaggedLogWrapper, is_external_matching_enabled
 from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.events import Events
 from d3a.models.area.markets import AreaMarkets

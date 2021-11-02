@@ -28,8 +28,8 @@ from pendulum import duration  # noqa
 from pendulum.datetime import DateTime
 
 from d3a import constants
-from d3a.d3a_core.exceptions import MarketException
-from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a.gsy_e_core.exceptions import MarketException
+from d3a.gsy_e_core.util import get_market_maker_rate_from_config
 from d3a.models.state import PVState
 from d3a.models.strategy import BidEnabledStrategy, utils
 from d3a.models.strategy.settlement.strategy import settlement_market_strategy_factory

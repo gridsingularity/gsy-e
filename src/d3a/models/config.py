@@ -25,9 +25,9 @@ from gsy_framework.read_user_profile import (
 from pendulum import DateTime, Duration, duration, today
 
 from d3a.constants import TIME_ZONE
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import (
+from d3a.gsy_e_core.redis_connections.redis_area_market_communicator import (
     ExternalConnectionCommunicator)
-from d3a.d3a_core.util import change_global_config, format_interval
+from d3a.gsy_e_core.util import change_global_config, format_interval
 
 
 class SimulationConfig:

@@ -22,7 +22,7 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
-from d3a.d3a_core.util import is_time_slot_in_simulation_duration
+from d3a.gsy_e_core.util import is_time_slot_in_simulation_duration
 from d3a.models.area.market_rotators import (BaseRotator, DefaultMarketRotator,
                                              SettlementMarketRotator, FutureMarketRotator)
 from d3a.models.market import GridFee, Market

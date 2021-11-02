@@ -23,8 +23,8 @@ from gsy_framework.results_validator import results_validator
 from gsy_framework.sim_results.all_results import ResultsHandler
 from gsy_framework.utils import get_json_dict_memory_allocation_size
 
-from d3a.d3a_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
-from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a.gsy_e_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
+from d3a.gsy_e_core.util import get_market_maker_rate_from_config
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.smart_meter import SmartMeterStrategy
@@ -37,7 +37,7 @@ from d3a.models.strategy.storage import StorageStrategy
 if TYPE_CHECKING:
     from d3a.models.area import Area
     from d3a.models.market import Market
-    from d3a.d3a_core.simulation import SimulationProgressInfo
+    from d3a.gsy_e_core.simulation import SimulationProgressInfo
 
 _NO_VALUE = {
     "min": None,

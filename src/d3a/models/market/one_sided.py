@@ -25,9 +25,9 @@ from gsy_framework.data_classes import Offer, Trade, TradeBidOfferInfo
 from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
-from d3a.d3a_core.exceptions import (InvalidOffer, MarketReadOnlyException, OfferNotFoundException,
-                                     InvalidTrade, MarketException)
-from d3a.d3a_core.util import short_offer_bid_log_str
+from d3a.gsy_e_core.exceptions import (
+    InvalidOffer, MarketReadOnlyException, OfferNotFoundException, InvalidTrade, MarketException)
+from d3a.gsy_e_core.util import short_offer_bid_log_str
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market import Market, lock_market_action
 

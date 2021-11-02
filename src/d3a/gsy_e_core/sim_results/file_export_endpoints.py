@@ -21,7 +21,7 @@ from typing import List, Dict
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 
-from d3a.d3a_core.myco_singleton import bid_offer_matcher
+from d3a.gsy_e_core.myco_singleton import bid_offer_matcher
 from d3a.models.area import Area
 from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.strategy.load_hours import LoadHoursStrategy

@@ -22,9 +22,9 @@ from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfile
 from gsy_framework.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
 from gsy_framework.utils import find_object_of_same_weekday_and_time
 
-from d3a.d3a_core.exceptions import MarketException
-from d3a.d3a_core.global_objects_singleton import global_objects
-from d3a.d3a_core.util import should_read_profile_from_db
+from d3a.gsy_e_core.exceptions import MarketException
+from d3a.gsy_e_core.global_objects_singleton import global_objects
+from d3a.gsy_e_core.util import should_read_profile_from_db
 from d3a.models.strategy import BidEnabledStrategy, INF_ENERGY
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 

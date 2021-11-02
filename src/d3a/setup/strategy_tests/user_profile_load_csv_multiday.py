@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
-from d3a.d3a_core.util import d3a_path
+from d3a.gsy_e_core.util import d3a_path
 import os
 
 

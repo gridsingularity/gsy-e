@@ -10,8 +10,8 @@ from gsy_framework.settings_validators import validate_global_settings
 from pendulum import duration, instance
 
 import d3a.constants
-from d3a.d3a_core.simulation import run_simulation
-from d3a.d3a_core.util import available_simulation_scenarios, update_advanced_settings
+from d3a.gsy_e_core.simulation import run_simulation
+from d3a.gsy_e_core.util import available_simulation_scenarios, update_advanced_settings
 from d3a.models.config import SimulationConfig
 
 log = logging.getLogger()
@@ -125,6 +125,6 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
                        kwargs=kwargs)
     except Exception:
         import traceback
-        from d3a.d3a_core.redis_connections.redis_communication import publish_job_error_output
+        from d3a.gsy_e_core.redis_connections.redis_communication import publish_job_error_output
         publish_job_error_output(job_id, traceback.format_exc())
         logging.getLogger().error(f"Error on jobId {job_id}: {traceback.format_exc()}")

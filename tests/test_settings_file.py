@@ -18,11 +18,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import unittest
 
-from d3a.d3a_core.util import IntervalType
-from d3a.d3a_core.util import d3a_path
+from d3a.gsy_e_core.util import IntervalType
+from d3a.gsy_e_core.util import d3a_path
 from gsy_framework.constants_limits import ConstSettings
-from d3a.d3a_core.util import read_settings_from_file
-from d3a.d3a_core.util import update_advanced_settings
+from d3a.gsy_e_core.util import read_settings_from_file
+from d3a.gsy_e_core.util import update_advanced_settings
 from d3a.models.config import SimulationConfig
 
 

@@ -136,5 +136,5 @@ def reqs():
 @hosts("localhost")
 def write_default_settings_file():
     # This lazy import has stay in order to avoid import errors when running 'fab sync'
-    from d3a.d3a_core.util import export_default_settings_to_json_file
+    from d3a.gsy_e_core.util import export_default_settings_to_json_file
     export_default_settings_to_json_file()

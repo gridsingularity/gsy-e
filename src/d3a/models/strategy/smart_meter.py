@@ -28,9 +28,9 @@ from pendulum.datetime import DateTime
 
 from d3a import constants
 from d3a.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
-from d3a.d3a_core.exceptions import GSyException, MarketException
-from d3a.d3a_core.global_objects_singleton import global_objects
-from d3a.d3a_core.util import (get_market_maker_rate_from_config, should_read_profile_from_db)
+from d3a.gsy_e_core.exceptions import GSyException, MarketException
+from d3a.gsy_e_core.global_objects_singleton import global_objects
+from d3a.gsy_e_core.util import (get_market_maker_rate_from_config, should_read_profile_from_db)
 from d3a.models.market import Market
 from d3a.models.state import SmartMeterState
 from d3a.models.strategy import BidEnabledStrategy, utils

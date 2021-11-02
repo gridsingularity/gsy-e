@@ -2,7 +2,7 @@ import uuid
 
 import d3a.constants
 from behave import given, then
-from d3a.d3a_core.util import d3a_path
+from d3a.gsy_e_core.util import d3a_path
 from d3a.models.config import SimulationConfig
 from gsy_framework.constants_limits import GlobalConfig
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes

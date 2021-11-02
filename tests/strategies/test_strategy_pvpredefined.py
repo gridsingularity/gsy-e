@@ -31,7 +31,7 @@ from gsy_framework.utils import generate_market_slot_list
 from pendulum import DateTime, duration, today, datetime
 
 from d3a.constants import TIME_ZONE, TIME_FORMAT
-from d3a.d3a_core.util import (d3a_path, change_global_config)
+from d3a.gsy_e_core.util import (d3a_path, change_global_config)
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 

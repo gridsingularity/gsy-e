@@ -1,8 +1,8 @@
 from threading import Lock
 import logging
 import traceback
-from d3a.d3a_core.area_serializer import area_from_dict
-from d3a.d3a_core.exceptions import GSyException
+from d3a.gsy_e_core.area_serializer import area_from_dict
+from d3a.gsy_e_core.exceptions import GSyException
 from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy

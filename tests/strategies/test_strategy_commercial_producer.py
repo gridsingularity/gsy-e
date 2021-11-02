@@ -23,10 +23,10 @@ from uuid import uuid4
 from gsy_framework.data_classes import Offer, Trade, BalancingOffer
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.area import DEFAULT_CONFIG
-from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.gsy_e_core.device_registry import DeviceRegistry
 from gsy_framework.constants_limits import ConstSettings
 from d3a.constants import TIME_ZONE, TIME_FORMAT
-from d3a.d3a_core.util import change_global_config
+from d3a.gsy_e_core.util import change_global_config
 
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 

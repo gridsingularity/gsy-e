@@ -24,7 +24,7 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
 from pendulum import duration, DateTime
 
-from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a.gsy_e_core.util import get_market_maker_rate_from_config
 from d3a.models.strategy.external_strategies import (
     ExternalMixin, IncomingRequest, ExternalStrategyConnectionManager, default_market_info)
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy

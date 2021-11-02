@@ -30,8 +30,8 @@ from numpy.random import random
 from pendulum import DateTime
 
 from d3a.constants import FLOATING_POINT_TOLERANCE, DATE_TIME_FORMAT
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
+from d3a.gsy_e_core.device_registry import DeviceRegistry
+from d3a.gsy_e_core.util import add_or_create_key, subtract_or_create_key
 from d3a.models.market.grid_fees.base_model import GridFees
 from d3a.models.market.grid_fees.constant_grid_fees import ConstantGridFees
 from d3a.models.market.market_redis_connection import (

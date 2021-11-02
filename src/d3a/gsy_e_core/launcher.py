@@ -26,7 +26,7 @@ from subprocess import Popen
 from time import sleep
 import platform
 from gsy_framework.utils import check_redis_health
-from d3a.d3a_core.util import get_simulation_queue_name
+from d3a.gsy_e_core.util import get_simulation_queue_name
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 MAX_JOBS = os.environ.get('D3A_MAX_JOBS_PER_POD', 2)
@@ -41,7 +41,7 @@ class Launcher:
         python_executable = sys.executable \
             if platform.python_implementation() != "PyPy" \
             else "pypy3"
-        self.command = [python_executable, 'src/d3a/d3a_core/d3a_jobs.py']
+        self.command = [python_executable, 'src/d3a/gsy_e_core/d3a_jobs.py']
         self.job_array = []
 
     def run(self):

@@ -12,8 +12,8 @@ from gsy_framework.matching_algorithms import (
 )
 from pendulum import now
 
-from d3a.d3a_core.blockchain_interface import NonBlockchainInterface
-from d3a.d3a_core.exceptions import (
+from d3a.gsy_e_core.blockchain_interface import NonBlockchainInterface
+from d3a.gsy_e_core.exceptions import (
     BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade, MarketException)
 from d3a.events import MarketEvent
 from d3a.models.market import Bid, Offer

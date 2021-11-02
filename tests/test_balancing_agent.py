@@ -20,7 +20,7 @@ from uuid import uuid4
 
 import pendulum
 from d3a.constants import TIME_ZONE
-from d3a.d3a_core.exceptions import InvalidBalancingTradeException
+from d3a.gsy_e_core.exceptions import InvalidBalancingTradeException
 from gsy_framework.data_classes import BalancingOffer, BalancingTrade, Offer, Trade
 from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
 from gsy_framework.constants_limits import ConstSettings

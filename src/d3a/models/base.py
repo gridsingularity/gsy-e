@@ -20,8 +20,8 @@ from typing import Dict, Optional, TYPE_CHECKING
 
 from cached_property import cached_property
 
-from d3a.d3a_core.exceptions import GSyException
-from d3a.d3a_core.util import TaggedLogWrapper
+from d3a.gsy_e_core.exceptions import GSyException
+from d3a.gsy_e_core.util import TaggedLogWrapper
 
 log = getLogger(__name__)
 

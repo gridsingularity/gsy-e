@@ -15,8 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.d3a_core.user_profile_handler import ProfilesHandler
-from d3a.d3a_core.global_stats import ExternalConnectionGlobalStatistics
+from d3a.gsy_e_core.user_profile_handler import ProfilesHandler
+from d3a.gsy_e_core.global_stats import ExternalConnectionGlobalStatistics
 
 
 class GlobalObjects:

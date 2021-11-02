@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from logging import getLogger
 
 from gsy_framework.exceptions import GSyException
-from d3a.d3a_core.util import retry_function
+from d3a.gsy_e_core.util import retry_function
 
 log = getLogger(__name__)
 

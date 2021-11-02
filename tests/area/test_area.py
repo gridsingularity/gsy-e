@@ -24,7 +24,7 @@ from parameterized import parameterized
 from pendulum import duration, today
 
 from d3a import constants
-from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.gsy_e_core.device_registry import DeviceRegistry
 from d3a.events.event_structures import AreaEvent, MarketEvent
 from d3a.models.area import Area, check_area_name_exists_in_parent_area
 from d3a.models.area.event_dispatcher import AreaDispatcher

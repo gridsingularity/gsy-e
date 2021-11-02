@@ -29,9 +29,9 @@ from gsy_framework.utils import (convert_str_to_pendulum_in_dict,
 from pendulum import DateTime
 
 import d3a.constants
-from d3a.d3a_core.global_objects_singleton import global_objects
+from d3a.gsy_e_core.global_objects_singleton import global_objects
 from d3a.models.market import Market
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import (
+from d3a.gsy_e_core.redis_connections.redis_area_market_communicator import (
     ResettableCommunicator, ExternalConnectionCommunicator)
 if TYPE_CHECKING:
     from d3a.models.area import Area
