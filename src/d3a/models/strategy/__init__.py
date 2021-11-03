@@ -41,6 +41,7 @@ from d3a.events import EventMixin
 from d3a.events.event_structures import AreaEvent, MarketEvent
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
+from d3a.models.strategy.settlement.strategy import SettlementMarketStrategyInterface
 
 log = getLogger(__name__)
 
@@ -451,8 +452,12 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         self._allowed_disable_events = [AreaEvent.ACTIVATE, MarketEvent.OFFER_TRADED]
         self.event_responses = []
         self._market_adapter = market_strategy_connection_adapter_factory()
+        self._settlement_market_strategy = self._create_settlement_market_strategy()
 
     parameters = None
+
+    def _create_settlement_market_strategy(self):
+        return SettlementMarketStrategyInterface()
 
     def energy_traded(self, market_id: str, time_slot: DateTime = None) -> float:
         """Get the traded energy on the market"""
