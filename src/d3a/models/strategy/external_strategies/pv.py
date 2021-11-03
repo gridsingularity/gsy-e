@@ -191,6 +191,7 @@ class PVExternalMixin(ExternalMixin):
     @property
     def _device_info_dict(self):
         return {
+            **super()._device_info_dict,
             "available_energy_kWh":
                 self.state.get_available_energy_kWh(self.spot_market.time_slot),
             "energy_active_in_offers": self.offers.open_offer_energy(self.spot_market.id),

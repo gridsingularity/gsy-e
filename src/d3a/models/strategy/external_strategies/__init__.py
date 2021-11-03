@@ -24,15 +24,15 @@ from typing import Dict, TYPE_CHECKING
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.data_classes import Trade
 from d3a_interface.enums import SpotMarketTypeEnum
-from d3a_interface.utils import (convert_str_to_pendulum_in_dict,
-                                 str_to_pendulum_datetime)
+from d3a_interface.utils import (convert_str_to_pendulum_in_dict, str_to_pendulum_datetime)
 from pendulum import DateTime
 
 import d3a.constants
 from d3a.d3a_core.global_objects_singleton import global_objects
-from d3a.models.market import Market
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import (
     ResettableCommunicator, ExternalConnectionCommunicator)
+from d3a.models.market import Market
+
 if TYPE_CHECKING:
     from d3a.models.area import Area
 
@@ -306,7 +306,9 @@ class ExternalMixin:
     @property
     def _device_info_dict(self) -> Dict:
         """Return the asset info."""
-        return {}
+        return {
+            **self._settlement_market_strategy.get_unsettled_deviation_dict(self)
+        }
 
     @property
     def _progress_info(self) -> Dict:
@@ -639,5 +641,6 @@ class ExternalMixin:
                     if self.area.current_market else None,
                     "total_cost": self.energy_traded_costs(self.area.current_market.id)
                     if self.area.current_market else None},
-                "asset_bill": self.device.stats.aggregated_stats.get("bills")
+                "asset_bill": self.device.stats.aggregated_stats.get("bills"),
+
                 }

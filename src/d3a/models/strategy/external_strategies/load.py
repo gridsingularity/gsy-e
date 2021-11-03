@@ -200,6 +200,7 @@ class LoadExternalMixin(ExternalMixin):
     def _device_info_dict(self) -> Dict:
         """Return the asset info."""
         return {
+            **super()._device_info_dict,
             "energy_requirement_kWh":
                 self.state.get_energy_requirement_Wh(self.spot_market.time_slot) / 1000.0,
             "energy_active_in_bids": self.posted_bid_energy(self.spot_market.id),
