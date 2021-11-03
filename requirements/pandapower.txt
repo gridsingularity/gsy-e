@@ -6,6 +6,10 @@
 #
 -e git+https://github.com/faizan2590/gsy-framework@feature/D3ASIM-3669#egg=gsy_framework
     # via -r requirements/dev.txt
+astroid==2.8.4
+    # via
+    #   -r requirements/dev.txt
+    #   pylint
 attrs==21.2.0
     # via
     #   -r requirements/dev.txt
@@ -100,6 +104,10 @@ idna==2.10
     #   -r requirements/dev.txt
     #   gsy-framework
     #   requests
+isort==5.10.0
+    # via
+    #   -r requirements/dev.txt
+    #   pylint
 jsonschema==4.1.2
     # via
     #   -r requirements/dev.txt
@@ -110,6 +118,10 @@ kafka-python==2.0.2
     #   gsy-framework
 kiwisolver==1.3.2
     # via matplotlib
+lazy-object-proxy==1.6.0
+    # via
+    #   -r requirements/dev.txt
+    #   astroid
 matplotlib==3.4.0
     # via -r requirements/pandapower.in
 mccabe==0.6.1
@@ -117,6 +129,7 @@ mccabe==0.6.1
     #   -r requirements/dev.txt
     #   flake8
     #   gsy-framework
+    #   pylint
 networkx==2.6.3
     # via pandapower
 nodeenv==1.6.0
@@ -157,6 +170,7 @@ platformdirs==2.4.0
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
+    #   pylint
     #   virtualenv
 plotly==5.3.1
     # via -r requirements/dev.txt
@@ -192,6 +206,8 @@ pyflakes==2.1.1
     #   -r requirements/dev.txt
     #   flake8
     #   gsy-framework
+pylint==2.11.1
+    # via -r requirements/dev.txt
 pynacl==1.4.0
     # via
     #   -r requirements/dev.txt
@@ -275,11 +291,17 @@ toml==0.10.2
     #   -r requirements/dev.txt
     #   gsy-framework
     #   pre-commit
+    #   pylint
     #   tox
 tox==3.24.4
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
+typing-extensions==3.10.0.2
+    # via
+    #   -r requirements/dev.txt
+    #   astroid
+    #   pylint
 unidecode==0.4.21
     # via
     #   -r requirements/dev.txt
@@ -299,7 +321,14 @@ websockets==10.0
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
+wrapt==1.13.3
+    # via
+    #   -r requirements/dev.txt
+    #   astroid
 xlrd==2.0.1
     # via pandapower
 xlsxwriter==3.0.2
     # via pandapower
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools

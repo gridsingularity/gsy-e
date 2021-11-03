@@ -6,6 +6,8 @@
 #
 -e git+https://github.com/faizan2590/gsy-framework@feature/D3ASIM-3669#egg=gsy_framework
     # via -r requirements/base.txt
+astroid==2.8.4
+    # via pylint
 attrs==21.2.0
     # via
     #   -r requirements/base.txt
@@ -90,6 +92,8 @@ idna==2.10
     #   -r requirements/base.txt
     #   gsy-framework
     #   requests
+isort==5.10.0
+    # via pylint
 jsonschema==4.1.2
     # via
     #   -r requirements/base.txt
@@ -98,11 +102,14 @@ kafka-python==2.0.2
     # via
     #   -r requirements/base.txt
     #   gsy-framework
+lazy-object-proxy==1.6.0
+    # via astroid
 mccabe==0.6.1
     # via
     #   -r requirements/base.txt
     #   flake8
     #   gsy-framework
+    #   pylint
 nodeenv==1.6.0
     # via
     #   -r requirements/base.txt
@@ -125,6 +132,7 @@ platformdirs==2.4.0
     # via
     #   -r requirements/base.txt
     #   gsy-framework
+    #   pylint
     #   virtualenv
 plotly==5.3.1
     # via -r requirements/base.txt
@@ -138,6 +146,7 @@ pony==0.7.14
 pre-commit==2.15.0
     # via
     #   -r requirements/base.txt
+    #   -r requirements/dev.in
     #   gsy-framework
 psutil==5.8.0
     # via -r requirements/dev.in
@@ -158,6 +167,8 @@ pyflakes==2.1.1
     #   -r requirements/base.txt
     #   flake8
     #   gsy-framework
+pylint==2.11.1
+    # via -r requirements/dev.in
 pynacl==1.4.0
     # via paramiko
 pyparsing==2.4.7
@@ -233,11 +244,16 @@ toml==0.10.2
     #   -r requirements/base.txt
     #   gsy-framework
     #   pre-commit
+    #   pylint
     #   tox
 tox==3.24.4
     # via
     #   -r requirements/base.txt
     #   gsy-framework
+typing-extensions==3.10.0.2
+    # via
+    #   astroid
+    #   pylint
 unidecode==0.4.21
     # via
     #   -r requirements/base.txt
@@ -257,3 +273,8 @@ websockets==10.0
     # via
     #   -r requirements/base.txt
     #   gsy-framework
+wrapt==1.13.3
+    # via astroid
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools
