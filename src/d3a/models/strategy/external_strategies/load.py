@@ -209,13 +209,13 @@ class LoadExternalMixin(ExternalMixin):
 
     def event_market_cycle(self) -> None:
         """Handler for the market cycle event."""
-
         self._reject_all_pending_requests()
         self._update_connection_status()
         if not self.should_use_default_strategy:
             self.add_entry_in_hrs_per_day()
             self._calculate_active_markets()
             self._update_energy_requirement_future_markets()
+            self._set_energy_measurement_of_last_market()
             if not self.is_aggregator_controlled:
                 market_event_channel = f"{self.channel_prefix}/events/market"
                 market_info = self.spot_market.info
@@ -472,3 +472,6 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
 
     def _read_or_rotate_profiles(self, reconfigure=False):
         """Overridden with empty implementation to disable reading profile from DB."""
+
+    def _set_energy_measurement_of_last_market(self):
+        pass

@@ -203,6 +203,7 @@ class PVExternalMixin(ExternalMixin):
         self._update_connection_status()
         if not self.should_use_default_strategy:
             self.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
+            self._set_energy_measurement_of_last_market()
             if not self.is_aggregator_controlled:
                 market_event_channel = f"{self.channel_prefix}/events/market"
                 market_info = self.spot_market.info
@@ -462,3 +463,6 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
 
     def _read_or_rotate_profiles(self, reconfigure=False) -> None:
         """Overridden with empty implementation to disable reading profile from DB."""
+
+    def _set_energy_measurement_of_last_market(self):
+        pass
