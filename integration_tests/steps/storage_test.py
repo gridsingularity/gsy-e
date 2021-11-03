@@ -42,30 +42,44 @@ def check_storage_prices(context):
 
 @then('the storage devices buy and sell energy respecting the hourly break even prices')
 def step_impl(context):
-    from d3a.setup.strategy_tests.storage_strategy_break_even_hourly import \
-        final_buying_rate_profile, final_selling_rate_profile, final_buying_rate_profile_2, \
-        final_selling_rate_profile_2
+    from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+    from d3a.setup.strategy_tests.storage_strategy_break_even_hourly import (
+        final_buying_rate_profile, final_selling_rate_profile, final_buying_rate_profile_2,
+        final_selling_rate_profile_2)
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
+
+    final_buying_rate_storage1 = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                        final_buying_rate_profile)
+    final_selling_rate_storage1 = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                         final_selling_rate_profile)
+    final_buying_rate_storage2 = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                        final_buying_rate_profile_2)
+    final_selling_rate_storage2 = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                         final_selling_rate_profile_2)
+    start_time_stamp = next(iter(final_buying_rate_storage1.keys()))
     for name, final_buying_rate, final_selling_rate in \
-            [("H1 Storage1", final_buying_rate_profile, final_selling_rate_profile),
-             ("H1 Storage2", final_buying_rate_profile_2, final_selling_rate_profile_2)]:
+            [("H1 Storage1", final_buying_rate_storage1, final_selling_rate_storage1),
+             ("H1 Storage2", final_buying_rate_storage2, final_selling_rate_storage2)]:
         trades_sold = []
         trades_bought = []
         for market in house1.past_markets:
-            slot = market.time_slot
             for trade in market.trades:
-                if slot.hour in final_selling_rate.keys() and trade.seller == name:
+                if trade.seller == name:
                     trades_sold.append(trade)
-                elif slot.hour in final_buying_rate.keys() and trade.buyer == name:
+                elif trade.buyer == name:
                     trades_bought.append(trade)
 
-        assert all([round(trade.offer_bid.energy_rate, 2) >=
-                    round(final_selling_rate[trade.creation_time.hour], 2)
-                    for trade in trades_sold])
-        assert all([round(trade.offer_bid.energy_rate, 2) <=
-                    round(final_buying_rate[trade.creation_time.hour], 2)
-                    for trade in trades_bought])
         assert len(trades_sold) > 0
+        assert len(trades_bought) > 0
+        for trade in trades_sold:
+            expected_time_stamp = start_time_stamp.add(hours=trade.creation_time.hour)
+            assert (round(trade.offer_bid.energy_rate, 2) >=
+                    round(final_selling_rate[expected_time_stamp], 2))
+
+        for trade in trades_bought:
+            expected_time_stamp = start_time_stamp.add(hours=trade.creation_time.hour)
+            assert (round(trade.offer_bid.energy_rate, 2) <=
+                    round(final_buying_rate[expected_time_stamp], 2))
 
 
 @then('the storage devices sell energy respecting the break even prices')
