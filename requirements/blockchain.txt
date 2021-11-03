@@ -8,13 +8,7 @@
     # via -r requirements/blockchain.in
 -e git+https://github.com/gridsingularity/d3a-interface@master#egg=d3a_interface
     # via -r requirements/base.txt
-appdirs==1.4.4
-    # via
-    #   -r requirements/base.txt
-    #   d3a-blockchain
-    #   d3a-interface
-    #   virtualenv
-attrs==20.3.0
+attrs==21.2.0
     # via
     #   -r requirements/base.txt
     #   d3a-blockchain
@@ -22,6 +16,12 @@ attrs==20.3.0
     #   jsonschema
 awesome-slugify==1.6.5
     # via -r requirements/base.txt
+backports.entry-points-selectable==1.1.0
+    # via
+    #   -r requirements/base.txt
+    #   d3a-blockchain
+    #   d3a-interface
+    #   virtualenv
 base58==2.0.1
     # via
     #   d3a-blockchain
@@ -29,20 +29,26 @@ base58==2.0.1
     #   substrate-interface
 cached-property==1.5.2
     # via -r requirements/base.txt
-certifi==2020.12.5
+certifi==2021.10.8
     # via
     #   -r requirements/base.txt
     #   d3a-blockchain
     #   d3a-interface
     #   requests
     #   substrate-interface
-chardet==3.0.4
+cfgv==3.3.1
+    # via
+    #   -r requirements/base.txt
+    #   d3a-blockchain
+    #   d3a-interface
+    #   pre-commit
+chardet==4.0.0
     # via
     #   -r requirements/base.txt
     #   d3a-blockchain
     #   d3a-interface
     #   requests
-click==7.1.2
+click==8.0.3
     # via
     #   -r requirements/base.txt
     #   click-default-group
@@ -51,19 +57,42 @@ click-default-group==1.2.2
     # via -r requirements/base.txt
 colorlog==4.7.2
     # via -r requirements/base.txt
-distlib==0.3.1
+distlib==0.3.3
     # via
     #   -r requirements/base.txt
     #   d3a-blockchain
     #   d3a-interface
     #   virtualenv
-filelock==3.0.12
+entrypoints==0.3
+    # via
+    #   -r requirements/base.txt
+    #   d3a-blockchain
+    #   d3a-interface
+    #   flake8
+filelock==3.3.2
     # via
     #   -r requirements/base.txt
     #   d3a-blockchain
     #   d3a-interface
     #   tox
     #   virtualenv
+flake8==3.7.9
+    # via
+    #   -r requirements/base.txt
+    #   d3a-blockchain
+    #   d3a-interface
+    #   flake8-tuple
+flake8-tuple==0.4.1
+    # via
+    #   -r requirements/base.txt
+    #   d3a-blockchain
+    #   d3a-interface
+identify==2.3.3
+    # via
+    #   -r requirements/base.txt
+    #   d3a-blockchain
+    #   d3a-interface
+    #   pre-commit
 idna==2.10
     # via
     #   -r requirements/base.txt
@@ -71,7 +100,7 @@ idna==2.10
     #   d3a-interface
     #   requests
     #   substrate-interface
-jsonschema==3.2.0
+jsonschema==4.1.2
     # via
     #   -r requirements/base.txt
     #   d3a-blockchain
@@ -81,13 +110,25 @@ kafka-python==2.0.2
     #   -r requirements/base.txt
     #   d3a-blockchain
     #   d3a-interface
+mccabe==0.6.1
+    # via
+    #   -r requirements/base.txt
+    #   d3a-blockchain
+    #   d3a-interface
+    #   flake8
 more-itertools==8.8.0
     # via
     #   d3a-blockchain
     #   scalecodec
+nodeenv==1.6.0
+    # via
+    #   -r requirements/base.txt
+    #   d3a-blockchain
+    #   d3a-interface
+    #   pre-commit
 numpy==1.20.3
     # via -r requirements/base.txt
-packaging==20.7
+packaging==21.2
     # via
     #   -r requirements/base.txt
     #   d3a-blockchain
@@ -98,9 +139,15 @@ pendulum==2.1.2
     #   -r requirements/base.txt
     #   d3a-blockchain
     #   d3a-interface
-plotly==5.2.1
+platformdirs==2.4.0
+    # via
+    #   -r requirements/base.txt
+    #   d3a-blockchain
+    #   d3a-interface
+    #   virtualenv
+plotly==5.3.1
     # via -r requirements/base.txt
-pluggy==0.13.1
+pluggy==1.0.0
     # via
     #   -r requirements/base.txt
     #   d3a-blockchain
@@ -108,7 +155,12 @@ pluggy==0.13.1
     #   tox
 pony==0.7.14
     # via -r requirements/base.txt
-py==1.9.0
+pre-commit==2.15.0
+    # via
+    #   -r requirements/base.txt
+    #   d3a-blockchain
+    #   d3a-interface
+py==1.10.0
     # via
     #   -r requirements/base.txt
     #   d3a-blockchain
@@ -126,19 +178,31 @@ py-sr25519-bindings==0.1.3
     # via
     #   d3a-blockchain
     #   substrate-interface
+pycodestyle==2.5.0
+    # via
+    #   -r requirements/base.txt
+    #   d3a-blockchain
+    #   d3a-interface
+    #   flake8
+pyflakes==2.1.1
+    # via
+    #   -r requirements/base.txt
+    #   d3a-blockchain
+    #   d3a-interface
+    #   flake8
 pyparsing==2.4.7
     # via
     #   -r requirements/base.txt
     #   d3a-blockchain
     #   d3a-interface
     #   packaging
-pyrsistent==0.17.3
+pyrsistent==0.18.0
     # via
     #   -r requirements/base.txt
     #   d3a-blockchain
     #   d3a-interface
     #   jsonschema
-python-dateutil==2.8.1
+python-dateutil==2.8.2
     # via
     #   -r requirements/base.txt
     #   d3a-blockchain
@@ -146,7 +210,7 @@ python-dateutil==2.8.1
     #   pendulum
 python-rex==0.4
     # via -r requirements/base.txt
-pytz==2021.1
+pytz==2021.3
     # via -r requirements/base.txt
 pytzdata==2020.1
     # via
@@ -154,13 +218,19 @@ pytzdata==2020.1
     #   d3a-blockchain
     #   d3a-interface
     #   pendulum
+pyyaml==6.0
+    # via
+    #   -r requirements/base.txt
+    #   d3a-blockchain
+    #   d3a-interface
+    #   pre-commit
 redis==3.5.3
     # via
     #   -r requirements/base.txt
     #   d3a-blockchain
     #   d3a-interface
     #   rq
-regex==2021.8.3
+regex==2021.10.23
     # via
     #   -r requirements/base.txt
     #   awesome-slugify
@@ -171,18 +241,18 @@ requests==2.25.1
     #   d3a-interface
     #   scalecodec
     #   substrate-interface
-rq==1.9.0
+rq==1.10.0
     # via -r requirements/base.txt
 scalecodec==0.11.16
     # via
     #   d3a-blockchain
     #   substrate-interface
-six==1.15.0
+six==1.16.0
     # via
     #   -r requirements/base.txt
     #   d3a-blockchain
     #   d3a-interface
-    #   jsonschema
+    #   flake8-tuple
     #   plotly
     #   python-dateutil
     #   python-rex
@@ -193,6 +263,11 @@ sortedcontainers==2.4.0
     # via -r requirements/base.txt
 substrate-interface==0.13.9
     # via d3a-blockchain
+tabulate==0.8.9
+    # via
+    #   -r requirements/base.txt
+    #   d3a-blockchain
+    #   d3a-interface
 tenacity==8.0.1
     # via
     #   -r requirements/base.txt
@@ -202,8 +277,9 @@ toml==0.10.2
     #   -r requirements/base.txt
     #   d3a-blockchain
     #   d3a-interface
+    #   pre-commit
     #   tox
-tox==3.20.1
+tox==3.24.4
     # via
     #   -r requirements/base.txt
     #   d3a-blockchain
@@ -212,23 +288,24 @@ unidecode==0.4.21
     # via
     #   -r requirements/base.txt
     #   awesome-slugify
-urllib3==1.26.4
+urllib3==1.26.7
     # via
     #   -r requirements/base.txt
     #   d3a-blockchain
     #   d3a-interface
     #   requests
-virtualenv==20.2.2
+virtualenv==20.10.0
     # via
     #   -r requirements/base.txt
     #   d3a-blockchain
     #   d3a-interface
+    #   pre-commit
     #   tox
 websocket-client==0.58.0
     # via
     #   d3a-blockchain
     #   substrate-interface
-websockets==8.1
+websockets==10.0
     # via
     #   -r requirements/base.txt
     #   d3a-blockchain
@@ -237,6 +314,3 @@ xxhash==2.0.2
     # via
     #   d3a-blockchain
     #   substrate-interface
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
