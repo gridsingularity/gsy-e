@@ -31,7 +31,7 @@ setup(
     description="decentralised energy exchange developed by Grid Singularity",
     long_description=README,
     author="GridSingularity",
-    author_email="gsy_e@gridsingularity.com",
+    author_email="d3a@gridsingularity.com",
     url="https://github.com/faizan2590/gsy-e",
     version=VERSION,
     packages=find_packages(where="src", exclude=["tests"]),
@@ -40,7 +40,7 @@ setup(
     install_requires=REQUIREMENTS,
     entry_points={
         "console_scripts": [
-            "gsy_e = gsy_e.gsy_e_core.cli:main",
+            "gsy-e = gsy_e.gsy_e_core.cli:main",
         ]
     },
     zip_safe=False,

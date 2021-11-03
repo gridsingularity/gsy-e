@@ -277,7 +277,7 @@ def running_the_simulation(context):
 def run_sim_console(context, scenario, hours):
     context.export_path = os.path.join(context.simdir, scenario)
     os.makedirs(context.export_path, exist_ok=True)
-    os.system("gsy_e -l FATAL run -d {hours}h -t 60s -s 60m --setup={scenario} "
+    os.system("gsy-e -l FATAL run -d {hours}h -t 60s -s 60m --setup={scenario} "
               "--export-path={export_path}"
               .format(export_path=context.export_path, scenario=scenario, hours=hours))
 
@@ -287,7 +287,7 @@ def run_sim_console(context, scenario, hours):
 def run_sim_console_decreased_tick_slot_length(context, scenario, hours, slot_length, tick_length):
     context.export_path = os.path.join(context.simdir, scenario)
     os.makedirs(context.export_path, exist_ok=True)
-    os.system(f"gsy_e -l FATAL run -d {hours}h -t {tick_length}s -s {slot_length}m "
+    os.system(f"gsy-e -l FATAL run -d {hours}h -t {tick_length}s -s {slot_length}m "
               f"--seed 0 --setup={scenario} --export-path={context.export_path}")
 
 
@@ -295,7 +295,7 @@ def run_sim_console_decreased_tick_slot_length(context, scenario, hours, slot_le
 def run_sim_console_alt_price(context, scenario):
     context.export_path = os.path.join(context.simdir, scenario)
     os.makedirs(context.export_path, exist_ok=True)
-    os.system("gsy_e -l FATAL run -d 2h -t 15s --setup={scenario} --export-path={export_path} "
+    os.system("gsy-e -l FATAL run -d 2h -t 15s --setup={scenario} --export-path={export_path} "
               "--compare-alt-pricing".format(export_path=context.export_path, scenario=scenario))
 
 
@@ -337,7 +337,7 @@ def run_sim_with_config_setting(context, cloud_coverage, scenario):
 def run_d3a_with_settings_file(context):
     context.export_path = os.path.join(context.simdir, "default")
     os.makedirs(context.export_path, exist_ok=True)
-    os.system("gsy_e -l FATAL run -g {settings_file} --export-path={export_path} "
+    os.system("gsy-e -l FATAL run -g {settings_file} --export-path={export_path} "
               "--setup default_2a".format(export_path=context.export_path,
                                           settings_file=os.path.join(d3a_path, "setup",
                                                                      "gsy_e-settings.json")))
