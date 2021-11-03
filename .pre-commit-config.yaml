@@ -17,7 +17,11 @@ repos:
     hooks:
     - id: flake8
       additional_dependencies: ["flake8-tuple"]
--   repo: https://github.com/PyCQA/pylint
-    rev: v2.11.1
+-   repo: local
     hooks:
     - id: pylint
+      name: pylint
+      entry: pylint
+      language: system
+      types: [python]
+      description: "Use local Pylint to be able to follow imports of local dependencies"
