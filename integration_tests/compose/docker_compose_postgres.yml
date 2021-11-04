@@ -1,3 +1,4 @@
+services:
   postgres:
     container_name: profiles_postgres_db
     build: postgres
