@@ -246,8 +246,7 @@ class AreaDispatcher:
         if market_type == AvailableMarketTypes.BALANCING:
             return BalancingAgent(**agent_constructor_arguments)
         if market_type == AvailableMarketTypes.FUTURE:
-            return FutureAgent(**agent_constructor_arguments,
-                               min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE)
+            return FutureAgent(**agent_constructor_arguments)
 
         assert False, f"Market type not supported {market_type}"
 

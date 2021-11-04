@@ -21,6 +21,7 @@ import sys
 from abc import ABC
 from dataclasses import dataclass
 from logging import getLogger
+from math import isclose
 from typing import List, Dict, Union, Optional, Generator, Callable, TYPE_CHECKING
 from uuid import uuid4
 
@@ -647,7 +648,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
 
         for offer, iterated_market_id in self.offers.open.items():
             updated_price = round(offer.energy * updated_rate, 10)
-            if offer.price == updated_price:
+            if isclose(offer.price, updated_price, rel_tol=1e-03):
                 continue
             iterated_market = self.get_market_from_id(iterated_market_id)
             # Skip offers that don't belong to the specified market slot
