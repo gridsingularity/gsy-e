@@ -17,18 +17,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import logging
-from collections import deque
-from typing import Dict, List, Union
+from typing import Dict, List, Union, TYPE_CHECKING, Callable
 
 from d3a_interface.constants_limits import ConstSettings
 from pendulum import duration
 
 from d3a.d3a_core.util import get_market_maker_rate_from_config
-from d3a.models.market import Market
 from d3a.models.strategy.external_strategies import (
     ExternalMixin, IncomingRequest, default_market_info, ExternalStrategyConnectionManager)
+from d3a.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
+
+if TYPE_CHECKING:
+    from d3a.models.state import LoadState
+    from d3a.models.market.two_sided import TwoSidedMarket
 
 
 class LoadExternalMixin(ExternalMixin):
@@ -36,6 +39,17 @@ class LoadExternalMixin(ExternalMixin):
     Mixin for enabling an external api for the load strategies.
     Should always be inherited together with a superclass of LoadHoursStrategy.
     """
+
+    state: "LoadState"
+    is_bid_posted: Callable
+    can_bid_be_posted: Callable
+    remove_bid_from_pending: Callable
+    post_bid: Callable
+    add_entry_in_hrs_per_day: Callable
+    posted_bid_energy: Callable
+    _delete_past_state: Callable
+    _calculate_active_markets: Callable
+    _update_energy_requirement_future_markets: Callable
 
     @property
     def channel_dict(self) -> Dict:
@@ -46,7 +60,7 @@ class LoadExternalMixin(ExternalMixin):
                 f"{self.channel_prefix}/list_bids": self.list_bids,
                 }
 
-    def filtered_market_bids(self, market: Market) -> List[Dict]:
+    def filtered_market_bids(self, market: "TwoSidedMarket") -> List[Dict]:
         """
         Get a representation of each of the asset's bids from the market.
         Args:
@@ -363,7 +377,7 @@ class LoadProfileExternalStrategy(LoadExternalMixin, DefinedLoadStrategy):
     pass
 
 
-class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
+class LoadForecastExternalStrategy(ForecastExternalMixin, LoadProfileExternalStrategy):
     """
         Strategy responsible for reading forecast and measurement consumption data via hardware API
     """
@@ -396,62 +410,6 @@ class LoadForecastExternalStrategy(LoadProfileExternalStrategy):
                          initial_buying_rate=initial_buying_rate,
                          balancing_energy_ratio=balancing_energy_ratio,
                          use_market_maker_rate=use_market_maker_rate)
-
-        # Buffers for energy forecast and measurement values,
-        # that have been sent by the d3a-api-client in the duration of one market slot
-        self.energy_forecast_buffer = {}  # Dict[DateTime, float]
-        self.energy_measurement_buffer = {}  # Dict[DateTime, float]
-
-    @property
-    def channel_dict(self):
-        """Extend channel_dict property with forecast related channels."""
-        return {**super().channel_dict,
-                f"{self.channel_prefix}/set_energy_forecast": self._set_energy_forecast,
-                f"{self.channel_prefix}/set_energy_measurement": self._set_energy_measurement}
-
-    def event_tick(self):
-        """Set the energy forecast using pending requests. Extends super implementation.
-
-        This method is triggered by the TICK event.
-        """
-        # Need to repeat he pending request parsing in order to handle power forecasts
-        # from the MQTT subscriber (non-connected admin)
-        for req in self.pending_requests:
-            if req.request_type == "set_energy_forecast":
-                self._set_energy_forecast_impl(req.arguments, req.response_channel)
-            elif req.request_type == "set_energy_measurement":
-                self._set_energy_measurement_impl(req.arguments, req.response_channel)
-
-        self.pending_requests = deque(
-            req for req in self.pending_requests
-            if req.request_type not in ["set_energy_forecast", "set_energy_measurement"])
-
-        super().event_tick()
-
-    def _incoming_commands_callback_selection(self, req):
-        """Map commands to callbacks for forecast and measurement reading."""
-        if req.request_type == "set_energy_forecast":
-            self._set_energy_forecast_impl(req.arguments, req.response_channel)
-        elif req.request_type == "set_energy_measurement":
-            self._set_energy_measurement_impl(req.arguments, req.response_channel)
-        else:
-            super()._incoming_commands_callback_selection(req)
-
-    def event_market_cycle(self):
-        """Update forecast and measurement in state by reading from buffers."""
-        self.update_energy_forecast()
-        self.update_energy_measurement()
-        self._clear_energy_buffers()
-        super().event_market_cycle()
-
-    def event_activate_energy(self):
-        """This strategy does not need to initiate energy values as they are sent via the API."""
-        self._clear_energy_buffers()
-
-    def _clear_energy_buffers(self):
-        """Clear forecast and measurement buffers."""
-        self.energy_forecast_buffer = {}
-        self.energy_measurement_buffer = {}
 
     def update_energy_forecast(self) -> None:
         """Set energy forecast for future markets."""
