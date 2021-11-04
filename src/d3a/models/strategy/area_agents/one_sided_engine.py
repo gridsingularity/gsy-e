@@ -64,10 +64,7 @@ class IAAEngine:
             "seller_id": self.owner.uuid
         }
 
-        if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-            return self.owner.offer(market_id=self.markets.target, offer_args=kwargs)
-        else:
-            return self.markets.target.offer(**kwargs)
+        return self.owner.post_offer(market=self.markets.target, replace_existing=False, **kwargs)
 
     def _forward_offer(self, offer):
         # TODO: This is an ugly solution. After the december release this check needs to
@@ -137,7 +134,7 @@ class IAAEngine:
                 self.owner.log.debug(f"Forwarded offer to {self.markets.source.name} "
                                      f"{self.owner.name}, {self.name} {forwarded_offer}")
 
-    def event_trade(self, *, trade):
+    def event_offer_traded(self, *, trade):
         offer_info = self.forwarded_offers.get(trade.offer_bid.id)
         if not offer_info:
             # Trade doesn't concern us
@@ -163,7 +160,7 @@ class IAAEngine:
                         trade.offer_bid_trade_info, offer_info.source_offer)
 
                 trade_source = self.owner.accept_offer(
-                    market_or_id=self.markets.source,
+                    market=self.markets.source,
                     offer=offer_info.source_offer,
                     energy=trade.offer_bid.energy,
                     buyer=self.owner.name,

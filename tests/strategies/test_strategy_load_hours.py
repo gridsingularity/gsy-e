@@ -26,13 +26,12 @@ import pytest
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.enums import SpotMarketTypeEnum
 from d3a_interface.exceptions import D3ADeviceException
-from parameterized import parameterized
 from pendulum import DateTime, duration, today, now
 
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import d3a_path
-from d3a.models.area import DEFAULT_CONFIG
+from d3a.models.area import DEFAULT_CONFIG, Area
 from d3a_interface.data_classes import Offer, BalancingOffer, Bid, Trade
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
@@ -53,7 +52,7 @@ class FakeArea:
         self.name = 'FakeArea'
         self.uuid = str(uuid4())
 
-        self._next_market = FakeMarket(0)
+        self._spot_market = FakeMarket(0)
         self.current_market = FakeMarket(0)
         self._bids = {}
         self.markets = {TIME: self.current_market,
@@ -63,7 +62,7 @@ class FakeArea:
         self.test_balancing_market_2 = FakeMarket(2)
 
     def get_future_market_from_id(self, id):
-        return self._next_market
+        return self._spot_market
 
     def get_path_to_root_fees(self):
         return 0.
@@ -91,14 +90,14 @@ class FakeArea:
 
     @property
     def balancing_markets(self):
-        return {self._next_market.time_slot: self.test_balancing_market}
+        return {self._spot_market.time_slot: self.test_balancing_market}
 
     def get_balancing_market(self, time):
         return self.test_balancing_market
 
     @property
-    def next_market(self):
-        return self._next_market
+    def spot_market(self):
+        return self._spot_market
 
 
 class FakeMarket:
@@ -115,11 +114,12 @@ class FakeMarket:
 
     def bid(self, price: float, energy: float, buyer: str, original_price=None,
             buyer_origin=None, buyer_origin_id=None, buyer_id=None,
-            attributes=None, requirements=None) -> Bid:
-        bid = Bid(id="bid_id", time=now(), price=price, energy=energy, buyer=buyer,
+            attributes=None, requirements=None, time_slot=None) -> Bid:
+        bid = Bid(id="bid_id", creation_time=now(), price=price, energy=energy, buyer=buyer,
                   original_price=original_price,
                   buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id,
-                  buyer_id=buyer_id, attributes=attributes, requirements=requirements)
+                  buyer_id=buyer_id, attributes=attributes, requirements=requirements,
+                  time_slot=time_slot)
         self.bids[bid.id] = bid
         return bid
 
@@ -397,7 +397,7 @@ def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strat
                                                                 partial):
     ConstSettings.IAASettings.MARKET_TYPE = 2
 
-    trade_market = load_hours_strategy_test5.area.next_market
+    trade_market = load_hours_strategy_test5.area.spot_market
     load_hours_strategy_test5.remove_bid_from_pending = called
     load_hours_strategy_test5.event_activate()
     load_hours_strategy_test5.area.markets = {TIME: trade_market}
@@ -421,7 +421,7 @@ def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_st
                                                                    called):
     ConstSettings.IAASettings.MARKET_TYPE = 2
 
-    trade_market = load_hours_strategy_test5.area.next_market
+    trade_market = load_hours_strategy_test5.area.spot_market
     load_hours_strategy_test5.remove_bid_from_pending = called
     load_hours_strategy_test5.event_activate()
     load_hours_strategy_test5.area.markets = {TIME: trade_market}
@@ -479,12 +479,13 @@ def test_balancing_offers_are_created_if_device_in_registry(
     selected_offer = area_test2.current_market.sorted_offers[0]
     balancing_fixture.state._energy_requirement_Wh[area_test2.current_market.time_slot] = \
         selected_offer.energy * 1000.0
-    balancing_fixture.event_trade(market_id=area_test2.current_market.id,
-                                  trade=Trade(id='id',
-                                              time=area_test2.now,
-                                              offer_bid=selected_offer,
-                                              seller='B',
-                                              buyer='FakeArea'))
+    balancing_fixture.event_offer_traded(market_id=area_test2.current_market.id,
+                                         trade=Trade(id='id',
+                                                     creation_time=area_test2.now,
+                                                     offer_bid=selected_offer,
+                                                     seller='B',
+                                                     buyer='FakeArea')
+                                         )
     assert len(area_test2.test_balancing_market.created_balancing_offers) == 2
     actual_balancing_supply_energy = \
         area_test2.test_balancing_market.created_balancing_offers[1].energy
@@ -497,7 +498,7 @@ def test_balancing_offers_are_created_if_device_in_registry(
     DeviceRegistry.REGISTRY = {}
 
 
-@parameterized.expand([
+@pytest.mark.parametrize("use_mmr, expected_rate", [
     [True, 9, ], [False, 33, ]
 ])
 def test_use_market_maker_rate_parameter_is_respected(use_mmr, expected_rate):
@@ -509,7 +510,7 @@ def test_use_market_maker_rate_parameter_is_respected(use_mmr, expected_rate):
     assert all(v == expected_rate for v in load.bid_update.final_rate.values())
 
 
-@parameterized.expand([
+@pytest.mark.parametrize("use_mmr, expected_rate", [
     [True, 9, ], [False, 33, ]
 ])
 def test_use_market_maker_rate_parameter_is_respected_for_load_profiles(use_mmr, expected_rate):
@@ -574,7 +575,7 @@ def test_assert_if_trade_rate_is_higher_than_bid_rate(load_hours_strategy_test3)
     trade = Trade("trade_id", "time", expensive_bid, load_hours_strategy_test3, "buyer")
 
     with pytest.raises(AssertionError):
-        load_hours_strategy_test3.event_trade(market_id=market_id, trade=trade)
+        load_hours_strategy_test3.event_offer_traded(market_id=market_id, trade=trade)
 
 
 def test_update_state(load_hours_strategy_test1):
@@ -601,3 +602,56 @@ def test_set_energy_measurement_of_last_market(utils_mock, load_hours_strategy_t
     load_hours_strategy_test1._set_energy_measurement_of_last_market()
     load_hours_strategy_test1.state.set_energy_measurement_kWh.assert_called_once_with(
         100, load_hours_strategy_test1.area.current_market.time_slot)
+
+
+@pytest.mark.parametrize("use_mmr, initial_buying_rate", [
+    (True, 40), (False, 40)])
+def test_predefined_load_strategy_rejects_incorrect_rate_parameters(use_mmr, initial_buying_rate):
+    user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
+    load = DefinedLoadStrategy(
+        daily_load_profile=user_profile_path,
+        initial_buying_rate=initial_buying_rate,
+        use_market_maker_rate=use_mmr)
+    load.area = FakeArea()
+    load.owner = load.area
+    with pytest.raises(D3ADeviceException):
+        load.event_activate()
+    with pytest.raises(D3ADeviceException):
+        DefinedLoadStrategy(daily_load_profile=user_profile_path, fit_to_limit=True,
+                            energy_rate_increase_per_update=1)
+    with pytest.raises(D3ADeviceException):
+        DefinedLoadStrategy(daily_load_profile=user_profile_path, fit_to_limit=False,
+                            energy_rate_increase_per_update=-1)
+
+
+@pytest.fixture(name="load_hours_fixture")
+def load_hours_for_settlement_tests(area_test1: Area) -> LoadHoursStrategy:
+    """Return LoadHoursStrategy object for testing of the interaction with settlement market."""
+    orig_market_type = ConstSettings.IAASettings.MARKET_TYPE
+    ConstSettings.IAASettings.MARKET_TYPE = 2
+    load = LoadHoursStrategy(avg_power_W=100)
+    area = FakeArea()
+    load.area = area
+    load.owner = area
+    yield load
+    ConstSettings.IAASettings.MARKET_TYPE = orig_market_type
+
+
+def test_event_bid_traded_calls_settlement_market_event_bid_traded(load_hours_fixture):
+    """Test if _settlement_market_strategy.event_bid_traded was called
+    although no spot market can be found by event_bid_traded."""
+    load_hours_fixture._settlement_market_strategy = Mock()
+    bid = Bid("bid", None, 1, 1, "buyer")
+    trade = Trade('idt', None, bid, 'B', load_hours_fixture.owner.name)
+    load_hours_fixture.event_bid_traded(market_id="not existing", bid_trade=trade)
+    load_hours_fixture._settlement_market_strategy.event_bid_traded.assert_called_once()
+
+
+def test_event_offer_traded_calls_settlement_market_event_offer_traded(load_hours_fixture):
+    """Test if _settlement_market_strategy.event_offer_traded was called
+    although no spot market can be found by event_offer_traded."""
+    load_hours_fixture._settlement_market_strategy = Mock()
+    offer = Offer("oid", None, 1, 1, "seller")
+    trade = Trade('idt', None, offer, 'B', load_hours_fixture.owner.name)
+    load_hours_fixture.event_offer_traded(market_id="not existing", trade=trade)
+    load_hours_fixture._settlement_market_strategy.event_offer_traded.assert_called_once()

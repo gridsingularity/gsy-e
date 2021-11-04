@@ -97,7 +97,7 @@ class TestRedisEventDispatching(unittest.TestCase):
                            (AreaEvent.ACTIVATE, ),
                            (AreaEvent.BALANCING_MARKET_CYCLE, )])
     def tests_broadcast(self, area_event):
-        self.area.dispatcher.broadcast_callback(area_event)
+        self.area.dispatcher.broadcast_notification(area_event)
         for child in self.area.children:
             dispatch_chanel = f"{child.uuid}/area_event"
             send_data = json.dumps({"event_type": area_event.value, "kwargs": {}})
@@ -138,7 +138,7 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
                          children=[self.device1, self.device2])
         self.area.dispatcher.market_event_dispatcher.redis = MagicMock(spec=RedisCommunicator)
         self.area.dispatcher.market_event_dispatcher.child_response_events = {
-            MarketEvent.TRADE.value: MagicMock(spec=Event),
+            MarketEvent.OFFER_TRADED.value: MagicMock(spec=Event),
             MarketEvent.OFFER.value: MagicMock(spec=Event),
             MarketEvent.OFFER_DELETED.value: MagicMock(spec=Event),
             MarketEvent.OFFER_SPLIT.value: MagicMock(spec=Event),
@@ -146,7 +146,7 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
         self.device1.dispatcher.market_event_dispatcher.redis = MagicMock(
             spec=RedisCommunicator)
         self.device1.dispatcher.market_event_dispatcher.child_response_events = {
-            MarketEvent.TRADE.value: MagicMock(spec=Event),
+            MarketEvent.OFFER_TRADED.value: MagicMock(spec=Event),
             MarketEvent.OFFER.value: MagicMock(spec=Event),
             MarketEvent.OFFER_DELETED.value: MagicMock(spec=Event),
             MarketEvent.OFFER_SPLIT.value: MagicMock(spec=Event),
@@ -154,7 +154,7 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
         self.device2.dispatcher.market_event_dispatcher.redis = MagicMock(
             spec=RedisCommunicator)
         self.device2.dispatcher.market_event_dispatcher.child_response_events = {
-            MarketEvent.TRADE.value: MagicMock(spec=Event),
+            MarketEvent.OFFER_TRADED.value: MagicMock(spec=Event),
             MarketEvent.OFFER.value: MagicMock(spec=Event),
             MarketEvent.OFFER_DELETED.value: MagicMock(spec=Event),
             MarketEvent.OFFER_SPLIT.value: MagicMock(spec=Event),
@@ -184,7 +184,7 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
             self.area.dispatcher.market_event_dispatcher.response_callback)
 
     @parameterized.expand([(MarketEvent.OFFER, ),
-                           (MarketEvent.TRADE, ),
+                           (MarketEvent.OFFER_TRADED,),
                            (MarketEvent.OFFER_SPLIT, ),
                            (MarketEvent.OFFER_DELETED, )])
     def test_publish_response(self, market_event):
@@ -197,11 +197,11 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
             dispatcher.redis.publish.assert_any_call(response_channel, response_payload)
 
     @parameterized.expand([(MarketEvent.OFFER, ),
-                           (MarketEvent.TRADE, ),
+                           (MarketEvent.OFFER_TRADED,),
                            (MarketEvent.OFFER_SPLIT, ),
                            (MarketEvent.OFFER_DELETED, )])
     def tests_broadcast(self, market_event):
-        self.area.dispatcher.broadcast_callback(market_event)
+        self.area.dispatcher.broadcast_notification(market_event)
         for child in self.area.children:
             dispatch_channel = f"{child.uuid}/market_event"
             send_data = json.dumps({"event_type": market_event.value, "kwargs": {}})
@@ -214,7 +214,7 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
                 clear.call_count == len(self.area.children)
 
     @parameterized.expand([(MarketEvent.OFFER, ),
-                           (MarketEvent.TRADE, ),
+                           (MarketEvent.OFFER_TRADED,),
                            (MarketEvent.OFFER_SPLIT, ),
                            (MarketEvent.OFFER_DELETED, )])
     def test_response_callback_from_children_unblocks_thread_event(self, market_event):
@@ -238,7 +238,7 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
                 evt.set.assert_not_called()
 
     @parameterized.expand([(MarketEvent.OFFER, ),
-                           (MarketEvent.TRADE, ),
+                           (MarketEvent.OFFER_TRADED,),
                            (MarketEvent.OFFER_SPLIT, ),
                            (MarketEvent.OFFER_DELETED, )])
     def test_event_listener_calls_the_event_listener_of_the_root_dispatcher(self, market_event):
@@ -269,12 +269,12 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
             assert dispatcher.redis.publish.call_count == 1
             payload = json.loads(dispatcher.redis.publish.call_args_list[0][0][1])
             assert isinstance(payload["kwargs"]["offer"], str)
-            assert Offer.from_json(payload["kwargs"]["offer"], offer.time) == offer
+            assert Offer.from_json(payload["kwargs"]["offer"], offer.creation_time) == offer
             assert isinstance(payload["kwargs"]["trade"], str)
-            assert Trade.from_json(payload["kwargs"]["trade"], trade.time) == trade
+            assert Trade.from_json(payload["kwargs"]["trade"], trade.creation_time) == trade
             assert isinstance(payload["kwargs"]["new_offer"], str)
             assert Offer.from_json(payload["kwargs"]["new_offer"],
-                                   new_offer.time) == new_offer
+                                   new_offer.creation_time) == new_offer
             assert isinstance(payload["kwargs"]["existing_offer"], str)
             assert Offer.from_json(payload["kwargs"]["existing_offer"],
-                                   existing_offer.time) == existing_offer
+                                   existing_offer.creation_time) == existing_offer

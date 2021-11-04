@@ -32,8 +32,7 @@ from d3a.d3a_core.blockchain_interface import blockchain_interface_factory
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import AreaException
 from d3a.d3a_core.myco_singleton import bid_offer_matcher
-from d3a.d3a_core.util import TaggedLogWrapper
-from d3a.events.event_structures import TriggerMixin
+from d3a.d3a_core.util import TaggedLogWrapper, is_external_matching_enabled
 from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.events import Events
 from d3a.models.area.markets import AreaMarkets
@@ -44,7 +43,7 @@ from d3a.models.config import SimulationConfig
 from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.strategy import BaseStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin
-
+from d3a.models.market.future import FutureMarkets
 log = getLogger(__name__)
 
 
@@ -52,7 +51,6 @@ log = getLogger(__name__)
 #       of this class with d3a-interface.constants_limits.GlobalConfig class:
 DEFAULT_CONFIG = SimulationConfig(
     sim_duration=duration(hours=24),
-    market_count=1,
     slot_length=duration(minutes=15),
     tick_length=duration(seconds=1),
     cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
@@ -279,6 +277,7 @@ class Area:
                     f"Strategy {self.strategy.__class__.__name__} on area {self} without parent!"
                     )
         else:
+            self._markets.activate_future_markets(self)
             self._markets.activate_market_rotators()
 
         if self.budget_keeper:
@@ -331,6 +330,7 @@ class Area:
         self.events.update_events(now_value)
 
         if not self.children:
+            self.stats.calculate_energy_deviances()
             # Since children trade in markets we only need to populate them if there are any
             return
 
@@ -339,7 +339,12 @@ class Area:
 
         self.log.debug("Cycling markets")
         self._markets.rotate_markets(now_value)
-        self.dispatcher._delete_past_agents(self.dispatcher._inter_area_agents)
+
+        # create new future markets:
+        if self.future_markets:
+            self.future_markets.create_future_markets(now_value, self.config.slot_length)
+
+        self.dispatcher.event_market_cycle()
 
         # area_market_stats have to updated when cycling market of each area:
         self.stats.update_area_market_stats()
@@ -354,8 +359,7 @@ class Area:
         # TODO: Refactor and port the future, spot, settlement and balancing market creation to
         # AreaMarkets class, in order to create all necessary markets with one call.
 
-        # Markets range from one slot to market_count into the future
-        changed = self._markets.create_future_markets(now_value, AvailableMarketTypes.SPOT, self)
+        changed = self._markets.create_new_spot_market(now_value, AvailableMarketTypes.SPOT, self)
 
         # create new settlement market
         if (self.last_past_market and
@@ -364,7 +368,7 @@ class Area:
 
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
                 len(DeviceRegistry.REGISTRY.keys()) != 0:
-            changed_balancing_market = self._markets.create_future_markets(
+            changed_balancing_market = self._markets.create_new_spot_market(
                 now_value, AvailableMarketTypes.BALANCING, self)
         else:
             changed_balancing_market = None
@@ -377,6 +381,7 @@ class Area:
         if (changed_balancing_market or len(self._markets.past_balancing_markets.keys()) == 0) \
                 and _trigger_event and ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.dispatcher.broadcast_balancing_market_cycle()
+        self.stats.calculate_energy_deviances()
 
     def publish_market_cycle_to_external_clients(self):
         if self.strategy and isinstance(self.strategy, ExternalMixin):
@@ -400,18 +405,26 @@ class Area:
     def tick(self):
         """Tick event handler.
 
-        Invoke aggregator commands consumer, publishes market clearing, updates events,
-        updates cached myco matcher markets and match trades recommendations.
+        Invoke aggregator commands consumer, publish market clearing, update events,
+        update cached myco matcher markets and match trades recommendations.
         """
-        self._consume_commands_from_aggregator()
-
-        if (ConstSettings.IAASettings.MARKET_TYPE != SpotMarketTypeEnum.ONE_SIDED.value
+        if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
                 and not self.strategy):
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+                self._consume_commands_from_aggregator()
                 self.dispatcher.publish_market_clearing()
+            elif is_external_matching_enabled():
+                # If external matching is enabled, clear before placing orders
+                bid_offer_matcher.match_recommendations()
+                self._consume_commands_from_aggregator()
+                self._update_myco_matcher()
             else:
+                # If internal matching is enabled, place orders before clearing
+                self._consume_commands_from_aggregator()
                 self._update_myco_matcher()
                 bid_offer_matcher.match_recommendations()
+        else:
+            self._consume_commands_from_aggregator()
 
         self.events.update_events(self.now)
 
@@ -419,20 +432,25 @@ class Area:
         """Update the markets cache that the myco matcher will request"""
         bid_offer_matcher.update_area_uuid_markets_mapping(
             area_uuid_markets_mapping={
-                self.uuid: {"markets": self.all_markets,
+                self.uuid: {"markets": [self.spot_market],
                             "settlement_markets": self.settlement_markets.values(),
+                            "future_markets": self.future_markets,
                             "current_time": self.now}})
 
-    def update_area_current_tick(self):
+    def update_clock_on_markets(self) -> None:
+        """
+        Update clock on markets with self.now member.
+        Returns:
+
+        """
         self.current_tick += 1
-        if self._markets:
-            for market in self._markets.markets.values():
-                market.update_clock(self.current_tick_in_slot)
+        if self.children:
+            self.spot_market.update_clock(self.now)
 
             for market in self._markets.settlement_markets.values():
-                market.update_clock(self.current_tick_in_slot)
+                market.update_clock(self.now)
         for child in self.children:
-            child.update_area_current_tick()
+            child.update_clock_on_markets()
 
     def tick_and_dispatch(self):
         """Invoke tick handler and broadcast the event to children."""
@@ -448,6 +466,10 @@ class Area:
             s=self,
             markets=[t.format(d3a.constants.TIME_FORMAT) for t in self._markets.markets.keys()]
         )
+
+    @property
+    def all_markets(self):
+        return [m for m in self._markets.markets.values() if m.in_sim_duration]
 
     @property
     def current_slot(self):
@@ -496,21 +518,17 @@ class Area:
         )
 
     @property
-    def all_markets(self):
-        return [m for m in self._markets.markets.values() if m.in_sim_duration]
-
-    @property
     def past_markets(self) -> List:
         return list(self._markets.past_markets.values())
 
-    def get_market(self, timeslot):
-        return self._markets.markets.get(timeslot)
+    def get_market(self, time_slot):
+        return self._markets.markets.get(time_slot)
 
-    def get_past_market(self, timeslot):
-        return self._markets.past_markets[timeslot]
+    def get_past_market(self, time_slot):
+        return self._markets.past_markets[time_slot]
 
-    def get_balancing_market(self, timeslot):
-        return self._markets.balancing_markets[timeslot]
+    def get_balancing_market(self, time_slot):
+        return self._markets.balancing_markets[time_slot]
 
     @property
     def balancing_markets(self) -> List:
@@ -521,17 +539,10 @@ class Area:
         return list(self._markets.past_balancing_markets.values())
 
     @property
-    def market_with_most_expensive_offer(self):
-        # In case of a tie, max returns the first market occurrence in order to
-        # satisfy the most recent market slot
-        return max(self.all_markets,
-                   key=lambda m: m.sorted_offers[0].energy_rate)
-
-    @property
-    def next_market(self):
+    def spot_market(self):
         """Returns the "current" market (i.e. the one currently "running")"""
         try:
-            return list(self._markets.markets.values())[0]
+            return self.all_markets[-1]
         except IndexError:
             return None
 
@@ -563,6 +574,14 @@ class Area:
             return None
 
     @property
+    def future_market_time_slots(self) -> List[DateTime]:
+        return self._markets.future_markets.market_time_slots
+
+    @property
+    def future_markets(self) -> FutureMarkets:
+        return self._markets.future_markets
+
+    @property
     def settlement_markets(self) -> Dict:
         return self._markets.settlement_markets
 
@@ -577,15 +596,19 @@ class Area:
     def past_settlement_markets(self) -> Dict:
         return self._markets.past_settlement_markets
 
-    def get_settlement_market(self, timeslot):
-        return self._markets.settlement_markets.get(timeslot)
+    def get_settlement_market(self, time_slot):
+        return self._markets.settlement_markets.get(time_slot)
 
-    @cached_property
-    def available_triggers(self):
-        triggers = []
-        if isinstance(self.strategy, TriggerMixin):
-            triggers.extend(self.strategy.available_triggers)
-        return {t.name: t for t in triggers}
+    def get_market_instances_from_class_type(self, market_type: AvailableMarketTypes) -> Dict:
+        """
+        Return market dicts for the selected market type
+        Args:
+            market_type: Selected market type (spot/balancing/settlement/future)
+
+        Returns: Dicts with market objects for the selected market type
+
+        """
+        return self._markets.get_market_instances_from_class_type(market_type)
 
     def update_config(self, **kwargs):
         if not self.config:

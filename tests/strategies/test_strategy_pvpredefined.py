@@ -59,7 +59,7 @@ class FakeArea:
         self.uuid = str(uuid4())
         self.count = count
         self.test_market = FakeMarket(0)
-        self._next_market = FakeMarket(0)
+        self._spot_market = FakeMarket(0)
 
     def get_future_market_from_id(self, id):
         return self.test_market
@@ -69,7 +69,7 @@ class FakeArea:
         return self.test_market
 
     @property
-    def next_market(self):
+    def spot_market(self):
         return self.test_market
 
     @property
@@ -100,11 +100,11 @@ class FakeAreaTimeSlot(FakeArea):
         super().__init__(0)
 
     @property
-    def all_markets(self):
-        return [self._next_market]
+    def spot_market(self):
+        return self._spot_market
 
-    def create_next_market(self, time_slot):
-        self._next_market = FakeMarketTimeSlot(time_slot)
+    def create_spot_market(self, time_slot):
+        self._spot_market = FakeMarketTimeSlot(time_slot)
 
 
 class FakeMarket:
@@ -112,14 +112,15 @@ class FakeMarket:
         self.count = count
         self.id = str(count)
         self.created_offers = []
-        self.offers = {'id': Offer(id='id', time=pendulum.now(), price=10, energy=0.5, seller='A')}
+        self.offers = {
+            'id': Offer(id='id', creation_time=pendulum.now(), price=10, energy=0.5, seller='A')}
         self._time_slot = TIME
 
     def offer(self, price, energy, seller, original_price=None, seller_origin=None,
-              seller_origin_id=None, seller_id=None):
+              seller_origin_id=None, seller_id=None, time_slot=None):
         offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy, seller,
                       original_price, seller_origin=seller_origin,
-                      seller_origin_id=seller_origin_id, seller_id=seller_id)
+                      seller_origin_id=seller_origin_id, seller_id=seller_id, time_slot=time_slot)
         self.created_offers.append(offer)
         self.offers[offer.id] = offer
         return offer
@@ -223,7 +224,7 @@ def pv_test4(area_test3, called):
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {
-        Offer(id='id', time=pendulum.now(), price=20, energy=1,
+        Offer(id='id', creation_time=pendulum.now(), price=20, energy=1,
               seller='FakeArea'): area_test3.test_market.id
     }
     return p
@@ -272,7 +273,7 @@ def testing_produced_energy_forecast_real_data(pv_test66):
     pv_test66.event_activate()
     # prepare whole day of energy_production_forecast_kWh:
     for time_slot in generate_market_slot_list():
-        pv_test66.area.create_next_market(time_slot)
+        pv_test66.area.create_spot_market(time_slot)
         pv_test66.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
 
     morning_time = pendulum.today(tz=TIME_ZONE).at(hour=5, minute=10, second=0)
@@ -325,7 +326,7 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
         pv_test6.state._energy_production_forecast_kWh[TIME]
     fake_trade = FakeTrade(market_test3.created_offers[0])
     fake_trade.seller = pv_test6.owner.name
-    pv_test6.event_trade(market_id=market_test3.id, trade=fake_trade)
+    pv_test6.event_offer_traded(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []
     pv_test6.event_tick()
     assert not market_test3.created_offers
@@ -379,12 +380,12 @@ def test_correct_time_expansion_read_arbitrary_profile():
     market_maker_rate = 30
     if GlobalConfig.IS_CANARY_NETWORK:
         GlobalConfig.sim_duration = duration(hours=3)
-        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS-1,
+        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS - 1,
                                                           hours=23, minutes=45)
         mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
         assert list(mmr.keys())[-1] == expected_last_time_slot
         GlobalConfig.sim_duration = duration(hours=30)
-        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS-1,
+        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS - 1,
                                                           hours=23, minutes=45)
         mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
         assert list(mmr.keys())[-1] == expected_last_time_slot

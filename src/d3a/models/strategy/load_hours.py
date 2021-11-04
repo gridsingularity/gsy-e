@@ -80,7 +80,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         LoadValidator.validate_energy(
             avg_power_W=avg_power_W, hrs_per_day=hrs_per_day, hrs_of_day=hrs_of_day)
-        self.state = LoadState()
+        self._state = LoadState()
         self.avg_power_W = avg_power_W
 
         # consolidated_cycle is KWh energy consumed for the entire year
@@ -99,6 +99,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._cycled_market = set()
         self._simulation_start_timestamp = None
         self._settlement_market_strategy = settlement_market_strategy_factory()
+
+    @property
+    def state(self) -> LoadState:
+        return self._state
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
                            use_market_maker_rate, initial_buying_rate, final_buying_rate):
@@ -151,7 +155,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if self.use_market_maker_rate:
             self._area_reconfigure_prices(
                 final_buying_rate=get_market_maker_rate_from_config(
-                    self.area.next_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
+                    self.area.spot_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
 
         super().event_market_cycle()
         self.add_entry_in_hrs_per_day()
@@ -165,10 +169,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._settlement_market_strategy.event_market_cycle(self)
 
     def add_entry_in_hrs_per_day(self, overwrite=False):
-        for market in self.area.all_markets:
-            current_day = self._get_day_of_timestamp(market.time_slot)
-            if current_day not in self.hrs_per_day or overwrite:
-                self.hrs_per_day[current_day] = self._initial_hrs_per_day
+        current_day = self._get_day_of_timestamp(self.area.spot_market.time_slot)
+        if current_day not in self.hrs_per_day or overwrite:
+            self.hrs_per_day[current_day] = self._initial_hrs_per_day
 
     def update_state(self):
         self._post_first_bid()
@@ -264,7 +267,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if self.use_market_maker_rate:
             self._area_reconfigure_prices(
                 final_buying_rate=get_market_maker_rate_from_config(
-                    self.area.next_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
+                    self.area.spot_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
 
         self._validate_rates(self.bid_update.initial_rate_profile_buffer,
                              self.bid_update.final_rate_profile_buffer,
@@ -354,11 +357,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            for market in self.area.all_markets:
-                time_slot = market.time_slot
-                final_rate = self.area.config.market_maker_rate[time_slot]
-                self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
-                                                         final_rate=final_rate)
+            time_slot = self.area.spot_market.time_slot
+            final_rate = self.area.config.market_maker_rate[time_slot]
+            self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
+                                                     final_rate=final_rate)
 
     def _post_first_bid(self):
         if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
@@ -368,7 +370,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                     self.state.can_buy_more_energy(market.time_slot)
                     and not self.are_bids_posted(market.id)):
                 bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
-                if self.is_eligible_for_balancing_market:
+                if self._is_eligible_for_balancing_market:
                     bid_energy -= (self.state.get_desired_energy(market.time_slot) *
                                    self.balancing_energy_ratio.demand)
                 try:
@@ -386,6 +388,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         This method is triggered by the MarketEvent.BID_TRADED event.
         """
+        # settlement market event_bid_traded has to be triggered before the early return:
+        self._settlement_market_strategy.event_bid_traded(self, market_id, bid_trade)
+
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
         market = self.area.get_future_market_from_id(market_id)
         if not market:
@@ -397,10 +402,14 @@ class LoadHoursStrategy(BidEnabledStrategy):
             market_day = self._get_day_of_timestamp(market.time_slot)
             if self.hrs_per_day != {} and market_day in self.hrs_per_day:
                 self.hrs_per_day[market_day] -= self._operating_hours(bid_trade.offer_bid.energy)
-        self._settlement_market_strategy.event_bid_traded(self, market_id, bid_trade)
 
-    def event_trade(self, *, market_id, trade):
-        self._settlement_market_strategy.event_bid_traded(self, market_id, trade)
+    def event_offer_traded(self, *, market_id, trade):
+        """Register the offer traded by the device and its effects. Extends the superclass method.
+
+        This method is triggered by the MarketEvent.OFFER_TRADED event.
+        """
+        # settlement market event_trade has to be triggered before the early return:
+        self._settlement_market_strategy.event_offer_traded(self, market_id, trade)
 
         market = self.area.get_future_market_from_id(market_id)
         if not market:
@@ -411,11 +420,11 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if ConstSettings.BalancingSettings.FLEXIBLE_LOADS_SUPPORT:
             # Load can only put supply_balancing_offers only when there is a trade in spot_market
             self._supply_balancing_offer(market, trade)
-        super().event_trade(market_id=market_id, trade=trade)
+        super().event_offer_traded(market_id=market_id, trade=trade)
 
     # committing to increase its consumption when required
     def _demand_balancing_offer(self, market):
-        if not self.is_eligible_for_balancing_market:
+        if not self._is_eligible_for_balancing_market:
             return
 
         ramp_up_energy = (self.balancing_energy_ratio.demand *
@@ -428,7 +437,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     # committing to reduce its consumption when required
     def _supply_balancing_offer(self, market, trade):
-        if not self.is_eligible_for_balancing_market:
+        if not self._is_eligible_for_balancing_market:
             return
         if trade.buyer != self.owner.name:
             return
@@ -483,10 +492,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def _update_energy_requirement_future_markets(self):
         self.energy_per_slot_Wh = convert_W_to_Wh(self.avg_power_W, self.area.config.slot_length)
-        for market in self.area.all_markets:
-            desired_energy_Wh = (self.energy_per_slot_Wh
-                                 if self._allowed_operating_hours(market.time_slot) else 0.0)
-            self.state.set_desired_energy(desired_energy_Wh, market.time_slot)
+        desired_energy_Wh = (self.energy_per_slot_Wh
+                             if self._allowed_operating_hours(self.area.spot_market.time_slot)
+                             else 0.0)
+        self.state.set_desired_energy(desired_energy_Wh, self.area.spot_market.time_slot)
 
         for market in self.active_markets:
             current_day = self._get_day_of_timestamp(market.time_slot)

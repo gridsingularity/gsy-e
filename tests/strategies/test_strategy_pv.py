@@ -55,7 +55,7 @@ class FakeArea:
         self.name = 'FakeArea'
         self.uuid = str(uuid4())
         self.test_market = FakeMarket(0)
-        self._next_market = FakeMarket(0)
+        self._spot_market = FakeMarket(0)
 
     def get_future_market_from_id(self, id):
         return self.test_market
@@ -87,7 +87,7 @@ class FakeArea:
                 self.test_market]
 
     @property
-    def next_market(self):
+    def spot_market(self):
         return self.test_market
 
 
@@ -96,11 +96,11 @@ class FakeAreaTimeSlot(FakeArea):
         super().__init__()
 
     @property
-    def all_markets(self):
-        return [self._next_market]
+    def spot_market(self):
+        return self._spot_market
 
-    def create_next_market(self, time_slot):
-        self._next_market = FakeMarketTimeSlot(time_slot)
+    def create_spot_market(self, time_slot):
+        self._spot_market = FakeMarketTimeSlot(time_slot)
 
 
 class FakeMarketTimeSlot:
@@ -113,13 +113,14 @@ class FakeMarket:
         self.count = count
         self.id = str(count)
         self.created_offers = []
-        self.offers = {'id': Offer(id='id', time=pendulum.now(), price=10, energy=0.5, seller='A')}
+        self.offers = {
+            'id': Offer(id='id', creation_time=pendulum.now(), price=10, energy=0.5, seller='A')}
 
     def offer(self, price, energy, seller, original_price=None, seller_origin=None,
-              seller_origin_id=None, seller_id=None):
+              seller_origin_id=None, seller_id=None, time_slot=None):
         offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy, seller,
                       original_price, seller_origin=seller_origin,
-                      seller_origin_id=seller_origin_id, seller_id=seller_id)
+                      seller_origin_id=seller_origin_id, seller_id=seller_id, time_slot=time_slot)
         self.created_offers.append(offer)
         self.offers[offer.id] = offer
         return offer
@@ -271,7 +272,7 @@ def pv_test4(area_test3, called):
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {
-        Offer(id='id', time=pendulum.now(), price=20,
+        Offer(id='id', creation_time=pendulum.now(), price=20,
               energy=1, seller='FakeArea'): area_test3.test_market.id
     }
     return p
@@ -279,13 +280,13 @@ def pv_test4(area_test3, called):
 
 def testing_event_trade(area_test3, pv_test4):
     pv_test4.state._available_energy_kWh[area_test3.test_market.time_slot] = 1
-    pv_test4.event_trade(market_id=area_test3.test_market.id,
-                         trade=Trade(id="id", time="time",
-                                     offer_bid=Offer(id="id", time=pendulum.now(), price=20,
-                                                     energy=1, seller="FakeArea"),
-                                     seller=area_test3.name, buyer="buyer"
-                                     )
-                         )
+    pv_test4.event_offer_traded(market_id=area_test3.test_market.id,
+                                trade=Trade(id="id", creation_time="time",
+                                            offer_bid=Offer(id="id", creation_time=pendulum.now(),
+                                                            price=20,
+                                                            energy=1, seller="FakeArea"),
+                                            seller=area_test3.name, buyer="buyer")
+                                )
     assert len(pv_test4.offers.open) == 0
 
 
@@ -332,16 +333,16 @@ def testing_produced_energy_forecast_real_data(pv_test66):
     pv_test66.event_activate()
     # prepare whole day of energy_production_forecast_kWh:
     for time_slot in generate_market_slot_list():
-        pv_test66.area.create_next_market(time_slot)
+        pv_test66.area.create_spot_market(time_slot)
         pv_test66.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
     morning_time = pendulum.today(tz=TIME_ZONE).at(hour=8, minute=20, second=0)
     afternoon_time = pendulum.today(tz=TIME_ZONE).at(hour=16, minute=40, second=0)
 
     class Counts(object):
-        def __init__(self, time):
+        def __init__(self, time_of_day: str):
             self.total = 0
             self.count = 0
-            self.time = time
+            self.time_of_day = time_of_day
     morning_counts = Counts('morning')
     afternoon_counts = Counts('afternoon')
     evening_counts = Counts('evening')
@@ -391,7 +392,7 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
         pv_test6.state._energy_production_forecast_kWh[TIME]
     fake_trade = FakeTrade(market_test3.created_offers[0])
     fake_trade.seller = pv_test6.owner.name
-    pv_test6.event_trade(market_id=market_test3.id, trade=fake_trade)
+    pv_test6.event_offer_traded(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []
     assert not market_test3.created_offers
 
@@ -554,7 +555,7 @@ def test_assert_if_trade_rate_is_lower_than_offer_rate(pv_test11):
     trade = Trade("trade_id", "time", to_cheap_offer, pv_test11, "buyer")
 
     with pytest.raises(AssertionError):
-        pv_test11.event_trade(market_id=market_id, trade=trade)
+        pv_test11.event_offer_traded(market_id=market_id, trade=trade)
 
 
 @pytest.fixture(name="pv_strategy")

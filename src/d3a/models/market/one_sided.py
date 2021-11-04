@@ -18,15 +18,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from copy import deepcopy
 from logging import getLogger
 from math import isclose
-from typing import Union, Dict, List  # noqa
+from typing import Union, Dict, List, Optional
 
 from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Offer, Trade
+from d3a_interface.data_classes import Offer, Trade, TradeBidOfferInfo
 from d3a_interface.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
-from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
-    OfferNotFoundException, InvalidTrade, MarketException
+from d3a.d3a_core.exceptions import (InvalidOffer, MarketReadOnlyException, OfferNotFoundException,
+                                     InvalidTrade, MarketException)
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market import Market, lock_market_action
@@ -98,10 +98,17 @@ class OneSidedMarket(Market):
         return deepcopy(self.offers)
 
     @lock_market_action
-    def offer(self, price: float, energy: float, seller: str, seller_origin,
-              offer_id=None, original_price=None, dispatch_event=True,
-              adapt_price_with_fees=True, add_to_history=True, seller_origin_id=None,
-              seller_id=None, attributes: Dict = None, requirements: List[Dict] = None) -> Offer:
+    def offer(self, price: float, energy: float, seller: str, seller_origin: str,
+              offer_id: Optional[str] = None,
+              original_price: Optional[float] = None,
+              dispatch_event: bool = True,
+              adapt_price_with_fees: bool = True,
+              add_to_history: bool = True,
+              seller_origin_id: Optional[str] = None,
+              seller_id: Optional[str] = None,
+              attributes: Optional[Dict] = None,
+              requirements: Optional[List[Dict]] = None,
+              time_slot: Optional[DateTime] = None) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
@@ -119,7 +126,8 @@ class OneSidedMarket(Market):
             offer_id = self.bc_interface.create_new_offer(energy, price, seller)
         offer = Offer(offer_id, self.now, price, energy, seller, original_price,
                       seller_origin=seller_origin, seller_origin_id=seller_origin_id,
-                      seller_id=seller_id, attributes=attributes, requirements=requirements)
+                      seller_id=seller_id, attributes=attributes, requirements=requirements,
+                      time_slot=time_slot)
 
         self.offers[offer.id] = offer
         if add_to_history is True:
@@ -136,17 +144,17 @@ class OneSidedMarket(Market):
         self._notify_listeners(MarketEvent.OFFER, offer=offer)
 
     @lock_market_action
-    def delete_offer(self, offer_or_id: Union[str, Offer]):
+    def delete_offer(self, offer_or_id: Union[str, Offer]) -> None:
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
             offer_or_id = offer_or_id.id
         offer = self.offers.pop(offer_or_id, None)
+        if not offer:
+            raise OfferNotFoundException()
         self.bc_interface.cancel_offer(offer)
 
         self._update_min_max_avg_offer_prices()
-        if not offer:
-            raise OfferNotFoundException()
         log.debug(f"{self._debug_log_market_type_identifier}[OFFER][DEL]"
                   f"[{self.name}][{self.time_slot_str}] {offer}")
         # TODO: Once we add event-driven blockchain, this should be asynchronous
@@ -167,8 +175,9 @@ class OneSidedMarket(Market):
             else offer.price
 
     def split_offer(self, original_offer, energy, orig_offer_price):
-
+        """Split offer into two, one with provided energy, the other with the residual."""
         self.offers.pop(original_offer.id, None)
+
         # same offer id is used for the new accepted_offer
         original_accepted_price = energy / original_offer.energy * orig_offer_price
         accepted_offer = self.offer(offer_id=original_offer.id,
@@ -183,7 +192,8 @@ class OneSidedMarket(Market):
                                     adapt_price_with_fees=False,
                                     add_to_history=False,
                                     attributes=original_offer.attributes,
-                                    requirements=original_offer.requirements)
+                                    requirements=original_offer.requirements,
+                                    time_slot=original_offer.time_slot)
 
         residual_price = (1 - energy / original_offer.energy) * original_offer.price
         residual_energy = original_offer.energy - energy
@@ -202,7 +212,8 @@ class OneSidedMarket(Market):
                                     adapt_price_with_fees=False,
                                     add_to_history=True,
                                     attributes=original_offer.attributes,
-                                    requirements=original_offer.requirements)
+                                    requirements=original_offer.requirements,
+                                    time_slot=original_offer.time_slot)
 
         log.debug(f"{self._debug_log_market_type_identifier}[OFFER][SPLIT]"
                   f"[{self.time_slot_str}, {self.name}] "
@@ -235,11 +246,15 @@ class OneSidedMarket(Market):
             return grid_fee_price, energy * trade_rate_incl_fees
 
     @lock_market_action
-    def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
-                     time: DateTime = None,
-                     already_tracked: bool = False, trade_rate: float = None,
-                     trade_bid_info=None, buyer_origin=None, buyer_origin_id=None,
-                     buyer_id=None) -> Trade:
+    def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *,
+                     energy: Optional[float] = None,
+                     time: Optional[DateTime] = None,
+                     already_tracked: bool = False,
+                     trade_rate: Optional[float] = None,
+                     trade_bid_info: Optional[TradeBidOfferInfo] = None,
+                     buyer_origin: Optional[str] = None,
+                     buyer_origin_id: Optional[str] = None,
+                     buyer_id: Optional[str] = None) -> Trade:
         if self.readonly:
             raise MarketReadOnlyException()
 
@@ -306,16 +321,16 @@ class OneSidedMarket(Market):
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
                       fee_price=fee_price, buyer_origin_id=buyer_origin_id,
                       seller_origin_id=offer.seller_origin_id,
-                      seller_id=offer.seller_id, buyer_id=buyer_id
+                      seller_id=offer.seller_id, buyer_id=buyer_id, time_slot=offer.time_slot
                       )
         self.bc_interface.track_trade_event(self.time_slot, trade)
 
         if already_tracked is False:
             self._update_stats_after_trade(trade, offer)
-            log.info(f"{self._debug_log_market_type_identifier}[TRADE] "
+            log.info(f"{self._debug_log_market_type_identifier}[TRADE][OFFER] "
                      f"[{self.name}] [{self.time_slot_str}] {trade}")
 
         # TODO: Use non-blockchain non-event-driven version for now for both blockchain and
         # normal runs.
-        self._notify_listeners(MarketEvent.TRADE, trade=trade)
+        self._notify_listeners(MarketEvent.OFFER_TRADED, trade=trade)
         return trade

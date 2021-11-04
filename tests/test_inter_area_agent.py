@@ -90,8 +90,8 @@ class FakeMarket:
     def get_bids(self):
         return self.bids
 
-    def set_time_slot(self, timeslot):
-        self.time_slot = timeslot
+    def set_time_slot(self, time_slot):
+        self.time_slot = time_slot
 
     def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
                      trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
@@ -101,9 +101,10 @@ class FakeMarket:
         self.calls_offers.append(offer)
         if energy < offer.energy:
             residual_energy = offer.energy - energy
-            residual = Offer('res', offer.time, offer.price, residual_energy, offer.seller,
-                             seller_origin='res')
-            traded = Offer(offer.id, offer.time, offer.price, energy,
+            residual = Offer(
+                'res', offer.creation_time, offer.price, residual_energy, offer.seller,
+                seller_origin='res')
+            traded = Offer(offer.id, offer.creation_time, offer.price, energy,
                            offer.seller, seller_origin='res')
             return Trade('trade_id', time, traded, traded.seller, buyer, residual,
                          seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
@@ -127,15 +128,15 @@ class FakeMarket:
         market_bid = [b for b in self._bids if b.id == bid.id][0]
         if energy < market_bid.energy:
             residual_energy = bid.energy - energy
-            residual = Bid('res', bid.time, bid.price, residual_energy, bid.buyer,
+            residual = Bid('res', bid.creation_time, bid.price, residual_energy, bid.buyer,
                            buyer_origin='res')
-            traded = Bid(bid.id, bid.time, (trade_rate * energy), energy, bid.buyer,
+            traded = Bid(bid.id, bid.creation_time, (trade_rate * energy), energy, bid.buyer,
                          buyer_origin='res')
             return Trade('trade_id', time, traded, seller, bid.buyer, residual,
                          buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
                          seller_id=seller_id)
         else:
-            traded = Bid(bid.id, bid.time, (trade_rate * energy), energy, bid.buyer,
+            traded = Bid(bid.id, bid.creation_time, (trade_rate * energy), energy, bid.buyer,
                          buyer_origin=bid.id)
             return Trade('trade_id', time, traded, seller, bid.buyer,
                          buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
@@ -157,7 +158,7 @@ class FakeMarket:
     def offer(self, price: float, energy: float, seller: str, offer_id=None,
               original_price=None, dispatch_event=True, seller_origin=None,
               adapt_price_with_fees=True, seller_origin_id=None,
-              seller_id=None) -> Offer:
+              seller_id=None, time_slot=None) -> Offer:
         self.offer_call_count += 1
 
         if original_price is None:
@@ -179,7 +180,7 @@ class FakeMarket:
 
     def bid(self, price: float, energy: float, buyer: str,
             bid_id: str = None, original_price=None, buyer_origin=None,
-            adapt_price_with_fees=True, buyer_origin_id=None, buyer_id=None):
+            adapt_price_with_fees=True, buyer_origin_id=None, buyer_id=None, time_slot=None):
         self.bid_call_count += 1
 
         if original_price is None:
@@ -498,9 +499,9 @@ class TestIAABid:
         original_bid = iaa_double_sided.higher_market.forwarded_bid
         accepted_bid_price = (original_bid.price/original_bid.energy) * 1
         residual_bid_price = (original_bid.price/original_bid.energy) * 0.1
-        accepted_bid = Bid(original_bid.id, original_bid.time, accepted_bid_price, 1,
+        accepted_bid = Bid(original_bid.id, original_bid.creation_time, accepted_bid_price, 1,
                            original_bid.buyer)
-        residual_bid = Bid('residual_bid', original_bid.time, residual_bid_price, 0.1,
+        residual_bid = Bid('residual_bid', original_bid.creation_time, residual_bid_price, 0.1,
                            original_bid.buyer)
         iaa_double_sided.event_bid_split(market_id=iaa_double_sided.higher_market,
                                          original_bid=original_bid,
@@ -520,11 +521,12 @@ class TestIAABid:
         iaa_double_sided._get_market_from_market_id = lambda x: iaa_double_sided.lower_market
         original_bid = iaa_double_sided.lower_market._bids[0]
         residual_energy = 0.1
-        accepted_bid = Bid(original_bid.id, original_bid.time, original_bid.price,
+        accepted_bid = Bid(original_bid.id, original_bid.creation_time, original_bid.price,
                            original_bid.energy - residual_energy, original_bid.buyer,
                            original_bid.price)
-        residual_bid = Bid('residual_bid', original_bid.time, original_bid.price, residual_energy,
-                           original_bid.buyer, original_bid.price)
+        residual_bid = Bid(
+            'residual_bid', original_bid.creation_time, original_bid.price, residual_energy,
+            original_bid.buyer, original_bid.price)
         iaa_double_sided.usable_bid = lambda s: True
         iaa_double_sided.event_bid_split(market_id=iaa_double_sided.lower_market,
                                          original_bid=original_bid,
@@ -569,37 +571,37 @@ class TestIAAOffer:
 
     def test_iaa_event_trade_deletes_forwarded_offer_when_sold(self, iaa, called):
         iaa.lower_market.delete_offer = called
-        iaa.event_trade(trade=Trade('trade_id',
-                                    pendulum.now(tz=TIME_ZONE),
-                                    iaa.higher_market.offers['id3'],
-                                    'owner',
-                                    'someone_else'),
-                        market_id=iaa.higher_market.id)
+        iaa.event_offer_traded(trade=Trade('trade_id',
+                                           pendulum.now(tz=TIME_ZONE),
+                                           iaa.higher_market.offers['id3'],
+                                           'owner',
+                                           'someone_else'),
+                               market_id=iaa.higher_market.id)
         assert len(iaa.lower_market.delete_offer.calls) == 1
 
     def test_iaa_event_trade_buys_accepted_offer(self, iaa2):
-        iaa2.event_trade(trade=Trade('trade_id',
-                                     pendulum.now(tz=TIME_ZONE),
-                                     iaa2.higher_market.forwarded_offer,
-                                     'owner',
-                                     'someone_else',
-                                     fee_price=0.0),
-                         market_id=iaa2.higher_market.id)
+        iaa2.event_offer_traded(trade=Trade('trade_id',
+                                            pendulum.now(tz=TIME_ZONE),
+                                            iaa2.higher_market.forwarded_offer,
+                                            'owner',
+                                            'someone_else',
+                                            fee_price=0.0),
+                                market_id=iaa2.higher_market.id)
         assert len(iaa2.lower_market.calls_energy) == 1
 
     def test_iaa_event_trade_buys_partial_accepted_offer(self, iaa2):
         total_offer = iaa2.higher_market.forwarded_offer
         accepted_offer = Offer(
-            total_offer.id, total_offer.time, total_offer.price, 1, total_offer.seller
+            total_offer.id, total_offer.creation_time, total_offer.price, 1, total_offer.seller
         )
-        iaa2.event_trade(trade=Trade('trade_id',
-                                     pendulum.now(tz=TIME_ZONE),
-                                     accepted_offer,
-                                     'owner',
-                                     'someone_else',
-                                     'residual_offer',
-                                     fee_price=0.0),
-                         market_id=iaa2.higher_market.id)
+        iaa2.event_offer_traded(trade=Trade('trade_id',
+                                            pendulum.now(tz=TIME_ZONE),
+                                            accepted_offer,
+                                            'owner',
+                                            'someone_else',
+                                            'residual_offer',
+                                            fee_price=0.0),
+                                market_id=iaa2.higher_market.id)
         assert iaa2.lower_market.calls_energy[0] == 1
 
     def test_iaa_event_offer_split_and_trade_correctly_populate_forwarded_offer_entries(
@@ -627,14 +629,14 @@ class TestIAAOffer:
         # and the residual offer was added
         assert engine.forwarded_offers[residual_offer_id].target_offer.energy == accepted.energy
 
-        iaa2.event_trade(trade=Trade('trade_id',
-                                     pendulum.now(tz=TIME_ZONE),
-                                     accepted,
-                                     'owner',
-                                     'someone_else',
-                                     residual,
-                                     fee_price=0.0),
-                         market_id=iaa2.lower_market.id)
+        iaa2.event_offer_traded(trade=Trade('trade_id',
+                                            pendulum.now(tz=TIME_ZONE),
+                                            accepted,
+                                            'owner',
+                                            'someone_else',
+                                            residual,
+                                            fee_price=0.0),
+                                market_id=iaa2.lower_market.id)
 
         # after the trade event:
         # the forwarded_offers only contain the residual offer

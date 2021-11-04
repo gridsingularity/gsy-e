@@ -115,13 +115,17 @@ class SmartMeterStrategy(BidEnabledStrategy):
             energy_rate_increase_per_update=energy_rate_increase_per_update,
             energy_rate_decrease_per_update=energy_rate_decrease_per_update)
 
-        self.state = SmartMeterState()
+        self._state = SmartMeterState()
         self._simulation_start_timestamp = None
 
         # Instances to update the Smart Meter's bids and offers across all market slots
         self.bid_update = None
         self.offer_update = None
         self._init_price_update()
+
+    @property
+    def state(self) -> SmartMeterState:
+        return self._state
 
     def _init_price_update(self):
         """Initialize the bid and offer updaters."""
@@ -239,10 +243,10 @@ class SmartMeterStrategy(BidEnabledStrategy):
         self._event_tick_consumption()
         self._event_tick_production()
 
-    def event_trade(self, *, market_id, trade):
+    def event_offer_traded(self, *, market_id, trade):
         """Validate the trade for both offers and bids. Extends the superclass method.
 
-        This method is triggered by the MarketEvent.TRADE event.
+        This method is triggered by the MarketEvent.OFFER_TRADED event.
         """
         market = self.area.get_future_market_from_id(market_id)
         if not market:
@@ -251,7 +255,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         if self.owner.name not in (trade.seller, trade.buyer):
             return  # Only react to trades in which the device took part
 
-        super().event_trade(market_id=market_id, trade=trade)
+        super().event_offer_traded(market_id=market_id, trade=trade)
 
         is_buyer = self.owner.name == trade.buyer
         if is_buyer:
@@ -262,7 +266,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
                 # self._supply_balancing_offer(market, trade)
                 pass
         else:
-            self.assert_if_trade_offer_price_is_too_low(market_id, trade)
+            self._assert_if_trade_offer_price_is_too_low(market_id, trade)
             self.state.decrement_available_energy(
                 trade.offer_bid.energy, market.time_slot, self.owner.name)
 
@@ -432,7 +436,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
 
         bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
         # TODO: balancing market support not yet implemented
-        # if self.is_eligible_for_balancing_market:
+        # if self._is_eligible_for_balancing_market:
         #     bid_energy -= self.state.get_desired_energy(market.time_slot) * \
         #                   self.balancing_energy_ratio.demand
         try:
@@ -499,12 +503,12 @@ class SmartMeterStrategy(BidEnabledStrategy):
         # Reconfigure the final buying rate (for energy consumption)
         self._area_reconfigure_consumption_prices(
             final_buying_rate=get_market_maker_rate_from_config(
-                self.area.next_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
+                self.area.spot_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
 
         # Reconfigure the initial selling rate (for energy production)
         self._area_reconfigure_production_prices(
             initial_selling_rate=get_market_maker_rate_from_config(
-                self.area.next_market, 0) - self.owner.get_path_to_root_fees(), validate=False)
+                self.area.spot_market, 0) - self.owner.get_path_to_root_fees(), validate=False)
 
     def _validate_consumption_rates(
             self, initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):

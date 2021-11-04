@@ -174,7 +174,7 @@ def area_name_from_area_or_iaa_name(name):
     return name[4:] if name[:4] == 'IAA ' else name
 
 
-def is_timeslot_in_simulation_duration(config, time_slot):
+def is_time_slot_in_simulation_duration(config, time_slot):
     return config.start_date <= time_slot < config.end_date or \
            GlobalConfig.IS_CANARY_NETWORK
 
@@ -209,23 +209,22 @@ def read_settings_from_file(settings_file):
     Reads basic and advanced settings from a settings file (json format).
     """
     if os.path.isfile(settings_file):
-        with open(settings_file, "r") as sf:
+        with open(settings_file, "r", encoding="utf-8") as sf:
             settings = json.load(sf)
         advanced_settings = settings["advanced_settings"]
         simulation_settings = {
-            "sim_duration": IntervalType('H:M')(
-                settings["basic_settings"].get('sim_duration', GlobalConfig.sim_duration)),
-            "slot_length": IntervalType('M:S')(
-                settings["basic_settings"].get('slot_length', GlobalConfig.slot_length)),
-            "tick_length": IntervalType('M:S')(
-                settings["basic_settings"].get('tick_length', GlobalConfig.tick_length)),
-            "market_count": settings["basic_settings"].get('market_count', 1),
+            "sim_duration": IntervalType("H:M")(
+                settings["basic_settings"].get("sim_duration", GlobalConfig.sim_duration)),
+            "slot_length": IntervalType("M:S")(
+                settings["basic_settings"].get("slot_length", GlobalConfig.slot_length)),
+            "tick_length": IntervalType("M:S")(
+                settings["basic_settings"].get("tick_length", GlobalConfig.tick_length)),
             "cloud_coverage": settings["basic_settings"].get(
-                'cloud_coverage', advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"])
+                "cloud_coverage", advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"])
         }
         return simulation_settings, advanced_settings
-    else:
-        raise FileExistsError("Please provide a valid settings_file path")
+
+    raise FileExistsError("Please provide a valid settings_file path")
 
 
 def update_advanced_settings(advanced_settings):
@@ -403,7 +402,6 @@ def export_default_settings_to_json_file():
             "sim_duration": f"{GlobalConfig.DURATION_D*24}h",
             "slot_length": f"{GlobalConfig.SLOT_LENGTH_M}m",
             "tick_length": f"{GlobalConfig.TICK_LENGTH_S}s",
-            "market_count": GlobalConfig.MARKET_COUNT,
             "cloud_coverage": GlobalConfig.CLOUD_COVERAGE,
             "start_date": instance(GlobalConfig.start_date).format(d3a.constants.DATE_FORMAT),
     }

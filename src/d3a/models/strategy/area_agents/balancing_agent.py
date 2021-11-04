@@ -43,13 +43,13 @@ class BalancingAgent(OneSidedAgent):
             self._trigger_balancing_trades(self.lower_market.unmatched_energy_upward,
                                            self.lower_market.unmatched_energy_downward)
 
-    def event_trade(self, *, market_id, trade):
+    def event_offer_traded(self, *, market_id, trade):
         market = self._get_market_from_market_id(market_id)
         if market is None:
             return
 
         self._calculate_and_buy_balancing_energy(market, trade)
-        super().event_trade(market_id=market_id, trade=trade)
+        super().event_offer_traded(market_id=market_id, trade=trade)
 
     def event_bid_traded(self, *, market_id, bid_trade):
         if bid_trade.already_tracked:
@@ -110,7 +110,7 @@ class BalancingAgent(OneSidedAgent):
 
     def event_balancing_trade(self, *, market_id, trade, offer=None):
         for engine in sorted(self.engines, key=lambda _: random()):
-            engine.event_trade(trade=trade)
+            engine.event_offer_traded(trade=trade)
 
     def event_balancing_offer_split(self, *, market_id, original_offer, accepted_offer,
                                     residual_offer):

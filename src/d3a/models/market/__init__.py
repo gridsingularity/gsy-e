@@ -17,26 +17,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import uuid
+from collections import namedtuple
+from functools import wraps
 from logging import getLogger
-from typing import Dict, List, Union  # noqa
+from threading import RLock
+from typing import Dict, List, Union, Tuple
 
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.data_classes import Offer, Trade, Bid
 from d3a_interface.enums import SpotMarketTypeEnum
 from numpy.random import random
-from collections import namedtuple
 from pendulum import DateTime
-from functools import wraps
-from threading import RLock
 
-from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.constants import FLOATING_POINT_TOLERANCE, DATE_TIME_FORMAT
+from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
-from d3a_interface.data_classes import Offer, Trade, Bid
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a.models.market.grid_fees.base_model import GridFees
+from d3a.models.market.grid_fees.constant_grid_fees import ConstantGridFees
 from d3a.models.market.market_redis_connection import (
     MarketRedisEventSubscriber, MarketRedisEventPublisher,
     TwoSidedMarketRedisEventSubscriber)
-from d3a.models.market.grid_fees.base_model import GridFees
-from d3a.models.market.grid_fees.constant_grid_fees import ConstantGridFees
+
 log = getLogger(__name__)
 
 GridFee = namedtuple("GridFee", ('grid_fee_percentage', 'grid_fee_const'))
@@ -67,9 +68,6 @@ class Market:
         self.bc_interface = bc
         self.id = str(uuid.uuid4())
         self.time_slot = time_slot
-        self.time_slot_str = time_slot.format(DATE_TIME_FORMAT) \
-            if self.time_slot is not None \
-            else None
         self.readonly = readonly
         # offer-id -> Offer
         self.offers = {}  # type: Dict[str, Offer]
@@ -79,6 +77,7 @@ class Market:
         self.bid_history = []  # type: List[Bid]
         self.trades = []  # type: List[Trade]
         self.const_fee_rate = None
+        self.now = time_slot
 
         self._create_fee_handler(grid_fee_type, grid_fees)
         self.market_fee = 0
@@ -96,7 +95,7 @@ class Market:
             self.redis_publisher = MarketRedisEventPublisher(self.id)
         elif notification_listener:
             self.notification_listeners.append(notification_listener)
-        self.current_tick_in_slot = 0
+
         self.device_registry = DeviceRegistry.REGISTRY
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             self.redis_api = (
@@ -104,6 +103,11 @@ class Market:
                 if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
                 else TwoSidedMarketRedisEventSubscriber(self))
         setattr(self, RLOCK_MEMBER_NAME, RLock())
+
+    @property
+    def time_slot_str(self):
+        """A string representation of the market slot."""
+        return self.time_slot.format(DATE_TIME_FORMAT) if self.time_slot else None
 
     def _create_fee_handler(self, grid_fee_type, grid_fees):
         if not grid_fees:
@@ -128,9 +132,8 @@ class Market:
     def _is_constant_fees(self):
         return isinstance(self.fee_class, ConstantGridFees)
 
-    @property
-    def open_bids_and_offers(self):
-        return self.bids, self.offers
+    def open_bids_and_offers(self, **kwargs) -> Tuple[List, List]:
+        return list(self.bids.values()), list(self.offers.values())
 
     def add_listener(self, listener):
         self.notification_listeners.append(listener)
@@ -230,13 +233,16 @@ class Market:
         return [o for o in self.sorted_offers if
                 abs(o.energy_rate - rate) < FLOATING_POINT_TOLERANCE]
 
-    def update_clock(self, current_tick_in_slot):
-        self.current_tick_in_slot = current_tick_in_slot
+    def update_clock(self, now: DateTime) -> None:
+        """
+        Update self.now member with the provided now DateTime
+        Args:
+            now: Datetime object
 
-    @property
-    def now(self) -> DateTime:
-        return self.time_slot.add(
-            seconds=GlobalConfig.tick_length.seconds * self.current_tick_in_slot)
+        Returns:
+
+        """
+        self.now = now
 
     def bought_energy(self, buyer):
         return sum(trade.offer_bid.energy for trade in self.trades if trade.buyer == buyer)

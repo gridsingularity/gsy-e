@@ -16,17 +16,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import OrderedDict
-from typing import Dict, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING, Optional
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
-from d3a.d3a_core.util import is_timeslot_in_simulation_duration
+from d3a.d3a_core.util import is_time_slot_in_simulation_duration
 from d3a.models.area.market_rotators import (BaseRotator, DefaultMarketRotator,
-                                             SettlementMarketRotator)
+                                             SettlementMarketRotator, FutureMarketRotator)
 from d3a.models.market import GridFee, Market
 from d3a.models.market.balancing import BalancingMarket
+from d3a.models.market.future import FutureMarkets
 from d3a.models.market.market_structures import AvailableMarketTypes
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.settlement import SettlementMarket
@@ -49,11 +50,24 @@ class AreaMarkets:
         self.past_markets:  Dict[DateTime, Market] = OrderedDict()
         self.past_balancing_markets:  Dict[DateTime, BalancingMarket] = OrderedDict()
         self.past_settlement_markets: Dict[DateTime, TwoSidedMarket] = OrderedDict()
+        # TODO: rename and refactor:
         self.indexed_future_markets = {}
+        # Future markets:
+        self.future_markets: Optional[FutureMarkets] = None
 
         self.spot_market_rotator = BaseRotator()
         self.balancing_market_rotator = BaseRotator()
         self.settlement_market_rotator = BaseRotator()
+        self.future_market_rotator = BaseRotator()
+
+    def activate_future_markets(self, area: "Area") -> None:
+        self.future_markets = FutureMarkets(
+            bc=area.bc,
+            notification_listener=area.dispatcher.broadcast_notification,
+            grid_fee_type=area.config.grid_fee_type,
+            grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
+                              grid_fee_const=area.grid_fee_constant),
+            name=area.name)
 
     def activate_market_rotators(self):
         """The user specific ConstSettings are not available when the class is constructed,
@@ -65,6 +79,8 @@ class AreaMarkets:
         if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
             self.settlement_market_rotator = (
                 SettlementMarketRotator(self.settlement_markets, self.past_settlement_markets))
+        if self.future_markets:
+            self.future_market_rotator = FutureMarketRotator(self.future_markets)
 
     def _update_indexed_future_markets(self) -> None:
         """Update the indexed_future_markets mapping."""
@@ -75,6 +91,7 @@ class AreaMarkets:
         self.spot_market_rotator.rotate(current_time)
         self.balancing_market_rotator.rotate(current_time)
         self.settlement_market_rotator.rotate(current_time)
+        self.future_market_rotator.rotate(current_time)
 
         self._update_indexed_future_markets()
 
@@ -104,24 +121,21 @@ class AreaMarkets:
         else:
             assert False, f"Market type not supported {market_type}"
 
-    def create_future_markets(self, current_time: DateTime,
-                              market_type: AvailableMarketTypes, area: "Area") -> bool:
+    def create_new_spot_market(self, current_time: DateTime,
+                               market_type: AvailableMarketTypes, area: "Area") -> bool:
         """Create future markets according to the market count."""
         markets = self.get_market_instances_from_class_type(market_type)
         market_class = self._select_market_class(market_type)
 
         changed = False
-        for offset in (area.config.slot_length * i
-                       for i in range(area.config.market_count)):
-            time_slot = current_time + offset
-            if not markets or time_slot not in markets:
-                markets[time_slot] = self._create_market(market_class, time_slot, area,
-                                                         market_type)
-                changed = True
-                self.log.trace("Adding {t:{format}} market".format(
-                    t=time_slot,
-                    format="%H:%M" if area.config.slot_length.seconds > 60 else "%H:%M:%S"
-                ))
+        if not markets or current_time not in markets:
+            markets[current_time] = self._create_market(
+                market_class, current_time, area, market_type)
+            changed = True
+            self.log.trace("Adding {t:{format}} market".format(
+                t=current_time,
+                format="%H:%M" if area.config.slot_length.seconds > 60 else "%H:%M:%S"
+            ))
         self._update_indexed_future_markets()
         return changed
 
@@ -144,12 +158,12 @@ class AreaMarkets:
         market = market_class(
             time_slot=time_slot,
             bc=area.bc,
-            notification_listener=area.dispatcher.broadcast_callback,
+            notification_listener=area.dispatcher.broadcast_notification,
             grid_fee_type=area.config.grid_fee_type,
             grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
                               grid_fee_const=area.grid_fee_constant),
             name=area.name,
-            in_sim_duration=is_timeslot_in_simulation_duration(area.config, time_slot)
+            in_sim_duration=is_time_slot_in_simulation_duration(area.config, time_slot)
         )
 
         area.dispatcher.create_area_agents(market_type, market)

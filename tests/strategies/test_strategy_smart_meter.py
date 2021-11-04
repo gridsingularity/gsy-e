@@ -136,7 +136,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
         # We want to iterate over some area markets, so we create mocks for them
         market_mocks = self._create_market_mocks(3)
         self.strategy.area.all_markets = market_mocks
-        self.strategy.state = create_autospec(SmartMeterState)
+        self.strategy._state = create_autospec(SmartMeterState)
 
         self.strategy._set_energy_forecast_for_future_markets(reconfigure=True)
 
