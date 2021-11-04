@@ -60,6 +60,8 @@ class MycoInternalMatcher(MycoMatcherInterface):
         for area_uuid, area_data in self.area_uuid_markets_mapping.items():
             for market_type in ["markets", "settlement_markets"]:
                 for market in area_data[market_type]:
+                    if not market:
+                        continue
                     while True:
                         bids, offers = market.open_bids_and_offers()
                         data = {
@@ -81,6 +83,8 @@ class MycoInternalMatcher(MycoMatcherInterface):
         """Loop over all future markets and match bids and offers."""
         for area_uuid, area_data in self.area_uuid_markets_mapping.items():
             future_markets = area_data["future_markets"]
+            if not future_markets:
+                continue
             for time_slot in future_markets.market_time_slots:
                 while True:
                     bids, offers = future_markets.open_bids_and_offers(time_slot=time_slot)
