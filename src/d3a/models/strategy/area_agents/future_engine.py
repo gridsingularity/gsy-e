@@ -29,8 +29,8 @@ class FutureEngine(TwoSidedEngine):
     """Handles order forwarding between future markets."""
 
     def __repr__(self) -> str:
-        return f"<FutureEngine [{self.owner.name}] {self.name} " \
-               f"{self.markets.source.time_slot:%H:%M}>"
+        return (f"<FutureEngine [{self.owner.name}] {self.name} "
+                f"{self.markets.source.time_slot:%H:%M}>")
 
     @staticmethod
     def _delete_trade_residual_buffers(residual_buffer: Dict,

@@ -44,7 +44,7 @@ class OneSidedAgent(InterAreaAgent):
         self.uuid = owner.uuid
 
     def usable_offer(self, offer):
-        """Prevent IAAEngines from trading their counterpart"s offers"""
+        """Prevent IAAEngines from trading their counterpart's offers"""
         return all(offer.id not in engine.forwarded_offers.keys() for engine in self.engines)
 
     def get_market_from_market_id(self, market_id: str) -> Optional[Market]:

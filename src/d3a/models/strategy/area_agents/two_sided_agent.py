@@ -41,7 +41,7 @@ class TwoSidedAgent(OneSidedAgent):
                          min_offer_age=min_offer_age, do_create_engine=False)
 
     def usable_bid(self, bid):
-        """Prevent IAAEngines from trading their counterparts bids."""
+        """Prevent IAAEngines from trading their counterpart's bids."""
         return all(bid.id not in engine.forwarded_bids.keys() for engine in self.engines)
 
     # pylint: disable=unused-argument
