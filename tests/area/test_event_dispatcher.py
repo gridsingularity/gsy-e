@@ -45,19 +45,9 @@ from d3a.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
 
 # pylint: disable=W0212
 
-
-@pytest.fixture(name="area_dispatcher")
-def area_dispatcher_fixture():
-    """Return fixture for AreaDispatcher object."""
-    area = Area("name")
-    area.children = [Area("child1"), Area("child2")]
-    area.parent = Area("parent")
-    return AreaDispatcher(area)
-
-
-@pytest.fixture(name="area_dispatcher_area_markets")
-def area_dispatcher_area_markets_fixture():
-    """Return fixture for AreaDispatcher object."""
+@pytest.fixture(name="area_with_markets")
+def area_with_markets_fixture():
+    """Return Area activated object that contains all types of markets."""
     config = Mock()
     config.slot_length = duration(minutes=15)
     config.tick_length = duration(seconds=15)
@@ -69,13 +59,19 @@ def area_dispatcher_area_markets_fixture():
     area = Area("name", config=config)
     area.children = [Area("child1"), Area("child2")]
     area.parent = Area("parent")
+
     area.activate()
     area.cycle_markets()
     area._markets.settlement_markets = {config.start_date: MagicMock(autospec=SettlementMarket)}
     area._markets.balancing_markets = {config.start_date: MagicMock(autospec=BalancingMarket)}
     area._markets.update_area_market_id_lists()
+    return area
 
-    return AreaDispatcher(area)
+
+@pytest.fixture(name="area_dispatcher")
+def area_dispatcher_fixture(area_with_markets):
+    """Return fixture for AreaDispatcher object."""
+    return AreaDispatcher(area_with_markets)
 
 
 class TestAreaDispatcher:
@@ -192,19 +188,19 @@ class TestAreaDispatcher:
         AreaEvent.BALANCING_MARKET_CYCLE,
     ])
     def test_broadcast_notification_triggers_correct_methods_area_events(
-            event_type: Union[AreaEvent, MarketEvent], area_dispatcher_area_markets):
+            event_type: Union[AreaEvent, MarketEvent], area_dispatcher):
         """Test if broadcast_notification triggers correct dispatcher methods for area events."""
-        kwargs = {"market_id": area_dispatcher_area_markets.area.spot_market.id}
-        for child in area_dispatcher_area_markets.area.children:
+        kwargs = {"market_id": area_dispatcher.area.spot_market.id}
+        for child in area_dispatcher.area.children:
             child.dispatcher.event_listener = Mock()
-        area_dispatcher_area_markets._broadcast_notification_to_area_and_child_agents = Mock()
+        area_dispatcher._broadcast_notification_to_area_and_child_agents = Mock()
 
-        area_dispatcher_area_markets.broadcast_notification(event_type, **kwargs)
+        area_dispatcher.broadcast_notification(event_type, **kwargs)
 
-        for child in area_dispatcher_area_markets.area.children:
+        for child in area_dispatcher.area.children:
             child.dispatcher.event_listener.assert_called_once()
 
-        (area_dispatcher_area_markets._broadcast_notification_to_area_and_child_agents.
+        (area_dispatcher._broadcast_notification_to_area_and_child_agents.
             assert_has_calls([
                 call(AvailableMarketTypes.SPOT, event_type, **kwargs),
                 call(AvailableMarketTypes.BALANCING, event_type, **kwargs),
@@ -225,29 +221,29 @@ class TestAreaDispatcher:
     def test_broadcast_notification_triggers_correct_methods_market_events(
             event_type: Union[AreaEvent, MarketEvent],
             expected_market_type: AvailableMarketTypes,
-            area_dispatcher_area_markets):
+            area_dispatcher):
         """Test if broadcast_notification triggers correct dispatcher methods for market events."""
 
         market_id = None
         if expected_market_type == AvailableMarketTypes.SPOT:
-            market_id = area_dispatcher_area_markets.area.spot_market.id
+            market_id = area_dispatcher.area.spot_market.id
         if expected_market_type == AvailableMarketTypes.FUTURE:
-            market_id = area_dispatcher_area_markets.area.future_markets.id
+            market_id = area_dispatcher.area.future_markets.id
         if expected_market_type == AvailableMarketTypes.SETTLEMENT:
-            market_id = list(area_dispatcher_area_markets.area.settlement_markets.values())[0].id
+            market_id = list(area_dispatcher.area.settlement_markets.values())[0].id
         if expected_market_type == AvailableMarketTypes.BALANCING:
-            market_id = area_dispatcher_area_markets.area.balancing_markets[0].id
+            market_id = area_dispatcher.area.balancing_markets[0].id
 
         kwargs = {"market_id": market_id}
 
-        for child in area_dispatcher_area_markets.area.children:
+        for child in area_dispatcher.area.children:
             child.dispatcher.event_listener = Mock()
-        area_dispatcher_area_markets._broadcast_notification_to_area_and_child_agents = Mock()
+        area_dispatcher._broadcast_notification_to_area_and_child_agents = Mock()
 
-        area_dispatcher_area_markets.broadcast_notification(event_type, **kwargs)
+        area_dispatcher.broadcast_notification(event_type, **kwargs)
 
-        for child in area_dispatcher_area_markets.area.children:
+        for child in area_dispatcher.area.children:
             child.dispatcher.event_listener.assert_called_once()
 
-        (area_dispatcher_area_markets._broadcast_notification_to_area_and_child_agents.
+        (area_dispatcher._broadcast_notification_to_area_and_child_agents.
             assert_called_once_with(expected_market_type, event_type, **kwargs))
