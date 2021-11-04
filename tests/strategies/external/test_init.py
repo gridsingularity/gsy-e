@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import uuid
 from collections import deque
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
@@ -33,7 +33,8 @@ import d3a.models.strategy.external_strategies
 from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.models.area import Area
 from d3a.models.strategy import BidEnabledStrategy
-from d3a.models.strategy.external_strategies import IncomingRequest
+from d3a.models.strategy.external_strategies import (
+    IncomingRequest, ExternalStrategyConnectionManager)
 from d3a.models.strategy.external_strategies.load import (LoadHoursExternalStrategy,
                                                           LoadForecastExternalStrategy)
 from d3a.models.strategy.external_strategies.pv import (PVExternalStrategy,
@@ -388,10 +389,10 @@ class TestExternalMixin:
         self.device.strategy.owner = self.device
         assert self.device.strategy.connected is False
         self.device.strategy._register(payload)
-        self.device.strategy.register_on_market_cycle()
+        self.device.strategy._update_connection_status()
         assert self.device.strategy.connected is True
         self.device.strategy._unregister(payload)
-        self.device.strategy.register_on_market_cycle()
+        self.device.strategy._update_connection_status()
         assert self.device.strategy.connected is False
 
         payload = {"data": json.dumps({"transaction_id": None})}
@@ -422,7 +423,7 @@ class TestExternalMixin:
     def test_restore_state(self, strategy):
         strategy.state.restore_state = MagicMock()
         strategy.connected = True
-        strategy._connected = True
+        strategy._is_registered = True
         strategy._use_template_strategy = True
         state_dict = {
             "connected": False,
@@ -431,7 +432,7 @@ class TestExternalMixin:
         }
         strategy.restore_state(state_dict)
         assert strategy.connected is False
-        assert strategy._connected is False
+        assert strategy._is_registered is False
         assert strategy._use_template_strategy is False
         strategy.state.restore_state.assert_called_once_with(state_dict)
 
@@ -484,7 +485,7 @@ class TestForecastRelatedFeatures:
                      "energy_forecast": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
         payload = {"data": json.dumps(arguments)}
         assert ext_strategy_fixture.pending_requests == deque([])
-        ext_strategy_fixture.set_energy_forecast(payload)
+        ext_strategy_fixture._set_energy_forecast(payload)
         assert len(ext_strategy_fixture.pending_requests) > 0
         energy_forecast_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
                                            "response/set_energy_forecast"
@@ -498,7 +499,7 @@ class TestForecastRelatedFeatures:
         ext_strategy_fixture.redis.publish_json = Mock()
         ext_strategy_fixture.pending_requests = deque([])
         payload = {"data": json.dumps({"transaction_id": transaction_id})}
-        ext_strategy_fixture.set_energy_forecast(payload)
+        ext_strategy_fixture._set_energy_forecast(payload)
         energy_forecast_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
                                            "response/set_energy_forecast"
         ext_strategy_fixture.redis.publish_json.assert_called_with(
@@ -515,7 +516,7 @@ class TestForecastRelatedFeatures:
                      "energy_measurement": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
         payload = {"data": json.dumps(arguments)}
         assert ext_strategy_fixture.pending_requests == deque([])
-        ext_strategy_fixture.set_energy_measurement(payload)
+        ext_strategy_fixture._set_energy_measurement(payload)
         assert len(ext_strategy_fixture.pending_requests) > 0
         energy_measurement_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
                                               "response/set_energy_measurement"
@@ -530,7 +531,7 @@ class TestForecastRelatedFeatures:
         ext_strategy_fixture.redis.publish_json = Mock()
         ext_strategy_fixture.pending_requests = deque([])
         payload = {"data": json.dumps({"transaction_id": transaction_id})}
-        ext_strategy_fixture.set_energy_measurement(payload)
+        ext_strategy_fixture._set_energy_measurement(payload)
         energy_measurement_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
                                               "response/set_energy_measurement"
         ext_strategy_fixture.redis.publish_json.assert_called_with(
@@ -548,7 +549,7 @@ class TestForecastRelatedFeatures:
         arguments = {"transaction_id": transaction_id,
                      "energy_forecast": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
         response_channel = "response_channel"
-        ext_strategy_fixture.set_energy_forecast_impl(arguments, response_channel)
+        ext_strategy_fixture._set_energy_forecast_impl(arguments, response_channel)
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
             response_channel, {"command": "set_energy_forecast",
                                "status": "ready",
@@ -562,7 +563,7 @@ class TestForecastRelatedFeatures:
         response_channel = "response_channel"
         arguments = {"transaction_id": transaction_id,
                      "energy_forecast": {"wrong:time:format": 1}}
-        ext_strategy_fixture.set_energy_forecast_impl(arguments, response_channel)
+        ext_strategy_fixture._set_energy_forecast_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_forecast_impl "
                          f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
@@ -579,7 +580,7 @@ class TestForecastRelatedFeatures:
         response_channel = "response_channel"
         arguments = {"transaction_id": transaction_id,
                      "energy_forecast": {now().format(d3a.constants.DATE_TIME_FORMAT): -1}}
-        ext_strategy_fixture.set_energy_forecast_impl(arguments, response_channel)
+        ext_strategy_fixture._set_energy_forecast_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_forecast_impl "
                          f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
@@ -596,7 +597,7 @@ class TestForecastRelatedFeatures:
         arguments = {"transaction_id": transaction_id,
                      "energy_measurement": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
         response_channel = "response_channel"
-        ext_strategy_fixture.set_energy_measurement_impl(arguments, response_channel)
+        ext_strategy_fixture._set_energy_measurement_impl(arguments, response_channel)
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
             response_channel, {"command": "set_energy_measurement",
                                "status": "ready",
@@ -610,7 +611,7 @@ class TestForecastRelatedFeatures:
         ext_strategy_fixture.redis.publish_json.reset_mock()
         arguments = {"transaction_id": transaction_id,
                      "energy_measurement": {"wrong:time:format": 1}}
-        ext_strategy_fixture.set_energy_measurement_impl(arguments, response_channel)
+        ext_strategy_fixture._set_energy_measurement_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_measurement_impl "
                          f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
@@ -627,7 +628,7 @@ class TestForecastRelatedFeatures:
         ext_strategy_fixture.redis.publish_json.reset_mock()
         arguments = {"transaction_id": transaction_id,
                      "energy_measurement": {now().format(d3a.constants.DATE_TIME_FORMAT): -1}}
-        ext_strategy_fixture.set_energy_measurement_impl(arguments, response_channel)
+        ext_strategy_fixture._set_energy_measurement_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_measurement_impl "
                          f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
@@ -667,3 +668,79 @@ class TestForecastRelatedFeatures:
         assert command_name in return_value
         assert argument_name in return_value[command_name]
         assert list(return_value[command_name][argument_name].values())[0] == 1234.0
+
+
+class TestAreaExternalConnectionManager:
+    """Test the AreaExternalConnectionManager class."""
+    def test_register(self):
+        """Test the register method of AreaExternalConnectionManager."""
+        redis_communicator = MagicMock()
+        # is_connected=True
+        assert ExternalStrategyConnectionManager.register(
+            redis_communicator, "channel1", is_connected=True,
+            transaction_id="transaction1", area_uuid="area1") is True
+        redis_communicator.publish_json.assert_not_called()
+
+        # is_connected=False
+        assert ExternalStrategyConnectionManager.register(
+            redis_communicator, "channel1", is_connected=False,
+            transaction_id="transaction1", area_uuid="area1") is True
+        redis_communicator.publish_json.assert_called_once_with(
+            "channel1/response/register_participant",
+            {"command": "register", "status": "ready", "registered": True,
+             "transaction_id": "transaction1", "device_uuid": "area1"}
+        )
+
+        # Exception raised
+        redis_communicator.reset_mock()
+        redis_communicator.publish_json.side_effect = Exception
+        assert ExternalStrategyConnectionManager.register(
+            redis_communicator, "channel1", is_connected=False,
+            transaction_id="transaction1", area_uuid="area1") is False
+
+    @patch("d3a.models.strategy.external_strategies.ExternalStrategyConnectionManager."
+           "check_for_connected_and_reply")
+    def test_unregister(self, check_for_connected_mock):
+        """Test the unregister method of AreaExternalConnectionManager."""
+        redis_communicator = MagicMock()
+
+        # is_connected=False
+        check_for_connected_mock.return_value = False
+        assert ExternalStrategyConnectionManager.unregister(
+            redis_communicator, "channel1", is_connected=False,
+            transaction_id="transaction1") is False
+        redis_communicator.publish_json.assert_not_called()
+
+        # is_connected=True
+        check_for_connected_mock.return_value = True
+        assert ExternalStrategyConnectionManager.unregister(
+            redis_communicator, "channel1", is_connected=True,
+            transaction_id="transaction1") is False
+        redis_communicator.publish_json.assert_called_once_with(
+            "channel1/response/unregister_participant",
+            {"command": "unregister", "status": "ready", "unregistered": True,
+             "transaction_id": "transaction1"}
+        )
+
+        # Exception raised
+        redis_communicator.reset_mock()
+        redis_communicator.publish_json.side_effect = Exception
+        assert ExternalStrategyConnectionManager.unregister(
+            redis_communicator, "channel1", is_connected=False,
+            transaction_id="transaction1") is False
+
+    def test_check_for_connected_and_reply(self):
+        """Test the check_for_connected_and_reply method of AreaExternalConnectionManager."""
+        redis_communicator = MagicMock()
+
+        assert ExternalStrategyConnectionManager.check_for_connected_and_reply(
+            redis_communicator, "channel1", is_connected=True) is True
+        redis_communicator.publish_json.assert_not_called()
+
+        assert ExternalStrategyConnectionManager.check_for_connected_and_reply(
+            redis_communicator, "channel1", is_connected=False) is False
+        redis_communicator.publish_json.assert_called_once_with(
+            "channel1",
+            {"status": "error",
+             "error_message": "Client should be registered in order to access this area."}
+        )
