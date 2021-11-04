@@ -1238,13 +1238,13 @@
 <h2 id="backend-configuration">Backend Configuration<a class="headerlink" href="#backend-configuration" title="Permanent link">&para;</a></h2>
 <p>To implement a market maker in a backend simulation, two methods are available : </p>
 <p><a href="https://github.com/gridsingularity/d3a/blob/master/src/d3a/models/strategy/market_maker_strategy.py">infinite power plant</a>:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">Market</span> <span class="p">(</span><span class="s1">&#39;Market Maker&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">MarketMakerStrategy</span><span class="p">(</span><span class="n">energy_rate</span><span class="o">=</span><span class="n">selling_rate</span><span class="p">,</span>
-<span class="n">grid_connected</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">Market ('Market Maker', strategy=MarketMakerStrategy(energy_rate=selling_rate,
+grid_connected=True))
+</code></pre>
 
 <p><a href="https://github.com/gridsingularity/d3a/blob/master/src/d3a/models/strategy/infinite_bus.py">infinite bus </a>:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">Market</span> <span class="p">(</span><span class="s1">&#39;Market Maker&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">InfiniteBusStrategy</span><span class="p">(</span><span class="n">energy_buy_rate</span><span class="o">=</span><span class="mi">22</span><span class="p">,</span> <span class="n">energy_sell_rate</span><span class="o">=</span><span class="mi">22</span><span class="p">))</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">Market ('Market Maker', strategy=InfiniteBusStrategy(energy_buy_rate=22, energy_sell_rate=22))
+</code></pre>
                 
                   
                 

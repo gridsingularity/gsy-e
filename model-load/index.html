@@ -1253,13 +1253,13 @@
 <h2 id="backend-configuration">Backend Configuration<a class="headerlink" href="#backend-configuration" title="Permanent link">&para;</a></h2>
 <p>To implement the load in a backend simulation, two options are available : </p>
 <p><a href="https://github.com/gridsingularity/d3a/blob/master/src/d3a/models/strategy/load_hours.py">User configure Profile</a></p>
-<div class="codehilite"><pre><span></span><code><span class="n">Market</span><span class="p">(</span><span class="s1">&#39;Load&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadHoursStrategy</span><span class="p">(</span><span class="n">avg_power_W</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">hrs_per_day</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span><span class="n">hrs_of_day</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">18</span><span class="p">)),</span> <span class="n">initial_buying_rate</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">final_buying_rate</span><span class="o">=</span><span class="mi">35</span><span class="p">))</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">Market('Load', strategy=LoadHoursStrategy(avg_power_W=200, hrs_per_day=6,hrs_of_day=list(range(12, 18)), initial_buying_rate=0, final_buying_rate=35))
+</code></pre>
 
 <p><a href="https://github.com/gridsingularity/d3a/blob/master/src/d3a/models/strategy/predefined_load.py">User upload Profile</a></p>
-<div class="codehilite"><pre><span></span><code><span class="n">user_profile_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">d3a_path</span><span class="p">,</span><span class="s2">&quot;assets/load.csv&quot;</span><span class="p">)</span>
-<span class="n">Market</span><span class="p">(</span><span class="s1">&#39;Load&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadProfileStrategy</span><span class="p">(</span><span class="n">daily_load_profile</span><span class="o">=</span><span class="n">user_profile_path</span><span class="p">,</span> <span class="n">initial_buying_rate</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">final_buying_rate</span><span class="o">=</span><span class="mi">35</span><span class="p">))</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">user_profile_path = os.path.join(d3a_path,&quot;assets/load.csv&quot;)
+Market('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path, initial_buying_rate=0, final_buying_rate=35))
+</code></pre>
 
 <h2 id="addendum-hrs_of_day-and-hrs_per_day">Addendum: hrs_of_day and hrs_per_day<a class="headerlink" href="#addendum-hrs_of_day-and-hrs_per_day" title="Permanent link">&para;</a></h2>
 <p>hrs_of_day defines the allowed time-window in which the load has to consume for a time defined by hrs_per_day. </p>
