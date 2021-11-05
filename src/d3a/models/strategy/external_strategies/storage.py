@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import logging
-from typing import Dict, List
+from typing import Dict, List, TYPE_CHECKING, Callable
 
 from pendulum import DateTime
 
@@ -27,8 +27,22 @@ from d3a.models.strategy.external_strategies import (
     ExternalMixin, IncomingRequest, ExternalStrategyConnectionManager, default_market_info)
 from d3a.models.strategy.storage import StorageStrategy
 
+if TYPE_CHECKING:
+    from d3a.models.state import StorageState
+    from d3a.models.strategy import Offers
+
 
 class StorageExternalMixin(ExternalMixin):
+
+    state: "StorageState"
+    offers: "Offers"
+    post_offer: Callable
+    is_bid_posted: Callable
+    remove_bid_from_pending: Callable
+    posted_bid_energy: Callable
+    post_bid: Callable
+    _delete_past_state: Callable
+
     """
     Mixin for enabling an external api for the storage strategies.
     Should always be inherited together with a superclass of StorageStrategy.
@@ -381,7 +395,7 @@ class StorageExternalMixin(ExternalMixin):
                 self.area.current_market.time_slot
                 if self.area.current_market else None,
                 self.spot_market.time_slot,
-                [self.spot_market_time_slot]
+                [self.spot_market.time_slot]
             )
             self.state.clamp_energy_to_sell_kWh([self.spot_market.time_slot])
             self.state.clamp_energy_to_buy_kWh([self.spot_market.time_slot])
@@ -397,7 +411,7 @@ class StorageExternalMixin(ExternalMixin):
                 market_info["last_market_maker_rate"] = (
                     get_market_maker_rate_from_config(self.area.current_market))
                 market_info["last_market_stats"] = (
-                    self.market_area.stats.get_price_stats_current_market())
+                    self.area.stats.get_price_stats_current_market())
                 self.redis.publish_json(market_event_channel, market_info)
             self._delete_past_state()
         else:
@@ -411,7 +425,7 @@ class StorageExternalMixin(ExternalMixin):
         if not self.connected and not self.is_aggregator_controlled:
             super().event_tick()
         else:
-            self.state.tick(self.market_area, self.spot_market.time_slot)
+            self.state.tick(self.area, self.spot_market.time_slot)
             self.state.clamp_energy_to_sell_kWh([self.spot_market.time_slot])
             self.state.clamp_energy_to_buy_kWh([self.spot_market.time_slot])
 
