@@ -25,7 +25,7 @@ from d3a_interface.constants_limits import ConstSettings
 from hypothesis import strategies as st
 from hypothesis.control import assume
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rule
-from pendulum import DateTime, now
+from pendulum import now
 
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.blockchain_interface import NonBlockchainInterface
@@ -37,8 +37,8 @@ from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market.balancing import BalancingMarket
 from d3a.models.market.one_sided import OneSidedMarket
-from d3a.models.market.two_sided import TwoSidedMarket
 from d3a.models.market.settlement import SettlementMarket
+from d3a.models.market.two_sided import TwoSidedMarket
 
 device_registry_dict = {
     "A": {"balancing rates": (33, 35)},
@@ -117,37 +117,34 @@ def test_market_offer_delete_readonly(market):
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
-    (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+    (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now(tz=TIME_ZONE)),
      "offer", "accept_offer"),
-    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now(tz=TIME_ZONE)),
      "balancing_offer", "accept_offer"),
-    (SettlementMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+    (SettlementMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now(tz=TIME_ZONE)),
      "offer", "accept_offer")
 ])
 def test_market_trade(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 10, "A", "A")
-    now = DateTime.now(tz=TIME_ZONE)
     trade = getattr(market, accept_offer)(offer_or_id=e_offer, buyer="B",
-                                          energy=10, time=now)
+                                          energy=10)
     assert trade
     assert trade == market.trades[0]
     assert trade.id
-    assert trade.creation_time == now
+    assert trade.creation_time > e_offer.creation_time
     assert trade.offer_bid == e_offer
     assert trade.seller == "A"
     assert trade.buyer == "B"
 
 
 def test_balancing_market_negative_offer_trade(market=BalancingMarket(
-    bc=NonBlockchainInterface(str(uuid4())), time_slot=now())):  # NOQA
+        bc=NonBlockchainInterface(str(uuid4())))):  # NOQA
     offer = market.balancing_offer(20, -10, "A", "A")
-
-    now = DateTime.now(tz=TIME_ZONE)
-    trade = market.accept_offer(offer, "B", time=now, energy=-10)
+    trade = market.accept_offer(offer, "B", energy=-10)
     assert trade
     assert trade == market.trades[0]
     assert trade.id
-    assert trade.creation_time == now
+    assert trade.creation_time > offer.creation_time
     assert trade.offer_bid is offer
     assert trade.seller == "A"
     assert trade.buyer == "B"
@@ -163,9 +160,7 @@ def test_balancing_market_negative_offer_trade(market=BalancingMarket(
 ])
 def test_market_trade_by_id(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 10, "A", "A")
-    now = DateTime.now(tz=TIME_ZONE)
-    trade = getattr(market, accept_offer)(offer_or_id=e_offer.id, buyer="B",
-                                          energy=10, time=now)
+    trade = getattr(market, accept_offer)(offer_or_id=e_offer.id, buyer="B", energy=10)
     assert trade
 
 

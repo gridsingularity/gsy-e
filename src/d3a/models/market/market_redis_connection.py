@@ -4,12 +4,12 @@ from concurrent.futures import ThreadPoolExecutor
 from uuid import uuid4
 
 from d3a_interface.data_classes import BaseBidOffer, Trade
+from d3a_interface.utils import key_in_dict_and_not_none
 
+from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT, MAX_WORKER_THREADS
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import (
     ResettableCommunicator, BlockingCommunicator)
 from d3a.events import MarketEvent
-from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT, MAX_WORKER_THREADS
-from d3a_interface.utils import key_in_dict_and_not_none
 
 
 class MarketRedisEventPublisher:
@@ -121,23 +121,19 @@ class MarketRedisEventSubscriber:
 
     def _parse_payload(self, payload):
         data_dict = json.loads(payload["data"])
-        return MarketRedisEventSubscriber.sanitize_parameters(data_dict, self.market.now)
+        return MarketRedisEventSubscriber._parse_order_objects(data_dict)
 
     @classmethod
-    def sanitize_parameters(cls, data_dict, current_time):
+    def _parse_order_objects(cls, data_dict):
         if (key_in_dict_and_not_none(data_dict, "offer_or_id")
                 and isinstance(data_dict["offer_or_id"], str)):
-            data_dict["offer_or_id"] = (
-                BaseBidOffer.from_json(data_dict["offer_or_id"], current_time))
+            data_dict["offer_or_id"] = BaseBidOffer.from_json(data_dict["offer_or_id"])
         if key_in_dict_and_not_none(data_dict, "offer") and isinstance(data_dict["offer"], str):
-            data_dict["offer"] = (
-                BaseBidOffer.from_json(data_dict["offer"], current_time))
+            data_dict["offer"] = BaseBidOffer.from_json(data_dict["offer"])
         if key_in_dict_and_not_none(data_dict, "bid") and isinstance(data_dict["bid"], str):
-            data_dict["bid"] = (
-                BaseBidOffer.from_json(data_dict["bid"]))
+            data_dict["bid"] = BaseBidOffer.from_json(data_dict["bid"])
         if key_in_dict_and_not_none(data_dict, "trade") and isinstance(data_dict["trade"], str):
-            data_dict["trade"] = (
-                Trade.from_json(data_dict["trade"], current_time))
+            data_dict["trade"] = Trade.from_json(data_dict["trade"])
 
         return data_dict
 
@@ -238,18 +234,6 @@ class TwoSidedMarketRedisEventSubscriber(MarketRedisEventSubscriber):
     @property
     def _accept_bid_response_channel(self):
         return f"{self._accept_bid_channel}/RESPONSE"
-
-    @classmethod
-    def sanitize_parameters(cls, data_dict):
-        data_dict = super().sanitize_parameters(data_dict)
-        if "bid_or_id" in data_dict and data_dict["bid_or_id"] is not None:
-            if isinstance(data_dict["bid_or_id"], str):
-                data_dict["bid_or_id"] = BaseBidOffer.from_json(data_dict["bid_or_id"])
-        if "bid" in data_dict and data_dict["bid"] is not None:
-            if isinstance(data_dict["bid"], str):
-                data_dict["bid"] = BaseBidOffer.from_json(data_dict["bid"])
-
-        return data_dict
 
     def _accept_bid(self, payload):
         def thread_cb():
