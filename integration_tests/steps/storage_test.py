@@ -60,9 +60,11 @@ def step_impl(context):
                     trades_bought.append(trade)
 
         assert all([round(trade.offer_bid.energy_rate, 2) >=
-                    round(final_selling_rate[trade.time.hour], 2) for trade in trades_sold])
+                    round(final_selling_rate[trade.creation_time.hour], 2)
+                    for trade in trades_sold])
         assert all([round(trade.offer_bid.energy_rate, 2) <=
-                    round(final_buying_rate[trade.time.hour], 2) for trade in trades_bought])
+                    round(final_buying_rate[trade.creation_time.hour], 2)
+                    for trade in trades_bought])
         assert len(trades_sold) > 0
 
 

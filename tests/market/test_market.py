@@ -134,7 +134,7 @@ def test_market_trade(market, offer, accept_offer):
     assert trade
     assert trade == market.trades[0]
     assert trade.id
-    assert trade.time == now
+    assert trade.creation_time == now
     assert trade.offer_bid == e_offer
     assert trade.seller == "A"
     assert trade.buyer == "B"
@@ -156,7 +156,8 @@ def test_orders_per_slot(market):
                                          "id": "bid1",
                                          "original_price": 10,
                                          "requirements": None,
-                                         "time": datetime_to_string_incl_seconds(creation_time),
+                                         "creation_time": datetime_to_string_incl_seconds(
+                                             creation_time),
                                          "type": "Bid"}],
                                "offers": [{"attributes": None,
                                            "energy": 10,
@@ -168,7 +169,8 @@ def test_orders_per_slot(market):
                                            "seller_id": None,
                                            "seller_origin": None,
                                            "seller_origin_id": None,
-                                           "time": datetime_to_string_incl_seconds(creation_time),
+                                           "creation_time": datetime_to_string_incl_seconds(
+                                               creation_time),
                                            "type": "Offer"}]}}
 
 
@@ -181,7 +183,7 @@ def test_balancing_market_negative_offer_trade(market=BalancingMarket(
     assert trade
     assert trade == market.trades[0]
     assert trade.id
-    assert trade.time == now
+    assert trade.creation_time == now
     assert trade.offer_bid is offer
     assert trade.seller == "A"
     assert trade.buyer == "B"

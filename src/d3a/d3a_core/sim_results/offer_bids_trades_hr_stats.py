@@ -40,12 +40,12 @@ class OfferBidTradeGraphStats:
             info_dict = {"rate": bid.energy_rate, "tag": "bid",
                          "color": self.color_mapping[bid.buyer_origin],
                          "buyer_origin": bid.buyer_origin, "energy": bid.energy}
-            self.state[area.name][last_past_market.time_slot][bid.time].append(info_dict)
+            self.state[area.name][last_past_market.time_slot][bid.creation_time].append(info_dict)
 
         for offer in last_past_market.offer_history:
             self.check_and_create_color_mapping(offer.seller_origin)
             self.check_and_create_list(area, last_past_market, offer)
-            self.state[area.name][last_past_market.time_slot][offer.time].append(
+            self.state[area.name][last_past_market.time_slot][offer.creation_time].append(
                 {"rate": offer.energy_rate, "tag": "offer",
                  "color": self.color_mapping[offer.seller_origin],
                  "seller_origin": offer.seller_origin, "energy": offer.energy})
@@ -57,7 +57,8 @@ class OfferBidTradeGraphStats:
                          "color": self.color_mapping[trade.seller_origin],
                          "seller_origin": trade.seller_origin, "buyer_origin": trade.buyer_origin,
                          "energy": trade.offer_bid.energy}
-            self.state[area.name][last_past_market.time_slot][trade.time].append(info_dict)
+            self.state[area.name][last_past_market.time_slot][trade.creation_time].append(
+                info_dict)
 
         for child in area.children:
             if not child.children:
@@ -70,5 +71,5 @@ class OfferBidTradeGraphStats:
                 f"rgb({randint(0, 255)}, {randint(0, 255)}, {randint(0, 255)})"
 
     def check_and_create_list(self, area, last_past_market, trade):
-        if trade.time not in self.state[area.name][last_past_market.time_slot].keys():
-            self.state[area.name][last_past_market.time_slot][trade.time] = []
+        if trade.creation_time not in self.state[area.name][last_past_market.time_slot].keys():
+            self.state[area.name][last_past_market.time_slot][trade.creation_time] = []

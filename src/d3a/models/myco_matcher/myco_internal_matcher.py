@@ -62,6 +62,8 @@ class MycoInternalMatcher(MycoMatcherInterface):
             markets = [*area_data["markets"], *area_data["settlement_markets"],
                        area_data["future_markets"]]
             for market in markets:
+                if not market:
+                    continue
                 while True:
                     orders = market.orders_per_slot()
                     # Format should be: {area_uuid: {time_slot: {"bids": [], "offers": [], ...}}}

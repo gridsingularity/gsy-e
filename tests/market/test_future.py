@@ -71,7 +71,7 @@ def count_orders_in_buffers(future_markets: FutureMarkets, expected_count: int) 
 
 
 class TestFutureMarkets:
-    """Tests that tarked the future markets."""
+    """Tests that target the future markets."""
 
     @staticmethod
     def test_create_future_markets(future_market):
@@ -220,7 +220,7 @@ class TestFutureMarkets:
                           "id": "bid1",
                           "original_price": 10,
                           "requirements": None,
-                          "time": datetime_to_string_incl_seconds(time_slot1),
+                          "creation_time": datetime_to_string_incl_seconds(time_slot1),
                           "type": "Bid"}],
                 "offers": []},
             time_slot2.format(DATE_TIME_FORMAT): {
@@ -235,5 +235,5 @@ class TestFutureMarkets:
                             "seller_id": None,
                             "seller_origin": None,
                             "seller_origin_id": None,
-                            "time": datetime_to_string_incl_seconds(time_slot2),
+                            "creation_time": datetime_to_string_incl_seconds(time_slot2),
                             "type": "Offer"}]}}
