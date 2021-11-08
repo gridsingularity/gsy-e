@@ -101,9 +101,9 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
     def test_parse_order_objects(self):
         input_data = {
             "trade_bid_info": {
-                'original_bid_rate': 20, 'propagated_bid_rate': 30,
-                'original_offer_rate': 99, 'propagated_offer_rate': 10,
-                'trade_rate': 12},
+                "original_bid_rate": 20, "propagated_bid_rate": 30,
+                "original_offer_rate": 99, "propagated_offer_rate": 10,
+                "trade_rate": 12},
             "offer_or_id": json.dumps({"id": "offer_id2", "type": "Offer",
                                        "price": 123, "energy": 4321, "seller": "offer_seller2"}),
             "offer": json.dumps({"id": "offer_id", "type": "Offer",
@@ -216,7 +216,7 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
         )
 
     def test_accept_bid_calls_market_method_and_publishes_response(self):
-        bid = Bid("b_id", now, 12, 13, "b_buyer")
+        bid = Bid("b_id", now(), 12, 13, "b_buyer")
         payload = {"data": json.dumps({
                 "seller": "mykonos",
                 "energy": 12,
