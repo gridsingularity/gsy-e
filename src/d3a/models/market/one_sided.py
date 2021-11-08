@@ -20,10 +20,10 @@ from logging import getLogger
 from math import isclose
 from typing import Union, Dict, List, Optional
 
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, TIME_ZONE
 from d3a_interface.data_classes import Offer, Trade, TradeBidOfferInfo
 from d3a_interface.enums import SpotMarketTypeEnum
-from pendulum import DateTime
+from pendulum import DateTime, now
 
 from d3a.d3a_core.exceptions import (InvalidOffer, MarketReadOnlyException, OfferNotFoundException,
                                      InvalidTrade, MarketException)
@@ -248,7 +248,6 @@ class OneSidedMarket(Market):
     @lock_market_action
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *,
                      energy: Optional[float] = None,
-                     time: Optional[DateTime] = None,
                      already_tracked: bool = False,
                      trade_rate: Optional[float] = None,
                      trade_bid_info: Optional[TradeBidOfferInfo] = None,
@@ -276,9 +275,6 @@ class OneSidedMarket(Market):
         orig_offer_price = self._calculate_original_prices(offer)
 
         try:
-            if time is None:
-                time = self.now
-
             if energy == 0:
                 raise InvalidTrade("Energy can not be zero.")
             elif energy < offer.energy:
@@ -316,7 +312,8 @@ class OneSidedMarket(Market):
         self.offers.pop(offer.id, None)
         offer_bid_trade_info = self.fee_class.propagate_original_bid_info_on_offer_trade(
             trade_original_info=trade_bid_info)
-        trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer,
+
+        trade = Trade(trade_id, now(tz=TIME_ZONE), offer, offer.seller, buyer, residual_offer,
                       offer_bid_trade_info=offer_bid_trade_info,
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
                       fee_price=fee_price, buyer_origin_id=buyer_origin_id,
