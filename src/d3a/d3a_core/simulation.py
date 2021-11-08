@@ -347,7 +347,7 @@ class Simulation:
 
             bid_offer_matcher.event_market_cycle(
                 slot_completion="0%",
-                market_slot=self.progress_info.next_slot_str)
+                market_slot=self.progress_info.current_slot_str)
 
             self._update_and_send_results()
             self.live_events.handle_all_events(self.area)
