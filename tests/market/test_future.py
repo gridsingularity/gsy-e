@@ -220,7 +220,8 @@ class TestFutureMarkets:
                           "id": "bid1",
                           "original_price": 10,
                           "requirements": None,
-                          "time": datetime_to_string_incl_seconds(time_slot1),
+                          "time_slot": datetime_to_string_incl_seconds(time_slot1),
+                          "creation_time": datetime_to_string_incl_seconds(time_slot1),
                           "type": "Bid"}],
                 "offers": []},
             time_slot2.format(DATE_TIME_FORMAT): {
@@ -231,9 +232,10 @@ class TestFutureMarkets:
                             "id": "offer1",
                             "original_price": 10,
                             "requirements": None,
+                            "time_slot": datetime_to_string_incl_seconds(time_slot2),
                             "seller": "seller",
                             "seller_id": None,
                             "seller_origin": None,
                             "seller_origin_id": None,
-                            "time": datetime_to_string_incl_seconds(time_slot2),
+                            "creation_time": datetime_to_string_incl_seconds(time_slot2),
                             "type": "Offer"}]}}

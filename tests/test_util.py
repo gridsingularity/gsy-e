@@ -162,17 +162,16 @@ class TestD3ACoreUtil:
         assert (settings_dict["IAASettings"]["AlternativePricing"]["COMPARE_PRICING_SCHEMES"] ==
                 ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES)
 
-    @patch("d3a.d3a_core.util.pendulum")
-    def test_future_market_counter(self, mock_datetime):
+    def test_future_market_counter(self):
         """Test the counter of future market clearing."""
         with patch("d3a.d3a_core.util.ConstSettings.FutureMarketSettings."
-                   "FUTURE_MARKET_CLEARING_INTERVAL", 15):
+                   "FUTURE_MARKET_CLEARING_INTERVAL_MINUTES", 15):
+            future_market_counter = FutureMarketCounter()
             current_time = datetime(year=2021, month=11, day=2,
                                     hour=1, minute=1, second=0)
-            mock_datetime.now.return_value = current_time
-            future_market_counter = FutureMarketCounter()
-            assert future_market_counter.is_time_for_clearing is False
+            future_market_counter(current_time)
+            assert future_market_counter.is_time_for_clearing(current_time) is False
 
             # Skip the 15 minutes duration
-            mock_datetime.now.return_value = current_time.add(minutes=15)
-            assert future_market_counter.is_time_for_clearing is True
+            current_time = current_time.add(minutes=15)
+            assert future_market_counter.is_time_for_clearing(current_time) is True

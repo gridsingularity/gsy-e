@@ -155,7 +155,9 @@ def test_orders_per_slot(market):
                                          "id": "bid1",
                                          "original_price": 10,
                                          "requirements": None,
-                                         "time": datetime_to_string_incl_seconds(creation_time),
+                                         "time_slot": "",
+                                         "creation_time": datetime_to_string_incl_seconds(
+                                             creation_time),
                                          "type": "Bid"}],
                                "offers": [{"attributes": None,
                                            "energy": 10,
@@ -167,7 +169,9 @@ def test_orders_per_slot(market):
                                            "seller_id": None,
                                            "seller_origin": None,
                                            "seller_origin_id": None,
-                                           "time": datetime_to_string_incl_seconds(creation_time),
+                                           "time_slot": "",
+                                           "creation_time": datetime_to_string_incl_seconds(
+                                               creation_time),
                                            "type": "Offer"}]}}
 
 

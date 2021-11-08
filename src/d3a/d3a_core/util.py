@@ -25,7 +25,6 @@ import tty
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 
-import pendulum
 from click.types import ParamType
 from d3a_interface.constants_limits import GlobalConfig, RangeLimit, ConstSettings
 from d3a_interface.enums import BidOfferMatchAlgoEnum
@@ -495,20 +494,22 @@ class FutureMarketCounter:
     In the future market, we only want to clear in a predefined interval.
     """
     def __init__(self):
-        self.last_time_dispatched = pendulum.now()
+        self.last_time_dispatched = None
 
-    @property
-    def is_time_for_clearing(self) -> bool:
+    def __call__(self, last_time_dispatched: DateTime):
+        """To be called when activating the counter."""
+        self.last_time_dispatched = last_time_dispatched
+
+    def is_time_for_clearing(self, current_time: DateTime) -> bool:
         """Compare current time with the latest time clearing was dispatched.
 
-        Returns True if the FUTURE_MARKET_CLEARING_INTERVAL has
+        Returns True if the FUTURE_MARKET_CLEARING_INTERVAL_MINUTES has
         already passed since the last dispatch time.
         """
-        current_time = pendulum.now()
         duration_in_s = (current_time - self.last_time_dispatched).seconds
         duration_in_min = duration_in_s // 60
-        x = ConstSettings.FutureMarketSettings.FUTURE_MARKET_CLEARING_INTERVAL
-        if duration_in_min >= ConstSettings.FutureMarketSettings.FUTURE_MARKET_CLEARING_INTERVAL:
+        if (duration_in_min >=
+                ConstSettings.FutureMarketSettings.FUTURE_MARKET_CLEARING_INTERVAL_MINUTES):
             self.last_time_dispatched = current_time
             return True
         return False

@@ -164,6 +164,7 @@ class Simulation:
         self.area = self.setup_module.get_setup(self.simulation_config)
         bid_offer_matcher.activate()
         global_objects.external_global_stats(self.area, self.simulation_config.ticks_per_slot)
+        global_objects.future_market_counter(self.area.now)
 
         self.endpoint_buffer = SimulationEndpointBuffer(
             redis_job_id, self.initial_params,
