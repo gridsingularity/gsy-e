@@ -253,7 +253,6 @@ class FutureMarkets(TwoSidedMarket):
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *,
                      energy: Optional[float] = None,
-                     time: Optional[DateTime] = None,
                      already_tracked: bool = False,
                      trade_rate: Optional[float] = None,
                      trade_bid_info: Optional[TradeBidOfferInfo] = None,
@@ -262,7 +261,7 @@ class FutureMarkets(TwoSidedMarket):
                      buyer_id: Optional[str] = None) -> Trade:
         """Call superclass accept_offer and buffer returned trade object."""
         trade = super().accept_offer(offer_or_id=offer_or_id,
-                                     buyer=buyer, energy=energy, time=time,
+                                     buyer=buyer, energy=energy,
                                      already_tracked=already_tracked, trade_rate=trade_rate,
                                      trade_bid_info=trade_bid_info, buyer_origin=buyer_origin,
                                      buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
