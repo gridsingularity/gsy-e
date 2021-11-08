@@ -22,10 +22,10 @@ from logging import getLogger
 from math import isclose
 from typing import Dict, List, Union, Tuple, Optional
 
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, TIME_ZONE
 from d3a_interface.data_classes import Bid, Offer, Trade, TradeBidOfferInfo, BidOfferMatch
 from d3a_interface.matching_algorithms.requirements_validators import RequirementsSatisfiedChecker
-from pendulum import DateTime
+from pendulum import DateTime, now
 
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import (BidNotFoundException, InvalidBid,
@@ -113,7 +113,7 @@ class TwoSidedMarket(OneSidedMarket):
             raise MarketException("Negative price after taxes, bid cannot be posted.")
 
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
-                  self.now, price, energy, buyer, original_price, buyer_origin,
+                  now(tz=TIME_ZONE), price, energy, buyer, original_price, buyer_origin,
                   buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
                   attributes=attributes, requirements=requirements, time_slot=time_slot)
 
@@ -245,7 +245,7 @@ class TwoSidedMarket(OneSidedMarket):
             trade_offer_info, ignore_fees=True
         )
 
-        trade = Trade(str(uuid.uuid4()), self.now, bid, seller,
+        trade = Trade(str(uuid.uuid4()), now(tz=TIME_ZONE), bid, seller,
                       buyer, residual_bid, already_tracked=already_tracked,
                       offer_bid_trade_info=updated_bid_trade_info,
                       buyer_origin=bid.buyer_origin, seller_origin=seller_origin,

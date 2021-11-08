@@ -21,7 +21,7 @@ from parameterized import parameterized
 from logging import getLogger
 from unittest.mock import MagicMock
 from threading import Event
-from pendulum import now
+from pendulum import datetime
 
 import d3a.models.area
 from d3a.models.area import Area
@@ -253,11 +253,12 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
             dispatcher.redis.publish.assert_called_once()
 
     def test_publish_event_converts_python_objects_to_json(self):
-        offer = Offer("1", now(), 2, 3, "A")
-        trade = Trade("2", now(), Offer("accepted", now(), 7, 8, "Z"), "B", "C",
+        now = datetime(2021, 11, 3, 10, 45)
+        offer = Offer("1", now, 2, 3, "A")
+        trade = Trade("2", now.add(minutes=1), Offer("accepted", now, 7, 8, "Z"), "B", "C",
                       None, None, TradeBidOfferInfo(None, None, None, None, None))
-        new_offer = Offer("3", now(), 4, 5, "D")
-        existing_offer = Offer("4", now(), 5, 6, "E")
+        new_offer = Offer("3", now, 4, 5, "D")
+        existing_offer = Offer("4", now, 5, 6, "E")
         kwargs = {"offer": offer,
                   "trade": trade,
                   "new_offer": new_offer,
@@ -269,12 +270,10 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
             assert dispatcher.redis.publish.call_count == 1
             payload = json.loads(dispatcher.redis.publish.call_args_list[0][0][1])
             assert isinstance(payload["kwargs"]["offer"], str)
-            assert Offer.from_json(payload["kwargs"]["offer"], offer.creation_time) == offer
+            assert Offer.from_json(payload["kwargs"]["offer"]) == offer
             assert isinstance(payload["kwargs"]["trade"], str)
-            assert Trade.from_json(payload["kwargs"]["trade"], trade.creation_time) == trade
+            assert Trade.from_json(payload["kwargs"]["trade"]) == trade
             assert isinstance(payload["kwargs"]["new_offer"], str)
-            assert Offer.from_json(payload["kwargs"]["new_offer"],
-                                   new_offer.creation_time) == new_offer
+            assert Offer.from_json(payload["kwargs"]["new_offer"]) == new_offer
             assert isinstance(payload["kwargs"]["existing_offer"], str)
-            assert Offer.from_json(payload["kwargs"]["existing_offer"],
-                                   existing_offer.creation_time) == existing_offer
+            assert Offer.from_json(payload["kwargs"]["existing_offer"]) == existing_offer
