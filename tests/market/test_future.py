@@ -71,7 +71,7 @@ def count_orders_in_buffers(future_markets: FutureMarkets, expected_count: int) 
 
 
 class TestFutureMarkets:
-    """Tests that tarked the future markets."""
+    """Tests that target the future markets."""
 
     @staticmethod
     def test_create_future_markets(future_market):

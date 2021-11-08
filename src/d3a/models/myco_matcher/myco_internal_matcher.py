@@ -63,6 +63,8 @@ class MycoInternalMatcher(MycoMatcherInterface):
             if global_objects.future_market_counter.is_time_for_clearing:
                 markets.append(area_data["future_markets"])
             for market in markets:
+                if not market:
+                    continue
                 while True:
                     orders = market.orders_per_slot()
                     # Format should be: {area_uuid: {time_slot: {"bids": [], "offers": [], ...}}}
@@ -74,7 +76,6 @@ class MycoInternalMatcher(MycoMatcherInterface):
                     if not bid_offer_pairs:
                         break
                     market.match_recommendations(bid_offer_pairs)
-
         self.area_uuid_markets_mapping = {}
 
     def event_tick(self, **kwargs) -> None:

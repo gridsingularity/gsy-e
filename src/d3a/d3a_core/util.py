@@ -210,22 +210,22 @@ def read_settings_from_file(settings_file):
     Reads basic and advanced settings from a settings file (json format).
     """
     if os.path.isfile(settings_file):
-        with open(settings_file, "r") as sf:
+        with open(settings_file, "r", encoding="utf-8") as sf:
             settings = json.load(sf)
         advanced_settings = settings["advanced_settings"]
         simulation_settings = {
-            "sim_duration": IntervalType('H:M')(
-                settings["basic_settings"].get('sim_duration', GlobalConfig.sim_duration)),
-            "slot_length": IntervalType('M:S')(
-                settings["basic_settings"].get('slot_length', GlobalConfig.slot_length)),
-            "tick_length": IntervalType('M:S')(
-                settings["basic_settings"].get('tick_length', GlobalConfig.tick_length)),
+            "sim_duration": IntervalType("H:M")(
+                settings["basic_settings"].get("sim_duration", GlobalConfig.sim_duration)),
+            "slot_length": IntervalType("M:S")(
+                settings["basic_settings"].get("slot_length", GlobalConfig.slot_length)),
+            "tick_length": IntervalType("M:S")(
+                settings["basic_settings"].get("tick_length", GlobalConfig.tick_length)),
             "cloud_coverage": settings["basic_settings"].get(
-                'cloud_coverage', advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"])
+                "cloud_coverage", advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"])
         }
         return simulation_settings, advanced_settings
-    else:
-        raise FileExistsError("Please provide a valid settings_file path")
+
+    raise FileExistsError("Please provide a valid settings_file path")
 
 
 def update_advanced_settings(advanced_settings):

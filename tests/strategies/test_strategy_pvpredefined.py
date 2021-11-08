@@ -112,14 +112,15 @@ class FakeMarket:
         self.count = count
         self.id = str(count)
         self.created_offers = []
-        self.offers = {'id': Offer(id='id', time=pendulum.now(), price=10, energy=0.5, seller='A')}
+        self.offers = {
+            'id': Offer(id='id', creation_time=pendulum.now(), price=10, energy=0.5, seller='A')}
         self._time_slot = TIME
 
     def offer(self, price, energy, seller, original_price=None, seller_origin=None,
-              seller_origin_id=None, seller_id=None):
+              seller_origin_id=None, seller_id=None, time_slot=None):
         offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy, seller,
                       original_price, seller_origin=seller_origin,
-                      seller_origin_id=seller_origin_id, seller_id=seller_id)
+                      seller_origin_id=seller_origin_id, seller_id=seller_id, time_slot=time_slot)
         self.created_offers.append(offer)
         self.offers[offer.id] = offer
         return offer
@@ -223,7 +224,7 @@ def pv_test4(area_test3, called):
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {
-        Offer(id='id', time=pendulum.now(), price=20, energy=1,
+        Offer(id='id', creation_time=pendulum.now(), price=20, energy=1,
               seller='FakeArea'): area_test3.test_market.id
     }
     return p
