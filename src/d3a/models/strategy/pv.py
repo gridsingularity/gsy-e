@@ -75,7 +75,8 @@ class PVStrategy(BidEnabledStrategy):
                                 use_market_maker_rate, fit_to_limit,
                                 energy_rate_decrease_per_update)
 
-    def _create_settlement_market_strategy(self):
+    @classmethod
+    def _create_settlement_market_strategy(cls):
         return settlement_market_strategy_factory()
 
     @property

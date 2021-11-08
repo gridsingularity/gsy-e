@@ -23,6 +23,7 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.data_classes import Offer
 from pendulum import duration
 
+from d3a.d3a_core.exceptions import D3AException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.strategy.external_strategies import (
     ExternalMixin, IncomingRequest, ExternalStrategyConnectionManager, default_market_info)
@@ -36,7 +37,10 @@ if TYPE_CHECKING:
 
 
 class PVExternalMixin(ExternalMixin):
-
+    """
+    Mixin for enabling an external api for the PV strategies.
+    Should always be inherited together with a superclass of PVStrategy.
+    """
     state: "PVState"
     offers: "Offers"
     can_offer_be_posted: Callable
@@ -44,10 +48,6 @@ class PVExternalMixin(ExternalMixin):
     set_produced_energy_forecast_kWh_future_markets: Callable
     _delete_past_state: Callable
 
-    """
-    Mixin for enabling an external api for the PV strategies.
-    Should always be inherited together with a superclass of PVStrategy.
-    """
     @property
     def channel_dict(self) -> Dict:
         """Offer-related Redis API channels."""
@@ -83,7 +83,7 @@ class PVExternalMixin(ExternalMixin):
             response = {"command": "list_offers", "status": "ready",
                         "offer_list": filtered_offers,
                         "transaction_id": arguments.get("transaction_id")}
-        except Exception:
+        except D3AException:
             error_message = f"Error when handling list offers on area {self.device.name}"
             logging.exception(error_message)
             response = {"command": "list_offers", "status": "error",
@@ -103,8 +103,8 @@ class PVExternalMixin(ExternalMixin):
             market = self._get_market_from_command_argument(arguments)
             if arguments.get("offer") and not self.offers.is_offer_posted(
                     market.id, arguments["offer"]):
-                raise Exception("Offer_id is not associated with any posted offer.")
-        except Exception:
+                raise D3AException("Offer_id is not associated with any posted offer.")
+        except (D3AException, json.JSONDecodeError):
             logging.exception("Error when handling delete offer request. Payload %s", payload)
             self.redis.publish_json(
                 delete_offer_response_channel,
@@ -125,7 +125,7 @@ class PVExternalMixin(ExternalMixin):
             response = {"command": "offer_delete", "status": "ready",
                         "deleted_offers": deleted_offers,
                         "transaction_id": arguments.get("transaction_id")}
-        except Exception:
+        except D3AException:
             error_message = (f"Error when handling offer delete on area {self.device.name}: "
                              f"Offer Arguments: {arguments}")
             logging.exception(error_message)
@@ -155,7 +155,7 @@ class PVExternalMixin(ExternalMixin):
             # Check that every provided argument is allowed
             assert all(arg in allowed_args for arg in arguments.keys())
 
-        except Exception:
+        except (json.JSONDecodeError, AssertionError):
             logging.exception("Incorrect offer request. Payload %s.", payload)
             self.redis.publish_json(
                 offer_response_channel,
@@ -190,7 +190,7 @@ class PVExternalMixin(ExternalMixin):
                 {"command": "offer", "status": "ready",
                  "offer": offer.to_json_string(replace_existing=replace_existing),
                  "transaction_id": arguments.get("transaction_id")})
-        except Exception:
+        except (AssertionError, D3AException):
             error_message = (f"Error when handling offer create on area {self.device.name}: "
                              f"Offer Arguments: {arguments}")
             logging.exception(error_message)
@@ -275,7 +275,7 @@ class PVExternalMixin(ExternalMixin):
         market = self._get_market_from_command_argument(arguments)
         if arguments.get("offer") and not self.offers.is_offer_posted(
                 market.id, arguments["offer"]):
-            raise Exception("Offer_id is not associated with any posted offer.")
+            raise D3AException("Offer_id is not associated with any posted offer.")
 
         try:
             to_delete_offer_id = arguments.get("offer")
@@ -287,7 +287,7 @@ class PVExternalMixin(ExternalMixin):
                 "deleted_offers": deleted_offers,
                 "transaction_id": arguments.get("transaction_id")
             }
-        except Exception:
+        except D3AException:
             response = {
                 "command": "offer_delete", "status": "error",
                 "area_uuid": self.device.uuid,
@@ -306,7 +306,7 @@ class PVExternalMixin(ExternalMixin):
                 "command": "list_offers", "status": "ready", "offer_list": filtered_offers,
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id")}
-        except Exception:
+        except D3AException:
             response = {
                 "command": "list_offers", "status": "error",
                 "area_uuid": self.device.uuid,
@@ -350,7 +350,7 @@ class PVExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id"),
                 "area_uuid": self.device.uuid
             }
-        except Exception:
+        except (AssertionError, D3AException):
             logging.exception("Failed to post PV offer.")
             response = {
                 "command": "offer", "status": "error",
@@ -381,6 +381,7 @@ class PVForecastExternalStrategy(ForecastExternalMixin, PVPredefinedExternalStra
                   "final_selling_rate", "fit_to_limit", "update_interval",
                   "energy_rate_decrease_per_update", "use_market_maker_rate")
 
+    # pylint: disable=too-many-arguments
     def __init__(
             self, panel_count=1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
