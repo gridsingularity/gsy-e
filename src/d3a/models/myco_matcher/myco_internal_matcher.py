@@ -58,7 +58,6 @@ class MycoInternalMatcher(MycoMatcherInterface):
     def match_recommendations(self, **kwargs):
         """Request trade recommendations and match them in the relevant market."""
         for area_uuid, area_data in self.area_uuid_markets_mapping.items():
-            # TODO: we don't always want to clear future markets
             markets = [*area_data["markets"], *area_data["settlement_markets"]]
             if global_objects.future_market_counter.is_time_for_clearing(
                     area_data["current_time"]):
