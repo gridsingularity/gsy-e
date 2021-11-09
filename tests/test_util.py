@@ -169,7 +169,10 @@ class TestD3ACoreUtil:
             future_market_counter = FutureMarketCounter()
             current_time = datetime(year=2021, month=11, day=2,
                                     hour=1, minute=1, second=0)
-            future_market_counter(current_time)
+            # When the _last_time_dispatched is None -> return True
+            assert future_market_counter.is_time_for_clearing(current_time) is True
+
+            # The interval time did not pass yet
             assert future_market_counter.is_time_for_clearing(current_time) is False
 
             # Skip the 15 minutes duration
