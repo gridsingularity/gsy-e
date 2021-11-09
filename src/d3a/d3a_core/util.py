@@ -505,8 +505,7 @@ class FutureMarketCounter:
         if not self._last_time_dispatched:
             self._last_time_dispatched = current_time
             return True
-        duration_in_s = (current_time - self._last_time_dispatched).seconds
-        duration_in_min = duration_in_s // 60
+        duration_in_min = (current_time - self._last_time_dispatched).minutes
         if (duration_in_min >=
                 ConstSettings.FutureMarketSettings.FUTURE_MARKET_CLEARING_INTERVAL_MINUTES):
             self._last_time_dispatched = current_time
