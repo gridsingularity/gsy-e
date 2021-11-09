@@ -376,6 +376,7 @@ class StorageExternalMixin(ExternalMixin):
     def _device_info_dict(self) -> Dict:
         """Return the asset info."""
         return {
+            **super()._device_info_dict,
             "energy_to_sell": self.state.energy_to_sell_dict[self.spot_market.time_slot],
             "energy_active_in_bids": self.state.offered_sell_kWh[self.spot_market.time_slot],
             "energy_to_buy": self.state.energy_to_buy_dict[self.spot_market.time_slot],

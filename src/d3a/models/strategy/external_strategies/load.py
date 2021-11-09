@@ -22,6 +22,7 @@ from typing import Dict, List, Union, TYPE_CHECKING, Callable
 from d3a_interface.constants_limits import ConstSettings
 from pendulum import duration
 
+from d3a.d3a_core.exceptions import D3AException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.strategy.external_strategies import (
     ExternalMixin, IncomingRequest, default_market_info, ExternalStrategyConnectionManager)
@@ -99,7 +100,7 @@ class LoadExternalMixin(ExternalMixin):
                     "command": "list_bids", "status": "ready",
                     "bid_list": self.filtered_market_bids(market),
                     "transaction_id": arguments.get("transaction_id")}
-        except Exception:
+        except D3AException:
             error_message = f"Error when handling list bids on area {self.device.name}"
             logging.exception(error_message)
             response = {"command": "list_bids", "status": "error",
@@ -118,8 +119,8 @@ class LoadExternalMixin(ExternalMixin):
             arguments = json.loads(payload["data"])
             market = self._get_market_from_command_argument(arguments)
             if arguments.get("bid") and not self.is_bid_posted(market, arguments["bid"]):
-                raise Exception("Bid_id is not associated with any posted bid.")
-        except Exception as exception:
+                raise D3AException("Bid_id is not associated with any posted bid.")
+        except (D3AException, json.JSONDecodeError) as exception:
             self.redis.publish_json(
                 delete_bid_response_channel,
                 {"command": "bid_delete",
@@ -138,7 +139,7 @@ class LoadExternalMixin(ExternalMixin):
             deleted_bids = self.remove_bid_from_pending(market.id, bid_id=to_delete_bid_id)
             response = {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
                         "transaction_id": arguments.get("transaction_id")}
-        except Exception:
+        except D3AException:
             error_message = (f"Error when handling bid delete on area {self.device.name}: "
                              f"Bid Arguments: {arguments}, "
                              "Bid does not exist on the current market.")
@@ -201,7 +202,7 @@ class LoadExternalMixin(ExternalMixin):
                     "command": "bid", "status": "ready",
                     "bid": bid.to_json_string(replace_existing=replace_existing),
                     "transaction_id": arguments.get("transaction_id")}
-        except Exception:
+        except (AssertionError, D3AException):
             error_message = (f"Error when handling bid create on area {self.device.name}: "
                              f"Bid Arguments: {arguments}")
             logging.exception(error_message)
@@ -214,6 +215,7 @@ class LoadExternalMixin(ExternalMixin):
     def _device_info_dict(self) -> Dict:
         """Return the asset info."""
         return {
+            **super()._device_info_dict,
             "energy_requirement_kWh":
                 self.state.get_energy_requirement_Wh(self.spot_market.time_slot) / 1000.0,
             "energy_active_in_bids": self.posted_bid_energy(self.spot_market.id),
@@ -223,13 +225,13 @@ class LoadExternalMixin(ExternalMixin):
 
     def event_market_cycle(self) -> None:
         """Handler for the market cycle event."""
-
         self._reject_all_pending_requests()
         self._update_connection_status()
         if not self.should_use_default_strategy:
             self.add_entry_in_hrs_per_day()
             self._calculate_active_markets()
             self._update_energy_requirement_future_markets()
+            self._set_energy_measurement_of_last_market()
             if not self.is_aggregator_controlled:
                 market_event_channel = f"{self.channel_prefix}/events/market"
                 market_info = self.spot_market.info
@@ -317,7 +319,7 @@ class LoadExternalMixin(ExternalMixin):
                 "bid": bid.to_json_string(replace_existing=replace_existing),
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id")}
-        except Exception:
+        except (AssertionError, D3AException):
             logging.exception("Error when handling bid on area %s", self.device.name)
             response = {
                 "command": "bid", "status": "error",
@@ -338,7 +340,7 @@ class LoadExternalMixin(ExternalMixin):
                 "command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id")}
-        except Exception:
+        except D3AException:
             logging.exception("Error when handling delete bid on area %s", self.device.name)
             response = {
                 "command": "bid_delete", "status": "error",
@@ -358,7 +360,7 @@ class LoadExternalMixin(ExternalMixin):
                 "bid_list": self.filtered_market_bids(market),
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id")}
-        except Exception:
+        except D3AException:
             logging.exception("Error when handling list bids on area %s", self.device.name)
             response = {
                 "command": "list_bids", "status": "error",
@@ -369,11 +371,11 @@ class LoadExternalMixin(ExternalMixin):
 
 
 class LoadHoursExternalStrategy(LoadExternalMixin, LoadHoursStrategy):
-    pass
+    """Concrete LoadHoursStrategy class with external connection capabilities"""
 
 
 class LoadProfileExternalStrategy(LoadExternalMixin, DefinedLoadStrategy):
-    pass
+    """Concrete DefinedLoadStrategy class with external connection capabilities"""
 
 
 class LoadForecastExternalStrategy(ForecastExternalMixin, LoadProfileExternalStrategy):
@@ -384,6 +386,7 @@ class LoadForecastExternalStrategy(ForecastExternalMixin, LoadProfileExternalStr
                   "update_interval", "initial_buying_rate", "final_buying_rate",
                   "balancing_energy_ratio", "use_market_maker_rate")
 
+    # pylint: disable=too-many-arguments
     def __init__(self, fit_to_limit=True, energy_rate_increase_per_update=None,
                  update_interval=None,
                  initial_buying_rate: Union[float, dict, str] =
@@ -426,4 +429,9 @@ class LoadForecastExternalStrategy(ForecastExternalMixin, LoadProfileExternalStr
     def _update_energy_requirement_future_markets(self):
         """
         Setting demanded energy for the next slot is already done by update_energy_forecast
+        """
+
+    def _set_energy_measurement_of_last_market(self):
+        """
+        Setting measured energy for the previous slot is already done by update_energy_measurement
         """
