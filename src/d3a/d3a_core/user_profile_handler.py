@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Dict
 
 import pytz
@@ -61,7 +61,7 @@ class ProfileDBConnectionHandler:
     @staticmethod
     def strip_timezone_and_create_pendulum_instance_from_datetime(
             time_stamp: datetime) -> DateTime:
-        return instance(time_stamp.astimezone(timezone.utc), pytz.UTC)
+        return instance(time_stamp).in_timezone('UTC')
 
     def connect(self):
         """ Establishes a connection to the d3a-profiles DB
