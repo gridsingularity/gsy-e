@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,15 +19,15 @@ import uuid
 from unittest.mock import Mock, MagicMock
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Bid, Offer, Trade
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Bid, Offer, Trade
 from pendulum import today, duration
 
-from d3a.constants import TIME_ZONE
-from d3a.models.market.two_sided import TwoSidedMarket
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.settlement.strategy import SettlementMarketStrategy
+from gsy_e.constants import TIME_ZONE
+from gsy_e.models.market.two_sided import TwoSidedMarket
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.pv import PVStrategy
+from gsy_e.models.strategy.settlement.strategy import SettlementMarketStrategy
 
 
 class TestSettlementMarketStrategy:
@@ -154,3 +154,17 @@ class TestSettlementMarketStrategy:
             Trade("456", self.time_slot, self.test_bid, self.area_mock.name, self.area_mock.name)
         )
         assert strategy_fixture.state.get_unsettled_deviation_kWh(self.time_slot) == 14
+
+    @pytest.mark.parametrize(
+        "strategy_fixture", [LoadHoursStrategy(100), PVStrategy()])
+    def test_get_unsettled_deviation_dict(self, strategy_fixture):
+        self._setup_strategy_fixture(strategy_fixture, True, False)
+        strategy_fixture.state.set_energy_measurement_kWh(15, self.time_slot)
+        unsettled_deviation_dict = self.settlement_strategy.get_unsettled_deviation_dict(
+            strategy_fixture)
+        from gsy_framework.utils import format_datetime
+        assert len(unsettled_deviation_dict["unsettled_deviation_kWh"]) == 1
+        assert (list(unsettled_deviation_dict["unsettled_deviation_kWh"].keys()) ==
+                [format_datetime(self.time_slot)])
+        assert (list(unsettled_deviation_dict["unsettled_deviation_kWh"].values()) ==
+                [strategy_fixture.state.get_unsettled_deviation_kWh(self.time_slot)])

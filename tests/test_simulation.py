@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,15 +18,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from unittest.mock import MagicMock
 
-from d3a_interface.constants_limits import TIME_ZONE, GlobalConfig
-from d3a_interface.kafka_communication.kafka_producer import (DisabledKafkaConnection,
+from gsy_framework.constants_limits import TIME_ZONE, GlobalConfig
+from gsy_framework.kafka_communication.kafka_producer import (DisabledKafkaConnection,
                                                               KafkaConnection)
-from d3a_interface.sim_results.all_results import ResultsHandler
+from gsy_framework.sim_results.all_results import ResultsHandler
 from pendulum import duration, today
 
-from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
-from d3a.d3a_core.simulation import Simulation
-from d3a.models.config import SimulationConfig
+from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
+from gsy_e.gsy_e_core.simulation import Simulation
+from gsy_e.models.config import SimulationConfig
 
 
 class SimulationTest(unittest.TestCase):

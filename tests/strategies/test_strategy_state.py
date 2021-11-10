@@ -1,7 +1,7 @@
 import pytest
 from pendulum import datetime
 
-from d3a.models.state import LoadState, PVState
+from gsy_e.models.state import LoadState, PVState
 
 
 class TestProsumptionInterface:

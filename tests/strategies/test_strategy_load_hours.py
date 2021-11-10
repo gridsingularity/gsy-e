@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,18 +23,18 @@ from unittest.mock import MagicMock, Mock, patch
 from uuid import uuid4
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.enums import SpotMarketTypeEnum
-from d3a_interface.exceptions import D3ADeviceException
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.exceptions import GSyDeviceException
 from pendulum import DateTime, duration, today, now
 
-from d3a.constants import TIME_ZONE, TIME_FORMAT
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.d3a_core.util import d3a_path
-from d3a.models.area import DEFAULT_CONFIG, Area
-from d3a_interface.data_classes import Offer, BalancingOffer, Bid, Trade
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.predefined_load import DefinedLoadStrategy
+from gsy_e.constants import TIME_ZONE, TIME_FORMAT
+from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.models.area import DEFAULT_CONFIG, Area
+from gsy_framework.data_classes import Offer, BalancingOffer, Bid, Trade
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 
 TIME = today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
@@ -195,7 +195,7 @@ class TestLoadHoursStrategyInput(unittest.TestCase):
 
     def test_LoadHoursStrategy_input(self):
         power_W = 620
-        with self.assertRaises(D3ADeviceException):
+        with self.assertRaises(GSyDeviceException):
             self.Mock_LoadHoursStrategy(power_W, 4, [1, 2])
 
 
@@ -530,12 +530,12 @@ def test_load_constructor_rejects_incorrect_rate_parameters():
     load = LoadHoursStrategy(avg_power_W=100, initial_buying_rate=10, final_buying_rate=5)
     load.area = FakeArea()
     load.owner = load.area
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         load.event_activate()
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         LoadHoursStrategy(avg_power_W=100, fit_to_limit=True,
                           energy_rate_increase_per_update=1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         LoadHoursStrategy(avg_power_W=100, fit_to_limit=False,
                           energy_rate_increase_per_update=-1)
 
@@ -578,14 +578,16 @@ def test_assert_if_trade_rate_is_higher_than_bid_rate(load_hours_strategy_test3)
         load_hours_strategy_test3.event_offer_traded(market_id=market_id, trade=trade)
 
 
-def test_update_state(load_hours_strategy_test1):
+def test_event_market_cycle_updates_measurement_and_forecast(load_hours_strategy_test1):
     """update_state sends command to update the simulated real energy of the device."""
     load_hours_strategy_test1._set_energy_measurement_of_last_market = Mock()
-    load_hours_strategy_test1.update_state()
+    load_hours_strategy_test1._update_energy_requirement_future_markets = Mock()
+    load_hours_strategy_test1.event_market_cycle()
     load_hours_strategy_test1._set_energy_measurement_of_last_market.assert_called_once()
+    load_hours_strategy_test1._update_energy_requirement_future_markets.assert_called_once()
 
 
-@patch("d3a.models.strategy.load_hours.utils")
+@patch("gsy_e.models.strategy.load_hours.utils")
 def test_set_energy_measurement_of_last_market(utils_mock, load_hours_strategy_test1):
     """The real energy of the last market is set when necessary."""
     # If we are in the first market slot, the real energy is not set
@@ -614,12 +616,12 @@ def test_predefined_load_strategy_rejects_incorrect_rate_parameters(use_mmr, ini
         use_market_maker_rate=use_mmr)
     load.area = FakeArea()
     load.owner = load.area
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         load.event_activate()
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         DefinedLoadStrategy(daily_load_profile=user_profile_path, fit_to_limit=True,
                             energy_rate_increase_per_update=1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         DefinedLoadStrategy(daily_load_profile=user_profile_path, fit_to_limit=False,
                             energy_rate_increase_per_update=-1)
 

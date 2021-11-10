@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,18 +23,18 @@ from uuid import uuid4
 
 import pendulum
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.exceptions import D3ADeviceException
-from d3a_interface.utils import generate_market_slot_list
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.exceptions import GSyDeviceException
+from gsy_framework.utils import generate_market_slot_list
 from parameterized import parameterized
 
-from d3a.constants import TIME_FORMAT
-from d3a.constants import TIME_ZONE
-from d3a.d3a_core.util import d3a_path
-from d3a.models.area import DEFAULT_CONFIG
-from d3a_interface.data_classes import Offer, Trade
-from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
-from d3a.models.strategy.pv import PVStrategy
+from gsy_e.constants import TIME_FORMAT
+from gsy_e.constants import TIME_ZONE
+from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.models.area import DEFAULT_CONFIG
+from gsy_framework.data_classes import Offer, Trade
+from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
+from gsy_e.models.strategy.pv import PVStrategy
 
 ENERGY_FORECAST = {}  # type: Dict[pendulum.DateTime, float]
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
@@ -398,16 +398,16 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
 
 
 def test_pv_constructor_rejects_incorrect_parameters():
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         PVStrategy(panel_count=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         PVStrategy(capacity_kW=-100)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         pv = PVStrategy(initial_selling_rate=5, final_selling_rate=15)
         pv.event_activate()
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         PVStrategy(fit_to_limit=True, energy_rate_decrease_per_update=1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         PVStrategy(fit_to_limit=False, energy_rate_decrease_per_update=-1)
 
 
@@ -566,7 +566,7 @@ def fixture_pv_strategy():
     return pv_strategy
 
 
-@patch("d3a.models.strategy.pv.utils")
+@patch("gsy_e.models.strategy.pv.utils")
 def test_set_energy_measurement_of_last_market(utils_mock, pv_strategy):
     """The real energy of the last market is set when necessary."""
     # If we are in the first market slot, the real energy is not set

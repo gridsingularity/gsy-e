@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,15 +20,15 @@ from unittest.mock import MagicMock
 
 from pendulum import duration, today
 
-from d3a.constants import TIME_ZONE
-from d3a.d3a_core.global_stats import ExternalConnectionGlobalStatistics
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import \
+from gsy_e.constants import TIME_ZONE
+from gsy_e.gsy_e_core.global_stats import ExternalConnectionGlobalStatistics
+from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import \
     ExternalConnectionCommunicator
-from d3a.models.area import Area
-from d3a.models.config import SimulationConfig
-from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
-from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
-from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
+from gsy_e.models.area import Area
+from gsy_e.models.config import SimulationConfig
+from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStrategy
+from gsy_e.models.strategy.external_strategies.pv import PVExternalStrategy
+from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 
 
 class TestGlobalObjects(unittest.TestCase):
