@@ -3,7 +3,7 @@ Feature: Alternative Pricing
   Scenario: CLI parameter works and 4 subdirectories for results are created
     Given we have a scenario named jira/d3asim_895
     And gsy-e is installed
-    When we run the d3a simulation with compare-alt-pricing flag with jira.d3asim_895
+    When we run the gsy-e simulation with compare-alt-pricing flag with jira.d3asim_895
     Then we test the export of with compare-alt-pricing flag
 
   @disabled

@@ -18,7 +18,7 @@ Feature: Commercial Power Plant tests
      Given we have a scenario named strategy_tests/commercial_producer_market_maker_rate
      And gsy-e is installed
      And we have a profile of market_maker_rate for strategy_tests.commercial_producer_market_maker_rate
-     When we run the d3a simulation with cloud_coverage [1] and strategy_tests.commercial_producer_market_maker_rate
+     When we run the gsy-e simulation with cloud_coverage [1] and strategy_tests.commercial_producer_market_maker_rate
      Then we test that cloud coverage [1] and market_maker_rate are parsed correctly
      And the Commercial Energy Producer always sells energy at the defined market maker rate
 
