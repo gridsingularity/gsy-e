@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,11 +18,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from unittest.mock import Mock
 
 import pytest
-from d3a.models.area import Area
-from d3a.models.market import GridFee
-from d3a.models.market.future import FutureMarkets, FutureMarketException
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.data_classes import Bid, Offer, Trade, TradeBidOfferInfo
+from gsy_e.models.area import Area
+from gsy_e.models.market import GridFee
+from gsy_e.models.market.future import FutureMarkets, FutureMarketException
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo
 from pendulum import datetime, duration
 
 DEFAULT_CURRENT_MARKET_SLOT = datetime(2021, 10, 19, 0, 0)

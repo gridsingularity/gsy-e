@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,12 +19,12 @@ from behave import then, given
 from math import isclose
 from pendulum import today
 import os
-from d3a.d3a_core.util import d3a_path
-from d3a.constants import TIME_ZONE
-from d3a.d3a_core.export import EXPORT_DEVICE_VARIABLES
-from d3a_interface.sim_results.market_price_energy_day import MarketPriceEnergyDay
-from d3a_interface.sim_results.bills import CumulativeBills
-from d3a_interface.sim_results.cumulative_grid_trades import CumulativeGridTrades
+from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.constants import TIME_ZONE
+from gsy_e.gsy_e_core.export import EXPORT_DEVICE_VARIABLES
+from gsy_framework.sim_results.market_price_energy_day import MarketPriceEnergyDay
+from gsy_framework.sim_results.bills import CumulativeBills
+from gsy_framework.sim_results.cumulative_grid_trades import CumulativeGridTrades
 
 
 def get_areas_from_2_house_grid(context):
@@ -219,7 +219,7 @@ def trades_on_all_markets_max_load_rate(context):
 
 @then('the Load of House 1 should only buy energy from IAA between 5:00 and 8:00')
 def house1_load_only_from_iaa(context):
-    from d3a_interface.constants_limits import ConstSettings
+    from gsy_framework.constants_limits import ConstSettings
     house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
     load1 = [child for child in house1.children if child.name == "H1 General Load"][0]
 
@@ -260,7 +260,7 @@ def device_statistics(context):
 
 @then("an AreaException is raised")
 def area_exception_is_raised(context):
-    from d3a.d3a_core.exceptions import AreaException
+    from gsy_e.gsy_e_core.exceptions import AreaException
     assert type(context.sim_error) == AreaException
 
 

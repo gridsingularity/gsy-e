@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -21,15 +21,15 @@ from uuid import uuid4
 
 import pendulum
 import pytest
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 
-from d3a.constants import TIME_ZONE
-from d3a.d3a_core.blockchain_interface import NonBlockchainInterface
-from d3a.d3a_core.exceptions import MarketException
-from d3a_interface.data_classes import Offer, Trade, Bid
-from d3a.models.market.one_sided import OneSidedMarket
-from d3a.models.market.two_sided import TwoSidedMarket
-from d3a.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
+from gsy_e.constants import TIME_ZONE
+from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
+from gsy_e.gsy_e_core.exceptions import MarketException
+from gsy_framework.data_classes import Offer, Trade, Bid
+from gsy_e.models.market.one_sided import OneSidedMarket
+from gsy_e.models.market.two_sided import TwoSidedMarket
+from gsy_e.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
 
 
 def teardown_function():
