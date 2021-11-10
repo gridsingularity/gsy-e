@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -21,19 +21,19 @@ import pendulum
 from math import isclose
 from uuid import uuid4
 
-from d3a_interface.data_classes import MarketClearingState
+from gsy_framework.data_classes import MarketClearingState
 
-from d3a.constants import TIME_FORMAT
-from d3a.constants import TIME_ZONE
-from d3a.models.area import DEFAULT_CONFIG
-from d3a_interface.data_classes import Offer, Trade, Bid
-from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
-from d3a.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
-from d3a.models.strategy.area_agents.settlement_agent import SettlementAgent
-from d3a.models.strategy.area_agents.two_sided_engine import BidInfo
-from d3a_interface.constants_limits import ConstSettings
-from d3a.models.market import GridFee
-from d3a.models.market.grid_fees.base_model import GridFees
+from gsy_e.constants import TIME_FORMAT
+from gsy_e.constants import TIME_ZONE
+from gsy_e.models.area import DEFAULT_CONFIG
+from gsy_framework.data_classes import Offer, Trade, Bid
+from gsy_e.models.strategy.area_agents.one_sided_agent import OneSidedAgent
+from gsy_e.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
+from gsy_e.models.strategy.area_agents.settlement_agent import SettlementAgent
+from gsy_e.models.strategy.area_agents.two_sided_engine import BidInfo
+from gsy_framework.constants_limits import ConstSettings
+from gsy_e.models.market import GridFee
+from gsy_e.models.market.grid_fees.base_model import GridFees
 
 
 def teardown_function():
@@ -343,7 +343,7 @@ def iaa_bid(request):
 
 @pytest.fixture
 def iaa_double_sided():
-    from d3a_interface.constants_limits import ConstSettings
+    from gsy_framework.constants_limits import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket(offers=[Offer('id', pendulum.now(), 2, 2, 'other', 2)],
                               bids=[Bid('bid_id', pendulum.now(), 10, 10, 'B', 10)],
