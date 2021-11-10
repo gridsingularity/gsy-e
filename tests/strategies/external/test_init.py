@@ -26,6 +26,7 @@ from d3a_interface.data_classes import Bid, Offer, Trade
 from d3a_interface.utils import format_datetime
 from parameterized import parameterized
 from pendulum import datetime, duration, now
+from redis.exceptions import RedisError
 
 import d3a.constants
 import d3a.d3a_core.util
@@ -724,7 +725,7 @@ class TestAreaExternalConnectionManager:
 
         # Exception raised
         redis_communicator.reset_mock()
-        redis_communicator.publish_json.side_effect = Exception
+        redis_communicator.publish_json.side_effect = RedisError
         assert ExternalStrategyConnectionManager.register(
             redis_communicator, "channel1", is_connected=False,
             transaction_id="transaction1", area_uuid="area1") is False
@@ -755,7 +756,7 @@ class TestAreaExternalConnectionManager:
 
         # Exception raised
         redis_communicator.reset_mock()
-        redis_communicator.publish_json.side_effect = Exception
+        redis_communicator.publish_json.side_effect = RedisError
         assert ExternalStrategyConnectionManager.unregister(
             redis_communicator, "channel1", is_connected=False,
             transaction_id="transaction1") is False

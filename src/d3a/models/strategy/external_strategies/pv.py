@@ -17,18 +17,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import logging
-from collections import deque
-from typing import Dict
+from typing import Dict, Callable, TYPE_CHECKING
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.data_classes import Offer
-from pendulum import duration, DateTime
+from pendulum import duration
 
+from d3a.d3a_core.exceptions import D3AException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.strategy.external_strategies import (
     ExternalMixin, IncomingRequest, ExternalStrategyConnectionManager, default_market_info)
+from d3a.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from d3a.models.strategy.pv import PVStrategy
+
+if TYPE_CHECKING:
+    from d3a.models.state import PVState
+    from d3a.models.strategy import Offers
 
 
 class PVExternalMixin(ExternalMixin):
@@ -36,6 +41,13 @@ class PVExternalMixin(ExternalMixin):
     Mixin for enabling an external api for the PV strategies.
     Should always be inherited together with a superclass of PVStrategy.
     """
+    state: "PVState"
+    offers: "Offers"
+    can_offer_be_posted: Callable
+    post_offer: Callable
+    set_produced_energy_forecast_kWh_future_markets: Callable
+    _delete_past_state: Callable
+
     @property
     def channel_dict(self) -> Dict:
         """Offer-related Redis API channels."""
@@ -71,7 +83,7 @@ class PVExternalMixin(ExternalMixin):
             response = {"command": "list_offers", "status": "ready",
                         "offer_list": filtered_offers,
                         "transaction_id": arguments.get("transaction_id")}
-        except Exception:
+        except D3AException:
             error_message = f"Error when handling list offers on area {self.device.name}"
             logging.exception(error_message)
             response = {"command": "list_offers", "status": "error",
@@ -91,8 +103,8 @@ class PVExternalMixin(ExternalMixin):
             market = self._get_market_from_command_argument(arguments)
             if arguments.get("offer") and not self.offers.is_offer_posted(
                     market.id, arguments["offer"]):
-                raise Exception("Offer_id is not associated with any posted offer.")
-        except Exception:
+                raise D3AException("Offer_id is not associated with any posted offer.")
+        except (D3AException, json.JSONDecodeError):
             logging.exception("Error when handling delete offer request. Payload %s", payload)
             self.redis.publish_json(
                 delete_offer_response_channel,
@@ -113,7 +125,7 @@ class PVExternalMixin(ExternalMixin):
             response = {"command": "offer_delete", "status": "ready",
                         "deleted_offers": deleted_offers,
                         "transaction_id": arguments.get("transaction_id")}
-        except Exception:
+        except D3AException:
             error_message = (f"Error when handling offer delete on area {self.device.name}: "
                              f"Offer Arguments: {arguments}")
             logging.exception(error_message)
@@ -143,7 +155,7 @@ class PVExternalMixin(ExternalMixin):
             # Check that every provided argument is allowed
             assert all(arg in allowed_args for arg in arguments.keys())
 
-        except Exception:
+        except (json.JSONDecodeError, AssertionError):
             logging.exception("Incorrect offer request. Payload %s.", payload)
             self.redis.publish_json(
                 offer_response_channel,
@@ -178,7 +190,7 @@ class PVExternalMixin(ExternalMixin):
                 {"command": "offer", "status": "ready",
                  "offer": offer.to_json_string(replace_existing=replace_existing),
                  "transaction_id": arguments.get("transaction_id")})
-        except Exception:
+        except (AssertionError, D3AException):
             error_message = (f"Error when handling offer create on area {self.device.name}: "
                              f"Offer Arguments: {arguments}")
             logging.exception(error_message)
@@ -191,6 +203,7 @@ class PVExternalMixin(ExternalMixin):
     @property
     def _device_info_dict(self):
         return {
+            **super()._device_info_dict,
             "available_energy_kWh":
                 self.state.get_available_energy_kWh(self.spot_market.time_slot),
             "energy_active_in_offers": self.offers.open_offer_energy(self.spot_market.id),
@@ -203,6 +216,7 @@ class PVExternalMixin(ExternalMixin):
         self._update_connection_status()
         if not self.should_use_default_strategy:
             self.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
+            self._set_energy_measurement_of_last_market()
             if not self.is_aggregator_controlled:
                 market_event_channel = f"{self.channel_prefix}/events/market"
                 market_info = self.spot_market.info
@@ -215,7 +229,7 @@ class PVExternalMixin(ExternalMixin):
                 market_info["last_market_maker_rate"] = (
                     get_market_maker_rate_from_config(self.area.current_market))
                 market_info["last_market_stats"] = (
-                    self.market_area.stats.get_price_stats_current_market())
+                    self.area.stats.get_price_stats_current_market())
                 self.redis.publish_json(market_event_channel, market_info)
             self._delete_past_state()
         else:
@@ -261,7 +275,7 @@ class PVExternalMixin(ExternalMixin):
         market = self._get_market_from_command_argument(arguments)
         if arguments.get("offer") and not self.offers.is_offer_posted(
                 market.id, arguments["offer"]):
-            raise Exception("Offer_id is not associated with any posted offer.")
+            raise D3AException("Offer_id is not associated with any posted offer.")
 
         try:
             to_delete_offer_id = arguments.get("offer")
@@ -273,7 +287,7 @@ class PVExternalMixin(ExternalMixin):
                 "deleted_offers": deleted_offers,
                 "transaction_id": arguments.get("transaction_id")
             }
-        except Exception:
+        except D3AException:
             response = {
                 "command": "offer_delete", "status": "error",
                 "area_uuid": self.device.uuid,
@@ -292,7 +306,7 @@ class PVExternalMixin(ExternalMixin):
                 "command": "list_offers", "status": "ready", "offer_list": filtered_offers,
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id")}
-        except Exception:
+        except D3AException:
             response = {
                 "command": "list_offers", "status": "error",
                 "area_uuid": self.device.uuid,
@@ -343,7 +357,7 @@ class PVExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id"),
                 "area_uuid": self.device.uuid,
                 "message": response_message}
-        except Exception:
+        except (AssertionError, D3AException):
             logging.exception("Failed to post PV offer.")
             response = {
                 "command": "offer", "status": "error",
@@ -366,7 +380,7 @@ class PVPredefinedExternalStrategy(PVExternalMixin, PVPredefinedStrategy):
     """Strategy class for external PV devices with predefined profile."""
 
 
-class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
+class PVForecastExternalStrategy(ForecastExternalMixin, PVPredefinedExternalStrategy):
     """
     Strategy responsible for reading forecast and measurement production data via hardware API
     """
@@ -374,6 +388,7 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
                   "final_selling_rate", "fit_to_limit", "update_interval",
                   "energy_rate_decrease_per_update", "use_market_maker_rate")
 
+    # pylint: disable=too-many-arguments
     def __init__(
             self, panel_count=1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
@@ -394,62 +409,6 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
                          use_market_maker_rate=use_market_maker_rate)
 
-        # Buffers for energy forecast and measurement values,
-        # that have been sent by the d3a-api-client in the duration of one market slot
-        self.energy_forecast_buffer: Dict[DateTime, float] = {}
-        self.energy_measurement_buffer: Dict[DateTime, float] = {}
-
-    @property
-    def channel_dict(self) -> Dict:
-        """Extend channel_dict property with forecast related channels."""
-        return {**super().channel_dict,
-                f"{self.channel_prefix}/set_energy_forecast": self._set_energy_forecast,
-                f"{self.channel_prefix}/set_energy_measurement": self._set_energy_measurement}
-
-    def event_tick(self) -> None:
-        """Set the energy forecast using pending requests. Extends super implementation.
-
-        This method is triggered by the TICK event.
-        """
-        # Need to repeat the pending request parsing in order to handle energy forecasts
-        # from the MQTT subscriber (non-connected admin)
-        for req in self.pending_requests:
-            if req.request_type == "set_energy_forecast":
-                self._set_energy_forecast_impl(req.arguments, req.response_channel)
-            elif req.request_type == "set_energy_measurement":
-                self._set_energy_measurement_impl(req.arguments, req.response_channel)
-
-        self.pending_requests = deque(
-            req for req in self.pending_requests
-            if req.request_type not in ["set_energy_forecast", "set_energy_measurement"])
-
-        super().event_tick()
-
-    def _incoming_commands_callback_selection(self, req: IncomingRequest) -> None:
-        """Map commands to callbacks for forecast and measurement reading."""
-        if req.request_type == "set_energy_forecast":
-            self._set_energy_forecast_impl(req.arguments, req.response_channel)
-        elif req.request_type == "set_energy_measurement":
-            self._set_energy_measurement_impl(req.arguments, req.response_channel)
-        else:
-            super()._incoming_commands_callback_selection(req)
-
-    def event_market_cycle(self) -> None:
-        """Update forecast and measurement in state by reading from buffers."""
-        self.update_energy_forecast()
-        self.update_energy_measurement()
-        self._clear_energy_buffers()
-        super().event_market_cycle()
-
-    def _clear_energy_buffers(self) -> None:
-        """Clear forecast and measurement buffers."""
-        self.energy_forecast_buffer = {}
-        self.energy_measurement_buffer = {}
-
-    def event_activate_energy(self) -> None:
-        """This strategy does not need to initiate energy values as they are sent via the API."""
-        self._clear_energy_buffers()
-
     def update_energy_forecast(self) -> None:
         """Set energy forecast for future markets."""
         for slot_time, energy_kWh in self.energy_forecast_buffer.items():
@@ -464,8 +423,11 @@ class PVForecastExternalStrategy(PVPredefinedExternalStrategy):
 
     def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=False) -> None:
         """
-        Setting produced energy for the next slot is already done by produced_energy_forecast_kWh
+        Setting produced energy for the next slot is already done by update_energy_forecast
         """
 
-    def _read_or_rotate_profiles(self, reconfigure=False) -> None:
-        """Overridden with empty implementation to disable reading profile from DB."""
+    def _set_energy_measurement_of_last_market(self):
+        """
+         Setting energy measurement for the previous slot is already done by
+         update_energy_measurement
+         """

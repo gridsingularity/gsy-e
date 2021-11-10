@@ -116,6 +116,9 @@ class OneSidedMarket(Market):
         if original_price is None:
             original_price = price
 
+        if not time_slot:
+            time_slot = self.time_slot
+
         if adapt_price_with_fees:
             price = self._update_new_offer_price_with_fee(price, original_price, energy)
 
@@ -248,7 +251,6 @@ class OneSidedMarket(Market):
     @lock_market_action
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *,
                      energy: Optional[float] = None,
-                     time: Optional[DateTime] = None,
                      already_tracked: bool = False,
                      trade_rate: Optional[float] = None,
                      trade_bid_info: Optional[TradeBidOfferInfo] = None,
@@ -276,9 +278,6 @@ class OneSidedMarket(Market):
         orig_offer_price = self._calculate_original_prices(offer)
 
         try:
-            if time is None:
-                time = self.now
-
             if energy == 0:
                 raise InvalidTrade("Energy can not be zero.")
             elif energy < offer.energy:
@@ -316,7 +315,8 @@ class OneSidedMarket(Market):
         self.offers.pop(offer.id, None)
         offer_bid_trade_info = self.fee_class.propagate_original_bid_info_on_offer_trade(
             trade_original_info=trade_bid_info)
-        trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer,
+
+        trade = Trade(trade_id, self.now, offer, offer.seller, buyer, residual_offer,
                       offer_bid_trade_info=offer_bid_trade_info,
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
                       fee_price=fee_price, buyer_origin_id=buyer_origin_id,

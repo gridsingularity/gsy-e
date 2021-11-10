@@ -74,7 +74,10 @@ class PVStrategy(BidEnabledStrategy):
         self._init_price_update(update_interval, initial_selling_rate, final_selling_rate,
                                 use_market_maker_rate, fit_to_limit,
                                 energy_rate_decrease_per_update)
-        self._settlement_market_strategy = settlement_market_strategy_factory()
+
+    @classmethod
+    def _create_settlement_market_strategy(cls):
+        return settlement_market_strategy_factory()
 
     @property
     def state(self) -> PVState:

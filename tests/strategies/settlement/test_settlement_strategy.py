@@ -154,3 +154,17 @@ class TestSettlementMarketStrategy:
             Trade("456", self.time_slot, self.test_bid, self.area_mock.name, self.area_mock.name)
         )
         assert strategy_fixture.state.get_unsettled_deviation_kWh(self.time_slot) == 14
+
+    @pytest.mark.parametrize(
+        "strategy_fixture", [LoadHoursStrategy(100), PVStrategy()])
+    def test_get_unsettled_deviation_dict(self, strategy_fixture):
+        self._setup_strategy_fixture(strategy_fixture, True, False)
+        strategy_fixture.state.set_energy_measurement_kWh(15, self.time_slot)
+        unsettled_deviation_dict = self.settlement_strategy.get_unsettled_deviation_dict(
+            strategy_fixture)
+        from d3a_interface.utils import format_datetime
+        assert len(unsettled_deviation_dict["unsettled_deviation_kWh"]) == 1
+        assert (list(unsettled_deviation_dict["unsettled_deviation_kWh"].keys()) ==
+                [format_datetime(self.time_slot)])
+        assert (list(unsettled_deviation_dict["unsettled_deviation_kWh"].values()) ==
+                [strategy_fixture.state.get_unsettled_deviation_kWh(self.time_slot)])

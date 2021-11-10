@@ -3,4 +3,5 @@
 fabric3
 pre-commit
 psutil
+pylint
 pyyaml>=4.2b1
