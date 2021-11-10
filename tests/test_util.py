@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -21,18 +21,18 @@ import tempfile
 from unittest.mock import MagicMock
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.enums import SpotMarketTypeEnum
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.enums import SpotMarketTypeEnum
 from parameterized import parameterized
 from pendulum import datetime
 
-from d3a import setup as d3a_setup
-from d3a.d3a_core import util
-from d3a.d3a_core.cli import available_simulation_scenarios
-from d3a.d3a_core.util import (validate_const_settings_for_simulation, retry_function,
-                               get_simulation_queue_name, get_market_maker_rate_from_config,
-                               export_default_settings_to_json_file, constsettings_to_dict,
-                               convert_str_to_pause_after_interval)
+from gsy_e import setup as d3a_setup
+from gsy_e.gsy_e_core import util
+from gsy_e.gsy_e_core.cli import available_simulation_scenarios
+from gsy_e.gsy_e_core.util import (validate_const_settings_for_simulation, retry_function,
+                                   get_simulation_queue_name, get_market_maker_rate_from_config,
+                                   export_default_settings_to_json_file, constsettings_to_dict,
+                                   convert_str_to_pause_after_interval)
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -109,9 +109,9 @@ class TestD3ACoreUtil:
         assert retry_counter == 3
 
     def test_get_simulation_queue_name(self):
-        assert get_simulation_queue_name() == "d3a"
+        assert get_simulation_queue_name() == "gsy_e"
         os.environ["LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE"] = "no"
-        assert get_simulation_queue_name() == "d3a"
+        assert get_simulation_queue_name() == "gsy_e"
         os.environ["LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE"] = "yes"
         assert get_simulation_queue_name() == "canary_network"
 
@@ -133,8 +133,8 @@ class TestD3ACoreUtil:
         export_default_settings_to_json_file()
         setup_dir = os.path.join(temp_dir.name, "setup")
         assert os.path.exists(setup_dir)
-        assert set(os.listdir(setup_dir)) == {"d3a-settings.json"}
-        file_path = os.path.join(setup_dir, "d3a-settings.json")
+        assert set(os.listdir(setup_dir)) == {"gsy_e_settings.json"}
+        file_path = os.path.join(setup_dir, "gsy_e_settings.json")
         file_contents = json.load(open(file_path))
         assert file_contents["basic_settings"]["sim_duration"] == "24h"
         assert file_contents["basic_settings"]["slot_length"] == "15m"

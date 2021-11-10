@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -21,9 +21,9 @@ from collections import deque
 from typing import Dict
 from unittest.mock import MagicMock, Mock
 
-from d3a.models.area import Area
-from d3a.models.strategy.external_strategies import IncomingRequest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from gsy_e.models.area import Area
+from gsy_e.models.strategy.external_strategies import IncomingRequest
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from pendulum import duration
 
 

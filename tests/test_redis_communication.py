@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,16 +23,16 @@ from unittest.mock import MagicMock
 from threading import Event
 from pendulum import datetime
 
-import d3a.models.area
-from d3a.models.area import Area
+import gsy_e.models.area
+from gsy_e.models.area import Area
 
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.storage import StorageStrategy
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a.models.area.event_dispatcher import RedisAreaDispatcher, AreaDispatcher
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import RedisCommunicator
-from d3a.events.event_structures import AreaEvent, MarketEvent
-from d3a_interface.data_classes import (
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.storage import StorageStrategy
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_e.models.area.event_dispatcher import RedisAreaDispatcher, AreaDispatcher
+from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import RedisCommunicator
+from gsy_e.events.event_structures import AreaEvent, MarketEvent
+from gsy_framework.data_classes import (
     Offer, Trade, TradeBidOfferInfo)
 
 log = getLogger(__name__)
@@ -54,7 +54,7 @@ class MockDispatcherFactory:
         return self.dispatcher
 
 
-d3a.models.area.DispatcherFactory = MockDispatcherFactory
+gsy_e.models.area.DispatcherFactory = MockDispatcherFactory
 
 
 class TestRedisEventDispatching(unittest.TestCase):

@@ -46,7 +46,8 @@ In the backend, the simulation process is slightly different. There is no need t
 This is the most basic skeleton for a setup-file:
 
 ```python
-from d3a.models.area import Area
+```python
+from gsy_e.models.area import Area
 def get_setup(config):
     area = Area('Grid', [])
     return area
@@ -67,9 +68,10 @@ Bold instances in the outline above are [markets](model-markets.md) (`Area` comp
 In the following, the corresponding setup-file is shown.
 
 ```python
-from d3a.models.area import Area
+```python
+from gsy_e.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 
 
@@ -134,7 +136,7 @@ The user can overwrite the configuration settings by changing variables of the [
 Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market type, constant grid fee and default min (0cts/kWh) and max to (35cts/kWh) energy rate for all [loads](model-load.md):
 
 ```python
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.LoadSettings.MIN_ENERGY_RATE = 0

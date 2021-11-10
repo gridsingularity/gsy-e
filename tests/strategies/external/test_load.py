@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,10 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
 
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 import pytest
 
-from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
+from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from tests.strategies.external.utils import (
     assert_bid_offer_aggregator_commands_return_value,
     check_external_command_endpoint_with_correct_payload_succeeds,
