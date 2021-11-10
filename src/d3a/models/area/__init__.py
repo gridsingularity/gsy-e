@@ -140,7 +140,6 @@ class Area:
         log.debug("External connection %s for area %s", external_connection_available, self.name)
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available and self.strategy is None else None
-        self.should_update_child_strategies = False
         self.external_connection_available = external_connection_available
 
     @property
@@ -351,10 +350,6 @@ class Area:
 
         if deactivate:
             return
-
-        if self.should_update_child_strategies is True:
-            self._update_descendants_strategy_prices()
-            self.should_update_child_strategies = False
 
         # TODO: Refactor and port the future, spot, settlement and balancing market creation to
         # AreaMarkets class, in order to create all necessary markets with one call.

@@ -19,7 +19,6 @@ import json
 from logging import getLogger
 from typing import Dict, Optional, TYPE_CHECKING
 
-from d3a_interface.area_validator import validate_area
 from d3a_interface.exceptions import D3AAreaException
 
 import d3a
@@ -104,8 +103,6 @@ class RedisMarketExternalConnection:
 
     def set_grid_fees_callback(self, payload: Dict) -> Optional[Dict]:
         """Update the grid fees of the market."""
-        # TODO: This function should reuse the area_reconfigure_event function
-        # since they share the same functionality.
         if not (self._connected or self.is_aggregator_controlled):
             return None
         grid_fees_response_channel = f"{self.channel_prefix}/response/grid_fees"
@@ -113,38 +110,29 @@ class RedisMarketExternalConnection:
             payload["data"] if isinstance(payload["data"], dict)
             else json.loads(payload["data"]))
         try:
-            validate_area(grid_fee_percentage=payload_data.get("fee_percent", None),
-                          grid_fee_constant=payload_data.get("fee_const", None))
+            self.area.area_reconfigure_event(
+                grid_fee_constant=payload_data.get("fee_percent", None),
+                grid_fee_percentage=payload_data.get("fee_const", None))
         except D3AAreaException as e:
             log.error(str(e))
             return None
 
-        base_dict = {"area_uuid": self.area.uuid,
-                     "command": "grid_fees"}
+        response = {"area_uuid": self.area.uuid,
+                    "command": "grid_fees",
+                    "status": "ready"}
         if payload_data.get("fee_const") is not None and self.area.config.grid_fee_type == 1:
-            self.area.grid_fee_constant = payload_data["fee_const"]
-            ret_val = {
-                "status": "ready",
-                "market_fee_const": str(self.area.grid_fee_constant),
-                **base_dict}
+            response["market_fee_const"] = str(self.area.grid_fee_constant)
         elif payload_data.get("fee_percent") is not None and self.area.config.grid_fee_type == 2:
-            self.area.grid_fee_percentage = payload_data["fee_percent"]
-            ret_val = {
-                "status": "ready",
-                "market_fee_percent": str(self.area.grid_fee_percentage),
-                **base_dict}
+            response["market_fee_percent"] = str(self.area.grid_fee_percentage)
         else:
-            ret_val = {
+            response.update({
                 "status": "error",
-                "error_message": "GridFee parameter conflicting with GlobalConfigFeeType",
-                **base_dict}
-
-        self.area.should_update_child_strategies = True
+                "error_message": "GridFee parameter conflicting with GlobalConfigFeeType"})
 
         if self.is_aggregator_controlled:
-            return ret_val
-        ret_val["transaction_id"] = payload_data.get("transaction_id", None)
-        self._redis_communicator.publish_json(grid_fees_response_channel, ret_val)
+            return response
+        response["transaction_id"] = payload_data.get("transaction_id", None)
+        self._redis_communicator.publish_json(grid_fees_response_channel, response)
         return None
 
     def dso_market_stats_callback(self, payload: Dict) -> Optional[Dict]:
