@@ -20,10 +20,10 @@ from logging import getLogger
 from math import isclose
 from typing import Union, Dict, List, Optional
 
-from d3a_interface.constants_limits import ConstSettings, TIME_ZONE
+from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.data_classes import Offer, Trade, TradeBidOfferInfo
 from d3a_interface.enums import SpotMarketTypeEnum
-from pendulum import DateTime, now
+from pendulum import DateTime
 
 from d3a.d3a_core.exceptions import (InvalidOffer, MarketReadOnlyException, OfferNotFoundException,
                                      InvalidTrade, MarketException)
@@ -115,6 +115,9 @@ class OneSidedMarket(Market):
             raise InvalidOffer()
         if original_price is None:
             original_price = price
+
+        if not time_slot:
+            time_slot = self.time_slot
 
         if adapt_price_with_fees:
             price = self._update_new_offer_price_with_fee(price, original_price, energy)
@@ -313,7 +316,7 @@ class OneSidedMarket(Market):
         offer_bid_trade_info = self.fee_class.propagate_original_bid_info_on_offer_trade(
             trade_original_info=trade_bid_info)
 
-        trade = Trade(trade_id, now(tz=TIME_ZONE), offer, offer.seller, buyer, residual_offer,
+        trade = Trade(trade_id, self.now, offer, offer.seller, buyer, residual_offer,
                       offer_bid_trade_info=offer_bid_trade_info,
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
                       fee_price=fee_price, buyer_origin_id=buyer_origin_id,
