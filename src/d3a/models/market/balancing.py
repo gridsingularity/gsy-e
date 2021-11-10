@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
 from typing import Union, Dict, List, Optional  # noqa
-from pendulum import now, DateTime
+from pendulum import DateTime
 from logging import getLogger
 
 from d3a_interface.data_classes import Offer
@@ -30,7 +30,7 @@ from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a_interface.constants_limits import ConstSettings, TIME_ZONE
+from d3a_interface.constants_limits import ConstSettings
 
 log = getLogger(__name__)
 
@@ -84,9 +84,9 @@ class BalancingMarket(OneSidedMarket):
             offer_id = str(uuid.uuid4())
 
         offer = BalancingOffer(
-            offer_id, now(tz=TIME_ZONE), price, energy, seller,
+            offer_id, self.now, price, energy, seller,
             seller_origin=seller_origin, attributes=attributes,
-            requirements=requirements)
+            requirements=requirements, time_slot=self.time_slot)
         self.offers[offer.id] = offer
 
         self.offer_history.append(offer)
@@ -215,7 +215,7 @@ class BalancingMarket(OneSidedMarket):
             self.bc_interface.handle_blockchain_trade_event(
                 offer, buyer, original_offer, residual_offer
             )
-        trade = BalancingTrade(trade_id, now(tz=TIME_ZONE), offer, offer.seller, buyer,
+        trade = BalancingTrade(trade_id, self.now, offer, offer.seller, buyer,
                                residual_offer, seller_origin=offer.seller_origin,
                                buyer_origin=buyer_origin, fee_price=fees,
                                seller_origin_id=offer.seller_origin_id,
