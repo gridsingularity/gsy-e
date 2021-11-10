@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # pylint: disable=no-name-in-module
 from behave import then
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from pendulum import duration
 
 from d3a.constants import DEFAULT_PRECISION
 from d3a.setup.strategy_tests.storage_strategy_break_even_hourly import (
@@ -61,7 +60,6 @@ def step_impl(context):
                                                         final_buying_rate_profile_2)
     final_selling_rate_storage2 = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                          final_selling_rate_profile_2)
-    start_time_stamp = next(iter(final_buying_rate_storage1.keys()))
     for name, final_buying_rate, final_selling_rate in \
             [("H1 Storage1", final_buying_rate_storage1, final_selling_rate_storage1),
              ("H1 Storage2", final_buying_rate_storage2, final_selling_rate_storage2)]:
@@ -69,14 +67,13 @@ def step_impl(context):
         trades_bought = []
         for market in house1.past_markets:
             for trade in market.trades:
-                expected_time_stamp = start_time_stamp + duration(hours=trade.creation_time.hour)
                 if trade.seller == name:
                     assert (round(trade.offer_bid.energy_rate, 2) >=
-                            round(final_selling_rate[expected_time_stamp], 2))
+                            round(final_selling_rate[market.time_slot], 2))
                     trades_sold.append(trade)
                 elif trade.buyer == name:
                     assert (round(trade.offer_bid.energy_rate, 2) <=
-                            round(final_buying_rate[expected_time_stamp], 2))
+                            round(final_buying_rate[market.time_slot], 2))
                     trades_bought.append(trade)
 
         assert len(trades_sold) > 0
