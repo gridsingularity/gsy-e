@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
 import json
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 from d3a.d3a_core.exceptions import D3ARedisException
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.area import Area

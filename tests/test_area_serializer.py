@@ -28,7 +28,7 @@ from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
 from d3a.models.strategy.smart_meter import SmartMeterStrategy
 from d3a.models.strategy.pv import PVStrategy
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from pendulum import duration, instance
 
 

@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
-from d3a_interface.constants_limits import ConstSettings, RateRange
+from gsy_framework.constants_limits import ConstSettings, RateRange
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 
 

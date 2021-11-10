@@ -3,7 +3,7 @@ import logging
 from collections import deque
 from typing import Dict
 
-from d3a_interface.utils import convert_str_to_pendulum_in_dict
+from gsy_framework.utils import convert_str_to_pendulum_in_dict
 from pendulum import DateTime
 
 from d3a.models.strategy.external_strategies import IncomingRequest, ExternalMixin

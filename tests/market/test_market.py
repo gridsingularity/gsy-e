@@ -21,7 +21,7 @@ from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 from hypothesis import strategies as st
 from hypothesis.control import assume
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rule

@@ -20,7 +20,7 @@ from typing import Dict, Optional, TYPE_CHECKING
 
 from cached_property import cached_property
 
-from d3a.d3a_core.exceptions import D3AException
+from d3a.d3a_core.exceptions import GSyException
 from d3a.d3a_core.util import TaggedLogWrapper
 
 log = getLogger(__name__)
@@ -83,7 +83,7 @@ class AreaBehaviorBase:
         try:
             return self.state.get_state()
         except AttributeError as ex:
-            raise D3AException(
+            raise GSyException(
                 "Strategy does not have a state. "
                 "State is required to support save state functionality.") from ex
 
@@ -92,6 +92,6 @@ class AreaBehaviorBase:
         try:
             self.state.restore_state(saved_state)
         except AttributeError as ex:
-            raise D3AException(
+            raise GSyException(
                 "Strategy does not have a state. "
                 "State is required to support load state functionality.") from ex

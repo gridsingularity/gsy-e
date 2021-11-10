@@ -19,10 +19,10 @@ import json
 import logging
 from typing import Dict, List, Union, TYPE_CHECKING, Callable
 
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 from pendulum import duration
 
-from d3a.d3a_core.exceptions import D3AException
+from d3a.d3a_core.exceptions import GSyException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.strategy.external_strategies import (
     ExternalMixin, IncomingRequest, default_market_info, ExternalStrategyConnectionManager)
@@ -100,7 +100,7 @@ class LoadExternalMixin(ExternalMixin):
                     "command": "list_bids", "status": "ready",
                     "bid_list": self.filtered_market_bids(market),
                     "transaction_id": arguments.get("transaction_id")}
-        except D3AException:
+        except GSyException:
             error_message = f"Error when handling list bids on area {self.device.name}"
             logging.exception(error_message)
             response = {"command": "list_bids", "status": "error",
@@ -119,8 +119,8 @@ class LoadExternalMixin(ExternalMixin):
             arguments = json.loads(payload["data"])
             market = self._get_market_from_command_argument(arguments)
             if arguments.get("bid") and not self.is_bid_posted(market, arguments["bid"]):
-                raise D3AException("Bid_id is not associated with any posted bid.")
-        except (D3AException, json.JSONDecodeError) as exception:
+                raise GSyException("Bid_id is not associated with any posted bid.")
+        except (GSyException, json.JSONDecodeError) as exception:
             self.redis.publish_json(
                 delete_bid_response_channel,
                 {"command": "bid_delete",
@@ -139,7 +139,7 @@ class LoadExternalMixin(ExternalMixin):
             deleted_bids = self.remove_bid_from_pending(market.id, bid_id=to_delete_bid_id)
             response = {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
                         "transaction_id": arguments.get("transaction_id")}
-        except D3AException:
+        except GSyException:
             error_message = (f"Error when handling bid delete on area {self.device.name}: "
                              f"Bid Arguments: {arguments}, "
                              "Bid does not exist on the current market.")
@@ -202,7 +202,7 @@ class LoadExternalMixin(ExternalMixin):
                     "command": "bid", "status": "ready",
                     "bid": bid.to_json_string(replace_existing=replace_existing),
                     "transaction_id": arguments.get("transaction_id")}
-        except (AssertionError, D3AException):
+        except (AssertionError, GSyException):
             error_message = (f"Error when handling bid create on area {self.device.name}: "
                              f"Bid Arguments: {arguments}")
             logging.exception(error_message)
@@ -319,7 +319,7 @@ class LoadExternalMixin(ExternalMixin):
                 "bid": bid.to_json_string(replace_existing=replace_existing),
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id")}
-        except (AssertionError, D3AException):
+        except (AssertionError, GSyException):
             logging.exception("Error when handling bid on area %s", self.device.name)
             response = {
                 "command": "bid", "status": "error",
@@ -340,7 +340,7 @@ class LoadExternalMixin(ExternalMixin):
                 "command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id")}
-        except D3AException:
+        except GSyException:
             logging.exception("Error when handling delete bid on area %s", self.device.name)
             response = {
                 "command": "bid_delete", "status": "error",
@@ -360,7 +360,7 @@ class LoadExternalMixin(ExternalMixin):
                 "bid_list": self.filtered_market_bids(market),
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id")}
-        except D3AException:
+        except GSyException:
             logging.exception("Error when handling list bids on area %s", self.device.name)
             response = {
                 "command": "list_bids", "status": "error",

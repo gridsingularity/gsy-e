@@ -19,7 +19,7 @@ from d3a.models.area import Area
 from d3a.models.area.events import StrategyEvents
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 
 
 def get_setup(config):

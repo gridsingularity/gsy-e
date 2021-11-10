@@ -21,15 +21,15 @@ from collections import deque, namedtuple
 from threading import Lock
 from typing import Dict, TYPE_CHECKING, Callable
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Trade
-from d3a_interface.enums import SpotMarketTypeEnum
-from d3a_interface.utils import str_to_pendulum_datetime
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Trade
+from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.utils import str_to_pendulum_datetime
 from pendulum import DateTime
 from redis import RedisError
 
 import d3a.constants
-from d3a.d3a_core.exceptions import MarketException, D3AException
+from d3a.d3a_core.exceptions import MarketException, GSyException
 from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import (
     ResettableCommunicator, ExternalConnectionCommunicator)
@@ -255,7 +255,7 @@ class ExternalMixin:
             response = {"command": "device_info", "status": "ready",
                         "device_info": self._device_info_dict,
                         "transaction_id": arguments.get("transaction_id")}
-        except D3AException:
+        except GSyException:
             error_message = f"Error when handling device info on area {self.device.name}"
             logging.exception(error_message)
             response = {"command": "device_info", "status": "error",
@@ -275,7 +275,7 @@ class ExternalMixin:
                 "transaction_id": arguments.get("transaction_id"),
                 "area_uuid": self.device.uuid
             }
-        except D3AException:
+        except GSyException:
             response = {
                 "command": "device_info", "status": "error",
                 "error_message": f"Error when handling device info on area {self.device.name}.",

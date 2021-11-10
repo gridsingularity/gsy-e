@@ -21,7 +21,7 @@ import platform
 from d3a.models.power_flow import PowerFlowBase
 from d3a.d3a_core.util import convert_unit_to_mega, convert_kilo_to_mega, convert_percent_to_ratio
 from d3a.d3a_core.export import mkdir_from_str
-from d3a_interface.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import GlobalConfig
 if platform.python_implementation() != "PyPy" and GlobalConfig.POWER_FLOW is True:
     import pandapower as pp
     from pandapower.plotting import to_html

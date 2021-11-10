@@ -20,12 +20,12 @@ from collections import namedtuple
 from logging import getLogger
 from typing import Union, Dict  # NOQA
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.enums import SpotMarketTypeEnum
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.utils import (
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.utils import (
     convert_W_to_Wh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
-from d3a_interface.validators.load_validator import LoadValidator
+from gsy_framework.validators.load_validator import LoadValidator
 from numpy import random
 from pendulum import duration
 from pendulum.datetime import DateTime
@@ -36,7 +36,7 @@ from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.market import Market
-from d3a_interface.data_classes import Offer
+from gsy_framework.data_classes import Offer
 from d3a.models.state import LoadState
 from d3a.models.strategy import BidEnabledStrategy, utils
 from d3a.models.strategy.update_frequency import TemplateStrategyBidUpdater

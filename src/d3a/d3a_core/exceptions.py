@@ -16,14 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from d3a_interface.exceptions import D3AException
+from gsy_framework.exceptions import GSyException
 
 
-class SimulationException(D3AException):
+class SimulationException(GSyException):
     pass
 
 
-class MarketException(D3AException):
+class MarketException(GSyException):
     pass
 
 
@@ -51,7 +51,7 @@ class InvalidBid(MarketException):
     pass
 
 
-class AreaException(D3AException):
+class AreaException(GSyException):
     pass
 
 
@@ -63,17 +63,17 @@ class DeviceNotInRegistryError(MarketException):
     pass
 
 
-class D3ARedisException(D3AException):
+class D3ARedisException(GSyException):
     pass
 
 
-class WrongMarketTypeException(D3AException):
+class WrongMarketTypeException(GSyException):
     pass
 
 
-class InvalidBidOfferPairException(D3AException):
+class InvalidBidOfferPairException(GSyException):
     pass
 
 
-class MycoValidationException(D3AException):
+class MycoValidationException(GSyException):
     pass

@@ -21,11 +21,11 @@ from enum import Enum
 from logging import getLogger
 from typing import Union
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.enums import SpotMarketTypeEnum
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
-from d3a_interface.validators import StorageValidator
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
+from gsy_framework.validators import StorageValidator
 from pendulum import duration
 
 from d3a import constants

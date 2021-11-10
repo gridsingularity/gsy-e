@@ -15,12 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a_interface.constants_limits import GlobalConfig, ConstSettings
-from d3a_interface.read_user_profile import InputProfileTypes, \
+from gsy_framework.constants_limits import GlobalConfig, ConstSettings
+from gsy_framework.read_user_profile import InputProfileTypes, \
     convert_identity_profile_to_float
-from d3a_interface.read_user_profile import read_and_convert_identity_profile_to_float
-from d3a_interface.utils import key_in_dict_and_not_none
-from d3a_interface.validators import MarketMakerValidator
+from gsy_framework.read_user_profile import read_and_convert_identity_profile_to_float
+from gsy_framework.utils import key_in_dict_and_not_none
+from gsy_framework.validators import MarketMakerValidator
 
 from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.d3a_core.util import should_read_profile_from_db

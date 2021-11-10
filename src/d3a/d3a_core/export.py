@@ -28,11 +28,11 @@ from functools import reduce  # forward compatibility for Python 3
 from typing import Dict, Tuple, List, Mapping
 
 import plotly.graph_objs as go
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
-from d3a_interface.data_classes import (
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
+from gsy_framework.data_classes import (
     Trade, BalancingTrade, Bid, Offer, BalancingOffer, MarketClearingState, Clearing)
-from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
-from d3a_interface.utils import mkdir_from_str, generate_market_slot_list
+from gsy_framework.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
+from gsy_framework.utils import mkdir_from_str, generate_market_slot_list
 from pendulum import DateTime
 from slugify import slugify
 from sortedcontainers import SortedDict

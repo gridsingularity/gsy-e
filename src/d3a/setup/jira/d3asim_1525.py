@@ -23,8 +23,8 @@ from d3a.models.strategy.predefined_pv import PVUserProfileStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.d3a_core.util import d3a_path
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.enums import BidOfferMatchAlgoEnum
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import BidOfferMatchAlgoEnum
 
 """
 This setup file reenacts a case where the assert "Accepted bids were not enough to satisfy the

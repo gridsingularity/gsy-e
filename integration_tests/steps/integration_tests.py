@@ -26,12 +26,12 @@ from copy import deepcopy
 from math import isclose
 
 from behave import given, when, then
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
     default_profile_dict
-from d3a_interface.unit_test_utils import assert_dicts_identical
-from d3a_interface.utils import convert_W_to_Wh, convert_W_to_kWh, convert_kW_to_kWh, \
+from gsy_framework.unit_test_utils import assert_dicts_identical
+from gsy_framework.utils import convert_W_to_Wh, convert_W_to_kWh, convert_kW_to_kWh, \
     get_area_name_uuid_mapping
 from deepdiff import DeepDiff
 from pendulum import duration, today, from_format
@@ -100,7 +100,7 @@ def json_string_profile(context, device):
 @given('we have a profile of market_maker_rate for {scenario}')
 def hour_profile_of_market_maker_rate(context, scenario):
     import importlib
-    from d3a_interface.read_user_profile import InputProfileTypes
+    from gsy_framework.read_user_profile import InputProfileTypes
     setup_file_module = importlib.import_module("d3a.setup.{}".format(scenario))
     context._market_maker_rate = \
         read_arbitrary_profile(InputProfileTypes.IDENTITY, setup_file_module.market_maker_rate)
@@ -209,7 +209,7 @@ def load_profile_scenario(context):
 
 @given('d3a uses an {market_type} market')
 def one_sided_market(context, market_type):
-    from d3a_interface.constants_limits import ConstSettings
+    from gsy_framework.constants_limits import ConstSettings
     if market_type == "one-sided":
         ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
     elif market_type == "two-sided-pay-as-bid":

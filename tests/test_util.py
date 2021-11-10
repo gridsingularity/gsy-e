@@ -21,8 +21,8 @@ import tempfile
 from unittest.mock import MagicMock
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.enums import SpotMarketTypeEnum
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.enums import SpotMarketTypeEnum
 from parameterized import parameterized
 from pendulum import datetime
 

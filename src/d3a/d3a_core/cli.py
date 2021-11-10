@@ -26,9 +26,9 @@ from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
 from pendulum import DateTime, today
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.exceptions import D3AException
-from d3a_interface.settings_validators import validate_global_settings
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.exceptions import GSyException
+from gsy_framework.settings_validators import validate_global_settings
 
 from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, TIME_FORMAT, TIME_ZONE
 from d3a.d3a_core.simulation import run_simulation
@@ -148,5 +148,5 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
             run_simulation(setup_module_name, simulation_config, None, None, None,
                            slot_length_realtime, kwargs)
 
-    except D3AException as ex:
+    except GSyException as ex:
         raise click.BadOptionUsage(ex.args[0])

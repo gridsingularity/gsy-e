@@ -20,9 +20,9 @@ from logging import getLogger
 from math import isclose
 from typing import Union, Dict, List, Optional
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Offer, Trade, TradeBidOfferInfo
-from d3a_interface.enums import SpotMarketTypeEnum
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Offer, Trade, TradeBidOfferInfo
+from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
 from d3a.d3a_core.exceptions import (InvalidOffer, MarketReadOnlyException, OfferNotFoundException,

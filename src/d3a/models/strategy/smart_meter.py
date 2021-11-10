@@ -16,19 +16,19 @@ from logging import getLogger
 from pathlib import Path
 from typing import Dict, Union
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Offer
-from d3a_interface.enums import SpotMarketTypeEnum
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.utils import find_object_of_same_weekday_and_time
-from d3a_interface.validators.smart_meter_validator import SmartMeterValidator
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Offer
+from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.utils import find_object_of_same_weekday_and_time
+from gsy_framework.validators.smart_meter_validator import SmartMeterValidator
 from numpy import random
 from pendulum import duration
 from pendulum.datetime import DateTime
 
 from d3a import constants
 from d3a.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
-from d3a.d3a_core.exceptions import D3AException, MarketException
+from d3a.d3a_core.exceptions import GSyException, MarketException
 from d3a.d3a_core.global_objects_singleton import global_objects
 from d3a.d3a_core.util import (get_market_maker_rate_from_config, should_read_profile_from_db)
 from d3a.models.market import Market
@@ -455,7 +455,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         self._read_or_rotate_profiles(reconfigure=reconfigure)
 
         if not self.profile:
-            raise D3AException(
+            raise GSyException(
                 f"Smart Meter {self.owner.name} tries to set its required energy forecast without "
                 "a profile.")
 

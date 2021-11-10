@@ -27,10 +27,10 @@ from rq.exceptions import NoSuchJobError
 from typing import Dict, TYPE_CHECKING, Optional
 
 import d3a.constants
-from d3a_interface.results_validator import results_validator  # NOQA
-from d3a_interface.constants_limits import HeartBeat
-from d3a_interface.utils import RepeatingTimer
-from d3a_interface.exceptions import D3AException
+from gsy_framework.results_validator import results_validator  # NOQA
+from gsy_framework.constants_limits import HeartBeat
+from gsy_framework.utils import RepeatingTimer
+from gsy_framework.exceptions import GSyException
 
 
 log = getLogger(__name__)
@@ -192,7 +192,7 @@ class RedisSimulationCommunication:
                 self._simulation.stop()
 
         except NoSuchJobError:
-            raise D3AException(f"Redis job {self._simulation_id} "
+            raise GSyException(f"Redis job {self._simulation_id} "
                                f"cannot be found in the Redis job queue. "
                                f"get_current_job failed. Job will de killed.")
 

@@ -20,11 +20,11 @@ import sys
 import pendulum
 from uuid import uuid4
 
-from d3a_interface.data_classes import Offer, Trade, BalancingOffer
+from gsy_framework.data_classes import Offer, Trade, BalancingOffer
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.util import change_global_config
 
@@ -298,8 +298,8 @@ def testing_event_market_cycle(commercial_test3, area_test3):
 
 
 def test_market_maker_strategy_constructor_modifies_global_market_maker_rate():
-    import d3a_interface.constants_limits
+    import gsy_framework.constants_limits
     from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
     MarketMakerStrategy(energy_rate=22)
     assert all(v == 22
-               for v in d3a_interface.constants_limits.GlobalConfig.market_maker_rate.values())
+               for v in gsy_framework.constants_limits.GlobalConfig.market_maker_rate.values())

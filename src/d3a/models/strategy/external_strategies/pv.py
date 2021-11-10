@@ -19,11 +19,11 @@ import json
 import logging
 from typing import Dict, Callable, TYPE_CHECKING
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Offer
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Offer
 from pendulum import duration
 
-from d3a.d3a_core.exceptions import D3AException
+from d3a.d3a_core.exceptions import GSyException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
 from d3a.models.strategy.external_strategies import (
     ExternalMixin, IncomingRequest, ExternalStrategyConnectionManager, default_market_info)
@@ -83,7 +83,7 @@ class PVExternalMixin(ExternalMixin):
             response = {"command": "list_offers", "status": "ready",
                         "offer_list": filtered_offers,
                         "transaction_id": arguments.get("transaction_id")}
-        except D3AException:
+        except GSyException:
             error_message = f"Error when handling list offers on area {self.device.name}"
             logging.exception(error_message)
             response = {"command": "list_offers", "status": "error",
@@ -103,8 +103,8 @@ class PVExternalMixin(ExternalMixin):
             market = self._get_market_from_command_argument(arguments)
             if arguments.get("offer") and not self.offers.is_offer_posted(
                     market.id, arguments["offer"]):
-                raise D3AException("Offer_id is not associated with any posted offer.")
-        except (D3AException, json.JSONDecodeError):
+                raise GSyException("Offer_id is not associated with any posted offer.")
+        except (GSyException, json.JSONDecodeError):
             logging.exception("Error when handling delete offer request. Payload %s", payload)
             self.redis.publish_json(
                 delete_offer_response_channel,
@@ -125,7 +125,7 @@ class PVExternalMixin(ExternalMixin):
             response = {"command": "offer_delete", "status": "ready",
                         "deleted_offers": deleted_offers,
                         "transaction_id": arguments.get("transaction_id")}
-        except D3AException:
+        except GSyException:
             error_message = (f"Error when handling offer delete on area {self.device.name}: "
                              f"Offer Arguments: {arguments}")
             logging.exception(error_message)
@@ -190,7 +190,7 @@ class PVExternalMixin(ExternalMixin):
                 {"command": "offer", "status": "ready",
                  "offer": offer.to_json_string(replace_existing=replace_existing),
                  "transaction_id": arguments.get("transaction_id")})
-        except (AssertionError, D3AException):
+        except (AssertionError, GSyException):
             error_message = (f"Error when handling offer create on area {self.device.name}: "
                              f"Offer Arguments: {arguments}")
             logging.exception(error_message)
@@ -275,7 +275,7 @@ class PVExternalMixin(ExternalMixin):
         market = self._get_market_from_command_argument(arguments)
         if arguments.get("offer") and not self.offers.is_offer_posted(
                 market.id, arguments["offer"]):
-            raise D3AException("Offer_id is not associated with any posted offer.")
+            raise GSyException("Offer_id is not associated with any posted offer.")
 
         try:
             to_delete_offer_id = arguments.get("offer")
@@ -287,7 +287,7 @@ class PVExternalMixin(ExternalMixin):
                 "deleted_offers": deleted_offers,
                 "transaction_id": arguments.get("transaction_id")
             }
-        except D3AException:
+        except GSyException:
             response = {
                 "command": "offer_delete", "status": "error",
                 "area_uuid": self.device.uuid,
@@ -306,7 +306,7 @@ class PVExternalMixin(ExternalMixin):
                 "command": "list_offers", "status": "ready", "offer_list": filtered_offers,
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id")}
-        except D3AException:
+        except GSyException:
             response = {
                 "command": "list_offers", "status": "error",
                 "area_uuid": self.device.uuid,
@@ -350,7 +350,7 @@ class PVExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id"),
                 "area_uuid": self.device.uuid
             }
-        except (AssertionError, D3AException):
+        except (AssertionError, GSyException):
             logging.exception("Failed to post PV offer.")
             response = {
                 "command": "offer", "status": "error",

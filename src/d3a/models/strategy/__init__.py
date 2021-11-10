@@ -24,9 +24,9 @@ from logging import getLogger
 from typing import List, Dict, Union, Optional, Generator, Callable, TYPE_CHECKING
 from uuid import uuid4
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import (Offer, Bid, Trade)
-from d3a_interface.enums import SpotMarketTypeEnum
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import (Offer, Bid, Trade)
+from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
 from d3a import constants
@@ -47,7 +47,7 @@ log = getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from d3a_interface.data_classes import TradeBidOfferInfo
+    from gsy_framework.data_classes import TradeBidOfferInfo
     from d3a.models.market.one_sided import OneSidedMarket
     from d3a.models.market.two_sided import TwoSidedMarket
 

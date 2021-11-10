@@ -19,8 +19,8 @@ import json
 import d3a
 from logging import getLogger
 
-from d3a_interface.area_validator import validate_area
-from d3a_interface.utils import key_in_dict_and_not_none
+from gsy_framework.area_validator import validate_area
+from gsy_framework.utils import key_in_dict_and_not_none
 from d3a.models.strategy.external_strategies import (
     CommandTypeNotSupported, ExternalStrategyConnectionManager)
 

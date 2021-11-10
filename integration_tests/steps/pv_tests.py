@@ -17,8 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from math import isclose
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.utils import convert_W_to_kWh
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.utils import convert_W_to_kWh
 from d3a.constants import DEFAULT_PRECISION
 
 

@@ -19,8 +19,8 @@ import uuid
 from unittest.mock import Mock, MagicMock
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Bid, Offer, Trade
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Bid, Offer, Trade
 from pendulum import today, duration
 
 from d3a.constants import TIME_ZONE
@@ -162,7 +162,7 @@ class TestSettlementMarketStrategy:
         strategy_fixture.state.set_energy_measurement_kWh(15, self.time_slot)
         unsettled_deviation_dict = self.settlement_strategy.get_unsettled_deviation_dict(
             strategy_fixture)
-        from d3a_interface.utils import format_datetime
+        from gsy_framework.utils import format_datetime
         assert len(unsettled_deviation_dict["unsettled_deviation_kWh"]) == 1
         assert (list(unsettled_deviation_dict["unsettled_deviation_kWh"].keys()) ==
                 [format_datetime(self.time_slot)])

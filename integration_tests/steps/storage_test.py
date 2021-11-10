@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # pylint: disable=missing-function-docstring
 # pylint: disable=no-name-in-module
 from behave import then
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 
 from d3a.constants import DEFAULT_PRECISION
 from d3a.setup.strategy_tests.storage_strategy_break_even_hourly import (

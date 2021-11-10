@@ -2,8 +2,8 @@ from d3a.models.area import Area
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.enums import BidOfferMatchAlgoEnum
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import BidOfferMatchAlgoEnum
 
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 

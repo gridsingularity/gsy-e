@@ -25,7 +25,7 @@ from rq import Queue
 from subprocess import Popen
 from time import sleep
 import platform
-from d3a_interface.utils import check_redis_health
+from gsy_framework.utils import check_redis_health
 from d3a.d3a_core.util import get_simulation_queue_name
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')

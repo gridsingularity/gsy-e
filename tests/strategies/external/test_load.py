@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
 
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 import pytest
 
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy

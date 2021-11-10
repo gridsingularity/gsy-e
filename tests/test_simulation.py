@@ -18,10 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from unittest.mock import MagicMock
 
-from d3a_interface.constants_limits import TIME_ZONE, GlobalConfig
-from d3a_interface.kafka_communication.kafka_producer import (DisabledKafkaConnection,
+from gsy_framework.constants_limits import TIME_ZONE, GlobalConfig
+from gsy_framework.kafka_communication.kafka_producer import (DisabledKafkaConnection,
                                                               KafkaConnection)
-from d3a_interface.sim_results.all_results import ResultsHandler
+from gsy_framework.sim_results.all_results import ResultsHandler
 from pendulum import duration, today
 
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer

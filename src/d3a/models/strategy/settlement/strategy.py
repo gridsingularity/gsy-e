@@ -14,9 +14,9 @@ see <http://www.gnu.org/licenses/>.
 """
 from typing import Optional, Dict, Iterable, TYPE_CHECKING
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Offer, Bid, Trade
-from d3a_interface.utils import format_datetime
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Offer, Bid, Trade
+from gsy_framework.utils import format_datetime
 from pendulum import duration
 
 from d3a.constants import SettlementTemplateStrategiesConstants

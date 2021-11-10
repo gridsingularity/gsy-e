@@ -22,9 +22,9 @@ from logging import getLogger
 from math import isclose
 from typing import Dict, List, Union, Tuple, Optional
 
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Bid, Offer, Trade, TradeBidOfferInfo, BidOfferMatch
-from d3a_interface.matching_algorithms.requirements_validators import RequirementsSatisfiedChecker
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo, BidOfferMatch
+from gsy_framework.matching_algorithms.requirements_validators import RequirementsSatisfiedChecker
 from pendulum import DateTime
 
 from d3a.constants import FLOATING_POINT_TOLERANCE
