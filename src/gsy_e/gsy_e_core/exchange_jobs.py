@@ -27,7 +27,7 @@ from rq.decorators import job
 logger = logging.getLogger()
 
 
-@job('gsy_e')
+@job('exchange')
 def start(scenario, settings, events, aggregator_device_mapping, saved_state):
     from gsy_e.gsy_e_core.rq_job_handler import launch_simulation_from_rq_job
     job = get_current_job()

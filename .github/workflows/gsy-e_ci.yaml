@@ -4,7 +4,7 @@ on:
     branches:
       - master
       - staging
-jobs:.github/workflows/gsy-e_ci_cd_development.yaml
+jobs:
   test-build:
     runs-on: ubuntu-latest
     steps:

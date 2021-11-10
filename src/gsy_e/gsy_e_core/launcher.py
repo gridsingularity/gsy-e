@@ -41,7 +41,7 @@ class Launcher:
         python_executable = sys.executable \
             if platform.python_implementation() != "PyPy" \
             else "pypy3"
-        self.command = [python_executable, 'src/gsy_e/gsy_e_core/d3a_jobs.py']
+        self.command = [python_executable, 'src/gsy_e/gsy_e_core/exchange_jobs.py']
         self.job_array = []
 
     def run(self):
