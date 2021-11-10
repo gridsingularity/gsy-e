@@ -16,11 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
-import gsy_e
 from logging import getLogger
 from typing import Dict, Optional, TYPE_CHECKING
 
-from gsy_framework.exceptions import D3AAreaException
+from gsy_framework.exceptions import GSyAreaException
 
 import gsy_e
 from gsy_e.models.strategy.external_strategies import (
@@ -124,7 +123,7 @@ class RedisMarketExternalConnection:
                 response.update(
                     {"market_fee_const": str(self.area.grid_fee_constant),
                      "market_fee_percent": str(self.area.grid_fee_percentage)})
-            except D3AAreaException as e:
+            except GSyAreaException as e:
                 log.error(str(e))
                 return None
         else:

@@ -2,10 +2,10 @@ import json
 from unittest.mock import Mock, patch
 
 import pytest
-from d3a_interface.exceptions import D3AAreaException
+from gsy_framework.exceptions import GSyAreaException
 
-import d3a
-from d3a.models.area import Area, RedisMarketExternalConnection
+import gsy_e
+from gsy_e.models.area import Area, RedisMarketExternalConnection
 
 # pylint:disable=protected-access
 # pylint:disable=no-self-use
@@ -53,11 +53,11 @@ class TestRedisMarketExternalConnection:
 
     def test_channel_prefix(self, market_connection):
         """Test the channel prefix used to publish messages."""
-        with patch("d3a.constants.EXTERNAL_CONNECTION_WEB", True):
+        with patch("gsy_e.constants.EXTERNAL_CONNECTION_WEB", True):
             assert market_connection.channel_prefix == \
-                   f"external/{d3a.constants.CONFIGURATION_ID}/{market_connection.area.uuid}"
+                   f"external/{gsy_e.constants.CONFIGURATION_ID}/{market_connection.area.uuid}"
 
-        with patch("d3a.constants.EXTERNAL_CONNECTION_WEB", False):
+        with patch("gsy_e.constants.EXTERNAL_CONNECTION_WEB", False):
             assert market_connection.channel_prefix == f"{market_connection.area.slug}"
 
     def test_get_transaction_id(self, market_connection):
@@ -69,7 +69,7 @@ class TestRedisMarketExternalConnection:
         with pytest.raises(ValueError):
             market_connection._get_transaction_id({"data": data})
 
-    @patch("d3a.models.area.redis_external_market_connection."
+    @patch("gsy_e.models.area.redis_external_market_connection."
            "ExternalStrategyConnectionManager.register")
     def test_register(self, register_mock, market_connection):
         """Test whether the register method correctly updates the _connected flag."""
@@ -82,7 +82,7 @@ class TestRedisMarketExternalConnection:
             market_connection._redis_communicator, market_connection.channel_prefix,
             False, "mock_transaction_id", area_uuid=str(market_connection.area.uuid))
 
-    @patch("d3a.models.area.redis_external_market_connection."
+    @patch("gsy_e.models.area.redis_external_market_connection."
            "ExternalStrategyConnectionManager.unregister")
     def test_unregister(self, unregister_mock, market_connection):
         """Test whether the unregister method correctly updates the _connected flag."""
@@ -136,7 +136,7 @@ class TestRedisMarketExternalConnection:
             response_channel, expected_response)
 
         # In the case of is_aggregator_controlled = True, the callback should return the response
-        with patch("d3a.models.area.redis_external_market_connection."
+        with patch("gsy_e.models.area.redis_external_market_connection."
                    "RedisMarketExternalConnection.is_aggregator_controlled", True):
             expected_response.pop("transaction_id")
             assert market_connection.set_grid_fees_callback(
@@ -161,18 +161,18 @@ class TestRedisMarketExternalConnection:
             response_channel, expected_response)
 
         # In the case of is_aggregator_controlled = True, the callback should return the response
-        with patch("d3a.models.area.redis_external_market_connection."
+        with patch("gsy_e.models.area.redis_external_market_connection."
                    "RedisMarketExternalConnection.is_aggregator_controlled", True):
             expected_response.pop("transaction_id")
             assert market_connection.set_grid_fees_callback(
                 {"data": {"fee_percent": 12}}) == expected_response
 
-    def test_set_grid_fees_callback_d3a_exception(self, market_connection):
+    def test_set_grid_fees_callback_gsy_e_exception(self, market_connection):
         """Test the set_grid_fees callback when the area_reconfigure_event raises an exception."""
         market_connection._connected = True
         market_connection.area.area_reconfigure_event = Mock()
         market_connection._redis_communicator = Mock()
-        market_connection.area.area_reconfigure_event.side_effect = D3AAreaException
+        market_connection.area.area_reconfigure_event.side_effect = GSyAreaException
         market_connection.set_grid_fees_callback({"data": {"fee_percent": 12}})
         market_connection._redis_communicator.assert_not_called()
 
@@ -194,7 +194,7 @@ class TestRedisMarketExternalConnection:
         market_connection._redis_communicator.publish_json.assert_called_once_with(
             response_channel, response)
 
-    @patch("d3a.models.area.redis_external_market_connection.RedisMarketExternalConnection."
+    @patch("gsy_e.models.area.redis_external_market_connection.RedisMarketExternalConnection."
            "_progress_info", {})
     def test_publish_market_cycle(self, market_connection):
         """Test the publish_market_cycle method."""
@@ -202,7 +202,7 @@ class TestRedisMarketExternalConnection:
         market_connection.publish_market_cycle()
         market_connection.aggregator.add_batch_market_event.assert_not_called()
 
-        with patch("d3a.models.area.Area.current_market", True):
+        with patch("gsy_e.models.area.Area.current_market", True):
             market_connection.publish_market_cycle()
         market_connection.aggregator.add_batch_market_event.assert_called_once_with(
             str(market_connection.area.uuid), {})
@@ -212,7 +212,7 @@ class TestRedisMarketExternalConnection:
         market_connection.aggregator = Mock()
         market_connection._redis_communicator = Mock()
         # Dispatch to aggregator
-        with patch("d3a.models.area.redis_external_market_connection."
+        with patch("gsy_e.models.area.redis_external_market_connection."
                    "RedisMarketExternalConnection.is_aggregator_controlled", True):
             market_connection.deactivate()
         market_connection.aggregator.add_batch_finished_event.assert_called_once_with(
@@ -223,7 +223,7 @@ class TestRedisMarketExternalConnection:
         market_connection.aggregator.reset_mock()
         market_connection._redis_communicator.is_enabled = True
         event_channel = f"{market_connection.channel_prefix}/events/finish"
-        with patch("d3a.models.area.redis_external_market_connection."
+        with patch("gsy_e.models.area.redis_external_market_connection."
                    "RedisMarketExternalConnection.is_aggregator_controlled", False):
             market_connection.deactivate()
         market_connection._redis_communicator.publish_json.assert_called_once_with(
@@ -232,16 +232,18 @@ class TestRedisMarketExternalConnection:
     def test_trigger_aggregator_commands(self, market_connection):
         """Test how trigger_aggregator_commands calls the callbacks."""
         command = {}
-        assert market_connection.trigger_aggregator_commands(command) == \
-               {"status": "error",
-                "area_uuid": market_connection.area.uuid,
-                "message": "Invalid command type"}
+        assert market_connection.trigger_aggregator_commands(command) == (
+            {"status": "error",
+             "area_uuid": market_connection.area.uuid,
+             "message": "Invalid command type"}
+        )
 
         command = {"type": "unsupported_command"}
-        assert market_connection.trigger_aggregator_commands(command) == \
-               {"command": command["type"], "status": "error",
-                "area_uuid": market_connection.area.uuid,
-                "message": f"Command type not supported for device {market_connection.area.uuid}"}
+        assert market_connection.trigger_aggregator_commands(command) == (
+            {"command": command["type"], "status": "error",
+             "area_uuid": market_connection.area.uuid,
+             "message": f"Command type not supported for device {market_connection.area.uuid}"}
+        )
 
         market_connection.set_grid_fees_callback = Mock()
         market_connection.set_grid_fees_callback.return_value = {"random": "value"}
