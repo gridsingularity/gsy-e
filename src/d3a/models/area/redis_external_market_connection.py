@@ -109,21 +109,23 @@ class RedisMarketExternalConnection:
         payload_data = (
             payload["data"] if isinstance(payload["data"], dict)
             else json.loads(payload["data"]))
-        try:
-            self.area.area_reconfigure_event(
-                grid_fee_constant=payload_data.get("fee_percent", None),
-                grid_fee_percentage=payload_data.get("fee_const", None))
-        except D3AAreaException as e:
-            log.error(str(e))
-            return None
 
         response = {"area_uuid": self.area.uuid,
                     "command": "grid_fees",
                     "status": "ready"}
-        if payload_data.get("fee_const") is not None and self.area.config.grid_fee_type == 1:
-            response["market_fee_const"] = str(self.area.grid_fee_constant)
-        elif payload_data.get("fee_percent") is not None and self.area.config.grid_fee_type == 2:
-            response["market_fee_percent"] = str(self.area.grid_fee_percentage)
+        if (
+           (payload_data.get("fee_const") is not None and self.area.config.grid_fee_type == 1) or
+           (payload_data.get("fee_percent") is not None and self.area.config.grid_fee_type == 2)):
+            try:
+                self.area.area_reconfigure_event(
+                    grid_fee_constant=payload_data.get("fee_const", None),
+                    grid_fee_percentage=payload_data.get("fee_percent", None))
+                response.update(
+                    {"market_fee_const": str(self.area.grid_fee_constant),
+                     "market_fee_percent": str(self.area.grid_fee_percentage)})
+            except D3AAreaException as e:
+                log.error(str(e))
+                return None
         else:
             response.update({
                 "status": "error",
