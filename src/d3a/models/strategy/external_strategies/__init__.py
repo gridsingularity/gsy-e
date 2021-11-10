@@ -26,12 +26,15 @@ from d3a_interface.data_classes import Trade
 from d3a_interface.enums import SpotMarketTypeEnum
 from d3a_interface.utils import str_to_pendulum_datetime
 from pendulum import DateTime
+from redis import RedisError
 
 import d3a.constants
+from d3a.d3a_core.exceptions import MarketException, D3AException
 from d3a.d3a_core.global_objects_singleton import global_objects
-from d3a.models.market import Market
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import (
     ResettableCommunicator, ExternalConnectionCommunicator)
+from d3a.models.market import Market
+
 if TYPE_CHECKING:
     from d3a.models.area import Area
 
@@ -89,9 +92,9 @@ class ExternalStrategyConnectionManager:
                 {"command": "register", "status": "ready", "registered": True,
                  "transaction_id": transaction_id, "device_uuid": area_uuid})
             return True
-        except Exception:
+        except RedisError:
             logging.exception("Error when registering to area %s", channel_prefix)
-            return False
+        return False
 
     @staticmethod
     def unregister(redis: ResettableCommunicator, channel_prefix: str,
@@ -112,7 +115,7 @@ class ExternalStrategyConnectionManager:
                 {"command": "unregister", "status": "ready", "unregistered": True,
                  "transaction_id": transaction_id})
             return False
-        except Exception:
+        except RedisError:
             logging.exception("Error when registering to area %s", channel_prefix)
             return is_connected
 
@@ -130,6 +133,7 @@ class ExternalMixin:
     # alternative is to include here the mixed-in class dependencies as type annotations
     area: "Area"
     owner: "Area"
+    spot_market: "Market"
     deactivate: Callable
     get_state: Callable
     restore_state: Callable
@@ -251,7 +255,7 @@ class ExternalMixin:
             response = {"command": "device_info", "status": "ready",
                         "device_info": self._device_info_dict,
                         "transaction_id": arguments.get("transaction_id")}
-        except Exception:
+        except D3AException:
             error_message = f"Error when handling device info on area {self.device.name}"
             logging.exception(error_message)
             response = {"command": "device_info", "status": "error",
@@ -271,7 +275,7 @@ class ExternalMixin:
                 "transaction_id": arguments.get("transaction_id"),
                 "area_uuid": self.device.uuid
             }
-        except Exception:
+        except D3AException:
             response = {
                 "command": "device_info", "status": "error",
                 "error_message": f"Error when handling device info on area {self.device.name}.",
@@ -279,12 +283,6 @@ class ExternalMixin:
                 "area_uuid": self.device.uuid
             }
         return response
-
-    @property
-    def spot_market(self):
-        """Return the spot_market member of the area."""
-        # TODO: remove this property and resort to the AreaBehaviorBase spot_market member
-        return self.area.spot_market
 
     def _get_market_from_command_argument(self, arguments: Dict) -> Market:
         """Extract the time_slot from command argument and return the needed market."""
@@ -300,8 +298,9 @@ class ExternalMixin:
             return market
         market = self.area.get_settlement_market(time_slot)
         if not market:
-            raise Exception(f"Timeslot {time_slot} is not currently in the spot, future or "
-                            f"settlement markets")
+            raise MarketException(
+                f"Timeslot {time_slot} is not currently in the spot, future or "
+                f"settlement markets")
         return market
 
     @property
@@ -317,7 +316,9 @@ class ExternalMixin:
     @property
     def _device_info_dict(self) -> Dict:
         """Return the asset info."""
-        return {}
+        return {
+            **self._settlement_market_strategy.get_unsettled_deviation_dict(self)
+        }
 
     @property
     def _progress_info(self) -> Dict:
@@ -546,5 +547,6 @@ class ExternalMixin:
                     if self.area.current_market else None,
                     "total_cost": self.energy_traded_costs(self.area.current_market.id)
                     if self.area.current_market else None},
-                "asset_bill": self.device.stats.aggregated_stats.get("bills")
+                "asset_bill": self.device.stats.aggregated_stats.get("bills"),
+
                 }
