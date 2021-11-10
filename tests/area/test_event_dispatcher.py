@@ -245,5 +245,11 @@ class TestAreaDispatcher:
         for child in area_dispatcher.area.children:
             child.dispatcher.event_listener.assert_called_once()
 
-        (area_dispatcher._broadcast_notification_to_area_and_child_agents.
-            assert_called_once_with(expected_market_type, event_type, **kwargs))
+        if expected_market_type in [AvailableMarketTypes.BALANCING, AvailableMarketTypes.SPOT]:
+            (area_dispatcher._broadcast_notification_to_area_and_child_agents.
+                assert_has_calls(
+                    [call(AvailableMarketTypes.SPOT, event_type, **kwargs),
+                     call(AvailableMarketTypes.BALANCING, event_type, **kwargs)]))
+        else:
+            (area_dispatcher._broadcast_notification_to_area_and_child_agents.
+                assert_called_once_with(expected_market_type, event_type, **kwargs))
