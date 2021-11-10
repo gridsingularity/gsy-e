@@ -35,7 +35,7 @@ Running the simulation
 
 After installation the simulation can be run with the following command::
 
-    ~# d3a run
+    ~# gsy-e run
 
 There are various options available to control the simulation run.
 Help on there is available via::
