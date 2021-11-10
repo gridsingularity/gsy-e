@@ -27,7 +27,7 @@ else:
 VERSION = "1.1.0"
 
 setup(
-    name="gsy_e",
+    name="gsy-e",
     description="decentralised energy exchange developed by Grid Singularity",
     long_description=README,
     author="GridSingularity",
