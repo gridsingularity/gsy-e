@@ -66,7 +66,7 @@ class AreaMarkets:
         self.settlement_market_ids: List = []
 
     def update_area_market_id_lists(self) -> None:
-        """Populates lists of market ids that are currently in the market dicts."""
+        """Populate lists of market-ids that are currently in the market dicts."""
         self.spot_market_ids: List = [market.id
                                       for market in self.markets.values()]
         self.balancing_market_ids: List = [market.id

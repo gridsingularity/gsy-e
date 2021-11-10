@@ -21,6 +21,7 @@ from logging import getLogger
 from typing import Union, Dict  # NOQA
 
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.data_classes import Offer
 from d3a_interface.enums import SpotMarketTypeEnum
 from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.utils import (
@@ -35,10 +36,9 @@ from d3a.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import get_market_maker_rate_from_config
-from d3a.models.market import Market
-from d3a_interface.data_classes import Offer
-from d3a.models.state import LoadState
 from d3a.models.base import AssetType
+from d3a.models.market import Market
+from d3a.models.state import LoadState
 from d3a.models.strategy import BidEnabledStrategy, utils
 from d3a.models.strategy.future.strategy import future_market_strategy_factory
 from d3a.models.strategy.settlement.strategy import settlement_market_strategy_factory
@@ -100,8 +100,11 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._calculate_active_markets()
         self._cycled_market = set()
         self._simulation_start_timestamp = None
-        self._settlement_market_strategy = settlement_market_strategy_factory()
         self._future_market_strategy = future_market_strategy_factory()
+
+    @classmethod
+    def _create_settlement_market_strategy(cls):
+        return settlement_market_strategy_factory()
 
     @property
     def state(self) -> LoadState:
@@ -167,6 +170,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self.bid_update.reset(self)
         self._calculate_active_markets()
         self._update_energy_requirement_future_markets()
+        # Provide energy values for the past market slot, to be used in the settlement market
+        self._set_energy_measurement_of_last_market()
         self._set_alternative_pricing_scheme()
         self.update_state()
         self._settlement_market_strategy.event_market_cycle(self)
@@ -182,8 +187,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if self.area.current_market:
             self._cycled_market = {self.area.current_market.time_slot}
 
-        # Provide energy values for the past market slot, to be used in the settlement market
-        self._set_energy_measurement_of_last_market()
         self._delete_past_state()
 
     def _set_energy_measurement_of_last_market(self):

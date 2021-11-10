@@ -115,6 +115,8 @@ class AreaDispatcher:
             event_type: AreaEvent, **kwargs) -> None:
 
         if market_type == AvailableMarketTypes.FUTURE:
+            # First check for the market_type and then check if an future agent exists, otherwise
+            # the future event would be posted on non-future agents.
             if self.future_agent:
                 self.future_agent.event_listener(event_type, **kwargs)
         else:
@@ -246,8 +248,7 @@ class AreaDispatcher:
         if market_type == AvailableMarketTypes.BALANCING:
             return BalancingAgent(**agent_constructor_arguments)
         if market_type == AvailableMarketTypes.FUTURE:
-            return FutureAgent(**agent_constructor_arguments,
-                               min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE)
+            return FutureAgent(**agent_constructor_arguments)
 
         assert False, f"Market type not supported {market_type}"
 
