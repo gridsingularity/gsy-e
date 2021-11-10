@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from numpy.random import random
 from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a.d3a_core.util import make_ba_name, make_iaa_name
+from d3a.gsy_e_core.util import make_ba_name, make_iaa_name
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.one_sided_engine import BalancingEngine
 from gsy_framework.constants_limits import ConstSettings

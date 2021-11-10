@@ -21,7 +21,7 @@ from typing import Dict, List, TYPE_CHECKING, Callable
 
 from pendulum import DateTime
 
-from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a.gsy_e_core.util import get_market_maker_rate_from_config
 from d3a.models.market import Market
 from d3a.models.strategy.external_strategies import (
     ExternalMixin, IncomingRequest, ExternalStrategyConnectionManager, default_market_info)

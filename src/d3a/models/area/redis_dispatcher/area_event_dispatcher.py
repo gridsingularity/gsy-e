@@ -1,7 +1,7 @@
 import json
 from random import random
 from d3a.events import AreaEvent
-from d3a.d3a_core.exceptions import D3ARedisException
+from d3a.gsy_e_core.exceptions import D3ARedisException
 from d3a.models.area.redis_dispatcher import RedisEventDispatcherBase
 
 

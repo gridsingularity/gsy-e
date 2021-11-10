@@ -26,8 +26,8 @@ from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 
 from d3a import constants
 from d3a.constants import TIME_ZONE
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.d3a_core.util import d3a_path
+from d3a.gsy_e_core.device_registry import DeviceRegistry
+from d3a.gsy_e_core.util import d3a_path
 from d3a.models.area import DEFAULT_CONFIG
 from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import os
-from d3a.d3a_core.area_serializer import area_from_string
+from d3a.gsy_e_core.area_serializer import area_from_string
 
 
 def get_setup(config):

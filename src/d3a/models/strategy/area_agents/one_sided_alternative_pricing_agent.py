@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
-from d3a.d3a_core.exceptions import MarketException
+from d3a.gsy_e_core.exceptions import MarketException
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy import INF_ENERGY
 from gsy_framework.constants_limits import ConstSettings

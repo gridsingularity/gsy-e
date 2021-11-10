@@ -19,8 +19,8 @@ from collections import namedtuple
 from typing import Dict, Set  # noqa
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from gsy_framework.constants_limits import ConstSettings
-from d3a.d3a_core.util import short_offer_bid_log_str
-from d3a.d3a_core.exceptions import MarketException, OfferNotFoundException
+from d3a.gsy_e_core.util import short_offer_bid_log_str
+from d3a.gsy_e_core.exceptions import MarketException, OfferNotFoundException
 from gsy_framework.data_classes import Offer
 from gsy_framework.enums import SpotMarketTypeEnum
 

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import os
-from d3a.d3a_core.util import d3a_path
+from d3a.gsy_e_core.util import d3a_path
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.electrolyzer import ElectrolyzerStrategy

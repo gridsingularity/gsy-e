@@ -28,7 +28,7 @@ from pendulum import DateTime
 
 from d3a import limit_float_precision
 from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a.d3a_core.util import is_time_slot_in_past_markets, write_default_to_dict
+from d3a.gsy_e_core.util import is_time_slot_in_past_markets, write_default_to_dict
 
 StorageSettings = ConstSettings.StorageSettings
 

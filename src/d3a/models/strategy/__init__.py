@@ -32,11 +32,11 @@ from pendulum import DateTime
 from d3a import constants
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.d3a_core.exceptions import D3ARedisException
-from d3a.d3a_core.exceptions import SimulationException, MarketException
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
-from d3a.d3a_core.util import append_or_create_key
+from d3a.gsy_e_core.device_registry import DeviceRegistry
+from d3a.gsy_e_core.exceptions import D3ARedisException
+from d3a.gsy_e_core.exceptions import SimulationException, MarketException
+from d3a.gsy_e_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
+from d3a.gsy_e_core.util import append_or_create_key
 from d3a.events import EventMixin
 from d3a.events.event_structures import AreaEvent, MarketEvent
 from d3a.models.base import AreaBehaviorBase

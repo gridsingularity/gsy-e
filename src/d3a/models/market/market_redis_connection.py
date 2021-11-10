@@ -7,7 +7,7 @@ from gsy_framework.data_classes import BaseBidOffer, Trade
 from gsy_framework.utils import key_in_dict_and_not_none
 
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT, MAX_WORKER_THREADS
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import (
+from d3a.gsy_e_core.redis_connections.redis_area_market_communicator import (
     ResettableCommunicator, BlockingCommunicator)
 from d3a.events import MarketEvent
 

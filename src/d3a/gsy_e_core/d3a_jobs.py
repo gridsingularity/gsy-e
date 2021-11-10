@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 from os import environ, getpid
 
-from d3a.d3a_core.util import get_simulation_queue_name
+from d3a.gsy_e_core.util import get_simulation_queue_name
 from pendulum import now
 from redis import StrictRedis
 from rq import Connection, Worker, get_current_job
@@ -29,7 +29,7 @@ logger = logging.getLogger()
 
 @job('d3a')
 def start(scenario, settings, events, aggregator_device_mapping, saved_state):
-    from d3a.d3a_core.rq_job_handler import launch_simulation_from_rq_job
+    from d3a.gsy_e_core.rq_job_handler import launch_simulation_from_rq_job
     job = get_current_job()
     job.save_meta()
     launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_mapping,

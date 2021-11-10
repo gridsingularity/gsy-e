@@ -1,6 +1,6 @@
 from gsy_framework.constants_limits import ConstSettings
 
-from d3a.d3a_core.util import make_sa_name
+from d3a.gsy_e_core.util import make_sa_name
 from d3a.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
 from d3a.models.strategy.area_agents.two_sided_engine import TwoSidedEngine
 

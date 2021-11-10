@@ -30,7 +30,7 @@ from parameterized import parameterized
 
 from d3a.constants import TIME_FORMAT
 from d3a.constants import TIME_ZONE
-from d3a.d3a_core.util import d3a_path
+from d3a.gsy_e_core.util import d3a_path
 from d3a.models.area import DEFAULT_CONFIG
 from gsy_framework.data_classes import Offer, Trade
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy

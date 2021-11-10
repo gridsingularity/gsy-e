@@ -29,9 +29,9 @@ from pendulum import DateTime
 from redis import RedisError
 
 import d3a.constants
-from d3a.d3a_core.exceptions import MarketException, GSyException
-from d3a.d3a_core.global_objects_singleton import global_objects
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import (
+from d3a.gsy_e_core.exceptions import MarketException, GSyException
+from d3a.gsy_e_core.global_objects_singleton import global_objects
+from d3a.gsy_e_core.redis_connections.redis_area_market_communicator import (
     ResettableCommunicator, ExternalConnectionCommunicator)
 from d3a.models.market import Market
 

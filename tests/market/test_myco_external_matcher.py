@@ -5,7 +5,7 @@ import pytest
 from pendulum import now
 
 import d3a.models.market.market_redis_connection
-from d3a.d3a_core.exceptions import MycoValidationException, InvalidBidOfferPairException
+from d3a.gsy_e_core.exceptions import MycoValidationException, InvalidBidOfferPairException
 from d3a.models.market import Offer, Bid
 from d3a.models.market.two_sided import TwoSidedMarket
 from d3a.models.myco_matcher import MycoExternalMatcher

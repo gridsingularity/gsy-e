@@ -24,8 +24,8 @@ import pytest
 from gsy_framework.constants_limits import ConstSettings
 
 from d3a.constants import TIME_ZONE
-from d3a.d3a_core.blockchain_interface import NonBlockchainInterface
-from d3a.d3a_core.exceptions import MarketException
+from d3a.gsy_e_core.blockchain_interface import NonBlockchainInterface
+from d3a.gsy_e_core.exceptions import MarketException
 from gsy_framework.data_classes import Offer, Trade, Bid
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.two_sided import TwoSidedMarket

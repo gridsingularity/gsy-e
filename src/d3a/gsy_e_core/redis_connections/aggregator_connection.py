@@ -4,7 +4,7 @@ from copy import deepcopy
 from threading import Lock
 
 import d3a.constants
-from d3a.d3a_core.global_objects_singleton import global_objects
+from d3a.gsy_e_core.global_objects_singleton import global_objects
 from gsy_framework.utils import create_subdict_or_update
 from redis import StrictRedis
 

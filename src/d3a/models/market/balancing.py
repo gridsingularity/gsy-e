@@ -24,11 +24,11 @@ from gsy_framework.data_classes import Offer
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.events.event_structures import MarketEvent
 from gsy_framework.data_classes import BalancingOffer, BalancingTrade
-from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
+from d3a.gsy_e_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidBalancingTradeException, \
     DeviceNotInRegistryError
-from d3a.d3a_core.util import short_offer_bid_log_str
-from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.gsy_e_core.util import short_offer_bid_log_str
+from d3a.gsy_e_core.device_registry import DeviceRegistry
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from gsy_framework.constants_limits import ConstSettings
 

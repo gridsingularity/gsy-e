@@ -22,8 +22,8 @@ from typing import Dict, List, Union, TYPE_CHECKING, Callable
 from gsy_framework.constants_limits import ConstSettings
 from pendulum import duration
 
-from d3a.d3a_core.exceptions import GSyException
-from d3a.d3a_core.util import get_market_maker_rate_from_config
+from d3a.gsy_e_core.exceptions import GSyException
+from d3a.gsy_e_core.util import get_market_maker_rate_from_config
 from d3a.models.strategy.external_strategies import (
     ExternalMixin, IncomingRequest, default_market_info, ExternalStrategyConnectionManager)
 from d3a.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin

@@ -25,7 +25,7 @@ from gsy_framework.data_classes import Offer
 from pendulum import DateTime
 
 from d3a import limit_float_precision
-from d3a.d3a_core.util import area_name_from_area_or_iaa_name, add_or_create_key, \
+from d3a.gsy_e_core.util import area_name_from_area_or_iaa_name, add_or_create_key, \
     area_sells_to_child, child_buys_from_area
 from d3a.models.market import Market
 from d3a.models.strategy.load_hours import LoadHoursStrategy

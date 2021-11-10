@@ -19,7 +19,7 @@ import json
 from datetime import datetime
 
 import pytest
-from d3a.d3a_core.area_serializer import area_to_string, area_from_string, are_all_areas_unique
+from d3a.gsy_e_core.area_serializer import area_to_string, area_from_string, are_all_areas_unique
 from d3a.models.area import Area
 from d3a.models.config import SimulationConfig
 from d3a.models.leaves import SmartMeter, PV, LoadHours, Storage

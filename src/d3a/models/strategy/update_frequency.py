@@ -21,8 +21,8 @@ from gsy_framework.read_user_profile import InputProfileTypes
 from gsy_framework.utils import find_object_of_same_weekday_and_time
 from pendulum import duration
 
-from d3a.d3a_core.global_objects_singleton import global_objects
-from d3a.d3a_core.util import write_default_to_dict, is_time_slot_in_past_markets
+from d3a.gsy_e_core.global_objects_singleton import global_objects
+from d3a.gsy_e_core.util import write_default_to_dict, is_time_slot_in_past_markets
 
 
 class UpdateFrequencyMixin:
