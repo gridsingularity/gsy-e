@@ -1,7 +1,7 @@
 # Redis dump files
 dump.rdb
 
-# Byte-compiled / optimized / DLL files.github/workflows/gsy-e_ci.yaml
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
