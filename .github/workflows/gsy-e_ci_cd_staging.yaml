@@ -1,4 +1,4 @@
-name: gsy_e-ci-cd-staging
+name: gsy-e-ci-cd-staging
 on:
   push:
     branches:

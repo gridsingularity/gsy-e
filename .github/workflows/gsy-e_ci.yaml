@@ -1,10 +1,10 @@
-name: gsy_e-ci
+name: gsy-e-ci
 on:
   pull_request:
     branches:
       - master
       - staging
-jobs:
+jobs:.github/workflows/gsy-e_ci_cd_development.yaml
   test-build:
     runs-on: ubuntu-latest
     steps:

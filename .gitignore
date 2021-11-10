@@ -1,12 +1,12 @@
 # Redis dump files
 dump.rdb
 
-# Byte-compiled / optimized / DLL files
+# Byte-compiled / optimized / DLL files.github/workflows/gsy-e_ci.yaml
 __pycache__/
 *.py[cod]
 *$py.class
 
-# JetBeans PyCharm files
+# JetBeans PyCharm files.github/workflows/gsy-e_ci.yaml
 .idea/
 
 # C extensions
@@ -92,7 +92,7 @@ ENV/
 .ropeproject
 
 *.DS_Store
-.d3a/
+.gsy-e/
 
 requirements/local.*
 
@@ -100,7 +100,7 @@ requirements/local.*
 
 .pytest_cache
 
-d3a-simulation
+gsy-e-simulation
 
 # Ink contract builds
 
