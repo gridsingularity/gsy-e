@@ -40,7 +40,7 @@ After installation the simulation can be run with the following command::
 There are various options available to control the simulation run.
 Help on there is available via::
 
-    ~# d3a run --help
+    ~# gsy-e run --help
 
 
 Controlling the simulation
@@ -100,19 +100,19 @@ Docker
 The repository contains a `docker`_ Dockerfile. To build an image use the
 following command (change into repository folder first)::
 
-    ~# docker build -t d3a .
+    ~# docker build -t gsy-e .
 
 
 After building is complete you can run the image with::
 
-    ~# docker run --rm -it d3a
+    ~# docker run --rm -it gsy-e
 
 
 Command line parameters can be given normally after the image name::
 
-    ~# docker run --rm d3a --help
-    ~# docker run --rm d3a run --help
-    ~# docker run --rm d3a run --setup default_2a -t15s
+    ~# docker run --rm gsy-e --help
+    ~# docker run --rm gsy-e run --help
+    ~# docker run --rm gsy-e run --setup default_2a -t15s
 
 
 There is also a handy script that deals with the building of the image and running the provided command::
@@ -123,13 +123,13 @@ There is also a handy script that deals with the building of the image and runni
 where you can provide the d3a_command and export path where the simulation results are stored.
 For example::
 
-    ~# ./run_d3a_on_docker.sh "d3a -l ERROR run --setup default_2a -t 15s" $HOME/d3a-simulation
+    ~# ./run_d3a_on_docker.sh "gsy-e -l ERROR run --setup default_2a -t 15s" $HOME/gsy-e-simulation
 
 
-builds a d3a docker image (if not already present),
+builds a gsy-e docker image (if not already present),
 runs the simulation with setup-file default_2a, tick-length 15s
-and stores the simulation output data into $HOME/d3a-simulation.
-If no export_path is provided, simulation results will be stored in $HOME/d3a-simulation.
+and stores the simulation output data into $HOME/gsy-e-simulation.
+If no export_path is provided, simulation results will be stored in $HOME/gsy-e-simulation.
 
 
 _`docker`: https://docker.io
