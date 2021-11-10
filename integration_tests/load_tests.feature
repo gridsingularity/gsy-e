@@ -23,7 +23,7 @@ Feature: Load Tests
   Scenario: DefinedLoadStrategy trades energy based on a multiday csv profile
     Given we have a scenario named strategy_tests/user_profile_load_csv_multiday
     And gsy-e is installed
-    When we run a multi-day d3a simulation with strategy_tests.user_profile_load_csv_multiday [2019-01-01, 48, 15, 15]
+    When we run a multi-day gsy-e simulation with strategy_tests.user_profile_load_csv_multiday [2019-01-01, 48, 15, 15]
     Then the DefinedLoadStrategy follows the multi day Load profile provided as csv
     And load only accepted offers lower than final_buying_rate
 

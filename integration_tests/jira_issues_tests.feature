@@ -28,7 +28,7 @@ Feature: Jira Issues Tests
      Given we have a scenario named default_3
      And gsy-e is installed
      And the min offer age is set to 1 tick
-     When we run a multi-day d3a simulation with default_3 [None, 72, 15, 60]
+     When we run a multi-day gsy-e simulation with default_3 [None, 72, 15, 60]
      Then pv produces the same energy on each corresponding time slot regardless of the day
      And all loads consume the same energy on each corresponding time slot regardless of the day
      And all loads adhere to the hours of day configuration
@@ -72,7 +72,7 @@ Feature: Jira Issues Tests
     Given we have a scenario named jira/d3asim_962
     And gsy-e is installed
     When export is needed
-    And we run a multi-day d3a simulation with jira.d3asim_962 [2019-01-01, 48, 60, 60]
+    And we run a multi-day gsy-e simulation with jira.d3asim_962 [2019-01-01, 48, 60, 60]
     Then the device statistics are correct
 
   @slow

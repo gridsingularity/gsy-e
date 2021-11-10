@@ -109,9 +109,9 @@ class TestD3ACoreUtil:
         assert retry_counter == 3
 
     def test_get_simulation_queue_name(self):
-        assert get_simulation_queue_name() == "gsy_e"
+        assert get_simulation_queue_name() == "exchange"
         os.environ["LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE"] = "no"
-        assert get_simulation_queue_name() == "gsy_e"
+        assert get_simulation_queue_name() == "exchange"
         os.environ["LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE"] = "yes"
         assert get_simulation_queue_name() == "canary_network"
 
