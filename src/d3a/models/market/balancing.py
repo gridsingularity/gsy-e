@@ -49,10 +49,17 @@ class BalancingMarket(OneSidedMarket):
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name, in_sim_duration=in_sim_duration)
 
-    def offer(self, price: float, energy: float, seller: str, seller_origin,
-              offer_id=None, original_price=None, dispatch_event=True,
-              adapt_price_with_fees=True, add_to_history=True, seller_origin_id=None,
-              seller_id=None, attributes: Dict = None, requirements: List[Dict] = None):
+    def offer(self, price: float, energy: float, seller: str, seller_origin: str,
+              offer_id: Optional[str] = None,
+              original_price: Optional[float] = None,
+              dispatch_event: bool = True,
+              adapt_price_with_fees: bool = True,
+              add_to_history: bool = True,
+              seller_origin_id: Optional[str] = None,
+              seller_id: Optional[str] = None,
+              attributes: Optional[Dict] = None,
+              requirements: Optional[List[Dict]] = None,
+              time_slot: Optional[DateTime] = None):
         assert False
 
     def balancing_offer(self, price: float, energy: float, seller: str,
@@ -79,7 +86,7 @@ class BalancingMarket(OneSidedMarket):
         offer = BalancingOffer(
             offer_id, self.now, price, energy, seller,
             seller_origin=seller_origin, attributes=attributes,
-            requirements=requirements)
+            requirements=requirements, time_slot=self.time_slot)
         self.offers[offer.id] = offer
 
         self.offer_history.append(offer)
@@ -144,7 +151,7 @@ class BalancingMarket(OneSidedMarket):
         )
 
     def accept_offer(self, offer_or_id: Union[str, BalancingOffer], buyer: str, *,
-                     energy: int = None, time: DateTime = None,
+                     energy: int = None,
                      already_tracked: bool = False, trade_rate: float = None,
                      trade_bid_info: float = None,
                      buyer_origin=None, buyer_origin_id=None, buyer_id=None) -> BalancingTrade:
@@ -172,8 +179,6 @@ class BalancingMarket(OneSidedMarket):
         orig_offer_price = self._calculate_original_prices(offer)
 
         try:
-            if time is None:
-                time = self.now
             if energy == 0:
                 raise InvalidBalancingTradeException("Energy can not be zero.")
             elif abs(energy) < abs(offer.energy):
@@ -210,13 +215,13 @@ class BalancingMarket(OneSidedMarket):
             self.bc_interface.handle_blockchain_trade_event(
                 offer, buyer, original_offer, residual_offer
             )
-        trade = BalancingTrade(trade_id, time, offer, offer.seller, buyer,
+        trade = BalancingTrade(trade_id, self.now, offer, offer.seller, buyer,
                                residual_offer, seller_origin=offer.seller_origin,
                                buyer_origin=buyer_origin, fee_price=fees,
                                seller_origin_id=offer.seller_origin_id,
                                seller_id=offer.seller_id,
                                buyer_origin_id=buyer_origin_id,
-                               buyer_id=buyer_id)
+                               buyer_id=buyer_id, time_slot=offer.time_slot)
         self.bc_interface.track_trade_event(self.time_slot, trade)
 
         if already_tracked is False:

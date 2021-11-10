@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Dict
 
 import pytz
@@ -39,11 +39,13 @@ class ProfileDBConnectionHandler:
     _db = Database()
 
     class Profile_Database_ProfileTimeSeries(_db.Entity):
+        """Model for the profile timeseries data"""
         profile_uuid = Required(uuid.UUID)
         time = Required(datetime)
         value = Required(float)
 
     class Profile_Database_ConfigurationAreaProfileUuids(_db.Entity):
+        """Model for the information associated with each profile"""
         configuration_uuid = Required(uuid.UUID)
         area_uuid = Required(uuid.UUID)
         profile_uuid = Required(uuid.UUID)
@@ -55,13 +57,13 @@ class ProfileDBConnectionHandler:
         self._profile_uuids = None
 
     @staticmethod
-    def convert_pendulum_to_datetime(time_stamp):
+    def _convert_pendulum_to_datetime(time_stamp):
         return datetime.fromtimestamp(time_stamp.timestamp(), tz=pytz.UTC)
 
     @staticmethod
-    def strip_timezone_and_create_pendulum_instance_from_datetime(
+    def _strip_timezone_and_create_pendulum_instance_from_datetime(
             time_stamp: datetime) -> DateTime:
-        return instance(time_stamp.astimezone(timezone.utc), pytz.UTC)
+        return instance(time_stamp).in_timezone("UTC")
 
     def connect(self):
         """ Establishes a connection to the d3a-profiles DB
@@ -108,7 +110,7 @@ class ProfileDBConnectionHandler:
         )
 
         datapoint_dict = {
-            self.strip_timezone_and_create_pendulum_instance_from_datetime(datapoint.time).set(
+            self._strip_timezone_and_create_pendulum_instance_from_datetime(datapoint.time).set(
                 year=current_timestamp.year,
                 month=current_timestamp.month,
                 day=current_timestamp.day
@@ -158,18 +160,18 @@ class ProfileDBConnectionHandler:
             current_timestamp (Datetime): Current pendulum time stamp
         """
         start_time, end_time = self._get_start_end_time(current_timestamp)
-        query_ret_val = self._get_profiles_from_db(self.convert_pendulum_to_datetime(start_time),
-                                                   self.convert_pendulum_to_datetime(end_time))
+        query_ret_val = self._get_profiles_from_db(self._convert_pendulum_to_datetime(start_time),
+                                                   self._convert_pendulum_to_datetime(end_time))
 
         for profile_uuid in self._profile_uuids:
             self._user_profiles[profile_uuid] = {
-                self.strip_timezone_and_create_pendulum_instance_from_datetime(
+                self._strip_timezone_and_create_pendulum_instance_from_datetime(
                     data_point.time): data_point.value
                 for data_point in query_ret_val if data_point.profile_uuid == profile_uuid
             }
 
-        for profile_uuid in self._user_profiles:
-            if not self._user_profiles[profile_uuid]:
+        for profile_uuid, profile_timeseries in self._user_profiles.items():
+            if not profile_timeseries:
                 self._user_profiles[profile_uuid] = self.get_first_week_from_profile(
                     profile_uuid, current_timestamp)
 
@@ -195,7 +197,7 @@ class ProfileDBConnectionHandler:
         time_stamps = generate_market_slot_list(current_timestamp)
         return min(time_stamps), max(time_stamps)
 
-    def should_buffer_profiles(self, current_timestamp: DateTime):
+    def _should_buffer_profiles(self, current_timestamp: DateTime):
         return (self._profile_uuids is None or
                 (not self._buffered_times or (current_timestamp not in self._buffered_times)))
 
@@ -207,7 +209,7 @@ class ProfileDBConnectionHandler:
                                           that is used to decide whether to buffer or not
 
         """
-        if self.should_buffer_profiles(current_timestamp):
+        if self._should_buffer_profiles(current_timestamp):
             self._buffer_profile_uuid_list()
             self._buffer_all_profiles(current_timestamp)
             self._buffer_time_slots()
@@ -237,16 +239,17 @@ class ProfilesHandler:
 
     def activate(self):
         """Connect to DB, update current timestamp and get the first chunk of data from the DB"""
-        self.connect_to_db()
+        self._connect_to_db()
         self.update_time_and_buffer_profiles(GlobalConfig.start_date)
 
-    def connect_to_db(self):
+    def _connect_to_db(self):
         if d3a.constants.CONNECT_TO_PROFILES_DB:
             self.db = ProfileDBConnectionHandler()
             self.db.connect()
 
     @property
     def current_timestamp(self):
+        """Get the current timestamp of the simulation"""
         return self._current_timestamp
 
     def _update_current_time(self, timestamp: DateTime):
