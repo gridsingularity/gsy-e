@@ -139,7 +139,7 @@ class ProsumptionInterface(StateInterface, ABC):
         Returns: True if the bid should be posted, false otherwise
 
         """
-        return self._forecast_measurement_deviation_kWh.get(time_slot) > 0.0
+        return self._forecast_measurement_deviation_kWh.get(time_slot, 0.0) > 0.0
 
     def can_post_settlement_offer(self, time_slot: DateTime) -> bool:
         """
@@ -150,7 +150,7 @@ class ProsumptionInterface(StateInterface, ABC):
         Returns: True if the offer should be posted, false otherwise
 
         """
-        return self._forecast_measurement_deviation_kWh.get(time_slot) < 0.0
+        return self._forecast_measurement_deviation_kWh.get(time_slot, 0.0) < 0.0
 
     def get_unsettled_deviation_kWh(self, time_slot: DateTime) -> float:
         """

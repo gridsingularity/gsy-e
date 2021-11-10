@@ -41,6 +41,7 @@ from d3a.events import EventMixin
 from d3a.events.event_structures import AreaEvent, MarketEvent
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
+from d3a.models.strategy.settlement.strategy import SettlementMarketStrategyInterface
 
 log = getLogger(__name__)
 
@@ -53,6 +54,7 @@ if TYPE_CHECKING:
 INF_ENERGY = int(sys.maxsize)
 
 
+# pylint: disable=too-many-instance-attributes
 @dataclass
 class AcceptOfferParameters:
     """Parameters for the accept_offer MarketStrategyConnectionAdapter methods"""
@@ -348,6 +350,7 @@ class Offers:
         """Get list of sold offers in a market"""
         return self.sold[market_id] if market_id in self.sold else []
 
+    # pylint: disable=too-many-arguments
     def can_offer_be_posted(
             self, offer_energy: float, offer_price: float, available_energy: float,
             market: "Market", replace_existing: bool = False,
@@ -451,8 +454,13 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         self._allowed_disable_events = [AreaEvent.ACTIVATE, MarketEvent.OFFER_TRADED]
         self.event_responses = []
         self._market_adapter = market_strategy_connection_adapter_factory()
+        self._settlement_market_strategy = self._create_settlement_market_strategy()
 
     parameters = None
+
+    @classmethod
+    def _create_settlement_market_strategy(cls):
+        return SettlementMarketStrategyInterface()
 
     def energy_traded(self, market_id: str, time_slot: DateTime = None) -> float:
         """Get the traded energy on the market"""
@@ -610,6 +618,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             assert (trade.offer_bid.energy_rate >=
                     offer.energy_rate - FLOATING_POINT_TOLERANCE)
 
+    # pylint: disable=too-many-arguments
     def can_offer_be_posted(self, offer_energy: float, offer_price: float, available_energy: float,
                             market: "OneSidedMarket", replace_existing: bool = False) -> bool:
         """Check if an offer with the selected attributes can be posted"""
@@ -636,9 +645,14 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             replace_existing=replace_existing)
 
     @property
+    def spot_market(self) -> "Market":
+        """Return the spot_market member of the area."""
+        return self.area.spot_market
+
+    @property
     def spot_market_time_slot(self) -> DateTime:
         """Time slot of the current spot market"""
-        return self.area.spot_market.time_slot
+        return self.spot_market.time_slot
 
     def update_offer_rates(self, market: "OneSidedMarket", updated_rate: float) -> None:
         """Update the total price of all offers in the specified market based on their new rate."""
@@ -680,12 +694,14 @@ class BidEnabledStrategy(BaseStrategy):
         self._traded_bids = {}
 
     def energy_traded(self, market_id: str, time_slot: Optional[DateTime] = None) -> float:
+        # pylint: disable=fixme
         # TODO: Potential bug when used for the storage strategy. Does not really make sense to
         # accumulate the energy sold and energy bought in one float variable
         offer_energy = super().energy_traded(market_id, time_slot)
         return offer_energy + self._traded_bid_energy(market_id, time_slot)
 
     def energy_traded_costs(self, market_id: str, time_slot: Optional[DateTime] = None) -> float:
+        # pylint: disable=fixme
         # TODO: Same as the energy_traded method, the storage strategy will increase its revenue
         # from sold offers, and decrease its revenue from sold bids, therefore addition of the 2
         # is not appropriate
@@ -698,6 +714,7 @@ class BidEnabledStrategy(BaseStrategy):
             assert bid.buyer == self.owner.name
             self.remove_bid_from_pending(market.id, bid.id)
 
+    # pylint: disable=too-many-arguments
     def post_bid(
             self, market: Market, price: float, energy: float, replace_existing: bool = True,
             attributes: Optional[Dict] = None, requirements: Optional[Dict] = None,
@@ -748,6 +765,7 @@ class BidEnabledStrategy(BaseStrategy):
             self.post_bid(market, bid.energy * updated_rate,
                           bid.energy, attributes=bid.attributes, requirements=bid.requirements)
 
+    # pylint: disable=too-many-arguments
     def can_bid_be_posted(self, bid_energy: float, bid_price: float, required_energy_kWh: float,
                           market: "TwoSidedMarket", replace_existing: bool = False) -> bool:
         """Check if a bid can be posted to the market"""
