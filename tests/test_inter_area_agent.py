@@ -23,17 +23,17 @@ from uuid import uuid4
 
 from gsy_framework.data_classes import MarketClearingState
 
-from d3a.constants import TIME_FORMAT
-from d3a.constants import TIME_ZONE
-from d3a.models.area import DEFAULT_CONFIG
+from gsy_e.constants import TIME_FORMAT
+from gsy_e.constants import TIME_ZONE
+from gsy_e.models.area import DEFAULT_CONFIG
 from gsy_framework.data_classes import Offer, Trade, Bid
-from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
-from d3a.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
-from d3a.models.strategy.area_agents.settlement_agent import SettlementAgent
-from d3a.models.strategy.area_agents.two_sided_engine import BidInfo
+from gsy_e.models.strategy.area_agents.one_sided_agent import OneSidedAgent
+from gsy_e.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
+from gsy_e.models.strategy.area_agents.settlement_agent import SettlementAgent
+from gsy_e.models.strategy.area_agents.two_sided_engine import BidInfo
 from gsy_framework.constants_limits import ConstSettings
-from d3a.models.market import GridFee
-from d3a.models.market.grid_fees.base_model import GridFees
+from gsy_e.models.market import GridFee
+from gsy_e.models.market.grid_fees.base_model import GridFees
 
 
 def teardown_function():

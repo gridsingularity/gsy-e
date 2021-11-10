@@ -24,10 +24,10 @@ from gsy_framework.unit_test_utils import assert_dicts_identical, \
     assert_lists_contain_same_elements
 from gsy_framework.sim_results.bills import MarketEnergyBills
 from gsy_framework.data_classes import Trade
-from d3a.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
-from d3a.gsy_e_core.util import make_iaa_name
-from d3a import constants
-from d3a.models.area.throughput_parameters import ThroughputParameters
+from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
+from gsy_e.gsy_e_core.util import make_iaa_name
+from gsy_e import constants
+from gsy_e.models.area.throughput_parameters import ThroughputParameters
 
 
 @pytest.fixture(scope="function", autouse=True)

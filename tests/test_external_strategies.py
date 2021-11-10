@@ -19,16 +19,16 @@ from unittest.mock import MagicMock, Mock
 import uuid
 import json
 import pytest
-from d3a.models.area import Area
-from d3a.models.strategy.external_strategies.load import (LoadForecastExternalStrategy,
-                                                          LoadHoursExternalStrategy)
-from d3a.models.strategy.external_strategies.pv import (PVForecastExternalStrategy,
-                                                        PVExternalStrategy)
-from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
+from gsy_e.models.area import Area
+from gsy_e.models.strategy.external_strategies.load import (LoadForecastExternalStrategy,
+                                                            LoadHoursExternalStrategy)
+from gsy_e.models.strategy.external_strategies.pv import (PVForecastExternalStrategy,
+                                                          PVExternalStrategy)
+from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from pendulum import now, duration
 from collections import deque
-from d3a.models.strategy.external_strategies import IncomingRequest
+from gsy_e.models.strategy.external_strategies import IncomingRequest
 
 
 @pytest.fixture

@@ -1,4 +1,4 @@
-name: d3a-ci-cd-development
+name: gsy_e-ci-cd-development
 on:
   push:
     branches:

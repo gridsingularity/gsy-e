@@ -21,8 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from behave import then
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 
-from d3a.constants import DEFAULT_PRECISION
-from d3a.setup.strategy_tests.storage_strategy_break_even_hourly import (
+from gsy_e.constants import DEFAULT_PRECISION
+from gsy_e.setup.strategy_tests.storage_strategy_break_even_hourly import (
     final_buying_rate_profile, final_selling_rate_profile, final_buying_rate_profile_2,
     final_selling_rate_profile_2)
 

@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from behave import then
 from math import isclose
 from gsy_framework.read_user_profile import _str_to_datetime
-from d3a.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_framework.constants_limits import DATE_TIME_FORMAT
 from gsy_framework.utils import scenario_representation_traversal
 

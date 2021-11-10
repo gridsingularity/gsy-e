@@ -23,13 +23,13 @@ import pendulum
 import pytest
 from gsy_framework.constants_limits import ConstSettings
 
-from d3a.constants import TIME_ZONE
-from d3a.gsy_e_core.blockchain_interface import NonBlockchainInterface
-from d3a.gsy_e_core.exceptions import MarketException
+from gsy_e.constants import TIME_ZONE
+from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
+from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_framework.data_classes import Offer, Trade, Bid
-from d3a.models.market.one_sided import OneSidedMarket
-from d3a.models.market.two_sided import TwoSidedMarket
-from d3a.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
+from gsy_e.models.market.one_sided import OneSidedMarket
+from gsy_e.models.market.two_sided import TwoSidedMarket
+from gsy_e.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
 
 
 def teardown_function():

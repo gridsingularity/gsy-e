@@ -27,7 +27,7 @@ else:
 VERSION = "1.1.0"
 
 setup(
-    name="d3a",
+    name="gsy_e",
     description="decentralised energy exchange developed by Grid Singularity",
     long_description=README,
     author="GridSingularity",
@@ -36,11 +36,11 @@ setup(
     version=VERSION,
     packages=find_packages(where="src", exclude=["tests"]),
     package_dir={"": "src"},
-    package_data={"d3a": ["resources/*.csv"]},
+    package_data={"gsy_e": ["resources/*.csv"]},
     install_requires=REQUIREMENTS,
     entry_points={
         "console_scripts": [
-            "d3a = d3a.gsy_e_core.cli:main",
+            "gsy-e = gsy_e.gsy_e_core.cli:main",
         ]
     },
     zip_safe=False,

@@ -30,10 +30,10 @@ from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfile
 from gsy_framework.utils import generate_market_slot_list
 from pendulum import DateTime, duration, today, datetime
 
-from d3a.constants import TIME_ZONE, TIME_FORMAT
-from d3a.gsy_e_core.util import (d3a_path, change_global_config)
-from d3a.models.area import DEFAULT_CONFIG
-from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
+from gsy_e.constants import TIME_ZONE, TIME_FORMAT
+from gsy_e.gsy_e_core.util import (d3a_path, change_global_config)
+from gsy_e.models.area import DEFAULT_CONFIG
+from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 
 
 def setup_function():
@@ -376,7 +376,7 @@ def test_correct_interpolation_power_profile():
 
 
 def test_correct_time_expansion_read_arbitrary_profile():
-    # TODO: this test needs to move to d3a-interface
+    # TODO: this test needs to move to gsy_e-interface
     market_maker_rate = 30
     if GlobalConfig.IS_CANARY_NETWORK:
         GlobalConfig.sim_duration = duration(hours=3)

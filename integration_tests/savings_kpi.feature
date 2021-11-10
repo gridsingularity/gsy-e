@@ -2,7 +2,7 @@ Feature: Savings KPI integration tests
 
   Scenario Outline: Savings KPI Cases
      Given we have a scenario named <setup>
-     And d3a is installed
+     And gsy-e is installed
      When we run the d3a simulation on console with <setup> for 24 hrs
      Then saving_percentage of {'<scenario>': <saving_percentage>} are correctly reported
   Examples: Cases

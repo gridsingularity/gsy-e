@@ -8,15 +8,15 @@ from gsy_framework.constants_limits import ConstSettings
 from deepdiff import DeepDiff
 from pendulum import now, datetime
 
-import d3a.models.market.market_redis_connection
-from d3a.events import MarketEvent
-from d3a.models.market.market_redis_connection import MarketRedisEventPublisher, \
+import gsy_e.models.market.market_redis_connection
+from gsy_e.events import MarketEvent
+from gsy_e.models.market.market_redis_connection import MarketRedisEventPublisher, \
     MarketRedisEventSubscriber, TwoSidedMarketRedisEventSubscriber
 from gsy_framework.data_classes import Offer, Trade, Bid
-from d3a.models.market.one_sided import OneSidedMarket
+from gsy_e.models.market.one_sided import OneSidedMarket
 
-d3a.models.market.market_redis_connection.BlockingCommunicator = MagicMock
-d3a.models.market.market_redis_connection.ResettableCommunicator = MagicMock
+gsy_e.models.market.market_redis_connection.BlockingCommunicator = MagicMock
+gsy_e.models.market.market_redis_connection.ResettableCommunicator = MagicMock
 
 test_datetime = datetime(2021, 11, 3, 14, 0)
 

@@ -36,11 +36,11 @@ from gsy_framework.utils import convert_W_to_Wh, convert_W_to_kWh, convert_kW_to
 from deepdiff import DeepDiff
 from pendulum import duration, today, from_format
 
-from d3a import constants
-from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
-from d3a.gsy_e_core.simulation import Simulation
-from d3a.gsy_e_core.util import d3a_path
-from d3a.models.config import SimulationConfig
+from gsy_e import constants
+from gsy_e.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
+from gsy_e.gsy_e_core.simulation import Simulation
+from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.models.config import SimulationConfig
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
 ACCUMULATED_KEYS_LIST = ["Accumulated Trades", "External Trades", "Totals", "Market Fees"]
@@ -50,14 +50,14 @@ ACCUMULATED_KEYS_LIST = ["Accumulated Trades", "External Trades", "Totals", "Mar
 def scenario_check(context, scenario):
     if "." in scenario:
         scenario = scenario.replace(".", "/")
-    scenario_file = "./src/d3a/setup/{}.py".format(scenario)
+    scenario_file = "./src/gsy_e/setup/{}.py".format(scenario)
     if not os.path.isfile(scenario_file):
         raise FileExistsError("File not found: {}".format(scenario_file))
 
 
-@given('d3a is installed')
+@given('gsy-e is installed')
 def install_check(context):
-    assert importlib.util.find_spec("d3a") is not None
+    assert importlib.util.find_spec("gsy_e") is not None
 
 
 @given('a {device} profile hourly dict as input to predefined load')
@@ -101,7 +101,7 @@ def json_string_profile(context, device):
 def hour_profile_of_market_maker_rate(context, scenario):
     import importlib
     from gsy_framework.read_user_profile import InputProfileTypes
-    setup_file_module = importlib.import_module("d3a.setup.{}".format(scenario))
+    setup_file_module = importlib.import_module("gsy_e.setup.{}".format(scenario))
     context._market_maker_rate = \
         read_arbitrary_profile(InputProfileTypes.IDENTITY, setup_file_module.market_maker_rate)
 
@@ -207,7 +207,7 @@ def load_profile_scenario(context):
     context._settings.area = predefined_load_scenario
 
 
-@given('d3a uses an {market_type} market')
+@given('gsy-e uses an {market_type} market')
 def one_sided_market(context, market_type):
     from gsy_framework.constants_limits import ConstSettings
     if market_type == "one-sided":
@@ -223,16 +223,16 @@ def one_sided_market(context, market_type):
         ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.EXTERNAL.value
 
 
-@given('d3a dispatches events from top to bottom')
+@given('gsy-e dispatches events from top to bottom')
 def dispatch_top_bottom(context):
-    import d3a.constants
-    d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = False
+    import gsy_e.constants
+    gsy_e.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = False
 
 
-@given('d3a dispatches events from bottom to top')
+@given('gsy-e dispatches events from bottom to top')
 def dispatch_bootom_top(context):
-    import d3a.constants
-    d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = True
+    import gsy_e.constants
+    gsy_e.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = True
 
 
 @given('the past markets are kept in memory')
@@ -273,33 +273,33 @@ def running_the_simulation(context):
     context.simulation.run()
 
 
-@when('we run the d3a simulation on console with {scenario} for {hours} hrs')
+@when('we run the gsy-e simulation on console with {scenario} for {hours} hrs')
 def run_sim_console(context, scenario, hours):
     context.export_path = os.path.join(context.simdir, scenario)
     os.makedirs(context.export_path, exist_ok=True)
-    os.system("d3a -l FATAL run -d {hours}h -t 60s -s 60m --setup={scenario} "
+    os.system("gsy-e -l FATAL run -d {hours}h -t 60s -s 60m --setup={scenario} "
               "--export-path={export_path}"
               .format(export_path=context.export_path, scenario=scenario, hours=hours))
 
 
-@when('we run the d3a simulation on console with {scenario} for {hours} hrs '
+@when('we run the gsy-e simulation on console with {scenario} for {hours} hrs '
       '({slot_length}, {tick_length})')
 def run_sim_console_decreased_tick_slot_length(context, scenario, hours, slot_length, tick_length):
     context.export_path = os.path.join(context.simdir, scenario)
     os.makedirs(context.export_path, exist_ok=True)
-    os.system(f"d3a -l FATAL run -d {hours}h -t {tick_length}s -s {slot_length}m "
+    os.system(f"gsy-e -l FATAL run -d {hours}h -t {tick_length}s -s {slot_length}m "
               f"--seed 0 --setup={scenario} --export-path={context.export_path}")
 
 
-@when('we run the d3a simulation with compare-alt-pricing flag with {scenario}')
+@when('we run the gsy-e simulation with compare-alt-pricing flag with {scenario}')
 def run_sim_console_alt_price(context, scenario):
     context.export_path = os.path.join(context.simdir, scenario)
     os.makedirs(context.export_path, exist_ok=True)
-    os.system("d3a -l FATAL run -d 2h -t 15s --setup={scenario} --export-path={export_path} "
+    os.system("gsy-e -l FATAL run -d 2h -t 15s --setup={scenario} --export-path={export_path} "
               "--compare-alt-pricing".format(export_path=context.export_path, scenario=scenario))
 
 
-@when('we run the d3a simulation with cloud_coverage [{cloud_coverage}] and {scenario}')
+@when('we run the gsy-e simulation with cloud_coverage [{cloud_coverage}] and {scenario}')
 def run_sim_with_config_setting(context, cloud_coverage, scenario):
 
     root_logger = logging.getLogger()
@@ -337,10 +337,10 @@ def run_sim_with_config_setting(context, cloud_coverage, scenario):
 def run_d3a_with_settings_file(context):
     context.export_path = os.path.join(context.simdir, "default")
     os.makedirs(context.export_path, exist_ok=True)
-    os.system("d3a -l FATAL run -g {settings_file} --export-path={export_path} "
+    os.system("gsy-e -l FATAL run -g {settings_file} --export-path={export_path} "
               "--setup default_2a".format(export_path=context.export_path,
                                           settings_file=os.path.join(d3a_path, "setup",
-                                                                     "d3a-settings.json")))
+                                                                     "gsy_e_settings.json")))
 
 
 @when('the reported price energy day results are saved')
@@ -363,7 +363,7 @@ def save_reported_bills(context, bill_type):
 
 @when('the past markets are not kept in memory')
 def past_markets_not_in_memory(context):
-    # d3a has to be set to publish the full results:
+    # gsy-e has to be set to publish the full results:
     ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS = True
     constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 
@@ -387,7 +387,7 @@ def test_export_supply_demand_curve(context):
 @then('we test the export of with compare-alt-pricing flag')
 def test_export_data_csv_alt_pricing(context):
     data_fn = "grid.csv"
-    from d3a.gsy_e_core.export import alternative_pricing_subdirs
+    from gsy_e.gsy_e_core.export import alternative_pricing_subdirs
     for subdir in alternative_pricing_subdirs.values():
         sim_data_csv = glob.glob(os.path.join(context.export_path, "*", subdir, data_fn))
         if len(sim_data_csv) != 1:
@@ -573,7 +573,7 @@ def min_bid_age_nr_ticks(context, min_bid_age):
     ConstSettings.IAASettings.MIN_BID_AGE = int(min_bid_age)
 
 
-@when('we run a multi-day d3a simulation with {scenario} [{start_date}, {total_duration}, '
+@when('we run a multi-day gsy-e simulation with {scenario} [{start_date}, {total_duration}, '
       '{slot_length}, {tick_length}]')
 def run_sim_multiday(context, scenario, start_date, total_duration, slot_length, tick_length):
 
@@ -844,7 +844,7 @@ def check_pv_profile(context):
 def check_user_pv_dict_profile(context):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
-    from d3a.setup.strategy_tests.user_profile_pv_dict import user_profile
+    from gsy_e.setup.strategy_tests.user_profile_pv_dict import user_profile
     profile_data = user_profile
     for timepoint, energy in pv.strategy.state._energy_production_forecast_kWh.items():
         if timepoint.hour in profile_data.keys():
@@ -861,7 +861,7 @@ def check_user_pv_dict_profile(context):
 def check_pv_csv_profile(context):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
-    from d3a.setup.strategy_tests.user_profile_pv_csv import user_profile_path
+    from gsy_e.setup.strategy_tests.user_profile_pv_csv import user_profile_path
     profile_data = read_arbitrary_profile(
         InputProfileTypes.POWER,
         user_profile_path)

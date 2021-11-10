@@ -27,18 +27,18 @@ from hypothesis.control import assume
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rule
 from pendulum import now
 
-from d3a.constants import TIME_ZONE
-from d3a.gsy_e_core.blockchain_interface import NonBlockchainInterface
-from d3a.gsy_e_core.device_registry import DeviceRegistry
-from d3a.gsy_e_core.exceptions import (DeviceNotInRegistryError, InvalidBalancingTradeException,
-                                       InvalidOffer, InvalidTrade, MarketReadOnlyException,
-                                       OfferNotFoundException)
-from d3a.gsy_e_core.util import add_or_create_key, subtract_or_create_key
-from d3a.events.event_structures import MarketEvent
-from d3a.models.market.balancing import BalancingMarket
-from d3a.models.market.one_sided import OneSidedMarket
-from d3a.models.market.settlement import SettlementMarket
-from d3a.models.market.two_sided import TwoSidedMarket
+from gsy_e.constants import TIME_ZONE
+from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
+from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.gsy_e_core.exceptions import (DeviceNotInRegistryError, InvalidBalancingTradeException,
+                                         InvalidOffer, InvalidTrade, MarketReadOnlyException,
+                                         OfferNotFoundException)
+from gsy_e.gsy_e_core.util import add_or_create_key, subtract_or_create_key
+from gsy_e.events.event_structures import MarketEvent
+from gsy_e.models.market.balancing import BalancingMarket
+from gsy_e.models.market.one_sided import OneSidedMarket
+from gsy_e.models.market.settlement import SettlementMarket
+from gsy_e.models.market.two_sided import TwoSidedMarket
 
 device_registry_dict = {
     "A": {"balancing rates": (33, 35)},

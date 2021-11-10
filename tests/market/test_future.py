@@ -18,9 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from unittest.mock import Mock
 
 import pytest
-from d3a.models.area import Area
-from d3a.models.market import GridFee
-from d3a.models.market.future import FutureMarkets, FutureMarketException
+from gsy_e.models.area import Area
+from gsy_e.models.market import GridFee
+from gsy_e.models.market.future import FutureMarkets, FutureMarketException
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo
 from pendulum import datetime, duration

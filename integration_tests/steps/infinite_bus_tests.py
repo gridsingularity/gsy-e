@@ -17,9 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then, given
 from math import isclose
-from d3a import limit_float_precision
+from gsy_e import limit_float_precision
 from gsy_framework.utils import get_area_name_uuid_mapping
-from d3a.models.config import ConstSettings
+from gsy_e.models.config import ConstSettings
 
 
 @given('the market type is {market_type}')
