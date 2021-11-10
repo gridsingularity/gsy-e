@@ -3,7 +3,7 @@ Feature: Run integration tests
   Scenario: Run integration tests on console
      Given we have a scenario named default_2a
      And gsy-e is installed
-     When we run the d3a simulation on console with default_2a for 2 hrs
+     When we run the gsy-e simulation on console with default_2a for 2 hrs
      Then we test the export functionality of default_2a
 
   Scenario: Run integration tests on console to test config parameters
@@ -15,7 +15,7 @@ Feature: Run integration tests
   Scenario: Test offers, bids and balancing offers are exported
      Given we have a scenario named two_sided_market/with_balancing_market
      And gsy-e is installed
-     When we run the d3a simulation on console with two_sided_market.with_balancing_market for 2 hrs
+     When we run the gsy-e simulation on console with two_sided_market.with_balancing_market for 2 hrs
      Then there are files with offers (with balancing offers) and bids for every area
 
   Scenario Outline: Run general integration tests for simulation
@@ -93,7 +93,7 @@ Feature: Run integration tests
   Scenario: Test aggregated results are exported
      Given we have a scenario named default_2a
      And gsy-e is installed
-     When we run the d3a simulation on console with default_2a for 2 hrs
+     When we run the gsy-e simulation on console with default_2a for 2 hrs
      Then aggregated result files are exported
 
   Scenario Outline: Price energy day results are the same with and without keeping the past markets
