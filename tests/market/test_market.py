@@ -78,6 +78,24 @@ def test_market_offer(market, offer):
     assert e_offer.price == 10
     assert e_offer.seller == "someone"
     assert len(e_offer.id) == 36
+    assert e_offer.creation_time == market.now
+    assert e_offer.time_slot == market.time_slot
+
+
+@pytest.mark.parametrize("market", [
+    TwoSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()),
+    SettlementMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now())
+])
+def test_market_bid(market):
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
+    bid = market.bid(10, 20, "someone", "someone")
+    assert market.bids[bid.id] == bid
+    assert bid.energy == 20
+    assert bid.price == 10
+    assert bid.buyer == "someone"
+    assert len(bid.id) == 36
+    assert bid.creation_time == market.now
+    assert bid.time_slot == market.time_slot
 
 
 def test_market_offer_invalid(market: OneSidedMarket):
@@ -131,7 +149,8 @@ def test_market_trade(market, offer, accept_offer):
     assert trade
     assert trade == market.trades[0]
     assert trade.id
-    assert trade.creation_time > e_offer.creation_time
+    assert trade.creation_time == market.now
+    assert trade.time_slot == market.time_slot
     assert trade.offer_bid == e_offer
     assert trade.seller == "A"
     assert trade.buyer == "B"
@@ -144,7 +163,8 @@ def test_balancing_market_negative_offer_trade(market=BalancingMarket(
     assert trade
     assert trade == market.trades[0]
     assert trade.id
-    assert trade.creation_time > offer.creation_time
+    assert trade.creation_time == market.now
+    assert trade.time_slot == market.time_slot
     assert trade.offer_bid is offer
     assert trade.seller == "A"
     assert trade.buyer == "B"
