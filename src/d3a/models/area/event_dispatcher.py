@@ -115,6 +115,8 @@ class AreaDispatcher:
             event_type: AreaEvent, **kwargs) -> None:
 
         if market_type == AvailableMarketTypes.FUTURE:
+            # First check for the market_type and then check if an future agent exists, otherwise
+            # the future event would be posted on non-future agents.
             if self.future_agent:
                 self.future_agent.event_listener(event_type, **kwargs)
         else:
