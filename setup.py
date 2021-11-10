@@ -32,7 +32,7 @@ setup(
     long_description=README,
     author="GridSingularity",
     author_email="contact@gridsingularity.com",
-    url="https://github.com/faizan2590/gsy-e",
+    url="https://github.com/gridsingularity/gsy-e",
     version=VERSION,
     packages=find_packages(where="src", exclude=["tests"]),
     package_dir={"": "src"},
