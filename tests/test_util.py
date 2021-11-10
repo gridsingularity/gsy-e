@@ -30,9 +30,9 @@ from gsy_e import setup as d3a_setup
 from gsy_e.gsy_e_core import util
 from gsy_e.gsy_e_core.cli import available_simulation_scenarios
 from gsy_e.gsy_e_core.util import (validate_const_settings_for_simulation, retry_function,
-                               get_simulation_queue_name, get_market_maker_rate_from_config,
-                               export_default_settings_to_json_file, constsettings_to_dict,
-                               convert_str_to_pause_after_interval, FutureMarketCounter)
+                                   get_simulation_queue_name, get_market_maker_rate_from_config,
+                                   export_default_settings_to_json_file, constsettings_to_dict,
+                                   convert_str_to_pause_after_interval, FutureMarketCounter)
 
 
 @pytest.fixture(scope="function", autouse=True)

@@ -26,7 +26,7 @@ from pendulum import DateTime, duration
 
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
 from gsy_e.gsy_e_core.exceptions import (BidNotFoundException, MarketReadOnlyException,
-                                     OfferNotFoundException)
+                                         OfferNotFoundException)
 from gsy_e.events.event_structures import MarketEvent
 from gsy_e.models.area.event_dispatcher import AreaDispatcher
 from gsy_e.models.market import GridFee
