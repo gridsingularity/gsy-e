@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,13 +20,13 @@ import sys
 import pendulum
 from uuid import uuid4
 
-from d3a_interface.data_classes import Offer, Trade, BalancingOffer
-from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.area import DEFAULT_CONFIG
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a_interface.constants_limits import ConstSettings
-from d3a.constants import TIME_ZONE, TIME_FORMAT
-from d3a.d3a_core.util import change_global_config
+from gsy_framework.data_classes import Offer, Trade, BalancingOffer
+from gsy_e.models.strategy.commercial_producer import CommercialStrategy
+from gsy_e.models.area import DEFAULT_CONFIG
+from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_framework.constants_limits import ConstSettings
+from gsy_e.constants import TIME_ZONE, TIME_FORMAT
+from gsy_e.gsy_e_core.util import change_global_config
 
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
@@ -291,15 +291,15 @@ def testing_event_market_cycle(commercial_test3, area_test3):
     assert area_test3.test_market.created_offers[-1].energy == sys.maxsize
 
 
-# TODO: Re-add test once validator is implemented in d3a-interface
+# TODO: Re-add test once validator is implemented in gsy_e-interface
 # def test_commercial_producer_constructor_rejects_invalid_parameters():
 #    with pytest.raises(ValueError):
 #        CommercialStrategy(energy_rate=-1)
 
 
 def test_market_maker_strategy_constructor_modifies_global_market_maker_rate():
-    import d3a_interface.constants_limits
-    from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
+    import gsy_framework.constants_limits
+    from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
     MarketMakerStrategy(energy_rate=22)
     assert all(v == 22
-               for v in d3a_interface.constants_limits.GlobalConfig.market_maker_rate.values())
+               for v in gsy_framework.constants_limits.GlobalConfig.market_maker_rate.values())
