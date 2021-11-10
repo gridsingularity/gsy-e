@@ -16,9 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from typing import Generator
 from unittest.mock import Mock, MagicMock
 
 import pytest
+from d3a_interface.constants_limits import GlobalConfig
 
 from d3a.models.area import Area
 from d3a.models.market.future import FutureMarkets
@@ -27,25 +29,27 @@ from d3a.models.strategy.area_agents.future_engine import FutureEngine
 
 
 @pytest.fixture(name="future_agent")
-def future_agent_fixture():
+def future_agent_fixture() -> Generator[FutureAgent, None, None]:
     """Return FutureAgent object"""
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
     area = MagicMock(autospec=Area)
     higher_market = FutureMarkets()
     lower_market = FutureMarkets()
-    return FutureAgent(owner=area, higher_market=higher_market, lower_market=lower_market)
+    yield FutureAgent(owner=area, higher_market=higher_market, lower_market=lower_market)
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
 
 
 class TestFutureAgent:
     """Collects tests for the FutureAgent."""
 
     @staticmethod
-    def test__init__creates_engines_of_correct_type(future_agent):
+    def test__init__creates_engines_of_correct_type(future_agent: FutureAgent) -> None:
         """Test whether __init__ creates list of engines off type FutureEngine."""
         for engine in future_agent.engines:
             assert isinstance(engine, FutureEngine)
 
     @staticmethod
-    def test_event_market_cycle_calls_engine_clean_up_buffers(future_agent):
+    def test_event_market_cycle_calls_engine_clean_up_buffers(future_agent: FutureAgent) -> None:
         """Test whether event_market_cycle calls clean_up_buffers of all engines."""
         for engine in future_agent.engines:
             engine.clean_up_order_buffers = Mock()

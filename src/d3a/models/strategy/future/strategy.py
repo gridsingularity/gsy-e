@@ -13,47 +13,71 @@ You should have received a copy of the GNU General Public License along with thi
 see <http://www.gnu.org/licenses/>.
 """
 
+from typing import TYPE_CHECKING, List
+
 from d3a_interface.constants_limits import GlobalConfig
-from pendulum import duration
+from pendulum import duration, DateTime
 
 from d3a.constants import FutureTemplateStrategiesConstants
 from d3a.models.base import AssetType
 from d3a.models.market import Market  # NOQA
-from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.strategy.update_frequency import (TemplateStrategyBidUpdater,
                                                   TemplateStrategyOfferUpdater)
+
+if TYPE_CHECKING:
+    from d3a.models.area import Area
+    from d3a.models.strategy import BidEnabledStrategy
+    from d3a.models.market.future import FutureMarkets
 
 
 class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
     """Version of TemplateStrategyBidUpdater class for future markets"""
 
     @property
-    def _time_slot_duration_in_seconds(self):
+    def _time_slot_duration_in_seconds(self) -> int:
         return GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 * 60
 
     @staticmethod
-    def get_all_markets(area):
+    def get_all_markets(area: "Area") -> List["FutureMarkets"]:
+        """Override to return list of future markets"""
         return [area.future_markets]
 
     @staticmethod
-    def get_all_time_slots(area):
+    def get_all_time_slots(area: "Area") -> List[DateTime]:
+        """Override to return all future market available time slots"""
         return area.future_markets.market_time_slots
+
+    def update(self, market: "FutureMarkets", strategy: "BidEnabledStrategy") -> None:
+        """Update the price of existing bids to reflect the new rates."""
+        for time_slot in strategy.area.future_markets.market_time_slots:
+            if self.time_for_price_update(strategy, time_slot):
+                if strategy.are_bids_posted(market.id, time_slot):
+                    strategy.update_bid_rates(market, self.get_updated_rate(time_slot))
 
 
 class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
     """Version of TemplateStrategyOfferUpdater class for future markets"""
 
     @property
-    def _time_slot_duration_in_seconds(self):
+    def _time_slot_duration_in_seconds(self) -> int:
         return GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 * 60
 
     @staticmethod
-    def get_all_markets(area):
+    def get_all_markets(area: "Area") -> List["FutureMarkets"]:
+        """Override to return list of future markets"""
         return [area.future_markets]
 
     @staticmethod
-    def get_all_time_slots(area):
+    def get_all_time_slots(area: "Area") -> List[DateTime]:
+        """Override to return all future market available time slots"""
         return area.future_markets.market_time_slots
+
+    def update(self, market: "FutureMarkets", strategy: "BidEnabledStrategy") -> None:
+        """Update the price of existing offers to reflect the new rates."""
+        for time_slot in strategy.area.future_markets.market_time_slots:
+            if self.time_for_price_update(strategy, time_slot):
+                if strategy.are_offers_posted(market.id):
+                    strategy.update_offer_rates(market, self.get_updated_rate(time_slot))
 
 
 class FutureMarketStrategyInterface:
@@ -63,19 +87,19 @@ class FutureMarketStrategyInterface:
     def __init__(self, *args, **kwargs):
         pass
 
-    def event_market_cycle(self, strategy):
-        pass
+    def event_market_cycle(self, strategy: "BidEnabledStrategy") -> None:
+        """Base class method for handling the market cycle"""
 
-    def event_tick(self, strategy):
-        pass
+    def event_tick(self, strategy: "BidEnabledStrategy") -> None:
+        """Base class method for handling the tick"""
 
 
 class FutureMarketStrategy(FutureMarketStrategyInterface):
+    """Manages bid/offer trading strategy for the future markets, for a single asset."""
     def __init__(self,
                  initial_buying_rate: float, final_buying_rate: float,
                  initial_selling_rate: float, final_selling_rate: float):
         """
-        Manages bid/offer trading strategy for the future markets, for a single asset.
         Args:
             initial_buying_rate: Initial rate of the future bids
             final_buying_rate: Final rate of the future bids
@@ -101,7 +125,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
                 update_interval=duration(minutes=self._update_interval),
                 rate_limit_object=max)
 
-    def event_market_cycle(self, strategy: BidEnabledStrategy) -> None:
+    def event_market_cycle(self, strategy: "BidEnabledStrategy") -> None:
         """
         Should be called by the event_market_cycle of the asset strategy class, posts
         settlement bids and offers on markets that do not have posted bids and offers yet
@@ -117,30 +141,11 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         self._offer_updater.update_and_populate_price_settings(strategy.area)
         for time_slot in strategy.area.future_markets.market_time_slots:
             if strategy.asset_type == AssetType.CONSUMER:
-                required_energy_kWh = strategy.state.get_energy_requirement_Wh(time_slot) / 1000.0
-                if required_energy_kWh <= 0.0:
-                    continue
-                if strategy.get_posted_bids(strategy.area.future_markets, time_slot):
-                    continue
-                strategy.post_bid(
-                    market=strategy.area.future_markets,
-                    energy=required_energy_kWh,
-                    price=self._bid_updater.initial_rate[time_slot],
-                    time_slot=time_slot
-                )
+                self._post_consumer_first_bid(strategy, time_slot)
             elif strategy.asset_type == AssetType.PRODUCER:
-                available_energy_kWh = strategy.state.get_available_energy_kWh(time_slot)
-                if available_energy_kWh <= 0.0:
-                    continue
-                if strategy.get_posted_offers(strategy.area.future_markets, time_slot):
-                    continue
-                strategy.post_offer(
-                    market=strategy.area.future_markets,
-                    replace_existing=False,
-                    energy=available_energy_kWh,
-                    price=self._offer_updater.initial_rate[time_slot],
-                    time_slot=time_slot
-                )
+                self._post_producer_first_offer(strategy, time_slot)
+            elif strategy.asset_type == AssetType.PROSUMER:
+                self._post_prosumer_first_bid_offer(strategy, time_slot)
             else:
                 assert False, ("Strategy %s has to be producer or consumer to be able to "
                                "participate in the future market.", strategy.owner.name)
@@ -148,7 +153,58 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         self._bid_updater.increment_update_counter_all_markets(strategy)
         self._offer_updater.increment_update_counter_all_markets(strategy)
 
-    def event_tick(self, strategy: BidEnabledStrategy) -> None:
+    def _post_consumer_first_bid(
+            self, strategy: "BidEnabledStrategy", time_slot: DateTime) -> None:
+        required_energy_kWh = strategy.state.get_energy_requirement_Wh(time_slot) / 1000.0
+        if required_energy_kWh <= 0.0:
+            return
+        if strategy.get_posted_bids(strategy.area.future_markets, time_slot):
+            return
+        strategy.post_bid(
+            market=strategy.area.future_markets,
+            energy=required_energy_kWh,
+            price=required_energy_kWh * self._bid_updater.initial_rate[time_slot],
+            time_slot=time_slot)
+
+    def _post_producer_first_offer(
+            self, strategy: "BidEnabledStrategy", time_slot: DateTime) -> None:
+        available_energy_kWh = strategy.state.get_available_energy_kWh(time_slot)
+        if available_energy_kWh <= 0.0:
+            return
+        if strategy.get_posted_offers(strategy.area.future_markets, time_slot):
+            return
+        strategy.post_offer(
+            market=strategy.area.future_markets,
+            replace_existing=False,
+            energy=available_energy_kWh,
+            price=available_energy_kWh * self._offer_updater.initial_rate[time_slot],
+            time_slot=time_slot
+        )
+
+    def _post_prosumer_first_bid_offer(
+            self, strategy: "BidEnabledStrategy", time_slot: DateTime) -> None:
+        offer_energy_kWh = strategy.get_available_energy_to_sell_kWh(time_slot)
+        offer_energy_rate = self._offer_updater.initial_rate[time_slot]
+        if (offer_energy_kWh > 0.0 and
+                not strategy.get_posted_offers(strategy.area.future_markets, time_slot)):
+            strategy.post_offer(
+                market=strategy.area.future_markets,
+                replace_existing=False,
+                energy=offer_energy_kWh,
+                price=offer_energy_kWh * offer_energy_rate,
+                time_slot=time_slot)
+
+        bid_energy_kWh = strategy.get_available_energy_to_buy_kWh(time_slot)
+        bid_energy_rate = self._bid_updater.initial_rate[time_slot]
+        if (bid_energy_kWh > 0.0 and
+                not strategy.get_posted_bids(strategy.area.future_markets, time_slot)):
+            strategy.post_bid(
+                market=strategy.area.future_markets,
+                energy=bid_energy_kWh,
+                price=bid_energy_kWh * bid_energy_rate,
+                time_slot=time_slot)
+
+    def event_tick(self, strategy: "BidEnabledStrategy") -> None:
         """
         Update posted settlement bids and offers on market tick.
         Order matters here:
@@ -192,8 +248,7 @@ def future_market_strategy_factory(
         return FutureMarketStrategy(
             initial_buying_rate, final_buying_rate,
             initial_selling_rate, final_selling_rate)
-    else:
-        return FutureMarketStrategyInterface(
-            initial_buying_rate, final_buying_rate,
-            initial_selling_rate, final_selling_rate
-        )
+    return FutureMarketStrategyInterface(
+        initial_buying_rate, final_buying_rate,
+        initial_selling_rate, final_selling_rate
+    )

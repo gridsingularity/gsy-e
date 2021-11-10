@@ -289,7 +289,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         """Reconfigure the device properties at runtime using the provided arguments.
 
         If custom profiles are provided in the `kwargs`, use them to replace the default ones
-        provided by the UpdateFrequencyMixin.
+        provided by the TemplateStrategyUpdaterBase.
         """
         self._area_reconfigure_consumption_prices(**kwargs)
         self._area_reconfigure_production_prices(**kwargs)

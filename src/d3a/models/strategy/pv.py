@@ -303,7 +303,8 @@ class PVStrategy(BidEnabledStrategy):
                     original_price=offer_price,
                     seller_origin=self.owner.name,
                     seller_origin_id=self.owner.uuid,
-                    seller_id=self.owner.uuid
+                    seller_id=self.owner.uuid,
+                    time_slot=market.time_slot
                 )
                 self.offers.post(offer, market.id)
             except MarketException:
@@ -331,19 +332,19 @@ class PVStrategy(BidEnabledStrategy):
             for market in self.area.all_markets:
                 time_slot = market.time_slot
                 if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
-                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=0,
-                                                               final_rate=0)
+                    self.offer_update.set_parameters(initial_rate=0,
+                                                     final_rate=0)
                 elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
                     rate = \
                         self.area.config.market_maker_rate[time_slot] * \
                         ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / \
                         100
-                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=rate,
-                                                               final_rate=rate)
+                    self.offer_update.set_parameters(initial_rate=rate,
+                                                     final_rate=rate)
                 elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
                     rate = self.area.config.market_maker_rate[time_slot]
-                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=rate,
-                                                               final_rate=rate)
+                    self.offer_update.set_parameters(initial_rate=rate,
+                                                     final_rate=rate)
                 else:
                     raise MarketException
 

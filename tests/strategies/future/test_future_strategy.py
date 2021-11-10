@@ -16,21 +16,31 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
+from typing import TYPE_CHECKING
 from unittest.mock import Mock, MagicMock
 
 import pytest
+from d3a_interface.constants_limits import GlobalConfig
 from pendulum import today, duration
 
-from d3a.constants import TIME_ZONE
+from d3a.constants import TIME_ZONE, FutureTemplateStrategiesConstants
 from d3a.models.market.future import FutureMarkets
 from d3a.models.strategy.future.strategy import FutureMarketStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.storage import StorageStrategy
+
+if TYPE_CHECKING:
+    from d3a.models.strategy import BaseStrategy
 
 
 class TestFutureMarketStrategy:
+    """Test the FutureMarketStrategy class."""
+    # pylint: disable = attribute-defined-outside-init
 
-    def setup_method(self):
+    def setup_method(self) -> None:
+        """Preparation for the tests execution"""
+        GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
         self.future_strategy = FutureMarketStrategy(10, 50, 50, 20)
         self.time_slot = today(tz=TIME_ZONE).at(hour=12, minute=0, second=0)
         self.area_mock = Mock()
@@ -40,96 +50,113 @@ class TestFutureMarketStrategy:
         self.future_markets.market_time_slots = [self.time_slot]
         self.future_markets.id = str(uuid.uuid4())
 
-    def _setup_strategy_fixture(self, strategy_fixture):
-        strategy_fixture.owner = self.area_mock
-        strategy_fixture.area = Mock()
-        strategy_fixture.area.future_markets = self.future_markets
-        strategy_fixture.area.current_tick = 0
-        strategy_fixture.area.config = Mock()
-        strategy_fixture.area.config.ticks_per_slot = 60
-        strategy_fixture.area.config.tick_length = duration(seconds=15)
+    @staticmethod
+    def teardown_method() -> None:
+        """Test cleanup"""
+        GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
 
-    @pytest.mark.parametrize(
-        "strategy_fixture", [LoadHoursStrategy(100), PVStrategy()])
-    def test_event_market_cycle_posts_bids_and_offers(self, strategy_fixture):
-        self._setup_strategy_fixture(strategy_fixture)
-        if isinstance(strategy_fixture, LoadHoursStrategy):
-            strategy_fixture.state.set_desired_energy(1234.0, self.time_slot)
-            self.future_strategy.event_market_cycle(strategy_fixture)
+    def _setup_strategy_fixture(self, future_strategy_fixture: "BaseStrategy") -> None:
+        future_strategy_fixture.owner = self.area_mock
+        future_strategy_fixture.update_bid_rates = Mock()
+        future_strategy_fixture.update_offer_rates = Mock()
+        future_strategy_fixture.area = Mock()
+        future_strategy_fixture.area.future_markets = self.future_markets
+        future_strategy_fixture.area.current_tick = 0
+        future_strategy_fixture.area.config = Mock()
+        future_strategy_fixture.area.config.tick_length = duration(seconds=15)
+
+    def test_event_market_cycle_posts_bids_load(self) -> None:
+        """Validate that market cycle event posts bids and offers for the load strategy"""
+        future_strategy_fixture = LoadHoursStrategy(100)
+        self._setup_strategy_fixture(future_strategy_fixture)
+        if isinstance(future_strategy_fixture, LoadHoursStrategy):
+            future_strategy_fixture.state.set_desired_energy(1234.0, self.time_slot)
+            self.future_strategy.event_market_cycle(future_strategy_fixture)
             self.future_markets.bid.assert_called_once_with(
-                10.0, 1.234, self.area_mock.name, original_price=10.0,
+                10.0 * 1.234, 1.234, self.area_mock.name, original_price=10.0 * 1.234,
                 buyer_origin=self.area_mock.name, buyer_origin_id=self.area_mock.uuid,
                 buyer_id=self.area_mock.uuid, attributes=None, requirements=None,
                 time_slot=self.time_slot
             )
-        if isinstance(strategy_fixture, PVStrategy):
-            strategy_fixture.state.set_available_energy(321.3, self.time_slot)
-            self.future_strategy.event_market_cycle(strategy_fixture)
+
+    def test_event_market_cycle_posts_offers_pv(self) -> None:
+        """Validate that market cycle event posts bids and offers for the pv strategy"""
+        future_strategy_fixture = PVStrategy()
+        self._setup_strategy_fixture(future_strategy_fixture)
+        if isinstance(future_strategy_fixture, PVStrategy):
+            future_strategy_fixture.state.set_available_energy(321.3, self.time_slot)
+            self.future_strategy.event_market_cycle(future_strategy_fixture)
             self.future_markets.offer.assert_called_once_with(
-                price=50.0, energy=321.3, seller=self.area_mock.name,
+                price=50.0 * 321.3, energy=321.3, seller=self.area_mock.name,
                 seller_origin=self.area_mock.name,
                 seller_origin_id=self.area_mock.uuid, seller_id=self.area_mock.uuid,
                 time_slot=self.time_slot
             )
 
-    # @pytest.mark.parametrize(
-    #     "strategy_fixture", [LoadHoursStrategy(100), PVStrategy()])
-    # @pytest.mark.parametrize("can_post_settlement_bid", [True, False])
-    # @pytest.mark.parametrize("can_post_settlement_offer", [True, False])
-    # def test_event_tick_updates_bids_and_offers(
-    #         self, strategy_fixture, can_post_settlement_bid, can_post_settlement_offer):
-    #     self._setup_strategy_fixture(
-    #         strategy_fixture, can_post_settlement_bid, can_post_settlement_offer)
-    #
-    #     strategy_fixture.area.current_tick = 0
-    #     strategy_fixture.area.config = Mock()
-    #     strategy_fixture.area.config.ticks_per_slot = 60
-    #     strategy_fixture.area.config.tick_length = duration(seconds=15)
-    #     self.settlement_strategy.event_market_cycle(strategy_fixture)
-    #
-    #     strategy_fixture.area.current_tick = 30
-    #     self.market_mock.bid.reset_mock()
-    #     self.market_mock.offer.reset_mock()
-    #
-    #     strategy_fixture.area.current_tick = 19
-    #     self.settlement_strategy.event_tick(strategy_fixture)
-    #     strategy_fixture.area.current_tick = 20
-    #     self.settlement_strategy.event_tick(strategy_fixture)
-    #     if can_post_settlement_bid:
-    #         self.market_mock.bid.assert_called_once_with(
-    #             30.0, 1.0, self.area_mock.name, original_price=30.0,
-    #             buyer_origin=self.area_mock.name, buyer_origin_id=self.area_mock.uuid,
-    #             buyer_id=self.area_mock.uuid, attributes=None, requirements=None,
-    #             time_slot=self.time_slot
-    #         )
-    #     if can_post_settlement_offer:
-    #         self.market_mock.offer.assert_called_once_with(
-    #             35, 1, self.area_mock.name, original_price=35,
-    #             seller_origin=None, seller_origin_id=None, seller_id=self.area_mock.uuid,
-    #             time_slot=self.time_slot
-    #         )
-    #
-    # @pytest.mark.parametrize(
-    #     "strategy_fixture", [LoadHoursStrategy(100), PVStrategy()])
-    # def test_event_trade_updates_energy_deviation(self, strategy_fixture):
-    #     self._setup_strategy_fixture(strategy_fixture, False, True)
-    #     strategy_fixture.state.set_energy_measurement_kWh(10, self.time_slot)
-    #     self.settlement_strategy.event_market_cycle(strategy_fixture)
-    #     self.settlement_strategy.event_offer_traded(
-    #         strategy_fixture, self.market_mock.id,
-    #         Trade("456", self.time_slot, self.test_offer,
-    #         self.area_mock.name, self.area_mock.name)
-    #     )
-    #     assert strategy_fixture.state.get_unsettled_deviation_kWh(self.time_slot) == 9
-    #
-    # @pytest.mark.parametrize(
-    #     "strategy_fixture", [LoadHoursStrategy(100), PVStrategy()])
-    # def test_event_bid_trade_updates_energy_deviation(self, strategy_fixture):
-    #     self._setup_strategy_fixture(strategy_fixture, True, False)
-    #     strategy_fixture.state.set_energy_measurement_kWh(15, self.time_slot)
-    #     self.settlement_strategy.event_market_cycle(strategy_fixture)
-    #     self.settlement_strategy.event_bid_traded(
-    #         strategy_fixture, self.market_mock.id,
-    #         Trade("456", self.time_slot, self.test_bid, self.area_mock.name, self.area_mock.name)
-    #     )
-    #     assert strategy_fixture.state.get_unsettled_deviation_kWh(self.time_slot) == 14
+    def test_event_market_cycle_posts_bids_and_offers_storage(self) -> None:
+        """Validate that market cycle event posts bids and offers for the pv strategy"""
+        future_strategy_fixture = StorageStrategy()
+        self._setup_strategy_fixture(future_strategy_fixture)
+        future_strategy_fixture.get_available_energy_to_buy_kWh = Mock(return_value=3)
+        future_strategy_fixture.get_available_energy_to_sell_kWh = Mock(return_value=2)
+        self.future_strategy.event_market_cycle(future_strategy_fixture)
+        self.future_markets.offer.assert_called_once_with(
+            price=50.0 * 2, energy=2, seller=self.area_mock.name,
+            seller_origin=self.area_mock.name,
+            seller_origin_id=self.area_mock.uuid, seller_id=self.area_mock.uuid,
+            time_slot=self.time_slot)
+
+        self.future_markets.bid.assert_called_once_with(
+            10.0 * 3, 3, self.area_mock.name, original_price=10.0 * 3,
+            buyer_origin=self.area_mock.name, buyer_origin_id=self.area_mock.uuid,
+            buyer_id=self.area_mock.uuid, attributes=None, requirements=None,
+            time_slot=self.time_slot
+        )
+
+    @pytest.mark.parametrize(
+        "future_strategy_fixture", [LoadHoursStrategy(100), PVStrategy(), StorageStrategy()])
+    def test_event_tick_updates_bids_and_offers(
+            self, future_strategy_fixture: "BaseStrategy") -> None:
+        """Validate that tick event updates existing bids and offers to the expected energy
+        rate"""
+        self._setup_strategy_fixture(future_strategy_fixture)
+        future_strategy_fixture.are_bids_posted = MagicMock(return_value=True)
+        future_strategy_fixture.are_offers_posted = MagicMock(return_value=True)
+
+        if isinstance(future_strategy_fixture, LoadHoursStrategy):
+            future_strategy_fixture.state.set_desired_energy(2000.0, self.time_slot)
+        if isinstance(future_strategy_fixture, PVStrategy):
+            future_strategy_fixture.state.set_available_energy(300.0, self.time_slot)
+        if isinstance(future_strategy_fixture, StorageStrategy):
+            future_strategy_fixture.get_available_energy_to_buy_kWh = Mock(return_value=3)
+            future_strategy_fixture.get_available_energy_to_sell_kWh = Mock(return_value=2)
+
+        future_strategy_fixture.area.current_tick = 0
+        future_strategy_fixture.area.config = Mock()
+        future_strategy_fixture.area.config.tick_length = duration(seconds=15)
+        self.future_strategy.event_market_cycle(future_strategy_fixture)
+
+        ticks_for_update = FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN * 60 / 15
+        future_strategy_fixture.area.current_tick = ticks_for_update - 1
+        self.future_markets.bid.reset_mock()
+        self.future_markets.offer.reset_mock()
+
+        future_strategy_fixture.area.current_tick = ticks_for_update - 1
+        self.future_strategy.event_tick(future_strategy_fixture)
+        future_strategy_fixture.area.current_tick = ticks_for_update
+        self.future_strategy.event_tick(future_strategy_fixture)
+        number_of_updates = ((GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 /
+                             FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN) - 1)
+        bid_energy_rate = (50 - 10) / number_of_updates
+        offer_energy_rate = (50 - 20) / number_of_updates
+        if isinstance(future_strategy_fixture, LoadHoursStrategy):
+            future_strategy_fixture.update_bid_rates.assert_called_once_with(
+                self.future_markets, 10 + bid_energy_rate)
+        if isinstance(future_strategy_fixture, PVStrategy):
+            future_strategy_fixture.update_offer_rates.assert_called_once_with(
+                self.future_markets, 50 - offer_energy_rate)
+        if isinstance(future_strategy_fixture, StorageStrategy):
+            future_strategy_fixture.update_bid_rates.assert_called_once_with(
+                self.future_markets, 10 + bid_energy_rate)
+            future_strategy_fixture.update_offer_rates.assert_called_once_with(
+                self.future_markets, 50 - offer_energy_rate)
