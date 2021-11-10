@@ -184,6 +184,7 @@ def test_orders_per_slot(market):
                                            "id": "offer1",
                                            "original_price": 10,
                                            "requirements": None,
+                                           "time_slot": "",
                                            "seller": "seller",
                                            "seller_id": None,
                                            "seller_origin": None,

@@ -76,6 +76,7 @@ class MycoInternalMatcher(MycoMatcherInterface):
                     if not bid_offer_pairs:
                         break
                     market.match_recommendations(bid_offer_pairs)
+
         self.area_uuid_markets_mapping = {}
 
     def event_tick(self, **kwargs) -> None:
