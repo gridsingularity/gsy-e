@@ -106,6 +106,8 @@ class RedisMarketExternalConnection:
         """Update the grid fees of the market."""
         # TODO: This function should reuse the area_reconfigure_event function
         # since they share the same functionality.
+        if not (self._connected or self.is_aggregator_controlled):
+            return None
         grid_fees_response_channel = f"{self.channel_prefix}/response/grid_fees"
         payload_data = (
             payload["data"] if isinstance(payload["data"], dict)
@@ -147,6 +149,8 @@ class RedisMarketExternalConnection:
 
     def dso_market_stats_callback(self, payload: Dict) -> Optional[Dict]:
         """Return or publish the market stats."""
+        if not (self._connected or self.is_aggregator_controlled):
+            return None
         dso_market_stats_response_channel = f"{self.channel_prefix}/response/dso_market_stats"
         payload_data = (
             payload["data"] if isinstance(payload["data"], dict)
