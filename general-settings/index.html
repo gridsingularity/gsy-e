@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/d3a/d3a-documentation/general-settings/">
+        <link rel="canonical" href="https://gridsingularity.github.io/gsy_e/gsy_e-documentation/general-settings/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -37,7 +37,7 @@
       
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
-      <link rel="shortcut icon" href="../img/d3a-favicon.png">
+      <link rel="shortcut icon" href="../img/Profile.png">
       <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.0.2">
     
     
@@ -119,9 +119,9 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="https://gridsingularity.github.io/d3a/d3a-documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="https://gridsingularity.github.io/gsy_e/gsy_e-documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
-            <img src="../img/New_Logo_up.png" width="32" height="32">
+            <img src="../img/Profile.png" width="32" height="32">
           
         </a>
       </div>
@@ -176,7 +176,7 @@
 
   
 
-<a href="https://github.com/gridsingularity/d3a/wiki/" title="Go to repository" class="md-source" data-md-source="github">
+<a href="https://github.com/gridsingularity/gsy_e/wiki/" title="Go to repository" class="md-source" data-md-source="github">
   
     <div class="md-source__icon">
       <svg viewBox="0 0 24 24" width="24" height="24">
@@ -209,9 +209,9 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="https://gridsingularity.github.io/d3a/d3a-documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="https://gridsingularity.github.io/gsy_e/gsy_e-documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
-        <img src="../img/New_Logo_up.png" width="48" height="48">
+        <img src="../img/Profile.png" width="48" height="48">
       
     </a>
     Grid Singularity Wiki
@@ -223,7 +223,7 @@
 
   
 
-<a href="https://github.com/gridsingularity/d3a/wiki/" title="Go to repository" class="md-source" data-md-source="github">
+<a href="https://github.com/gridsingularity/gsy_e/wiki/" title="Go to repository" class="md-source" data-md-source="github">
   
     <div class="md-source__icon">
       <svg viewBox="0 0 24 24" width="24" height="24">
@@ -264,7 +264,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../d3a-documentation/" title="Energy Market Design Challenge" class="md-nav__link">
+    <a href="../documentation/" title="Energy Market Design Challenge" class="md-nav__link">
       Energy Market Design Challenge
     </a>
   </li>
@@ -1286,7 +1286,7 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/gridsingularity/d3a/wiki/edit/master/docs/general-settings.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/gridsingularity/gsy_e/wiki/edit/master/docs/general-settings.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
                   <h1>General Configuration Settings</h1>
@@ -1326,7 +1326,8 @@
 <h2 id="backend-simulation-configuration">Backend Simulation Configuration<a class="headerlink" href="#backend-simulation-configuration" title="Permanent link">&para;</a></h2>
 <p>In the backend, the simulation process is slightly different. There is no need to login to set up a simulation. The user first needs to download the code from our Github Repository (Installation Instructions for <a href="../linux-installation-instructions/">Linux</a>, <a href="../ios-installation-instructions/">Mac</a> and <a href="../vm-installation-instructions/">Windows</a>). In the setup-file (in Python programming language), general and <a href="../default-trading-strategy/">trading strategy</a> settings can be defined. Examples can be found in the relevant <a href="https://github.com/gridsingularity/d3a/tree/master/src/d3a/setup">Grid Singularity GitHub</a> folder.</p>
 <p>This is the most basic skeleton for a setup-file:</p>
-<pre class="codehilite"><code class="language-python">from d3a.models.area import Area
+<pre class="codehilite"><code class="language-python">```python
+from gsy_e.models.area import Area
 def get_setup(config):
     area = Area('Grid', [])
     return area
@@ -1350,9 +1351,10 @@ def get_setup(config):
 </ul>
 <p>Bold instances in the outline above are <a href="../model-markets/">markets</a> (<code>Area</code> component). For each of these markets, an <a href="../inter-area-agent/">inter-area-agent</a> is created in the background to execute offer/bid forwarding and matching.</p>
 <p>In the following, the corresponding setup-file is shown.</p>
-<pre class="codehilite"><code class="language-python">from d3a.models.area import Area
+<pre class="codehilite"><code class="language-python">```python
+from gsy_e.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 
 
@@ -1413,7 +1415,7 @@ def get_setup(config):
 <li>Grid_fee_type (if equal to 1: <a href="../constant-fees/">Constant grid fee</a>, if equal to 2 : <a href="../percentage-fees/">Percentage grid fee</a>)</li>
 </ul>
 <p>Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market type, constant grid fee and default min (0cts/kWh) and max to (35cts/kWh) energy rate for all <a href="../model-load/">loads</a>:</p>
-<pre class="codehilite"><code class="language-python">from d3a_interface.constants_limits import ConstSettings
+<pre class="codehilite"><code class="language-python">from gsy_framework.constants_limits import ConstSettings
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.LoadSettings.MIN_ENERGY_RATE = 0
