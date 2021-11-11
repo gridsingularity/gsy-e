@@ -15,18 +15,18 @@ see <http://www.gnu.org/licenses/>.
 
 from typing import TYPE_CHECKING, List, Union
 
-from d3a_interface.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import GlobalConfig
 from pendulum import duration, DateTime
 
-from d3a.constants import FutureTemplateStrategiesConstants
-from d3a.models.base import AssetType
-from d3a.models.strategy.update_frequency import (
+from gsy_e.constants import FutureTemplateStrategiesConstants
+from gsy_e.models.base import AssetType
+from gsy_e.models.strategy.update_frequency import (
     TemplateStrategyBidUpdater, TemplateStrategyOfferUpdater, TemplateStrategyUpdaterInterface)
 
 if TYPE_CHECKING:
-    from d3a.models.area import Area
-    from d3a.models.strategy import BidEnabledStrategy
-    from d3a.models.market.future import FutureMarkets
+    from gsy_e.models.area import Area
+    from gsy_e.models.strategy import BidEnabledStrategy
+    from gsy_e.models.market.future import FutureMarkets
 
 
 class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
@@ -182,7 +182,6 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
     def _post_consumer_first_bid(
             self, strategy: "BidEnabledStrategy", time_slot: DateTime,
             available_buy_energy_kWh: float) -> None:
-
         if available_buy_energy_kWh <= 0.0:
             return
         if strategy.get_posted_bids(strategy.area.future_markets, time_slot):

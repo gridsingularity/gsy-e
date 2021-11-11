@@ -426,19 +426,23 @@ class StorageStrategy(BidEnabledStrategy):
             self.state.pledged_buy_kWh[bid_trade.time_slot] += bid_trade.offer_bid.energy
             self.state.offered_buy_kWh[bid_trade.time_slot] -= bid_trade.offer_bid.energy
 
-    def event_market_cycle(self):
-        super().event_market_cycle()
-        self._set_alternative_pricing_scheme()
-        self._update_profiles_with_default_values()
-        self.offer_update.reset(self)
+    def _cycle_state(self):
         current_market = self.area.spot_market
         past_market = self.area.last_past_market
 
         self.state.market_cycle(
             past_market.time_slot if past_market else None,
             current_market.time_slot,
-            [self.spot_market_time_slot]
+            self.area.future_market_time_slots
         )
+
+    def event_market_cycle(self):
+        super().event_market_cycle()
+        self._set_alternative_pricing_scheme()
+        self._update_profiles_with_default_values()
+        self.offer_update.reset(self)
+
+        self._cycle_state()
 
         self._sell_energy_to_spot_market()
         self._buy_energy_two_sided_spot_market()
@@ -580,7 +584,8 @@ class StorageStrategy(BidEnabledStrategy):
     def _update_profiles_with_default_values(self):
         self.offer_update.update_and_populate_price_settings(self.area)
         self.bid_update.update_and_populate_price_settings(self.area)
-        self.state.add_default_values_to_state_profiles([self.spot_market_time_slot])
+        self.state.add_default_values_to_state_profiles([
+            self.spot_market_time_slot, *self.area.future_market_time_slots])
 
     def event_offer(self, *, market_id, offer):
         super().event_offer(market_id=market_id, offer=offer)
