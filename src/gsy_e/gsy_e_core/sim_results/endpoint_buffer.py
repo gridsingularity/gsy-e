@@ -76,7 +76,7 @@ class SimulationEndpointBuffer:
             self.offer_bid_trade_hr = OfferBidTradeGraphStats()
 
     def prepare_results_for_publish(self) -> Dict:
-        """Validate, serialise and check size of the results before sending to gsy_e-web."""
+        """Validate, serialise and check size of the results before sending to gsy-web."""
         result_report = self.generate_result_report()
         results_validator(result_report)
 
@@ -118,7 +118,7 @@ class SimulationEndpointBuffer:
             self.update_results_area_uuids(child)
 
     def generate_result_report(self) -> Dict:
-        """Create dict that contains all statistics that are sent to the gsy_e-web."""
+        """Create dict that contains all statistics that are sent to the gsy-web."""
         # TODO: In D3ASIM-2288, add unix_time=True to convert_pendulum_to_str_in_dict
         return {
             "job_id": self.job_id,

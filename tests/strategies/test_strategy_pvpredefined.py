@@ -376,7 +376,7 @@ def test_correct_interpolation_power_profile():
 
 
 def test_correct_time_expansion_read_arbitrary_profile():
-    # TODO: this test needs to move to gsy_e-interface
+    # TODO: this test needs to move to gsy-framework
     market_maker_rate = 30
     if GlobalConfig.IS_CANARY_NETWORK:
         GlobalConfig.sim_duration = duration(hours=3)
