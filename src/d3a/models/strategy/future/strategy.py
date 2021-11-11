@@ -13,15 +13,15 @@ You should have received a copy of the GNU General Public License along with thi
 see <http://www.gnu.org/licenses/>.
 """
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Union
 
 from d3a_interface.constants_limits import GlobalConfig
 from pendulum import duration, DateTime
 
 from d3a.constants import FutureTemplateStrategiesConstants
 from d3a.models.base import AssetType
-from d3a.models.strategy.update_frequency import (TemplateStrategyBidUpdater,
-                                                  TemplateStrategyOfferUpdater)
+from d3a.models.strategy.update_frequency import (
+    TemplateStrategyBidUpdater, TemplateStrategyOfferUpdater, TemplateStrategyUpdaterInterface)
 
 if TYPE_CHECKING:
     from d3a.models.area import Area
@@ -93,9 +93,41 @@ class FutureMarketStrategyInterface:
         """Base class method for handling the tick"""
 
 
+def future_strategy_bid_updater_factory(
+        initial_buying_rate: float, final_buying_rate: float, asset_type: AssetType
+) -> Union[TemplateStrategyUpdaterInterface, FutureTemplateStrategyBidUpdater]:
+
+    _update_interval = FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN
+    if asset_type in [AssetType.CONSUMER, AssetType.PROSUMER]:
+        return FutureTemplateStrategyBidUpdater(
+            initial_rate=initial_buying_rate,
+            final_rate=final_buying_rate,
+            fit_to_limit=True,
+            energy_rate_change_per_update=None,
+            update_interval=duration(minutes=_update_interval),
+            rate_limit_object=min)
+    return TemplateStrategyUpdaterInterface()
+
+
+def future_strategy_offer_updater_factory(
+        initial_selling_rate: float, final_selling_rate: float, asset_type: AssetType
+) -> Union[TemplateStrategyUpdaterInterface, FutureTemplateStrategyOfferUpdater]:
+
+    _update_interval = FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN
+    if asset_type in [AssetType.PRODUCER, AssetType.PROSUMER]:
+        return FutureTemplateStrategyOfferUpdater(
+            initial_rate=initial_selling_rate,
+            final_rate=final_selling_rate,
+            fit_to_limit=True,
+            energy_rate_change_per_update=None,
+            update_interval=duration(minutes=_update_interval),
+            rate_limit_object=max)
+    return TemplateStrategyUpdaterInterface()
+
+
 class FutureMarketStrategy(FutureMarketStrategyInterface):
     """Manages bid/offer trading strategy for the future markets, for a single asset."""
-    def __init__(self,
+    def __init__(self, asset_type: AssetType,
                  initial_buying_rate: float, final_buying_rate: float,
                  initial_selling_rate: float, final_selling_rate: float):
         """
@@ -106,23 +138,13 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             final_selling_rate: Final rate of the future offers
         """
         super().__init__()
+        self._offer_updater = future_strategy_offer_updater_factory(
+            initial_selling_rate, final_selling_rate, asset_type
+        )
 
-        self._update_interval = FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN
-        self._bid_updater = FutureTemplateStrategyBidUpdater(
-                initial_rate=initial_buying_rate,
-                final_rate=final_buying_rate,
-                fit_to_limit=True,
-                energy_rate_change_per_update=None,
-                update_interval=duration(minutes=self._update_interval),
-                rate_limit_object=min)
-
-        self._offer_updater = FutureTemplateStrategyOfferUpdater(
-                initial_rate=initial_selling_rate,
-                final_rate=final_selling_rate,
-                fit_to_limit=True,
-                energy_rate_change_per_update=None,
-                update_interval=duration(minutes=self._update_interval),
-                rate_limit_object=max)
+        self._bid_updater = future_strategy_bid_updater_factory(
+            initial_buying_rate, final_buying_rate, asset_type
+        )
 
     def event_market_cycle(self, strategy: "BidEnabledStrategy") -> None:
         """
@@ -208,6 +230,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
 
 
 def future_market_strategy_factory(
+        asset_type: AssetType,
         initial_buying_rate: float = FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE,
         final_buying_rate: float = FutureTemplateStrategiesConstants.FINAL_BUYING_RATE,
         initial_selling_rate: float = FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE,
@@ -228,9 +251,9 @@ def future_market_strategy_factory(
     """
     if GlobalConfig.FUTURE_MARKET_DURATION_HOURS > 0:
         return FutureMarketStrategy(
-            initial_buying_rate, final_buying_rate,
+            asset_type, initial_buying_rate, final_buying_rate,
             initial_selling_rate, final_selling_rate)
     return FutureMarketStrategyInterface(
-        initial_buying_rate, final_buying_rate,
+        asset_type, initial_buying_rate, final_buying_rate,
         initial_selling_rate, final_selling_rate
     )

@@ -32,7 +32,29 @@ if TYPE_CHECKING:
     from d3a.models.strategy import BidEnabledStrategy, BaseStrategy
 
 
-class TemplateStrategyUpdaterBase:
+class TemplateStrategyUpdaterInterface:
+    """Interface for the updater of orders for template strategies"""
+
+    def update_and_populate_price_settings(self, area: "Area") -> None:
+        """Update the price settings. Usually called during the market cycle event"""
+
+    def increment_update_counter_all_markets(self, strategy: "BaseStrategy") -> bool:
+        """Increment the update counter for all markets. Usually called during the tick event"""
+        return False
+
+    def set_parameters(self, *, initial_rate: float = None, final_rate: float = None,
+                       energy_rate_change_per_update: float = None, fit_to_limit: bool = None,
+                       update_interval: int = None) -> None:
+        """Update the parameters of the class on the fly."""
+
+    def reset(self, strategy: "BaseStrategy") -> None:
+        """Reset the price of all orders based to use their initial rate."""
+
+    def update(self, market: "OneSidedMarket", strategy: "BaseStrategy") -> None:
+        """Update the price of existing orders to reflect the new rates."""
+
+
+class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
     """Manage template strategy bid / offer posting. Updates periodically the energy rate
     of the posted bids or offers. Base class"""
     def __init__(self, initial_rate: float, final_rate: float, fit_to_limit: bool = True,
@@ -213,6 +235,12 @@ class TemplateStrategyUpdaterBase:
             should_update = True
         if should_update:
             self._read_or_rotate_rate_profiles()
+
+    def reset(self, strategy: "BaseStrategy") -> None:
+        raise NotImplementedError
+
+    def update(self, market: "OneSidedMarket", strategy: "BaseStrategy") -> None:
+        raise NotImplementedError
 
 
 class TemplateStrategyBidUpdater(TemplateStrategyUpdaterBase):

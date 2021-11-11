@@ -37,10 +37,10 @@ from d3a.d3a_core.util import area_name_from_area_or_iaa_name
 from d3a.models.base import AssetType
 from d3a.models.state import StorageState, ESSEnergyOrigin, EnergyOrigin
 from d3a.models.strategy import BidEnabledStrategy
+from d3a.models.strategy.future.strategy import future_market_strategy_factory
 from d3a.models.strategy.update_frequency import (
     TemplateStrategyOfferUpdater,
     TemplateStrategyBidUpdater)
-
 
 log = getLogger(__name__)
 
@@ -132,6 +132,7 @@ class StorageStrategy(BidEnabledStrategy):
             min_allowed_soc=min_allowed_soc)
         self.cap_price_strategy = cap_price_strategy
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
+        self._future_market_strategy = future_market_strategy_factory(self.asset_type)
 
     @property
     def state(self) -> StorageState:
@@ -364,6 +365,8 @@ class StorageStrategy(BidEnabledStrategy):
         if self.offer_update.increment_update_counter_all_markets(self):
             self._buy_energy_one_sided_spot_market(market)
 
+        self._future_market_strategy.event_tick(self)
+
     def event_offer_traded(self, *, market_id, trade):
 
         super().event_offer_traded(market_id=market_id, trade=trade)
@@ -439,6 +442,7 @@ class StorageStrategy(BidEnabledStrategy):
 
         self._sell_energy_to_spot_market()
         self._buy_energy_two_sided_spot_market()
+        self._future_market_strategy.event_market_cycle(self)
         self._delete_past_state()
 
     def event_balancing_market_cycle(self):

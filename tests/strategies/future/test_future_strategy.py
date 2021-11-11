@@ -41,7 +41,6 @@ class TestFutureMarketStrategy:
     def setup_method(self) -> None:
         """Preparation for the tests execution"""
         GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
-        self.future_strategy = FutureMarketStrategy(10, 50, 50, 20)
         self.time_slot = today(tz=TIME_ZONE).at(hour=12, minute=0, second=0)
         self.area_mock = Mock()
         self.area_mock.name = "test_name"
@@ -68,10 +67,11 @@ class TestFutureMarketStrategy:
     def test_event_market_cycle_posts_bids_load(self) -> None:
         """Validate that market cycle event posts bids and offers for the load strategy"""
         future_strategy_fixture = LoadHoursStrategy(100)
+        future_strategy = FutureMarketStrategy(future_strategy_fixture.asset_type, 10, 50, 50, 20)
         self._setup_strategy_fixture(future_strategy_fixture)
         if isinstance(future_strategy_fixture, LoadHoursStrategy):
             future_strategy_fixture.state.set_desired_energy(1234.0, self.time_slot)
-            self.future_strategy.event_market_cycle(future_strategy_fixture)
+            future_strategy.event_market_cycle(future_strategy_fixture)
             self.future_markets.bid.assert_called_once_with(
                 10.0 * 1.234, 1.234, self.area_mock.name, original_price=10.0 * 1.234,
                 buyer_origin=self.area_mock.name, buyer_origin_id=self.area_mock.uuid,
@@ -82,10 +82,11 @@ class TestFutureMarketStrategy:
     def test_event_market_cycle_posts_offers_pv(self) -> None:
         """Validate that market cycle event posts bids and offers for the pv strategy"""
         future_strategy_fixture = PVStrategy()
+        future_strategy = FutureMarketStrategy(future_strategy_fixture.asset_type, 10, 50, 50, 20)
         self._setup_strategy_fixture(future_strategy_fixture)
         if isinstance(future_strategy_fixture, PVStrategy):
             future_strategy_fixture.state.set_available_energy(321.3, self.time_slot)
-            self.future_strategy.event_market_cycle(future_strategy_fixture)
+            future_strategy.event_market_cycle(future_strategy_fixture)
             self.future_markets.offer.assert_called_once_with(
                 price=50.0 * 321.3, energy=321.3, seller=self.area_mock.name,
                 seller_origin=self.area_mock.name,
@@ -96,10 +97,11 @@ class TestFutureMarketStrategy:
     def test_event_market_cycle_posts_bids_and_offers_storage(self) -> None:
         """Validate that market cycle event posts bids and offers for the pv strategy"""
         future_strategy_fixture = StorageStrategy()
+        future_strategy = FutureMarketStrategy(future_strategy_fixture.asset_type, 10, 50, 50, 20)
         self._setup_strategy_fixture(future_strategy_fixture)
         future_strategy_fixture.get_available_energy_to_buy_kWh = Mock(return_value=3)
         future_strategy_fixture.get_available_energy_to_sell_kWh = Mock(return_value=2)
-        self.future_strategy.event_market_cycle(future_strategy_fixture)
+        future_strategy.event_market_cycle(future_strategy_fixture)
         self.future_markets.offer.assert_called_once_with(
             price=50.0 * 2, energy=2, seller=self.area_mock.name,
             seller_origin=self.area_mock.name,
@@ -119,6 +121,7 @@ class TestFutureMarketStrategy:
             self, future_strategy_fixture: "BaseStrategy") -> None:
         """Validate that tick event updates existing bids and offers to the expected energy
         rate"""
+        future_strategy = FutureMarketStrategy(future_strategy_fixture.asset_type, 10, 50, 50, 20)
         self._setup_strategy_fixture(future_strategy_fixture)
         future_strategy_fixture.are_bids_posted = MagicMock(return_value=True)
         future_strategy_fixture.are_offers_posted = MagicMock(return_value=True)
@@ -134,7 +137,7 @@ class TestFutureMarketStrategy:
         future_strategy_fixture.area.current_tick = 0
         future_strategy_fixture.area.config = Mock()
         future_strategy_fixture.area.config.tick_length = duration(seconds=15)
-        self.future_strategy.event_market_cycle(future_strategy_fixture)
+        future_strategy.event_market_cycle(future_strategy_fixture)
 
         ticks_for_update = FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN * 60 / 15
         future_strategy_fixture.area.current_tick = ticks_for_update - 1
@@ -142,9 +145,9 @@ class TestFutureMarketStrategy:
         self.future_markets.offer.reset_mock()
 
         future_strategy_fixture.area.current_tick = ticks_for_update - 1
-        self.future_strategy.event_tick(future_strategy_fixture)
+        future_strategy.event_tick(future_strategy_fixture)
         future_strategy_fixture.area.current_tick = ticks_for_update
-        self.future_strategy.event_tick(future_strategy_fixture)
+        future_strategy.event_tick(future_strategy_fixture)
         number_of_updates = ((GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 /
                              FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN) - 1)
         bid_energy_rate = (50 - 10) / number_of_updates

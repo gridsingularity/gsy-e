@@ -100,7 +100,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._calculate_active_markets()
         self._cycled_market = set()
         self._simulation_start_timestamp = None
-        self._future_market_strategy = future_market_strategy_factory()
+        self._future_market_strategy = future_market_strategy_factory(self.asset_type)
 
     @classmethod
     def _create_settlement_market_strategy(cls):
