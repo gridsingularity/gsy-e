@@ -187,7 +187,7 @@ class RedisSimulationCommunication:
             job.refresh()
             if job.meta.get("terminated"):
                 log.error(f"Redis job {self._simulation_id} received a stop "
-                          "message via the job.terminated metadata by gsy_e-web. "
+                          "message via the job.terminated metadata by gsy-web. "
                           "Stopping the simulation.")
                 self._simulation.stop()
 

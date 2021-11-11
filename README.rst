@@ -137,4 +137,4 @@ _`docker`: https://docker.io
 
 Detailed Documentation
 ===============
-Please refer to: https://gridsingularity.github.io/d3a/d3a-documentation/
+Please refer to: https://gridsingularity.github.io/gsy-e/documentation/

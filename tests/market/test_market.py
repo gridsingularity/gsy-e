@@ -189,6 +189,7 @@ def test_orders_per_slot(market):
                                            "seller_id": None,
                                            "seller_origin": None,
                                            "seller_origin_id": None,
+                                           "time_slot": "",
                                            "creation_time": datetime_to_string_incl_seconds(
                                                creation_time),
                                            "type": "Offer"}]}}

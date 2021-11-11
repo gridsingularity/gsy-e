@@ -39,7 +39,7 @@ DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 10
 
 CONFIGURATION_ID = ""
 # Controls whether the external connection is for use with the redis api client
-# or with the gsy_e-web. Default is to connect via Redis.
+# or with the gsy-web. Default is to connect via Redis.
 EXTERNAL_CONNECTION_WEB = False
 
 SIMULATION_PAUSE_TIMEOUT = 600
