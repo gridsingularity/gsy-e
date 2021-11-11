@@ -27,14 +27,23 @@ class BalancingAgent(OneSidedAgent):
     def __init__(self, owner, higher_market, lower_market,
                  min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE):
         self.balancing_spot_trade_ratio = owner.balancing_spot_trade_ratio
-        self.engines = [
-            BalancingEngine('High -> Low', higher_market, lower_market, min_offer_age, self),
-            BalancingEngine('Low -> High', lower_market, higher_market, min_offer_age, self),
-        ]
-        super().__init__(owner=owner, higher_market=higher_market,
+
+        super().__init__(owner=owner,
+                         higher_market=higher_market,
                          lower_market=lower_market,
-                         min_offer_age=min_offer_age, do_create_engine=False)
+                         min_offer_age=min_offer_age)
         self.name = make_ba_name(self.owner)
+
+    def _create_engines(self):
+        self.engines = [
+            BalancingEngine('High -> Low', self.higher_market, self.lower_market,
+                            self.min_offer_age, self),
+            BalancingEngine('Low -> High', self.lower_market, self.higher_market,
+                            self.min_offer_age, self),
+        ]
+
+    def __repr__(self):
+        return f"<BalancingAgent {self.name} {self.time_slot_str}>"
 
     def event_tick(self):
         super().event_tick()
@@ -44,7 +53,7 @@ class BalancingAgent(OneSidedAgent):
                                            self.lower_market.unmatched_energy_downward)
 
     def event_offer_traded(self, *, market_id, trade):
-        market = self._get_market_from_market_id(market_id)
+        market = self.get_market_from_market_id(market_id)
         if market is None:
             return
 
@@ -55,7 +64,7 @@ class BalancingAgent(OneSidedAgent):
         if bid_trade.already_tracked:
             return
 
-        market = self._get_market_from_market_id(market_id)
+        market = self.get_market_from_market_id(market_id)
         if market is None:
             return
 

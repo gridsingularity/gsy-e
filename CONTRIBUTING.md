@@ -1,10 +1,10 @@
-## How to contribute to D3A
+## How to contribute to the GSy Exchange
 
 #### **Did you find a bug?**
 
-* **Ensure the bug was not already reported** by searching on GitHub under [Issues](https://github.com/gridsingularity/d3a/issues).
+* **Ensure the bug was not already reported** by searching on GitHub under [Issues](https://github.com/gridsingularity/gsy-e/issues).
 
-* If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/gridsingularity/d3a/issues/new). Be sure to include a **title and clear description**, as much relevant information as possible, and a **code sample** or an **executable test case** demonstrating the expected behavior that is not occurring.
+* If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/gridsingularity/gsy-e/issues/new). Be sure to include a **title and clear description**, as much relevant information as possible, and a **code sample** or an **executable test case** demonstrating the expected behavior that is not occurring.
 
 
 #### **Did you write a patch that fixes a bug?**
@@ -16,30 +16,30 @@
 
 #### **Did you fix whitespace, format code, or make a purely cosmetic patch?**
 
-Changes that are cosmetic in nature and do not add anything substantial to the stability, functionality, or testability of the D3A will generally not be accepted.
+Changes that are cosmetic in nature and do not add anything substantial to the stability, functionality, or testability of the GSy Exchange will generally not be accepted.
 
 
 #### **Do you intend to add a new feature or change an existing one?**
 
-* Suggest your change in an email to d3a@gridsingularity.com
+* Suggest your change in an email to contact@gridsingularity.com
 
 * Do not open an issue on GitHub until you have collected positive feedback about the change. GitHub issues are primarily intended for bug reports and fixes.
 
 
-#### **Do you have questions about the source code or the functionality of D3A?**
+#### **Do you have questions about the source code or the functionality of the GSy Exchange?**
 
-* Consult our Wiki [D3A Wiki page](https://gridsingularity.github.io/d3a/d3a-documentation/)
+* Consult our [Wiki](https://gridsingularity.github.io/gsy-e/documentation/)
 
-* If things are still unclear: Ask any question about how to use D3A in the [Grid Singularity Community Slack](https://gsycommunity.slack.com/join/shared_invite/zt-dpfxe2gk-hKFccsrr68g982odCJlrIg#/).
+* If things are still unclear: Ask any question about how to use the GSy Exchange in the [Grid Singularity Community Slack](https://gsycommunity.slack.com/join/shared_invite/zt-dpfxe2gk-hKFccsrr68g982odCJlrIg#/).
 
 
 #### **License**
 
-By contributing to D3A, you agree that your contributions will be licensed under the [GPLv3 License](./Grid Singularity LICENSE).
+By contributing to the GSy Exchange, you agree that your contributions will be licensed under the [GPLv3 License](https://github.com/gridsingularity/gsy-e/blob/master/LICENSE).
 
 Each contributor has to sign our Contributor License Agreement. The purpose of the CLA is to ensure that the guardian of a project's outputs has the necessary ownership or grants of rights over all contributions to allow them to distribute under the chosen license. You can read and sign our full [Contributor License Agreement](https://gist.github.com/gsydev/c880a76b3cb73658f3b99b9edb791fb4) before submitting a pull request.
 
 
 Thanks!
 
-D3A Team
+GSy Team

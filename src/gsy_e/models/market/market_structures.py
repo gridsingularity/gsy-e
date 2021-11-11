@@ -45,6 +45,7 @@ class AvailableMarketTypes(Enum):
     SPOT = 0
     BALANCING = 1
     SETTLEMENT = 2
+    FUTURE = 3
 
 
 PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING = {

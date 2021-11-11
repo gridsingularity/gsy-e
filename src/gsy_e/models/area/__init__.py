@@ -48,7 +48,7 @@ log = getLogger(__name__)
 
 
 # TODO: As this is only used in the unittests, please remove it here and replace the usages
-#       of this class with gsy_e-interface.constants_limits.GlobalConfig class:
+#       of this class with gsy-framework.constants_limits.GlobalConfig class:
 DEFAULT_CONFIG = SimulationConfig(
     sim_duration=duration(hours=24),
     slot_length=duration(minutes=15),
@@ -368,6 +368,8 @@ class Area:
         else:
             changed_balancing_market = None
 
+        self._markets.update_area_market_id_lists()
+
         # Force market cycle event in case this is the first market slot
         if (changed or len(self._markets.past_markets.keys()) == 0) and _trigger_event:
             self.dispatcher.broadcast_market_cycle()
@@ -613,3 +615,19 @@ class Area:
             self.strategy.read_config_event()
         for child in self.children:
             child.update_config(**kwargs)
+
+    def is_market_spot(self, market_id: str) -> bool:
+        """Return True if market_id belongs to a SPOT market."""
+        return market_id in self._markets.spot_market_ids
+
+    def is_market_settlement(self, market_id: str) -> bool:
+        """Return True if market_id belongs to a SETTLEMENT market."""
+        return market_id in self._markets.settlement_market_ids
+
+    def is_market_balancing(self, market_id: str) -> bool:
+        """Return True if market_id belongs to a BALANCING market."""
+        return market_id in self._markets.balancing_market_ids
+
+    def is_market_future(self, market_id: str) -> bool:
+        """Return True if market_id belongs to a FUTURE market."""
+        return market_id == self.future_markets.id
