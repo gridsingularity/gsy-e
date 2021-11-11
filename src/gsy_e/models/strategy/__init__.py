@@ -29,7 +29,7 @@ from gsy_framework.data_classes import (Offer, Bid, Trade)
 from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
-from gsy_e import constants
+from gsy_e import constants, limit_float_precision
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
@@ -660,7 +660,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             return
 
         for offer, iterated_market_id in self.offers.open.items():
-            updated_price = round(offer.energy * updated_rate, 10)
+            updated_price = limit_float_precision(offer.energy * updated_rate)
             if abs(offer.price - updated_price) <= FLOATING_POINT_TOLERANCE:
                 continue
             iterated_market = self.get_market_from_id(iterated_market_id)
