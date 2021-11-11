@@ -48,7 +48,7 @@ log = getLogger(__name__)
 
 
 # TODO: As this is only used in the unittests, please remove it here and replace the usages
-#       of this class with gsy_e-interface.constants_limits.GlobalConfig class:
+#       of this class with gsy-framework.constants_limits.GlobalConfig class:
 DEFAULT_CONFIG = SimulationConfig(
     sim_duration=duration(hours=24),
     slot_length=duration(minutes=15),
