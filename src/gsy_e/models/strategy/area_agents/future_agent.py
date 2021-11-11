@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of gsy_e.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,12 +20,12 @@ from typing import TYPE_CHECKING
 from gsy_framework.constants_limits import ConstSettings
 
 from gsy_e.gsy_e_core.util import make_sa_name
-from gsy_e.models.market.future import FutureMarkets
 from gsy_e.models.strategy.area_agents.future_engine import FutureEngine
 from gsy_e.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
+    from gsy_e.models.market.future import FutureMarkets
 
 
 class FutureAgent(TwoSidedAgent):

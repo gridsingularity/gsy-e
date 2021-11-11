@@ -905,9 +905,14 @@ class BidEnabledStrategy(BaseStrategy):
             return []
         return [b for b in self._bids[market.id] if time_slot is None or b.time_slot == time_slot]
 
+    def _assert_market_type_on_bid_event(self, market_id):
+        assert (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value or
+                self.area.is_market_future(market_id)), (
+            "Invalid state, cannot receive a bid if single sided market is globally configured or "
+            "if it is not a future market bid.")
+
     def event_bid_deleted(self, *, market_id: str, bid: Bid) -> None:
-        assert ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value, (
-            "Invalid state, cannot receive a bid if single sided market is globally configured.")
+        self._assert_market_type_on_bid_event(market_id)
 
         if bid.buyer != self.owner.name:
             return
@@ -916,9 +921,8 @@ class BidEnabledStrategy(BaseStrategy):
     # pylint: disable=unused-argument
     def event_bid_split(self, *, market_id: str, original_bid: Bid, accepted_bid: Bid,
                         residual_bid: Bid) -> None:
-        assert ConstSettings.IAASettings.MARKET_TYPE != 1, ("Invalid state, cannot receive a bid "
-                                                            "if single sided market is "
-                                                            "globally configured.")
+        self._assert_market_type_on_bid_event(market_id)
+
         if accepted_bid.buyer != self.owner.name:
             return
         self.add_bid_to_posted(market_id, bid=accepted_bid)
@@ -929,9 +933,7 @@ class BidEnabledStrategy(BaseStrategy):
 
         This method is triggered by the MarketEvent.BID_TRADED event.
         """
-        assert ConstSettings.IAASettings.MARKET_TYPE != 1, ("Invalid state, cannot receive a bid "
-                                                            "if single sided market is "
-                                                            "globally configured.")
+        self._assert_market_type_on_bid_event(market_id)
 
         if bid_trade.buyer == self.owner.name:
             self.add_bid_to_bought(bid_trade.offer_bid, market_id)
