@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@ import os
 import glob
 from math import isclose
 from behave import then
-from d3a.d3a_core.myco_singleton import bid_offer_matcher
-from d3a.d3a_core.util import make_iaa_name
+from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
+from gsy_e.gsy_e_core.util import make_iaa_name
 
 
 @then('all trades are equal to market_clearing_rate')

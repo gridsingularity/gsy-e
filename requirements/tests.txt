@@ -4,7 +4,7 @@
 #
 #    pip-compile --max-rounds=100 --no-emit-index-url requirements/tests.in
 #
--e git+https://github.com/gridsingularity/d3a-interface@master#egg=d3a_interface
+-e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework
     # via -r requirements/dev.txt
 astroid==2.8.4
     # via
@@ -13,7 +13,7 @@ astroid==2.8.4
 attrs==21.2.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   hypothesis
     #   jsonschema
     #   pytest
@@ -22,7 +22,7 @@ awesome-slugify==1.6.5
 backports.entry-points-selectable==1.1.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   virtualenv
 bcrypt==3.2.0
     # via
@@ -35,7 +35,7 @@ cached-property==1.5.2
 certifi==2021.10.8
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   requests
 cffi==1.15.0
     # via
@@ -46,12 +46,12 @@ cffi==1.15.0
 cfgv==3.3.1
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   pre-commit
 chardet==4.0.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   requests
 click==8.0.3
     # via
@@ -73,41 +73,41 @@ deepdiff==5.6.0
 distlib==0.3.3
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   virtualenv
 entrypoints==0.3
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
     #   flake8
+    #   gsy-framework
 fabric3==1.14.post1
     # via -r requirements/dev.txt
 filelock==3.3.2
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   tox
     #   virtualenv
 flake8==3.7.9
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
     #   flake8-tuple
+    #   gsy-framework
 flake8-tuple==0.4.1
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
 hypothesis==4.38.0
     # via -r requirements/tests.in
 identify==2.3.3
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   pre-commit
 idna==2.10
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   requests
 iniconfig==1.1.1
     # via pytest
@@ -119,11 +119,11 @@ isort==5.10.0
 jsonschema==4.1.2
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
 kafka-python==2.0.2
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
 lazy-object-proxy==1.6.0
     # via
     #   -r requirements/dev.txt
@@ -131,13 +131,13 @@ lazy-object-proxy==1.6.0
 mccabe==0.6.1
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
     #   flake8
+    #   gsy-framework
     #   pylint
 nodeenv==1.6.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   pre-commit
 numpy==1.20.3
     # via -r requirements/dev.txt
@@ -146,7 +146,7 @@ ordered-set==4.0.2
 packaging==21.2
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   pytest
     #   tox
 parameterized==0.8.1
@@ -164,11 +164,11 @@ parse-type==0.5.2
 pendulum==2.1.2
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
 platformdirs==2.4.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   pylint
     #   virtualenv
 plotly==5.3.1
@@ -176,7 +176,7 @@ plotly==5.3.1
 pluggy==1.0.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   pytest
     #   tox
 pony==0.7.14
@@ -184,20 +184,20 @@ pony==0.7.14
 pre-commit==2.15.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
 psutil==5.8.0
     # via -r requirements/dev.txt
 py==1.10.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   pytest
     #   tox
 pycodestyle==2.5.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
     #   flake8
+    #   gsy-framework
 pycparser==2.20
     # via
     #   -r requirements/dev.txt
@@ -205,8 +205,8 @@ pycparser==2.20
 pyflakes==2.1.1
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
     #   flake8
+    #   gsy-framework
 pylint==2.11.1
     # via -r requirements/dev.txt
 pynacl==1.4.0
@@ -216,12 +216,12 @@ pynacl==1.4.0
 pyparsing==2.4.7
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   packaging
 pyrsistent==0.18.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   jsonschema
 pytest==6.2.5
     # via
@@ -232,7 +232,7 @@ pytest-random-order==1.0.4
 python-dateutil==2.8.2
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   pendulum
 python-rex==0.4
     # via -r requirements/dev.txt
@@ -241,17 +241,17 @@ pytz==2021.3
 pytzdata==2020.1
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   pendulum
 pyyaml==6.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   pre-commit
 redis==3.5.3
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   rq
 regex==2021.10.23
     # via
@@ -260,7 +260,7 @@ regex==2021.10.23
 requests==2.25.1
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   requests-mock
 requests-mock==1.9.3
     # via -r requirements/tests.in
@@ -271,9 +271,9 @@ six==1.16.0
     #   -r requirements/dev.txt
     #   bcrypt
     #   behave
-    #   d3a-interface
     #   fabric3
     #   flake8-tuple
+    #   gsy-framework
     #   parse-type
     #   plotly
     #   pynacl
@@ -287,7 +287,7 @@ sortedcontainers==2.4.0
 tabulate==0.8.9
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
 tenacity==8.0.1
     # via
     #   -r requirements/dev.txt
@@ -295,7 +295,7 @@ tenacity==8.0.1
 toml==0.10.2
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   pre-commit
     #   pylint
     #   pytest
@@ -303,7 +303,7 @@ toml==0.10.2
 tox==3.24.4
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
 typing-extensions==3.10.0.2
     # via
     #   -r requirements/dev.txt
@@ -316,18 +316,18 @@ unidecode==0.4.21
 urllib3==1.26.7
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   requests
 virtualenv==20.10.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   pre-commit
     #   tox
 websockets==10.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
 wrapt==1.13.3
     # via
     #   -r requirements/dev.txt

@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
 import pendulum
-from d3a_interface.data_classes import Offer, BalancingOffer
+from gsy_framework.data_classes import Offer, BalancingOffer
 
 
 @pytest.mark.parametrize("offer", [Offer, BalancingOffer])

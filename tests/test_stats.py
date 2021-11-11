@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,14 +20,14 @@ from math import isclose
 from uuid import uuid4
 import pytest
 from pendulum import today, now
-from d3a_interface.unit_test_utils import assert_dicts_identical, \
+from gsy_framework.unit_test_utils import assert_dicts_identical, \
     assert_lists_contain_same_elements
-from d3a_interface.sim_results.bills import MarketEnergyBills
-from d3a_interface.data_classes import Trade
-from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
-from d3a.d3a_core.util import make_iaa_name
-from d3a import constants
-from d3a.models.area.throughput_parameters import ThroughputParameters
+from gsy_framework.sim_results.bills import MarketEnergyBills
+from gsy_framework.data_classes import Trade
+from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
+from gsy_e.gsy_e_core.util import make_iaa_name
+from gsy_e import constants
+from gsy_e.models.area.throughput_parameters import ThroughputParameters
 
 
 @pytest.fixture(scope="function", autouse=True)
