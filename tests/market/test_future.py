@@ -15,18 +15,15 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from unittest.mock import Mock
-
 import pytest
-from gsy_framework.utils import datetime_to_string_incl_seconds
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
+from gsy_framework.constants_limits import GlobalConfig, DATE_TIME_FORMAT
 from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo
+from gsy_framework.utils import datetime_to_string_incl_seconds
 from pendulum import datetime, duration, now
 
 from gsy_e.models.area import Area
 from gsy_e.models.market import GridFee
 from gsy_e.models.market.future import FutureMarkets, FutureMarketException
-
 
 DEFAULT_CURRENT_MARKET_SLOT = datetime(2021, 10, 19, 0, 0)
 DEFAULT_SLOT_LENGTH = duration(minutes=15)
@@ -37,13 +34,6 @@ def active_future_market() -> FutureMarkets:
     """Return future market object."""
     orig_future_market_duration = GlobalConfig.future_market_duration
     GlobalConfig.future_market_duration = duration(hours=1)
-    config = Mock()
-    config.slot_length = duration(minutes=15)
-    config.tick_length = duration(seconds=15)
-    config.ticks_per_slot = 60
-    config.start_date = DEFAULT_CURRENT_MARKET_SLOT
-    config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
-    config.end_date = config.start_date + duration(days=1)
     area = Area("test_area")
     area.activate()
     future_market = FutureMarkets(
@@ -201,7 +191,8 @@ class TestFutureMarkets:
         assert len(future_market.slot_trade_mapping[first_future_market]) == 1
         assert trade in future_market.slot_trade_mapping[first_future_market]
 
-    def test_orders_per_slot(self, future_market):
+    @staticmethod
+    def test_orders_per_slot(future_market):
         """Test whether the orders_per_slot method returns order in format format."""
         time_slot1 = now()
         time_slot2 = time_slot1.add(minutes=15)

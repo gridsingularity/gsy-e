@@ -37,8 +37,8 @@ def test_export_of_kpi_result(context, kpi, expected_kpis):
     with open(sim_data_csv[0], "r") as sf:
         kpi_data = json.load(sf)
     expected_kpis = ast.literal_eval(expected_kpis)
-    for area, value in expected_kpis.items():
-        area_uuid = name_uuid_map[area]
+    for area_name, value in expected_kpis.items():
+        area_uuid = name_uuid_map[area_name]
         if kpi == "self_sufficiency":
             assert isclose(kpi_data[area_uuid]['self_sufficiency'], float(value), abs_tol=1e-03)
 

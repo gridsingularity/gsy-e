@@ -294,9 +294,11 @@ class ExternalMixin:
     def _get_market_from_time_slot(self, time_slot: DateTime) -> Market:
         """Get the market instance based on the time_slot."""
         market = self.area.get_market(time_slot)
-        if market:
-            return market
-        market = self.area.get_settlement_market(time_slot)
+
+        market = market or self.area.get_settlement_market(time_slot)
+
+        if not market and time_slot in self.area.future_market_time_slots:
+            market = self.area.future_markets
         if not market:
             raise MarketException(
                 f"Timeslot {time_slot} is not currently in the spot, future or "

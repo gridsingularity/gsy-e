@@ -35,7 +35,7 @@ Changes that are cosmetic in nature and do not add anything substantial to the s
 
 #### **License**
 
-By contributing to the GSy Exchange, you agree that your contributions will be licensed under the [GPLv3 License](./Grid Singularity LICENSE).
+By contributing to the GSy Exchange, you agree that your contributions will be licensed under the [GPLv3 License](https://github.com/gridsingularity/gsy-e/blob/master/LICENSE).
 
 Each contributor has to sign our Contributor License Agreement. The purpose of the CLA is to ensure that the guardian of a project's outputs has the necessary ownership or grants of rights over all contributions to allow them to distribute under the chosen license. You can read and sign our full [Contributor License Agreement](https://gist.github.com/gsydev/c880a76b3cb73658f3b99b9edb791fb4) before submitting a pull request.
 
