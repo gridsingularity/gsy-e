@@ -48,15 +48,12 @@ class FutureAgent(TwoSidedAgent):
         ]
         self.name = make_sa_name(self.owner)
 
-    def _clean_up_engine_buffers(self) -> None:
+    def delete_engines(self) -> None:
+        """Delete all bids and offers for the non-future markets (overwriting super() method)."""
         if not self.owner.current_market:
             return
         for engine in self.engines:
             engine.clean_up_order_buffers(self.owner.current_market.time_slot)
-
-    def delete_engines(self) -> None:
-        """Delete all bids and offers for the non-future markets (overwriting super() method)."""
-        self._clean_up_engine_buffers()
 
     def event_market_cycle(self):
         super().event_market_cycle()
