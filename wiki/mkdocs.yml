@@ -5,7 +5,7 @@ site_url: 'https://gridsingularity.github.io/d3a/d3a-documentation/'
 
 nav:
 - 'General Overview':
-    - 'Energy Market Design Challenge': 'd3a-documentation.md'
+    - 'Energy Market Design Challenge': 'documentation.md'
     - 'Grid Singularity Vision': 'vision.md'
     - 'Grid Singularity Technical Approach': 'technical-approach.md'
     - 'Licensing and Open Source Ethos': 'licensing.md'
