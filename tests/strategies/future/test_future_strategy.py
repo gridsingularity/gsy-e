@@ -20,15 +20,15 @@ from typing import TYPE_CHECKING
 from unittest.mock import Mock, MagicMock
 
 import pytest
-from d3a_interface.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import GlobalConfig
 from pendulum import today, duration
 
-from d3a.constants import TIME_ZONE, FutureTemplateStrategiesConstants
-from d3a.models.market.future import FutureMarkets
-from d3a.models.strategy.future.strategy import FutureMarketStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.storage import StorageStrategy
+from gsy_e.constants import TIME_ZONE, FutureTemplateStrategiesConstants
+from gsy_e.models.market.future import FutureMarkets
+from gsy_e.models.strategy.future.strategy import FutureMarketStrategy
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.pv import PVStrategy
+from gsy_e.models.strategy.storage import StorageStrategy
 
 if TYPE_CHECKING:
     from d3a.models.strategy import BaseStrategy

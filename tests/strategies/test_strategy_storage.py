@@ -66,6 +66,10 @@ class FakeArea:
     log = getLogger(__name__)
 
     @property
+    def future_market_time_slots(self):
+        return []
+
+    @property
     def future_markets(self):
         return None
 

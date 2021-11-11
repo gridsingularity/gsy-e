@@ -20,7 +20,7 @@ from typing import Generator
 from unittest.mock import Mock, MagicMock
 
 import pytest
-from d3a_interface.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import GlobalConfig
 
 from gsy_e.models.area import Area
 from gsy_e.models.market.future import FutureMarkets

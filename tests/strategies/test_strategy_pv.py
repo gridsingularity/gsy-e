@@ -64,6 +64,10 @@ class FakeArea:
         return True
 
     @property
+    def future_market_time_slots(self):
+        return []
+
+    @property
     def future_markets(self):
         return None
 
@@ -330,11 +334,13 @@ def area_test66():
 
 @pytest.fixture()
 def pv_test66(area_test66):
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
     p = PVStrategy()
     p.area = area_test66
     p.owner = area_test66
     p.offers.posted = {}
-    return p
+    yield p
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
 
 
 def testing_produced_energy_forecast_real_data(pv_test66):
