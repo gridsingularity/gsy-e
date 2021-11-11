@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of gsy_e.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,15 +17,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import TYPE_CHECKING
 
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 
-from d3a.d3a_core.util import make_sa_name
-from d3a.models.strategy.area_agents.future_engine import FutureEngine
-from d3a.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
+from gsy_e.gsy_e_core.util import make_sa_name
+from gsy_e.models.market.future import FutureMarkets
+from gsy_e.models.strategy.area_agents.future_engine import FutureEngine
+from gsy_e.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
 
 if TYPE_CHECKING:
-    from d3a.models.area import Area
-    from d3a.models.market.future import FutureMarkets
+    from gsy_e.models.area import Area
 
 
 class FutureAgent(TwoSidedAgent):

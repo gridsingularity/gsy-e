@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of gsy_e.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,15 +20,15 @@ from typing import Generator
 from unittest.mock import MagicMock
 
 import pytest
-from d3a_interface.constants_limits import GlobalConfig
-from d3a_interface.data_classes import Offer, Bid
+from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.data_classes import Offer, Bid
 from pendulum import datetime, now
 
-from d3a.models.market.future import FutureMarkets
-from d3a.models.strategy.area_agents.future_agent import FutureAgent
-from d3a.models.strategy.area_agents.future_engine import FutureEngine
-from d3a.models.strategy.area_agents.one_sided_engine import OfferInfo
-from d3a.models.strategy.area_agents.two_sided_engine import BidInfo
+from gsy_e.models.market.future import FutureMarkets
+from gsy_e.models.strategy.area_agents.future_agent import FutureAgent
+from gsy_e.models.strategy.area_agents.future_engine import FutureEngine
+from gsy_e.models.strategy.area_agents.one_sided_engine import OfferInfo
+from gsy_e.models.strategy.area_agents.two_sided_engine import BidInfo
 
 CURRENT_TIME_SLOT = datetime(2021, 10, 21, 0, 0)
 

@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of gsy_e.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,27 +20,27 @@ from typing import Dict, Union
 from unittest.mock import MagicMock, Mock, call
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.enums import SpotMarketTypeEnum
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime, datetime
 from pendulum import duration
 
-from d3a.events.event_structures import MarketEvent, AreaEvent
-from d3a.models.area import Area
-from d3a.models.area.event_dispatcher import AreaDispatcher
-from d3a.models.market import Market
-from d3a.models.market.balancing import BalancingMarket
-from d3a.models.market.future import FutureMarkets
-from d3a.models.market.market_structures import AvailableMarketTypes
-from d3a.models.market.one_sided import OneSidedMarket
-from d3a.models.market.settlement import SettlementMarket
-from d3a.models.market.two_sided import TwoSidedMarket
-from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
-from d3a.models.strategy.area_agents.future_agent import FutureAgent
-from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent
-from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
-from d3a.models.strategy.area_agents.settlement_agent import SettlementAgent
-from d3a.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
+from gsy_e.events.event_structures import MarketEvent, AreaEvent
+from gsy_e.models.area import Area
+from gsy_e.models.area.event_dispatcher import AreaDispatcher
+from gsy_e.models.market import Market
+from gsy_e.models.market.balancing import BalancingMarket
+from gsy_e.models.market.future import FutureMarkets
+from gsy_e.models.market.market_structures import AvailableMarketTypes
+from gsy_e.models.market.one_sided import OneSidedMarket
+from gsy_e.models.market.settlement import SettlementMarket
+from gsy_e.models.market.two_sided import TwoSidedMarket
+from gsy_e.models.strategy.area_agents.balancing_agent import BalancingAgent
+from gsy_e.models.strategy.area_agents.future_agent import FutureAgent
+from gsy_e.models.strategy.area_agents.inter_area_agent import InterAreaAgent
+from gsy_e.models.strategy.area_agents.one_sided_agent import OneSidedAgent
+from gsy_e.models.strategy.area_agents.settlement_agent import SettlementAgent
+from gsy_e.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
 
 
 # pylint: disable=W0212
@@ -245,5 +245,11 @@ class TestAreaDispatcher:
         for child in area_dispatcher.area.children:
             child.dispatcher.event_listener.assert_called_once()
 
-        (area_dispatcher._broadcast_notification_to_area_and_child_agents.
-            assert_called_once_with(expected_market_type, event_type, **kwargs))
+        if expected_market_type in [AvailableMarketTypes.BALANCING, AvailableMarketTypes.SPOT]:
+            (area_dispatcher._broadcast_notification_to_area_and_child_agents.
+                assert_has_calls(
+                    [call(AvailableMarketTypes.SPOT, event_type, **kwargs),
+                     call(AvailableMarketTypes.BALANCING, event_type, **kwargs)]))
+        else:
+            (area_dispatcher._broadcast_notification_to_area_and_child_agents.
+                assert_called_once_with(expected_market_type, event_type, **kwargs))

@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of gsy_e.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,10 +22,10 @@ from unittest.mock import Mock, MagicMock
 import pytest
 from d3a_interface.constants_limits import GlobalConfig
 
-from d3a.models.area import Area
-from d3a.models.market.future import FutureMarkets
-from d3a.models.strategy.area_agents.future_agent import FutureAgent
-from d3a.models.strategy.area_agents.future_engine import FutureEngine
+from gsy_e.models.area import Area
+from gsy_e.models.market.future import FutureMarkets
+from gsy_e.models.strategy.area_agents.future_agent import FutureAgent
+from gsy_e.models.strategy.area_agents.future_engine import FutureEngine
 
 
 @pytest.fixture(name="future_agent")

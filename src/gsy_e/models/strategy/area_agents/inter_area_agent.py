@@ -17,9 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import Optional
 
-from gsy_framework.constants_limits import ConstSettings, TIME_FORMAT
+from gsy_framework.constants_limits import ConstSettings
 from numpy.random import random
 
+from gsy_e.constants import TIME_FORMAT
 from gsy_e.models.strategy import BaseStrategy, _TradeLookerUpper
 
 

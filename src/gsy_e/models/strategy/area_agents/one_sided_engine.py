@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
-from typing import Dict, Optional
+from typing import Dict, Set, Optional  # noqa
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer

@@ -23,9 +23,9 @@ from gsy_framework.enums import SpotMarketTypeEnum
 from numpy.random import random
 from pendulum import DateTime
 
+from gsy_e.events.event_structures import MarketEvent, AreaEvent
 from gsy_e.gsy_e_core.exceptions import WrongMarketTypeException
 from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import RedisCommunicator
-from gsy_e.events.event_structures import MarketEvent, AreaEvent
 from gsy_e.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
 from gsy_e.models.area.redis_dispatcher.area_to_market_publisher import AreaToMarketEventPublisher
 from gsy_e.models.area.redis_dispatcher.market_event_dispatcher import (
@@ -178,11 +178,13 @@ class AreaDispatcher:
         market_id = kwargs.get("market_id")
         if not market_id and isinstance(event_type, MarketEvent):
             assert False, "MarketEvent should always provide a market_id."
-
-        if isinstance(event_type, AreaEvent) or self.area.is_market_spot(market_id):
+        if (isinstance(event_type, AreaEvent)
+                or self.area.is_market_spot(market_id)
+                or self.area.is_market_balancing(market_id)):
+            # Both spot and balancing agents need to be informed about each others events.
+            # To be changed when updating the balancing market feature.
             self._broadcast_notification_to_area_and_child_agents(
                 AvailableMarketTypes.SPOT, event_type, **kwargs)
-        if isinstance(event_type, AreaEvent) or self.area.is_market_balancing(market_id):
             self._broadcast_notification_to_area_and_child_agents(
                 AvailableMarketTypes.BALANCING, event_type, **kwargs)
         if isinstance(event_type, AreaEvent) or self.area.is_market_settlement(market_id):
@@ -323,9 +325,9 @@ class AreaDispatcher:
 
     def event_market_cycle(self) -> None:
         """Called every market cycle. Recycles old area agents."""
-        self._delete_past_agents(self.interarea_agents)
-        self._delete_past_agents(self.balancing_agents)
-        self._delete_past_agents(self.settlement_agents)
+        self._delete_past_agents(self._inter_area_agents)
+        self._delete_past_agents(self._balancing_agents)
+        self._delete_past_agents(self._settlement_agents)
 
     def _delete_past_agents(
             self, area_agent_member: Dict[DateTime,

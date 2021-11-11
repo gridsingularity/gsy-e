@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
 from gsy_framework.constants_limits import ConstSettings
 
 from gsy_e.gsy_e_core.util import make_sa_name
