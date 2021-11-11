@@ -237,18 +237,19 @@ class Area:
 
         self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
         self.throughput = throughput
-        self._update_descendants_strategy_prices()
+        self.update_descendants_strategy_prices()
 
         return None
 
-    def _update_descendants_strategy_prices(self):
+    def update_descendants_strategy_prices(self):
+        """Recursively update the strategy prices of all descendants of the area."""
         try:
             if self.strategy is not None:
                 self.strategy.event_activate_price()
             for child in self.children:
-                child._update_descendants_strategy_prices()
+                child.update_descendants_strategy_prices()
         except Exception:
-            log.exception("area._update_descendants_strategy_prices failed.")
+            log.exception("area.update_descendants_strategy_prices failed.")
             return
 
     def _set_grid_fees(self, grid_fee_const, grid_fee_percentage):
