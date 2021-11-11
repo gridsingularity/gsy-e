@@ -26,9 +26,9 @@ Changes that are cosmetic in nature and do not add anything substantial to the s
 * Do not open an issue on GitHub until you have collected positive feedback about the change. GitHub issues are primarily intended for bug reports and fixes.
 
 
-#### **Do you have questions about the source code or the functionality of D3A?**
+#### **Do you have questions about the source code or the functionality of the GSy Exchange?**
 
-* Consult our Wiki [GSy Wiki page](https://gridsingularity.github.io/gsy-e/documentation/)
+* Consult our [Wiki](https://gridsingularity.github.io/gsy-e/documentation/)
 
 * If things are still unclear: Ask any question about how to use the GSy Exchange in the [Grid Singularity Community Slack](https://gsycommunity.slack.com/join/shared_invite/zt-dpfxe2gk-hKFccsrr68g982odCJlrIg#/).
 
