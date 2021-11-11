@@ -32,6 +32,7 @@ from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterfac
 
 
 class ExternalMatcherEventsEnum(Enum):
+    """Enum for all events of the external matcher."""
     OFFERS_BIDS_RESPONSE = "offers_bids_response"
     MATCH = "match"
     TICK = "tick"
@@ -57,14 +58,14 @@ class MycoExternalMatcher(MycoMatcherInterface):
         self.myco_ext_conn = ResettableCommunicator()
         self.myco_ext_conn.sub_to_multiple_channels(
             {"external-myco/simulation-id/": self.publish_simulation_id,
-             f"{self._channel_prefix}/offers-bids/": self.publish_offers_bids,
+             f"{self._channel_prefix}/offers-bids/": self.publish_orders,
              f"{self._channel_prefix}/recommendations/": self._populate_recommendations})
 
-    def publish_offers_bids(self, message):
+    def publish_orders(self, message):
         """Publish open offers and bids.
 
         Published data are of the following format:
-        {"bids_offers": {'area_uuid' : {'time_slot': {"bids": [], "offers": [] }, filters: {}}}}
+        {"bids_offers": {'area_uuid' : {'time_slot': {"bids": [], "offers": []}}}}
 
         """
         response_data = {"event": ExternalMatcherEventsEnum.OFFERS_BIDS_RESPONSE.value}
@@ -77,14 +78,20 @@ class MycoExternalMatcher(MycoMatcherInterface):
             if filtered_areas_uuids and area_uuid not in filtered_areas_uuids:
                 # Client is uninterested in this Area -> skip
                 continue
+            # Cache the market (needed while matching)
             for market in area_data["markets"]:
-                # Cache the market (needed while matching)
-                self.area_markets_mapping[f"{area_uuid}-{market.time_slot_str}"] = market
-                bids_list, offers_list = self._get_bids_offers(market, filters)
-                market_offers_bids_list_mapping[area_uuid] = {
-                    market.time_slot_str: {"bids": bids_list, "offers": offers_list}
-                }
+                self.area_markets_mapping.update(
+                    {f"{area_uuid}-{market.time_slot_str}": market})
+                market_offers_bids_list_mapping[area_uuid] = self._get_orders(market, filters)
+
+            for market in area_data.get("future_markets") or []:
+                # Future markets
+                self.area_markets_mapping.update(
+                    {f"{area_uuid}-{time_slot_str}": market
+                     for time_slot_str in market.orders_per_slot().keys()})
+                market_offers_bids_list_mapping[area_uuid] = self._get_orders(market, filters)
         self.area_uuid_markets_mapping = {}
+        # TODO: change the `bids_offers` key and the channel to `orders`
         response_data.update({
             "bids_offers": market_offers_bids_list_mapping,
         })
@@ -98,7 +105,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
         recommendations = data.get("recommended_matches", [])
         self._recommendations.extend(recommendations)
 
-    def match_recommendations(self) -> None:
+    def match_recommendations(self, **kwargs) -> None:
         """Consume trade recommendations and match them in the relevant market.
 
         Validate recommendations and if any pair raised a blocking exception
@@ -169,21 +176,21 @@ class MycoExternalMatcher(MycoMatcherInterface):
         self.myco_ext_conn.publish_json(self._events_channel, data)
 
     @staticmethod
-    def _get_bids_offers(market: TwoSidedMarket, filters: Dict):
+    def _get_orders(market: TwoSidedMarket, filters: Dict) -> Dict:
         """Get bids and offers from market, apply filters and return serializable lists."""
 
-        bids, offers = market.open_bids_and_offers()
-        bids_list = list(bid.serializable_dict() for bid in bids)
-        filtered_offers_energy_type = filters.get("energy_type")
-        if filtered_offers_energy_type:
-            offers_list = list(
-                offer.serializable_dict() for offer in offers
-                if offer.attributes and
-                offer.attributes.get("energy_type") == filtered_offers_energy_type)
-        else:
-            offers_list = list(
-                offer.serializable_dict() for offer in offers)
-        return bids_list, offers_list
+        # TODO: refactor into a filter class if more filters needed in the future
+        orders = market.orders_per_slot()
+        filtered_energy_type = filters.get("energy_type")
+        if filtered_energy_type:
+            for orders_values in orders.values():
+                offers_list = []
+                for offer in orders_values["offers"]:
+                    if offer.get("attributes") and offer["attributes"].get(
+                            "energy_type") == filtered_energy_type:
+                        offers_list.append(offer)
+                orders_values["offers"] = offers_list
+        return orders
 
 
 class MycoExternalMatcherValidator:
@@ -249,8 +256,7 @@ class MycoExternalMatcherValidator:
                     response[
                         "message"] = f"Validation Error, matching will be skipped: {exception}"
                     break
-                else:
-                    response["recommendations"].append(
-                        {**recommendation, "status": "fail", "message": str(exception)})
-                    continue
+                response["recommendations"].append(
+                    {**recommendation, "status": "fail", "message": str(exception)})
+                continue
         return response

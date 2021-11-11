@@ -58,48 +58,25 @@ class MycoInternalMatcher(MycoMatcherInterface):
     def match_recommendations(self, **kwargs):
         """Request trade recommendations and match them in the relevant market."""
         for area_uuid, area_data in self.area_uuid_markets_mapping.items():
-            for market_type in ["markets", "settlement_markets"]:
-                for market in area_data[market_type]:
-                    if not market:
-                        continue
-                    while True:
-                        bids, offers = market.open_bids_and_offers()
-                        data = {
-                            area_uuid: {
-                                market.time_slot_str:
-                                    {"bids": [bid.serializable_dict() for bid in bids],
-                                     "offers": [offer.serializable_dict() for offer in offers],
-                                     "current_time": area_data["current_time"]}}}
-                        bid_offer_pairs = self._get_matches_recommendations(data)
-                        if not bid_offer_pairs:
-                            break
-                        market.match_recommendations(bid_offer_pairs)
-
-        self._match_recommendations_future_markets()
-
-        self.area_uuid_markets_mapping = {}
-
-    def _match_recommendations_future_markets(self):
-        """Loop over all future markets and match bids and offers."""
-        for area_uuid, area_data in self.area_uuid_markets_mapping.items():
-            future_markets = area_data["future_markets"]
-            if not future_markets:
-                continue
-            for time_slot in future_markets.market_time_slots:
+            # TODO: we don't always want to clear future markets
+            markets = [*area_data["markets"], *area_data["settlement_markets"],
+                       area_data["future_markets"]]
+            for market in markets:
+                if not market:
+                    continue
                 while True:
-                    bids, offers = future_markets.open_bids_and_offers(time_slot=time_slot)
+                    orders = market.orders_per_slot()
+                    # Format should be: {area_uuid: {time_slot: {"bids": [], "offers": [], ...}}}
                     data = {
                         area_uuid: {
-                            time_slot:
-                            {"bids": [bid.serializable_dict() for bid in bids],
-                             "offers": [offer.serializable_dict() for offer in offers],
-                             "current_time": area_data["current_time"]}
-                        }
-                    }
+                            time_slot: {**orders_data, "current_time": area_data["current_time"]}
+                            for time_slot, orders_data in orders.items()}}
                     bid_offer_pairs = self._get_matches_recommendations(data)
                     if not bid_offer_pairs:
                         break
-                    future_markets.match_recommendations(bid_offer_pairs)
+                    market.match_recommendations(bid_offer_pairs)
+
+        self.area_uuid_markets_mapping = {}
 
     def event_tick(self, **kwargs) -> None:
         pass

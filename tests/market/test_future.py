@@ -16,9 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import GlobalConfig, DATE_TIME_FORMAT
 from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo
-from pendulum import datetime, duration
+from gsy_framework.utils import datetime_to_string_incl_seconds
+from pendulum import datetime, duration, now
 
 from gsy_e.models.area import Area
 from gsy_e.models.market import GridFee
@@ -190,3 +191,43 @@ class TestFutureMarkets:
         assert trade in future_market.trades
         assert len(future_market.slot_trade_mapping[first_future_market]) == 1
         assert trade in future_market.slot_trade_mapping[first_future_market]
+
+    def test_orders_per_slot(self, future_market):
+        """Test whether the orders_per_slot method returns order in format format."""
+        time_slot1 = now()
+        time_slot2 = time_slot1.add(minutes=15)
+        future_market.slot_bid_mapping = {
+            time_slot1: [Bid("bid1", time_slot1, 10, 10, "buyer", time_slot=time_slot1)]}
+        future_market.slot_offer_mapping = {
+            time_slot2: [Offer("offer1", time_slot2, 10, 10, "seller", time_slot=time_slot2)]}
+        assert future_market.orders_per_slot() == {
+            time_slot1.format(DATE_TIME_FORMAT): {
+                "bids": [{"attributes": None,
+                          "buyer": "buyer",
+                          "buyer_id": None,
+                          "buyer_origin": None,
+                          "buyer_origin_id": None,
+                          "energy": 10,
+                          "energy_rate": 1.0,
+                          "id": "bid1",
+                          "original_price": 10,
+                          "requirements": None,
+                          "time_slot": datetime_to_string_incl_seconds(time_slot1),
+                          "creation_time": datetime_to_string_incl_seconds(time_slot1),
+                          "type": "Bid"}],
+                "offers": []},
+            time_slot2.format(DATE_TIME_FORMAT): {
+                "bids": [],
+                "offers": [{"attributes": None,
+                            "energy": 10,
+                            "energy_rate": 1.0,
+                            "id": "offer1",
+                            "original_price": 10,
+                            "requirements": None,
+                            "time_slot": datetime_to_string_incl_seconds(time_slot2),
+                            "seller": "seller",
+                            "seller_id": None,
+                            "seller_origin": None,
+                            "seller_origin_id": None,
+                            "creation_time": datetime_to_string_incl_seconds(time_slot2),
+                            "type": "Offer"}]}}

@@ -20,7 +20,7 @@ from copy import deepcopy
 from logging import getLogger
 from typing import Dict, List, Union, Optional, Tuple, TYPE_CHECKING
 
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
 from gsy_framework.data_classes import Bid, Offer, Trade, BaseBidOffer, TradeBidOfferInfo
 from pendulum import DateTime, duration
 
@@ -78,6 +78,22 @@ class FutureMarkets(TwoSidedMarket):
 
         return (self.slot_bid_mapping[kwargs["time_slot"]],
                 self.slot_offer_mapping[kwargs["time_slot"]])
+
+    def orders_per_slot(self) -> Dict[str, Dict]:
+        """Return all orders in the market per time slot."""
+        orders_dict = {}
+        for time_slot, bids_list in self.slot_bid_mapping.items():
+            time_slot = time_slot.format(DATE_TIME_FORMAT)
+            if time_slot not in orders_dict:
+                orders_dict[time_slot] = {"bids": [], "offers": []}
+            orders_dict[time_slot]["bids"].extend([bid.serializable_dict() for bid in bids_list])
+        for time_slot, offers_list in self.slot_offer_mapping.items():
+            time_slot = time_slot.format(DATE_TIME_FORMAT)
+            if time_slot not in orders_dict:
+                orders_dict[time_slot] = {"bids": [], "offers": []}
+            orders_dict[time_slot]["offers"].extend(
+                [offer.serializable_dict() for offer in offers_list])
+        return orders_dict
 
     def delete_orders_in_old_future_markets(self, current_market_time_slot: DateTime) -> None:
         """Delete order and trade buffers."""
