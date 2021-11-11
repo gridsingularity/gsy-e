@@ -291,7 +291,7 @@ def testing_event_market_cycle(commercial_test3, area_test3):
     assert area_test3.test_market.created_offers[-1].energy == sys.maxsize
 
 
-# TODO: Re-add test once validator is implemented in gsy_e-interface
+# TODO: Re-add test once validator is implemented in gsy-framework
 # def test_commercial_producer_constructor_rejects_invalid_parameters():
 #    with pytest.raises(ValueError):
 #        CommercialStrategy(energy_rate=-1)

@@ -13,8 +13,6 @@ def get_setup(config):
 
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 1
     ConstSettings.IAASettings.MARKET_TYPE = 1
-    ConstSettings.IAASettings.MIN_OFFER_AGE = 0
-    ConstSettings.IAASettings.MIN_BID_AGE = 0
 
     area = Area(
         "Grid",
@@ -77,7 +75,7 @@ def get_setup(config):
 
                 ], grid_fee_percentage=1, grid_fee_constant=0,
             ),
-            Area("DSO", strategy=InfiniteBusStrategy(energy_buy_rate=20, energy_sell_rate=30),
+            Area("DSO", strategy=InfiniteBusStrategy(energy_buy_rate=19, energy_sell_rate=30),
                  )
         ],
         config=config, grid_fee_percentage=0, grid_fee_constant=0,
