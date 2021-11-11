@@ -589,7 +589,8 @@ class StorageStrategy(BidEnabledStrategy):
 
     def event_offer(self, *, market_id, offer):
         super().event_offer(market_id=market_id, offer=offer)
-        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+        if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
+                and not self.area.is_market_future(market_id)):
             market = self.area.get_spot_or_future_market_by_id(market_id)
             if not market:
                 return
