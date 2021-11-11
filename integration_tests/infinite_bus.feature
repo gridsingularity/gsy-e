@@ -2,7 +2,7 @@ Feature: Infinite Bus tests
 
   Scenario Outline: Infinite Bus behaviour
     Given we have a scenario named <scenario>
-    And d3a is installed
+    And gsy-e is installed
     And the market type is <market_type>
     And export is_needed
     When we run the simulation with setup file <scenario> and parameters [24, 60, 60]
@@ -15,6 +15,6 @@ Feature: Infinite Bus tests
 
   Scenario: InfiniteBus Respects its buy/sell rate
     Given we have a scenario named two_sided_market.jira_d3asim-1675
-    And d3a is installed
+    And gsy-e is installed
     When we run the simulation with setup file two_sided_market.jira_d3asim-1675 and parameters [24, 60, 60]
     Then the infinite bus traded energy respecting its buy/sell rate

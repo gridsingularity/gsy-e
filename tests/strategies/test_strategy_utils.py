@@ -14,7 +14,7 @@ see <http://www.gnu.org/licenses/>.
 """
 from unittest.mock import Mock
 
-from d3a.models.strategy import utils
+from gsy_e.models.strategy import utils
 
 
 class TestStrategyUtils:

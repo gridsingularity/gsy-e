@@ -46,7 +46,7 @@ fab sync
 Each transaction in the simulation triggers a call to the pallet. Currently, the buyer and the seller are default addresses. In addition to the buyer and seller, the trade structure has a trade ID, energy quantity, and rate. Following Grid Singularity Exchange’s integration with the decentralized identity registry (Energy Web Switchboard), the addresses will be actual user accounts. In the terminal, you should see the extrinsic hash and the block hash.
 
 ```
-17:39:37.466 WARNING  ( 333) d3a.d3a_core.simulation       : Slot 1 of 96 - (1.0%) 0.00 second elapsed, ETA: 0.01 second
+17:39:37.466 WARNING  ( 333) d3a.gsy_e_core.simulation       : Slot 1 of 96 - (1.0%) 0.00 second elapsed, ETA: 0.01 second
 17:39:41.974 INFO     ( 122) root                          : Extrinsic '0xe1357be7db683e0f3f85e101ea017da10fcaa63310e4dc7040e505cad9ac1a0a' sent and included in block '0x2199d0870583183e6f2c591b66e9a1a9cb2399b7b3ed21b21c3804c3cfcf730f'
 17:39:41.975 INFO     ( 271) d3a.models.market.one_sided   : [TRADE] [Grid] [2021-01-26T00:00] {7f15aa} [origin: H1 Storage2 -> Cell Tower] [IAA House 1 -> Cell Tower] 0.025 kWh @ 0.7500000000000001 30.0 db09b600-22a9-4feb-ae4d-620cb6247702 [fee: 0.0 cts.]
 ```
