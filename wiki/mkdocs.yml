@@ -5,7 +5,7 @@ site_url: 'https://gridsingularity.github.io/gsy_e/gsy_e-documentation/'
 
 nav:
 - 'General Overview':
-    - 'Energy Market Design Challenge': 'gsy_e-documentation.md'
+    - 'Energy Market Design Challenge': 'documentation.md'
     - 'Grid Singularity Mission': 'vision.md'
     - 'Grid Singularity Technical Approach': 'technical-approach.md'
     - 'Licensing and Open Source Ethos': 'licensing.md'
@@ -77,8 +77,8 @@ theme:
   font:
     text: 'PT Sans'
     code: 'Ubuntu Mono'
-  favicon: 'img/gsy_e-favicon.png'
-  logo: 'img/New_Logo_up.png'
+  favicon: 'img/Profile.png'
+  logo: 'img/Profile.png'
   feature:
     tabs: false
 
