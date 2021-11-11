@@ -875,6 +875,9 @@ class BidEnabledStrategy(BaseStrategy):
         """Checks if any bids have been posted in the market slot with the given ID."""
         if market_id not in self._bids:
             return False
+        # time_slot is empty when called for spot markets, where we can retrieve the bids for a
+        # time_slot only by the market_id. For the future markets, the time_slot needs to be
+        # defined for the correct bid selection.
         return len([bid for bid in self._bids[market_id]
                     if time_slot is None or bid.time_slot == time_slot]) > 0
 

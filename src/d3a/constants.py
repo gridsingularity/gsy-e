@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 # Need to import required settings from d3a-interface in order to be available in d3a,
 # thus avoiding accessing the d3a-interface constants.
+# pylint: disable=unused-import
 from d3a_interface.constants_limits import TIME_FORMAT, DATE_FORMAT, GlobalConfig # NOQA
 from d3a_interface.constants_limits import DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, TIME_ZONE  # NOQA
 
@@ -61,6 +62,7 @@ CONNECT_TO_PROFILES_DB = False
 
 
 class SettlementTemplateStrategiesConstants:
+    """Constants related to the configuration of settlement template strategies"""
     INITIAL_BUYING_RATE = 0
     FINAL_BUYING_RATE = 50
     INITIAL_SELLING_RATE = 50
@@ -69,10 +71,5 @@ class SettlementTemplateStrategiesConstants:
     UPDATE_INTERVAL_MIN = 5
 
 
-class FutureTemplateStrategiesConstants:
-    INITIAL_BUYING_RATE = 0
-    FINAL_BUYING_RATE = 50
-    INITIAL_SELLING_RATE = 50
-    FINAL_SELLING_RATE = 0
-
-    UPDATE_INTERVAL_MIN = 5
+class FutureTemplateStrategiesConstants(SettlementTemplateStrategiesConstants):
+    """Constants related to the configuration of future template strategies"""

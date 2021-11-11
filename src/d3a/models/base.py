@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 
 
 class AssetType(Enum):
+    """Enum class for defining the asset type"""
     PRODUCER = 0
     CONSUMER = 1
     PROSUMER = 2
@@ -41,7 +42,6 @@ class AssetType(Enum):
 
 class AreaBehaviorBase:
     """Base class used by area behaviour defining classes `BaseStrategy`"""
-    asset_type: AssetType = AssetType.UNDEFINED
 
     def __init__(self):
         # `area` is the area we trade in
@@ -108,4 +108,5 @@ class AreaBehaviorBase:
 
     @property
     def asset_type(self):
+        """Return the asset type of the strategy. Should be implemented by all children."""
         raise NotImplementedError

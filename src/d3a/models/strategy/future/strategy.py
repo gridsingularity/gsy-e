@@ -20,7 +20,6 @@ from pendulum import duration, DateTime
 
 from d3a.constants import FutureTemplateStrategiesConstants
 from d3a.models.base import AssetType
-from d3a.models.market import Market  # NOQA
 from d3a.models.strategy.update_frequency import (TemplateStrategyBidUpdater,
                                                   TemplateStrategyOfferUpdater)
 
@@ -141,11 +140,16 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         self._offer_updater.update_and_populate_price_settings(strategy.area)
         for time_slot in strategy.area.future_markets.market_time_slots:
             if strategy.asset_type == AssetType.CONSUMER:
-                self._post_consumer_first_bid(strategy, time_slot)
+                required_energy_kWh = strategy.state.get_energy_requirement_Wh(time_slot) / 1000.0
+                self._post_consumer_first_bid(strategy, time_slot, required_energy_kWh)
             elif strategy.asset_type == AssetType.PRODUCER:
-                self._post_producer_first_offer(strategy, time_slot)
+                available_energy_kWh = strategy.state.get_available_energy_kWh(time_slot)
+                self._post_producer_first_offer(strategy, time_slot, available_energy_kWh)
             elif strategy.asset_type == AssetType.PROSUMER:
-                self._post_prosumer_first_bid_offer(strategy, time_slot)
+                available_energy_sell_kWh = strategy.get_available_energy_to_sell_kWh(time_slot)
+                available_energy_buy_kWh = strategy.get_available_energy_to_buy_kWh(time_slot)
+                self._post_producer_first_offer(strategy, time_slot, available_energy_sell_kWh)
+                self._post_consumer_first_bid(strategy, time_slot, available_energy_buy_kWh)
             else:
                 assert False, ("Strategy %s has to be producer or consumer to be able to "
                                "participate in the future market.", strategy.owner.name)
@@ -154,55 +158,33 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         self._offer_updater.increment_update_counter_all_markets(strategy)
 
     def _post_consumer_first_bid(
-            self, strategy: "BidEnabledStrategy", time_slot: DateTime) -> None:
-        required_energy_kWh = strategy.state.get_energy_requirement_Wh(time_slot) / 1000.0
-        if required_energy_kWh <= 0.0:
+            self, strategy: "BidEnabledStrategy", time_slot: DateTime,
+            available_buy_energy_kWh: float) -> None:
+
+        if available_buy_energy_kWh <= 0.0:
             return
         if strategy.get_posted_bids(strategy.area.future_markets, time_slot):
             return
         strategy.post_bid(
             market=strategy.area.future_markets,
-            energy=required_energy_kWh,
-            price=required_energy_kWh * self._bid_updater.initial_rate[time_slot],
+            energy=available_buy_energy_kWh,
+            price=available_buy_energy_kWh * self._bid_updater.initial_rate[time_slot],
             time_slot=time_slot)
 
     def _post_producer_first_offer(
-            self, strategy: "BidEnabledStrategy", time_slot: DateTime) -> None:
-        available_energy_kWh = strategy.state.get_available_energy_kWh(time_slot)
-        if available_energy_kWh <= 0.0:
+            self, strategy: "BidEnabledStrategy", time_slot: DateTime,
+            available_sell_energy_kWh: float) -> None:
+        if available_sell_energy_kWh <= 0.0:
             return
         if strategy.get_posted_offers(strategy.area.future_markets, time_slot):
             return
         strategy.post_offer(
             market=strategy.area.future_markets,
             replace_existing=False,
-            energy=available_energy_kWh,
-            price=available_energy_kWh * self._offer_updater.initial_rate[time_slot],
+            energy=available_sell_energy_kWh,
+            price=available_sell_energy_kWh * self._offer_updater.initial_rate[time_slot],
             time_slot=time_slot
         )
-
-    def _post_prosumer_first_bid_offer(
-            self, strategy: "BidEnabledStrategy", time_slot: DateTime) -> None:
-        offer_energy_kWh = strategy.get_available_energy_to_sell_kWh(time_slot)
-        offer_energy_rate = self._offer_updater.initial_rate[time_slot]
-        if (offer_energy_kWh > 0.0 and
-                not strategy.get_posted_offers(strategy.area.future_markets, time_slot)):
-            strategy.post_offer(
-                market=strategy.area.future_markets,
-                replace_existing=False,
-                energy=offer_energy_kWh,
-                price=offer_energy_kWh * offer_energy_rate,
-                time_slot=time_slot)
-
-        bid_energy_kWh = strategy.get_available_energy_to_buy_kWh(time_slot)
-        bid_energy_rate = self._bid_updater.initial_rate[time_slot]
-        if (bid_energy_kWh > 0.0 and
-                not strategy.get_posted_bids(strategy.area.future_markets, time_slot)):
-            strategy.post_bid(
-                market=strategy.area.future_markets,
-                energy=bid_energy_kWh,
-                price=bid_energy_kWh * bid_energy_rate,
-                time_slot=time_slot)
 
     def event_tick(self, strategy: "BidEnabledStrategy") -> None:
         """
