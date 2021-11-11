@@ -37,7 +37,7 @@ from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.base import AssetType
-from gsy_e.models.market import Market
+from gsy_e.models.market import MarketBase
 from gsy_e.models.state import LoadState
 from gsy_e.models.strategy import BidEnabledStrategy, utils
 from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
@@ -286,7 +286,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         offers = market.most_affordable_offers
         return random.choice(offers)
 
-    def _offer_rate_can_be_accepted(self, offer: Offer, market_slot: Market):
+    def _offer_rate_can_be_accepted(self, offer: Offer, market_slot: MarketBase):
         """Check if the offer rate is less than what the device wants to pay."""
         max_affordable_offer_rate = self.bid_update.get_updated_rate(market_slot.time_slot)
         return (
