@@ -674,6 +674,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
                 continue
             try:
                 # Delete the old offer and create a new equivalent one with an updated price
+                time_slot = offer.time_slot or iterated_market.time_slot
                 iterated_market.delete_offer(offer.id)
                 new_offer = iterated_market.offer(
                     updated_price,
@@ -683,7 +684,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
                     seller_origin=offer.seller_origin,
                     seller_origin_id=offer.seller_origin_id,
                     seller_id=self.owner.uuid,
-                    time_slot=iterated_market.time_slot
+                    time_slot=time_slot
                 )
                 self.offers.replace(offer, new_offer, iterated_market.id)
             except MarketException:
@@ -770,7 +771,8 @@ class BidEnabledStrategy(BaseStrategy):
 
             self.remove_bid_from_pending(market.id, bid.id)
             self.post_bid(market, bid.energy * updated_rate,
-                          bid.energy, attributes=bid.attributes, requirements=bid.requirements)
+                          bid.energy, attributes=bid.attributes, requirements=bid.requirements,
+                          time_slot=bid.time_slot)
 
     # pylint: disable=too-many-arguments
     def can_bid_be_posted(self, bid_energy: float, bid_price: float, required_energy_kWh: float,

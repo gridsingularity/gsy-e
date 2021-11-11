@@ -26,10 +26,10 @@ from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import write_default_to_dict, is_time_slot_in_past_markets
 
 if TYPE_CHECKING:
-    from d3a.models.area import Area
-    from d3a.models.market.one_sided import OneSidedMarket
-    from d3a.models.market.two_sided import TwoSidedMarket
-    from d3a.models.strategy import BidEnabledStrategy, BaseStrategy
+    from gsy_e.models.area import Area
+    from gsy_e.models.market.one_sided import OneSidedMarket
+    from gsy_e.models.market.two_sided import TwoSidedMarket
+    from gsy_e.models.strategy import BidEnabledStrategy, BaseStrategy
 
 
 class TemplateStrategyUpdaterInterface:

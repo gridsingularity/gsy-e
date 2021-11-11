@@ -33,8 +33,11 @@ DEFAULT_SLOT_LENGTH = duration(minutes=15)
 def active_future_market() -> FutureMarkets:
     """Return future market object."""
     orig_future_market_duration = GlobalConfig.future_market_duration
+    orig_start_date = GlobalConfig.start_date
     GlobalConfig.future_market_duration = duration(hours=1)
     area = Area("test_area")
+    area.config.start_date = DEFAULT_CURRENT_MARKET_SLOT
+    area.config.end_date = area.config.start_date + area.config.sim_duration
     area.activate()
     future_market = FutureMarkets(
             bc=area.bc,
@@ -43,10 +46,12 @@ def active_future_market() -> FutureMarkets:
             grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
                               grid_fee_const=area.grid_fee_constant),
             name=area.name)
-    future_market.create_future_markets(DEFAULT_CURRENT_MARKET_SLOT, DEFAULT_SLOT_LENGTH)
+    future_market.create_future_markets(
+        DEFAULT_CURRENT_MARKET_SLOT, DEFAULT_SLOT_LENGTH, area.config)
     yield future_market
 
     GlobalConfig.future_market_duration = orig_future_market_duration
+    GlobalConfig.start_date = orig_start_date
 
 
 def count_orders_in_buffers(future_markets: FutureMarkets, expected_count: int) -> None:
