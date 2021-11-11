@@ -43,8 +43,7 @@ class RedisMarketExternalConnection:
     """
     def __init__(self, area: "Area"):
         self.area: "Area" = area
-        self._redis_communicator: "ExternalConnectionCommunicator" = (
-            area.config.external_redis_communicator)
+        self._redis_communicator: Optional["ExternalConnectionCommunicator"] = None
         self.aggregator: Optional["AggregatorHandler"] = None
         self._connected: bool = False
 
@@ -92,6 +91,7 @@ class RedisMarketExternalConnection:
 
     def sub_to_external_channels(self) -> None:
         """Subscribe to the redis channels and map callbacks (not used at the moment)."""
+        self._redis_communicator = self.area.config.external_redis_communicator
         sub_channel_dict = {
             f"{self.channel_prefix}/dso_market_stats": self.dso_market_stats_callback,
             f"{self.channel_prefix}/grid_fees": self.set_grid_fees_callback,

@@ -101,7 +101,7 @@ class TestRedisMarketExternalConnection:
         assert market_connection.aggregator is None
         market_connection._redis_communicator.is_enabled = False
         market_connection.sub_to_external_channels()
-        assert market_connection.aggregator is None
+        assert market_connection.aggregator is not None
         prefix = market_connection.channel_prefix
         market_connection._redis_communicator.sub_to_multiple_channels.assert_called_once_with(
             {f"{prefix}/dso_market_stats": market_connection.dso_market_stats_callback,
