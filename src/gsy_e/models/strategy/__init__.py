@@ -526,7 +526,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
 
     def get_posted_offers(self, market: "OneSidedMarket",
                           time_slot: Optional[DateTime] = None) -> List[Offer]:
-        """Get list of posted bids from a market"""
+        """Get list of posted offers from a market"""
         return self.offers.posted_in_market(market.id, time_slot)
 
     def get_market_from_id(self, market_id: str) -> Optional[Market]:

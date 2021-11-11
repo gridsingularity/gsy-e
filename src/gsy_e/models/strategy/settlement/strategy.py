@@ -38,7 +38,7 @@ class SettlementTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
         return area.settlement_markets.values()
 
     @staticmethod
-    def get_all_time_slots(area):
+    def _get_all_time_slots(area):
         return area.settlement_markets.keys()
 
 
@@ -50,7 +50,7 @@ class SettlementTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
         return area.settlement_markets.values()
 
     @staticmethod
-    def get_all_time_slots(area):
+    def _get_all_time_slots(area):
         return area.settlement_markets.keys()
 
 

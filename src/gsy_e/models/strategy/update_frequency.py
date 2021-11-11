@@ -119,12 +119,12 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
         return [area.spot_market]
 
     @staticmethod
-    def get_all_time_slots(area: "Area") -> List[DateTime]:
+    def _get_all_time_slots(area: "Area") -> List[DateTime]:
         """Get list of available time slots. Defaults to only the spot market time slot."""
         return [area.spot_market.time_slot]
 
     def _populate_profiles(self, area: "Area") -> None:
-        for time_slot in self.get_all_time_slots(area):
+        for time_slot in self._get_all_time_slots(area):
             if self.fit_to_limit is False:
                 self.energy_rate_change_per_update[time_slot] = (
                     find_object_of_same_weekday_and_time(
@@ -196,7 +196,7 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
         is required."""
         should_update = [
             self._increment_update_counter(strategy, time_slot)
-            for time_slot in self.get_all_time_slots(strategy.area)
+            for time_slot in self._get_all_time_slots(strategy.area)
         ]
         return any(should_update)
 

@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 General Public License as published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
@@ -42,7 +42,7 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
         return [area.future_markets]
 
     @staticmethod
-    def get_all_time_slots(area: "Area") -> List[DateTime]:
+    def _get_all_time_slots(area: "Area") -> List[DateTime]:
         """Override to return all future market available time slots"""
         return area.future_markets.market_time_slots
 
@@ -67,7 +67,7 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
         return [area.future_markets]
 
     @staticmethod
-    def get_all_time_slots(area: "Area") -> List[DateTime]:
+    def _get_all_time_slots(area: "Area") -> List[DateTime]:
         """Override to return all future market available time slots"""
         return area.future_markets.market_time_slots
 
