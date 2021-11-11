@@ -18,20 +18,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from copy import deepcopy
 from logging import getLogger
-from typing import Dict, List, Union, Optional, Tuple
+from typing import Dict, List, Union, Optional, Tuple, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
 from gsy_framework.data_classes import Bid, Offer, Trade, BaseBidOffer, TradeBidOfferInfo
 from pendulum import DateTime, duration
 
+from gsy_e.events.event_structures import MarketEvent
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
 from gsy_e.gsy_e_core.exceptions import (BidNotFoundException, MarketReadOnlyException,
                                          OfferNotFoundException)
-from gsy_e.events.event_structures import MarketEvent
-from gsy_e.models.area.event_dispatcher import AreaDispatcher
 from gsy_e.models.market import GridFee
 from gsy_e.models.market import lock_market_action
 from gsy_e.models.market.two_sided import TwoSidedMarket
+
+if TYPE_CHECKING:
+    from gsy_e.models.area.event_dispatcher import AreaDispatcher
 
 log = getLogger(__name__)
 
@@ -44,7 +46,7 @@ class FutureMarkets(TwoSidedMarket):
     """Class responsible for future markets."""
 
     def __init__(self, bc: Optional[NonBlockchainInterface] = None,
-                 notification_listener: Optional[AreaDispatcher] = None,
+                 notification_listener: Optional["AreaDispatcher"] = None,
                  readonly: bool = False,
                  grid_fee_type: int = ConstSettings.IAASettings.GRID_FEE_TYPE,
                  grid_fees: Optional[GridFee] = None,

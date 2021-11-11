@@ -170,6 +170,10 @@ def make_sa_name(owner):
     return f"SA {owner.name}"
 
 
+def make_fa_name(owner):
+    return f"FA {owner.name}"
+
+
 def area_name_from_area_or_iaa_name(name):
     return name[4:] if name[:4] == 'IAA ' else name
 
