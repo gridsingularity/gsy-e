@@ -115,12 +115,9 @@ class AreaDispatcher:
             self, agent_area: "Area", market_type: AvailableMarketTypes,
             event_type: AreaEvent, **kwargs) -> None:
 
-        if market_type == AvailableMarketTypes.FUTURE:
-            # First check for the market_type and then check if an future agent exists, otherwise
-            # the future event would be posted on non-future agents.
-            if self.future_agent:
-                self.future_agent.event_listener(event_type, **kwargs)
-        else:
+        if market_type == AvailableMarketTypes.FUTURE and self.future_agent:
+            self.future_agent.event_listener(event_type, **kwargs)
+        elif market_type != AvailableMarketTypes.FUTURE:
             agent_dict = self._get_agents_for_market_type(agent_area.dispatcher, market_type)
             for time_slot, agent in agent_dict.items():
                 if time_slot not in agent_area.get_market_instances_from_class_type(
