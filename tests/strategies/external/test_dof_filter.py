@@ -4,7 +4,7 @@ from typing import Dict
 
 import pytest
 
-from d3a.models.strategy.external_strategies.dof_filter import DegreesOfFreedomFilter
+from gsy_e.models.strategy.external_strategies.dof_filter import DegreesOfFreedomFilter
 
 
 @pytest.fixture(name="order_with_dof")
