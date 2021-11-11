@@ -26,7 +26,7 @@ from pendulum import duration, today
 from gsy_e import constants
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.events.event_structures import AreaEvent, MarketEvent
-from gsy_e.models.area import Area, check_area_name_exists_in_parent_area
+from gsy_e.models.area import Area, Asset, Market, check_area_name_exists_in_parent_area
 from gsy_e.models.area.events import Events
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.market.market_structures import AvailableMarketTypes
@@ -331,3 +331,27 @@ class TestFunctions:
         area = Area(name="Street", children=[Area(name="House")], )
         assert check_area_name_exists_in_parent_area(area, "House") is True
         assert check_area_name_exists_in_parent_area(area, "House 2") is False
+
+
+class TestMarket:
+    """Tests for the Market class."""
+
+    @staticmethod
+    def test_init_with_children():
+        """The class can be correctly instantiated with children."""
+        Market(name="Street", children=[Area(name="House")])
+
+
+class TestAsset:
+    """Tests for the Asset class."""
+
+    @staticmethod
+    def test_init_fails_with_children():
+        """The class can't be initialized with children."""
+        with pytest.raises(ValueError):
+            Asset(name="Street", children=[Area(name="House")])
+
+    @staticmethod
+    def test_init_succeeds_without():
+        """The class can be initialized without children."""
+        Asset(name="Some device")

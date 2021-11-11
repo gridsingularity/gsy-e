@@ -102,6 +102,10 @@ class AreaChildrenList(list):
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-public-methods
 class Area:
+    """Generic class to define both market areas and devices.
+
+    Important: this class should not be used in setup files. Please use Market or Asset instead.
+    """
 
     # pylint: disable=too-many-arguments
     def __init__(self, name: str = None, children: List["Area"] = None,
@@ -668,3 +672,17 @@ class Area:
     def is_market_future(self, market_id: str) -> bool:
         """Return True if market_id belongs to a FUTURE market."""
         return market_id == self.future_markets.id
+
+
+class Market(Area):
+    """Class to define geographical market areas that can contain children (areas or assets)."""
+
+
+class Asset(Area):
+    """Class to define assets (devices). These instances cannot contain children."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if self.children:
+            raise ValueError(f"{self.__class__.__name__} instances can't have children.")
