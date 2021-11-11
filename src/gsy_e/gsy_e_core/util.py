@@ -486,3 +486,28 @@ def is_time_slot_in_past_markets(time_slot: DateTime, current_time_slot: DateTim
             hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
     else:
         return time_slot < current_time_slot
+
+
+class FutureMarketCounter:
+    """Hold a time counter for the future market.
+
+    In the future market, we only want to clear in a predefined interval.
+    """
+    def __init__(self):
+        self._last_time_dispatched = None
+
+    def is_time_for_clearing(self, current_time: DateTime) -> bool:
+        """Compare current time with the latest time clearing was dispatched.
+
+        Returns True if the FUTURE_MARKET_CLEARING_INTERVAL_MINUTES has
+        already passed since the last dispatch time.
+        """
+        if not self._last_time_dispatched:
+            self._last_time_dispatched = current_time
+            return True
+        duration_in_min = (current_time - self._last_time_dispatched).minutes
+        if (duration_in_min >=
+                ConstSettings.FutureMarketSettings.FUTURE_MARKET_CLEARING_INTERVAL_MINUTES):
+            self._last_time_dispatched = current_time
+            return True
+        return False
