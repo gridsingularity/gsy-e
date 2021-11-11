@@ -15,8 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-# Need to import required settings from gsy_e-interface in order to be available in gsy_e,
-# thus avoiding accessing the gsy_e-interface constants.
+# Need to import required settings from gsy-framework in order to be available in gsy_e,
+# thus avoiding accessing the gsy-framework constants.
 from gsy_framework.constants_limits import TIME_FORMAT, DATE_FORMAT, GlobalConfig # NOQA
 from gsy_framework.constants_limits import DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, TIME_ZONE  # NOQA
 
@@ -37,7 +37,7 @@ DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 10
 
 CONFIGURATION_ID = ""
 # Controls whether the external connection is for use with the redis api client
-# or with the gsy_e-web. Default is to connect via Redis.
+# or with the gsy-web. Default is to connect via Redis.
 EXTERNAL_CONNECTION_WEB = False
 
 SIMULATION_PAUSE_TIMEOUT = 600

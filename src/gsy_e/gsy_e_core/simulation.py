@@ -420,7 +420,7 @@ class Simulation:
 
     @property
     def should_send_results_to_broker(self):
-        """Flag that decides whether to send results to the gsy_e-web"""
+        """Flag that decides whether to send results to the gsy-web"""
         return not self._started_from_cli and self.kafka_connection.is_enabled()
 
     def handle_slowdown_and_realtime(self, tick_no):
