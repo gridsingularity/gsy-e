@@ -2,8 +2,8 @@
 Grid Singularity Energy Exchange
 ====================================
 
-.. image:: https://codecov.io/gh/gridsingularity/d3a/branch/master/graph/badge.svg?token=XTWK3DAKUA
-   :target: https://codecov.io/gh/gridsingularity/d3a
+.. image:: https://codecov.io/gh/gridsingularity/gsy-e/branch/master/graph/badge.svg?token=XTWK3DAKUA
+   :target: https://codecov.io/gh/gridsingularity/gsy-e
 
 The Grid Singularity Energy Exchange Engine is developed by `Grid Singularity <https://gridsingularity.com/>`__ as an interface (`Singularity Map <https://map.gridsingularity.com/singularity-map>`__) and open source codebase (see `Licensing <https://gridsingularity.github.io/d3a/licensing/>`__ to model, simulate, optimize and (coming soon) download and deploy interconnected, grid-aware energy marketplaces.
 Grid Singularity has been proclaimed the `World Tech Pioneer by the World Economic Forum <https://www.weforum.org/organizations/grid-singularity-gmbh-gsy-gmbh>`__ and is also known as a co-founder of the `Energy Web Foundation <https://www.energyweb.org/>`__ that gathers leading energy corporations globally co-developing a shared blockchain-based platform.
