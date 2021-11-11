@@ -27,14 +27,20 @@ class BalancingAgent(OneSidedAgent):
     def __init__(self, owner, higher_market, lower_market,
                  min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE):
         self.balancing_spot_trade_ratio = owner.balancing_spot_trade_ratio
-        self.engines = [
-            BalancingEngine('High -> Low', higher_market, lower_market, min_offer_age, self),
-            BalancingEngine('Low -> High', lower_market, higher_market, min_offer_age, self),
-        ]
-        super().__init__(owner=owner, higher_market=higher_market,
+
+        super().__init__(owner=owner,
+                         higher_market=higher_market,
                          lower_market=lower_market,
-                         min_offer_age=min_offer_age, do_create_engine=False)
+                         min_offer_age=min_offer_age)
         self.name = make_ba_name(self.owner)
+
+    def _create_engines(self):
+        self.engines = [
+            BalancingEngine('High -> Low', self.higher_market, self.lower_market,
+                            self.min_offer_age, self),
+            BalancingEngine('Low -> High', self.lower_market, self.higher_market,
+                            self.min_offer_age, self),
+        ]
 
     def __repr__(self):
         return f"<BalancingAgent {self.name} {self.time_slot_str}>"
@@ -66,7 +72,6 @@ class BalancingAgent(OneSidedAgent):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
 
     def _calculate_and_buy_balancing_energy(self, market, trade):
-        print("_calculate_and_buy_balancing_energy")
         if trade.buyer != make_iaa_name(self.owner) or \
                 market.time_slot != self.lower_market.time_slot:
             return
@@ -102,7 +107,6 @@ class BalancingAgent(OneSidedAgent):
         buyer = make_ba_name(self.owner) \
             if make_ba_name(self.owner) != offer.seller \
             else f"{self.owner.name} Reserve"
-        print("_balancing_trade", abs(offer.energy), abs(target_energy))
         if abs(offer.energy) <= abs(target_energy):
             trade = self.lower_market.accept_offer(offer_or_id=offer,
                                                    buyer=buyer,

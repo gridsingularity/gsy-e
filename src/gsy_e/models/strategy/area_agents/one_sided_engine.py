@@ -192,8 +192,8 @@ class IAAEngine:
                 self.owner.delete_offer(self.markets.target, offer_info.target_offer)
             except OfferNotFoundException:
                 pass
-            except MarketException as ex:
-                self.owner.log.error("Error deleting InterAreaAgent offer: %s", ex)
+            except MarketException:
+                self.owner.log.exception("Error deleting InterAreaAgent offer:")
 
             self._delete_forwarded_offer_entries(offer_info.source_offer)
             self.offer_age.pop(offer_info.source_offer.id, None)

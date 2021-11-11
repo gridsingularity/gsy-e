@@ -17,10 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import Optional
 
-from gsy_framework.constants_limits import ConstSettings
 from numpy.random import random
 
-from gsy_e.gsy_e_core.util import make_iaa_name
 from gsy_e.models.market import Market
 from gsy_e.models.strategy.area_agents.inter_area_agent import InterAreaAgent
 from gsy_e.models.strategy.area_agents.one_sided_engine import IAAEngine
@@ -28,20 +26,14 @@ from gsy_e.models.strategy.area_agents.one_sided_engine import IAAEngine
 
 class OneSidedAgent(InterAreaAgent):
     """Inter area agent implementation for the one sided case."""
-    def __init__(self, *, owner, higher_market, lower_market,
-                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
-                 do_create_engine=True):
-        super().__init__(owner=owner,
-                         higher_market=higher_market,
-                         lower_market=lower_market,
-                         min_offer_age=min_offer_age)
-        if do_create_engine:
-            self.engines = [
-                IAAEngine("High -> Low", higher_market, lower_market, min_offer_age, self),
-                IAAEngine("Low -> High", lower_market, higher_market, min_offer_age, self),
-            ]
-        self.name = make_iaa_name(owner)
-        self.uuid = owner.uuid
+
+    def _create_engines(self):
+        self.engines = [
+            IAAEngine("High -> Low", self.higher_market, self.lower_market,
+                      self.min_offer_age, self),
+            IAAEngine("Low -> High", self.lower_market, self.higher_market,
+                      self.min_offer_age, self),
+        ]
 
     def usable_offer(self, offer):
         """Prevent IAAEngines from trading their counterpart's offers"""

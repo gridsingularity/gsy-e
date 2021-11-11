@@ -27,18 +27,23 @@ class TwoSidedAgent(OneSidedAgent):
 
     def __init__(self, *, owner, higher_market, lower_market,
                  min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
-                 min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE,
-                 do_create_engine=True):
-        if do_create_engine:
-            self.engines = [
-                TwoSidedEngine("High -> Low", higher_market, lower_market, min_offer_age,
-                               min_bid_age, self),
-                TwoSidedEngine("Low -> High", lower_market, higher_market, min_offer_age,
-                               min_bid_age, self),
-            ]
+                 min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE):
+
+        self.min_bid_age = min_bid_age
         super().__init__(owner=owner,
-                         higher_market=higher_market, lower_market=lower_market,
-                         min_offer_age=min_offer_age, do_create_engine=False)
+                         higher_market=higher_market,
+                         lower_market=lower_market,
+                         min_offer_age=min_offer_age)
+
+    def _create_engines(self):
+        self.engines = [
+            TwoSidedEngine("High -> Low", self.higher_market, self.lower_market,
+                           self.min_offer_age,
+                           self.min_bid_age, self),
+            TwoSidedEngine("Low -> High", self.lower_market, self.higher_market,
+                           self.min_offer_age,
+                           self.min_bid_age, self),
+        ]
 
     def usable_bid(self, bid):
         """Prevent IAAEngines from trading their counterpart's bids."""
