@@ -164,7 +164,7 @@ class TestD3ACoreUtil:
 
     def test_future_market_counter(self):
         """Test the counter of future market clearing."""
-        with patch("gsy_e.gsy_e_core.util.ConstSettings.FutureMarketSettings."
+        with patch("gsy_framework.constants_limits.ConstSettings.FutureMarketSettings."
                    "FUTURE_MARKET_CLEARING_INTERVAL_MINUTES", 15):
             future_market_counter = FutureMarketCounter()
             current_time = datetime(year=2021, month=11, day=2,

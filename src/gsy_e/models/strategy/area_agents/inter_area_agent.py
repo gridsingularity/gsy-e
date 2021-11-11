@@ -21,6 +21,7 @@ from gsy_framework.constants_limits import ConstSettings
 from numpy.random import random
 
 from gsy_e.constants import TIME_FORMAT
+from gsy_e.gsy_e_core.util import make_iaa_name
 from gsy_e.models.strategy import BaseStrategy, _TradeLookerUpper
 
 
@@ -41,6 +42,13 @@ class InterAreaAgent(BaseStrategy):
         self.higher_market = higher_market
         self.lower_market = lower_market
         self.min_offer_age = min_offer_age
+
+        self._create_engines()
+        self.name = make_iaa_name(owner)
+        self.uuid = owner.uuid
+
+    def _create_engines(self):
+        """Base method for creating the engines"""
 
     @property
     def time_slot_str(self) -> Optional[str]:

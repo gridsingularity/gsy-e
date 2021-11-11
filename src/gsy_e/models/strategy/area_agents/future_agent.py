@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings
 
-from gsy_e.gsy_e_core.util import make_sa_name
+from gsy_e.gsy_e_core.util import make_fa_name
 from gsy_e.models.market.future import FutureMarkets
 from gsy_e.models.strategy.area_agents.future_engine import FutureEngine
 from gsy_e.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
@@ -36,17 +36,20 @@ class FutureAgent(TwoSidedAgent):
                  min_offer_age: int = ConstSettings.IAASettings.MIN_OFFER_AGE,
                  min_bid_age: int = ConstSettings.IAASettings.MIN_BID_AGE):
 
-        super().__init__(owner=owner, higher_market=higher_market,
+        super().__init__(owner=owner,
+                         higher_market=higher_market,
                          lower_market=lower_market,
-                         min_offer_age=min_offer_age, min_bid_age=min_bid_age,
-                         do_create_engine=False)
+                         min_offer_age=min_offer_age,
+                         min_bid_age=min_bid_age)
+        self.name = make_fa_name(self.owner)
+
+    def _create_engines(self):
         self.engines = [
-            FutureEngine("High -> Low", higher_market, lower_market,
-                         min_offer_age, min_bid_age, self),
-            FutureEngine("Low -> High", lower_market, higher_market,
-                         min_offer_age, min_bid_age, self),
+            FutureEngine("High -> Low", self.higher_market, self.lower_market,
+                         self.min_offer_age, self.min_bid_age, self),
+            FutureEngine("Low -> High", self.lower_market, self.higher_market,
+                         self.min_offer_age, self.min_bid_age, self),
         ]
-        self.name = make_sa_name(self.owner)
 
     def delete_engines(self) -> None:
         """Delete all bids and offers for the non-future markets (overwriting super() method)."""
