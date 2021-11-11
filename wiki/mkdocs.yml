@@ -77,7 +77,7 @@ theme:
   font:
     text: 'PT Sans'
     code: 'Ubuntu Mono'
-  favicon: 'img/d3a-favicon.png'
+  favicon: 'img/Profile.png'
   logo: 'img/Profile.png'
   feature:
     tabs: false
