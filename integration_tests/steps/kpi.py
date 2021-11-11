@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ import ast
 from behave import then
 from math import isclose
 
-from d3a_interface.utils import get_area_name_uuid_mapping
+from gsy_framework.utils import get_area_name_uuid_mapping
 
 
 @then('{kpi} of {expected_kpis} are correctly reported')

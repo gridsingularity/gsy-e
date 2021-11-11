@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,10 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from behave import given, then
 from math import isclose
 from functools import reduce
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.d3a_core.util import make_ba_name
-from d3a_interface.constants_limits import ConstSettings
-from d3a.constants import FLOATING_POINT_TOLERANCE
+from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.gsy_e_core.util import make_ba_name
+from gsy_framework.constants_limits import ConstSettings
+from gsy_e.constants import FLOATING_POINT_TOLERANCE
 
 
 @given('we have configured all the balancing_market.default_2a devices in the registry')
@@ -36,7 +36,7 @@ def configure_default_2a_registry(context):
 
 @then("the device registry is not empty in market class")
 def check_device_registry(context):
-    from d3a.setup.balancing_market.test_device_registry import device_registry_dict
+    from gsy_e.setup.balancing_market.test_device_registry import device_registry_dict
     house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     for market in house.past_markets:
         assert market.device_registry == device_registry_dict
