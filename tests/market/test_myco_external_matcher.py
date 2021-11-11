@@ -4,32 +4,31 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pendulum import now
 
-import d3a.models.market.market_redis_connection
-from d3a.d3a_core.exceptions import MycoValidationException, InvalidBidOfferPairException
-from d3a.models.market import Offer, Bid
-from d3a.models.market.two_sided import TwoSidedMarket
-from d3a.models.myco_matcher import MycoExternalMatcher
-from d3a.models.myco_matcher.myco_external_matcher import MycoExternalMatcherValidator
+import gsy_e.models.market.market_redis_connection
+from gsy_e.gsy_e_core.exceptions import MycoValidationException, InvalidBidOfferPairException
+from gsy_e.models.market import Offer, Bid
+from gsy_e.models.market.two_sided import TwoSidedMarket
+from gsy_e.models.myco_matcher import MycoExternalMatcher
+from gsy_e.models.myco_matcher.myco_external_matcher import MycoExternalMatcherValidator
 
-d3a.models.myco_matcher.myco_external_matcher.BlockingCommunicator = MagicMock
-d3a.models.myco_matcher.myco_external_matcher.ResettableCommunicator = MagicMock
+gsy_e.models.myco_matcher.myco_external_matcher.BlockingCommunicator = MagicMock
+gsy_e.models.myco_matcher.myco_external_matcher.ResettableCommunicator = MagicMock
 
 
 class TestMycoExternalMatcher:
 
     @classmethod
-    def setup_class(cls):
+    def setup_method(cls):
         cls.matcher = MycoExternalMatcher()
+        cls.market_id = "Area1"
         cls.market = TwoSidedMarket(time_slot=now())
-        cls.matcher.markets_mapping = {cls.market.id: cls.market}
-        cls.redis_connection = d3a.models.myco_matcher.myco_external_matcher.ResettableCommunicator
-        assert cls.matcher.simulation_id == d3a.constants.CONFIGURATION_ID
-        cls.channel_prefix = f"external-myco/{d3a.constants.CONFIGURATION_ID}/"
+        cls.matcher.area_markets_mapping = {
+            f"{cls.market_id}-{cls.market.time_slot_str}": cls.market}
+        cls.redis_connection = (
+            gsy_e.models.myco_matcher.myco_external_matcher.ResettableCommunicator)
+        assert cls.matcher.simulation_id == gsy_e.constants.CONFIGURATION_ID
+        cls.channel_prefix = f"external-myco/{gsy_e.constants.CONFIGURATION_ID}/"
         cls.events_channel = f"{cls.channel_prefix}events/"
-
-    def setup_method(self, method):
-        self.matcher.myco_ext_conn.publish_json.reset_mock()
-        self.matcher.markets_mapping = {self.market.id: self.market}
 
     def _populate_market_bids_offers(self):
         self.market.offers = {"id1": Offer("id1", now(), 3, 3, "seller", 3),
@@ -44,7 +43,7 @@ class TestMycoExternalMatcher:
                 "external-myco/simulation-id/": self.matcher.publish_simulation_id,
                 f"{self.channel_prefix}offers-bids/": self.matcher.publish_offers_bids,
                 f"{self.channel_prefix}recommendations/":
-                    self.matcher.match_recommendations
+                    self.matcher._populate_recommendations
             }
         )
 
@@ -59,17 +58,16 @@ class TestMycoExternalMatcher:
         self.matcher.event_tick()
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             self.events_channel, data)
-
         self.matcher.event_tick(is_it_time_for_external_tick=False)
         # should still be == 1 as the above won't trigger the publish_json method
         assert self.matcher.myco_ext_conn.publish_json.call_count == 1
 
     def test_event_market_cycle(self):
-        assert self.matcher.markets_mapping
+        assert self.matcher.area_markets_mapping
         data = {"event": "market_cycle"}
         self.matcher.event_market_cycle()
         # Market cycle event should clear the markets cache
-        assert not self.matcher.markets_mapping
+        assert not self.matcher.area_markets_mapping
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             self.events_channel, data)
 
@@ -87,9 +85,9 @@ class TestMycoExternalMatcher:
 
     def test_get_bids_offers(self):
         self._populate_market_bids_offers()
-        bids, offers = self.market.open_bids_and_offers
-        expected_bids_list = list(bid.serializable_dict() for bid in bids.values())
-        expected_offers_list = list(offer.serializable_dict() for offer in offers.values())
+        bids, offers = self.market.open_bids_and_offers()
+        expected_bids_list = list(bid.serializable_dict() for bid in bids)
+        expected_offers_list = list(offer.serializable_dict() for offer in offers)
 
         actual_bids_list, actual_offers_list = self.matcher._get_bids_offers(self.market, {})
         assert (expected_bids_list, expected_offers_list) == (actual_bids_list, actual_offers_list)
@@ -99,15 +97,15 @@ class TestMycoExternalMatcher:
         actual_bids_list, actual_offers_list = self.matcher._get_bids_offers(self.market, filters)
         assert (expected_bids_list, []) == (actual_bids_list, actual_offers_list)
 
-        list(offers.values())[0].attributes = {"energy_type": "Green"}
+        offers[0].attributes = {"energy_type": "Green"}
         actual_bids_list, actual_offers_list = self.matcher._get_bids_offers(self.market, filters)
-        bids, offers = self.market.open_bids_and_offers
+        bids, offers = self.market.open_bids_and_offers()
         expected_offers_list = list(
-            offer.serializable_dict() for offer in offers.values()
+            offer.serializable_dict() for offer in offers
             if offer.attributes and offer.attributes.get("energy_type") == "Green")
         assert (expected_bids_list, expected_offers_list) == (actual_bids_list, actual_offers_list)
 
-    @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcher."
+    @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcher."
            "_get_bids_offers", MagicMock(return_value=([], [])))
     def test_publish_offers_bids(self):
         channel = f"{self.channel_prefix}offers-bids/response/"
@@ -118,7 +116,7 @@ class TestMycoExternalMatcher:
         }
         expected_data = {
             "event": "offers_bids_response",
-            "bids_offers": {self.market.id: {"bids": [], "offers": []}}
+            "bids_offers": {"area1": {self.market.time_slot_str: {"bids": [], "offers": []}}}
         }
         self.matcher.update_area_uuid_markets_mapping({"area1": {"markets": [self.market]}})
         self.matcher.publish_offers_bids(payload)
@@ -140,52 +138,58 @@ class TestMycoExternalMatcher:
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
 
-    @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcherValidator."
+    @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcherValidator."
            "validate_and_report")
-    @patch("d3a.models.myco_matcher.myco_external_matcher.TwoSidedMarket."
+    @patch("gsy_e.models.myco_matcher.myco_external_matcher.TwoSidedMarket."
            "match_recommendations", return_value=None)
     def test_match_recommendations(
             self, mock_market_match_recommendations, mock_validate_and_report):
         channel = f"{self.channel_prefix}recommendations/response/"
-        expected_data = {"event": "match", "status": "success", "recommendations": []}
         payload = {"data": json.dumps({})}
         # Empty recommendations list should pass
         mock_validate_and_report.return_value = {
             "status": "success", "recommendations": []}
-        self.matcher.match_recommendations(payload)
-        assert mock_market_match_recommendations.call_count == 0
-        self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
-            channel, expected_data)
+        self.matcher._populate_recommendations(payload)
+        self.matcher.match_recommendations()
+        mock_market_match_recommendations.assert_not_called()
+        self.matcher.myco_ext_conn.publish_json.assert_not_called()
 
         self.matcher.myco_ext_conn.publish_json.reset_mock()
         mock_validate_and_report.return_value = {
             "status": "fail",
             "message": "Validation Error, matching will be skipped: Invalid Bid Offer Pair",
             "recommendations": []}
-        self.matcher.match_recommendations(payload)
+        payload = {"data": json.dumps({"recommended_matches": [{}, {}]})}
+        self.matcher._populate_recommendations(payload)
+        self.matcher.match_recommendations()
         expected_data = {
             "event": "match", "status": "fail",
             "recommendations": [],
             "message": "Validation Error, matching will be skipped: Invalid Bid Offer Pair"}
-        assert mock_market_match_recommendations.call_count == 0
+        mock_market_match_recommendations.assert_not_called()
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
 
         self.matcher.myco_ext_conn.publish_json.reset_mock()
         mock_validate_and_report.return_value = {
             "status": "success",
-            "recommendations": [{"status": "success", "market_id": self.market.id}]}
-        self.matcher.match_recommendations(payload)
+            "recommendations": [{"status": "success",
+                                 "market_id": self.market_id,
+                                 "time_slot": self.market.time_slot_str}]}
+        self.matcher._populate_recommendations(payload)
+        self.matcher.match_recommendations()
         expected_data = {
             "event": "match", "status": "success",
-            "recommendations": [{"market_id": self.market.id, "status": "success"}]}
+            "recommendations": [{"market_id": self.market_id,
+                                 "status": "success",
+                                 "time_slot": self.market.time_slot_str}]}
         assert mock_market_match_recommendations.call_count == 1
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
 
 
 class TestMycoExternalMatcherValidator:
-    @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcherValidator."
+    @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcherValidator."
            "_validate")
     def test_validate_and_report(self, mock_validate):
         recommendations = []
@@ -195,6 +199,7 @@ class TestMycoExternalMatcherValidator:
 
         recommendations = [{
                 "market_id": "market",
+                "time_slot": "2021-10-06T12:00",
                 "bids": [],
                 "offers": [],
                 "trade_rate": 1,
@@ -210,6 +215,7 @@ class TestMycoExternalMatcherValidator:
         expected_data = {"status": "success",
                          "recommendations": [{
                              "market_id": "market",
+                             "time_slot": "2021-10-06T12:00",
                              "bids": [],
                              "offers": [],
                              "trade_rate": 1,
@@ -220,7 +226,7 @@ class TestMycoExternalMatcherValidator:
         assert MycoExternalMatcherValidator.validate_and_report(
             None, recommendations) == expected_data
 
-    @patch("d3a.models.myco_matcher.myco_external_matcher.BidOfferMatch.is_valid_dict")
+    @patch("gsy_e.models.myco_matcher.myco_external_matcher.BidOfferMatch.is_valid_dict")
     def test_validate_valid_dict(self, mock_is_valid_dict):
         mock_is_valid_dict.return_value = True
         assert MycoExternalMatcherValidator._validate_valid_dict(None, {}) is None
@@ -229,26 +235,30 @@ class TestMycoExternalMatcherValidator:
         with pytest.raises(MycoValidationException):
             MycoExternalMatcherValidator._validate_valid_dict(None, {})
 
-    @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
+    @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
     def test_validate_market_exists(self, mock_myco_external_matcher):
-        mock_myco_external_matcher.markets_mapping = {"market": MagicMock()}
-        recommendation = {"market_id": "market"}
+        market = MagicMock()
+        market.time_slot_str = "2021-10-06T12:00"
+        mock_myco_external_matcher.area_markets_mapping = {"market-2021-10-06T12:00": market}
+        recommendation = {"market_id": "market", "time_slot": "2021-10-06T12:00"}
         assert MycoExternalMatcherValidator._validate_market_exists(
             mock_myco_external_matcher, recommendation) is None
 
-        mock_myco_external_matcher.markets_mapping = {}
+        mock_myco_external_matcher.area_markets_mapping = {}
         with pytest.raises(MycoValidationException):
             MycoExternalMatcherValidator._validate_market_exists(
                 mock_myco_external_matcher, recommendation)
 
-    @patch("d3a.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
+    @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
     def test_validate_orders_exist_in_market(self, mock_myco_external_matcher):
         market = MagicMock()
+        market.time_slot_str = "2021-10-06T12:00"
         market.offers = {"offer1": MagicMock()}
         market.bids = {"bid1": MagicMock()}
-        mock_myco_external_matcher.markets_mapping = {"market": market}
+        mock_myco_external_matcher.area_markets_mapping = {"market-2021-10-06T12:00": market}
         recommendation = {
             "market_id": "market",
+            "time_slot": "2021-10-06T12:00",
             "offers": [{"id": "offer1"}], "bids": [{"id": "bid1"}]}
         assert MycoExternalMatcherValidator._validate_orders_exist_in_market(
             mock_myco_external_matcher, recommendation) is None

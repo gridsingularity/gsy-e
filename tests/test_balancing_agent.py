@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,11 +19,11 @@ import pytest
 from uuid import uuid4
 
 import pendulum
-from d3a.constants import TIME_ZONE
-from d3a.d3a_core.exceptions import InvalidBalancingTradeException
-from d3a_interface.data_classes import BalancingOffer, BalancingTrade, Offer, Trade
-from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
-from d3a_interface.constants_limits import ConstSettings
+from gsy_e.constants import TIME_ZONE
+from gsy_e.gsy_e_core.exceptions import InvalidBalancingTradeException
+from gsy_framework.data_classes import BalancingOffer, BalancingTrade, Offer, Trade
+from gsy_e.models.strategy.area_agents.balancing_agent import BalancingAgent
+from gsy_framework.constants_limits import ConstSettings
 from tests.test_inter_area_agent import FakeMarket
 
 
@@ -49,11 +49,11 @@ class FakeBalancingMarket:
         self.area = FakeArea("fake_area")
         self.unmatched_energy_upward = 0
         self.unmatched_energy_downward = 0
-        self._timeslot = pendulum.now(tz=TIME_ZONE)
+        self._time_slot = pendulum.now(tz=TIME_ZONE)
 
     @property
     def time_slot(self):
-        return self._timeslot
+        return self._time_slot
 
     def accept_offer(self, offer_or_id, buyer, energy=None, time=None,
                      trade_rate: float = None):
@@ -92,8 +92,8 @@ def test_baa_event_trade(baa):
                   'IAA owner')
     fake_spot_market = FakeMarket([])
     fake_spot_market.set_time_slot(baa.lower_market.time_slot)
-    baa.event_trade(trade=trade,
-                    market_id=fake_spot_market.id)
+    baa.event_offer_traded(trade=trade,
+                           market_id=fake_spot_market.id)
     assert baa.lower_market.unmatched_energy_upward == 0
     assert baa.lower_market.unmatched_energy_downward == 0
 
@@ -117,7 +117,7 @@ def test_baa_unmatched_event_trade(baa2):
     fake_spot_market = FakeMarket([])
     fake_spot_market.set_time_slot(baa2.lower_market.time_slot)
     baa2.owner._fake_spot_market = fake_spot_market
-    baa2.event_trade(trade=trade,
-                     market_id=fake_spot_market.id)
+    baa2.event_offer_traded(trade=trade,
+                            market_id=fake_spot_market.id)
     assert baa2.lower_market.unmatched_energy_upward != 0
     assert baa2.lower_market.unmatched_energy_downward != 0

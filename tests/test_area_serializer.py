@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,16 +19,16 @@ import json
 from datetime import datetime
 
 import pytest
-from d3a.d3a_core.area_serializer import area_to_string, area_from_string, are_all_areas_unique
-from d3a.models.area import Area
-from d3a.models.config import SimulationConfig
-from d3a.models.leaves import SmartMeter, PV, LoadHours, Storage
-from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
-from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
-from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
-from d3a.models.strategy.smart_meter import SmartMeterStrategy
-from d3a.models.strategy.pv import PVStrategy
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from gsy_e.gsy_e_core.area_serializer import area_to_string, area_from_string, are_all_areas_unique
+from gsy_e.models.area import Area
+from gsy_e.models.config import SimulationConfig
+from gsy_e.models.leaves import SmartMeter, PV, LoadHours, Storage
+from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStrategy
+from gsy_e.models.strategy.external_strategies.pv import PVExternalStrategy
+from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
+from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
+from gsy_e.models.strategy.pv import PVStrategy
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from pendulum import duration, instance
 
 
@@ -49,7 +49,6 @@ def create_config(settings={}):
         "market_maker_rate":
             settings.get("market_maker_rate",
                          str(ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE)),
-        "market_count": settings.get("market_count", GlobalConfig.market_count),
         "cloud_coverage": settings.get("cloud_coverage", GlobalConfig.cloud_coverage),
         "pv_user_profile": settings.get("pv_user_profile", None),
         "capacity_kW": settings.get("capacity_kW",
