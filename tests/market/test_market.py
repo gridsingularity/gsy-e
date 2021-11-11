@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -21,26 +21,26 @@ from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import Bid, Offer
-from d3a_interface.utils import datetime_to_string_incl_seconds
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Bid, Offer
+from gsy_framework.utils import datetime_to_string_incl_seconds
 from hypothesis import strategies as st
 from hypothesis.control import assume
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rule
 from pendulum import now
 
-from d3a.constants import TIME_ZONE
-from d3a.d3a_core.blockchain_interface import NonBlockchainInterface
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.d3a_core.exceptions import (DeviceNotInRegistryError, InvalidBalancingTradeException,
-                                     InvalidOffer, InvalidTrade, MarketReadOnlyException,
-                                     OfferNotFoundException)
-from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
-from d3a.events.event_structures import MarketEvent
-from d3a.models.market.balancing import BalancingMarket
-from d3a.models.market.one_sided import OneSidedMarket
-from d3a.models.market.settlement import SettlementMarket
-from d3a.models.market.two_sided import TwoSidedMarket
+from gsy_e.constants import TIME_ZONE
+from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
+from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.gsy_e_core.exceptions import (DeviceNotInRegistryError, InvalidBalancingTradeException,
+                                         InvalidOffer, InvalidTrade, MarketReadOnlyException,
+                                         OfferNotFoundException)
+from gsy_e.gsy_e_core.util import add_or_create_key, subtract_or_create_key
+from gsy_e.events.event_structures import MarketEvent
+from gsy_e.models.market.balancing import BalancingMarket
+from gsy_e.models.market.one_sided import OneSidedMarket
+from gsy_e.models.market.settlement import SettlementMarket
+from gsy_e.models.market.two_sided import TwoSidedMarket
 
 device_registry_dict = {
     "A": {"balancing rates": (33, 35)},
