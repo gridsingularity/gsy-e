@@ -184,15 +184,15 @@ class TestFutureMarkets:
         """Test if trade is added to trade buffers when accept_offer is called."""
         first_future_market = next(iter(future_market.slot_bid_mapping))
         offer = future_market.offer(1, 1, "seller", "seller_origin", time_slot=first_future_market)
-        trade = future_market.accept_offer(offer, "buyer",
-                                           trade_bid_info=TradeBidOfferInfo(1, 1, 1, 1, 1))
+        trade = future_market.accept_offer(offer, "buyer")
 
         assert len(future_market.trades) == 1
         assert trade in future_market.trades
         assert len(future_market.slot_trade_mapping[first_future_market]) == 1
         assert trade in future_market.slot_trade_mapping[first_future_market]
 
-    def test_orders_per_slot(self, future_market):
+    @staticmethod
+    def test_orders_per_slot(future_market):
         """Test whether the orders_per_slot method returns order in format format."""
         time_slot1 = now()
         time_slot2 = time_slot1.add(minutes=15)
