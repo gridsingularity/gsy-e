@@ -27,6 +27,7 @@ from gsy_e.models.area import Area
 from gsy_e.models.market import GridFee
 from gsy_e.models.market.future import FutureMarkets, FutureMarketException
 
+
 DEFAULT_CURRENT_MARKET_SLOT = datetime(2021, 10, 19, 0, 0)
 DEFAULT_SLOT_LENGTH = duration(minutes=15)
 
