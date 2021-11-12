@@ -25,6 +25,7 @@ from gsy_framework.utils import find_object_of_same_weekday_and_time
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import should_read_profile_from_db
+from gsy_e.models.base import AssetType
 from gsy_e.models.strategy import BidEnabledStrategy, INF_ENERGY
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 
@@ -177,3 +178,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             saved_state["energy_buy_rate"]))
         self.energy_rate.update(convert_str_to_pendulum_in_dict(
             saved_state["energy_rate"]))
+
+    @property
+    def asset_type(self):
+        return AssetType.PROSUMER

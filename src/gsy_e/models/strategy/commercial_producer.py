@@ -25,6 +25,7 @@ from gsy_framework.validators import CommercialProducerValidator
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
+from gsy_e.models.base import AssetType
 from gsy_e.models.strategy import BaseStrategy, INF_ENERGY
 
 
@@ -117,3 +118,7 @@ class CommercialStrategy(BaseStrategy):
 
     def restore_state(self, saved_state):
         self.energy_rate.update(convert_str_to_pendulum_in_dict(saved_state["energy_rate"]))
+
+    @property
+    def asset_type(self):
+        return AssetType.PRODUCER

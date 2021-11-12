@@ -37,6 +37,10 @@ class SettlementTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
     def get_all_markets(area: "Area") -> Iterable[Market]:
         return area.settlement_markets.values()
 
+    @staticmethod
+    def _get_all_time_slots(area):
+        return area.settlement_markets.keys()
+
 
 class SettlementTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
     """Version of TemplateStrategyOfferUpdater class for settlement markets"""
@@ -44,6 +48,10 @@ class SettlementTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
     @staticmethod
     def get_all_markets(area: "Area") -> Iterable[Market]:
         return area.settlement_markets.values()
+
+    @staticmethod
+    def _get_all_time_slots(area):
+        return area.settlement_markets.keys()
 
 
 class SettlementMarketStrategyInterface:

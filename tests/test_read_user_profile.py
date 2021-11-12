@@ -20,6 +20,7 @@ class TestReadUserProfile(unittest.TestCase):
         out_profile = copy_profile_to_multiple_days(in_profile)
         daytime_dict = dict((time_str(time.hour, time.minute), time) for time in in_profile.keys())
 
-        assert len(in_profile) * PROFILE_EXPANSION_DAYS == len(out_profile)
+        assert (len(in_profile) * PROFILE_EXPANSION_DAYS +
+                GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 4) == len(out_profile)
         for time, out_value in out_profile.items():
             assert out_value == in_profile[daytime_dict[time_str(time.hour, time.minute)]]

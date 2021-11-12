@@ -21,6 +21,7 @@ from logging import getLogger
 from typing import Union, Dict  # NOQA
 
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Offer
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
@@ -35,12 +36,13 @@ from gsy_e.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
+from gsy_e.models.base import AssetType
 from gsy_e.models.market import Market
-from gsy_framework.data_classes import Offer
 from gsy_e.models.state import LoadState
 from gsy_e.models.strategy import BidEnabledStrategy, utils
-from gsy_e.models.strategy.update_frequency import TemplateStrategyBidUpdater
+from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
 from gsy_e.models.strategy.settlement.strategy import settlement_market_strategy_factory
+from gsy_e.models.strategy.update_frequency import TemplateStrategyBidUpdater
 
 log = getLogger(__name__)
 
@@ -98,6 +100,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._calculate_active_markets()
         self._cycled_market = set()
         self._simulation_start_timestamp = None
+        self._future_market_strategy = future_market_strategy_factory(self.asset_type)
 
     @classmethod
     def _create_settlement_market_strategy(cls):
@@ -172,6 +175,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._set_alternative_pricing_scheme()
         self.update_state()
         self._settlement_market_strategy.event_market_cycle(self)
+        self._future_market_strategy.event_market_cycle(self)
 
     def add_entry_in_hrs_per_day(self, overwrite=False):
         current_day = self._get_day_of_timestamp(self.area.spot_market.time_slot)
@@ -331,6 +335,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         self.bid_update.increment_update_counter_all_markets(self)
         self._settlement_market_strategy.event_tick(self)
+        self._future_market_strategy.event_tick(self)
 
     def event_offer(self, *, market_id, offer):
         """Automatically react to offers in single-sided markets.
@@ -342,7 +347,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if ConstSettings.IAASettings.MARKET_TYPE != 1:
             return
 
-        market = self.area.get_future_market_from_id(market_id)
+        market = self.area.get_spot_or_future_market_by_id(market_id)
         if not market:
             return
         if market.time_slot not in self._cycled_market:
@@ -362,8 +367,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             time_slot = self.area.spot_market.time_slot
             final_rate = self.area.config.market_maker_rate[time_slot]
-            self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
-                                                     final_rate=final_rate)
+            self.bid_update.set_parameters(initial_rate=0,
+                                           final_rate=final_rate)
 
     def _post_first_bid(self):
         if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
@@ -395,14 +400,15 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._settlement_market_strategy.event_bid_traded(self, market_id, bid_trade)
 
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
-        market = self.area.get_future_market_from_id(market_id)
-        if not market:
+
+        if not self.area.is_market_spot_or_future(market_id):
             return
+
         if bid_trade.offer_bid.buyer == self.owner.name:
             self.state.decrement_energy_requirement(
                 bid_trade.offer_bid.energy * 1000,
-                market.time_slot, self.owner.name)
-            market_day = self._get_day_of_timestamp(market.time_slot)
+                bid_trade.time_slot, self.owner.name)
+            market_day = self._get_day_of_timestamp(bid_trade.time_slot)
             if self.hrs_per_day != {} and market_day in self.hrs_per_day:
                 self.hrs_per_day[market_day] -= self._operating_hours(bid_trade.offer_bid.energy)
 
@@ -414,7 +420,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         # settlement market event_trade has to be triggered before the early return:
         self._settlement_market_strategy.event_offer_traded(self, market_id, trade)
 
-        market = self.area.get_future_market_from_id(market_id)
+        market = self.area.get_spot_or_future_market_by_id(market_id)
         if not market:
             return
 
@@ -522,3 +528,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if self._simulation_start_timestamp is None:
             return 0
         return (time_slot - self._simulation_start_timestamp).days
+
+    @property
+    def asset_type(self):
+        return AssetType.CONSUMER

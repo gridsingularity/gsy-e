@@ -81,8 +81,10 @@ class TestMarketRotation:
         ticks_per_slot = area_fixture.config.slot_length / area_fixture.config.tick_length
         area_fixture.current_tick = ticks_per_slot
         area_fixture.cycle_markets()
+        # The expected future market count is market slots for the whole simulation duration
+        # -2 to not take into account the first 2 market slots due to the cycle_markets call
         expected_number_of_future_markets = (
-                GlobalConfig.future_market_duration / area_fixture.config.slot_length + 1)
+                GlobalConfig.sim_duration / area_fixture.config.slot_length - 2)
         assert len(area_fixture.past_markets) == 1
         assert len(area_fixture.all_markets) == 1
         assert len(area_fixture.future_market_time_slots) == expected_number_of_future_markets
@@ -91,7 +93,8 @@ class TestMarketRotation:
         area_fixture.cycle_markets()
         assert len(area_fixture.past_markets) == 2
         assert len(area_fixture.all_markets) == 1
-        assert len(area_fixture.future_market_time_slots) == expected_number_of_future_markets
+        # The cycle_markets decreases by one the count of expected future markets
+        assert len(area_fixture.future_market_time_slots) == expected_number_of_future_markets - 1
 
     @patch("gsy_framework.constants_limits.ConstSettings.BalancingSettings."
            "ENABLE_BALANCING_MARKET", True)

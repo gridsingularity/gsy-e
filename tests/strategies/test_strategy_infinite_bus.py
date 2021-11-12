@@ -62,6 +62,10 @@ class FakeArea:
         return self.test_market
 
     @property
+    def future_markets(self):
+        return None
+
+    @property
     def all_markets(self):
         return [self.test_market]
 
@@ -371,11 +375,13 @@ def test_global_market_maker_rate_single_value(bus_test4):
 
 @pytest.fixture()
 def bus_test5(area_test1):
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
     c = InfiniteBusStrategy(
         energy_rate_profile=os.path.join(d3a_path, "resources", "SAM_SF_Summer.csv"))
     c.area = area_test1
     c.owner = area_test1
-    return c
+    yield c
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
 
 
 def test_global_market_maker_rate_profile_and_infinite_bus_selling_rate_profile(bus_test5):
@@ -393,11 +399,13 @@ def test_global_market_maker_rate_profile_and_infinite_bus_selling_rate_profile(
 
 @pytest.fixture()
 def bus_test6(area_test1):
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
     c = InfiniteBusStrategy(
         buying_rate_profile=os.path.join(d3a_path, "resources", "LOAD_DATA_1.csv"))
     c.area = area_test1
     c.owner = area_test1
-    return c
+    yield c
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
 
 
 def test_infinite_bus_buying_rate_set_as_profile(bus_test6):
