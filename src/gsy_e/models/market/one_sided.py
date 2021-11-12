@@ -323,6 +323,7 @@ class OneSidedMarket(Market):
                       seller_origin_id=offer.seller_origin_id,
                       seller_id=offer.seller_id, buyer_id=buyer_id, time_slot=offer.time_slot
                       )
+
         self.bc_interface.track_trade_event(self.time_slot, trade)
 
         if already_tracked is False:

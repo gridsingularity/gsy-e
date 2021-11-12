@@ -61,11 +61,18 @@ class FakeArea:
         self.test_balancing_market = FakeMarket(1)
         self.test_balancing_market_2 = FakeMarket(2)
 
-    def get_future_market_from_id(self, id):
+    def get_spot_or_future_market_by_id(self, _):
         return self._spot_market
+
+    def is_market_spot_or_future(self, _):
+        return True
 
     def get_path_to_root_fees(self):
         return 0.
+
+    @property
+    def future_markets(self):
+        return None
 
     @property
     def all_markets(self):
@@ -407,7 +414,8 @@ def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strat
 
     # Increase energy requirement to cover the energy from the bid
     load_hours_strategy_test5.state._energy_requirement_Wh[TIME] = 1000
-    trade = Trade('idt', None, bid, 'B', load_hours_strategy_test5.owner.name, residual=partial)
+    trade = Trade('idt', None, bid, 'B', load_hours_strategy_test5.owner.name, residual=partial,
+                  time_slot=TIME)
     load_hours_strategy_test5.event_bid_traded(market_id=trade_market.id, bid_trade=trade)
 
     assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 1
@@ -429,7 +437,8 @@ def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_st
     bid = list(load_hours_strategy_test5._bids.values())[0][0]
     # Increase energy requirement to cover the energy from the bid + threshold
     load_hours_strategy_test5.state._energy_requirement_Wh[TIME] = bid.energy * 1000 + 0.000009
-    trade = Trade('idt', None, bid, 'B', load_hours_strategy_test5.owner.name, residual=True)
+    trade = Trade('idt', None, bid, 'B', load_hours_strategy_test5.owner.name, residual=True,
+                  time_slot=TIME)
     load_hours_strategy_test5.event_bid_traded(market_id=trade_market.id, bid_trade=trade)
 
     assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 1
@@ -484,7 +493,8 @@ def test_balancing_offers_are_created_if_device_in_registry(
                                                      creation_time=area_test2.now,
                                                      offer_bid=selected_offer,
                                                      seller='B',
-                                                     buyer='FakeArea')
+                                                     buyer='FakeArea',
+                                                     time_slot=area_test2.current_market.time_slot)
                                          )
     assert len(area_test2.test_balancing_market.created_balancing_offers) == 2
     actual_balancing_supply_energy = \

@@ -91,6 +91,7 @@ def after_scenario(context, scenario):
 def before_all(context):
     context.default_const_settings = constsettings_to_dict()
     context.config.setup_logging()
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
     constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
     if os.environ.get("DISPATCH_EVENTS_BOTTOM_TO_TOP") == "False":
         gsy_e.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = False

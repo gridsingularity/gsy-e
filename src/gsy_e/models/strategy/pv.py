@@ -31,7 +31,9 @@ from gsy_e import constants
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.state import PVState
+from gsy_e.models.base import AssetType
 from gsy_e.models.strategy import BidEnabledStrategy, utils
+from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
 from gsy_e.models.strategy.settlement.strategy import settlement_market_strategy_factory
 from gsy_e.models.strategy.update_frequency import TemplateStrategyOfferUpdater
 
@@ -74,6 +76,7 @@ class PVStrategy(BidEnabledStrategy):
         self._init_price_update(update_interval, initial_selling_rate, final_selling_rate,
                                 use_market_maker_rate, fit_to_limit,
                                 energy_rate_decrease_per_update)
+        self._future_market_strategy = future_market_strategy_factory(self.asset_type)
 
     @classmethod
     def _create_settlement_market_strategy(cls):
@@ -213,6 +216,7 @@ class PVStrategy(BidEnabledStrategy):
         self.offer_update.increment_update_counter_all_markets(self)
 
         self._settlement_market_strategy.event_tick(self)
+        self._future_market_strategy.event_tick(self)
 
     def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
         # This forecast ist based on the real PV system data provided by enphase
@@ -256,6 +260,7 @@ class PVStrategy(BidEnabledStrategy):
         self.event_market_cycle_price()
         self._delete_past_state()
         self._settlement_market_strategy.event_market_cycle(self)
+        self._future_market_strategy.event_market_cycle(self)
 
     def _set_energy_measurement_of_last_market(self):
         """Set the (simulated) actual energy of the device in the previous market slot."""
@@ -298,7 +303,8 @@ class PVStrategy(BidEnabledStrategy):
                     original_price=offer_price,
                     seller_origin=self.owner.name,
                     seller_origin_id=self.owner.uuid,
-                    seller_id=self.owner.uuid
+                    seller_id=self.owner.uuid,
+                    time_slot=market.time_slot
                 )
                 self.offers.post(offer, market.id)
             except MarketException:
@@ -307,15 +313,15 @@ class PVStrategy(BidEnabledStrategy):
     def event_offer_traded(self, *, market_id, trade):
         super().event_offer_traded(market_id=market_id, trade=trade)
         self._settlement_market_strategy.event_offer_traded(self, market_id, trade)
-        market = self.area.get_future_market_from_id(market_id)
-        if market is None:
+
+        if not self.area.is_market_spot_or_future(market_id):
             return
 
         self._assert_if_trade_offer_price_is_too_low(market_id, trade)
 
         if trade.seller == self.owner.name:
             self.state.decrement_available_energy(
-                trade.offer_bid.energy, market.time_slot, self.owner.name)
+                trade.offer_bid.energy, trade.time_slot, self.owner.name)
 
     def event_bid_traded(self, *, market_id, bid_trade):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
@@ -326,18 +332,22 @@ class PVStrategy(BidEnabledStrategy):
             for market in self.area.all_markets:
                 time_slot = market.time_slot
                 if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
-                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=0,
-                                                               final_rate=0)
+                    self.offer_update.set_parameters(initial_rate=0,
+                                                     final_rate=0)
                 elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
                     rate = \
                         self.area.config.market_maker_rate[time_slot] * \
                         ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / \
                         100
-                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=rate,
-                                                               final_rate=rate)
+                    self.offer_update.set_parameters(initial_rate=rate,
+                                                     final_rate=rate)
                 elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
                     rate = self.area.config.market_maker_rate[time_slot]
-                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=rate,
-                                                               final_rate=rate)
+                    self.offer_update.set_parameters(initial_rate=rate,
+                                                     final_rate=rate)
                 else:
                     raise MarketException
+
+    @property
+    def asset_type(self):
+        return AssetType.PRODUCER

@@ -98,7 +98,6 @@
         10000
       ],
       "MIN_ALLOWED_SOC": 10,
-      "SELL_ON_MOST_EXPENSIVE_MARKET": false,
       "LOSS_FUNCTION": 1,
       "LOSS_FUNCTION_LIMIT": [
         1,

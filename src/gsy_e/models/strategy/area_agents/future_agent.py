@@ -20,19 +20,19 @@ from typing import TYPE_CHECKING
 from gsy_framework.constants_limits import ConstSettings
 
 from gsy_e.gsy_e_core.util import make_fa_name
-from gsy_e.models.market.future import FutureMarkets
 from gsy_e.models.strategy.area_agents.future_engine import FutureEngine
 from gsy_e.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
+    from gsy_e.models.market.future import FutureMarkets
 
 
 class FutureAgent(TwoSidedAgent):
     """Handler for IAAEngines for the future markets."""
 
-    def __init__(self, *, owner: "Area", higher_market: FutureMarkets,
-                 lower_market: FutureMarkets,
+    def __init__(self, *, owner: "Area", higher_market: "FutureMarkets",
+                 lower_market: "FutureMarkets",
                  min_offer_age: int = ConstSettings.IAASettings.MIN_OFFER_AGE,
                  min_bid_age: int = ConstSettings.IAASettings.MIN_BID_AGE):
 
