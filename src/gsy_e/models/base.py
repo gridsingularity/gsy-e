@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from enum import Enum
 from logging import getLogger
 from typing import Dict, Optional, TYPE_CHECKING
 
@@ -31,8 +32,17 @@ if TYPE_CHECKING:
     from gsy_e.models.state import StateInterface
 
 
+class AssetType(Enum):
+    """Enum class for defining the asset type"""
+    PRODUCER = 0
+    CONSUMER = 1
+    PROSUMER = 2
+    UNDEFINED = 3
+
+
 class AreaBehaviorBase:
     """Base class used by area behaviour defining classes `BaseStrategy`"""
+
     def __init__(self):
         # `area` is the area we trade in
         self.area: Optional["Area"] = None
@@ -95,3 +105,8 @@ class AreaBehaviorBase:
             raise GSyException(
                 "Strategy does not have a state. "
                 "State is required to support load state functionality.") from ex
+
+    @property
+    def asset_type(self):
+        """Return the asset type of the strategy. Should be implemented by all children."""
+        raise NotImplementedError

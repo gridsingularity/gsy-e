@@ -329,6 +329,3 @@ xlrd==2.0.1
     # via pandapower
 xlsxwriter==3.0.2
     # via pandapower
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools

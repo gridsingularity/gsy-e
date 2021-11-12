@@ -45,10 +45,10 @@ class OneSidedAgent(InterAreaAgent):
             return self.lower_market
         if self.higher_market.id == market_id:
             return self.higher_market
-        if self.owner.get_future_market_from_id(market_id):
-            return self.owner.get_future_market_from_id(market_id)
-        if self.owner.parent.get_future_market_from_id(market_id) is not None:
-            return self.owner.parent.get_future_market_from_id(market_id)
+        if self.owner.get_spot_or_future_market_by_id(market_id):
+            return self.owner.get_spot_or_future_market_by_id(market_id)
+        if self.owner.parent.get_spot_or_future_market_by_id(market_id) is not None:
+            return self.owner.parent.get_spot_or_future_market_by_id(market_id)
 
         return None
 

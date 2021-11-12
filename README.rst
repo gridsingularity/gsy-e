@@ -10,11 +10,11 @@ Grid Singularity has been proclaimed the `World Tech Pioneer by the World Econom
 
 Code of Conduct
 ===============
-Please refer to: https://github.com/gridsingularity/d3a/blob/master/CODE_OF_CONDUCT.md
+Please refer to: https://github.com/gridsingularity/gsy-e/blob/master/CODE_OF_CONDUCT.md
 
 How to contribute:
 ==================
-Please refer to: https://github.com/gridsingularity/d3a/blob/master/CONTRIBUTING.md
+Please refer to: https://github.com/gridsingularity/gsy-e/blob/master/CONTRIBUTING.md
 
 
 Basic setup
