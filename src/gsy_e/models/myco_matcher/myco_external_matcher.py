@@ -30,6 +30,8 @@ from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import (
 from gsy_e.models.market.two_sided import TwoSidedMarket
 from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
 
+# pylint: disable=fixme
+
 
 class ExternalMatcherEventsEnum(Enum):
     """Enum for all events of the external matcher."""
@@ -84,8 +86,9 @@ class MycoExternalMatcher(MycoMatcherInterface):
                     {f"{area_uuid}-{market.time_slot_str}": market})
                 market_offers_bids_list_mapping[area_uuid] = self._get_orders(market, filters)
 
-            for market in area_data.get("future_markets") or []:
+            if area_data.get("future_markets"):
                 # Future markets
+                market = area_data["future_markets"]
                 self.area_markets_mapping.update(
                     {f"{area_uuid}-{time_slot_str}": market
                      for time_slot_str in market.orders_per_slot().keys()})
@@ -142,7 +145,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
         self._recommendations = []
         self.myco_ext_conn.publish_json(channel, response_data)
 
-    def publish_simulation_id(self, message):
+    def publish_simulation_id(self, _):
         """Publish the simulation id to the redis myco client.
 
         At the moment the id of the simulations run by the cli is set as ""
@@ -179,7 +182,6 @@ class MycoExternalMatcher(MycoMatcherInterface):
     def _get_orders(market: TwoSidedMarket, filters: Dict) -> Dict:
         """Get bids and offers from market, apply filters and return serializable lists."""
 
-        # TODO: refactor into a filter class if more filters needed in the future
         orders = market.orders_per_slot()
         filtered_energy_type = filters.get("energy_type")
         if filtered_energy_type:
@@ -200,7 +202,7 @@ class MycoExternalMatcherValidator:
     BLOCKING_EXCEPTIONS = (MycoValidationException, )
 
     @staticmethod
-    def _validate_valid_dict(matcher: MycoExternalMatcher, recommendation: Dict):
+    def _validate_valid_dict(_: MycoExternalMatcher, recommendation: Dict):
         """Check whether the recommendation dict is valid."""
         if not BidOfferMatch.is_valid_dict(recommendation):
             raise MycoValidationException(f"BidOfferMatch is not valid {recommendation}")
