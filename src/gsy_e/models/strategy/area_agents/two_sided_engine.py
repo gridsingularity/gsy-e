@@ -26,7 +26,7 @@ from gsy_e.gsy_e_core.util import short_offer_bid_log_str
 from gsy_e.models.strategy.area_agents.one_sided_engine import IAAEngine
 
 if TYPE_CHECKING:
-    from gsy_e.models.strategy.area_agents.inter_area_agent import InterAreaAgent
+    from gsy_e.models.strategy.area_agents.market_agent import MarketAgent
 
 BidInfo = namedtuple("BidInfo", ("source_bid", "target_bid"))
 
@@ -36,7 +36,7 @@ class TwoSidedEngine(IAAEngine):
     # pylint: disable = too-many-arguments
 
     def __init__(self, name: str, market_1, market_2, min_offer_age: int, min_bid_age: int,
-                 owner: "InterAreaAgent"):
+                 owner: "MarketAgent"):
         super().__init__(name, market_1, market_2, min_offer_age, owner)
         self.forwarded_bids: Dict[str, BidInfo] = {}
         self.bid_trade_residual: Dict[str, Bid] = {}
@@ -191,7 +191,7 @@ class TwoSidedEngine(IAAEngine):
             try:
                 self._delete_forwarded_bids(bid_info)
             except MarketException:
-                self.owner.log.exception("Error deleting InterAreaAgent bid")
+                self.owner.log.exception("Error deleting MarketAgent bid")
         self._delete_forwarded_bid_entries(bid_info.source_bid)
         self.bid_age.pop(bid_info.source_bid.id, None)
 

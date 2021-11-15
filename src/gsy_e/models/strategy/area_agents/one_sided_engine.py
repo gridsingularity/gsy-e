@@ -193,7 +193,7 @@ class IAAEngine:
             except OfferNotFoundException:
                 pass
             except MarketException:
-                self.owner.log.exception("Error deleting InterAreaAgent offer:")
+                self.owner.log.exception("Error deleting MarketAgent offer:")
 
             self._delete_forwarded_offer_entries(offer_info.source_offer)
             self.offer_age.pop(offer_info.source_offer.id, None)
@@ -221,7 +221,7 @@ class IAAEngine:
                 self.owner.delete_offer(self.markets.target, offer_info.target_offer)
                 self._delete_forwarded_offer_entries(offer_info.source_offer)
             except MarketException:
-                self.owner.log.exception("Error deleting InterAreaAgent offer")
+                self.owner.log.exception("Error deleting MarketAgent offer")
         # TODO: Should potentially handle the flip side, by not deleting the source market offer
         # but by deleting the offered_offers entries
 

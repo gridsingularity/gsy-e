@@ -37,7 +37,7 @@ from gsy_e.models.market.settlement import SettlementMarket
 from gsy_e.models.market.two_sided import TwoSidedMarket
 from gsy_e.models.strategy.area_agents.balancing_agent import BalancingAgent
 from gsy_e.models.strategy.area_agents.future_agent import FutureAgent
-from gsy_e.models.strategy.area_agents.inter_area_agent import InterAreaAgent
+from gsy_e.models.strategy.area_agents.market_agent import MarketAgent
 from gsy_e.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from gsy_e.models.strategy.area_agents.settlement_agent import SettlementAgent
 from gsy_e.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
@@ -83,7 +83,7 @@ class TestAreaDispatcher:
     ) -> Dict[DateTime, Union[OneSidedAgent, BalancingAgent, SettlementAgent]]:
         """Select the correct IAA dict in the AreaDispatcher depending on the market_type"""
         if market_type == AvailableMarketTypes.SPOT:
-            return dispatcher_object.interarea_agents
+            return dispatcher_object.market_agents
         if market_type == AvailableMarketTypes.BALANCING:
             return dispatcher_object.balancing_agents
         if market_type == AvailableMarketTypes.SETTLEMENT:
@@ -121,7 +121,7 @@ class TestAreaDispatcher:
     def test_create_area_agents_creates_correct_objects(self, market_type: AvailableMarketTypes,
                                                         spot_market_type: SpotMarketTypeEnum,
                                                         market_class: MarketBase,
-                                                        expected_agent_type: InterAreaAgent,
+                                                        expected_agent_type: MarketAgent,
                                                         area_dispatcher):
         """Test if create_area_agents creates correct objects in the agent dicts."""
         original_matching_type = ConstSettings.IAASettings.MARKET_TYPE

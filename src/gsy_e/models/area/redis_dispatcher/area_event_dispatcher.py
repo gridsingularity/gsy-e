@@ -37,7 +37,7 @@ class RedisAreaEventDispatcher(RedisEventDispatcherBase):
             self.root_dispatcher.market_event_dispatcher.wait_for_futures()
             self.root_dispatcher.market_notify_event_dispatcher.wait_for_futures()
 
-        for time_slot, agents in self.root_dispatcher._inter_area_agents.items():
+        for time_slot, agents in self.root_dispatcher._market_agents.items():
             if time_slot not in self.area._markets.markets:
                 # exclude past IAAs
                 continue

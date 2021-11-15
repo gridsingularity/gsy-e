@@ -20,11 +20,11 @@ from typing import Optional
 from numpy.random import random
 
 from gsy_e.models.market import MarketBase
-from gsy_e.models.strategy.area_agents.inter_area_agent import InterAreaAgent
+from gsy_e.models.strategy.area_agents.market_agent import MarketAgent
 from gsy_e.models.strategy.area_agents.one_sided_engine import IAAEngine
 
 
-class OneSidedAgent(InterAreaAgent):
+class OneSidedAgent(MarketAgent):
     """Inter area agent implementation for the one sided case."""
 
     def _create_engines(self):

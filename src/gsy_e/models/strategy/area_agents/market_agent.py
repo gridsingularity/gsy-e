@@ -25,7 +25,7 @@ from gsy_e.gsy_e_core.util import make_iaa_name
 from gsy_e.models.strategy import BaseStrategy, _TradeLookerUpper
 
 
-class InterAreaAgent(BaseStrategy):
+class MarketAgent(BaseStrategy):
     """Base class for inter area agents implementations."""
     parameters = ("owner", "higher_market", "lower_market", "min_offer_age")
 
@@ -74,4 +74,4 @@ class InterAreaAgent(BaseStrategy):
         return _TradeLookerUpper(self.name)
 
     def __repr__(self):
-        return f"<InterAreaAgent {self.name} {self.time_slot_str}>"
+        return f"<MarketAgent {self.name} {self.time_slot_str}>"

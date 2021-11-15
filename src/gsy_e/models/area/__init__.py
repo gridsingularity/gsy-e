@@ -336,7 +336,7 @@ class Area:
         Trigger `MARKET_CYCLE` event to allow child markets to also cycle.
 
         It's important for this to happen from top to bottom of the `Area` tree
-        in order for the `InterAreaAgent`s to be connected correctly
+        in order for the `MarketAgent`s to be connected correctly
 
         `_trigger_event` is used internally to avoid multiple event chains during
         initial area activation.
