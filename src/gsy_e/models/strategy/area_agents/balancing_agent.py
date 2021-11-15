@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from numpy.random import random
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.gsy_e_core.util import make_ba_name, make_iaa_name
+from gsy_e.gsy_e_core.util import make_ba_name, make_ma_name
 from gsy_e.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from gsy_e.models.strategy.area_agents.one_sided_engine import BalancingEngine
 from gsy_framework.constants_limits import ConstSettings
@@ -72,7 +72,7 @@ class BalancingAgent(OneSidedAgent):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
 
     def _calculate_and_buy_balancing_energy(self, market, trade):
-        if trade.buyer != make_iaa_name(self.owner) or \
+        if trade.buyer != make_ma_name(self.owner) or \
                 market.time_slot != self.lower_market.time_slot:
             return
         positive_balancing_energy = \

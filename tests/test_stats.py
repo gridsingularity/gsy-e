@@ -25,7 +25,7 @@ from gsy_framework.unit_test_utils import assert_dicts_identical, \
 from gsy_framework.sim_results.bills import MarketEnergyBills
 from gsy_framework.data_classes import Trade
 from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
-from gsy_e.gsy_e_core.util import make_iaa_name
+from gsy_e.gsy_e_core.util import make_ma_name
 from gsy_e import constants
 from gsy_e.models.area.throughput_parameters import ThroughputParameters
 
@@ -289,7 +289,7 @@ def grid2():
         'street',
         children=[house1, house2],
         past_markets=[FakeMarket(
-            (_trade(2, make_iaa_name(house1), 3, make_iaa_name(house2)),), 'street'
+            (_trade(2, make_ma_name(house1), 3, make_ma_name(house2)),), 'street'
         )]
     )
     house1.parent = grid
@@ -334,7 +334,7 @@ def grid_fees():
     grid = FakeArea(
         'street',
         children=[house1, house2],
-        past_markets=[FakeMarket((_trade(2, make_iaa_name(house2), 3, make_iaa_name(house1),
+        past_markets=[FakeMarket((_trade(2, make_ma_name(house2), 3, make_ma_name(house1),
                                          fee_price=1.0),), 'street', fees=1.0)
                       ])
     house1.parent = grid
@@ -356,8 +356,8 @@ def test_energy_bills_accumulate_fees(grid_fees):
     m_bills._update_market_fees(epb.area_result_dict, epb.flattened_area_core_stats_dict)
     grid_fees.children[0].past_markets = [FakeMarket([], name='house1', fees=2.0)]
     grid_fees.children[1].past_markets = []
-    grid_fees.past_markets = [FakeMarket((_trade(2, make_iaa_name(grid_fees.children[0]), 3,
-                                                 make_iaa_name(grid_fees.children[0]),
+    grid_fees.past_markets = [FakeMarket((_trade(2, make_ma_name(grid_fees.children[0]), 3,
+                                                 make_ma_name(grid_fees.children[0]),
                                                  fee_price=4.0),), 'street', fees=4.0)]
     epb.current_market_time_slot_str = grid_fees.current_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid_fees)
@@ -390,8 +390,8 @@ def test_energy_bills_report_correctly_market_fees(grid_fees):
                    epb.current_market_time_slot_str)
     grid_fees.children[0].past_markets = [FakeMarket([], name='house1', fees=2.0)]
     grid_fees.children[1].past_markets = []
-    grid_fees.past_markets = [FakeMarket((_trade(2, make_iaa_name(grid_fees.children[0]), 3,
-                                                 make_iaa_name(grid_fees.children[0]),
+    grid_fees.past_markets = [FakeMarket((_trade(2, make_ma_name(grid_fees.children[0]), 3,
+                                                 make_ma_name(grid_fees.children[0]),
                                                  fee_price=4.0),), 'street', fees=4.0)]
     epb.current_market_time_slot_str = grid_fees.current_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid_fees)

@@ -158,7 +158,7 @@ class NonBlockingConsole:
         return False
 
 
-def make_iaa_name(owner):
+def make_ma_name(owner):
     return f"IAA {owner.name}"
 
 
