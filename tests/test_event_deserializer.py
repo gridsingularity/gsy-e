@@ -1,9 +1,9 @@
 import unittest
 import pytest
 import datetime
-from d3a.models.area import Area
-from d3a.models.area.event_deserializer import deserialize_events_to_areas
-from d3a.models.area.event_types import DisconnectMarketEvent, ConnectMarketEvent, \
+from gsy_e.models.area import Area
+from gsy_e.models.area.event_deserializer import deserialize_events_to_areas
+from gsy_e.models.area.event_types import DisconnectMarketEvent, ConnectMarketEvent, \
     DisableMarketEvent, EnableMarketEvent
 
 

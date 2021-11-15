@@ -1,5 +1,6 @@
 """
-Copyright 2018 Grid Singularity This file is part of D3A.
+Copyright 2018 Grid Singularity
+This file is part of Grid Singularity Exchange
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 General Public License as published by the Free Software Foundation, either version 3 of the
@@ -14,7 +15,7 @@ see <http://www.gnu.org/licenses/>.
 """
 from unittest.mock import Mock
 
-from d3a.models.strategy import utils
+from gsy_e.models.strategy import utils
 
 
 class TestStrategyUtils:

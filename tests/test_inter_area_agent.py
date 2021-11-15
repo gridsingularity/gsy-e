@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -21,19 +21,19 @@ import pendulum
 from math import isclose
 from uuid import uuid4
 
-from d3a_interface.data_classes import MarketClearingState
+from gsy_framework.data_classes import MarketClearingState
 
-from d3a.constants import TIME_FORMAT
-from d3a.constants import TIME_ZONE
-from d3a.models.area import DEFAULT_CONFIG
-from d3a_interface.data_classes import Offer, Trade, Bid
-from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
-from d3a.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
-from d3a.models.strategy.area_agents.settlement_agent import SettlementAgent
-from d3a.models.strategy.area_agents.two_sided_engine import BidInfo
-from d3a_interface.constants_limits import ConstSettings
-from d3a.models.market import GridFee
-from d3a.models.market.grid_fees.base_model import GridFees
+from gsy_e.constants import TIME_FORMAT
+from gsy_e.constants import TIME_ZONE
+from gsy_e.models.area import DEFAULT_CONFIG
+from gsy_framework.data_classes import Offer, Trade, Bid
+from gsy_e.models.strategy.area_agents.one_sided_agent import OneSidedAgent
+from gsy_e.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
+from gsy_e.models.strategy.area_agents.settlement_agent import SettlementAgent
+from gsy_e.models.strategy.area_agents.two_sided_engine import BidInfo
+from gsy_framework.constants_limits import ConstSettings
+from gsy_e.models.market import GridFee
+from gsy_e.models.market.grid_fees.base_model import GridFees
 
 
 def teardown_function():
@@ -343,7 +343,7 @@ def iaa_bid(request):
 
 @pytest.fixture
 def iaa_double_sided():
-    from d3a_interface.constants_limits import ConstSettings
+    from gsy_framework.constants_limits import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket(offers=[Offer('id', pendulum.now(), 2, 2, 'other', 2)],
                               bids=[Bid('bid_id', pendulum.now(), 10, 10, 'B', 10)],
@@ -436,7 +436,7 @@ class TestIAABid:
             residual_bid.update_price(residual_energy * original_bid.energy_rate)
             residual_bid.update_energy(residual_energy)
 
-            low_to_high_engine.event_bid_split(market_id=low_to_high_engine.markets.target,
+            low_to_high_engine.event_bid_split(market_id=low_to_high_engine.markets.target.id,
                                                original_bid=original_bid,
                                                accepted_bid=accepted_bid,
                                                residual_bid=residual_bid)
@@ -503,7 +503,7 @@ class TestIAABid:
                            original_bid.buyer)
         residual_bid = Bid('residual_bid', original_bid.creation_time, residual_bid_price, 0.1,
                            original_bid.buyer)
-        iaa_double_sided.event_bid_split(market_id=iaa_double_sided.higher_market,
+        iaa_double_sided.event_bid_split(market_id=iaa_double_sided.higher_market.id,
                                          original_bid=original_bid,
                                          accepted_bid=accepted_bid,
                                          residual_bid=residual_bid)
@@ -528,7 +528,7 @@ class TestIAABid:
             'residual_bid', original_bid.creation_time, original_bid.price, residual_energy,
             original_bid.buyer, original_bid.price)
         iaa_double_sided.usable_bid = lambda s: True
-        iaa_double_sided.event_bid_split(market_id=iaa_double_sided.lower_market,
+        iaa_double_sided.event_bid_split(market_id=iaa_double_sided.lower_market.id,
                                          original_bid=original_bid,
                                          accepted_bid=accepted_bid,
                                          residual_bid=residual_bid)

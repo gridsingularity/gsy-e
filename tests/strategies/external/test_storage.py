@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -15,12 +15,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+# pylint: disable=missing-function-docstring
+
 import uuid
 
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 import pytest
 
-from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
+from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 from tests.strategies.external.utils import (
     check_external_command_endpoint_with_correct_payload_succeeds,
     create_areas_markets_for_strategy_fixture, assert_bid_offer_aggregator_commands_return_value)
@@ -28,12 +30,14 @@ from tests.strategies.external.utils import (
 
 @pytest.fixture(name="external_storage")
 def external_storage_fixture():
+    """Create a StorageExternalStrategy instance in a two-sided market."""
     ConstSettings.IAASettings.MARKET_TYPE = 2
     yield create_areas_markets_for_strategy_fixture(StorageExternalStrategy())
     ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 class TestStorageExternalStrategy:
+    """Tests for the StorageExternalStrategy class."""
 
     @staticmethod
     def test_offer_succeeds(external_storage):

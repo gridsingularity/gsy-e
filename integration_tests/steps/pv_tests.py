@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,9 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from math import isclose
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.utils import convert_W_to_kWh
-from d3a.constants import DEFAULT_PRECISION
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.utils import convert_W_to_kWh
+from gsy_e.constants import DEFAULT_PRECISION
 
 
 @then('the storages buy energy for no more than the min PV selling rate')

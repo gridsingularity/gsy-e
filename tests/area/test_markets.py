@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,13 +20,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from unittest.mock import Mock, patch
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings, TIME_ZONE, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings, TIME_ZONE, GlobalConfig
 from pendulum import duration, today
 
-import d3a
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.models.area import Area
-from d3a.models.strategy.storage import StorageStrategy
+import gsy_e
+from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.models.area import Area
+from gsy_e.models.strategy.storage import StorageStrategy
 
 
 class TestMarketRotation:
@@ -48,14 +48,14 @@ class TestMarketRotation:
         area = Area(name="parent_area", children=[child], config=config)
         ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
         ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = False
-        d3a.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
+        gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 
         yield area
 
         DeviceRegistry.REGISTRY = original_registry
         ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
         ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = False
-        d3a.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
+        gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 
     def test_market_rotation_is_successful(self, area_fixture):
         ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
@@ -74,15 +74,17 @@ class TestMarketRotation:
         assert len(area_fixture.past_markets) == 1
         assert len(area_fixture.all_markets) == 1
 
-    @patch("d3a.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE", True)
+    @patch("gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE", True)
     def test_market_rotation_is_successful_keep_past_markets(self, area_fixture):
         area_fixture.activate()
         assert len(area_fixture.all_markets) == 1
         ticks_per_slot = area_fixture.config.slot_length / area_fixture.config.tick_length
         area_fixture.current_tick = ticks_per_slot
         area_fixture.cycle_markets()
+        # The expected future market count is market slots for the whole simulation duration
+        # -2 to not take into account the first 2 market slots due to the cycle_markets call
         expected_number_of_future_markets = (
-                GlobalConfig.future_market_duration / area_fixture.config.slot_length + 1)
+                GlobalConfig.sim_duration / area_fixture.config.slot_length - 2)
         assert len(area_fixture.past_markets) == 1
         assert len(area_fixture.all_markets) == 1
         assert len(area_fixture.future_market_time_slots) == expected_number_of_future_markets
@@ -91,9 +93,10 @@ class TestMarketRotation:
         area_fixture.cycle_markets()
         assert len(area_fixture.past_markets) == 2
         assert len(area_fixture.all_markets) == 1
-        assert len(area_fixture.future_market_time_slots) == expected_number_of_future_markets
+        # The cycle_markets decreases by one the count of expected future markets
+        assert len(area_fixture.future_market_time_slots) == expected_number_of_future_markets - 1
 
-    @patch("d3a_interface.constants_limits.ConstSettings.BalancingSettings."
+    @patch("gsy_framework.constants_limits.ConstSettings.BalancingSettings."
            "ENABLE_BALANCING_MARKET", True)
     def test_balancing_market_rotation_is_successful(self, area_fixture):
         area_fixture.activate()
@@ -109,7 +112,7 @@ class TestMarketRotation:
         assert len(area_fixture.past_balancing_markets) == 1
         assert len(area_fixture.balancing_markets) == 1
 
-    @patch("d3a_interface.constants_limits.ConstSettings.SettlementMarketSettings."
+    @patch("gsy_framework.constants_limits.ConstSettings.SettlementMarketSettings."
            "ENABLE_SETTLEMENT_MARKETS", True)
     def test_settlement_market_rotation_is_successful(self, area_fixture):
         """

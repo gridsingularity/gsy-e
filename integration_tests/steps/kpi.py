@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ import ast
 from behave import then
 from math import isclose
 
-from d3a_interface.utils import get_area_name_uuid_mapping
+from gsy_framework.utils import get_area_name_uuid_mapping
 
 
 @then('{kpi} of {expected_kpis} are correctly reported')
@@ -37,8 +37,8 @@ def test_export_of_kpi_result(context, kpi, expected_kpis):
     with open(sim_data_csv[0], "r") as sf:
         kpi_data = json.load(sf)
     expected_kpis = ast.literal_eval(expected_kpis)
-    for area, value in expected_kpis.items():
-        area_uuid = name_uuid_map[area]
+    for area_name, value in expected_kpis.items():
+        area_uuid = name_uuid_map[area_name]
         if kpi == "self_sufficiency":
             assert isclose(kpi_data[area_uuid]['self_sufficiency'], float(value), abs_tol=1e-03)
 

@@ -2,20 +2,20 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock
 
-from d3a_interface.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import GlobalConfig
 from pendulum import duration
 
-from d3a.d3a_core.live_events import CreateAreaEvent, UpdateAreaEvent
-from d3a.d3a_core.live_events import LiveEvents
-from d3a.d3a_core.util import d3a_path
-from d3a.models.area import Area
-from d3a.models.config import SimulationConfig
-from d3a.models.strategy.smart_meter import SmartMeterStrategy
-from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
-from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.storage import StorageStrategy
+from gsy_e.gsy_e_core.live_events import CreateAreaEvent, UpdateAreaEvent
+from gsy_e.gsy_e_core.live_events import LiveEvents
+from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.models.area import Area
+from gsy_e.models.config import SimulationConfig
+from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
+from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
+from gsy_e.models.strategy.pv import PVStrategy
+from gsy_e.models.strategy.storage import StorageStrategy
 
 
 class TestLiveEvents(unittest.TestCase):

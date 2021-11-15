@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,12 +18,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from behave import then
 from math import isclose
 
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
     _str_to_datetime
-from d3a_interface.utils import convert_W_to_Wh, find_object_of_same_weekday_and_time
-from d3a.setup.strategy_tests import user_profile_load_csv  # NOQA
-from d3a.setup.strategy_tests import user_profile_load_csv_multiday  # NOQA
-from d3a.constants import FLOATING_POINT_TOLERANCE, DATE_TIME_FORMAT
+from gsy_framework.utils import convert_W_to_Wh, find_object_of_same_weekday_and_time
+from gsy_e.setup.strategy_tests import user_profile_load_csv  # NOQA
+from gsy_e.setup.strategy_tests import user_profile_load_csv_multiday  # NOQA
+from gsy_e.constants import FLOATING_POINT_TOLERANCE, DATE_TIME_FORMAT
 
 
 @then('the DefinedLoadStrategy follows the {single_or_multi} day Load profile provided as csv')
@@ -55,7 +55,7 @@ def check_traded_energy_rate(context):
 def check_user_pv_dict_profile(context):
     house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     load = next(filter(lambda x: x.name == "H1 DefinedLoad", house.children))
-    from d3a.setup.strategy_tests.user_profile_load_dict import user_profile
+    from gsy_e.setup.strategy_tests.user_profile_load_dict import user_profile
 
     for market in house.past_markets:
         slot = market.time_slot

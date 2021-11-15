@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,15 +22,15 @@ from uuid import uuid4
 
 import pendulum
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 
-from d3a import constants
-from d3a.constants import TIME_ZONE
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.d3a_core.util import d3a_path
-from d3a.models.area import DEFAULT_CONFIG
-from d3a_interface.data_classes import Offer, Trade, BalancingOffer, Bid
-from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
+from gsy_e import constants
+from gsy_e.constants import TIME_ZONE
+from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.models.area import DEFAULT_CONFIG
+from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid
+from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
@@ -60,6 +60,10 @@ class FakeArea:
 
     def get_future_market_from_id(self, id):
         return self.test_market
+
+    @property
+    def future_markets(self):
+        return None
 
     @property
     def all_markets(self):
@@ -371,11 +375,13 @@ def test_global_market_maker_rate_single_value(bus_test4):
 
 @pytest.fixture()
 def bus_test5(area_test1):
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
     c = InfiniteBusStrategy(
         energy_rate_profile=os.path.join(d3a_path, "resources", "SAM_SF_Summer.csv"))
     c.area = area_test1
     c.owner = area_test1
-    return c
+    yield c
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
 
 
 def test_global_market_maker_rate_profile_and_infinite_bus_selling_rate_profile(bus_test5):
@@ -393,11 +399,13 @@ def test_global_market_maker_rate_profile_and_infinite_bus_selling_rate_profile(
 
 @pytest.fixture()
 def bus_test6(area_test1):
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
     c = InfiniteBusStrategy(
         buying_rate_profile=os.path.join(d3a_path, "resources", "LOAD_DATA_1.csv"))
     c.area = area_test1
     c.owner = area_test1
-    return c
+    yield c
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
 
 
 def test_infinite_bus_buying_rate_set_as_profile(bus_test6):

@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,19 +22,19 @@ from math import isclose
 from uuid import uuid4
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.exceptions import D3ADeviceException
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.exceptions import GSyDeviceException
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from pendulum import Duration, DateTime, now
 
-from d3a.constants import TIME_FORMAT, FLOATING_POINT_TOLERANCE
-from d3a.constants import TIME_ZONE
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.d3a_core.util import change_global_config
-from d3a.models.config import SimulationConfig
-from d3a_interface.data_classes import Offer, Trade, BalancingOffer, Bid
-from d3a.models.state import EnergyOrigin, ESSEnergyOrigin
-from d3a.models.strategy.storage import StorageStrategy
+from gsy_e.constants import TIME_FORMAT, FLOATING_POINT_TOLERANCE
+from gsy_e.constants import TIME_ZONE
+from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.gsy_e_core.util import change_global_config
+from gsy_e.models.config import SimulationConfig
+from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid
+from gsy_e.models.state import EnergyOrigin, ESSEnergyOrigin
+from gsy_e.models.strategy.storage import StorageStrategy
 
 DeviceRegistry.REGISTRY = {
     "A": (23, 25),
@@ -60,14 +60,24 @@ class FakeArea:
         self.current_tick = 0
         self.past_market = FakeMarket(4)
         self.current_market = FakeMarket(0)
-        self._markets_return = {"Fake Market": FakeMarket(self.count)}
-        self.spot_market = self.all_markets[0]
+        self.spot_market = self.current_market
         self.test_balancing_market = FakeMarket(1)
 
     log = getLogger(__name__)
 
-    def get_future_market_from_id(self, id):
+    @property
+    def future_market_time_slots(self):
+        return []
+
+    @property
+    def future_markets(self):
+        return None
+
+    def get_spot_or_future_market_by_id(self, _):
         return self.spot_market
+
+    def is_market_spot_or_future(self, _):
+        return True
 
     def get_balancing_market(self, time):
         return self.test_balancing_market
@@ -75,10 +85,6 @@ class FakeArea:
     @property
     def last_past_market(self):
         return self.past_market
-
-    @property
-    def all_markets(self):
-        return list(self._markets_return.values())
 
     @property
     def cheapest_offers(self):
@@ -124,7 +130,7 @@ class FakeMarket:
         self.count = count
         self.id = str(count)
         self.trade = Trade('id', 'time', Offer('id', now(), 11.8, 0.5, 'FakeArea'),
-                           'FakeArea', 'buyer'
+                           'FakeArea', 'buyer', time_slot=self.time_slot
                            )
         self.created_offers = []
         self.offers = {'id': Offer('id', now(), 11.8, 0.5, 'FakeArea'),
@@ -144,6 +150,9 @@ class FakeMarket:
         ]
         return offers[self.count]
 
+    def get_offers(self):
+        return self.offers
+
     @property
     def time_slot(self):
         return DateTime.now(tz=TIME_ZONE).start_of('day')
@@ -156,7 +165,7 @@ class FakeMarket:
         return
 
     def offer(self, price, energy, seller, original_price=None, seller_origin=None,
-              seller_origin_id=None, seller_id=None):
+              seller_origin_id=None, seller_id=None, time_slot=None):
         offer = Offer('id', now(), price, energy, seller, original_price,
                       seller_origin=seller_origin, seller_origin_id=seller_origin_id,
                       seller_id=seller_id)
@@ -285,7 +294,7 @@ def storage_strategy_test_buy_energy(area_test3, called):
 
 def test_if_storage_buys_below_break_even(storage_strategy_test_buy_energy, area_test3):
     storage_strategy_test_buy_energy.event_activate()
-    storage_strategy_test_buy_energy.buy_energy(area_test3.all_markets[0])
+    storage_strategy_test_buy_energy.event_tick()
 
     assert len(storage_strategy_test_buy_energy.accept_offer.calls) == 1
 
@@ -332,7 +341,7 @@ def storage_strategy_test5(area_test5, called):
     s = StorageStrategy(initial_soc=100, battery_capacity_kWh=5)
     s.owner = area_test5
     s.area = area_test5
-    s.sell_energy = called
+    s._sell_energy_to_spot_market = called
     area_test5.past_market.offers = {
         'id': Offer('id', now(), 20, 1, 'A'),
         'id2': Offer('id2', now(), 20, 3, 'FakeArea'),
@@ -351,7 +360,7 @@ def test_if_storage_handles_capacity_correctly(storage_strategy_test5, area_test
     storage_strategy_test5.event_activate()
     storage_strategy_test5.event_market_cycle()
     assert storage_strategy_test5.state.used_storage == 5
-    assert len(storage_strategy_test5.sell_energy.calls) == 1
+    assert len(storage_strategy_test5._sell_energy_to_spot_market.calls) == 1
 
 
 """TEST6"""
@@ -412,10 +421,10 @@ def storage_strategy_test7(area_test7):
 
 def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
     storage_strategy_test7.event_activate()
-    sell_market = area_test7.all_markets[0]
+    sell_market = area_test7.spot_market
     energy_sell_dict = \
         storage_strategy_test7.state.clamp_energy_to_sell_kWh([sell_market.time_slot])
-    storage_strategy_test7.sell_energy()
+    storage_strategy_test7.event_market_cycle()
     assert(isclose(storage_strategy_test7.state.offered_sell_kWh[sell_market.time_slot],
                    energy_sell_dict[sell_market.time_slot], rel_tol=1e-03))
     assert(isclose(storage_strategy_test7.state.used_storage, 3.0, rel_tol=1e-03))
@@ -513,8 +522,8 @@ def storage_strategy_test8(area_test8):
 
 def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_test8: FakeArea):
     storage_strategy_test8.event_activate()
-    storage_strategy_test8.sell_energy()
-    sell_market = area_test8.all_markets[0]
+    storage_strategy_test8.event_market_cycle()
+    sell_market = area_test8.spot_market
     assert abs(storage_strategy_test8.state.used_storage
                - storage_strategy_test8.state.offered_sell_kWh[sell_market.time_slot] -
                storage_strategy_test8.state.capacity *
@@ -523,11 +532,11 @@ def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_
                    100 - storage_strategy_test8.state.capacity *
                    storage_strategy_test8.state.min_allowed_soc_ratio, rel_tol=1e-02))
 
-    assert(isclose(area_test8._markets_return["Fake Market"].created_offers[0].energy,
+    assert(isclose(area_test8.spot_market.created_offers[0].energy,
                    100 - storage_strategy_test8.state.capacity *
                    storage_strategy_test8.state.min_allowed_soc_ratio, rel_tol=1e-02))
     assert len(storage_strategy_test8.offers.posted_in_market(
-        area_test8._markets_return["Fake Market"].id)
+        area_test8.spot_market.id)
     ) > 0
 
 
@@ -539,12 +548,12 @@ def test_first_market_cycle_with_initial_capacity(storage_strategy_test8: Storag
                                                   area_test8: FakeArea):
     storage_strategy_test8.event_activate()
     storage_strategy_test8.event_market_cycle()
-    sell_market = area_test8.all_markets[0]
+    sell_market = area_test8.spot_market
     assert(isclose(storage_strategy_test8.state.offered_sell_kWh[sell_market.time_slot],
                    100.0 - storage_strategy_test8.state.capacity *
                    storage_strategy_test8.state.min_allowed_soc_ratio, rel_tol=1e-02))
     assert len(storage_strategy_test8.offers.posted_in_market(
-        area_test8._markets_return["Fake Market"].id)
+        area_test8.spot_market.id)
     ) > 0
 
 
@@ -559,38 +568,38 @@ def test_initial_charge(caplog):
 
 
 def test_storage_constructor_rejects_incorrect_parameters():
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(battery_capacity_kWh=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(initial_soc=101)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(initial_soc=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(initial_selling_rate=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(final_selling_rate=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(initial_selling_rate=1, final_selling_rate=5)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(initial_buying_rate=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(final_buying_rate=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(initial_buying_rate=10, final_buying_rate=1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(initial_selling_rate=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(fit_to_limit=True, energy_rate_decrease_per_update=1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(fit_to_limit=False, energy_rate_decrease_per_update=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(fit_to_limit=True, energy_rate_increase_per_update=1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         StorageStrategy(fit_to_limit=False, energy_rate_increase_per_update=-1)
 
 
 def test_free_storage_calculation_takes_into_account_storage_capacity(storage_strategy_test1):
-    time_slot = storage_strategy_test1.area.all_markets[0].time_slot
+    time_slot = storage_strategy_test1.area.spot_market.time_slot
     for capacity in [50.0, 100.0, 1000.0]:
         storage_strategy_test1.state.pledged_sell_kWh[time_slot] = 12.0
         storage_strategy_test1.state.pledged_buy_kWh[time_slot] = 13.0
@@ -626,7 +635,7 @@ def storage_strategy_test11(area_test11, called):
 def test_storage_buys_partial_offer_and_respecting_battery_power(storage_strategy_test11,
                                                                  area_test11):
     storage_strategy_test11.event_activate()
-    buy_market = area_test11.all_markets[0]
+    buy_market = area_test11.spot_market
     storage_strategy_test11.event_tick()
     for i in range(2):
         area_test11.current_tick += 310
@@ -640,7 +649,7 @@ def test_storage_buys_partial_offer_and_respecting_battery_power(storage_strateg
 
 def test_has_battery_reached_max_power(storage_strategy_test11):
     storage_strategy_test11.event_activate()
-    time_slot = storage_strategy_test11.area.all_markets[0].time_slot
+    time_slot = storage_strategy_test11.area.spot_market.time_slot
     storage_strategy_test11.state.pledged_sell_kWh[time_slot] = 5
     storage_strategy_test11.state.offered_sell_kWh[time_slot] = 5
     storage_strategy_test11.state.pledged_buy_kWh[time_slot] = 5
@@ -736,7 +745,7 @@ def test_balancing_offers_are_created_if_device_in_registry(
     storage_strategy_test13.event_activate()
     storage_strategy_test13.event_market_cycle()
     storage_strategy_test13.event_balancing_market_cycle()
-    storage_slot_market = storage_strategy_test13.area.all_markets[0]
+    storage_slot_market = storage_strategy_test13.area.spot_market
     assert len(area_test13.test_balancing_market.created_balancing_offers) == 2
     actual_balancing_demand_energy = \
         area_test13.test_balancing_market.created_balancing_offers[0].energy
@@ -787,8 +796,8 @@ def storage_strategy_test14(area_test14, called):
 
 def test_initial_selling_rate(storage_strategy_test14, area_test14):
     storage_strategy_test14.event_activate()
-    storage_strategy_test14.sell_energy()
-    created_offer = area_test14.all_markets[0].created_offers[0]
+    storage_strategy_test14.event_market_cycle()
+    created_offer = area_test14.spot_market.created_offers[0]
     assert created_offer.price/created_offer.energy == 25
 
 
@@ -839,7 +848,7 @@ def test_energy_origin(storage_strategy_test15, market_test15):
 
     storage_strategy_test15.area.current_market.trade = \
         Trade('id', 'time', Offer('id', now(), 20, 2.0, 'Storage'),
-              'Storage', 'A')
+              'Storage', 'A', time_slot=storage_strategy_test15.area.current_market.time_slot)
     storage_strategy_test15.event_offer_traded(
         market_id=market_test15.id,
         trade=storage_strategy_test15.area.current_market.trade)
@@ -893,10 +902,10 @@ def test_assert_if_trade_rate_is_lower_than_offer_rate(storage_test11):
 
 def test_assert_if_trade_rate_is_higher_than_bid_rate(storage_test11):
     market_id = "2"
-    storage_test11._bids[market_id] = \
-        [Bid("bid_id", now(), 30, 1, buyer="FakeArea")]
+    storage_test11.area.spot_market.id = market_id
+    storage_test11._bids[market_id] = [Bid("bid_id", now(), 30, 1, buyer="FakeArea")]
     expensive_bid = Bid("bid_id", now(), 31, 1, buyer="FakeArea")
-    trade = Trade("trade_id", "time", expensive_bid, storage_test11, "buyer")
+    trade = Trade("trade_id", "time", expensive_bid, "FakeArea", "buyer")
 
     with pytest.raises(AssertionError):
         storage_test11.event_offer_traded(market_id=market_id, trade=trade)
