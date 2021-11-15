@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 gsy_framework_branch = "master"
 
 try:
-    with open("requirements/dev.txt") as req:
+    with open("requirements/dev.txt", encoding="utf-8") as req:
         REQUIREMENTS = [r.partition("#")[0] for r in req if not r.startswith("-e")]
         REQUIREMENTS.extend(
             [f"gsy-framework @ "
@@ -15,7 +15,7 @@ except OSError:
     # Shouldn't happen
     REQUIREMENTS = []
 
-with open("README.rst", "r") as readme:
+with open("README.rst", "r", encoding="utf-8") as readme:
     README = readme.read()
 
 if platform.python_implementation() == "PyPy":
@@ -41,6 +41,7 @@ setup(
     entry_points={
         "console_scripts": [
             "gsy-e = gsy_e.gsy_e_core.cli:main",
+            "d3a = gsy_e.gsy_e_core.cli:main",
         ]
     },
     zip_safe=False,

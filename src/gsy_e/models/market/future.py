@@ -18,20 +18,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from copy import deepcopy
 from logging import getLogger
-from typing import Dict, List, Union, Optional, Tuple
+from typing import Dict, List, Union, Optional, Tuple, TYPE_CHECKING
 
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
 from gsy_framework.data_classes import Bid, Offer, Trade, BaseBidOffer, TradeBidOfferInfo
 from pendulum import DateTime, duration
 
+from gsy_e.events.event_structures import MarketEvent
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
 from gsy_e.gsy_e_core.exceptions import (BidNotFoundException, MarketReadOnlyException,
                                          OfferNotFoundException)
-from gsy_e.events.event_structures import MarketEvent
-from gsy_e.models.area.event_dispatcher import AreaDispatcher
+from gsy_e.gsy_e_core.util import is_time_slot_in_simulation_duration
 from gsy_e.models.market import GridFee
 from gsy_e.models.market import lock_market_action
 from gsy_e.models.market.two_sided import TwoSidedMarket
+
+if TYPE_CHECKING:
+    from gsy_e.models.area.event_dispatcher import AreaDispatcher
+    from gsy_e.models.config import SimulationConfig
 
 log = getLogger(__name__)
 
@@ -44,7 +48,7 @@ class FutureMarkets(TwoSidedMarket):
     """Class responsible for future markets."""
 
     def __init__(self, bc: Optional[NonBlockchainInterface] = None,
-                 notification_listener: Optional[AreaDispatcher] = None,
+                 notification_listener: Optional["AreaDispatcher"] = None,
                  readonly: bool = False,
                  grid_fee_type: int = ConstSettings.IAASettings.GRID_FEE_TYPE,
                  grid_fees: Optional[GridFee] = None,
@@ -76,6 +80,22 @@ class FutureMarkets(TwoSidedMarket):
 
         return (self.slot_bid_mapping[kwargs["time_slot"]],
                 self.slot_offer_mapping[kwargs["time_slot"]])
+
+    def orders_per_slot(self) -> Dict[str, Dict]:
+        """Return all orders in the market per time slot."""
+        orders_dict = {}
+        for time_slot, bids_list in self.slot_bid_mapping.items():
+            time_slot = time_slot.format(DATE_TIME_FORMAT)
+            if time_slot not in orders_dict:
+                orders_dict[time_slot] = {"bids": [], "offers": []}
+            orders_dict[time_slot]["bids"].extend([bid.serializable_dict() for bid in bids_list])
+        for time_slot, offers_list in self.slot_offer_mapping.items():
+            time_slot = time_slot.format(DATE_TIME_FORMAT)
+            if time_slot not in orders_dict:
+                orders_dict[time_slot] = {"bids": [], "offers": []}
+            orders_dict[time_slot]["offers"].extend(
+                [offer.serializable_dict() for offer in offers_list])
+        return orders_dict
 
     def delete_orders_in_old_future_markets(self, current_market_time_slot: DateTime) -> None:
         """Delete order and trade buffers."""
@@ -113,12 +133,14 @@ class FutureMarkets(TwoSidedMarket):
                 current_market_orders.pop(order.id)
 
     def create_future_markets(self, current_market_time_slot: DateTime,
-                              slot_length: duration) -> None:
+                              slot_length: duration,
+                              config: "SimulationConfig") -> None:
         """Add sub dicts in order dictionaries for future market slots."""
         future_time_slot = current_market_time_slot.add(minutes=slot_length.total_minutes())
         most_future_slot = future_time_slot + GlobalConfig.future_market_duration
         while future_time_slot <= most_future_slot:
-            if future_time_slot not in self.slot_bid_mapping:
+            if (future_time_slot not in self.slot_bid_mapping and
+                    is_time_slot_in_simulation_duration(config, future_time_slot)):
                 self.slot_bid_mapping[future_time_slot] = []
                 self.slot_offer_mapping[future_time_slot] = []
                 self.slot_trade_mapping[future_time_slot] = []
@@ -205,7 +227,7 @@ class FutureMarkets(TwoSidedMarket):
 
         offer_id = offer_or_id.id if isinstance(offer_or_id, Offer) else offer_or_id
 
-        offer = self.offers.pop(offer_id)
+        offer = self.offers.pop(offer_id, None)
         if not offer:
             raise OfferNotFoundException()
 

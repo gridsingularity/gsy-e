@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
-from typing import List, Dict
+from typing import List, Dict, Optional, TYPE_CHECKING
 from uuid import uuid4
 
 from gsy_framework.area_validator import validate_area
@@ -47,8 +47,12 @@ from gsy_e.models.market.future import FutureMarkets
 log = getLogger(__name__)
 
 
+if TYPE_CHECKING:
+    from d3a.models.market import Market
+
+
 # TODO: As this is only used in the unittests, please remove it here and replace the usages
-#       of this class with gsy_e-interface.constants_limits.GlobalConfig class:
+#       of this class with gsy-framework.constants_limits.GlobalConfig class:
 DEFAULT_CONFIG = SimulationConfig(
     sim_duration=duration(hours=24),
     slot_length=duration(minutes=15),
@@ -140,7 +144,6 @@ class Area:
         log.debug("External connection %s for area %s", external_connection_available, self.name)
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available and self.strategy is None else None
-        self.should_update_child_strategies = False
         self.external_connection_available = external_connection_available
 
     @property
@@ -342,7 +345,8 @@ class Area:
 
         # create new future markets:
         if self.future_markets:
-            self.future_markets.create_future_markets(now_value, self.config.slot_length)
+            self.future_markets.create_future_markets(
+                now_value, self.config.slot_length, self.config)
 
         self.dispatcher.event_market_cycle()
 
@@ -351,10 +355,6 @@ class Area:
 
         if deactivate:
             return
-
-        if self.should_update_child_strategies is True:
-            self._update_descendants_strategy_prices()
-            self.should_update_child_strategies = False
 
         # TODO: Refactor and port the future, spot, settlement and balancing market creation to
         # AreaMarkets class, in order to create all necessary markets with one call.
@@ -372,6 +372,8 @@ class Area:
                 now_value, AvailableMarketTypes.BALANCING, self)
         else:
             changed_balancing_market = None
+
+        self._markets.update_area_market_id_lists()
 
         # Force market cycle event in case this is the first market slot
         if (changed or len(self._markets.past_markets.keys()) == 0) and _trigger_event:
@@ -566,6 +568,16 @@ class Area:
     def get_future_market_from_id(self, _id):
         return self._markets.indexed_future_markets.get(_id, None)
 
+    def get_spot_or_future_market_by_id(self, market_id: str) -> Optional["Market"]:
+        if self.is_market_spot(market_id):
+            return self.spot_market
+        if self.is_market_future(market_id):
+            return self.future_markets
+        return None
+
+    def is_market_spot_or_future(self, market_id):
+        return self.is_market_spot(market_id) or self.is_market_future(market_id)
+
     @property
     def last_past_market(self):
         try:
@@ -618,3 +630,19 @@ class Area:
             self.strategy.read_config_event()
         for child in self.children:
             child.update_config(**kwargs)
+
+    def is_market_spot(self, market_id: str) -> bool:
+        """Return True if market_id belongs to a SPOT market."""
+        return market_id in self._markets.spot_market_ids
+
+    def is_market_settlement(self, market_id: str) -> bool:
+        """Return True if market_id belongs to a SETTLEMENT market."""
+        return market_id in self._markets.settlement_market_ids
+
+    def is_market_balancing(self, market_id: str) -> bool:
+        """Return True if market_id belongs to a BALANCING market."""
+        return market_id in self._markets.balancing_market_ids
+
+    def is_market_future(self, market_id: str) -> bool:
+        """Return True if market_id belongs to a FUTURE market."""
+        return market_id == self.future_markets.id

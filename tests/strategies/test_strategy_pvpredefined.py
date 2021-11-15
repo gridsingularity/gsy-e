@@ -23,7 +23,7 @@ from uuid import uuid4
 
 import pendulum
 import pytest
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig, PROFILE_EXPANSION_DAYS
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import Offer
 from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
@@ -61,8 +61,15 @@ class FakeArea:
         self.test_market = FakeMarket(0)
         self._spot_market = FakeMarket(0)
 
-    def get_future_market_from_id(self, id):
+    @property
+    def future_markets(self):
+        return None
+
+    def get_spot_or_future_market_by_id(self, _):
         return self.test_market
+
+    def is_market_spot_or_future(self, _):
+        return True
 
     @property
     def current_market(self):
@@ -326,6 +333,7 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
         pv_test6.state._energy_production_forecast_kWh[TIME]
     fake_trade = FakeTrade(market_test3.created_offers[0])
     fake_trade.seller = pv_test6.owner.name
+    fake_trade.time_slot = market_test3.time_slot
     pv_test6.event_offer_traded(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []
     pv_test6.event_tick()
@@ -373,29 +381,6 @@ def test_correct_interpolation_power_profile():
     times = list(profile)
     for ii in range(len(times)-1):
         assert abs((times[ii]-times[ii+1]).in_seconds()) == slot_length * 60
-
-
-def test_correct_time_expansion_read_arbitrary_profile():
-    # TODO: this test needs to move to gsy_e-interface
-    market_maker_rate = 30
-    if GlobalConfig.IS_CANARY_NETWORK:
-        GlobalConfig.sim_duration = duration(hours=3)
-        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS - 1,
-                                                          hours=23, minutes=45)
-        mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
-        assert list(mmr.keys())[-1] == expected_last_time_slot
-        GlobalConfig.sim_duration = duration(hours=30)
-        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS - 1,
-                                                          hours=23, minutes=45)
-        mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
-        assert list(mmr.keys())[-1] == expected_last_time_slot
-    else:
-        GlobalConfig.sim_duration = duration(hours=3)
-        mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
-        assert (list(mmr.keys())[-1] - today(tz=TIME_ZONE)).days == 0
-        GlobalConfig.sim_duration = duration(hours=36)
-        mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
-        assert (list(mmr.keys())[-1] - today(tz=TIME_ZONE)).days == 1
 
 
 def test_predefined_pv_constructor_rejects_incorrect_parameters():

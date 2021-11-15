@@ -15,15 +15,15 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from unittest.mock import Mock
-
 import pytest
+from gsy_framework.constants_limits import GlobalConfig, DATE_TIME_FORMAT
+from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo
+from gsy_framework.utils import datetime_to_string_incl_seconds
+from pendulum import datetime, duration, now
+
 from gsy_e.models.area import Area
 from gsy_e.models.market import GridFee
 from gsy_e.models.market.future import FutureMarkets, FutureMarketException
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo
-from pendulum import datetime, duration
 
 DEFAULT_CURRENT_MARKET_SLOT = datetime(2021, 10, 19, 0, 0)
 DEFAULT_SLOT_LENGTH = duration(minutes=15)
@@ -33,15 +33,11 @@ DEFAULT_SLOT_LENGTH = duration(minutes=15)
 def active_future_market() -> FutureMarkets:
     """Return future market object."""
     orig_future_market_duration = GlobalConfig.future_market_duration
+    orig_start_date = GlobalConfig.start_date
     GlobalConfig.future_market_duration = duration(hours=1)
-    config = Mock()
-    config.slot_length = duration(minutes=15)
-    config.tick_length = duration(seconds=15)
-    config.ticks_per_slot = 60
-    config.start_date = DEFAULT_CURRENT_MARKET_SLOT
-    config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
-    config.end_date = config.start_date + duration(days=1)
     area = Area("test_area")
+    area.config.start_date = DEFAULT_CURRENT_MARKET_SLOT
+    area.config.end_date = area.config.start_date + area.config.sim_duration
     area.activate()
     future_market = FutureMarkets(
             bc=area.bc,
@@ -50,10 +46,12 @@ def active_future_market() -> FutureMarkets:
             grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
                               grid_fee_const=area.grid_fee_constant),
             name=area.name)
-    future_market.create_future_markets(DEFAULT_CURRENT_MARKET_SLOT, DEFAULT_SLOT_LENGTH)
+    future_market.create_future_markets(
+        DEFAULT_CURRENT_MARKET_SLOT, DEFAULT_SLOT_LENGTH, area.config)
     yield future_market
 
     GlobalConfig.future_market_duration = orig_future_market_duration
+    GlobalConfig.start_date = orig_start_date
 
 
 def count_orders_in_buffers(future_markets: FutureMarkets, expected_count: int) -> None:
@@ -197,3 +195,44 @@ class TestFutureMarkets:
         assert trade in future_market.trades
         assert len(future_market.slot_trade_mapping[first_future_market]) == 1
         assert trade in future_market.slot_trade_mapping[first_future_market]
+
+    @staticmethod
+    def test_orders_per_slot(future_market):
+        """Test whether the orders_per_slot method returns order in format format."""
+        time_slot1 = now()
+        time_slot2 = time_slot1.add(minutes=15)
+        future_market.slot_bid_mapping = {
+            time_slot1: [Bid("bid1", time_slot1, 10, 10, "buyer", time_slot=time_slot1)]}
+        future_market.slot_offer_mapping = {
+            time_slot2: [Offer("offer1", time_slot2, 10, 10, "seller", time_slot=time_slot2)]}
+        assert future_market.orders_per_slot() == {
+            time_slot1.format(DATE_TIME_FORMAT): {
+                "bids": [{"attributes": None,
+                          "buyer": "buyer",
+                          "buyer_id": None,
+                          "buyer_origin": None,
+                          "buyer_origin_id": None,
+                          "energy": 10,
+                          "energy_rate": 1.0,
+                          "id": "bid1",
+                          "original_price": 10,
+                          "requirements": None,
+                          "time_slot": datetime_to_string_incl_seconds(time_slot1),
+                          "creation_time": datetime_to_string_incl_seconds(time_slot1),
+                          "type": "Bid"}],
+                "offers": []},
+            time_slot2.format(DATE_TIME_FORMAT): {
+                "bids": [],
+                "offers": [{"attributes": None,
+                            "energy": 10,
+                            "energy_rate": 1.0,
+                            "id": "offer1",
+                            "original_price": 10,
+                            "requirements": None,
+                            "time_slot": datetime_to_string_incl_seconds(time_slot2),
+                            "seller": "seller",
+                            "seller_id": None,
+                            "seller_origin": None,
+                            "seller_origin_id": None,
+                            "creation_time": datetime_to_string_incl_seconds(time_slot2),
+                            "type": "Offer"}]}}

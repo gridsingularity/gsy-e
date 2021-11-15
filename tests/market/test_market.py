@@ -22,6 +22,8 @@ from uuid import uuid4
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Bid, Offer
+from gsy_framework.utils import datetime_to_string_incl_seconds
 from hypothesis import strategies as st
 from hypothesis.control import assume
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rule
@@ -154,6 +156,43 @@ def test_market_trade(market, offer, accept_offer):
     assert trade.offer_bid == e_offer
     assert trade.seller == "A"
     assert trade.buyer == "B"
+
+
+def test_orders_per_slot(market):
+    """Test whether the orders_per_slot method returns order in format format."""
+    creation_time = now()
+    market.bids = {"bid1": Bid("bid1", creation_time, 10, 10, "buyer")}
+    market.offers = {"offer1": Offer("offer1", creation_time, 10, 10, "seller")}
+    assert market.orders_per_slot() == {
+        market.time_slot_str: {"bids": [{"attributes": None,
+                                         "buyer": "buyer",
+                                         "buyer_id": None,
+                                         "buyer_origin": None,
+                                         "buyer_origin_id": None,
+                                         "energy": 10,
+                                         "energy_rate": 1.0,
+                                         "id": "bid1",
+                                         "original_price": 10,
+                                         "requirements": None,
+                                         "time_slot": "",
+                                         "creation_time": datetime_to_string_incl_seconds(
+                                             creation_time),
+                                         "type": "Bid"}],
+                               "offers": [{"attributes": None,
+                                           "energy": 10,
+                                           "energy_rate": 1.0,
+                                           "id": "offer1",
+                                           "original_price": 10,
+                                           "requirements": None,
+                                           "time_slot": "",
+                                           "seller": "seller",
+                                           "seller_id": None,
+                                           "seller_origin": None,
+                                           "seller_origin_id": None,
+                                           "time_slot": "",
+                                           "creation_time": datetime_to_string_incl_seconds(
+                                               creation_time),
+                                           "type": "Offer"}]}}
 
 
 def test_balancing_market_negative_offer_trade(market=BalancingMarket(

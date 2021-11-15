@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 General Public License as published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
@@ -37,6 +37,10 @@ class SettlementTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
     def get_all_markets(area: "Area") -> Iterable[Market]:
         return area.settlement_markets.values()
 
+    @staticmethod
+    def _get_all_time_slots(area):
+        return area.settlement_markets.keys()
+
 
 class SettlementTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
     """Version of TemplateStrategyOfferUpdater class for settlement markets"""
@@ -44,6 +48,10 @@ class SettlementTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
     @staticmethod
     def get_all_markets(area: "Area") -> Iterable[Market]:
         return area.settlement_markets.values()
+
+    @staticmethod
+    def _get_all_time_slots(area):
+        return area.settlement_markets.keys()
 
 
 class SettlementMarketStrategyInterface:

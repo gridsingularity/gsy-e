@@ -16,17 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
-from typing import Union, Dict, TYPE_CHECKING  # noqa
+from typing import Union, Dict, TYPE_CHECKING, Optional
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import SpotMarketTypeEnum
 from numpy.random import random
-from pendulum import DateTime  # noqa
+from pendulum import DateTime
 
-from gsy_e import constants
+from gsy_e.events.event_structures import MarketEvent, AreaEvent
 from gsy_e.gsy_e_core.exceptions import WrongMarketTypeException
 from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import RedisCommunicator
-from gsy_e.events.event_structures import MarketEvent, AreaEvent
 from gsy_e.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
 from gsy_e.models.area.redis_dispatcher.area_to_market_publisher import AreaToMarketEventPublisher
 from gsy_e.models.area.redis_dispatcher.market_event_dispatcher import (
@@ -36,6 +35,7 @@ from gsy_e.models.area.redis_dispatcher.market_notify_event_subscriber import (
 from gsy_e.models.market import Market
 from gsy_e.models.market.market_structures import AvailableMarketTypes
 from gsy_e.models.strategy.area_agents.balancing_agent import BalancingAgent
+from gsy_e.models.strategy.area_agents.future_agent import FutureAgent
 from gsy_e.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from gsy_e.models.strategy.area_agents.one_sided_alternative_pricing_agent import (
     OneSidedAlternativePricingAgent)
@@ -60,6 +60,7 @@ class AreaDispatcher:
         self._inter_area_agents: Dict[DateTime, OneSidedAgent] = {}
         self._balancing_agents: Dict[DateTime, BalancingAgent] = {}
         self._settlement_agents: Dict[DateTime, SettlementAgent] = {}
+        self._future_agent: Optional[FutureAgent] = None
         self.area = area
 
     @property
@@ -71,6 +72,11 @@ class AreaDispatcher:
     def balancing_agents(self) -> Dict[DateTime, BalancingAgent]:
         """Return balancing market inter area agents"""
         return self._balancing_agents
+
+    @property
+    def future_agent(self):
+        """Return the future agent."""
+        return self._future_agent
 
     @property
     def settlement_agents(self) -> Dict[DateTime, SettlementAgent]:
@@ -108,17 +114,22 @@ class AreaDispatcher:
     def _broadcast_notification_to_single_agent(
             self, agent_area: "Area", market_type: AvailableMarketTypes,
             event_type: AreaEvent, **kwargs) -> None:
-        agent_dict = self._get_agents_for_market_type(agent_area.dispatcher, market_type)
-        for time_slot, agent in agent_dict.items():
-            if time_slot not in agent_area.get_market_instances_from_class_type(
-                    market_type):
-                # exclude past IAAs
-                continue
 
-            agent.event_listener(event_type, **kwargs)
+        if market_type == AvailableMarketTypes.FUTURE and self.future_agent:
+            self.future_agent.event_listener(event_type, **kwargs)
+        elif market_type != AvailableMarketTypes.FUTURE:
+            agent_dict = self._get_agents_for_market_type(agent_area.dispatcher, market_type)
+            for time_slot, agent in agent_dict.items():
+                if time_slot not in agent_area.get_market_instances_from_class_type(
+                        market_type):
+                    # exclude past IAAs
+                    continue
+
+                agent.event_listener(event_type, **kwargs)
 
     def _broadcast_notification_to_area_and_child_agents(
-            self, market_type: AvailableMarketTypes, event_type: AreaEvent, **kwargs) -> None:
+            self, market_type: AvailableMarketTypes,
+            event_type: Union[MarketEvent, AreaEvent], **kwargs) -> None:
 
         if not self.area.events.is_connected:
             return
@@ -160,12 +171,25 @@ class AreaDispatcher:
         # Broadcast to children in random order to ensure fairness
         for child in sorted(self.area.children, key=lambda _: random()):
             child.dispatcher.event_listener(event_type, **kwargs)
-        self._broadcast_notification_to_area_and_child_agents(
-            AvailableMarketTypes.SPOT, event_type, **kwargs)
-        self._broadcast_notification_to_area_and_child_agents(
-            AvailableMarketTypes.BALANCING, event_type, **kwargs)
-        self._broadcast_notification_to_area_and_child_agents(
-            AvailableMarketTypes.SETTLEMENT, event_type, **kwargs)
+
+        market_id = kwargs.get("market_id")
+        if not market_id and isinstance(event_type, MarketEvent):
+            assert False, "MarketEvent should always provide a market_id."
+        if (isinstance(event_type, AreaEvent)
+                or self.area.is_market_spot(market_id)
+                or self.area.is_market_balancing(market_id)):
+            # Both spot and balancing agents need to be informed about each others events.
+            # To be changed when updating the balancing market feature.
+            self._broadcast_notification_to_area_and_child_agents(
+                AvailableMarketTypes.SPOT, event_type, **kwargs)
+            self._broadcast_notification_to_area_and_child_agents(
+                AvailableMarketTypes.BALANCING, event_type, **kwargs)
+        if isinstance(event_type, AreaEvent) or self.area.is_market_settlement(market_id):
+            self._broadcast_notification_to_area_and_child_agents(
+                AvailableMarketTypes.SETTLEMENT, event_type, **kwargs)
+        if isinstance(event_type, AreaEvent) or self.area.is_market_future(market_id):
+            self._broadcast_notification_to_area_and_child_agents(
+                AvailableMarketTypes.FUTURE, event_type, **kwargs)
 
     def _should_dispatch_to_strategies(self, event_type: Union[AreaEvent, MarketEvent]) -> bool:
         if event_type is AreaEvent.ACTIVATE:
@@ -223,6 +247,9 @@ class AreaDispatcher:
             return SettlementAgent(**agent_constructor_arguments)
         if market_type == AvailableMarketTypes.BALANCING:
             return BalancingAgent(**agent_constructor_arguments)
+        if market_type == AvailableMarketTypes.FUTURE:
+            return FutureAgent(**agent_constructor_arguments)
+
         assert False, f"Market type not supported {market_type}"
 
     @staticmethod
@@ -237,6 +264,32 @@ class AreaDispatcher:
             return dispatcher_object.settlement_agents
         assert False, f"Market type not supported {market_type}"
 
+    @property
+    def _should_agent_be_created(self) -> bool:
+        if not self.area.parent:
+            return False
+        if self.area.strategy:
+            return False
+        if not self.area.parent.events.is_connected:
+            return False
+        if not self.area.children:
+            return False
+        return True
+
+    def create_area_agents_for_future_markets(self, market: Market) -> None:
+        """Create area agents for future markets; There should only be one per Area at any time."""
+        if not self._should_agent_be_created:
+            return
+
+        iaa = self._create_agent_object(
+            owner=self.area,
+            higher_market=self.area.parent.future_markets,
+            lower_market=market,
+            market_type=AvailableMarketTypes.FUTURE
+        )
+
+        self._future_agent = iaa
+
     def create_area_agents(self, market_type: AvailableMarketTypes, market: Market) -> None:
         """
         Create interarea agents for all market types, and store their reference to the respective
@@ -248,13 +301,7 @@ class AreaDispatcher:
         Returns: None
 
         """
-        if not self.area.parent:
-            return
-        if self.area.strategy:
-            return
-        if not self.area.parent.events.is_connected:
-            return
-        if not self.area.children:
+        if not self._should_agent_be_created:
             return
 
         interarea_agents = self._get_agents_for_market_type(self, market_type)
@@ -275,10 +322,9 @@ class AreaDispatcher:
 
     def event_market_cycle(self) -> None:
         """Called every market cycle. Recycles old area agents."""
-        if not constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
-            self._delete_past_agents(self.interarea_agents)
-            self._delete_past_agents(self.balancing_agents)
-            self._delete_past_agents(self.settlement_agents)
+        self._delete_past_agents(self._inter_area_agents)
+        self._delete_past_agents(self._balancing_agents)
+        self._delete_past_agents(self._settlement_agents)
 
     def _delete_past_agents(
             self, area_agent_member: Dict[DateTime,
@@ -287,18 +333,8 @@ class AreaDispatcher:
         delete_agents = [(pm, agents_list) for pm, agents_list in area_agent_member.items() if
                          self.area.current_market and pm < self.area.current_market.time_slot]
         for pm, agent in delete_agents:
-            if hasattr(agent, "offers"):
-                del agent.offers
             if hasattr(agent, "engines"):
-                for engine in agent.engines:
-                    del engine.forwarded_offers
-                    del engine.offer_age
-                    del engine.trade_residual
-                    del engine.ignored_offers
-                    if hasattr(engine, "forwarded_bids"):
-                        del engine.forwarded_bids
-                        del engine.bid_age
-                        del engine.bid_trade_residual
+                agent.delete_engines()
                 del agent.engines
             agent.higher_market = None
             agent.lower_market = None

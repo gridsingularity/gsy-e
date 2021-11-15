@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 General Public License as published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
@@ -31,6 +31,7 @@ from gsy_e.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
 from gsy_e.gsy_e_core.exceptions import GSyException, MarketException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import (get_market_maker_rate_from_config, should_read_profile_from_db)
+from gsy_e.models.base import AssetType
 from gsy_e.models.market import Market
 from gsy_e.models.state import SmartMeterState
 from gsy_e.models.strategy import BidEnabledStrategy, utils
@@ -232,7 +233,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         if ConstSettings.IAASettings.MARKET_TYPE != 1:
             return
 
-        market = self.area.get_future_market_from_id(market_id)
+        market = self.area.get_spot_or_future_market_by_id(market_id)
         if self._offer_comes_from_different_seller(offer):
             self._one_sided_market_event_tick(market, offer)
 
@@ -248,7 +249,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
 
         This method is triggered by the MarketEvent.OFFER_TRADED event.
         """
-        market = self.area.get_future_market_from_id(market_id)
+        market = self.area.get_spot_or_future_market_by_id(market_id)
         if not market:
             return
 
@@ -280,7 +281,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
 
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
 
-        market = self.area.get_future_market_from_id(market_id)
+        market = self.area.get_spot_or_future_market_by_id(market_id)
         self.state.decrement_energy_requirement(
             bid_trade.offer_bid.energy * 1000, market.time_slot, self.owner.name)
 
@@ -288,7 +289,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         """Reconfigure the device properties at runtime using the provided arguments.
 
         If custom profiles are provided in the `kwargs`, use them to replace the default ones
-        provided by the UpdateFrequencyMixin.
+        provided by the TemplateStrategyUpdaterBase.
         """
         self._area_reconfigure_consumption_prices(**kwargs)
         self._area_reconfigure_production_prices(**kwargs)
@@ -597,6 +598,10 @@ class SmartMeterStrategy(BidEnabledStrategy):
 
     def _offer_comes_from_different_seller(self, offer):
         return offer.seller != self.owner.name and offer.seller != self.area.name
+
+    @property
+    def asset_type(self):
+        return AssetType.PRODUCER
 
 
 class InconsistentEnergyException(Exception):

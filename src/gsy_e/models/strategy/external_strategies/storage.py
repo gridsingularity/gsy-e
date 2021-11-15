@@ -42,6 +42,7 @@ class StorageExternalMixin(ExternalMixin):
     posted_bid_energy: Callable
     post_bid: Callable
     _delete_past_state: Callable
+    _cycle_state: Callable
 
     """
     Mixin for enabling an external api for the storage strategies.
@@ -401,12 +402,13 @@ class StorageExternalMixin(ExternalMixin):
         self._reject_all_pending_requests()
         self._update_connection_status()
         if not self.should_use_default_strategy:
-            self.state.market_cycle(
-                self.area.current_market.time_slot
-                if self.area.current_market else None,
-                self.spot_market.time_slot,
-                [self.spot_market.time_slot]
-            )
+            self.state.add_default_values_to_state_profiles([
+                self.spot_market_time_slot, *self.area.future_market_time_slots])
+            self._cycle_state()
+
+            # TODO: Need to be removed as soon as the methods get_available_energy_to_sell_kWh and
+            # get_available_energy_to_buy_kWh are used by the external strategy. This should be
+            # part of D3ASIM-3671
             self.state.clamp_energy_to_sell_kWh([self.spot_market.time_slot])
             self.state.clamp_energy_to_buy_kWh([self.spot_market.time_slot])
             if not self.is_aggregator_controlled:

@@ -436,7 +436,7 @@ class TestIAABid:
             residual_bid.update_price(residual_energy * original_bid.energy_rate)
             residual_bid.update_energy(residual_energy)
 
-            low_to_high_engine.event_bid_split(market_id=low_to_high_engine.markets.target,
+            low_to_high_engine.event_bid_split(market_id=low_to_high_engine.markets.target.id,
                                                original_bid=original_bid,
                                                accepted_bid=accepted_bid,
                                                residual_bid=residual_bid)
@@ -503,7 +503,7 @@ class TestIAABid:
                            original_bid.buyer)
         residual_bid = Bid('residual_bid', original_bid.creation_time, residual_bid_price, 0.1,
                            original_bid.buyer)
-        iaa_double_sided.event_bid_split(market_id=iaa_double_sided.higher_market,
+        iaa_double_sided.event_bid_split(market_id=iaa_double_sided.higher_market.id,
                                          original_bid=original_bid,
                                          accepted_bid=accepted_bid,
                                          residual_bid=residual_bid)
@@ -528,7 +528,7 @@ class TestIAABid:
             'residual_bid', original_bid.creation_time, original_bid.price, residual_energy,
             original_bid.buyer, original_bid.price)
         iaa_double_sided.usable_bid = lambda s: True
-        iaa_double_sided.event_bid_split(market_id=iaa_double_sided.lower_market,
+        iaa_double_sided.event_bid_split(market_id=iaa_double_sided.lower_market.id,
                                          original_bid=original_bid,
                                          accepted_bid=accepted_bid,
                                          residual_bid=residual_bid)

@@ -29,7 +29,7 @@ from gsy_framework.data_classes import (Offer, Bid, Trade)
 from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
-from gsy_e import constants
+from gsy_e import constants, limit_float_precision
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
@@ -360,7 +360,7 @@ class Offers:
         Check whether an offer with the specified parameters can be posted on the market
         Args:
             offer_energy: Energy of the offer, in kWh
-            offer_price: Price of the offer, in cents/kWh
+            offer_price: Price of the offer, in cents
             available_energy: Available energy of the strategy for trading, in kWh
             market: Market that the offer will be posted to
             replace_existing: Set to True if the posted and unsold offers should be replaced
@@ -534,12 +534,17 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             energy=energy_kWh,
         )
 
+    def get_posted_offers(self, market: "OneSidedMarket",
+                          time_slot: Optional[DateTime] = None) -> List[Offer]:
+        """Get list of posted offers from a market"""
+        return self.offers.posted_in_market(market.id, time_slot)
+
     def get_market_from_id(self, market_id: str) -> Optional[Market]:
         """Retrieve a market object from the market_id."""
         # Look in spot and future markets first
         if not self.area:
             return None
-        market = self.area.get_future_market_from_id(market_id)
+        market = self.area.get_spot_or_future_market_by_id(market_id)
         if market is not None:
             return market
         # Then check settlement markets
@@ -670,14 +675,17 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             return
 
         for offer, iterated_market_id in self.offers.open.items():
+            updated_price = limit_float_precision(offer.energy * updated_rate)
+            if abs(offer.price - updated_price) <= FLOATING_POINT_TOLERANCE:
+                continue
             iterated_market = self.get_market_from_id(iterated_market_id)
             # Skip offers that don't belong to the specified market slot
             if market is None or iterated_market is None or iterated_market.id != market.id:
                 continue
             try:
                 # Delete the old offer and create a new equivalent one with an updated price
+                time_slot = offer.time_slot or iterated_market.time_slot
                 iterated_market.delete_offer(offer.id)
-                updated_price = round(offer.energy * updated_rate, 10)
                 new_offer = iterated_market.offer(
                     updated_price,
                     offer.energy,
@@ -686,7 +694,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
                     seller_origin=offer.seller_origin,
                     seller_origin_id=offer.seller_origin_id,
                     seller_id=self.owner.uuid,
-                    time_slot=iterated_market.time_slot
+                    time_slot=time_slot
                 )
                 self.offers.replace(offer, new_offer, iterated_market.id)
             except MarketException:
@@ -773,7 +781,8 @@ class BidEnabledStrategy(BaseStrategy):
 
             self.remove_bid_from_pending(market.id, bid.id)
             self.post_bid(market, bid.energy * updated_rate,
-                          bid.energy, attributes=bid.attributes, requirements=bid.requirements)
+                          bid.energy, attributes=bid.attributes, requirements=bid.requirements,
+                          time_slot=bid.time_slot)
 
     # pylint: disable=too-many-arguments
     def can_bid_be_posted(self, bid_energy: float, bid_price: float, required_energy_kWh: float,
@@ -874,11 +883,15 @@ class BidEnabledStrategy(BaseStrategy):
             return []
         return self._traded_bids[market_id]
 
-    def are_bids_posted(self, market_id: str) -> bool:
+    def are_bids_posted(self, market_id: str, time_slot: DateTime = None) -> bool:
         """Checks if any bids have been posted in the market slot with the given ID."""
         if market_id not in self._bids:
             return False
-        return len(self._bids[market_id]) > 0
+        # time_slot is empty when called for spot markets, where we can retrieve the bids for a
+        # time_slot only by the market_id. For the future markets, the time_slot needs to be
+        # defined for the correct bid selection.
+        return len([bid for bid in self._bids[market_id]
+                    if time_slot is None or bid.time_slot == time_slot]) > 0
 
     def post_first_bid(self, market: "Market", energy_Wh: float,
                        initial_energy_rate: float) -> Optional[Bid]:
@@ -904,9 +917,14 @@ class BidEnabledStrategy(BaseStrategy):
             return []
         return [b for b in self._bids[market.id] if time_slot is None or b.time_slot == time_slot]
 
+    def _assert_market_type_on_bid_event(self, market_id):
+        assert (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value or
+                self.area.is_market_future(market_id)), (
+            "Invalid state, cannot receive a bid if single sided market is globally configured or "
+            "if it is not a future market bid.")
+
     def event_bid_deleted(self, *, market_id: str, bid: Bid) -> None:
-        assert ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value, (
-            "Invalid state, cannot receive a bid if single sided market is globally configured.")
+        self._assert_market_type_on_bid_event(market_id)
 
         if bid.buyer != self.owner.name:
             return
@@ -915,9 +933,8 @@ class BidEnabledStrategy(BaseStrategy):
     # pylint: disable=unused-argument
     def event_bid_split(self, *, market_id: str, original_bid: Bid, accepted_bid: Bid,
                         residual_bid: Bid) -> None:
-        assert ConstSettings.IAASettings.MARKET_TYPE != 1, ("Invalid state, cannot receive a bid "
-                                                            "if single sided market is "
-                                                            "globally configured.")
+        self._assert_market_type_on_bid_event(market_id)
+
         if accepted_bid.buyer != self.owner.name:
             return
         self.add_bid_to_posted(market_id, bid=accepted_bid)
@@ -928,9 +945,7 @@ class BidEnabledStrategy(BaseStrategy):
 
         This method is triggered by the MarketEvent.BID_TRADED event.
         """
-        assert ConstSettings.IAASettings.MARKET_TYPE != 1, ("Invalid state, cannot receive a bid "
-                                                            "if single sided market is "
-                                                            "globally configured.")
+        self._assert_market_type_on_bid_event(market_id)
 
         if bid_trade.buyer == self.owner.name:
             self.add_bid_to_bought(bid_trade.offer_bid, market_id)
