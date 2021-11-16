@@ -17,8 +17,7 @@ class DegreesOfFreedomFilter:
         """
         filtered_fields = []
         for field in cls.FIELDS:
-            if order.get(field):
-                order.pop(field)
+            if order.pop(field, None):
                 filtered_fields.append(field)
 
         return order, filtered_fields
