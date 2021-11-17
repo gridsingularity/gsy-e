@@ -35,7 +35,7 @@ from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterfac
 
 class ExternalMatcherEventsEnum(Enum):
     """Enum for all events of the external matcher."""
-    OFFERS_BIDS_RESPONSE = "offers_bids_response"
+    ORDERS_RESPONSE = "orders_response"
     MATCH = "match"
     TICK = "tick"
     MARKET = "market_cycle"
@@ -60,17 +60,17 @@ class MycoExternalMatcher(MycoMatcherInterface):
         self.myco_ext_conn = ResettableCommunicator()
         self.myco_ext_conn.sub_to_multiple_channels(
             {"external-myco/simulation-id/": self.publish_simulation_id,
-             f"{self._channel_prefix}/offers-bids/": self.publish_orders,
+             f"{self._channel_prefix}/orders/": self.publish_orders,
              f"{self._channel_prefix}/recommendations/": self._populate_recommendations})
 
     def publish_orders(self, message):
         """Publish open offers and bids.
 
         Published data are of the following format:
-        {"bids_offers": {'area_uuid' : {'time_slot': {"bids": [], "offers": []}}}}
+        {"orders": {'area_uuid' : {'time_slot': {"bids": [], "offers": []}}}}
 
         """
-        response_data = {"event": ExternalMatcherEventsEnum.OFFERS_BIDS_RESPONSE.value}
+        response_data = {"event": ExternalMatcherEventsEnum.ORDERS_RESPONSE.value}
         data = json.loads(message.get("data"))
         filters = data.get("filters", {})
         # IDs of markets (Areas) the client is interested in
@@ -100,12 +100,11 @@ class MycoExternalMatcher(MycoMatcherInterface):
                 market_orders_list_mapping[area_uuid].update(
                     self._get_orders(market, filters))
         self.area_uuid_markets_mapping = {}
-        # TODO: change the `bids_offers` key and the channel to `orders`
         response_data.update({
-            "bids_offers": market_orders_list_mapping,
+            "orders": market_orders_list_mapping,
         })
 
-        channel = f"{self._channel_prefix}/offers-bids/response/"
+        channel = f"{self._channel_prefix}/orders/response/"
         self.myco_ext_conn.publish_json(channel, response_data)
 
     def _populate_recommendations(self, message):

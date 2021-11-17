@@ -30,7 +30,7 @@ class TestMycoExternalMatcher:
         cls.channel_prefix = f"external-myco/{gsy_e.constants.CONFIGURATION_ID}/"
         cls.events_channel = f"{cls.channel_prefix}events/"
 
-    def _populate_market_bids_offers(self):
+    def _populate_market_orders(self):
         self.market.offers = {"id1": Offer("id1", now(), 3, 3, "seller", 3),
                               "id2": Offer("id2", now(), 0.5, 1, "seller", 0.5)}
 
@@ -41,7 +41,7 @@ class TestMycoExternalMatcher:
         self.matcher.myco_ext_conn.sub_to_multiple_channels.assert_called_once_with(
             {
                 "external-myco/simulation-id/": self.matcher.publish_simulation_id,
-                f"{self.channel_prefix}offers-bids/": self.matcher.publish_orders,
+                f"{self.channel_prefix}orders/": self.matcher.publish_orders,
                 f"{self.channel_prefix}recommendations/":
                     self.matcher._populate_recommendations
             }
@@ -84,7 +84,7 @@ class TestMycoExternalMatcher:
         assert mapping_dict == self.matcher.area_uuid_markets_mapping
 
     def test_get_orders(self):
-        self._populate_market_bids_offers()
+        self._populate_market_orders()
         expected_orders = self.market.orders_per_slot()
 
         actual_orders = self.matcher._get_orders(self.market, {})
@@ -104,16 +104,16 @@ class TestMycoExternalMatcher:
 
     @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcher."
            "_get_orders", MagicMock(return_value=({})))
-    def test_publish_offers_bids(self):
-        channel = f"{self.channel_prefix}offers-bids/response/"
+    def test_publish_orders(self):
+        channel = f"{self.channel_prefix}orders/response/"
         payload = {
             "data": json.dumps({
                 "filters": {}
             })
         }
         expected_data = {
-            "event": "offers_bids_response",
-            "bids_offers": {"area1": {}}
+            "event": "orders_response",
+            "orders": {"area1": {}}
         }
         self.matcher.update_area_uuid_markets_mapping({"area1": {"markets": [self.market]}})
         self.matcher.publish_orders(payload)
@@ -128,8 +128,8 @@ class TestMycoExternalMatcher:
             })
         }
         expected_data = {
-            "event": "offers_bids_response",
-            "bids_offers": {}
+            "event": "orders_response",
+            "orders": {}
         }
         self.matcher.publish_orders(payload)
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
