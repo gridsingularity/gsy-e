@@ -5,7 +5,7 @@ from uuid import uuid4
 import pendulum
 import pytest
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import BidOfferMatch
+from gsy_framework.data_classes import OrdersMatch
 from gsy_framework.data_classes import TradeBidOfferInfo, Trade
 from gsy_framework.matching_algorithms import (
     PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
@@ -366,14 +366,14 @@ class TestTwoSidedMarket:
 
     def test_matching_list_gets_updated_with_residual_offers(self):
         matches = [
-            BidOfferMatch(
+            OrdersMatch(
                 offers=[Offer("offer_id", pendulum.now(), 1, 1, "S").serializable_dict()],
                 selected_energy=1,
                 bids=[Bid("bid_id", pendulum.now(), 1, 1, "B").serializable_dict()],
                 trade_rate=1,
                 market_id="",
                 time_slot="").serializable_dict(),
-            BidOfferMatch(
+            OrdersMatch(
                 offers=[Offer("offer_id2", pendulum.now(), 2, 2, "S").serializable_dict()],
                 selected_energy=2,
                 bids=[Bid("bid_id2", pendulum.now(), 2, 2, "B").serializable_dict()],
@@ -418,7 +418,7 @@ class TestTwoSidedMarketMatchRecommendations:
         market.bids = {"bid_id1": bid}
 
         recommendations = [
-            BidOfferMatch(
+            OrdersMatch(
                 bids=[bid.serializable_dict()], offers=[offer.serializable_dict()],
                 trade_rate=2, selected_energy=1, market_id=market.id,
                 time_slot="time_slot").serializable_dict()
@@ -448,7 +448,7 @@ class TestTwoSidedMarketMatchRecommendations:
         market.offers = {"offer_id1": offer}
 
         recommendations = [
-            BidOfferMatch(
+            OrdersMatch(
                 bids=[bid.serializable_dict()], offers=[offer.serializable_dict()],
                 trade_rate=2, selected_energy=1, market_id=market.id,
                 time_slot="2021-10-06T12:00").serializable_dict()
@@ -466,7 +466,7 @@ class TestTwoSidedMarketMatchRecommendations:
         market.offers = {"offer_id1": offer1, "offer_id2": offer2}
 
         recommendations = [
-            BidOfferMatch(
+            OrdersMatch(
                 bids=[bid.serializable_dict()],
                 offers=[offer.serializable_dict() for offer in market.offers.values()],
                 trade_rate=2, selected_energy=1, market_id=market.id,
@@ -485,7 +485,7 @@ class TestTwoSidedMarketMatchRecommendations:
         market.offers = {"offer_id1": offer1}
 
         recommendations = [
-            BidOfferMatch(
+            OrdersMatch(
                 bids=[bid.serializable_dict() for bid in market.bids.values()],
                 offers=[offer.serializable_dict() for offer in market.offers.values()],
                 trade_rate=1, selected_energy=1, market_id=market.id,
@@ -505,7 +505,7 @@ class TestTwoSidedMarketMatchRecommendations:
         market.offers = {"offer_id1": offer1, "offer_id2": offer2}
 
         recommendations = [
-            BidOfferMatch(
+            OrdersMatch(
                 bids=[bid.serializable_dict() for bid in market.bids.values()],
                 offers=[offer.serializable_dict() for offer in market.offers.values()],
                 trade_rate=1, selected_energy=2, market_id=market.id,
@@ -526,7 +526,7 @@ class TestTwoSidedMarketMatchRecommendations:
 
         def assert_no_trade(bids, offers):
             recommendations = [
-                BidOfferMatch(
+                OrdersMatch(
                     bids=[b.serializable_dict() for b in bids.values()],
                     offers=[o.serializable_dict() for o in offers.values()],
                     trade_rate=1, selected_energy=2, market_id=market.id,

@@ -23,7 +23,7 @@ from math import isclose
 from typing import Dict, List, Union, Tuple, Optional
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo, BidOfferMatch
+from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo, OrdersMatch
 from gsy_framework.matching_algorithms.requirements_validators import RequirementsSatisfiedChecker
 from pendulum import DateTime
 
@@ -292,11 +292,11 @@ class TwoSidedMarket(OneSidedMarket):
         return bid_trade, trade
 
     def match_recommendations(
-            self, recommendations: List[BidOfferMatch.serializable_dict]) -> None:
+            self, recommendations: List[OrdersMatch.serializable_dict]) -> None:
         """Match a list of bid/offer pairs, create trades and residual offers/bids."""
         while recommendations:
             recommended_pair = recommendations.pop(0)
-            recommended_pair = BidOfferMatch.from_dict(recommended_pair)
+            recommended_pair = OrdersMatch.from_dict(recommended_pair)
             selected_energy = recommended_pair.selected_energy
             clearing_rate = recommended_pair.trade_rate
             market_offers = [
@@ -400,7 +400,7 @@ class TwoSidedMarket(OneSidedMarket):
     @classmethod
     def _replace_offers_bids_with_residual_in_recommendations_list(
             cls, recommendations: List[Dict], offer_trade: Trade, bid_trade: Trade
-    ) -> List[BidOfferMatch.serializable_dict]:
+    ) -> List[OrdersMatch.serializable_dict]:
         """
         If a trade resulted in a residual offer/bid, upcoming matching list with same offer/bid
         needs to be replaced with residual offer/bid.

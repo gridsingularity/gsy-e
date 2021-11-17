@@ -20,7 +20,7 @@ import json
 from enum import Enum
 from typing import Dict, List
 
-from gsy_framework.data_classes import BidOfferMatch
+from gsy_framework.data_classes import OrdersMatch
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import (
@@ -138,7 +138,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
                     continue
                 recommendation.pop("status")
                 # market_id refers to the area_id (Area that has no strategy)
-                # TODO: rename market_id to area_id in the BidOfferMatch dataclass
+                # TODO: rename market_id to area_id in the OrdersMatch dataclass
                 market = self.area_markets_mapping.get(
                     f"{recommendation['market_id']}-{recommendation['time_slot']}")
                 market.match_recommendations([recommendation])
@@ -209,8 +209,8 @@ class MycoExternalMatcherValidator:
     @staticmethod
     def _validate_valid_dict(_: MycoExternalMatcher, recommendation: Dict):
         """Check whether the recommendation dict is valid."""
-        if not BidOfferMatch.is_valid_dict(recommendation):
-            raise MycoValidationException(f"BidOfferMatch is not valid {recommendation}")
+        if not OrdersMatch.is_valid_dict(recommendation):
+            raise MycoValidationException(f"OrdersMatch is not valid {recommendation}")
 
     @staticmethod
     def _validate_market_exists(matcher: MycoExternalMatcher, recommendation: Dict):

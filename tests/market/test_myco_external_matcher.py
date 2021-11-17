@@ -223,7 +223,7 @@ class TestMycoExternalMatcherValidator:
         assert MycoExternalMatcherValidator.validate_and_report(
             None, recommendations) == expected_data
 
-    @patch("gsy_e.models.myco_matcher.myco_external_matcher.BidOfferMatch.is_valid_dict")
+    @patch("gsy_e.models.myco_matcher.myco_external_matcher.OrdersMatch.is_valid_dict")
     def test_validate_valid_dict(self, mock_is_valid_dict):
         mock_is_valid_dict.return_value = True
         assert MycoExternalMatcherValidator._validate_valid_dict(None, {}) is None
