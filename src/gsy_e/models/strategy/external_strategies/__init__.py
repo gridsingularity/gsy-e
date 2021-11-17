@@ -19,7 +19,7 @@ import json
 import logging
 from collections import deque, namedtuple
 from threading import Lock
-from typing import Dict, TYPE_CHECKING, Callable
+from typing import Callable, Dict, List, Tuple, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Trade
@@ -34,9 +34,11 @@ from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import (
     ResettableCommunicator, ExternalConnectionCommunicator)
 from gsy_e.models.market import Market
+from gsy_e.models.strategy.external_strategies.dof_filter import DegreesOfFreedomFilter
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
+
 
 IncomingRequest = namedtuple("IncomingRequest", ("request_type", "arguments", "response_channel"))
 
@@ -552,3 +554,12 @@ class ExternalMixin:
                 "asset_bill": self.device.stats.aggregated_stats.get("bills"),
 
                 }
+
+    def filter_degrees_of_freedom_arguments(self, order_arguments: Dict) -> Tuple[Dict, List[str]]:
+        """Filter the arguments of an incoming order to remove Degrees of Freedom if necessary."""
+        if self.simulation_config.enable_degrees_of_freedom:
+            return order_arguments, []
+
+        order_arguments, filtered_fields = DegreesOfFreedomFilter.apply(order_arguments)
+
+        return order_arguments, filtered_fields

@@ -40,6 +40,7 @@ from gsy_e.gsy_e_core.util import append_or_create_key
 from gsy_e.events import EventMixin
 from gsy_e.events.event_structures import AreaEvent, MarketEvent
 from gsy_e.models.base import AreaBehaviorBase
+from gsy_e.models.config import SimulationConfig
 from gsy_e.models.market import Market
 from gsy_e.models.strategy.settlement.strategy import SettlementMarketStrategyInterface
 
@@ -457,6 +458,15 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         self._settlement_market_strategy = self._create_settlement_market_strategy()
 
     parameters = None
+
+    @property
+    def simulation_config(self) -> SimulationConfig:
+        """Return the SimulationConfiguration used by the current market area.
+
+        NOTE: this configuration is currently unique and shared across all areas, but this might
+        change in the future (each area could have its own configuration).
+        """
+        return self.area.config
 
     @classmethod
     def _create_settlement_market_strategy(cls):
