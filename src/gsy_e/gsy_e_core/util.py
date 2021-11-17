@@ -224,7 +224,9 @@ def read_settings_from_file(settings_file):
             "tick_length": IntervalType("M:S")(
                 settings["basic_settings"].get("tick_length", GlobalConfig.tick_length)),
             "cloud_coverage": settings["basic_settings"].get(
-                "cloud_coverage", advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"])
+                "cloud_coverage", advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"]),
+            "enable_degrees_of_freedom": settings["basic_settings"].get(
+                "enable_degrees_of_freedom", GlobalConfig.enable_degrees_of_freedom)
         }
         return simulation_settings, advanced_settings
 

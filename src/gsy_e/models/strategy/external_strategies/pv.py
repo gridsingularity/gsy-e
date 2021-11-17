@@ -315,6 +315,13 @@ class PVExternalMixin(ExternalMixin):
         return response
 
     def _offer_aggregator(self, arguments: Dict) -> Dict:
+        response_message = ""
+        arguments, filtered_fields = self.filter_degrees_of_freedom_arguments(arguments)
+        if filtered_fields:
+            response_message = (
+                "The following arguments are not supported for this market and have been "
+                f"removed from your order: {filtered_fields}.")
+
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
                                             "time_slot",
@@ -348,8 +355,8 @@ class PVExternalMixin(ExternalMixin):
                 "status": "ready",
                 "offer": offer.to_json_string(replace_existing=replace_existing),
                 "transaction_id": arguments.get("transaction_id"),
-                "area_uuid": self.device.uuid
-            }
+                "area_uuid": self.device.uuid,
+                "message": response_message}
         except (AssertionError, GSyException):
             logging.exception("Failed to post PV offer.")
             response = {
@@ -375,7 +382,7 @@ class PVPredefinedExternalStrategy(PVExternalMixin, PVPredefinedStrategy):
 
 class PVForecastExternalStrategy(ForecastExternalMixin, PVPredefinedExternalStrategy):
     """
-        Strategy responsible for reading forecast and measurement production data via hardware API
+    Strategy responsible for reading forecast and measurement production data via hardware API
     """
     parameters = ("energy_forecast_Wh", "panel_count", "initial_selling_rate",
                   "final_selling_rate", "fit_to_limit", "update_interval",

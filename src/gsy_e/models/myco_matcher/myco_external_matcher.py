@@ -75,7 +75,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
         filters = data.get("filters", {})
         # IDs of markets (Areas) the client is interested in
         filtered_areas_uuids = filters.get("markets")
-        market_offers_bids_list_mapping = {}
+        market_orders_list_mapping = {}
         for area_uuid, area_data in self.area_uuid_markets_mapping.items():
             if filtered_areas_uuids and area_uuid not in filtered_areas_uuids:
                 # Client is uninterested in this Area -> skip
@@ -84,7 +84,10 @@ class MycoExternalMatcher(MycoMatcherInterface):
             for market in area_data["markets"]:
                 self.area_markets_mapping.update(
                     {f"{area_uuid}-{market.time_slot_str}": market})
-                market_offers_bids_list_mapping[area_uuid] = self._get_orders(market, filters)
+                if area_uuid not in market_orders_list_mapping:
+                    market_orders_list_mapping[area_uuid] = {}
+                market_orders_list_mapping[area_uuid].update(
+                    self._get_orders(market, filters))
 
             if area_data.get("future_markets"):
                 # Future markets
@@ -92,11 +95,14 @@ class MycoExternalMatcher(MycoMatcherInterface):
                 self.area_markets_mapping.update(
                     {f"{area_uuid}-{time_slot_str}": market
                      for time_slot_str in market.orders_per_slot().keys()})
-                market_offers_bids_list_mapping[area_uuid] = self._get_orders(market, filters)
+                if area_uuid not in market_orders_list_mapping:
+                    market_orders_list_mapping[area_uuid] = {}
+                market_orders_list_mapping[area_uuid].update(
+                    self._get_orders(market, filters))
         self.area_uuid_markets_mapping = {}
         # TODO: change the `bids_offers` key and the channel to `orders`
         response_data.update({
-            "bids_offers": market_offers_bids_list_mapping,
+            "bids_offers": market_orders_list_mapping,
         })
 
         channel = f"{self._channel_prefix}/offers-bids/response/"
