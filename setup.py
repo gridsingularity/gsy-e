@@ -2,7 +2,7 @@ import platform
 
 from setuptools import find_packages, setup
 
-gsy_framework_branch = "master"
+gsy_framework_branch = "rename-bids-offers"
 
 try:
     with open("requirements/dev.txt", encoding="utf-8") as req:
