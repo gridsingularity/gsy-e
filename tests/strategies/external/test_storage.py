@@ -25,7 +25,7 @@ import pytest
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 from tests.strategies.external.utils import (
     check_external_command_endpoint_with_correct_payload_succeeds,
-    create_areas_markets_for_strategy_fixture, assert_bid_offer_aggregator_commands_return_value)
+    create_areas_markets_for_strategy_fixture, assert_orders_aggregator_commands_return_value)
 
 
 @pytest.fixture(name="external_storage")
@@ -88,7 +88,7 @@ class TestStorageExternalStrategy:
             "requirements": [{"price": 12}],
             "transaction_id": str(uuid.uuid4())})
 
-        assert_bid_offer_aggregator_commands_return_value(return_value, False)
+        assert_orders_aggregator_commands_return_value(return_value, False)
         assert return_value["message"] == (
             "The following arguments are not supported for this market and have been removed from "
             "your order: ['requirements', 'attributes'].")
@@ -110,7 +110,7 @@ class TestStorageExternalStrategy:
             "requirements": [{"price": 12}],
             "transaction_id": str(uuid.uuid4())})
 
-        assert_bid_offer_aggregator_commands_return_value(return_value, True)
+        assert_orders_aggregator_commands_return_value(return_value, True)
         assert return_value["message"] == (
             "The following arguments are not supported for this market and have been removed from "
             "your order: ['requirements', 'attributes'].")

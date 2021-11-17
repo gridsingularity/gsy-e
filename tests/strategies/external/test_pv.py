@@ -79,7 +79,7 @@ class TestPVForecastExternalStrategy:
                 "transaction_id": str(uuid.uuid4())
             }
         )
-        assert_bid_offer_aggregator_commands_return_value(return_value, True)
+        assert_orders_aggregator_commands_return_value(return_value, True)
         assert return_value["message"] == (
             "The following arguments are not supported for this market and have been removed from "
             "your order: ['requirements', 'attributes'].")
