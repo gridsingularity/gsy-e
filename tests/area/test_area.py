@@ -19,7 +19,7 @@ import unittest
 from unittest.mock import MagicMock, patch, Mock, call
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.enums import SpotMarketTypeEnum, BidOfferMatchAlgoEnum
+from gsy_framework.enums import SpotMarketTypeEnum, OrdersMatchAlgoEnum
 from parameterized import parameterized
 from pendulum import duration, today
 
@@ -69,7 +69,7 @@ class TestArea:
 
     def teardown_method(self):
         ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
-        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
+        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = OrdersMatchAlgoEnum.PAY_AS_BID.value
         ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS = False
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 
@@ -179,7 +179,7 @@ class TestArea:
         # TWO Sided markets with external matching, the order should be ->
         # call myco clearing -> consume commands from aggregator -> update myco cache
         manager.reset_mock()
-        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.EXTERNAL.value
+        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = OrdersMatchAlgoEnum.EXTERNAL.value
         self.area.tick()
         assert manager.mock_calls == [call.match(), call.consume_commands(), call.update_matcher()]
 

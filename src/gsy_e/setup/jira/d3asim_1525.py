@@ -24,7 +24,7 @@ from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 from gsy_e.gsy_e_core.util import d3a_path
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.enums import BidOfferMatchAlgoEnum
+from gsy_framework.enums import OrdersMatchAlgoEnum
 
 """
 This setup file reenacts a case where the assert "Accepted bids were not enough to satisfy the
@@ -66,7 +66,7 @@ house3_load_dict = {
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-        BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+        OrdersMatchAlgoEnum.PAY_AS_CLEAR.value
     area = Area(
             "Grid",
             [

@@ -20,14 +20,14 @@ from gsy_e.models.area import Area
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.enums import BidOfferMatchAlgoEnum
+from gsy_framework.enums import OrdersMatchAlgoEnum
 
 
 def get_setup(config):
     ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS = True
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-        BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+        OrdersMatchAlgoEnum.PAY_AS_CLEAR.value
     ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
     ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT = 1
     ConstSettings.IAASettings.MIN_OFFER_AGE = 0

@@ -3,7 +3,7 @@ from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStra
 from gsy_e.models.strategy.external_strategies.pv import PVExternalStrategy
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.enums import BidOfferMatchAlgoEnum
+from gsy_framework.enums import OrdersMatchAlgoEnum
 
 from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 
@@ -11,7 +11,7 @@ from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = (
-        BidOfferMatchAlgoEnum.EXTERNAL.value)
+        OrdersMatchAlgoEnum.EXTERNAL.value)
     area = Area(
         "Grid",
         [

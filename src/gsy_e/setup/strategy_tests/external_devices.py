@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.enums import BidOfferMatchAlgoEnum
+from gsy_framework.enums import OrdersMatchAlgoEnum
 
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.external_strategies.load import (LoadHoursExternalStrategy,
@@ -30,7 +30,7 @@ def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.IAASettings.MIN_BID_AGE = 0
     ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-        BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+        OrdersMatchAlgoEnum.PAY_AS_CLEAR.value
     ConstSettings.IAASettings.MIN_OFFER_AGE = 0
     area = Area(
         "Grid",

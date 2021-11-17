@@ -31,7 +31,7 @@ import plotly.graph_objs as go
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
 from gsy_framework.data_classes import (
     Trade, BalancingTrade, Bid, Offer, BalancingOffer, MarketClearingState, Clearing)
-from gsy_framework.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
+from gsy_framework.enums import OrdersMatchAlgoEnum, SpotMarketTypeEnum
 from gsy_framework.utils import mkdir_from_str, generate_market_slot_list
 from pendulum import DateTime
 from slugify import slugify
@@ -138,7 +138,7 @@ class ExportAndPlot:
             self.plot_energy_trade_profile_hr(self.area, self.plot_dir)
         if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
                 ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
-                BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value and
+                OrdersMatchAlgoEnum.PAY_AS_CLEAR.value and
                 ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS is True):
             self.plot_supply_demand_curve(self.area, self.plot_dir)
         self.move_root_plot_folder()
@@ -277,7 +277,7 @@ class ExportAndPlot:
         if area.children:
             if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED and
                     ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
-                    BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value):
+                    OrdersMatchAlgoEnum.PAY_AS_CLEAR.value):
                 self._export_area_clearing_rate(area, directory, "market-clearing-rate", is_first)
 
     def _export_area_clearing_rate(self, area, directory, file_suffix, is_first) -> None:

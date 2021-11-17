@@ -27,7 +27,7 @@ from math import isclose
 
 from behave import given, when, then
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
+from gsy_framework.enums import OrdersMatchAlgoEnum, SpotMarketTypeEnum
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
     default_profile_dict
 from gsy_framework.unit_test_utils import assert_dicts_identical
@@ -214,13 +214,13 @@ def one_sided_market(context, market_type):
         ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
     elif market_type == "two-sided-pay-as-bid":
         ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
-        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
+        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = OrdersMatchAlgoEnum.PAY_AS_BID.value
     elif market_type == "two-sided-pay-as-clear":
         ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
-        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = OrdersMatchAlgoEnum.PAY_AS_CLEAR.value
     elif market_type == "two-sided-external":
         ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
-        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.EXTERNAL.value
+        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = OrdersMatchAlgoEnum.EXTERNAL.value
 
 
 @given('gsy-e dispatches events from top to bottom')

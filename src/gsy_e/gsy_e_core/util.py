@@ -27,7 +27,7 @@ from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setL
 
 from click.types import ParamType
 from gsy_framework.constants_limits import GlobalConfig, RangeLimit, ConstSettings
-from gsy_framework.enums import BidOfferMatchAlgoEnum
+from gsy_framework.enums import OrdersMatchAlgoEnum
 from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import iterate_over_all_modules, str_to_pendulum_datetime, \
     format_datetime, find_object_of_same_weekday_and_time
@@ -475,7 +475,7 @@ def is_external_matching_enabled():
     Returns True if both are matched
     """
     return (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
-            BidOfferMatchAlgoEnum.EXTERNAL.value)
+            OrdersMatchAlgoEnum.EXTERNAL.value)
 
 
 class StrategyProfileConfigurationException(Exception):

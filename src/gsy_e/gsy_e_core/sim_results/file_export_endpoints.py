@@ -19,7 +19,7 @@ from abc import ABC, abstractmethod
 from typing import List, Dict
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
+from gsy_framework.enums import OrdersMatchAlgoEnum, SpotMarketTypeEnum
 
 from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
 from gsy_e.models.area import Area
@@ -189,7 +189,7 @@ class FileExportEndpoints:
     def _populate_plots_stats_for_supply_demand_curve(self, area: Area) -> None:
         if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
                 ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
-                BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value):
+                OrdersMatchAlgoEnum.PAY_AS_CLEAR.value):
             if len(area.past_markets) == 0:
                 return
             market = area.past_markets[-1]

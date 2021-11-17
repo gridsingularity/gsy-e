@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from gsy_framework.enums import BidOfferMatchAlgoEnum
+from gsy_framework.enums import OrdersMatchAlgoEnum
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.matching_algorithms import (
     PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm)
@@ -47,10 +47,10 @@ class MycoInternalMatcher(MycoMatcherInterface):
             WrongMarketTypeException
         """
         if (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
-                BidOfferMatchAlgoEnum.PAY_AS_BID.value):
+                OrdersMatchAlgoEnum.PAY_AS_BID.value):
             return PayAsBidMatchingAlgorithm()
         if (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
-                BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value):
+                OrdersMatchAlgoEnum.PAY_AS_CLEAR.value):
             return PayAsClearMatchingAlgorithm()
         raise WrongMarketTypeException("Wrong market type setting flag "
                                        f"{ConstSettings.IAASettings.MARKET_TYPE}")

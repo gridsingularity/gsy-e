@@ -21,13 +21,13 @@ from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.enums import BidOfferMatchAlgoEnum
+from gsy_framework.enums import OrdersMatchAlgoEnum
 
 
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-        BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+        OrdersMatchAlgoEnum.PAY_AS_CLEAR.value
     # ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS = False
     ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT = 3
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5

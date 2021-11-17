@@ -2,13 +2,13 @@ from gsy_e.models.area import Area
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.enums import BidOfferMatchAlgoEnum
+from gsy_framework.enums import OrdersMatchAlgoEnum
 
 
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
-        BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+        OrdersMatchAlgoEnum.PAY_AS_CLEAR.value
     area = Area(
             name="GRID",
             children=[
