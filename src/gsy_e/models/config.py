@@ -37,7 +37,8 @@ class SimulationConfig:
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  pv_user_profile=None, start_date: DateTime = today(tz=TIME_ZONE),
                  capacity_kW=None, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
-                 external_connection_enabled: bool = True, aggregator_device_mapping=None):
+                 external_connection_enabled=True, aggregator_device_mapping=None,
+                 enable_degrees_of_freedom: bool = True):
         """
         Args:
             sim_duration: The total duration of the simulation
@@ -52,6 +53,8 @@ class SimulationConfig:
             grid_fee_type: An integer describing the type of grid fees to be applied
             external_connection_enabled: A flag to allow receiving orders from an external client
             aggregator_device_mapping: A dictionary that maps each aggregator to its devices
+            enable_degrees_of_freedom: If True, allow orders to have Degrees of Freedom (they can
+                specify additional requirements and attributes)
         """
         self.sim_duration = sim_duration
         self.start_date = start_date
@@ -59,6 +62,7 @@ class SimulationConfig:
         self.slot_length = slot_length
         self.tick_length = tick_length
         self.grid_fee_type = grid_fee_type
+        self.enable_degrees_of_freedom = enable_degrees_of_freedom
 
         self.ticks_per_slot = self.slot_length / self.tick_length
         if self.ticks_per_slot != int(self.ticks_per_slot):
@@ -94,7 +98,7 @@ class SimulationConfig:
     def as_dict(self):
         fields = {"sim_duration", "slot_length", "tick_length", "ticks_per_slot",
                   "total_ticks", "cloud_coverage", "capacity_kW", "grid_fee_type",
-                  "external_connection_enabled"}
+                  "external_connection_enabled", "enable_degrees_of_freedom"}
         return {
             k: format_interval(v) if isinstance(v, Duration) else v
             for k, v in self.__dict__.items()
