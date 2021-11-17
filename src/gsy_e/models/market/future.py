@@ -21,7 +21,7 @@ from logging import getLogger
 from typing import Dict, List, Union, Optional, Tuple, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
-from gsy_framework.data_classes import Bid, Offer, Trade, BaseBidOffer, TradeBidOfferInfo
+from gsy_framework.data_classes import Bid, Offer, Trade, BaseOrder, TradeBidOfferInfo
 from pendulum import DateTime, duration
 
 from gsy_e.events.event_structures import MarketEvent
@@ -108,8 +108,8 @@ class FutureMarkets(TwoSidedMarket):
 
     def _delete_order_dict_market_slot(self, current_market_time_slot: DateTime,
                                        order_dict:
-                                       Dict[DateTime, List[Union[BaseBidOffer, Trade]]],
-                                       order_type: Union[BaseBidOffer, Trade]) -> None:
+                                       Dict[DateTime, List[Union[BaseOrder, Trade]]],
+                                       order_type: Union[BaseOrder, Trade]) -> None:
         """Empty order_dicts of order and trades for non-future time_stamps."""
         delete_time_slots = []
         for time_slot, orders in order_dict.items():
@@ -120,7 +120,7 @@ class FutureMarkets(TwoSidedMarket):
             del order_dict[time_slot]
 
     def _delete_list_of_orders_from_market(self, delete_orders: List,
-                                           order_type: Union[BaseBidOffer, Trade]) -> None:
+                                           order_type: Union[BaseOrder, Trade]) -> None:
         """Delete orders/trades from traditional market order dicts."""
         if order_type == Trade:
             current_market_trades = self.trades

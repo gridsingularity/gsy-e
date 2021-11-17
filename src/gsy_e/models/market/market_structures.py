@@ -19,7 +19,7 @@ import json
 from enum import Enum
 from typing import Dict, List, Tuple, Union  # noqa
 
-from gsy_framework.data_classes import Trade, BaseBidOffer
+from gsy_framework.data_classes import Trade, BaseOrder
 
 from gsy_e.events import MarketEvent
 
@@ -29,12 +29,12 @@ def parse_event_and_parameters_from_json_string(payload) -> Tuple:
     kwargs = data["kwargs"]
     for key in ["offer", "existing_offer", "new_offer"]:
         if key in kwargs:
-            kwargs[key] = BaseBidOffer.from_json(kwargs[key])
+            kwargs[key] = BaseOrder.from_json(kwargs[key])
     if "trade" in kwargs:
         kwargs["trade"] = Trade.from_json(kwargs["trade"])
     for key in ["bid", "existing_bid", "new_bid"]:
         if key in kwargs:
-            kwargs[key] = BaseBidOffer.from_json(kwargs[key])
+            kwargs[key] = BaseOrder.from_json(kwargs[key])
     if "bid_trade" in kwargs:
         kwargs["bid_trade"] = Trade.from_json(kwargs["bid_trade"])
     event_type = MarketEvent(data["event_type"])
