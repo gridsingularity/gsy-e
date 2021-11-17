@@ -137,7 +137,7 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
                 "transaction_uuid": "trans_id"
             })
         }
-        trade = Trade(id="trade_id", creation_time=now(), offer_bid=offer,
+        trade = Trade(id="trade_id", creation_time=now(), order=offer,
                       seller="trade_seller", buyer="trade_buyer")
         self.market.accept_offer = MagicMock(return_value=trade)
         self.subscriber._accept_offer(payload)
@@ -224,7 +224,7 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
                 "transaction_uuid": "trans_id"
             })
         }
-        trade = Trade(id="trade_id", creation_time=now(), offer_bid=bid,
+        trade = Trade(id="trade_id", creation_time=now(), order=bid,
                       seller="trade_seller", buyer="trade_buyer")
         self.market.accept_bid = MagicMock(return_value=trade)
         self.subscriber._accept_bid(payload)

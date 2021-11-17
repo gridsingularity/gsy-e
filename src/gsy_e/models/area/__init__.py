@@ -31,7 +31,7 @@ from cached_property import cached_property
 from gsy_e.gsy_e_core.blockchain_interface import blockchain_interface_factory
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import AreaException
-from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
+from gsy_e.gsy_e_core.myco_singleton import orders_matcher
 from gsy_e.gsy_e_core.util import TaggedLogWrapper, is_external_matching_enabled
 from gsy_e.models.area.event_dispatcher import DispatcherFactory
 from gsy_e.models.area.events import Events
@@ -417,14 +417,14 @@ class Area:
                 self.dispatcher.publish_market_clearing()
             elif is_external_matching_enabled():
                 # If external matching is enabled, clear before placing orders
-                bid_offer_matcher.match_recommendations()
+                orders_matcher.match_recommendations()
                 self._consume_commands_from_aggregator()
                 self._update_myco_matcher()
             else:
                 # If internal matching is enabled, place orders before clearing
                 self._consume_commands_from_aggregator()
                 self._update_myco_matcher()
-                bid_offer_matcher.match_recommendations()
+                orders_matcher.match_recommendations()
         else:
             self._consume_commands_from_aggregator()
 
@@ -432,7 +432,7 @@ class Area:
 
     def _update_myco_matcher(self) -> None:
         """Update the markets cache that the myco matcher will request"""
-        bid_offer_matcher.update_area_uuid_markets_mapping(
+        orders_matcher.update_area_uuid_markets_mapping(
             area_uuid_markets_mapping={
                 self.uuid: {"markets": [self.spot_market],
                             "settlement_markets": self.settlement_markets.values(),

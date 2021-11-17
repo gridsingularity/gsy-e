@@ -185,14 +185,14 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         Returns: None
 
         """
-        if isinstance(bid_trade.offer_bid, Offer):
+        if isinstance(bid_trade.order, Offer):
             return
         market = self._get_settlement_market_by_id(strategy, market_id)
         if not market:
             return
-        if bid_trade.offer_bid.buyer == strategy.owner.name:
+        if bid_trade.order.buyer == strategy.owner.name:
             strategy.state.decrement_unsettled_deviation(
-                bid_trade.offer_bid.energy, market.time_slot)
+                bid_trade.order.energy, market.time_slot)
 
     def event_offer_traded(self, strategy: "BidEnabledStrategy",
                            market_id: str, trade: Trade) -> None:
@@ -206,14 +206,14 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         Returns: None
 
         """
-        if isinstance(trade.offer_bid, Bid):
+        if isinstance(trade.order, Bid):
             return
         market = self._get_settlement_market_by_id(strategy, market_id)
         if not market:
             return
-        if trade.offer_bid.seller == strategy.owner.name:
+        if trade.order.seller == strategy.owner.name:
             strategy.state.decrement_unsettled_deviation(
-                trade.offer_bid.energy, market.time_slot)
+                trade.order.energy, market.time_slot)
 
     def get_unsettled_deviation_dict(self, strategy: "BidEnabledStrategy") -> Dict:
         return {

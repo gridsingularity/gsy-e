@@ -123,14 +123,14 @@ class TwoSidedEngine(IAAEngine):
 
     def event_bid_traded(self, *, bid_trade):
         """Perform actions that need to be done when BID_TRADED event is triggered."""
-        bid_info = self.forwarded_bids.get(bid_trade.offer_bid.id)
+        bid_info = self.forwarded_bids.get(bid_trade.order.id)
         if not bid_info:
             return
 
-        if bid_trade.offer_bid.id == bid_info.target_bid.id:
+        if bid_trade.order.id == bid_info.target_bid.id:
             # Bid was traded in target market, buy in source
             market_bid = self.markets.source.bids[bid_info.source_bid.id]
-            assert bid_trade.offer_bid.energy <= market_bid.energy, \
+            assert bid_trade.order.energy <= market_bid.energy, \
                 "Traded bid on target market has more energy than the market bid."
 
             source_rate = bid_info.source_bid.energy_rate
@@ -138,17 +138,17 @@ class TwoSidedEngine(IAAEngine):
             assert abs(source_rate) + FLOATING_POINT_TOLERANCE >= abs(target_rate), \
                 f"bid: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
-            trade_rate = (bid_trade.offer_bid.price/bid_trade.offer_bid.energy)
+            trade_rate = (bid_trade.order.price/bid_trade.order.energy)
 
-            if bid_trade.offer_bid_trade_info is not None:
+            if bid_trade.trade_orders_info is not None:
                 # Adapt trade_offer_info received by the trade to include source market grid fees,
                 # which was skipped when accepting the bid during the trade operation.
                 updated_trade_offer_info = \
                     self.markets.source.fee_class.propagate_original_offer_info_on_bid_trade(
-                        bid_trade.offer_bid_trade_info
+                        bid_trade.trade_orders_info
                     )
             else:
-                updated_trade_offer_info = bid_trade.offer_bid_trade_info
+                updated_trade_offer_info = bid_trade.trade_orders_info
 
             trade_offer_info = \
                 self.markets.source.fee_class.update_forwarded_bid_trade_original_info(
@@ -156,7 +156,7 @@ class TwoSidedEngine(IAAEngine):
                 )
             self.markets.source.accept_bid(
                 bid=market_bid,
-                energy=bid_trade.offer_bid.energy,
+                energy=bid_trade.order.energy,
                 seller=self.owner.name,
                 already_tracked=False,
                 trade_rate=trade_rate,
@@ -168,7 +168,7 @@ class TwoSidedEngine(IAAEngine):
             self._delete_forwarded_bids(bid_info)
             self.bid_age.pop(bid_info.source_bid.id, None)
 
-        elif bid_trade.offer_bid.id == bid_info.source_bid.id:
+        elif bid_trade.order.id == bid_info.source_bid.id:
             # Bid was traded in the source market by someone else
             self._delete_forwarded_bids(bid_info)
             self.bid_age.pop(bid_info.source_bid.id, None)

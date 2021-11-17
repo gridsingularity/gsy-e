@@ -46,10 +46,10 @@ class MycoInternalMatcher(MycoMatcherInterface):
         :raises:
             WrongMarketTypeException
         """
-        if (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+        if (ConstSettings.IAASettings.ORDERS_MATCH_TYPE ==
                 OrdersMatchAlgoEnum.PAY_AS_BID.value):
             return PayAsBidMatchingAlgorithm()
-        if (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+        if (ConstSettings.IAASettings.ORDERS_MATCH_TYPE ==
                 OrdersMatchAlgoEnum.PAY_AS_CLEAR.value):
             return PayAsClearMatchingAlgorithm()
         raise WrongMarketTypeException("Wrong market type setting flag "
@@ -72,10 +72,10 @@ class MycoInternalMatcher(MycoMatcherInterface):
                         area_uuid: {
                             time_slot: {**orders_data, "current_time": area_data["current_time"]}
                             for time_slot, orders_data in orders.items()}}
-                    bid_offer_pairs = self._get_matches_recommendations(data)
-                    if not bid_offer_pairs:
+                    orders_pairs = self._get_matches_recommendations(data)
+                    if not orders_pairs:
                         break
-                    market.match_recommendations(bid_offer_pairs)
+                    market.match_recommendations(orders_pairs)
 
         self.area_uuid_markets_mapping = {}
 

@@ -21,7 +21,7 @@ from logging import getLogger
 from typing import Dict, List, Union, Optional, Tuple, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
-from gsy_framework.data_classes import Bid, Offer, Trade, BaseOrder, TradeBidOfferInfo
+from gsy_framework.data_classes import Bid, Offer, Trade, BaseOrder, TradeOrderInfo
 from pendulum import DateTime, duration
 
 from gsy_e.events.event_structures import MarketEvent
@@ -244,7 +244,7 @@ class FutureMarkets(TwoSidedMarket):
                    buyer: Optional[str] = None,
                    already_tracked: bool = False,
                    trade_rate: Optional[float] = None,
-                   trade_offer_info: Optional[TradeBidOfferInfo] = None,
+                   trade_offer_info: Optional[TradeOrderInfo] = None,
                    seller_origin: Optional[str] = None,
                    seller_origin_id: Optional[str] = None,
                    seller_id: Optional[str] = None) -> Trade:
@@ -261,7 +261,7 @@ class FutureMarkets(TwoSidedMarket):
                      energy: Optional[float] = None,
                      already_tracked: bool = False,
                      trade_rate: Optional[float] = None,
-                     trade_bid_info: Optional[TradeBidOfferInfo] = None,
+                     trade_bid_info: Optional[TradeOrderInfo] = None,
                      buyer_origin: Optional[str] = None,
                      buyer_origin_id: Optional[str] = None,
                      buyer_id: Optional[str] = None) -> Trade:

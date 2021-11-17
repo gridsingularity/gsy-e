@@ -266,13 +266,13 @@ class TestExternalMixin:
         assert call_args["residual_bid_id"] == "None"
         assert call_args["residual_offer_id"] == "None"
         if isinstance(offer_bid, Bid):
-            assert call_args["bid_id"] == trade.offer_bid.id
+            assert call_args["bid_id"] == trade.order.id
             assert call_args["offer_id"] == "None"
             assert call_args["seller"] == trade.seller
             assert call_args["buyer"] == "anonymous"
         else:
             assert call_args["bid_id"] == "None"
-            assert call_args["offer_id"] == trade.offer_bid.id
+            assert call_args["offer_id"] == trade.order.id
             assert call_args["seller"] == "anonymous"
             assert call_args["buyer"] == trade.buyer
 
@@ -301,7 +301,7 @@ class TestExternalMixin:
         assert call_args["trade_price"] == 20
         assert call_args["traded_energy"] == 1.0
         assert call_args["fee_price"] == 0.23
-        assert call_args["offer_id"] == trade.offer_bid.id
+        assert call_args["offer_id"] == trade.order.id
         assert call_args["residual_id"] == "None"
         assert call_args["time"] == current_time.isoformat()
         assert call_args["seller"] == trade.seller

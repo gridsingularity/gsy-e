@@ -40,7 +40,7 @@ from gsy_e.gsy_e_core.exceptions import SimulationException
 from gsy_e.gsy_e_core.export import ExportAndPlot
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.live_events import LiveEvents
-from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
+from gsy_e.gsy_e_core.myco_singleton import orders_matcher
 from gsy_e.gsy_e_core.redis_connections.redis_communication import RedisSimulationCommunication
 from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from gsy_e.gsy_e_core.sim_results.file_export_endpoints import FileExportEndpoints
@@ -162,7 +162,7 @@ class Simulation:
         global_objects.profiles_handler.activate()
 
         self.area = self.setup_module.get_setup(self.simulation_config)
-        bid_offer_matcher.activate()
+        orders_matcher.activate()
         global_objects.external_global_stats(self.area, self.simulation_config.ticks_per_slot)
 
         self.endpoint_buffer = SimulationEndpointBuffer(
@@ -345,7 +345,7 @@ class Simulation:
                 global_objects.external_global_stats.update(market_cycle=True)
                 self.area.publish_market_cycle_to_external_clients()
 
-            bid_offer_matcher.event_market_cycle(
+            orders_matcher.event_market_cycle(
                 slot_completion="0%",
                 market_slot=self.progress_info.current_slot_str)
 
@@ -378,7 +378,7 @@ class Simulation:
 
                 self.area.tick_and_dispatch()
                 self.area.update_clock_on_markets()
-                bid_offer_matcher.event_tick(
+                orders_matcher.event_tick(
                     is_it_time_for_external_tick=global_objects.external_global_stats.
                     is_it_time_for_external_tick(current_tick_in_slot),
                     slot_completion=f"{int((tick_no / config.ticks_per_slot) * 100)}%",
@@ -401,7 +401,7 @@ class Simulation:
         self.deactivate_areas(self.area)
         self.simulation_config.external_redis_communicator.\
             publish_aggregator_commands_responses_events()
-        bid_offer_matcher.event_finish()
+        orders_matcher.event_finish()
         if not self.is_stopped:
             self._update_progress_info(slot_count - 1, slot_count)
             paused_duration = duration(seconds=self.paused_time)

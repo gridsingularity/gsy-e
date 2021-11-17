@@ -169,8 +169,8 @@ class Market:
         self._update_min_max_avg_offer_prices()
 
     def _update_accumulated_trade_price_energy(self, trade):
-        self.accumulated_trade_price += trade.offer_bid.price
-        self.accumulated_trade_energy += trade.offer_bid.energy
+        self.accumulated_trade_price += trade.order.price
+        self.accumulated_trade_energy += trade.order.energy
 
     def _update_min_max_avg_offer_prices(self):
         self._avg_offer_price = None
@@ -199,16 +199,16 @@ class Market:
         )
 
     @staticmethod
-    def sorting(offers_bids: Dict, reverse_order=False) -> List[Union[Bid, Offer]]:
+    def sorting(orders: Dict, reverse_order=False) -> List[Union[Bid, Offer]]:
         """Sort a list of bids or offers by their energy_rate attribute."""
         if reverse_order:
             # Sorted bids in descending order
             return list(reversed(sorted(
-                offers_bids.values(),
+                orders.values(),
                 key=lambda obj: obj.energy_rate)))
         else:
 
-            return sorted(offers_bids.values(),
+            return sorted(orders.values(),
                           key=lambda obj: obj.energy_rate,
                           reverse=reverse_order)
 
@@ -251,16 +251,16 @@ class Market:
         self.now = now
 
     def bought_energy(self, buyer):
-        return sum(trade.offer_bid.energy for trade in self.trades if trade.buyer == buyer)
+        return sum(trade.order.energy for trade in self.trades if trade.buyer == buyer)
 
     def sold_energy(self, seller):
-        return sum(trade.offer_bid.energy for trade in self.trades if trade.seller == seller)
+        return sum(trade.order.energy for trade in self.trades if trade.seller == seller)
 
     def total_spent(self, buyer):
-        return sum(trade.offer_bid.price for trade in self.trades if trade.buyer == buyer)
+        return sum(trade.order.price for trade in self.trades if trade.buyer == buyer)
 
     def total_earned(self, seller):
-        return sum(trade.offer_bid.price for trade in self.trades if trade.seller == seller)
+        return sum(trade.order.price for trade in self.trades if trade.seller == seller)
 
     @property
     def info(self):
@@ -271,7 +271,7 @@ class Market:
             "duration_min": GlobalConfig.slot_length.minutes
         }
 
-    def get_bids_offers_trades(self):
+    def get_orders_trades(self):
         return {
             "bids": [b.serializable_dict() for b in self.bid_history],
             "offers": [o.serializable_dict() for o in self.offer_history],

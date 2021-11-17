@@ -22,7 +22,7 @@ import pytest
 from gsy_e.models.strategy.external_strategies.pv import PVExternalStrategy
 from tests.strategies.external.utils import (
     check_external_command_endpoint_with_correct_payload_succeeds,
-    create_areas_markets_for_strategy_fixture, assert_bid_offer_aggregator_commands_return_value)
+    create_areas_markets_for_strategy_fixture, assert_orders_aggregator_commands_return_value)
 
 
 @pytest.fixture(name="external_pv")
@@ -59,7 +59,7 @@ class TestPVForecastExternalStrategy:
                 "transaction_id": str(uuid.uuid4())
             }
         )
-        assert_bid_offer_aggregator_commands_return_value(return_value, True)
+        assert_orders_aggregator_commands_return_value(return_value, True)
 
     @staticmethod
     def test_delete_offer_aggregator(external_pv):

@@ -384,8 +384,8 @@ class StorageStrategy(BidEnabledStrategy):
                 self._track_energy_bought_type(trade)
         if trade.seller == self.owner.name:
             self._track_energy_sell_type(trade)
-            self.state.pledged_sell_kWh[trade.time_slot] += trade.offer_bid.energy
-            self.state.offered_sell_kWh[trade.time_slot] -= trade.offer_bid.energy
+            self.state.pledged_sell_kWh[trade.time_slot] += trade.order.energy
+            self.state.offered_sell_kWh[trade.time_slot] -= trade.order.energy
 
     def _is_local(self, trade):
         for child in self.area.children:
@@ -395,7 +395,7 @@ class StorageStrategy(BidEnabledStrategy):
 
     # ESS Energy being utilized based on FIRST-IN FIRST-OUT mechanism
     def _track_energy_sell_type(self, trade):
-        energy = trade.offer_bid.energy
+        energy = trade.order.energy
         while limit_float_precision(energy) > 0 and len(self.state.get_used_storage_share) > 0:
             first_in_energy_with_origin = self.state.get_used_storage_share[0]
             if energy >= first_in_energy_with_origin.value:
@@ -409,11 +409,11 @@ class StorageStrategy(BidEnabledStrategy):
 
     def _track_energy_bought_type(self, trade):
         if area_name_from_area_or_iaa_name(trade.seller) == self.area.name:
-            self.state.update_used_storage_share(trade.offer_bid.energy, ESSEnergyOrigin.EXTERNAL)
+            self.state.update_used_storage_share(trade.order.energy, ESSEnergyOrigin.EXTERNAL)
         elif self._is_local(trade):
-            self.state.update_used_storage_share(trade.offer_bid.energy, ESSEnergyOrigin.LOCAL)
+            self.state.update_used_storage_share(trade.order.energy, ESSEnergyOrigin.LOCAL)
         else:
-            self.state.update_used_storage_share(trade.offer_bid.energy, ESSEnergyOrigin.UNKNOWN)
+            self.state.update_used_storage_share(trade.order.energy, ESSEnergyOrigin.UNKNOWN)
 
     def event_bid_traded(self, *, market_id, bid_trade):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
@@ -423,8 +423,8 @@ class StorageStrategy(BidEnabledStrategy):
 
         if bid_trade.buyer == self.owner.name:
             self._track_energy_bought_type(bid_trade)
-            self.state.pledged_buy_kWh[bid_trade.time_slot] += bid_trade.offer_bid.energy
-            self.state.offered_buy_kWh[bid_trade.time_slot] -= bid_trade.offer_bid.energy
+            self.state.pledged_buy_kWh[bid_trade.time_slot] += bid_trade.order.energy
+            self.state.offered_buy_kWh[bid_trade.time_slot] -= bid_trade.order.energy
 
     def _cycle_state(self):
         current_market = self.area.spot_market

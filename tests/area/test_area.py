@@ -69,7 +69,7 @@ class TestArea:
 
     def teardown_method(self):
         ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
-        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = OrdersMatchAlgoEnum.PAY_AS_BID.value
+        ConstSettings.IAASettings.ORDERS_MATCH_TYPE = OrdersMatchAlgoEnum.PAY_AS_BID.value
         ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS = False
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 
@@ -156,7 +156,7 @@ class TestArea:
 
     @patch("gsy_e.models.area.Area._consume_commands_from_aggregator", Mock())
     @patch("gsy_e.models.area.Area._update_myco_matcher", Mock())
-    @patch("gsy_e.models.area.bid_offer_matcher.match_recommendations")
+    @patch("gsy_e.models.area.orders_matcher.match_recommendations")
     def test_tick(self, mock_match_recommendations):
         """Test the correct chain of function calls in the Area's tick function."""
         manager = Mock()
@@ -179,7 +179,7 @@ class TestArea:
         # TWO Sided markets with external matching, the order should be ->
         # call myco clearing -> consume commands from aggregator -> update myco cache
         manager.reset_mock()
-        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = OrdersMatchAlgoEnum.EXTERNAL.value
+        ConstSettings.IAASettings.ORDERS_MATCH_TYPE = OrdersMatchAlgoEnum.EXTERNAL.value
         self.area.tick()
         assert manager.mock_calls == [call.match(), call.consume_commands(), call.update_matcher()]
 

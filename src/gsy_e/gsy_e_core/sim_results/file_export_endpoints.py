@@ -21,7 +21,7 @@ from typing import List, Dict
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import OrdersMatchAlgoEnum, SpotMarketTypeEnum
 
-from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
+from gsy_e.gsy_e_core.myco_singleton import orders_matcher
 from gsy_e.models.area import Area
 from gsy_e.models.market.market_structures import AvailableMarketTypes
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
@@ -66,8 +66,8 @@ class UpperLevelDataExporter(BaseDataExporter):
                 market.min_trade_price,
                 market.max_trade_price,
                 len(market.trades),
-                sum(trade.offer_bid.energy for trade in market.trades),
-                sum(trade.offer_bid.price for trade in market.trades)]
+                sum(trade.order.energy for trade in market.trades),
+                sum(trade.order.price for trade in market.trades)]
 
 
 class BalancingDataExporter(BaseDataExporter):
@@ -188,7 +188,7 @@ class FileExportEndpoints:
 
     def _populate_plots_stats_for_supply_demand_curve(self, area: Area) -> None:
         if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
-                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+                ConstSettings.IAASettings.ORDERS_MATCH_TYPE ==
                 OrdersMatchAlgoEnum.PAY_AS_CLEAR.value):
             if len(area.past_markets) == 0:
                 return
@@ -201,7 +201,7 @@ class FileExportEndpoints:
                 self.cumulative_offers[area.slug][market.time_slot] = {}
                 self.cumulative_bids[area.slug][market.time_slot] = {}
                 self.clearing[area.slug][market.time_slot] = {}
-                clearing_state = bid_offer_matcher.matcher.match_algorithm.state
+                clearing_state = orders_matcher.matcher.match_algorithm.state
             self.cumulative_offers[area.slug][market.time_slot] = (
                 clearing_state.cumulative_offers.get(market.id, {}))
             self.cumulative_bids[area.slug][market.time_slot] = (

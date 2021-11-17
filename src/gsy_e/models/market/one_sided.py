@@ -21,7 +21,7 @@ from math import isclose
 from typing import Union, Dict, List, Optional
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Offer, Trade, TradeBidOfferInfo
+from gsy_framework.data_classes import Offer, Trade, TradeOrderInfo
 from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
@@ -253,7 +253,7 @@ class OneSidedMarket(Market):
                      energy: Optional[float] = None,
                      already_tracked: bool = False,
                      trade_rate: Optional[float] = None,
-                     trade_bid_info: Optional[TradeBidOfferInfo] = None,
+                     trade_bid_info: Optional[TradeOrderInfo] = None,
                      buyer_origin: Optional[str] = None,
                      buyer_origin_id: Optional[str] = None,
                      buyer_id: Optional[str] = None) -> Trade:
@@ -313,11 +313,11 @@ class OneSidedMarket(Market):
 
         # Delete the accepted offer from self.offers:
         self.offers.pop(offer.id, None)
-        offer_bid_trade_info = self.fee_class.propagate_original_bid_info_on_offer_trade(
+        trade_orders_info = self.fee_class.propagate_original_bid_info_on_offer_trade(
             trade_original_info=trade_bid_info)
 
         trade = Trade(trade_id, self.now, offer, offer.seller, buyer, residual_offer,
-                      offer_bid_trade_info=offer_bid_trade_info,
+                      trade_orders_info=trade_orders_info,
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
                       fee_price=fee_price, buyer_origin_id=buyer_origin_id,
                       seller_origin_id=offer.seller_origin_id,

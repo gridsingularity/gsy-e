@@ -17,4 +17,4 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_e.models.myco_matcher.myco_matcher import MycoMatcher
 
-bid_offer_matcher = MycoMatcher()
+orders_matcher = MycoMatcher()

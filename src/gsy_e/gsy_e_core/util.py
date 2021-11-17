@@ -474,7 +474,7 @@ def is_external_matching_enabled():
     """Checks if the bid offer match type is set to external
     Returns True if both are matched
     """
-    return (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+    return (ConstSettings.IAASettings.ORDERS_MATCH_TYPE ==
             OrdersMatchAlgoEnum.EXTERNAL.value)
 
 

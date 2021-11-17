@@ -305,7 +305,7 @@ def test_bid_traded_moves_bid_from_posted_to_traded(base):
     test_bid = Bid("123", pendulum.now(), 12, 23, base.owner.name, 'B')
     trade = MagicMock()
     trade.buyer = base.owner.name
-    trade.offer_bid = test_bid
+    trade.order = test_bid
     market = FakeMarket(raises=False, id=21)
     base.area._market = market
     base._bids[market.id] = [test_bid]

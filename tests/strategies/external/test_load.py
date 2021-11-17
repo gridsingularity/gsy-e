@@ -22,7 +22,7 @@ import pytest
 
 from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from tests.strategies.external.utils import (
-    assert_bid_offer_aggregator_commands_return_value,
+    assert_orders_aggregator_commands_return_value,
     check_external_command_endpoint_with_correct_payload_succeeds,
     create_areas_markets_for_strategy_fixture)
 
@@ -64,7 +64,7 @@ class TestLoadForecastExternalStrategy:
                 "transaction_id": str(uuid.uuid4())
             }
         )
-        assert_bid_offer_aggregator_commands_return_value(return_value, False)
+        assert_orders_aggregator_commands_return_value(return_value, False)
 
     @staticmethod
     def test_delete_bid_aggregator(external_load):

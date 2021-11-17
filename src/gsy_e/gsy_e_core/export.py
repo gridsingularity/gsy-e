@@ -38,7 +38,7 @@ from slugify import slugify
 from sortedcontainers import SortedDict
 
 import gsy_e.constants
-from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
+from gsy_e.gsy_e_core.myco_singleton import orders_matcher
 from gsy_e.gsy_e_core.sim_results.plotly_graph import PlotlyGraph
 from gsy_e.gsy_e_core.util import constsettings_to_dict, round_floats_for_ui
 from gsy_e.data_classes import PlotDescription
@@ -130,14 +130,14 @@ class ExportAndPlot:
         self.plot_avg_trade_price(self.area, self.plot_dir)
         self.plot_ess_soc_history(self.area, self.plot_dir)
         self.plot_ess_energy_trace(self.area, self.plot_dir)
-        if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
+        if ConstSettings.GeneralSettings.EXPORT_ORDERS_TRADE_HR:
             self.plot_stock_info_per_area_per_market_slot(self.area, self.plot_dir)
         if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
             self.plot_device_stats(self.area, [])
         if ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
             self.plot_energy_trade_profile_hr(self.area, self.plot_dir)
         if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
-                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+                ConstSettings.IAASettings.ORDERS_MATCH_TYPE ==
                 OrdersMatchAlgoEnum.PAY_AS_CLEAR.value and
                 ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS is True):
             self.plot_supply_demand_curve(self.area, self.plot_dir)
@@ -182,26 +182,26 @@ class ExportAndPlot:
                                          is_first)
         if not area.children:
             return
-        self._export_offers_bids_trades_to_csv_files(past_markets=area.past_markets,
-                                                     market_member="trades",
-                                                     directory=directory,
-                                                     filename=f"{area.slug}-trades",
-                                                     labels=("slot",) + Trade.csv_fields(),
-                                                     is_first=is_first)
+        self._export_orders_trades_to_csv_files(past_markets=area.past_markets,
+                                                market_member="trades",
+                                                directory=directory,
+                                                filename=f"{area.slug}-trades",
+                                                labels=("slot",) + Trade.csv_fields(),
+                                                is_first=is_first)
 
-        self._export_offers_bids_trades_to_csv_files(past_markets=area.past_markets,
-                                                     market_member="offer_history",
-                                                     directory=directory,
-                                                     filename=f"{area.slug}-offers",
-                                                     labels=("slot",) + Offer.csv_fields(),
-                                                     is_first=is_first)
+        self._export_orders_trades_to_csv_files(past_markets=area.past_markets,
+                                                market_member="offer_history",
+                                                directory=directory,
+                                                filename=f"{area.slug}-offers",
+                                                labels=("slot",) + Offer.csv_fields(),
+                                                is_first=is_first)
 
-        self._export_offers_bids_trades_to_csv_files(past_markets=area.past_markets,
-                                                     market_member="bid_history",
-                                                     directory=directory,
-                                                     filename=f"{area.slug}-bids",
-                                                     labels=("slot",) + Bid.csv_fields(),
-                                                     is_first=is_first)
+        self._export_orders_trades_to_csv_files(past_markets=area.past_markets,
+                                                market_member="bid_history",
+                                                directory=directory,
+                                                filename=f"{area.slug}-bids",
+                                                labels=("slot",) + Bid.csv_fields(),
+                                                is_first=is_first)
 
     def _export_settlement_markets_stats(self, area: Area, directory: dir, is_first: bool) -> None:
         """Export bids, offers, trades, statistics csv-files for all settlement markets."""
@@ -211,21 +211,21 @@ class ExportAndPlot:
                                          is_first)
         if not area.children:
             return
-        self._export_offers_bids_trades_to_csv_files(
+        self._export_orders_trades_to_csv_files(
             past_markets=area.past_settlement_markets.values(),
             market_member="trades",
             directory=directory,
             filename=f"{area.slug}-settlement-trades",
             labels=("slot",) + Trade.csv_fields(),
             is_first=is_first)
-        self._export_offers_bids_trades_to_csv_files(
+        self._export_orders_trades_to_csv_files(
             past_markets=area.past_settlement_markets.values(),
             market_member="offer_history",
             directory=directory,
             filename=f"{area.slug}-settlement-offers",
             labels=("slot",) + Offer.csv_fields(),
             is_first=is_first)
-        self._export_offers_bids_trades_to_csv_files(
+        self._export_orders_trades_to_csv_files(
             past_markets=area.past_settlement_markets.values(),
             market_member="bid_history",
             directory=directory,
@@ -241,7 +241,7 @@ class ExportAndPlot:
                                          is_first)
         if not area.children:
             return
-        self._export_offers_bids_trades_to_csv_files(
+        self._export_orders_trades_to_csv_files(
             past_markets=area.past_balancing_markets,
             market_member="trades",
             directory=directory,
@@ -249,7 +249,7 @@ class ExportAndPlot:
             labels=("slot",) + BalancingTrade.csv_fields(),
             is_first=is_first)
 
-        self._export_offers_bids_trades_to_csv_files(
+        self._export_orders_trades_to_csv_files(
             past_markets=area.past_balancing_markets,
             market_member="offer_history",
             directory=directory,
@@ -276,7 +276,7 @@ class ExportAndPlot:
 
         if area.children:
             if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED and
-                    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+                    ConstSettings.IAASettings.ORDERS_MATCH_TYPE ==
                     OrdersMatchAlgoEnum.PAY_AS_CLEAR.value):
                 self._export_area_clearing_rate(area, directory, "market-clearing-rate", is_first)
 
@@ -290,7 +290,7 @@ class ExportAndPlot:
                 if is_first:
                     writer.writerow(labels)
                 for market in area.past_markets:
-                    market_clearing = bid_offer_matcher.matcher.match_algorithm.state.clearing.get(
+                    market_clearing = orders_matcher.matcher.match_algorithm.state.clearing.get(
                         market.id)
                     if market_clearing is None:
                         continue
@@ -301,9 +301,9 @@ class ExportAndPlot:
         except OSError:
             _log.exception("Could not export area market_clearing_rate")
 
-    def _export_offers_bids_trades_to_csv_files(self, past_markets: List, market_member: str,
-                                                directory: dir, filename: str, labels: Tuple,
-                                                is_first: bool = False) -> None:
+    def _export_orders_trades_to_csv_files(self, past_markets: List, market_member: str,
+                                           directory: dir, filename: str, labels: Tuple,
+                                           is_first: bool = False) -> None:
         """ Export files containing individual offers, bids (*-bids*/*-offers*.csv files)."""
         file_path = self._file_path(directory, filename)
         try:

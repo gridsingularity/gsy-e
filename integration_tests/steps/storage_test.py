@@ -38,12 +38,12 @@ def check_storage_prices(context):
             if trade.seller in ["H1 Storage1"]:
                 trades_sold.append(trade)
                 final_rate = storage.strategy.offer_update.final_rate[market.time_slot]
-                assert trade.offer_bid.energy_rate >= final_rate
+                assert trade.order.energy_rate >= final_rate
 
             elif trade.buyer in ["H1 Storage1"]:
                 trades_bought.append(trade)
                 final_rate = storage.strategy.offer_update.final_rate[market.time_slot]
-                assert trade.offer_bid.energy_rate <= final_rate
+                assert trade.order.energy_rate <= final_rate
     assert len(trades_sold) > 0
     assert len(trades_bought) > 0
 
@@ -68,11 +68,11 @@ def step_impl(context):
         for market in house1.past_markets:
             for trade in market.trades:
                 if trade.seller == name:
-                    assert (round(trade.offer_bid.energy_rate, 2) >=
+                    assert (round(trade.order.energy_rate, 2) >=
                             round(final_selling_rate[market.time_slot], 2))
                     trades_sold.append(trade)
                 elif trade.buyer == name:
-                    assert (round(trade.offer_bid.energy_rate, 2) <=
+                    assert (round(trade.order.energy_rate, 2) <=
                             round(final_buying_rate[market.time_slot], 2))
                     trades_bought.append(trade)
 
@@ -90,7 +90,7 @@ def check_storage_sell_prices(context):
             if trade.seller == storage.name:
                 trades_sold.append(trade)
                 final_rate = storage.strategy.offer_update.final_rate[market.time_slot]
-                assert trade.offer_bid.energy_rate >= final_rate
+                assert trade.order.energy_rate >= final_rate
     assert len(trades_sold) > 0
 
 
@@ -105,7 +105,7 @@ def check_capacity_dependant_sell_rate(context):
             if trade.seller == storage.name:
                 trades_sold.append(trade)
                 trade_rate = round(
-                    trade.offer_bid.energy_rate, DEFAULT_PRECISION)
+                    trade.order.energy_rate, DEFAULT_PRECISION)
                 break_even_sell = (
                     round(storage.strategy.offer_update.final_rate[market.time_slot],
                           DEFAULT_PRECISION))

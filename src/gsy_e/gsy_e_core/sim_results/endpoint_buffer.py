@@ -66,12 +66,12 @@ class SimulationEndpointBuffer:
             "percentage_completed": 0
         }
 
-        self.bids_offers_trades = {}
+        self.orders_trades = {}
         self.last_energy_trades_high_resolution = {}
         self.results_handler = ResultsHandler(should_export_plots)
         self.simulation_state = {"general": {}, "areas": {}}
 
-        if (ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or
+        if (ConstSettings.GeneralSettings.EXPORT_ORDERS_TRADE_HR or
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR):
             self.offer_bid_trade_hr = OfferBidTradeGraphStats()
 
@@ -127,7 +127,7 @@ class SimulationEndpointBuffer:
             "random_seed": self.random_seed,
             "status": self.status,
             "progress_info": self.simulation_progress,
-            "bids_offers_trades": self.bids_offers_trades,
+            "bids_offers_trades": self.orders_trades,
             "results_area_uuids": list(self.result_area_uuids),
             "simulation_state": self.simulation_state,
             "simulation_raw_data": self.flattened_area_core_stats_dict,
@@ -290,21 +290,21 @@ class SimulationEndpointBuffer:
             self.current_market_time_slot_str
         )
 
-        self.bids_offers_trades.clear()
+        self.orders_trades.clear()
 
-        if (ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or
+        if (ConstSettings.GeneralSettings.EXPORT_ORDERS_TRADE_HR or
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR):
             self.offer_bid_trade_hr.update(area)
 
         self.result_area_uuids = set()
         self.update_results_area_uuids(area)
-        self.update_offer_bid_trade()
+        self.update_orders_trade()
 
-    def update_offer_bid_trade(self) -> None:
-        """Populate self.bids_offers_trades with results from flattened_area_core_stats_dict
+    def update_orders_trade(self) -> None:
+        """Populate self.orders_trades with results from flattened_area_core_stats_dict
         (for local export of statistics)."""
         if self.current_market_time_slot_str == "":
             return
         for area_uuid, area_result in self.flattened_area_core_stats_dict.items():
-            self.bids_offers_trades[area_uuid] = {
+            self.orders_trades[area_uuid] = {
                 k: area_result[k] for k in ("offers", "bids", "trades")}

@@ -59,7 +59,7 @@ def check_external_command_endpoint_with_correct_payload_succeeds(ext_strategy_f
             deque([IncomingRequest(command, arguments, response_channel)]))
 
 
-def assert_bid_offer_aggregator_commands_return_value(return_value, is_offer):
+def assert_orders_aggregator_commands_return_value(return_value, is_offer):
     command_name = "offer" if is_offer else "bid"
     assert return_value["status"] == "ready"
     assert return_value["command"] == command_name

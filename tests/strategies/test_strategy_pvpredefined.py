@@ -152,7 +152,7 @@ class FakeMarketTimeSlot(FakeMarket):
 
 class FakeTrade:
     def __init__(self, offer):
-        self.offer_bid = offer
+        self.order = offer
         self.seller = "FakeSeller"
 
     @property

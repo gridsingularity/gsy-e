@@ -66,8 +66,8 @@ def check_infinite_bus_traded_energy_rate(context):
     for market in grid.past_markets:
         for trade in market.trades:
             if trade.seller_origin == "Infinite Bus":
-                assert isclose(trade.offer_bid.price/trade.offer_bid.energy,
+                assert isclose(trade.order.price/trade.order.energy,
                                bus.strategy.energy_rate[market.time_slot])
             if trade.buyer_origin == "Infinite Bus":
-                assert isclose(trade.offer_bid.price/trade.offer_bid.energy,
+                assert isclose(trade.order.price/trade.order.energy,
                                bus.strategy.energy_buy_rate[market.time_slot])

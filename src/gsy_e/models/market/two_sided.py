@@ -23,7 +23,7 @@ from math import isclose
 from typing import Dict, List, Union, Tuple, Optional
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo, OrdersMatch
+from gsy_framework.data_classes import Bid, Offer, Trade, TradeOrderInfo, OrdersMatch
 from gsy_framework.matching_algorithms.requirements_validators import RequirementsSatisfiedChecker
 from pendulum import DateTime
 
@@ -203,7 +203,7 @@ class TwoSidedMarket(OneSidedMarket):
                    buyer: Optional[str] = None,
                    already_tracked: bool = False,
                    trade_rate: Optional[float] = None,
-                   trade_offer_info: Optional[TradeBidOfferInfo] = None,
+                   trade_offer_info: Optional[TradeOrderInfo] = None,
                    seller_origin: Optional[str] = None,
                    seller_origin_id: Optional[str] = None,
                    seller_id: Optional[str] = None) -> Trade:
@@ -250,7 +250,7 @@ class TwoSidedMarket(OneSidedMarket):
 
         trade = Trade(str(uuid.uuid4()), self.now, bid, seller,
                       buyer, residual_bid, already_tracked=already_tracked,
-                      offer_bid_trade_info=updated_bid_trade_info,
+                      trade_orders_info=updated_bid_trade_info,
                       buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
                       fee_price=fee_price, seller_origin_id=seller_origin_id,
                       buyer_origin_id=bid.buyer_origin_id, seller_id=seller_id,
@@ -265,9 +265,9 @@ class TwoSidedMarket(OneSidedMarket):
         self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
         return trade
 
-    def accept_bid_offer_pair(self, bid: Bid, offer: Offer, clearing_rate: float,
-                              trade_bid_info: TradeBidOfferInfo,
-                              selected_energy: float) -> Tuple[Trade, Trade]:
+    def accept_orders_pair(self, bid: Bid, offer: Offer, clearing_rate: float,
+                           trade_bid_info: TradeOrderInfo,
+                           selected_energy: float) -> Tuple[Trade, Trade]:
         already_tracked = bid.buyer == offer.seller
         trade = self.accept_offer(offer_or_id=offer,
                                   buyer=bid.buyer,
@@ -308,7 +308,7 @@ class TwoSidedMarket(OneSidedMarket):
                 continue
 
             try:
-                self.validate_bid_offer_match(
+                self.validate_orders_match(
                     market_bids, market_offers,
                     clearing_rate, selected_energy)
             except InvalidBidOfferPairException as invalid_bop_exception:
@@ -324,14 +324,14 @@ class TwoSidedMarket(OneSidedMarket):
             market_bid = next(market_bids, None)
             while market_bid and market_offer:
                 original_bid_rate = market_bid.original_price / market_bid.energy
-                trade_bid_info = TradeBidOfferInfo(
+                trade_bid_info = TradeOrderInfo(
                     original_bid_rate=original_bid_rate,
                     propagated_bid_rate=market_bid.energy_rate,
                     original_offer_rate=market_offer.original_price / market_offer.energy,
                     propagated_offer_rate=market_offer.energy_rate,
                     trade_rate=original_bid_rate)
 
-                bid_trade, offer_trade = self.accept_bid_offer_pair(
+                bid_trade, offer_trade = self.accept_orders_pair(
                     market_bid, market_offer, clearing_rate,
                     trade_bid_info, min(selected_energy, market_offer.energy, market_bid.energy))
                 if offer_trade.residual:
@@ -343,7 +343,7 @@ class TwoSidedMarket(OneSidedMarket):
                 else:
                     market_bid = next(market_bids, None)
                 recommendations = (
-                    self._replace_offers_bids_with_residual_in_recommendations_list(
+                    self._replace_orders_with_residual_in_recommendations_list(
                         recommendations, offer_trade, bid_trade)
                 )
 
@@ -365,7 +365,7 @@ class TwoSidedMarket(OneSidedMarket):
                 f"OFFER: {offer} & BID: {bid} requirements failed the validation.")
 
     @classmethod
-    def validate_bid_offer_match(
+    def validate_orders_match(
             cls, bids: List[Bid], offers: List[Offer],
             clearing_rate: float, selected_energy: float) -> None:
         """Basic validation function for bids against offers.
@@ -391,14 +391,14 @@ class TwoSidedMarket(OneSidedMarket):
 
         # All combinations of bids and offers [(bid, offer), (bid, offer)...]
         # Example List1: [A, B], List2: [C, D] -> combinations: [(A, C), (A, D), (B, C), (B, D)]
-        bids_offers_combinations = itertools.product(bids, offers)
-        for combination in bids_offers_combinations:
+        orders_combinations = itertools.product(bids, offers)
+        for combination in orders_combinations:
             cls._validate_requirements_satisfied(
                 bid=combination[0], offer=combination[1], clearing_rate=clearing_rate,
                 selected_energy=selected_energy)
 
     @classmethod
-    def _replace_offers_bids_with_residual_in_recommendations_list(
+    def _replace_orders_with_residual_in_recommendations_list(
             cls, recommendations: List[Dict], offer_trade: Trade, bid_trade: Trade
     ) -> List[OrdersMatch.serializable_dict]:
         """
@@ -413,10 +413,10 @@ class TwoSidedMarket(OneSidedMarket):
 
         def replace_recommendations_with_residuals(recommendation: Dict):
             for index, offer in enumerate(recommendation["offers"]):
-                if offer["id"] == offer_trade.offer_bid.id:
+                if offer["id"] == offer_trade.order.id:
                     recommendation["offers"][index] = offer_trade.residual.serializable_dict()
             for index, bid in enumerate(recommendation["bids"]):
-                if bid["id"] == bid_trade.offer_bid.id:
+                if bid["id"] == bid_trade.order.id:
                     recommendation["bids"][index] = bid_trade.residual.serializable_dict()
             return recommendation
 

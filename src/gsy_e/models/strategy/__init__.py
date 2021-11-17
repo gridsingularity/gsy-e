@@ -47,7 +47,7 @@ log = getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from gsy_framework.data_classes import TradeBidOfferInfo
+    from gsy_framework.data_classes import TradeOrderInfo
     from gsy_e.models.market.one_sided import OneSidedMarket
     from gsy_e.models.market.two_sided import TwoSidedMarket
 
@@ -64,7 +64,7 @@ class AcceptOfferParameters:
     energy: float
     trade_rate: float
     already_tracked: bool
-    trade_bid_info: "TradeBidOfferInfo"
+    trade_bid_info: "TradeOrderInfo"
     buyer_origin: str
     buyer_origin_id: str
     buyer_id: str
@@ -424,10 +424,10 @@ class Offers:
         """Update contents of posted and sold dicts on the event of an offer being traded"""
         try:
             if trade.seller == self.strategy.owner.name:
-                if trade.offer_bid.id in self.split and trade.offer_bid in self.posted:
+                if trade.order.id in self.split and trade.order in self.posted:
                     # remove from posted as it is traded already
-                    self._remove(self.split[trade.offer_bid.id])
-                self.sold_offer(trade.offer_bid, market_id)
+                    self._remove(self.split[trade.order.id])
+                self.sold_offer(trade.order, market_id)
         except AttributeError as ex:
             raise SimulationException("Trade event before strategy was initialized.") from ex
 
@@ -549,7 +549,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
 
     def accept_offer(self, market: "OneSidedMarket", offer: Offer, *, buyer: str = None,
                      energy: float = None, already_tracked: bool = False, trade_rate: float = None,
-                     trade_bid_info: "TradeBidOfferInfo" = None, buyer_origin: str = None,
+                     trade_bid_info: "TradeOrderInfo" = None, buyer_origin: str = None,
                      buyer_origin_id: str = None, buyer_id: str = None):
         """
         Accept an offer on a market.
@@ -580,7 +580,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
                 trade_bid_info, buyer_origin, buyer_origin_id, buyer_id)
         )
 
-        self.offers.bought_offer(trade.offer_bid, market.id)
+        self.offers.bought_offer(trade.order, market.id)
         return trade
 
     def delete_offer(self, market: "OneSidedMarket", offer: Offer) -> None:
@@ -618,9 +618,9 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         self.event_responses = []
 
     def _assert_if_trade_offer_price_is_too_low(self, market_id: str, trade: Trade) -> None:
-        if trade.is_offer_trade and trade.offer_bid.seller == self.owner.name:
-            offer = [o for o in self.offers.sold[market_id] if o.id == trade.offer_bid.id][0]
-            assert (trade.offer_bid.energy_rate >=
+        if trade.is_offer_trade and trade.order.seller == self.owner.name:
+            offer = [o for o in self.offers.sold[market_id] if o.id == trade.order.id][0]
+            assert (trade.order.energy_rate >=
                     offer.energy_rate - FLOATING_POINT_TOLERANCE)
 
     # pylint: disable=too-many-arguments
@@ -938,7 +938,7 @@ class BidEnabledStrategy(BaseStrategy):
         self._assert_market_type_on_bid_event(market_id)
 
         if bid_trade.buyer == self.owner.name:
-            self.add_bid_to_bought(bid_trade.offer_bid, market_id)
+            self.add_bid_to_bought(bid_trade.order, market_id)
 
     def event_market_cycle(self) -> None:
         if not constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
@@ -958,6 +958,6 @@ class BidEnabledStrategy(BaseStrategy):
         Returns: None
 
         """
-        if trade.is_bid_trade and trade.offer_bid.buyer == self.owner.name:
-            bid = [bid for bid in self.get_posted_bids(market) if bid.id == trade.offer_bid.id][0]
-            assert trade.offer_bid.energy_rate <= bid.energy_rate + FLOATING_POINT_TOLERANCE
+        if trade.is_bid_trade and trade.order.buyer == self.owner.name:
+            bid = [bid for bid in self.get_posted_bids(market) if bid.id == trade.order.id][0]
+            assert trade.order.energy_rate <= bid.energy_rate + FLOATING_POINT_TOLERANCE

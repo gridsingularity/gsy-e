@@ -247,7 +247,7 @@ def test_event_trade(area_test2, bus_test2):
     bus_test2.event_offer_traded(market_id=area_test2.test_market.id,
                                  trade=Trade(id="id",
                                              creation_time="time",
-                                             offer_bid=traded_offer,
+                                             order=traded_offer,
                                              seller="FakeArea",
                                              buyer="buyer"
                                              )
@@ -289,7 +289,7 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, bus_test2):
     bus_test2.event_offer_traded(market_id=area_test2.test_market.id,
                                  trade=Trade(id="id",
                                              creation_time="time",
-                                             offer_bid=original_offer,
+                                             order=original_offer,
                                              seller="FakeArea",
                                              buyer="buyer")
                                  )
@@ -351,7 +351,7 @@ def testing_event_tick_buy_energy(bus_test4, area_test1):
     bus_test4.event_activate()
     bus_test4.event_tick()
     assert len(area_test1.test_market.traded_offers) == 1
-    assert area_test1.test_market.traded_offers[-1].offer_bid.energy == 1
+    assert area_test1.test_market.traded_offers[-1].order.energy == 1
 
 
 def testing_event_market_cycle_posting_bids(bus_test4, area_test1):

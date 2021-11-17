@@ -142,12 +142,12 @@ class IAAEngine:
 
     def event_offer_traded(self, *, trade):
         """Perform actions that need to be done when OFFER_TRADED event is triggered."""
-        offer_info = self.forwarded_offers.get(trade.offer_bid.id)
+        offer_info = self.forwarded_offers.get(trade.order.id)
         if not offer_info:
             # Trade doesn't concern us
             return
 
-        if trade.offer_bid.id == offer_info.target_offer.id:
+        if trade.order.id == offer_info.target_offer.id:
             # Offer was accepted in target market - buy in source
             source_rate = offer_info.source_offer.energy_rate
             target_rate = offer_info.target_offer.energy_rate
@@ -157,19 +157,19 @@ class IAAEngine:
             try:
                 if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                     # One sided market should subtract the fees
-                    trade_offer_rate = trade.offer_bid.energy_rate - \
-                                       trade.fee_price / trade.offer_bid.energy
+                    trade_offer_rate = trade.order.energy_rate - \
+                                       trade.fee_price / trade.order.energy
                 else:
                     # trade_offer_rate not used in two sided markets, trade_bid_info used instead
                     trade_offer_rate = None
                 updated_trade_bid_info = \
                     self.markets.source.fee_class.update_forwarded_offer_trade_original_info(
-                        trade.offer_bid_trade_info, offer_info.source_offer)
+                        trade.trade_orders_info, offer_info.source_offer)
 
                 trade_source = self.owner.accept_offer(
                     market=self.markets.source,
                     offer=offer_info.source_offer,
-                    energy=trade.offer_bid.energy,
+                    energy=trade.order.energy,
                     buyer=self.owner.name,
                     trade_rate=trade_offer_rate,
                     trade_bid_info=updated_trade_bid_info,
@@ -186,7 +186,7 @@ class IAAEngine:
             self._delete_forwarded_offer_entries(offer_info.source_offer)
             self.offer_age.pop(offer_info.source_offer.id, None)
 
-        elif trade.offer_bid.id == offer_info.source_offer.id:
+        elif trade.order.id == offer_info.source_offer.id:
             # Offer was bought in source market by another party
             try:
                 self.owner.delete_offer(self.markets.target, offer_info.target_offer)

@@ -214,13 +214,13 @@ def one_sided_market(context, market_type):
         ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
     elif market_type == "two-sided-pay-as-bid":
         ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
-        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = OrdersMatchAlgoEnum.PAY_AS_BID.value
+        ConstSettings.IAASettings.ORDERS_MATCH_TYPE = OrdersMatchAlgoEnum.PAY_AS_BID.value
     elif market_type == "two-sided-pay-as-clear":
         ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
-        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = OrdersMatchAlgoEnum.PAY_AS_CLEAR.value
+        ConstSettings.IAASettings.ORDERS_MATCH_TYPE = OrdersMatchAlgoEnum.PAY_AS_CLEAR.value
     elif market_type == "two-sided-external":
         ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
-        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = OrdersMatchAlgoEnum.EXTERNAL.value
+        ConstSettings.IAASettings.ORDERS_MATCH_TYPE = OrdersMatchAlgoEnum.EXTERNAL.value
 
 
 @given('gsy-e dispatches events from top to bottom')
@@ -396,13 +396,13 @@ def test_export_data_csv_alt_pricing(context):
 
 @then('there are nonempty files with offers ({with_or_without} balancing offers) '
       'and bids for every area')
-def nonempty_test_offer_bid_files(context, with_or_without):
-    test_offer_bid_files(context, with_or_without, True)
+def nonempty_test_orders_files(context, with_or_without):
+    test_orders_files(context, with_or_without, True)
 
 
 @then('there are files with offers ({with_or_without} balancing offers) '
       'and bids for every area')
-def test_offer_bid_files(context, with_or_without, nonempty=False):
+def test_orders_files(context, with_or_without, nonempty=False):
     base_path = os.path.join(context.export_path, "*")
     file_list = [os.path.join(base_path, 'grid-offers.csv'),
                  os.path.join(base_path, 'grid-bids.csv'),
@@ -423,7 +423,7 @@ def test_offer_bid_files(context, with_or_without, nonempty=False):
 
 
 @then("offers, bids trades and stats are exported also for settlement markets")
-def test_settlement_offer_bid_files(context):
+def test_settlement_orders_files(context):
     file_dict = {}
     for root, _, files in os.walk(context.export_path):
         if "grid" in root:
@@ -900,7 +900,7 @@ def test_finite_plant_energy_rate(context, plant_name):
             assert trade.buyer is not finite.name
             if trade.seller == finite.name:
                 trades_sold.append(trade)
-        assert all([isclose(trade.offer_bid.energy_rate,
+        assert all([isclose(trade.order.energy_rate,
                             finite.strategy.energy_rate[market.time_slot], rel_tol=1e-02)
                     for trade in trades_sold])
         assert len(trades_sold) > 0
@@ -917,12 +917,12 @@ def test_infinite_plant_energy_rate(context, plant_name):
     for market in grid.past_markets:
         for trade in market.trades:
             assert trade.buyer is not finite.name
-            trade.offer_bid.spot_market = market
+            trade.order.spot_market = market
             if trade.seller == finite.name:
                 trades_sold.append(trade)
 
-    assert all([isclose(trade.offer_bid.energy_rate,
-                        market_maker_rate[trade.offer_bid.spot_market.time_slot])
+    assert all([isclose(trade.order.energy_rate,
+                        market_maker_rate[trade.order.spot_market.time_slot])
                 for trade in trades_sold])
     assert len(trades_sold) > 0
 
@@ -939,7 +939,7 @@ def test_finite_plant_max_power(context, plant_name):
             assert trade.buyer is not finite.name
             if trade.seller == finite.name:
                 trades_sold.append(trade)
-        assert sum([trade.offer_bid.energy for trade in trades_sold]) <= \
+        assert sum([trade.order.energy for trade in trades_sold]) <= \
             convert_kW_to_kWh(finite.strategy.max_available_power_kW[market.time_slot],
                               finite.config.slot_length)
 
@@ -973,8 +973,8 @@ def assert_trade_rates(context, market_name, trade_rate, grid_fee_rate=0):
     assert any(len(market.trades) > 0 for market in markets)
     for market in markets:
         for trade in market.trades:
-            assert isclose(trade.offer_bid.energy_rate, float(trade_rate))
-            assert isclose(trade.fee_price / trade.offer_bid.energy, float(grid_fee_rate),
+            assert isclose(trade.order.energy_rate, float(trade_rate))
+            assert isclose(trade.fee_price / trade.order.energy, float(grid_fee_rate),
                            rel_tol=1e-05)
 
 
@@ -1064,11 +1064,11 @@ def pv_selling_rate_minus_fees(context):
     for market in grid.past_markets:
         for trade in market.trades:
             assert trade.buyer is not pv.name
-            trade.offer_bid.spot_market = market
+            trade.order.spot_market = market
             if trade.seller == pv.name:
                 trades_sold.append(trade)
 
-    assert all([isclose(trade.offer_bid.energy_rate,
+    assert all([isclose(trade.order.energy_rate,
                         market_maker_rate - fees_path_to_root)
                 for trade in trades_sold])
 
@@ -1086,11 +1086,11 @@ def load_buying_rate_plus_fees(context):
     for market in grid.past_markets:
         for trade in market.trades:
             assert trade.seller is not load.name
-            trade.offer_bid.spot_market = market
+            trade.order.spot_market = market
             if trade.buyer == load.name:
                 trades_bought.append(trade)
 
-    assert all([isclose(trade.offer_bid.energy,
+    assert all([isclose(trade.order.energy,
                         market_maker_rate + fees_path_to_root)
                 for trade in trades_bought])
 

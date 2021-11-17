@@ -207,7 +207,7 @@ def test_event_trade(area_test2, commercial_test2):
     commercial_test2.event_offer_traded(market_id=area_test2.test_market.id,
                                         trade=Trade(id="id",
                                                     creation_time="time",
-                                                    offer_bid=traded_offer,
+                                                    order=traded_offer,
                                                     seller="FakeArea",
                                                     buyer="buyer")
                                         )
@@ -248,7 +248,7 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, commercial_te
     commercial_test2.event_offer_traded(market_id=area_test2.test_market.id,
                                         trade=Trade(id="id",
                                                     creation_time="time",
-                                                    offer_bid=original_offer,
+                                                    order=original_offer,
                                                     seller="FakeArea",
                                                     buyer="buyer")
                                         )

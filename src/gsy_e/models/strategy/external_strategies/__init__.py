@@ -381,22 +381,22 @@ class ExternalMixin:
                                    "asset_id": self.device.uuid,
                                    "trade_id": trade.id,
                                    "time": trade.creation_time.isoformat(),
-                                   "trade_price": trade.offer_bid.price,
-                                   "traded_energy": trade.offer_bid.energy,
+                                   "trade_price": trade.order.price,
+                                   "traded_energy": trade.order.energy,
                                    "total_fee": trade.fee_price,
                                    "local_market_fee":
                                        self.area.current_market.fee_class.grid_fee_rate
                                        if self.area.current_market is not None else "None",
-                                   "attributes": trade.offer_bid.attributes,
+                                   "attributes": trade.order.attributes,
                                    "seller": trade.seller
                                    if trade.seller_id == self.device.uuid else "anonymous",
                                    "buyer": trade.buyer
                                    if trade.buyer_id == self.device.uuid else "anonymous",
                                    "seller_origin": trade.seller_origin,
                                    "buyer_origin": trade.buyer_origin,
-                                   "bid_id": trade.offer_bid.id
+                                   "bid_id": trade.order.id
                                    if trade.is_bid_trade else "None",
-                                   "offer_id": trade.offer_bid.id
+                                   "offer_id": trade.order.id
                                    if trade.is_offer_trade else "None",
                                    "residual_bid_id": trade.residual.id
                                    if trade.residual is not None and trade.is_bid_trade
@@ -412,8 +412,8 @@ class ExternalMixin:
                                    "event": "trade",
                                    "trade_id": trade.id,
                                    "time": trade.creation_time.isoformat(),
-                                   "trade_price": trade.offer_bid.price,
-                                   "traded_energy": trade.offer_bid.energy,
+                                   "trade_price": trade.order.price,
+                                   "traded_energy": trade.order.energy,
                                    "fee_price": trade.fee_price,
                                    "area_uuid": self.device.uuid,
                                    "seller": trade.seller
@@ -423,10 +423,10 @@ class ExternalMixin:
                                    "residual_id": trade.residual.id
                                    if trade.residual is not None else "None"}
 
-            bid_offer_key = "bid_id" if is_bid_trade else "offer_id"
+            orders_key = "bid_id" if is_bid_trade else "offer_id"
             event_response_dict["event_type"] = (
                 "buy" if trade.buyer == self.device.name else "sell")
-            event_response_dict[bid_offer_key] = trade.offer_bid.id
+            event_response_dict[orders_key] = trade.order.id
 
             trade_event_channel = f"{self.channel_prefix}/events/trade"
             self.redis.publish_json(trade_event_channel, event_response_dict)

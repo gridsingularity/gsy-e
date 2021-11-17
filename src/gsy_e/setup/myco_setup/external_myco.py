@@ -10,7 +10,7 @@ from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = (
+    ConstSettings.IAASettings.ORDERS_MATCH_TYPE = (
         OrdersMatchAlgoEnum.EXTERNAL.value)
     area = Area(
         "Grid",

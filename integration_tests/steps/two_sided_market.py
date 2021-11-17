@@ -163,7 +163,7 @@ def trades_matched_on_grid(context):
     house1 = next(c for c in context.simulation.area.children if c.name == "House 1")
     load = next(c for c in house1.children if c.name == "H1 General Load")
     load_energy_per_day = load.strategy.energy_per_slot_Wh / 1000 * 24
-    house1_consumed_energy = sum(trade.offer_bid.energy
+    house1_consumed_energy = sum(trade.order.energy
                                  for market in house1.past_markets
                                  for trade in market.trades)
     assert isclose(house1_consumed_energy, load_energy_per_day, rel_tol=1e-3)
@@ -174,7 +174,7 @@ def trades_matched_on_grid(context):
                for market in house2.past_markets
                for trade in market.trades)
 
-    house2_consumed_energy = sum(trade.offer_bid.energy
+    house2_consumed_energy = sum(trade.order.energy
                                  for market in house2.past_markets
                                  for trade in market.trades)
     assert isclose(house2_consumed_energy, load_energy_per_day, rel_tol=1e-3)
@@ -195,7 +195,7 @@ def trades_matched_on_house1(context):
                for market in house1.past_markets
                for trade in market.trades)
 
-    house1_consumed_energy = sum(trade.offer_bid.energy
+    house1_consumed_energy = sum(trade.order.energy
                                  for market in house1.past_markets
                                  for trade in market.trades)
     assert isclose(house1_consumed_energy, load_energy_per_day, rel_tol=1e-3)
@@ -227,7 +227,7 @@ def trades_matched_on_house2(context):
     assert all(trade.is_offer_trade
                for market in house2.past_markets
                for trade in market.trades)
-    house2_consumed_energy = sum(trade.offer_bid.energy
+    house2_consumed_energy = sum(trade.order.energy
                                  for market in house2.past_markets
                                  for trade in market.trades)
     assert isclose(house2_consumed_energy, load_energy_per_day, rel_tol=1e-3)

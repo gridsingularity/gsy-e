@@ -491,7 +491,7 @@ def test_balancing_offers_are_created_if_device_in_registry(
     balancing_fixture.event_offer_traded(market_id=area_test2.current_market.id,
                                          trade=Trade(id='id',
                                                      creation_time=area_test2.now,
-                                                     offer_bid=selected_offer,
+                                                     order=selected_offer,
                                                      seller='B',
                                                      buyer='FakeArea',
                                                      time_slot=area_test2.current_market.time_slot)
