@@ -29,8 +29,9 @@ from click.types import ParamType
 from gsy_framework.constants_limits import GlobalConfig, RangeLimit, ConstSettings
 from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.exceptions import GSyException
-from gsy_framework.utils import iterate_over_all_modules, str_to_pendulum_datetime, \
-    format_datetime, find_object_of_same_weekday_and_time, area_name_from_area_or_iaa_name
+from gsy_framework.utils import (
+    area_name_from_area_or_ma_name, iterate_over_all_modules, str_to_pendulum_datetime,
+    format_datetime, find_object_of_same_weekday_and_time)
 from pendulum import duration, from_format, instance, DateTime
 from rex import rex
 
@@ -414,13 +415,15 @@ def export_default_settings_to_json_file():
 
 
 def area_sells_to_child(trade, area_name, child_names):
-    return area_name_from_area_or_iaa_name(trade.seller) == \
-            area_name and area_name_from_area_or_iaa_name(trade.buyer) in child_names
+    return (
+        area_name_from_area_or_ma_name(trade.seller) == area_name
+        and area_name_from_area_or_ma_name(trade.buyer) in child_names)
 
 
 def child_buys_from_area(trade, area_name, child_names):
-    return area_name_from_area_or_iaa_name(trade.buyer) == \
-        area_name and area_name_from_area_or_iaa_name(trade.seller) in child_names
+    return (
+        area_name_from_area_or_ma_name(trade.buyer) == area_name
+        and area_name_from_area_or_ma_name(trade.seller) in child_names)
 
 
 def if_not_in_list_append(target_list, obj):

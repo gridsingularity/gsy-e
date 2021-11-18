@@ -21,7 +21,7 @@ from typing import Dict, List, Optional
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.utils import (
-    area_name_from_area_or_iaa_name, convert_pendulum_to_str_in_dict,
+    area_name_from_area_or_ma_name, convert_pendulum_to_str_in_dict,
     convert_str_to_pendulum_in_dict)
 from gsy_framework.data_classes import Offer
 from pendulum import DateTime
@@ -168,7 +168,7 @@ class AreaStats:
         self.imported_traded_energy_kwh = {}
         self.exported_traded_energy_kwh = {}
 
-        child_names = [area_name_from_area_or_iaa_name(c.name) for c in self._area.children]
+        child_names = [area_name_from_area_or_ma_name(c.name) for c in self._area.children]
         if getattr(self.current_market, "trades", None) is not None:
             for trade in self.current_market.trades:
                 if child_buys_from_area(trade, self._area.name, child_names):

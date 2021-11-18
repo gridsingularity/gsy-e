@@ -25,7 +25,7 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
-    area_name_from_area_or_iaa_name, key_in_dict_and_not_none,
+    area_name_from_area_or_ma_name, key_in_dict_and_not_none,
     find_object_of_same_weekday_and_time)
 from gsy_framework.validators import StorageValidator
 from pendulum import duration
@@ -407,7 +407,7 @@ class StorageStrategy(BidEnabledStrategy):
                 energy = 0
 
     def _track_energy_bought_type(self, trade):
-        if area_name_from_area_or_iaa_name(trade.seller) == self.area.name:
+        if area_name_from_area_or_ma_name(trade.seller) == self.area.name:
             self.state.update_used_storage_share(trade.offer_bid.energy, ESSEnergyOrigin.EXTERNAL)
         elif self._is_local(trade):
             self.state.update_used_storage_share(trade.offer_bid.energy, ESSEnergyOrigin.LOCAL)
