@@ -70,6 +70,30 @@ class UpperLevelDataExporter(BaseDataExporter):
                 sum(trade.offer_bid.price for trade in market.trades)]
 
 
+class FutureMarketsDataExporter(BaseDataExporter):
+    def __init__(self, future_markets):
+        self.future_markets = future_markets
+
+    @property
+    def labels(self) -> List:
+        return ["slot",
+                "# trades",
+                "total energy traded [kWh]",
+                "total trade volume [EURO ct.]"]
+
+    @property
+    def rows(self):
+        time_slot = self.future_markets.market_time_slots[0]
+        return [self._row(time_slot)]
+
+    def _row(self, slot):
+        trades = self.future_markets.slot_trade_mapping[slot]
+        return [slot,
+                len(trades),
+                sum(trade.offer_bid.energy for trade in trades),
+                sum(trade.offer_bid.price for trade in trades)]
+
+
 class BalancingDataExporter(BaseDataExporter):
     def __init__(self, past_markets):
         self.past_markets = past_markets
@@ -175,6 +199,8 @@ class FileExportEndpoints:
             return (UpperLevelDataExporter(area.past_settlement_markets.values())
                     if len(area.children) > 0
                     else LeafDataExporter(area, area.parent.past_settlement_markets.values()))
+        if past_market_type == AvailableMarketTypes.FUTURE:
+            return FutureMarketsDataExporter(area.future_markets)
 
     def _get_stats_from_market_data(self, out_dict: Dict, area: Area,
                                     past_market_type: AvailableMarketTypes) -> None:

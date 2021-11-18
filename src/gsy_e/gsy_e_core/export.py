@@ -25,7 +25,7 @@ import shutil
 from collections import namedtuple
 from copy import deepcopy
 from functools import reduce  # forward compatibility for Python 3
-from typing import Dict, Tuple, List, Mapping
+from typing import Dict, Tuple, List, Mapping, TYPE_CHECKING
 
 import plotly.graph_objs as go
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
@@ -47,6 +47,9 @@ from gsy_e.models.market.market_structures import (AvailableMarketTypes,
                                                    PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING)
 from gsy_e.models.state import ESSEnergyOrigin
 from gsy_e.models.strategy.storage import StorageStrategy
+
+if TYPE_CHECKING:
+    from gsy_e.models.market.future import FutureMarkets
 
 _log = logging.getLogger(__name__)
 
@@ -233,6 +236,36 @@ class ExportAndPlot:
             labels=("slot",) + Bid.csv_fields(),
             is_first=is_first)
 
+    def _export_future_markets_stats(self, area: Area, directory: dir, is_first: bool) -> None:
+        """Export bids, offers, trades, statistics csv-files for all settlement markets."""
+        if GlobalConfig.FUTURE_MARKET_DURATION_HOURS <= 0 or not area.future_markets:
+            return
+        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.FUTURE,
+                                         is_first)
+        if not area.children:
+            return
+        self._export_future_offers_bid_trades_to_csv_files(
+            future_markets=area.future_markets,
+            market_member="trades",
+            directory=directory,
+            filename=f"{area.slug}-future-trades",
+            labels=("slot",) + Trade.csv_fields(),
+            is_first=is_first)
+        self._export_future_offers_bid_trades_to_csv_files(
+            future_markets=area.future_markets,
+            market_member="offer_history",
+            directory=directory,
+            filename=f"{area.slug}-future-offers",
+            labels=("slot",) + Offer.csv_fields(),
+            is_first=is_first)
+        self._export_future_offers_bid_trades_to_csv_files(
+            future_markets=area.future_markets,
+            market_member="bid_history",
+            directory=directory,
+            filename=f"{area.slug}-future-bids",
+            labels=("slot",) + Bid.csv_fields(),
+            is_first=is_first)
+
     def _export_balancing_markets_stats(self, area: Area, directory: dir, is_first: bool) -> None:
         """Export bids, offers, trades, statistics csv-files for all balancing markets."""
         if not ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
@@ -272,6 +305,7 @@ class ExportAndPlot:
 
         self._export_spot_markets_stats(area, directory, is_first)
         self._export_settlement_markets_stats(area, directory, is_first)
+        self._export_future_markets_stats(area, directory, is_first)
         self._export_balancing_markets_stats(area, directory, is_first)
 
         if area.children:
@@ -300,6 +334,27 @@ class ExportAndPlot:
                             writer.writerow(row)
         except OSError:
             _log.exception("Could not export area market_clearing_rate")
+
+    def _export_future_offers_bid_trades_to_csv_files(
+            self, future_markets: "FutureMarkets", market_member: str, directory: dir,
+            filename: str, labels: Tuple, is_first: bool = False) -> None:
+        """ Export files containing individual future offers, bids (*-bids*/*-offers*.csv files).
+        """
+        file_path = self._file_path(directory, filename)
+        try:
+            with open(file_path, "a") as csv_file:
+                writer = csv.writer(csv_file)
+                if is_first:
+                    writer.writerow(labels)
+                if not future_markets.market_time_slots:
+                    return
+                time_slot = future_markets.market_time_slots[0]
+                for offer_or_bid in getattr(future_markets, market_member):
+                    if offer_or_bid.time_slot == time_slot:
+                        row = (time_slot,) + offer_or_bid.csv_values()
+                        writer.writerow(row)
+        except OSError:
+            _log.exception("Could not export offers, bids, trades")
 
     def _export_offers_bids_trades_to_csv_files(self, past_markets: List, market_member: str,
                                                 directory: dir, filename: str, labels: Tuple,
