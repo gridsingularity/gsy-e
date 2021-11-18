@@ -182,6 +182,13 @@ class LoadExternalMixin(ExternalMixin):
     def _bid_impl(self, arguments: Dict, bid_response_channel: str) -> None:
         """Implementation for the bid callback, post the bid in the market."""
         try:
+            response_message = ""
+            arguments, filtered_fields = self.filter_degrees_of_freedom_arguments(arguments)
+            if filtered_fields:
+                response_message = (
+                    "The following arguments are not supported for this market and have been "
+                    f"removed from your order: {filtered_fields}.")
+
             market = self._get_market_from_command_argument(arguments)
             replace_existing = arguments.get("replace_existing", True)
             assert self.can_bid_be_posted(
@@ -201,7 +208,8 @@ class LoadExternalMixin(ExternalMixin):
             response = {
                     "command": "bid", "status": "ready",
                     "bid": bid.to_json_string(replace_existing=replace_existing),
-                    "transaction_id": arguments.get("transaction_id")}
+                    "transaction_id": arguments.get("transaction_id"),
+                    "message": response_message}
         except (AssertionError, GSyException):
             error_message = (f"Error when handling bid create on area {self.device.name}: "
                              f"Bid Arguments: {arguments}")
@@ -285,6 +293,13 @@ class LoadExternalMixin(ExternalMixin):
 
     def _bid_aggregator(self, arguments: Dict) -> Dict:
         """Callback for the bid endpoint when sent by aggregator."""
+        response_message = ""
+        arguments, filtered_fields = self.filter_degrees_of_freedom_arguments(arguments)
+        if filtered_fields:
+            response_message = (
+                "The following arguments are not supported for this market and have been "
+                f"removed from your order: {filtered_fields}.")
+
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
                                             "time_slot",
@@ -318,7 +333,8 @@ class LoadExternalMixin(ExternalMixin):
                 "command": "bid", "status": "ready",
                 "bid": bid.to_json_string(replace_existing=replace_existing),
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id")}
+                "transaction_id": arguments.get("transaction_id"),
+                "message": response_message}
         except (AssertionError, GSyException):
             logging.exception("Error when handling bid on area %s", self.device.name)
             response = {

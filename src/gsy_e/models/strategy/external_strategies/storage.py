@@ -346,6 +346,13 @@ class StorageExternalMixin(ExternalMixin):
     def _bid_impl(self, arguments: Dict, bid_response_channel: str) -> None:
         """Implementation for the bid callback, post the bid in the market."""
         try:
+            response_message = ""
+            arguments, filtered_fields = self.filter_degrees_of_freedom_arguments(arguments)
+            if filtered_fields:
+                response_message = (
+                    "The following arguments are not supported for this market and have been "
+                    f"removed from your order: {filtered_fields}.")
+
             replace_existing = arguments.get("replace_existing", True)
             market = self._get_market_from_command_argument(arguments)
             assert self._can_bid_be_posted(market.time_slot, **arguments)
@@ -360,9 +367,11 @@ class StorageExternalMixin(ExternalMixin):
             self.state.offered_buy_kWh[market.time_slot] = self.posted_bid_energy(market.id)
             self.state.clamp_energy_to_buy_kWh([market.time_slot])
             response = {
-                "command": "bid", "status": "ready",
+                "command": "bid",
+                "status": "ready",
                 "bid": bid.to_json_string(replace_existing=replace_existing),
-                "transaction_id": arguments.get("transaction_id")}
+                "transaction_id": arguments.get("transaction_id"),
+                "message": response_message}
         except Exception:
             logging.exception("Error when handling bid create on area %s: Bid Arguments: %s",
                               self.device.name, arguments)
@@ -504,6 +513,13 @@ class StorageExternalMixin(ExternalMixin):
         return response
 
     def _offer_aggregator(self, arguments: Dict) -> Dict:
+        response_message = ""
+        arguments, filtered_fields = self.filter_degrees_of_freedom_arguments(arguments)
+        if filtered_fields:
+            response_message = (
+                "The following arguments are not supported for this market and have been "
+                f"removed from your order: {filtered_fields}.")
+
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
                                             "time_slot",
@@ -539,7 +555,7 @@ class StorageExternalMixin(ExternalMixin):
                     "status": "ready",
                     "offer": offer.to_json_string(replace_existing=replace_existing),
                     "transaction_id": arguments.get("transaction_id"),
-                }
+                    "message": response_message}
             except Exception:
                 response = {
                     "command": "offer", "status": "error",
@@ -550,6 +566,13 @@ class StorageExternalMixin(ExternalMixin):
             return response
 
     def _bid_aggregator(self, arguments: Dict) -> Dict:
+        response_message = ""
+        arguments, filtered_fields = self.filter_degrees_of_freedom_arguments(arguments)
+        if filtered_fields:
+            response_message = (
+                "The following arguments are not supported for this market and have been "
+                f"removed from your order: {filtered_fields}.")
+
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
                                             "time_slot",
@@ -581,7 +604,8 @@ class StorageExternalMixin(ExternalMixin):
                 "command": "bid", "status": "ready",
                 "bid": bid.to_json_string(replace_existing=replace_existing),
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id")}
+                "transaction_id": arguments.get("transaction_id"),
+                "message": response_message}
         except Exception:
             response = {
                 "command": "bid", "status": "error",
