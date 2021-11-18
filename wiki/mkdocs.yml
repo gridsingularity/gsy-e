@@ -1,13 +1,13 @@
 site_name: 'Grid Singularity Wiki'
 site_description: 'Documentation for the Grid Singularity Exchange'
 site_author: 'Grid Singularity'
-site_url: 'https://gridsingularity.github.io/gsy_e/gsy_e-documentation/'
+site_url: 'https://gridsingularity.github.io/gsy-e/documentation/'
 
 nav:
 - 'General Overview':
-    - 'Energy Market Design Challenge': 'documentation.md'
-    - 'Grid Singularity Mission': 'vision.md'
+    - 'Grid Singularity Mission': 'documentation.md'
     - 'Grid Singularity Technical Approach': 'technical-approach.md'
+    - 'Grid Singularity Development Path': 'development-path.md'
     - 'Licensing and Open Source Ethos': 'licensing.md'
 - 'Market Mechanism':
     - 'Market Types: Spot, Balancing, and Futures': 'markets.md'
@@ -94,7 +94,7 @@ extra_javascript:
 # Repository that houses the source code for this site. This
 # is needed to render the nice GH link on the top right.
 repo_name: 'Grid Singularity Exchange'
-repo_url: 'https://github.com/gridsingularity/gsy_e/wiki'
+repo_url: 'https://github.com/gridsingularity/gsy-e/wiki'
 
 # Social links
 extra:
@@ -129,5 +129,4 @@ plugins:
 
     - redirects:
         redirect_maps:
-            '': 'https://gridsingularity.github.io/gsy_e/gsy_e-documentation/'
-
+            '': 'https://gridsingularity.github.io/gsy-e/documentation/'
