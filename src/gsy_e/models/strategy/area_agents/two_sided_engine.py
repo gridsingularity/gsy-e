@@ -173,7 +173,7 @@ class TwoSidedEngine(IAAEngine):
             self._delete_forwarded_bids(bid_info)
             self.bid_age.pop(bid_info.source_bid.id, None)
         else:
-            raise Exception(f"Invalid bid state for IAA {self.owner.name}: "
+            raise Exception(f"Invalid bid state for MA {self.owner.name}: "
                             f"traded bid {bid_trade} was not in offered bids tuple {bid_info}")
 
     def event_bid_deleted(self, *, bid):

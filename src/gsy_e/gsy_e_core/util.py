@@ -159,7 +159,7 @@ class NonBlockingConsole:
 
 
 def make_ma_name(owner):
-    return f"IAA {owner.name}"
+    return f"MA {owner.name}"
 
 
 def make_ba_name(owner):

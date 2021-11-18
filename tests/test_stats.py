@@ -98,10 +98,10 @@ def area():
 def markets():
     """Example with all equal energy prices"""
     return (
-        FakeMarket((_trade(5, 'Fridge'), _trade(3, 'PV'), _trade(10, 'IAA 1'))),
+        FakeMarket((_trade(5, 'Fridge'), _trade(3, 'PV'), _trade(10, 'MA 1'))),
         FakeMarket((_trade(1, 'Storage'), _trade(4, 'Fridge'), _trade(6, 'Fridge'),
                     _trade(2, 'Fridge'))),
-        FakeMarket((_trade(11, 'IAA 3'), _trade(20, 'IAA 9'), _trade(21, 'IAA 3')))
+        FakeMarket((_trade(11, 'MA 3'), _trade(20, 'MA 9'), _trade(21, 'MA 3')))
     )
 
 
@@ -109,7 +109,7 @@ def markets():
 def markets2():
     """Example with different energy prices to test weighted averaging"""
     return(
-        FakeMarket((_trade(11, 'Fridge', 11), _trade(4, 'Storage', 4), _trade(1, 'IAA 1', 10))),
+        FakeMarket((_trade(11, 'Fridge', 11), _trade(4, 'Storage', 4), _trade(1, 'MA 1', 10))),
         FakeMarket((_trade(3, 'ECar', 1), _trade(9, 'Fridge', 3), _trade(3, 'Storage', 1)))
     )
 
@@ -127,7 +127,7 @@ def grid():
     e_car = FakeArea('e-car')
     house2 = FakeArea('house2',
                       children=[e_car])
-    house2.past_markets = [FakeMarket((_trade(1, 'e-car', 1, 'iaa'),), 'house2')]
+    house2.past_markets = [FakeMarket((_trade(1, 'e-car', 1, 'ma'),), 'house2')]
     e_car.parent = house2
 
     commercial = FakeArea('commercial')
@@ -166,10 +166,10 @@ def test_energy_bills(grid):
     assert 'children' not in result
 
     grid.children[0].past_markets = [FakeMarket((_trade(2, 'fridge', 2, 'pv'),
-                                                 _trade(3, 'fridge', 1, 'iaa')), 'house1')]
-    grid.children[1].past_markets = [FakeMarket((_trade(1, 'e-car', 4, 'iaa'),
-                                                _trade(1, 'e-car', 8, 'iaa'),
-                                                _trade(3, 'iaa', 5, 'e-car')), 'house2')]
+                                                 _trade(3, 'fridge', 1, 'ma')), 'house1')]
+    grid.children[1].past_markets = [FakeMarket((_trade(1, 'e-car', 4, 'ma'),
+                                                _trade(1, 'e-car', 8, 'ma'),
+                                                _trade(3, 'ma', 5, 'e-car')), 'house2')]
     grid.past_markets = [FakeMarket((_trade(2, 'house2', 12, 'commercial'),), 'grid')]
     epb.current_market_time_slot_str = grid.current_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid)
@@ -327,7 +327,7 @@ def grid_fees():
                       past_markets=[FakeMarket([], name='house1', fees=6.0)])
     house2 = FakeArea('house2',
                       children=[FakeArea("testLoad")],
-                      past_markets=[FakeMarket((_trade(2, "testload", 3, "IAA house2",
+                      past_markets=[FakeMarket((_trade(2, "testload", 3, "MA house2",
                                                        fee_price=3.0),), name='house2', fees=3.0)])
     house1.display_type = "House 1 type"
     house2.display_type = "House 2 type"
