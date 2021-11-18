@@ -24,7 +24,6 @@ from importlib import import_module
 from logging import getLogger
 from time import sleep, time, mktime
 
-import click
 import psutil
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.exceptions import GSyException
@@ -141,9 +140,9 @@ class Simulation:
                 sys.path.append(ConstSettings.GeneralSettings.SETUP_FILE_PATH)
                 self.setup_module = import_module("{}".format(self.setup_module_name))
             log.debug("Using setup module '%s'", self.setup_module_name)
-        except ImportError as ex:
+        except (ModuleNotFoundError, ImportError) as ex:
             raise SimulationException(
-                "Invalid setup module '{}'".format(self.setup_module_name)) from ex
+                "Invalid setup module '{}'".format(self.setup_module_name))
 
     def _init(self, slot_length_realtime, seed, paused, pause_after, redis_job_id, enable_bc):
         self.paused = paused
@@ -608,9 +607,9 @@ def run_simulation(setup_module_name="", simulation_config=None, simulation_even
                 redis_job_id=saved_sim_state["general"]["simulation_id"],
                 **kwargs
             )
-
-    except GSyException as ex:
-        raise click.BadOptionUsage(ex.args[0])
+    except SimulationException as ex:
+        log.error(ex)
+        return
 
     if saved_sim_state is not None and \
             saved_sim_state["areas"] != {} and \
