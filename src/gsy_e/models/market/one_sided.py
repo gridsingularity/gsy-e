@@ -21,7 +21,7 @@ from math import isclose
 from typing import Union, Dict, List, Optional
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Offer, Trade, TradeOrderInfo
+from gsy_framework.data_classes import Offer, Trade, TradeOrdersInfo
 from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
@@ -253,7 +253,7 @@ class OneSidedMarket(Market):
                      energy: Optional[float] = None,
                      already_tracked: bool = False,
                      trade_rate: Optional[float] = None,
-                     trade_bid_info: Optional[TradeOrderInfo] = None,
+                     trade_bid_info: Optional[TradeOrdersInfo] = None,
                      buyer_origin: Optional[str] = None,
                      buyer_origin_id: Optional[str] = None,
                      buyer_id: Optional[str] = None) -> Trade:

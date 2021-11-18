@@ -115,7 +115,7 @@ class FakeMarket:
                          buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
 
     def accept_bid(self, bid, energy, seller, buyer=None, *, time=None, trade_rate: float = None,
-                   trade_offer_info=None, already_tracked=False, seller_origin=None,
+                   trade_orders_info=None, already_tracked=False, seller_origin=None,
                    seller_origin_id=None, seller_id=None):
         self.calls_energy_bids.append(energy)
         self.calls_bids.append(bid)

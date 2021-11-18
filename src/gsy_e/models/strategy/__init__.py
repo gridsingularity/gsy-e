@@ -48,7 +48,7 @@ log = getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from gsy_framework.data_classes import TradeOrderInfo
+    from gsy_framework.data_classes import TradeOrdersInfo
     from gsy_e.models.market.one_sided import OneSidedMarket
     from gsy_e.models.market.two_sided import TwoSidedMarket
 
@@ -65,7 +65,7 @@ class AcceptOfferParameters:
     energy: float
     trade_rate: float
     already_tracked: bool
-    trade_bid_info: "TradeOrderInfo"
+    trade_bid_info: "TradeOrdersInfo"
     buyer_origin: str
     buyer_origin_id: str
     buyer_id: str
@@ -559,7 +559,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
 
     def accept_offer(self, market: "OneSidedMarket", offer: Offer, *, buyer: str = None,
                      energy: float = None, already_tracked: bool = False, trade_rate: float = None,
-                     trade_bid_info: "TradeOrderInfo" = None, buyer_origin: str = None,
+                     trade_bid_info: "TradeOrdersInfo" = None, buyer_origin: str = None,
                      buyer_origin_id: str = None, buyer_id: str = None):
         """
         Accept an offer on a market.

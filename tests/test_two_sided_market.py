@@ -6,7 +6,7 @@ import pendulum
 import pytest
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import OrdersMatch
-from gsy_framework.data_classes import TradeOrderInfo, Trade
+from gsy_framework.data_classes import TradeOrdersInfo, Trade
 from gsy_framework.matching_algorithms import (
     PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
 )
@@ -242,8 +242,8 @@ class TestTwoSidedMarket:
     def test_market_bid_trade(self, market=TwoSidedMarket(bc=MagicMock(),
                                                           time_slot=pendulum.now())):
         bid = market.bid(20, 10, "A", "A", original_price=20)
-        trade_offer_info = TradeOrderInfo(2, 2, 0.5, 0.5, 2)
-        trade = market.accept_bid(bid, energy=10, seller="B", trade_offer_info=trade_offer_info)
+        trade_orders_info = TradeOrdersInfo(2, 2, 0.5, 0.5, 2)
+        trade = market.accept_bid(bid, energy=10, seller="B", trade_orders_info=trade_orders_info)
         assert trade
         assert trade.id == market.trades[0].id
         assert trade.id
@@ -256,17 +256,17 @@ class TestTwoSidedMarket:
     def test_market_trade_bid_not_found(
             self, market=TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())):
         bid = market.bid(20, 10, "A", "A")
-        trade_offer_info = TradeOrderInfo(2, 2, 1, 1, 2)
-        assert market.accept_bid(bid, 10, "B", trade_offer_info=trade_offer_info)
+        trade_orders_info = TradeOrdersInfo(2, 2, 1, 1, 2)
+        assert market.accept_bid(bid, 10, "B", trade_orders_info=trade_orders_info)
 
         with pytest.raises(BidNotFoundException):
-            market.accept_bid(bid, 10, "B", trade_offer_info=trade_offer_info)
+            market.accept_bid(bid, 10, "B", trade_orders_info=trade_orders_info)
 
     def test_market_trade_bid_partial(
             self, market=TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())):
         bid = market.bid(20, 20, "A", "A", original_price=20)
-        trade_offer_info = TradeOrderInfo(1, 1, 1, 1, 1)
-        trade = market.accept_bid(bid, energy=5, seller="B", trade_offer_info=trade_offer_info)
+        trade_orders_info = TradeOrdersInfo(1, 1, 1, 1, 1)
+        trade = market.accept_bid(bid, energy=5, seller="B", trade_orders_info=trade_orders_info)
         assert trade
         assert trade.id == market.trades[0].id
         assert trade.id
@@ -286,8 +286,8 @@ class TestTwoSidedMarket:
             self, called, market=TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())):
         market.add_listener(called)
         bid = market.bid(20, 20, "A", "A")
-        trade_offer_info = TradeOrderInfo(1, 1, 1, 1, 1)
-        trade = market.accept_bid(bid, energy=1, trade_offer_info=trade_offer_info)
+        trade_orders_info = TradeOrdersInfo(1, 1, 1, 1, 1)
+        trade = market.accept_bid(bid, energy=1, trade_orders_info=trade_orders_info)
         assert all([ev != repr(MarketEvent.BID_DELETED) for c in called.calls for ev in c[0]])
         assert len(called.calls) == 2
         assert called.calls[0][0] == (repr(MarketEvent.BID_SPLIT),)
@@ -305,8 +305,8 @@ class TestTwoSidedMarket:
         setattr(market, market_method, called)
 
         bid = market.bid(20, 20, "A", "A")
-        trade_offer_info = TradeOrderInfo(1, 1, 1, 1, 1)
-        trade = market.accept_bid(bid, energy=5, seller="B", trade_offer_info=trade_offer_info)
+        trade_orders_info = TradeOrdersInfo(1, 1, 1, 1, 1)
+        trade = market.accept_bid(bid, energy=5, seller="B", trade_orders_info=trade_orders_info)
         assert trade
         assert len(getattr(market, market_method).calls) == 1
 
@@ -314,16 +314,16 @@ class TestTwoSidedMarket:
     def test_market_trade_partial_bid_invalid(
             self, energy, market=TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())):
         bid = market.bid(20, 20, "A", "A")
-        trade_offer_info = TradeOrderInfo(1, 1, 1, 1, 1)
+        trade_orders_info = TradeOrdersInfo(1, 1, 1, 1, 1)
         with pytest.raises(InvalidTrade):
-            market.accept_bid(bid, energy=energy, seller="A", trade_offer_info=trade_offer_info)
+            market.accept_bid(bid, energy=energy, seller="A", trade_orders_info=trade_orders_info)
 
     def test_market_accept_bid_yields_partial_bid_trade(
             self, market=TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())):
         bid = market.bid(2.0, 4, "buyer", "buyer")
-        trade_offer_info = TradeOrderInfo(2, 2, 1, 1, 2)
+        trade_orders_info = TradeOrdersInfo(2, 2, 1, 1, 2)
         trade = market.accept_bid(bid, energy=1, seller="seller",
-                                  trade_offer_info=trade_offer_info)
+                                  trade_orders_info=trade_orders_info)
         assert trade.order.id == bid.id and trade.order.energy == 1
 
     @pytest.mark.parametrize("offer, bid, mcp_rate, mcp_energy", [

@@ -141,18 +141,18 @@ class TwoSidedEngine(IAAEngine):
             trade_rate = (bid_trade.order.price/bid_trade.order.energy)
 
             if bid_trade.trade_orders_info is not None:
-                # Adapt trade_offer_info received by the trade to include source market grid fees,
+                # Adapt trade_orders_info received by the trade to include source market grid fees,
                 # which was skipped when accepting the bid during the trade operation.
-                updated_trade_offer_info = \
+                updated_trade_orders_info = \
                     self.markets.source.fee_class.propagate_original_offer_info_on_bid_trade(
                         bid_trade.trade_orders_info
                     )
             else:
-                updated_trade_offer_info = bid_trade.trade_orders_info
+                updated_trade_orders_info = bid_trade.trade_orders_info
 
-            trade_offer_info = \
+            trade_orders_info = \
                 self.markets.source.fee_class.update_forwarded_bid_trade_original_info(
-                    updated_trade_offer_info, market_bid
+                    updated_trade_orders_info, market_bid
                 )
             self.markets.source.accept_bid(
                 bid=market_bid,
@@ -160,7 +160,7 @@ class TwoSidedEngine(IAAEngine):
                 seller=self.owner.name,
                 already_tracked=False,
                 trade_rate=trade_rate,
-                trade_offer_info=trade_offer_info,
+                trade_orders_info=trade_orders_info,
                 seller_origin=bid_trade.seller_origin,
                 seller_origin_id=bid_trade.seller_origin_id,
                 seller_id=self.owner.uuid

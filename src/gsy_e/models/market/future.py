@@ -21,7 +21,7 @@ from logging import getLogger
 from typing import Dict, List, Union, Optional, Tuple, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
-from gsy_framework.data_classes import Bid, Offer, Trade, BaseOrder, TradeOrderInfo
+from gsy_framework.data_classes import Bid, Offer, Trade, BaseOrder, TradeOrdersInfo
 from pendulum import DateTime, duration
 
 from gsy_e.events.event_structures import MarketEvent
@@ -244,14 +244,15 @@ class FutureMarkets(TwoSidedMarket):
                    buyer: Optional[str] = None,
                    already_tracked: bool = False,
                    trade_rate: Optional[float] = None,
-                   trade_offer_info: Optional[TradeOrderInfo] = None,
+                   trade_orders_info: Optional[TradeOrdersInfo] = None,
                    seller_origin: Optional[str] = None,
                    seller_origin_id: Optional[str] = None,
                    seller_id: Optional[str] = None) -> Trade:
         """Call superclass accept_bid and buffer returned trade object."""
         trade = super().accept_bid(bid=bid, energy=energy, seller=seller, buyer=buyer,
                                    already_tracked=already_tracked, trade_rate=trade_rate,
-                                   trade_offer_info=trade_offer_info, seller_origin=seller_origin,
+                                   trade_orders_info=trade_orders_info,
+                                   seller_origin=seller_origin,
                                    seller_origin_id=seller_origin_id, seller_id=seller_id)
         if already_tracked is False:
             self.slot_trade_mapping[trade.time_slot].append(trade)
@@ -261,7 +262,7 @@ class FutureMarkets(TwoSidedMarket):
                      energy: Optional[float] = None,
                      already_tracked: bool = False,
                      trade_rate: Optional[float] = None,
-                     trade_bid_info: Optional[TradeOrderInfo] = None,
+                     trade_bid_info: Optional[TradeOrdersInfo] = None,
                      buyer_origin: Optional[str] = None,
                      buyer_origin_id: Optional[str] = None,
                      buyer_id: Optional[str] = None) -> Trade:

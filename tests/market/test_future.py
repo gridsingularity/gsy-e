@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
 from gsy_framework.constants_limits import GlobalConfig, DATE_TIME_FORMAT
-from gsy_framework.data_classes import Bid, Offer, Trade, TradeOrderInfo
+from gsy_framework.data_classes import Bid, Offer, Trade, TradeOrdersInfo
 from gsy_framework.utils import datetime_to_string_incl_seconds
 from pendulum import datetime, duration, now
 
@@ -177,7 +177,7 @@ class TestFutureMarkets:
         """Test if trade is added to trade buffers when accept_bid is called."""
         first_future_market = next(iter(future_market.slot_bid_mapping))
         bid = future_market.bid(1, 1, "buyer", "seller_origin", time_slot=first_future_market)
-        trade = future_market.accept_bid(bid, 1, trade_offer_info=TradeOrderInfo(1, 1, 1, 1, 1))
+        trade = future_market.accept_bid(bid, 1, trade_orders_info=TradeOrdersInfo(1, 1, 1, 1, 1))
 
         assert len(future_market.trades) == 1
         assert trade in future_market.trades

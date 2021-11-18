@@ -23,7 +23,7 @@ from math import isclose
 from typing import Dict, List, Union, Tuple, Optional
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Bid, Offer, Trade, TradeOrderInfo, OrdersMatch
+from gsy_framework.data_classes import Bid, Offer, Trade, TradeOrdersInfo, OrdersMatch
 from gsy_framework.matching_algorithms.requirements_validators import RequirementsSatisfiedChecker
 from pendulum import DateTime
 
@@ -191,9 +191,9 @@ class TwoSidedMarket(OneSidedMarket):
 
         return accepted_bid, residual_bid
 
-    def determine_bid_price(self, trade_offer_info, energy):
+    def determine_bid_price(self, trade_orders_info, energy):
         revenue, grid_fee_rate, final_trade_rate = \
-            self.fee_class.calculate_trade_price_and_fees(trade_offer_info)
+            self.fee_class.calculate_trade_price_and_fees(trade_orders_info)
         return grid_fee_rate * energy, energy * final_trade_rate
 
     @lock_market_action
@@ -203,7 +203,7 @@ class TwoSidedMarket(OneSidedMarket):
                    buyer: Optional[str] = None,
                    already_tracked: bool = False,
                    trade_rate: Optional[float] = None,
-                   trade_offer_info: Optional[TradeOrderInfo] = None,
+                   trade_orders_info: Optional[TradeOrdersInfo] = None,
                    seller_origin: Optional[str] = None,
                    seller_origin_id: Optional[str] = None,
                    seller_id: Optional[str] = None) -> Trade:
@@ -239,13 +239,13 @@ class TwoSidedMarket(OneSidedMarket):
             # full bid trade, nothing further to do here
             pass
 
-        fee_price, trade_price = self.determine_bid_price(trade_offer_info, energy)
+        fee_price, trade_price = self.determine_bid_price(trade_orders_info, energy)
         bid.update_price(trade_price)
 
         # Do not adapt grid fees when creating the bid_trade_info structure, to mimic
         # the behavior of the forwarded bids which use the source market fee.
         updated_bid_trade_info = self.fee_class.propagate_original_offer_info_on_bid_trade(
-            trade_offer_info, ignore_fees=True
+            trade_orders_info, ignore_fees=True
         )
 
         trade = Trade(str(uuid.uuid4()), self.now, bid, seller,
@@ -266,7 +266,7 @@ class TwoSidedMarket(OneSidedMarket):
         return trade
 
     def accept_orders_pair(self, bid: Bid, offer: Offer, clearing_rate: float,
-                           trade_bid_info: TradeOrderInfo,
+                           trade_bid_info: TradeOrdersInfo,
                            selected_energy: float) -> Tuple[Trade, Trade]:
         already_tracked = bid.buyer == offer.seller
         trade = self.accept_offer(offer_or_id=offer,
@@ -285,7 +285,7 @@ class TwoSidedMarket(OneSidedMarket):
                                     buyer=bid.buyer,
                                     already_tracked=True,
                                     trade_rate=clearing_rate,
-                                    trade_offer_info=trade_bid_info,
+                                    trade_orders_info=trade_bid_info,
                                     seller_origin=offer.seller_origin,
                                     seller_origin_id=offer.seller_origin_id,
                                     seller_id=offer.seller_id)
@@ -324,7 +324,7 @@ class TwoSidedMarket(OneSidedMarket):
             market_bid = next(market_bids, None)
             while market_bid and market_offer:
                 original_bid_rate = market_bid.original_price / market_bid.energy
-                trade_bid_info = TradeOrderInfo(
+                trade_bid_info = TradeOrdersInfo(
                     original_bid_rate=original_bid_rate,
                     propagated_bid_rate=market_bid.energy_rate,
                     original_offer_rate=market_offer.original_price / market_offer.energy,
