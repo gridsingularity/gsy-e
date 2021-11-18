@@ -24,7 +24,9 @@ from typing import Union
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from gsy_framework.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
+from gsy_framework.utils import (
+    area_name_from_area_or_iaa_name, key_in_dict_and_not_none,
+    find_object_of_same_weekday_and_time)
 from gsy_framework.validators import StorageValidator
 from pendulum import duration
 
@@ -33,7 +35,6 @@ from gsy_e import limit_float_precision
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
-from gsy_e.gsy_e_core.util import area_name_from_area_or_iaa_name
 from gsy_e.models.base import AssetType
 from gsy_e.models.state import StorageState, ESSEnergyOrigin, EnergyOrigin
 from gsy_e.models.strategy import BidEnabledStrategy

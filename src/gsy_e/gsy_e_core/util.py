@@ -30,7 +30,7 @@ from gsy_framework.constants_limits import GlobalConfig, RangeLimit, ConstSettin
 from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import iterate_over_all_modules, str_to_pendulum_datetime, \
-    format_datetime, find_object_of_same_weekday_and_time
+    format_datetime, find_object_of_same_weekday_and_time, area_name_from_area_or_iaa_name
 from pendulum import duration, from_format, instance, DateTime
 from rex import rex
 
@@ -172,10 +172,6 @@ def make_sa_name(owner):
 
 def make_fa_name(owner):
     return f"FA {owner.name}"
-
-
-def area_name_from_area_or_iaa_name(name):
-    return name[4:] if name[:4] == 'IAA ' else name
 
 
 def is_time_slot_in_simulation_duration(config, time_slot):
