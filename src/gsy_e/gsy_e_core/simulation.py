@@ -26,7 +26,6 @@ from time import sleep, time, mktime
 
 import psutil
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.exceptions import GSyException
 from gsy_framework.kafka_communication.kafka_producer import kafka_connection_factory
 from gsy_framework.utils import format_datetime, str_to_pendulum_datetime
 from numpy import random
@@ -142,7 +141,7 @@ class Simulation:
             log.debug("Using setup module '%s'", self.setup_module_name)
         except (ModuleNotFoundError, ImportError) as ex:
             raise SimulationException(
-                "Invalid setup module '{}'".format(self.setup_module_name))
+                "Invalid setup module '{}'".format(self.setup_module_name)) from ex
 
     def _init(self, slot_length_realtime, seed, paused, pause_after, redis_job_id, enable_bc):
         self.paused = paused
