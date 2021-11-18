@@ -24,10 +24,8 @@ from importlib import import_module
 from logging import getLogger
 from time import sleep, time, mktime
 
-import click
 import psutil
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.exceptions import GSyException
 from gsy_framework.kafka_communication.kafka_producer import kafka_connection_factory
 from gsy_framework.utils import format_datetime, str_to_pendulum_datetime
 from numpy import random
@@ -141,7 +139,7 @@ class Simulation:
                 sys.path.append(ConstSettings.GeneralSettings.SETUP_FILE_PATH)
                 self.setup_module = import_module("{}".format(self.setup_module_name))
             log.debug("Using setup module '%s'", self.setup_module_name)
-        except ImportError as ex:
+        except (ModuleNotFoundError, ImportError) as ex:
             raise SimulationException(
                 "Invalid setup module '{}'".format(self.setup_module_name)) from ex
 
@@ -608,9 +606,9 @@ def run_simulation(setup_module_name="", simulation_config=None, simulation_even
                 redis_job_id=saved_sim_state["general"]["simulation_id"],
                 **kwargs
             )
-
-    except GSyException as ex:
-        raise click.BadOptionUsage(ex.args[0])
+    except SimulationException as ex:
+        log.error(ex)
+        return
 
     if saved_sim_state is not None and \
             saved_sim_state["areas"] != {} and \

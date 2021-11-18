@@ -66,7 +66,9 @@ class MycoInternalMatcher(MycoMatcherInterface):
                 if not market:
                     continue
                 while True:
+                    # Perform matching until all recommendations and their residuals are handled.
                     orders = market.orders_per_slot()
+
                     # Format should be: {area_uuid: {time_slot: {"bids": [], "offers": [], ...}}}
                     data = {
                         area_uuid: {
@@ -75,7 +77,9 @@ class MycoInternalMatcher(MycoMatcherInterface):
                     bid_offer_pairs = self._get_matches_recommendations(data)
                     if not bid_offer_pairs:
                         break
-                    market.match_recommendations(bid_offer_pairs)
+                    trades_occurred = market.match_recommendations(bid_offer_pairs)
+                    if not trades_occurred:
+                        break
 
         self.area_uuid_markets_mapping = {}
 

@@ -919,9 +919,10 @@ class BidEnabledStrategy(BaseStrategy):
 
     def _assert_market_type_on_bid_event(self, market_id):
         assert (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value or
-                self.area.is_market_future(market_id)), (
+                self.area.is_market_future(market_id) or
+                self.area.is_market_settlement(market_id)), (
             "Invalid state, cannot receive a bid if single sided market is globally configured or "
-            "if it is not a future market bid.")
+            "if it is not a future or settlement market bid.")
 
     def event_bid_deleted(self, *, market_id: str, bid: Bid) -> None:
         self._assert_market_type_on_bid_event(market_id)

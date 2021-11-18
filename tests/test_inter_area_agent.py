@@ -36,11 +36,6 @@ from gsy_e.models.market import GridFee
 from gsy_e.models.market.grid_fees.base_model import GridFees
 
 
-def teardown_function():
-    ConstSettings.IAASettings.MARKET_TYPE = 1
-    ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
-
-
 transfer_fees = GridFee(grid_fee_percentage=0, grid_fee_const=0)
 
 
@@ -266,6 +261,11 @@ class TestIAAGridFee:
         self.iaa.owner.current_tick = 14
         self.iaa.event_tick()
 
+    @staticmethod
+    def teardown_method():
+        ConstSettings.IAASettings.MARKET_TYPE = 1
+        ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
+
     def test_iaa_forwarded_offers_complied_to_transfer_fee(self):
         source_offer = [o for o in self.iaa.lower_market.sorted_offers if o.id == "id"][0]
         target_offer = [o for o in self.iaa.higher_market.sorted_offers if o.id == "uuid"][0]
@@ -361,6 +361,11 @@ def iaa_double_sided():
 
 
 class TestIAABid:
+
+    @staticmethod
+    def teardown_method():
+        ConstSettings.IAASettings.MARKET_TYPE = 1
+        ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
 
     def test_iaa_forwards_bids(self, iaa_bid):
         assert iaa_bid.lower_market.bid_call_count == 2
@@ -564,6 +569,11 @@ def iaa2():
 
 
 class TestIAAOffer:
+
+    @staticmethod
+    def teardown_method():
+        ConstSettings.IAASettings.MARKET_TYPE = 1
+        ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
 
     def test_iaa_forwards_offers(self, iaa):
         assert iaa.lower_market.offer_call_count == 2
