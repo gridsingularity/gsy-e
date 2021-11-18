@@ -18,28 +18,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import uuid
 from collections import deque
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, Mock, PropertyMock, patch
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.data_classes import Trade, Offer, Bid
+from gsy_framework.data_classes import Bid, Offer, Trade
 from gsy_framework.utils import format_datetime
 from parameterized import parameterized
-from pendulum import now, duration, datetime
+from pendulum import datetime, duration, now
 from redis.exceptions import RedisError
 
 import gsy_e.constants
 import gsy_e.gsy_e_core.util
-import gsy_e.models.strategy.external_strategies
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.models.area import Area
 from gsy_e.models.strategy import BidEnabledStrategy
 from gsy_e.models.strategy.external_strategies import (
     IncomingRequest, ExternalStrategyConnectionManager)
-from gsy_e.models.strategy.external_strategies.load import (LoadHoursExternalStrategy,
-                                                            LoadForecastExternalStrategy)
-from gsy_e.models.strategy.external_strategies.pv import (PVExternalStrategy,
-                                                          PVForecastExternalStrategy)
+from gsy_e.models.strategy.external_strategies.load import (
+    LoadForecastExternalStrategy, LoadHoursExternalStrategy, LoadProfileExternalStrategy)
+from gsy_e.models.strategy.external_strategies.pv import (
+    PVExternalStrategy, PVForecastExternalStrategy, PVPredefinedExternalStrategy,
+    PVUserProfileExternalStrategy)
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 
 transaction_id = str(uuid.uuid4())
@@ -476,6 +476,37 @@ class TestExternalMixin:
         strategy.area.get_settlement_market = MagicMock(return_value=market_mock)
         market = strategy._get_market_from_command_argument({"time_slot": time_slot})
         assert market == market_mock
+
+    @staticmethod
+    @pytest.mark.parametrize("strategy", [
+        LoadHoursExternalStrategy(100),
+        LoadProfileExternalStrategy(),
+        PVExternalStrategy(2, capacity_kW=0.16),
+        PVUserProfileExternalStrategy(),
+        PVPredefinedExternalStrategy(),
+        StorageExternalStrategy()])
+    def test_filter_degrees_of_freedom_arguments(strategy):
+        """Degrees of Freedom are correctly filtered in all external strategies."""
+        order_arguments = {
+            "type": "bid", "energy": 0.025, "price": 30, "replace_existing": True,
+            "attributes": {"energy_type": "PV"}, "requirements": [{"price": 12}],
+            "timeslot": None, "transaction_id": "some-id"}
+
+        strategy.area = Mock(spec=Area)
+        # Arguments are preserved when required
+        type(strategy.simulation_config).enable_degrees_of_freedom = PropertyMock(
+            return_value=True)
+        result = strategy.filter_degrees_of_freedom_arguments(order_arguments)
+        assert result == (order_arguments, [])
+
+        # Arguments are removed when required
+        type(strategy.simulation_config).enable_degrees_of_freedom = PropertyMock(
+            return_value=False)
+        result = strategy.filter_degrees_of_freedom_arguments(order_arguments)
+        assert result == ({
+            "type": "bid", "energy": 0.025, "price": 30, "replace_existing": True,
+            "timeslot": None, "transaction_id": "some-id"},
+            ["requirements", "attributes"])
 
 
 class TestForecastRelatedFeatures:
