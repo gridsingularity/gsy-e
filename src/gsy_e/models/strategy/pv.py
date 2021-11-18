@@ -204,7 +204,7 @@ class PVStrategy(BidEnabledStrategy):
 
     def event_activate_energy(self):
         if self.capacity_kW is None:
-            self.capacity_kW = self.area.config.capacity_kW
+            self.capacity_kW = self.simulation_config.capacity_kW
         self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
 
     def event_tick(self):
@@ -249,7 +249,7 @@ class PVStrategy(BidEnabledStrategy):
                  )
             )
 
-        return round(convert_kW_to_kWh(gauss_forecast, self.area.config.slot_length), 4)
+        return round(convert_kW_to_kWh(gauss_forecast, self.simulation_config.slot_length), 4)
 
     def event_market_cycle(self):
         super().event_market_cycle()
@@ -332,19 +332,16 @@ class PVStrategy(BidEnabledStrategy):
             for market in self.area.all_markets:
                 time_slot = market.time_slot
                 if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
-                    self.offer_update.set_parameters(initial_rate=0,
-                                                     final_rate=0)
+                    self.offer_update.set_parameters(initial_rate=0, final_rate=0)
                 elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
-                    rate = \
-                        self.area.config.market_maker_rate[time_slot] * \
-                        ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / \
-                        100
-                    self.offer_update.set_parameters(initial_rate=rate,
-                                                     final_rate=rate)
+                    rate = (
+                        self.simulation_config.market_maker_rate[time_slot] *
+                        ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE /
+                        100)
+                    self.offer_update.set_parameters(initial_rate=rate, final_rate=rate)
                 elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
                     rate = self.area.config.market_maker_rate[time_slot]
-                    self.offer_update.set_parameters(initial_rate=rate,
-                                                     final_rate=rate)
+                    self.offer_update.set_parameters(initial_rate=rate, final_rate=rate)
                 else:
                     raise MarketException
 
