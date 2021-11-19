@@ -267,13 +267,10 @@ def constsettings_to_dict():
 
     def convert_nested_settings(class_object, class_name, settings_dict):
         for key, value in dict(class_object.__dict__).items():
-            if class_name not in settings_dict:
-                settings_dict[class_name] = {}
-
             if key.startswith("__"):
                 continue
 
-            if class_name not in settings_dict.keys():
+            if class_name not in settings_dict:
                 settings_dict[class_name] = {}
 
             if inspect.isclass(value):
