@@ -46,7 +46,7 @@ class TwoSidedAgent(OneSidedAgent):
         ]
 
     def usable_bid(self, bid):
-        """Prevent IAAEngines from trading their counterpart's bids."""
+        """Prevent MAEngines from trading their counterpart's bids."""
         return all(bid.id not in engine.forwarded_bids.keys() for engine in self.engines)
 
     # pylint: disable=unused-argument

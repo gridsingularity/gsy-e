@@ -23,7 +23,7 @@ from gsy_framework.data_classes import Bid
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import BidNotFoundException, MarketException
 from gsy_e.gsy_e_core.util import short_offer_bid_log_str
-from gsy_e.models.strategy.area_agents.one_sided_engine import IAAEngine
+from gsy_e.models.strategy.area_agents.one_sided_engine import MAEngine
 
 if TYPE_CHECKING:
     from gsy_e.models.strategy.area_agents.market_agent import MarketAgent
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 BidInfo = namedtuple("BidInfo", ("source_bid", "target_bid"))
 
 
-class TwoSidedEngine(IAAEngine):
+class TwoSidedEngine(MAEngine):
     """Handle forwarding offers and bids to the connected two-sided market."""
     # pylint: disable = too-many-arguments
 

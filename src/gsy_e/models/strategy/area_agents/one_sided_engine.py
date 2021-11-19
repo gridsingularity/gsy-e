@@ -31,7 +31,7 @@ Markets = namedtuple("Markets", ("source", "target"))
 ResidualInfo = namedtuple("ResidualInfo", ("forwarded", "age"))
 
 
-class IAAEngine:
+class MAEngine:
     """Handle forwarding offers to the connected one-sided market."""
     # pylint: disable = too-many-arguments
 
@@ -47,7 +47,7 @@ class IAAEngine:
         self.trade_residual: Dict[str, Offer] = {}
 
     def __repr__(self):
-        return "<IAAEngine [{s.owner.name}] {s.name} {s.markets.source.time_slot:%H:%M}>".format(
+        return "<MAEngine [{s.owner.name}] {s.name} {s.markets.source.time_slot:%H:%M}>".format(
             s=self
         )
 
@@ -281,7 +281,7 @@ class IAAEngine:
         self.forwarded_offers[target_offer.id] = offer_info
 
 
-class BalancingEngine(IAAEngine):
+class BalancingEngine(MAEngine):
     """Handle forwarding offers to the connected balancing market."""
 
     def _forward_offer(self, offer):

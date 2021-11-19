@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 
 class FutureAgent(TwoSidedAgent):
-    """Handler for IAAEngines for the future markets."""
+    """Handler for MAEngines for the future markets."""
 
     def __init__(self, *, owner: "Area", higher_market: "FutureMarkets",
                  lower_market: "FutureMarkets",
