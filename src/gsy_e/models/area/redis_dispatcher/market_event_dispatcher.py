@@ -69,7 +69,7 @@ class AreaRedisMarketEventDispatcher(RedisEventDispatcherBase):
             self.child_response_events[event_type.value].wait()
             self.child_response_events[event_type.value].clear()
 
-        for time_slot, agents in self.root_dispatcher._market_agents.items():
+        for time_slot, agents in self.root_dispatcher.spot_agents.items():
             if time_slot not in self.area._markets.markets:
                 # exclude past MAs
                 continue

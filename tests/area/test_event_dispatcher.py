@@ -83,7 +83,7 @@ class TestAreaDispatcher:
     ) -> Dict[DateTime, Union[OneSidedAgent, BalancingAgent, SettlementAgent]]:
         """Select the correct agent dict in the AreaDispatcher depending on the market_type"""
         if market_type == AvailableMarketTypes.SPOT:
-            return dispatcher_object.market_agents
+            return dispatcher_object.spot_agents
         if market_type == AvailableMarketTypes.BALANCING:
             return dispatcher_object.balancing_agents
         if market_type == AvailableMarketTypes.SETTLEMENT:
@@ -92,9 +92,9 @@ class TestAreaDispatcher:
 
     @staticmethod
     def _create_ma_and_markets_for_time_slot(dispatcher_object: AreaDispatcher,
-                                              time_slot: DateTime,
-                                              market_class: MarketBase,
-                                              market_type: AvailableMarketTypes):
+                                             time_slot: DateTime,
+                                             market_class: MarketBase,
+                                             market_type: AvailableMarketTypes):
         """Helps to create MAs for testing."""
         first_time_slot = time_slot
         lower_market = MagicMock(autospec=market_class)
@@ -159,16 +159,16 @@ class TestAreaDispatcher:
         [AvailableMarketTypes.BALANCING, BalancingMarket],
                              ])
     def test_event_market_cycle_deletes_all_old_mas(self, market_type: AvailableMarketTypes,
-                                                     market_class: MarketBase,
-                                                     area_dispatcher):
+                                                    market_class: MarketBase,
+                                                    area_dispatcher):
         """Test whether MAs are deleted from the agent dicts."""
 
         first_time_slot = datetime(2021, 10, 27)
         self._create_ma_and_markets_for_time_slot(area_dispatcher, first_time_slot,
-                                                   market_class, market_type)
+                                                  market_class, market_type)
         second_time_slot = first_time_slot.add(minutes=15)
         self._create_ma_and_markets_for_time_slot(area_dispatcher, second_time_slot,
-                                                   market_class, market_type)
+                                                  market_class, market_type)
 
         agent_dict = self._get_agents_for_market_type(area_dispatcher, market_type)
         assert first_time_slot in agent_dict

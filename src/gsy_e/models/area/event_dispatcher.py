@@ -57,20 +57,20 @@ class AreaDispatcher:
     dicts with interarea agents for each market type.
     """
     def __init__(self, area: "Area"):
-        self._market_agents: Dict[DateTime, OneSidedAgent] = {}
+        self._spot_agents: Dict[DateTime, OneSidedAgent] = {}
         self._balancing_agents: Dict[DateTime, BalancingAgent] = {}
         self._settlement_agents: Dict[DateTime, SettlementAgent] = {}
         self._future_agent: Optional[FutureAgent] = None
         self.area = area
 
     @property
-    def market_agents(self) -> Dict[DateTime, OneSidedAgent]:
-        """Return spot market inter area agents."""
-        return self._market_agents
+    def spot_agents(self) -> Dict[DateTime, OneSidedAgent]:
+        """Return market agents of spot markets."""
+        return self._spot_agents
 
     @property
     def balancing_agents(self) -> Dict[DateTime, BalancingAgent]:
-        """Return balancing market inter area agents"""
+        """Return balancing market inter area agents."""
         return self._balancing_agents
 
     @property
@@ -80,7 +80,7 @@ class AreaDispatcher:
 
     @property
     def settlement_agents(self) -> Dict[DateTime, SettlementAgent]:
-        """Return settlement market inter area agents"""
+        """Return settlement market inter area agents."""
         return self._settlement_agents
 
     def broadcast_activate(self, **kwargs) -> None:
@@ -257,7 +257,7 @@ class AreaDispatcher:
             dispatcher_object, market_type: AvailableMarketTypes
     ) -> Dict[DateTime, Union[OneSidedAgent, BalancingAgent, SettlementAgent]]:
         if market_type == AvailableMarketTypes.SPOT:
-            return dispatcher_object.market_agents
+            return dispatcher_object.spot_agents
         if market_type == AvailableMarketTypes.BALANCING:
             return dispatcher_object.balancing_agents
         if market_type == AvailableMarketTypes.SETTLEMENT:
@@ -322,7 +322,7 @@ class AreaDispatcher:
 
     def event_market_cycle(self) -> None:
         """Called every market cycle. Recycles old area agents."""
-        self._delete_past_agents(self._market_agents)
+        self._delete_past_agents(self._spot_agents)
         self._delete_past_agents(self._balancing_agents)
         self._delete_past_agents(self._settlement_agents)
 
