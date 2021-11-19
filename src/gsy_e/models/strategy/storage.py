@@ -481,7 +481,7 @@ class StorageStrategy(BidEnabledStrategy):
         alt_pricing_settings = ConstSettings.MASettings.AlternativePricing
         if (offer.seller == alt_pricing_settings.ALT_PRICING_MARKET_MAKER_NAME and
                 alt_pricing_settings.PRICING_SCHEME != 0):
-            # don't buy from IAA if alternative pricing scheme is activated
+            # don't buy from MA if alternative pricing scheme is activated
             return
 
         try:

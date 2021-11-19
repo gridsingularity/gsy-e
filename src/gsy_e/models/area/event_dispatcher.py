@@ -122,7 +122,7 @@ class AreaDispatcher:
             for time_slot, agent in agent_dict.items():
                 if time_slot not in agent_area.get_market_instances_from_class_type(
                         market_type):
-                    # exclude past IAAs
+                    # exclude past MAs
                     continue
 
                 agent.event_listener(event_type, **kwargs)
@@ -149,13 +149,13 @@ class AreaDispatcher:
         Broadcast all market and area events to the event_listener methods of the
         child dispatcher classes first (in order to propagate the event to the children of the
         area) and then to the Inter Area Agents of the children and this dispatcher's area.
-        Strategy event methods (e.g. event_offer) should have precedence over IAA's event methods.
-        Reason for that is that the IAA offer / bid  forwarding with MIN_BID/OFFER_AGE=0 setting
+        Strategy event methods (e.g. event_offer) should have precedence over MA's event methods.
+        Reason for that is that the MA offer / bid  forwarding with MIN_BID/OFFER_AGE=0 setting
         enabled is expected to forward the offer / bid on the same tick that the offer is posted.
-        If the IAA event method is called before the strategy event method, then the offer / bid
+        If the MA event method is called before the strategy event method, then the offer / bid
         will not be forwarded on the same tick, but on the next one.
         For a similar reason (a market area should clear all offers and bids posted by its children
-        before forwarding) the IAA event method is called after all children event methods have
+        before forwarding) the MA event method is called after all children event methods have
         been called.
         Args:
             event_type: Type of the event that will be broadcasted
@@ -281,14 +281,14 @@ class AreaDispatcher:
         if not self._should_agent_be_created:
             return
 
-        iaa = self._create_agent_object(
+        market_agent = self._create_agent_object(
             owner=self.area,
             higher_market=self.area.parent.future_markets,
             lower_market=market,
             market_type=AvailableMarketTypes.FUTURE
         )
 
-        self._future_agent = iaa
+        self._future_agent = market_agent
 
     def create_area_agents(self, market_type: AvailableMarketTypes, market: MarketBase) -> None:
         """
@@ -310,15 +310,15 @@ class AreaDispatcher:
         if market.time_slot in market_agents or market.time_slot not in parent_markets:
             return
 
-        iaa = self._create_agent_object(
+        market_agent = self._create_agent_object(
             owner=self.area,
             higher_market=parent_markets[market.time_slot],
             lower_market=market,
             market_type=market_type
         )
 
-        # Attach agent to own IAA dict
-        market_agents[market.time_slot] = iaa
+        # Attach agent to own MA dict
+        market_agents[market.time_slot] = market_agent
 
     def event_market_cycle(self) -> None:
         """Called every market cycle. Recycles old area agents."""

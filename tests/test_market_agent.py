@@ -253,7 +253,7 @@ class FakeMarket:
         return accepted_bid, residual_bid
 
 
-class TestIAAGridFee:
+class TestMAGridFee:
 
     @staticmethod
     def teardown_method():
@@ -280,19 +280,19 @@ class TestIAAGridFee:
         return market_agent
 
     @staticmethod
-    def test_iaa_forwarded_offers_complied_to_transfer_fee(market_agent):
+    def test_ma_forwarded_offers_complied_to_transfer_fee(market_agent):
         source_offer = [
             offer for offer in market_agent.lower_market.sorted_offers if offer.id == "id"][0]
         target_offer = [
             offer for offer in market_agent.higher_market.sorted_offers if offer.id == "uuid"][0]
-        earned_iaa_fee = target_offer.price - source_offer.price
-        expected_iaa_fee = market_agent.higher_market.fee_class.grid_fee_rate
+        earned_ma_fee = target_offer.price - source_offer.price
+        expected_ma_fee = market_agent.higher_market.fee_class.grid_fee_rate
 
-        assert isclose(earned_iaa_fee, expected_iaa_fee)
+        assert isclose(earned_ma_fee, expected_ma_fee)
 
     @staticmethod
     @pytest.mark.parametrize("market_agent_fee", [0.1, 0, 0.5, 0.75, 0.05, 0.02, 0.03])
-    def test_iaa_forwards_bids_according_to_percentage(market_agent_fee):
+    def test_ma_forwards_bids_according_to_percentage(market_agent_fee):
         ConstSettings.MASettings.MARKET_TYPE = 2
         lower_market = FakeMarket([], [Bid("id", pendulum.now(), 1, 1, "this", 1)],
                                   transfer_fees=GridFee(grid_fee_percentage=market_agent_fee,
@@ -302,21 +302,20 @@ class TestIAAGridFee:
                                    transfer_fees=GridFee(grid_fee_percentage=market_agent_fee,
                                                          grid_fee_const=0),
                                    name="FakeMarket")
-        iaa = TwoSidedAgent(owner=FakeArea("owner"),
-                            higher_market=higher_market,
-                            lower_market=lower_market)
-        iaa.event_tick()
-        iaa.owner.current_tick = 14
-        iaa.event_tick()
+        market_agent = TwoSidedAgent(
+            owner=FakeArea("owner"), higher_market=higher_market, lower_market=lower_market)
+        market_agent.event_tick()
+        market_agent.owner.current_tick = 14
+        market_agent.event_tick()
 
-        assert iaa.higher_market.bid_call_count == 1
-        assert (iaa.higher_market.forwarded_bid.price ==
-                list(iaa.lower_market.bids.values())[-1].price * (1 - market_agent_fee))
+        assert market_agent.higher_market.bid_call_count == 1
+        assert (market_agent.higher_market.forwarded_bid.price ==
+                list(market_agent.lower_market.bids.values())[-1].price * (1 - market_agent_fee))
 
     @staticmethod
     @pytest.mark.parametrize("market_agent_fee_const", [0.5, 1, 5, 10])
     @pytest.mark.skip("need to define if we need a constant fee")
-    def test_iaa_forwards_bids_according_to_constantfee(market_agent_fee_const):
+    def test_ma_forwards_bids_according_to_constantfee(market_agent_fee_const):
         ConstSettings.MASettings.MARKET_TYPE = 2
         lower_market = FakeMarket([], [Bid("id", pendulum.now(), 15, 1, "this", 15)],
                                   transfer_fees=GridFee(grid_fee_percentage=0,
@@ -324,16 +323,15 @@ class TestIAAGridFee:
         higher_market = FakeMarket([], [Bid("id2", pendulum.now(), 35, 3, "child", 35)],
                                    transfer_fees=GridFee(grid_fee_percentage=0,
                                                          grid_fee_const=market_agent_fee_const))
-        iaa = TwoSidedAgent(owner=FakeArea("owner"),
-                            higher_market=higher_market,
-                            lower_market=lower_market)
-        iaa.event_tick()
-        iaa.owner.current_tick = 14
-        iaa.event_tick()
+        market_agent = TwoSidedAgent(
+            owner=FakeArea("owner"), higher_market=higher_market, lower_market=lower_market)
+        market_agent.event_tick()
+        market_agent.owner.current_tick = 14
+        market_agent.event_tick()
 
-        assert iaa.higher_market.bid_call_count == 1
-        bid = list(iaa.lower_market.bids.values())[-1]
-        assert iaa.higher_market.forwarded_bid.price == (
+        assert market_agent.higher_market.bid_call_count == 1
+        bid = list(market_agent.lower_market.bids.values())[-1]
+        assert market_agent.higher_market.forwarded_bid.price == (
             bid.price - market_agent_fee_const * bid.energy)
 
 
@@ -349,13 +347,11 @@ def market_agent_bid_fixture(request):
     owner = FakeArea("owner")
 
     agent_class = request.param
-    iaa = agent_class(owner=owner,
-                      higher_market=higher_market,
-                      lower_market=lower_market)
-    iaa.event_tick()
-    iaa.owner.current_tick = 14
-    iaa.event_tick()
-    yield iaa
+    market_agent = agent_class(owner=owner, higher_market=higher_market, lower_market=lower_market)
+    market_agent.event_tick()
+    market_agent.owner.current_tick = 14
+    market_agent.event_tick()
+    yield market_agent
 
 
 @pytest.fixture(name="market_agent_double_sided")
@@ -368,28 +364,28 @@ def market_agent_double_sided_fixture():
     higher_market = FakeMarket([], [], transfer_fees=GridFee(grid_fee_percentage=0.01,
                                                              grid_fee_const=0))
     owner = FakeArea("owner")
-    iaa = TwoSidedAgent(owner=owner, lower_market=lower_market,
-                        higher_market=higher_market)
-    iaa.event_tick()
-    iaa.owner.current_tick += 2
-    iaa.event_tick()
-    yield iaa
+    market_agent = TwoSidedAgent(
+        owner=owner, lower_market=lower_market, higher_market=higher_market)
+    market_agent.event_tick()
+    market_agent.owner.current_tick += 2
+    market_agent.event_tick()
+    yield market_agent
 
 
 # pylint: disable=protected-access
-class TestIAABid:
+class TestMABid:
 
     @staticmethod
     def teardown_method():
-        ConstSettings.IAASettings.MARKET_TYPE = 1
-        ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
+        ConstSettings.MASettings.MARKET_TYPE = 1
+        ConstSettings.MASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
 
-    def test_iaa_forwards_bids(market_agent_bid):
+    def test_ma_forwards_bids(market_agent_bid):
         assert market_agent_bid.lower_market.bid_call_count == 2
         assert market_agent_bid.higher_market.bid_call_count == 1
 
     @staticmethod
-    def test_iaa_does_not_forward_bids_if_the_IAA_name_is_the_same_as_the_target_market(
+    def test_ma_does_not_forward_bids_if_the_MA_name_is_the_same_as_the_target_market(
             market_agent_bid):
         assert market_agent_bid.lower_market.bid_call_count == 2
         assert market_agent_bid.higher_market.bid_call_count == 1
@@ -402,7 +398,7 @@ class TestIAABid:
         assert market_agent_bid.higher_market.bid_call_count == 1
 
     @staticmethod
-    def test_iaa_forwarded_bids_adhere_to_iaa_overhead(market_agent_bid):
+    def test_ma_forwarded_bids_adhere_to_ma_overhead(market_agent_bid):
         assert market_agent_bid.higher_market.bid_call_count == 1
         expected_price = (
             list(market_agent_bid.lower_market.bids.values())[-1].price *
@@ -410,7 +406,7 @@ class TestIAABid:
         assert market_agent_bid.higher_market.forwarded_bid.price == expected_price
 
     @staticmethod
-    def test_iaa_event_trade_bid_deletes_forwarded_bid_when_sold(market_agent_bid, called):
+    def test_ma_event_trade_bid_deletes_forwarded_bid_when_sold(market_agent_bid, called):
         market_agent_bid.lower_market.delete_bid = called
         market_agent_bid.event_bid_traded(
             bid_trade=Trade("trade_id",
@@ -422,7 +418,7 @@ class TestIAABid:
         assert len(market_agent_bid.lower_market.delete_bid.calls) == 1
 
     @staticmethod
-    def test_iaa_event_trade_bid_does_not_delete_forwarded_bid_of_counterpart(
+    def test_ma_event_trade_bid_does_not_delete_forwarded_bid_of_counterpart(
             market_agent_bid, called):
         market_agent_bid.lower_market.delete_bid = called
         high_to_low_engine = market_agent_bid.engines[1]
@@ -436,7 +432,7 @@ class TestIAABid:
 
     @staticmethod
     @pytest.mark.parametrize("partial", [True, False])
-    def test_iaa_event_bid_split_and_trade_correctly_populate_forwarded_bid_entries(
+    def test_ma_event_bid_split_and_trade_correctly_populate_forwarded_bid_entries(
             market_agent_bid, called, partial):
         market_agent_bid.lower_market.delete_bid = called
         low_to_high_engine = market_agent_bid.engines[0]
@@ -492,7 +488,7 @@ class TestIAABid:
             assert set(low_to_high_engine.forwarded_bids.keys()) == {"uuid", "id3"}
 
     @staticmethod
-    def test_iaa_event_trade_buys_accepted_bid(market_agent_double_sided):
+    def test_ma_event_trade_buys_accepted_bid(market_agent_double_sided):
         market_agent_double_sided.higher_market.forwarded_bid = \
             market_agent_double_sided.higher_market.forwarded_bid
         market_agent_double_sided.event_bid_traded(
@@ -509,7 +505,7 @@ class TestIAABid:
         assert market_agent_double_sided.lower_market.calls_bids_price[-1] == 10.0
 
     @staticmethod
-    def test_iaa_event_bid_trade_increases_bid_price(market_agent_double_sided):
+    def test_ma_event_bid_trade_increases_bid_price(market_agent_double_sided):
         market_agent_double_sided.event_bid_traded(
             bid_trade=Trade("trade_id",
                             pendulum.now(tz=TIME_ZONE),
@@ -524,7 +520,7 @@ class TestIAABid:
         assert market_agent_double_sided.lower_market.calls_bids_price[-1] == 10
 
     @staticmethod
-    def test_iaa_event_trade_buys_partial_accepted_bid(market_agent_double_sided):
+    def test_ma_event_trade_buys_partial_accepted_bid(market_agent_double_sided):
         market_agent_double_sided._get_market_from_market_id = (
             lambda x: market_agent_double_sided.higher_market)
         original_bid = market_agent_double_sided.higher_market.forwarded_bid
@@ -550,7 +546,7 @@ class TestIAABid:
         assert market_agent_double_sided.lower_market.calls_energy_bids[0] == 1
 
     @staticmethod
-    def test_iaa_forwards_partial_bid_from_source_market(market_agent_double_sided):
+    def test_ma_forwards_partial_bid_from_source_market(market_agent_double_sided):
         market_agent_double_sided._get_market_from_market_id = (
             lambda x: market_agent_double_sided.lower_market)
         original_bid = market_agent_double_sided.lower_market._bids[0]
@@ -571,7 +567,7 @@ class TestIAABid:
             market_agent_double_sided.higher_market.forwarded_bid.energy, residual_energy)
 
 
-class TestIAAOffer:
+class TestMAOffer:
 
     @staticmethod
     def teardown_method():
@@ -609,12 +605,12 @@ class TestIAAOffer:
         return maa
 
     @staticmethod
-    def test_iaa_forwards_offers(market_agent):
+    def test_ma_forwards_offers(market_agent):
         assert market_agent.lower_market.offer_call_count == 2
         assert market_agent.higher_market.offer_call_count == 1
 
     @staticmethod
-    def test_iaa_event_trade_deletes_forwarded_offer_when_sold(market_agent, called):
+    def test_ma_event_trade_deletes_forwarded_offer_when_sold(market_agent, called):
         market_agent.lower_market.delete_offer = called
         market_agent.event_offer_traded(
             trade=Trade(
@@ -627,7 +623,7 @@ class TestIAAOffer:
         assert len(market_agent.lower_market.delete_offer.calls) == 1
 
     @staticmethod
-    def test_iaa_event_trade_buys_accepted_offer(market_agent_2):
+    def test_ma_event_trade_buys_accepted_offer(market_agent_2):
         market_agent_2.event_offer_traded(
             trade=Trade(
                 "trade_id",
@@ -640,7 +636,7 @@ class TestIAAOffer:
         assert len(market_agent_2.lower_market.calls_energy) == 1
 
     @staticmethod
-    def test_iaa_event_trade_buys_partial_accepted_offer(market_agent_2):
+    def test_ma_event_trade_buys_partial_accepted_offer(market_agent_2):
         total_offer = market_agent_2.higher_market.forwarded_offer
         accepted_offer = Offer(
             total_offer.id, total_offer.creation_time, total_offer.price, 1, total_offer.seller
@@ -658,7 +654,7 @@ class TestIAAOffer:
         assert market_agent_2.lower_market.calls_energy[0] == 1
 
     @staticmethod
-    def test_iaa_event_offer_split_and_trade_correctly_populate_forwarded_offer_entries(
+    def test_ma_event_offer_split_and_trade_correctly_populate_forwarded_offer_entries(
             market_agent_2):
         residual_offer_id = "res_id"
         original_offer_id = "id"

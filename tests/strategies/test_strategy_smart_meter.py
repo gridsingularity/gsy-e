@@ -230,9 +230,9 @@ class SmartMeterStrategyTest(unittest.TestCase):
             100, self.strategy.area.current_market.time_slot)
 
     @patch("gsy_framework.constants_limits.ConstSettings.MASettings")
-    def test_event_offer_two_sided_market(self, iaa_settings_mock):
+    def test_event_offer_two_sided_market(self, ma_settings_mock):
         """The device does not automatically react to offers in two-sided markets."""
-        iaa_settings_mock.MARKET_TYPE = 2
+        ma_settings_mock.MARKET_TYPE = 2
         self.strategy.event_offer(market_id="some_market_id", offer="some_offer")
         # Make sure that the method is returning immediately and not executing further logic
         self.strategy.area.get_future_market_from_id.assert_not_called()

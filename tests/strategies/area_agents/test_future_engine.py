@@ -37,11 +37,11 @@ CURRENT_TIME_SLOT = datetime(2021, 10, 21, 0, 0)
 def future_engine_fixture() -> Generator[FutureEngine, None, None]:
     """Return FutureAgent object"""
     GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
-    iaa = MagicMock(autospec=FutureAgent)
+    market_agent = MagicMock(autospec=FutureAgent)
     higher_market = MagicMock(autospec=FutureMarkets)
     lower_market = MagicMock(autospec=FutureMarkets)
     future_engine = FutureEngine(name="test_engine", min_bid_age=1, min_offer_age=1,
-                                 owner=iaa, market_1=higher_market, market_2=lower_market)
+                                 owner=market_agent, market_1=higher_market, market_2=lower_market)
     yield future_engine
     GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
 

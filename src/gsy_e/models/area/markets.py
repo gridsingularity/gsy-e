@@ -76,7 +76,7 @@ class AreaMarkets:
 
     def activate_future_markets(self, area: "Area") -> None:
         """
-        Create FutureMarkets instance and create IAAs that communicate to the parent FutureMarkets
+        Create FutureMarkets instance and create MAs that communicate to the parent FutureMarkets.
         """
         market = FutureMarkets(
             bc=area.bc,

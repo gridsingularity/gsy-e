@@ -297,7 +297,7 @@ def grid2():
     return grid
 
 
-def test_energy_bills_finds_iaas(grid2):
+def test_energy_bills_finds_mas(grid2):
     epb = SimulationEndpointBuffer("1", {"seed": 0}, grid2, True)
     epb.current_market_time_slot_str = grid2.current_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid2)

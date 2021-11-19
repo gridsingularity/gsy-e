@@ -129,7 +129,7 @@ class IAAEngine:
                 continue
 
             # Should never reach this point.
-            # This means that the IAA is forwarding offers with the same seller and buyer name.
+            # This means that the MA is forwarding offers with the same seller and buyer name.
             # If we ever again reach a situation like this, we should never forward the offer.
             if self.owner.name == offer.seller:
                 self.offer_age.pop(offer_id, None)

@@ -71,7 +71,7 @@ class AreaRedisMarketEventDispatcher(RedisEventDispatcherBase):
 
         for time_slot, agents in self.root_dispatcher._market_agents.items():
             if time_slot not in self.area._markets.markets:
-                # exclude past IAAs
+                # exclude past MAs
                 continue
 
             if not self.area.events.is_connected:
