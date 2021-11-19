@@ -97,6 +97,20 @@ class FutureMarkets(TwoSidedMarket):
                 [offer.serializable_dict() for offer in offers_list])
         return orders_dict
 
+    @staticmethod
+    def _remove_old_orders_from_list(order_list: List, current_market_time_slot: DateTime) -> List:
+        return [
+            order for order in order_list if order.time_slot > current_market_time_slot
+        ]
+
+    @staticmethod
+    def _remove_old_orders_from_dict(order_dict: Dict, current_market_time_slot: DateTime) -> Dict:
+        return {
+            order_id: order
+            for order_id, order in order_dict.items()
+            if order.time_slot > current_market_time_slot
+        }
+
     def delete_orders_in_old_future_markets(self, current_market_time_slot: DateTime) -> None:
         """Delete order and trade buffers."""
         self._delete_order_dict_market_slot(current_market_time_slot,
@@ -105,6 +119,16 @@ class FutureMarkets(TwoSidedMarket):
                                             self.slot_offer_mapping, Offer)
         self._delete_order_dict_market_slot(current_market_time_slot,
                                             self.slot_trade_mapping, Trade)
+
+        self.offers = self._remove_old_orders_from_dict(self.offers, current_market_time_slot)
+        self.bids = self._remove_old_orders_from_dict(self.bids, current_market_time_slot)
+
+        self.offer_history = self._remove_old_orders_from_list(
+            self.offer_history, current_market_time_slot)
+        self.bid_history = self._remove_old_orders_from_list(
+            self.bid_history, current_market_time_slot)
+        self.trades = self._remove_old_orders_from_list(
+            self.trades, current_market_time_slot)
 
     def _delete_order_dict_market_slot(self, current_market_time_slot: DateTime,
                                        order_dict:
@@ -130,7 +154,7 @@ class FutureMarkets(TwoSidedMarket):
         else:
             current_market_orders = self.offers if order_type is Offer else self.bids
             for order in delete_orders:
-                current_market_orders.pop(order.id)
+                current_market_orders.pop(order.id, None)
 
     def create_future_markets(self, current_market_time_slot: DateTime,
                               slot_length: duration,
@@ -254,6 +278,10 @@ class FutureMarkets(TwoSidedMarket):
                                    trade_orders_info=trade_orders_info,
                                    seller_origin=seller_origin,
                                    seller_origin_id=seller_origin_id, seller_id=seller_id)
+
+        if bid.id not in self.bids:
+            self.slot_bid_mapping[bid.time_slot].remove(bid)
+
         if already_tracked is False:
             self.slot_trade_mapping[trade.time_slot].append(trade)
         return trade
@@ -267,11 +295,20 @@ class FutureMarkets(TwoSidedMarket):
                      buyer_origin_id: Optional[str] = None,
                      buyer_id: Optional[str] = None) -> Trade:
         """Call superclass accept_offer and buffer returned trade object."""
+
+        if isinstance(offer_or_id, Offer):
+            offer_or_id = offer_or_id.id
+        offer = self.offers.get(offer_or_id, None)
+
         trade = super().accept_offer(offer_or_id=offer_or_id,
                                      buyer=buyer, energy=energy,
                                      already_tracked=already_tracked, trade_rate=trade_rate,
                                      trade_bid_info=trade_bid_info, buyer_origin=buyer_origin,
                                      buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
+
+        if offer.id not in self.offers:
+            self.slot_offer_mapping[offer.time_slot].remove(offer)
+
         if already_tracked is False:
             self.slot_trade_mapping[trade.time_slot].append(trade)
         return trade

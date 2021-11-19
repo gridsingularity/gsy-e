@@ -85,13 +85,14 @@ class TestFutureMarkets:
     def test_delete_old_future_markets(future_market):
         """Test if the correct markets slot buffers and their contents are deleted."""
         for time_slot in future_market.slot_bid_mapping:
-            bid = Bid(f"bid{time_slot}", time_slot, 1, 1, "buyer")
+            bid = Bid(f"bid{time_slot}", time_slot, 1, 1, "buyer", time_slot=time_slot)
             future_market.bids[bid.id] = bid
             future_market.slot_bid_mapping[time_slot].append(bid)
-            offer = Offer(f"oid{time_slot}", time_slot, 1, 1, "seller")
+            offer = Offer(f"oid{time_slot}", time_slot, 1, 1, "seller", time_slot=time_slot)
             future_market.offers[offer.id] = offer
             future_market.slot_offer_mapping[time_slot].append(offer)
-            trade = Trade(f"tid{time_slot}", time_slot, offer, "seller", "buyer")
+            trade = Trade(f"tid{time_slot}", time_slot, offer, "seller", "buyer",
+                          time_slot=time_slot)
             future_market.trades.append(trade)
             future_market.slot_trade_mapping[time_slot].append(trade)
 

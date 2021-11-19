@@ -292,8 +292,10 @@ class TwoSidedMarket(OneSidedMarket):
         return bid_trade, trade
 
     def match_recommendations(
-            self, recommendations: List[OrdersMatch.serializable_dict]) -> None:
-        """Match a list of bid/offer pairs, create trades and residual offers/bids."""
+            self, recommendations: List[OrdersMatch.serializable_dict]) -> bool:
+        """Match a list of bid/offer pairs, create trades and residual offers/bids.
+        Returns True if trades were actually performed, False otherwise."""
+        were_trades_performed = False
         while recommendations:
             recommended_pair = recommendations.pop(0)
             recommended_pair = OrdersMatch.from_dict(recommended_pair)
@@ -322,6 +324,7 @@ class TwoSidedMarket(OneSidedMarket):
             market_bids = iter(market_bids)
             market_offer = next(market_offers, None)
             market_bid = next(market_bids, None)
+
             while market_bid and market_offer:
                 original_bid_rate = market_bid.original_price / market_bid.energy
                 trade_bid_info = TradeOrdersInfo(
@@ -334,6 +337,7 @@ class TwoSidedMarket(OneSidedMarket):
                 bid_trade, offer_trade = self.accept_orders_pair(
                     market_bid, market_offer, clearing_rate,
                     trade_bid_info, min(selected_energy, market_offer.energy, market_bid.energy))
+                were_trades_performed = True
                 if offer_trade.residual:
                     market_offer = offer_trade.residual
                 else:
@@ -346,6 +350,7 @@ class TwoSidedMarket(OneSidedMarket):
                     self._replace_orders_with_residual_in_recommendations_list(
                         recommendations, offer_trade, bid_trade)
                 )
+        return were_trades_performed
 
     @staticmethod
     def _validate_requirements_satisfied(

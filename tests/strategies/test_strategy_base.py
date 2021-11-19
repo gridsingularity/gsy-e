@@ -62,7 +62,10 @@ class FakeArea:
     def get_spot_or_future_market_by_id(self, _):
         return self._market
 
-    def is_market_future(self, market_id):
+    def is_market_future(self, _):
+        return False
+
+    def is_market_settlement(self, _):
         return False
 
     @property
