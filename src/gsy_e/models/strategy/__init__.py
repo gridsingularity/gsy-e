@@ -774,9 +774,10 @@ class BidEnabledStrategy(BaseStrategy):
         """Replace the rate of all bids in the market slot with the given updated rate."""
         existing_bids = list(self.get_posted_bids(market))
         for bid in existing_bids:
+            if abs(bid.energy_rate - updated_rate) <= FLOATING_POINT_TOLERANCE:
+                continue
             assert bid.buyer == self.owner.name
-            if bid.id in market.bids.keys():
-                bid = market.bids[bid.id]
+
             market.delete_bid(bid.id)
 
             self.remove_bid_from_pending(market.id, bid.id)
