@@ -272,12 +272,17 @@ def constsettings_to_dict():
 
             if key.startswith("__"):
                 continue
+
+            if class_name not in settings_dict.keys():
+                settings_dict[class_name] = {}
+
             if inspect.isclass(value):
                 convert_nested_settings(value, key, settings_dict[class_name])
             else:
                 if class_name in settings_dict.keys():
                     settings_dict[class_name][key] = value
                 else:
+                    print(f"{class_name} messa nel dict")
                     settings_dict[class_name] = {key: value}
 
     try:
@@ -285,6 +290,7 @@ def constsettings_to_dict():
         for settings_class_name, settings_class in dict(ConstSettings.__dict__).items():
             if settings_class_name.startswith("__"):
                 continue
+            print(settings_class_name, settings_class)
             convert_nested_settings(settings_class, settings_class_name, const_settings)
         return const_settings
     except Exception:
@@ -326,7 +332,7 @@ def validate_const_settings_for_simulation():
     # And the market type is not single sided market
     # This is a wrong configuration and an exception is raised
     if not ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES and \
-       ConstSettings.IAASettings.MARKET_TYPE != 1 and \
+       ConstSettings.MASettings.MARKET_TYPE != 1 and \
        ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
         assert False, "Alternate pricing schemes are only usable with an one sided market."
 
@@ -334,7 +340,7 @@ def validate_const_settings_for_simulation():
     # There should be a single sided market
     if ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES and \
        ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-        ConstSettings.IAASettings.MARKET_TYPE = 1
+        ConstSettings.MASettings.MARKET_TYPE = 1
 
 
 def round_floats_for_ui(number):
@@ -478,7 +484,7 @@ def is_external_matching_enabled():
     """Checks if the bid offer match type is set to external
     Returns True if both are matched
     """
-    return (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+    return (ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
             BidOfferMatchAlgoEnum.EXTERNAL.value)
 
 

@@ -229,7 +229,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
         self.strategy.state.set_energy_measurement_kWh.assert_called_once_with(
             100, self.strategy.area.current_market.time_slot)
 
-    @patch("gsy_framework.constants_limits.ConstSettings.IAASettings")
+    @patch("gsy_framework.constants_limits.ConstSettings.MASettings")
     def test_event_offer_two_sided_market(self, iaa_settings_mock):
         """The device does not automatically react to offers in two-sided markets."""
         iaa_settings_mock.MARKET_TYPE = 2

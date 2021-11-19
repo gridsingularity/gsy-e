@@ -40,7 +40,7 @@ def alternative_pricing_auto_fixture():
     yield
     ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = False
     ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = 0
-    ConstSettings.IAASettings.MARKET_TYPE = 1
+    ConstSettings.MASettings.MARKET_TYPE = 1
 
 
 class TestD3ACoreUtil:
@@ -74,7 +74,7 @@ class TestD3ACoreUtil:
             self, market_type, alternative_pricing):
         ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = False
         ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = alternative_pricing
-        ConstSettings.IAASettings.MARKET_TYPE = market_type
+        ConstSettings.MASettings.MARKET_TYPE = market_type
         with pytest.raises(AssertionError):
             validate_const_settings_for_simulation()
 
@@ -87,10 +87,10 @@ class TestD3ACoreUtil:
     def test_validate_one_sided_market_when_pricing_scheme_on_comparison(
             self, market_type, alt_pricing):
         ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
-        ConstSettings.IAASettings.MARKET_TYPE = market_type
+        ConstSettings.MASettings.MARKET_TYPE = market_type
         ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = alt_pricing
         validate_const_settings_for_simulation()
-        assert ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
+        assert ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
         assert ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == alt_pricing
         assert ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES
 
@@ -157,9 +157,9 @@ class TestD3ACoreUtil:
                 ConstSettings.AreaSettings.PERCENTAGE_FEE_LIMIT)
         assert (settings_dict["StorageSettings"]["CAPACITY"] ==
                 ConstSettings.StorageSettings.CAPACITY)
-        assert (settings_dict["IAASettings"]["MARKET_TYPE"] ==
-                ConstSettings.IAASettings.MARKET_TYPE)
-        assert (settings_dict["IAASettings"]["AlternativePricing"]["COMPARE_PRICING_SCHEMES"] ==
+        assert (settings_dict["MASettings"]["MARKET_TYPE"] ==
+                ConstSettings.MASettings.MARKET_TYPE)
+        assert (settings_dict["MASettings"]["AlternativePricing"]["COMPARE_PRICING_SCHEMES"] ==
                 ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES)
 
     def test_future_market_counter(self):

@@ -293,7 +293,7 @@ class TestIAAGridFee:
     @staticmethod
     @pytest.mark.parametrize("market_agent_fee", [0.1, 0, 0.5, 0.75, 0.05, 0.02, 0.03])
     def test_iaa_forwards_bids_according_to_percentage(market_agent_fee):
-        ConstSettings.IAASettings.MARKET_TYPE = 2
+        ConstSettings.MASettings.MARKET_TYPE = 2
         lower_market = FakeMarket([], [Bid("id", pendulum.now(), 1, 1, "this", 1)],
                                   transfer_fees=GridFee(grid_fee_percentage=market_agent_fee,
                                                         grid_fee_const=0),
@@ -317,7 +317,7 @@ class TestIAAGridFee:
     @pytest.mark.parametrize("market_agent_fee_const", [0.5, 1, 5, 10])
     @pytest.mark.skip("need to define if we need a constant fee")
     def test_iaa_forwards_bids_according_to_constantfee(market_agent_fee_const):
-        ConstSettings.IAASettings.MARKET_TYPE = 2
+        ConstSettings.MASettings.MARKET_TYPE = 2
         lower_market = FakeMarket([], [Bid("id", pendulum.now(), 15, 1, "this", 15)],
                                   transfer_fees=GridFee(grid_fee_percentage=0,
                                                         grid_fee_const=market_agent_fee_const))
@@ -339,7 +339,7 @@ class TestIAAGridFee:
 
 @pytest.fixture(name="market_agent_bid", params=[TwoSidedAgent, SettlementAgent])
 def market_agent_bid_fixture(request):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     lower_market = FakeMarket([], [Bid("id", pendulum.now(), 1, 1, "this", 1,
                                        buyer_origin="id")])
     higher_market = FakeMarket([], [Bid("id2", pendulum.now(), 1, 1, "child", 1,
@@ -360,7 +360,7 @@ def market_agent_bid_fixture(request):
 
 @pytest.fixture(name="market_agent_double_sided")
 def market_agent_double_sided_fixture():
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     lower_market = FakeMarket(offers=[Offer("id", pendulum.now(), 2, 2, "other", 2)],
                               bids=[Bid("bid_id", pendulum.now(), 10, 10, "B", 10)],
                               transfer_fees=GridFee(grid_fee_percentage=0.01,

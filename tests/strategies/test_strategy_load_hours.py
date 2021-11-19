@@ -42,7 +42,7 @@ MIN_BUY_ENERGY = 50  # wh
 
 
 def teardown_function():
-    ConstSettings.IAASettings.MARKET_TYPE = 1
+    ConstSettings.MASettings.MARKET_TYPE = 1
 
 
 class FakeArea:
@@ -317,7 +317,7 @@ def test_event_tick_updates_rates(load_hours_strategy_test1, market_test1):
     for can_buy_energy in (True, False):
         load_hours_strategy_test1.state.can_buy_more_energy.return_value = can_buy_energy
         for market_type_id in available_market_types:
-            ConstSettings.IAASettings.MARKET_TYPE = market_type_id
+            ConstSettings.MASettings.MARKET_TYPE = market_type_id
             load_hours_strategy_test1.bid_update.update.reset_mock()
             load_hours_strategy_test1.event_tick()
             if market_type_id == 1:
@@ -403,7 +403,7 @@ def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy
 def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strategy_test5,
                                                                 called,
                                                                 partial):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
 
     trade_market = load_hours_strategy_test5.area.spot_market
     load_hours_strategy_test5.remove_bid_from_pending = called
@@ -428,7 +428,7 @@ def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strat
 def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_strategy_test5,
                                                                    market_test2,
                                                                    called):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
 
     trade_market = load_hours_strategy_test5.area.spot_market
     load_hours_strategy_test5.remove_bid_from_pending = called
@@ -640,14 +640,14 @@ def test_predefined_load_strategy_rejects_incorrect_rate_parameters(use_mmr, ini
 @pytest.fixture(name="load_hours_fixture")
 def load_hours_for_settlement_tests(area_test1: Area) -> LoadHoursStrategy:
     """Return LoadHoursStrategy object for testing of the interaction with settlement market."""
-    orig_market_type = ConstSettings.IAASettings.MARKET_TYPE
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    orig_market_type = ConstSettings.MASettings.MARKET_TYPE
+    ConstSettings.MASettings.MARKET_TYPE = 2
     load = LoadHoursStrategy(avg_power_W=100)
     area = FakeArea()
     load.area = area
     load.owner = area
     yield load
-    ConstSettings.IAASettings.MARKET_TYPE = orig_market_type
+    ConstSettings.MASettings.MARKET_TYPE = orig_market_type
 
 
 def test_event_bid_traded_calls_settlement_market_event_bid_traded(load_hours_fixture):

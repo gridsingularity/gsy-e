@@ -53,7 +53,7 @@ def ext_strategy_fixture(request):
     config.tick_length = duration(seconds=15)
     config.ticks_per_slot = 60
     config.start_date = GlobalConfig.start_date
-    config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
+    config.grid_fee_type = ConstSettings.MASettings.GRID_FEE_TYPE
     config.end_date = GlobalConfig.start_date + duration(days=1)
     area = Area(name="forecast_pv", config=config, strategy=strategy,
                 external_connection_available=True)
@@ -84,7 +84,7 @@ class TestExternalMixin:
         self.area.get_future_market_from_id = lambda _: market
 
     def teardown_method(self) -> None:
-        ConstSettings.IAASettings.MARKET_TYPE = 1
+        ConstSettings.MASettings.MARKET_TYPE = 1
 
     def test_dispatch_tick_frequency_gets_calculated_correctly(self):
         self.external_strategy = LoadHoursExternalStrategy(100)
@@ -314,7 +314,7 @@ class TestExternalMixin:
         [StorageExternalStrategy()]
     ])
     def test_skip_dispatch_double_event_trade_to_external_agent_two_sided_market(self, strategy):
-        ConstSettings.IAASettings.MARKET_TYPE = 2
+        ConstSettings.MASettings.MARKET_TYPE = 2
         strategy._track_energy_sell_type = lambda _: None
         self._create_and_activate_strategy_area(strategy)
         market = self.area.get_future_market_from_id(1)

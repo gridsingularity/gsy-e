@@ -12,7 +12,7 @@ current_dir = os.path.dirname(__file__)
 def get_setup(config):
 
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 1
-    ConstSettings.IAASettings.MARKET_TYPE = 1
+    ConstSettings.MASettings.MARKET_TYPE = 1
 
     area = Area(
         "Grid",

@@ -118,9 +118,9 @@ class AreaMarkets:
     def _select_market_class(market_type: AvailableMarketTypes) -> type(MarketBase):
         """Select market class dependent on the global config."""
         if market_type == AvailableMarketTypes.SPOT:
-            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                 return OneSidedMarket
-            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
+            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
                 return TwoSidedMarket
         if market_type == AvailableMarketTypes.SETTLEMENT:
             return SettlementMarket

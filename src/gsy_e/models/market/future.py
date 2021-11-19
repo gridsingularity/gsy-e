@@ -50,7 +50,7 @@ class FutureMarkets(TwoSidedMarket):
     def __init__(self, bc: Optional[NonBlockchainInterface] = None,
                  notification_listener: Optional["AreaDispatcher"] = None,
                  readonly: bool = False,
-                 grid_fee_type: int = ConstSettings.IAASettings.GRID_FEE_TYPE,
+                 grid_fee_type: int = ConstSettings.MASettings.GRID_FEE_TYPE,
                  grid_fees: Optional[GridFee] = None,
                  name: Optional[str] = None) -> None:
         super().__init__(time_slot=None, bc=bc, notification_listener=notification_listener,

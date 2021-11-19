@@ -53,7 +53,7 @@ def area_with_markets_fixture():
     config.tick_length = duration(seconds=15)
     config.ticks_per_slot = 60
     config.start_date = GlobalConfig.start_date
-    config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
+    config.grid_fee_type = ConstSettings.MASettings.GRID_FEE_TYPE
     config.end_date = GlobalConfig.start_date + duration(days=1)
 
     area = Area("name", config=config)
@@ -124,8 +124,8 @@ class TestAreaDispatcher:
                                                         expected_agent_type: MarketAgent,
                                                         area_dispatcher):
         """Test if create_area_agents creates correct objects in the agent dicts."""
-        original_matching_type = ConstSettings.IAASettings.MARKET_TYPE
-        ConstSettings.IAASettings.MARKET_TYPE = spot_market_type
+        original_matching_type = ConstSettings.MASettings.MARKET_TYPE
+        ConstSettings.MASettings.MARKET_TYPE = spot_market_type
 
         lower_market = MagicMock(autospec=market_class)
         higher_market = MagicMock(autospec=market_class)
@@ -142,7 +142,7 @@ class TestAreaDispatcher:
         assert agent.higher_market == higher_market
         assert agent.lower_market == lower_market
 
-        ConstSettings.IAASettings.MARKET_TYPE = original_matching_type
+        ConstSettings.MASettings.MARKET_TYPE = original_matching_type
 
     @staticmethod
     def test_create_area_agents_for_future_markets(area_dispatcher):

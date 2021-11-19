@@ -35,7 +35,7 @@ on the interpolation of bids and offers).
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.PVSettings.FINAL_SELLING_RATE = 0
     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = 30
     ConstSettings.StorageSettings.INITIAL_BUYING_RATE = 0

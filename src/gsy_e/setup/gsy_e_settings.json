@@ -201,7 +201,7 @@
       "FINAL_SELLING_RATE": 0,
       "MAX_WIND_TURBINE_OUTPUT_W": 160
     },
-    "IAASettings": {
+    "MASettings": {
       "GRID_FEE_TYPE": 1,
       "VALID_FEE_TYPES": [
         1,

@@ -187,8 +187,8 @@ class FileExportEndpoints:
                 out_dict[area.slug][label].append(row[ii])
 
     def _populate_plots_stats_for_supply_demand_curve(self, area: Area) -> None:
-        if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
-                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+        if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
+                ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
                 BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value):
             if len(area.past_markets) == 0:
                 return

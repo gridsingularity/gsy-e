@@ -33,8 +33,8 @@ class FutureAgent(TwoSidedAgent):
 
     def __init__(self, *, owner: "Area", higher_market: "FutureMarkets",
                  lower_market: "FutureMarkets",
-                 min_offer_age: int = ConstSettings.IAASettings.MIN_OFFER_AGE,
-                 min_bid_age: int = ConstSettings.IAASettings.MIN_BID_AGE):
+                 min_offer_age: int = ConstSettings.MASettings.MIN_OFFER_AGE,
+                 min_bid_age: int = ConstSettings.MASettings.MIN_BID_AGE):
 
         super().__init__(owner=owner,
                          higher_market=higher_market,

@@ -25,7 +25,7 @@ from gsy_framework.constants_limits import ConstSettings
 
 class BalancingAgent(OneSidedAgent):
     def __init__(self, owner, higher_market, lower_market,
-                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE):
+                 min_offer_age=ConstSettings.MASettings.MIN_OFFER_AGE):
         self.balancing_spot_trade_ratio = owner.balancing_spot_trade_ratio
 
         super().__init__(owner=owner,

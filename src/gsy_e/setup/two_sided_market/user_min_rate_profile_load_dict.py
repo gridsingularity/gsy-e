@@ -40,7 +40,7 @@ user_profile_str = "{'00:00': 10, '06:00': 15, '12:00': 20, '18:00': 25, '21:00'
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     area = Area(
         "Grid",
         [

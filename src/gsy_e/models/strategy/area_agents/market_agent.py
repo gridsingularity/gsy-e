@@ -30,7 +30,7 @@ class MarketAgent(BaseStrategy):
     parameters = ("owner", "higher_market", "lower_market", "min_offer_age")
 
     def __init__(self, *, owner, higher_market, lower_market,
-                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE):
+                 min_offer_age=ConstSettings.MASettings.MIN_OFFER_AGE):
         """
         :param min_offer_age: Minimum age of offer before transferring
         """

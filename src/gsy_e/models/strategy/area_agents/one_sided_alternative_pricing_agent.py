@@ -28,7 +28,7 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
     MIN_SLOT_AGE = 2
 
     def __init__(self, *, owner, higher_market, lower_market,
-                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE):
+                 min_offer_age=ConstSettings.MASettings.MIN_OFFER_AGE):
         super().__init__(owner=owner,
                          higher_market=higher_market, lower_market=lower_market,
                          min_offer_age=min_offer_age)

@@ -919,7 +919,7 @@ class BidEnabledStrategy(BaseStrategy):
         return [b for b in self._bids[market.id] if time_slot is None or b.time_slot == time_slot]
 
     def _assert_market_type_on_bid_event(self, market_id):
-        assert (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value or
+        assert (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value or
                 self.area.is_market_future(market_id) or
                 self.area.is_market_settlement(market_id)), (
             "Invalid state, cannot receive a bid if single sided market is globally configured or "

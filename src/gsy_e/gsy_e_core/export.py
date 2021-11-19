@@ -136,8 +136,8 @@ class ExportAndPlot:
             self.plot_device_stats(self.area, [])
         if ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
             self.plot_energy_trade_profile_hr(self.area, self.plot_dir)
-        if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
-                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+        if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
+                ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
                 BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value and
                 ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS is True):
             self.plot_supply_demand_curve(self.area, self.plot_dir)
@@ -275,8 +275,8 @@ class ExportAndPlot:
         self._export_balancing_markets_stats(area, directory, is_first)
 
         if area.children:
-            if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED and
-                    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+            if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED and
+                    ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
                     BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value):
                 self._export_area_clearing_rate(area, directory, "market-clearing-rate", is_first)
 

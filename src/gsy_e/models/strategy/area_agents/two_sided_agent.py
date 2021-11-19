@@ -26,8 +26,8 @@ class TwoSidedAgent(OneSidedAgent):
     """Handles order forwarding between two sided markets."""
 
     def __init__(self, *, owner, higher_market, lower_market,
-                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
-                 min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE):
+                 min_offer_age=ConstSettings.MASettings.MIN_OFFER_AGE,
+                 min_bid_age=ConstSettings.MASettings.MIN_BID_AGE):
 
         self.min_bid_age = min_bid_age
         super().__init__(owner=owner,

@@ -228,21 +228,21 @@ class AreaDispatcher:
             "owner": owner,
             "higher_market": higher_market,
             "lower_market": lower_market,
-            "min_offer_age": ConstSettings.IAASettings.MIN_OFFER_AGE
+            "min_offer_age": ConstSettings.MASettings.MIN_OFFER_AGE
         }
 
         if market_type == AvailableMarketTypes.SPOT:
-            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                 if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
                     return OneSidedAlternativePricingAgent(**agent_constructor_arguments)
                 return OneSidedAgent(**agent_constructor_arguments)
-            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
+            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
                 return TwoSidedAgent(
                     **agent_constructor_arguments,
-                    min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE
+                    min_bid_age=ConstSettings.MASettings.MIN_BID_AGE
                 )
             raise WrongMarketTypeException("Wrong market type setting flag "
-                                           f"{ConstSettings.IAASettings.MARKET_TYPE}")
+                                           f"{ConstSettings.MASettings.MARKET_TYPE}")
         if market_type == AvailableMarketTypes.SETTLEMENT:
             return SettlementAgent(**agent_constructor_arguments)
         if market_type == AvailableMarketTypes.BALANCING:
