@@ -90,13 +90,13 @@ class PVPredefinedStrategy(PVStrategy):
         self.energy_profile = {}
 
     def read_config_event(self):
-        # this is to trigger to read from self.area.config.cloud_coverage:
+        # this is to trigger to read from self.simulation_config.cloud_coverage:
         self.cloud_coverage = None
         self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
 
     def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
         self._power_profile_index = self.cloud_coverage \
-            if self.cloud_coverage is not None else self.area.config.cloud_coverage
+            if self.cloud_coverage is not None else self.simulation_config.cloud_coverage
         if reconfigure:
             self._read_predefined_profile_for_pv()
         market = self.area.spot_market
@@ -135,8 +135,8 @@ class PVPredefinedStrategy(PVStrategy):
             InputProfileTypes.IDENTITY, profile_path)
 
         self.energy_profile = {
-            time_slot: convert_kW_to_kWh(weight * self.capacity_kW,
-                                         self.area.config.slot_length)
+            time_slot: convert_kW_to_kWh(
+                weight * self.capacity_kW, self.simulation_config.slot_length)
             for time_slot, weight in power_weight_profile.items()}
 
     def area_reconfigure_event(self, **kwargs):
