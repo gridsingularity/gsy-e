@@ -257,8 +257,8 @@ class TestMAGridFee:
 
     @staticmethod
     def teardown_method():
-        ConstSettings.IAASettings.MARKET_TYPE = 1
-        ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
+        ConstSettings.MASettings.MARKET_TYPE = 1
+        ConstSettings.MASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
 
     @staticmethod
     @pytest.fixture(name="market_agent")
@@ -380,6 +380,7 @@ class TestMABid:
         ConstSettings.MASettings.MARKET_TYPE = 1
         ConstSettings.MASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
 
+    @staticmethod
     def test_ma_forwards_bids(market_agent_bid):
         assert market_agent_bid.lower_market.bid_call_count == 2
         assert market_agent_bid.higher_market.bid_call_count == 1
@@ -571,10 +572,10 @@ class TestMAOffer:
 
     @staticmethod
     def teardown_method():
-        ConstSettings.IAASettings.MARKET_TYPE = 1
-        ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
+        ConstSettings.MASettings.MARKET_TYPE = 1
+        ConstSettings.MASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
 
-
+    @staticmethod
     @pytest.fixture(name="market_agent")
     def market_agent_fixture():
         lower_market = FakeMarket([Offer("id", pendulum.now(), 1, 1, "other", 1)])
