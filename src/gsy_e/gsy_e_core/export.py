@@ -80,9 +80,9 @@ class ExportAndPlot:
         try:
             if path is not None:
                 path = os.path.abspath(path)
-            if ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES is True:
+            if ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES is True:
                 subdir = os.path.join(subdir, alternative_pricing_subdirs[
-                                      ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME])
+                                      ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME])
 
             self.rootdir = pathlib.Path(path or str(pathlib.Path.home()) + "/gsy_e-simulation")
             self.directory = pathlib.Path(self.rootdir, subdir)

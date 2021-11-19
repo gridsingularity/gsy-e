@@ -264,23 +264,21 @@ class StorageStrategy(BidEnabledStrategy):
         self.event_activate_price()
 
     def _set_alternative_pricing_scheme(self):
-        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+        if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
             for market in self.area.all_markets:
                 time_slot = market.time_slot
-                if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
+                if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME == 1:
                     self.bid_update.set_parameters(initial_rate=0,
                                                    final_rate=0)
                     self.offer_update.set_parameters(initial_rate=0,
                                                      final_rate=0)
-                elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
+                elif ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME == 2:
                     rate = (self.simulation_config.market_maker_rate[time_slot] *
-                            ConstSettings.IAASettings.AlternativePricing.
+                            ConstSettings.MASettings.AlternativePricing.
                             FEED_IN_TARIFF_PERCENTAGE / 100)
-                    self.bid_update.set_parameters(initial_rate=0,
-                                                   final_rate=rate)
-                    self.offer_update.set_parameters(initial_rate=rate,
-                                                     final_rate=rate)
-                elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
+                    self.bid_update.set_parameters(initial_rate=0, final_rate=rate)
+                    self.offer_update.set_parameters(initial_rate=rate, final_rate=rate)
+                elif ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME == 3:
                     rate = self.simulation_config.market_maker_rate[time_slot]
                     self.bid_update.set_parameters(initial_rate=0, final_rate=rate)
                     self.offer_update.set_parameters(initial_rate=rate, final_rate=rate)
@@ -480,7 +478,7 @@ class StorageStrategy(BidEnabledStrategy):
             # Can early return here, because the offers are sorted according to energy rate
             # therefore the following offers will be more expensive
             return True
-        alt_pricing_settings = ConstSettings.IAASettings.AlternativePricing
+        alt_pricing_settings = ConstSettings.MASettings.AlternativePricing
         if (offer.seller == alt_pricing_settings.ALT_PRICING_MARKET_MAKER_NAME and
                 alt_pricing_settings.PRICING_SCHEME != 0):
             # don't buy from IAA if alternative pricing scheme is activated

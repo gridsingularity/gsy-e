@@ -233,7 +233,7 @@ class AreaDispatcher:
 
         if market_type == AvailableMarketTypes.SPOT:
             if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
-                if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+                if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
                     return OneSidedAlternativePricingAgent(**agent_constructor_arguments)
                 return OneSidedAgent(**agent_constructor_arguments)
             if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:

@@ -364,7 +364,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         return offer.seller != self.owner.name and offer.seller != self.area.name
 
     def _set_alternative_pricing_scheme(self):
-        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+        if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
             time_slot = self.area.spot_market.time_slot
             final_rate = self.simulation_config.market_maker_rate[time_slot]
             self.bid_update.set_parameters(initial_rate=0,

@@ -282,7 +282,6 @@ def constsettings_to_dict():
                 if class_name in settings_dict.keys():
                     settings_dict[class_name][key] = value
                 else:
-                    print(f"{class_name} messa nel dict")
                     settings_dict[class_name] = {key: value}
 
     try:
@@ -290,7 +289,6 @@ def constsettings_to_dict():
         for settings_class_name, settings_class in dict(ConstSettings.__dict__).items():
             if settings_class_name.startswith("__"):
                 continue
-            print(settings_class_name, settings_class)
             convert_nested_settings(settings_class, settings_class_name, const_settings)
         return const_settings
     except Exception:
@@ -331,15 +329,15 @@ def validate_const_settings_for_simulation():
     # If schemes are not compared and an individual scheme is selected
     # And the market type is not single sided market
     # This is a wrong configuration and an exception is raised
-    if not ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES and \
+    if not ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES and \
        ConstSettings.MASettings.MARKET_TYPE != 1 and \
-       ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+       ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
         assert False, "Alternate pricing schemes are only usable with an one sided market."
 
     # If an alternate price is selected on compare schemes
     # There should be a single sided market
-    if ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES and \
-       ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+    if ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES and \
+       ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
         ConstSettings.MASettings.MARKET_TYPE = 1
 
 

@@ -307,7 +307,7 @@ class Area:
 
         if self.budget_keeper:
             self.budget_keeper.activate()
-        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+        if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
             self._set_grid_fees(0, 0)
 
         # Cycle markets without triggering it's own event chain.
