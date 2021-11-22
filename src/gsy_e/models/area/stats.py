@@ -27,7 +27,7 @@ from pendulum import DateTime
 from gsy_e import limit_float_precision
 from gsy_e.gsy_e_core.util import area_name_from_area_or_iaa_name, add_or_create_key, \
     area_sells_to_child, child_buys_from_area
-from gsy_e.models.market import Market
+from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 
@@ -137,7 +137,7 @@ class AreaStats:
         return out_dict
 
     @property
-    def current_market(self) -> Market:
+    def current_market(self) -> MarketBase:
         """Return the current market object"""
         past_markets = list(self._markets.past_markets.values())
         return past_markets[-1] if len(past_markets) > 0 else None

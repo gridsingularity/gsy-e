@@ -22,7 +22,7 @@ from typing import Dict, List, TYPE_CHECKING, Callable
 from pendulum import DateTime
 
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
-from gsy_e.models.market import Market
+from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.external_strategies import (
     ExternalMixin, IncomingRequest, ExternalStrategyConnectionManager, default_market_info)
 from gsy_e.models.strategy.storage import StorageStrategy
@@ -49,7 +49,7 @@ class StorageExternalMixin(ExternalMixin):
     Should always be inherited together with a superclass of StorageStrategy.
     """
 
-    def filtered_market_bids(self, market: Market) -> List[Dict]:
+    def filtered_market_bids(self, market: MarketBase) -> List[Dict]:
         """
         Get a representation of each of the asset's bids from the market.
         Args:

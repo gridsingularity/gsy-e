@@ -25,7 +25,7 @@ from pendulum import DateTime
 from gsy_e.gsy_e_core.util import is_time_slot_in_simulation_duration
 from gsy_e.models.area.market_rotators import (BaseRotator, DefaultMarketRotator,
                                                SettlementMarketRotator, FutureMarketRotator)
-from gsy_e.models.market import GridFee, Market
+from gsy_e.models.market import GridFee, MarketBase
 from gsy_e.models.market.balancing import BalancingMarket
 from gsy_e.models.market.future import FutureMarkets
 from gsy_e.models.market.market_structures import AvailableMarketTypes
@@ -44,11 +44,11 @@ class AreaMarkets:
     def __init__(self, area_log):
         self.log = area_log
         # Children trade in `markets`
-        self.markets:  Dict[DateTime, Market] = OrderedDict()
+        self.markets:  Dict[DateTime, MarketBase] = OrderedDict()
         self.balancing_markets:  Dict[DateTime, BalancingMarket] = OrderedDict()
         self.settlement_markets: Dict[DateTime, TwoSidedMarket] = OrderedDict()
         # Past markets:
-        self.past_markets:  Dict[DateTime, Market] = OrderedDict()
+        self.past_markets:  Dict[DateTime, MarketBase] = OrderedDict()
         self.past_balancing_markets:  Dict[DateTime, BalancingMarket] = OrderedDict()
         self.past_settlement_markets: Dict[DateTime, TwoSidedMarket] = OrderedDict()
         # TODO: rename and refactor in the frame of D3ASIM-3633:
@@ -115,7 +115,7 @@ class AreaMarkets:
         self._update_indexed_future_markets()
 
     @staticmethod
-    def _select_market_class(market_type: AvailableMarketTypes) -> type(Market):
+    def _select_market_class(market_type: AvailableMarketTypes) -> type(MarketBase):
         """Select market class dependent on the global config."""
         if market_type == AvailableMarketTypes.SPOT:
             if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
@@ -164,9 +164,9 @@ class AreaMarkets:
         self.log.trace("Adding %s market", time_slot.format(TIME_FORMAT))
 
     @staticmethod
-    def _create_market(market_class: Market,
+    def _create_market(market_class: MarketBase,
                        time_slot: DateTime, area: "Area",
-                       market_type: AvailableMarketTypes) -> Market:
+                       market_type: AvailableMarketTypes) -> MarketBase:
         """Create market for specific time_slot and market type."""
         market = market_class(
             time_slot=time_slot,

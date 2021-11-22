@@ -32,7 +32,7 @@ from gsy_e.models.area.redis_dispatcher.market_event_dispatcher import (
     AreaRedisMarketEventDispatcher)
 from gsy_e.models.area.redis_dispatcher.market_notify_event_subscriber import (
     MarketNotifyEventSubscriber)
-from gsy_e.models.market import Market
+from gsy_e.models.market import MarketBase
 from gsy_e.models.market.market_structures import AvailableMarketTypes
 from gsy_e.models.strategy.area_agents.balancing_agent import BalancingAgent
 from gsy_e.models.strategy.area_agents.future_agent import FutureAgent
@@ -221,8 +221,8 @@ class AreaDispatcher:
             self.area.strategy.event_on_disabled_area()
 
     @staticmethod
-    def _create_agent_object(owner: "Area", higher_market: Market,
-                             lower_market: Market, market_type: AvailableMarketTypes
+    def _create_agent_object(owner: "Area", higher_market: MarketBase,
+                             lower_market: MarketBase, market_type: AvailableMarketTypes
                              ) -> Union[OneSidedAgent, SettlementAgent, BalancingAgent]:
         agent_constructor_arguments = {
             "owner": owner,
@@ -276,7 +276,7 @@ class AreaDispatcher:
             return False
         return True
 
-    def create_area_agents_for_future_markets(self, market: Market) -> None:
+    def create_area_agents_for_future_markets(self, market: MarketBase) -> None:
         """Create area agents for future markets; There should only be one per Area at any time."""
         if not self._should_agent_be_created:
             return
@@ -290,13 +290,13 @@ class AreaDispatcher:
 
         self._future_agent = iaa
 
-    def create_area_agents(self, market_type: AvailableMarketTypes, market: Market) -> None:
+    def create_area_agents(self, market_type: AvailableMarketTypes, market: MarketBase) -> None:
         """
         Create interarea agents for all market types, and store their reference to the respective
         dict.
         Args:
             market_type: Type of the market (spot/settlement/balancing/future)
-            market: Market object that will be associated with this interarea agent
+            market: MarketBase object that will be associated with this interarea agent
 
         Returns: None
 
