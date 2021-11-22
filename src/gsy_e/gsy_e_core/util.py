@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import inspect
 import json
+import logging
 import os
 import select
 import sys
@@ -435,12 +436,18 @@ def if_not_in_list_append(target_list, obj):
         target_list.append(obj)
 
 
-def get_market_maker_rate_from_config(next_market, default_value=None):
+def get_market_maker_rate_from_config(next_market, default_value=None, time_slot=None):
     if next_market is None:
         return default_value
     if isinstance(GlobalConfig.market_maker_rate, dict):
+        if time_slot is None:
+            try:
+                time_slot = next_market.time_slot
+            except AttributeError as e:
+                logging.exception("time_slot parameter is required for future markets.")
+                raise e
         return find_object_of_same_weekday_and_time(GlobalConfig.market_maker_rate,
-                                                    next_market.time_slot)
+                                                    time_slot)
     else:
         return GlobalConfig.market_maker_rate
 

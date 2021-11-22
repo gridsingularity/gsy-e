@@ -24,10 +24,7 @@ from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIM
 from gsy_framework.data_classes import Bid, Offer, Trade, BaseBidOffer, TradeBidOfferInfo
 from pendulum import DateTime, duration
 
-from gsy_e.events.event_structures import MarketEvent
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
-from gsy_e.gsy_e_core.exceptions import (BidNotFoundException, MarketReadOnlyException,
-                                         OfferNotFoundException)
 from gsy_e.gsy_e_core.util import is_time_slot_in_simulation_duration
 from gsy_e.models.market import GridFee
 from gsy_e.models.market import lock_market_action
@@ -225,42 +222,19 @@ class FutureMarkets(TwoSidedMarket):
         self.slot_offer_mapping[time_slot].append(offer)
         return offer
 
-    @lock_market_action
     def delete_bid(self, bid_or_id: Union[str, Bid]) -> None:
         """Delete bid object from all buffers."""
-        if self.readonly:
-            raise MarketReadOnlyException()
+        bid = bid_or_id if isinstance(bid_or_id, Bid) else self.bids.get(bid_or_id)
+        if bid:
+            self.slot_bid_mapping[bid.time_slot].remove(bid)
+        super().delete_bid(bid_or_id)
 
-        bid_id = bid_or_id.id if isinstance(bid_or_id, Bid) else bid_or_id
-
-        bid = self.bids.pop(bid_id)
-        if not bid:
-            raise BidNotFoundException()
-
-        self.slot_bid_mapping[bid.time_slot].remove(bid)
-
-        log.debug("%s[BID][DEL][%s] %s", self._debug_log_market_type_identifier,
-                  self.time_slot_str, bid)
-        self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
-
-    @lock_market_action
     def delete_offer(self, offer_or_id: Union[str, Offer]) -> None:
         """Delete offer object from all buffers."""
-        if self.readonly:
-            raise MarketReadOnlyException()
-
-        offer_id = offer_or_id.id if isinstance(offer_or_id, Offer) else offer_or_id
-
-        offer = self.offers.pop(offer_id, None)
-        if not offer:
-            raise OfferNotFoundException()
-
-        self.slot_offer_mapping[offer.time_slot].remove(offer)
-
-        log.debug("%s[OFFER][DEL][%s][%s] %s",
-                  self._debug_log_market_type_identifier, self.name, self.time_slot_str, offer)
-
-        self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
+        offer = offer_or_id if isinstance(offer_or_id, Offer) else self.offers.get(offer_or_id)
+        if offer:
+            self.slot_offer_mapping[offer.time_slot].remove(offer)
+        super().delete_offer(offer_or_id)
 
     def accept_bid(self, bid: Bid,
                    energy: Optional[float] = None,

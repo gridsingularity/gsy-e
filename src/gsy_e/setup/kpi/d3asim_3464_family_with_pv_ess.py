@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from gsy_e.models.area import Area
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.pv import PVStrategy
@@ -26,7 +26,7 @@ from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant
 
 
 def get_setup(config):
-
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
     ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.MASettings.MIN_OFFER_AGE = 0
     ConstSettings.MASettings.MIN_BID_AGE = 0

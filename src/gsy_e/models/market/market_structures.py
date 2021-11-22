@@ -52,4 +52,5 @@ PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING = {
     AvailableMarketTypes.SPOT: "",
     AvailableMarketTypes.BALANCING: "-balancing",
     AvailableMarketTypes.SETTLEMENT: "-settlement",
+    AvailableMarketTypes.FUTURE: "-future",
 }
