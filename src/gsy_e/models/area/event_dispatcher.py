@@ -276,7 +276,7 @@ class AreaDispatcher:
             return False
         return True
 
-    def create_area_agents_for_future_markets(self, market: MarketBase) -> None:
+    def create_market_agents_for_future_markets(self, market: MarketBase) -> None:
         """Create area agents for future markets; There should only be one per Area at any time."""
         if not self._should_agent_be_created:
             return
@@ -290,13 +290,13 @@ class AreaDispatcher:
 
         self._future_agent = market_agent
 
-    def create_area_agents(self, market_type: AvailableMarketTypes, market: MarketBase) -> None:
+    def create_market_agents(self, market_type: AvailableMarketTypes, market: MarketBase) -> None:
         """
-        Create interarea agents for all market types, and store their reference to the respective
+        Create market agents for all market types, and store their reference to the respective
         dict.
         Args:
             market_type: Type of the market (spot/settlement/balancing/future)
-            market: MarketBase object that will be associated with this interarea agent
+            market: MarketBase object that will be associated with this market agent
 
         Returns: None
 
@@ -327,10 +327,9 @@ class AreaDispatcher:
         self._delete_past_agents(self._settlement_agents)
 
     def _delete_past_agents(
-            self, area_agent_member: Dict[DateTime,
-                                          Union[OneSidedAgent, BalancingAgent, SettlementAgent]]
-    ) -> None:
-        delete_agents = [(pm, agents_list) for pm, agents_list in area_agent_member.items() if
+            self, market_agent_member: Dict[DateTime, Union[
+                OneSidedAgent, BalancingAgent, SettlementAgent]]) -> None:
+        delete_agents = [(pm, agents_list) for pm, agents_list in market_agent_member.items() if
                          self.area.current_market and pm < self.area.current_market.time_slot]
         for pm, agent in delete_agents:
             if hasattr(agent, "engines"):
@@ -338,7 +337,7 @@ class AreaDispatcher:
                 del agent.engines
             agent.higher_market = None
             agent.lower_market = None
-            del area_agent_member[pm]
+            del market_agent_member[pm]
 
 
 class RedisAreaDispatcher(AreaDispatcher):

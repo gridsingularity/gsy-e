@@ -86,7 +86,7 @@ class AreaMarkets:
                               grid_fee_const=area.grid_fee_constant),
             name=area.name)
         self.future_markets = market
-        area.dispatcher.create_area_agents_for_future_markets(market)
+        area.dispatcher.create_market_agents_for_future_markets(market)
 
     def activate_market_rotators(self):
         """The user specific ConstSettings are not available when the class is constructed,
@@ -179,5 +179,5 @@ class AreaMarkets:
             in_sim_duration=is_time_slot_in_simulation_duration(area.config, time_slot)
         )
 
-        area.dispatcher.create_area_agents(market_type, market)
+        area.dispatcher.create_market_agents(market_type, market)
         return market

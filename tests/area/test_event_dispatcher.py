@@ -105,7 +105,7 @@ class TestAreaDispatcher:
         dispatcher_object.area.parent.get_market_instances_from_class_type = Mock(
             return_value={first_time_slot: higher_market})
 
-        dispatcher_object.create_area_agents(market_type, lower_market)
+        dispatcher_object.create_market_agents(market_type, lower_market)
 
     # pylint: disable=too-many-arguments
     @pytest.mark.parametrize("market_type, spot_market_type, market_class, expected_agent_type", [
@@ -118,12 +118,13 @@ class TestAreaDispatcher:
         [AvailableMarketTypes.BALANCING, SpotMarketTypeEnum.TWO_SIDED.value, BalancingMarket,
          BalancingAgent]
     ])
-    def test_create_area_agents_creates_correct_objects(self, market_type: AvailableMarketTypes,
-                                                        spot_market_type: SpotMarketTypeEnum,
-                                                        market_class: MarketBase,
-                                                        expected_agent_type: MarketAgent,
-                                                        area_dispatcher):
-        """Test if create_area_agents creates correct objects in the agent dicts."""
+    def test_create_market_agents_creates_correct_objects(
+            self, market_type: AvailableMarketTypes,
+            spot_market_type: SpotMarketTypeEnum,
+            market_class: MarketBase,
+            expected_agent_type: MarketAgent,
+            area_dispatcher):
+        """Test if create_market_agents creates correct objects in the agent dicts."""
         original_matching_type = ConstSettings.MASettings.MARKET_TYPE
         ConstSettings.MASettings.MARKET_TYPE = spot_market_type
 
@@ -132,7 +133,7 @@ class TestAreaDispatcher:
         area_dispatcher.area.parent.get_market_instances_from_class_type = Mock(
             return_value={lower_market.time_slot: higher_market})
 
-        area_dispatcher.create_area_agents(market_type, lower_market)
+        area_dispatcher.create_market_agents(market_type, lower_market)
 
         agent_dict = self._get_agents_for_market_type(area_dispatcher, market_type)
 
@@ -145,11 +146,11 @@ class TestAreaDispatcher:
         ConstSettings.MASettings.MARKET_TYPE = original_matching_type
 
     @staticmethod
-    def test_create_area_agents_for_future_markets(area_dispatcher):
+    def test_create_market_agents_for_future_markets(area_dispatcher):
         """Test if the future agent is correctly created."""
         area_dispatcher.area.parent = Mock()
         area_dispatcher.area.parent.future_markets = MagicMock(autospec=FutureMarkets)
-        area_dispatcher.create_area_agents_for_future_markets(MagicMock(autospec=FutureMarkets))
+        area_dispatcher.create_market_agents_for_future_markets(MagicMock(autospec=FutureMarkets))
         assert isinstance(area_dispatcher.future_agent, FutureAgent)
 
     @pytest.mark.parametrize("market_type, market_class", [
