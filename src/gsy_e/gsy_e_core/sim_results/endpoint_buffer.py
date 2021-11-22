@@ -38,7 +38,7 @@ from gsy_e.models.strategy.storage import StorageStrategy
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
-    from gsy_e.models.market import Market
+    from gsy_e.models.market import MarketBase
     from gsy_e.gsy_e_core.simulation import SimulationProgressInfo
 
 _NO_VALUE = {
@@ -190,7 +190,7 @@ class SimulationEndpointBuffer:
         return stats_dict
 
     @staticmethod
-    def _read_market_stats_to_dict(market: "Market") -> Dict:
+    def _read_market_stats_to_dict(market: "MarketBase") -> Dict:
         """Read all market related stats to a dictionary."""
         stats_dict = {"bids": [], "offers": [], "trades": [], "market_fee": 0.0}
         for offer in market.offer_history:
