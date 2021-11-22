@@ -422,29 +422,47 @@ def test_offer_bid_files(context, with_or_without, nonempty=False):
                for f in file_list)
 
 
-@then("offers, bids trades and stats are exported also for settlement markets")
+@then("offers, bids trades and stats are exported also for settlement and future markets")
 def test_settlement_offer_bid_files(context):
     file_dict = {}
     for root, _, files in os.walk(context.export_path):
         if "grid" in root:
             file_dict[root.split("grid")[1]] = files
 
-    expected_result = {"": ["house-1-trades.csv",
-                            "house-1-settlement-trades.csv",
-                            "house-1-bids.csv",
-                            "house-2-settlement-bids.csv",
-                            "house-2-settlement-offers.csv",
-                            "house-1-settlement-bids.csv",
-                            "house-2-offers.csv",
-                            "cell-tower-settlement.csv",
-                            "house-1-offers.csv",
-                            "house-2-settlement.csv",
-                            "house-1-settlement-offers.csv",
-                            "house-2-settlement-trades.csv",
-                            "house-2-bids.csv", "cell-tower.csv",
-                            "house-2.csv", "house-1.csv",
-                            "house-1-settlement.csv",
-                            "house-2-trades.csv"],
+    grid_csv_files = ["house-1-trades.csv",
+                      "house-1-bids.csv",
+                      "house-2-offers.csv",
+                      "house-1-offers.csv",
+                      "house-2-bids.csv",
+                      "cell-tower.csv",
+                      "house-2.csv",
+                      "house-1.csv",
+                      "house-2-trades.csv"]
+    grid_csv_files.extend([
+        "house-1-settlement-trades.csv",
+        "house-2-settlement-bids.csv",
+        "house-2-settlement-offers.csv",
+        "house-1-settlement-bids.csv",
+        "cell-tower-settlement.csv",
+        "house-2-settlement.csv",
+        "house-1-settlement-offers.csv",
+        "house-2-settlement-trades.csv",
+        "house-1-settlement.csv",
+    ])
+    grid_csv_files.extend([
+        "house-1-future.csv",
+        "house-1-future-bids.csv",
+        "house-1-future-offers.csv",
+        "house-1-future-trades.csv",
+        "house-2-future.csv",
+        "house-2-future-bids.csv",
+        "house-2-future-offers.csv",
+        "house-2-future-trades.csv"])
+
+    file_dict[""] = sorted(file_dict[""])
+    grid_csv_files = sorted(grid_csv_files)
+
+    expected_result = {"": grid_csv_files,
                        "/house-2": ["h2-pv-settlement.csv",
                                     "h2-general-load.csv",
                                     "h2-general-load-settlement.csv",
