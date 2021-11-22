@@ -51,6 +51,10 @@ class FakeArea:
         self.stats.exported_energy = Mock()
 
     @property
+    def future_markets(self):
+        return None
+
+    @property
     def current_market(self):
         return self.past_markets[-1] if self.past_markets else None
 
