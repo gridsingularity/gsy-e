@@ -32,10 +32,10 @@ from gsy_e.constants import TIME_FORMAT, TIME_ZONE
 from gsy_e.models.area import DEFAULT_CONFIG
 from gsy_e.models.market import GridFee
 from gsy_e.models.market.grid_fees.base_model import GridFees
-from gsy_e.models.strategy.area_agents.one_sided_agent import OneSidedAgent
-from gsy_e.models.strategy.area_agents.settlement_agent import SettlementAgent
-from gsy_e.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
-from gsy_e.models.strategy.area_agents.two_sided_engine import BidInfo
+from gsy_e.models.strategy.market_agents.one_sided_agent import OneSidedAgent
+from gsy_e.models.strategy.market_agents.settlement_agent import SettlementAgent
+from gsy_e.models.strategy.market_agents.two_sided_agent import TwoSidedAgent
+from gsy_e.models.strategy.market_agents.two_sided_engine import BidInfo
 
 
 TRANSFER_FEES = GridFee(grid_fee_percentage=0, grid_fee_const=0)

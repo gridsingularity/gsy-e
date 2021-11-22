@@ -20,8 +20,8 @@ from typing import Optional
 from numpy.random import random
 
 from gsy_e.models.market import MarketBase
-from gsy_e.models.strategy.area_agents.market_agent import MarketAgent
-from gsy_e.models.strategy.area_agents.one_sided_engine import MAEngine
+from gsy_e.models.strategy.market_agents.market_agent import MarketAgent
+from gsy_e.models.strategy.market_agents.one_sided_engine import MAEngine
 
 
 class OneSidedAgent(MarketAgent):

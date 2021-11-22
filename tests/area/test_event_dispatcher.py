@@ -35,12 +35,12 @@ from gsy_e.models.market.market_structures import AvailableMarketTypes
 from gsy_e.models.market.one_sided import OneSidedMarket
 from gsy_e.models.market.settlement import SettlementMarket
 from gsy_e.models.market.two_sided import TwoSidedMarket
-from gsy_e.models.strategy.area_agents.balancing_agent import BalancingAgent
-from gsy_e.models.strategy.area_agents.future_agent import FutureAgent
-from gsy_e.models.strategy.area_agents.market_agent import MarketAgent
-from gsy_e.models.strategy.area_agents.one_sided_agent import OneSidedAgent
-from gsy_e.models.strategy.area_agents.settlement_agent import SettlementAgent
-from gsy_e.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
+from gsy_e.models.strategy.market_agents.balancing_agent import BalancingAgent
+from gsy_e.models.strategy.market_agents.future_agent import FutureAgent
+from gsy_e.models.strategy.market_agents.market_agent import MarketAgent
+from gsy_e.models.strategy.market_agents.one_sided_agent import OneSidedAgent
+from gsy_e.models.strategy.market_agents.settlement_agent import SettlementAgent
+from gsy_e.models.strategy.market_agents.two_sided_agent import TwoSidedAgent
 
 
 # pylint: disable=W0212

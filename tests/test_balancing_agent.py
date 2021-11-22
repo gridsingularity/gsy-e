@@ -28,7 +28,7 @@ from gsy_framework.data_classes import BalancingOffer, BalancingTrade, Offer, Tr
 
 from gsy_e.constants import TIME_ZONE
 from gsy_e.gsy_e_core.exceptions import InvalidBalancingTradeException
-from gsy_e.models.strategy.area_agents.balancing_agent import BalancingAgent
+from gsy_e.models.strategy.market_agents.balancing_agent import BalancingAgent
 from tests.test_market_agent import FakeMarket
 
 

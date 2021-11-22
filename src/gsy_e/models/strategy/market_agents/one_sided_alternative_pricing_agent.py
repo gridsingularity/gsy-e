@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_e.models.strategy.area_agents.one_sided_agent import OneSidedAgent
+from gsy_e.models.strategy.market_agents.one_sided_agent import OneSidedAgent
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy import INF_ENERGY

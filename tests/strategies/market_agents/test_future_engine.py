@@ -25,10 +25,10 @@ from gsy_framework.data_classes import Offer, Bid
 from pendulum import datetime, now
 
 from gsy_e.models.market.future import FutureMarkets
-from gsy_e.models.strategy.area_agents.future_agent import FutureAgent
-from gsy_e.models.strategy.area_agents.future_engine import FutureEngine
-from gsy_e.models.strategy.area_agents.one_sided_engine import OfferInfo
-from gsy_e.models.strategy.area_agents.two_sided_engine import BidInfo
+from gsy_e.models.strategy.market_agents.future_agent import FutureAgent
+from gsy_e.models.strategy.market_agents.future_engine import FutureEngine
+from gsy_e.models.strategy.market_agents.one_sided_engine import OfferInfo
+from gsy_e.models.strategy.market_agents.two_sided_engine import BidInfo
 
 CURRENT_TIME_SLOT = datetime(2021, 10, 21, 0, 0)
 

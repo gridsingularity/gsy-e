@@ -23,10 +23,10 @@ from gsy_framework.data_classes import Bid
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import BidNotFoundException, MarketException
 from gsy_e.gsy_e_core.util import short_offer_bid_log_str
-from gsy_e.models.strategy.area_agents.one_sided_engine import MAEngine
+from gsy_e.models.strategy.market_agents.one_sided_engine import MAEngine
 
 if TYPE_CHECKING:
-    from gsy_e.models.strategy.area_agents.market_agent import MarketAgent
+    from gsy_e.models.strategy.market_agents.market_agent import MarketAgent
 
 BidInfo = namedtuple("BidInfo", ("source_bid", "target_bid"))
 
