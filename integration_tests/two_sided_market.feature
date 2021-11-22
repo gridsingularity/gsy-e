@@ -103,3 +103,9 @@ Feature: Two sided market tests
      |      0      |
      |      1      |
      |      4      |
+
+  Scenario: Test offers, bids trades and stats are exported also for settlement and future markets.
+     Given we have a scenario named settlement_market/default_2a_settlement
+     And gsy-e is installed
+     When we run the gsy-e simulation on console with settlement_market.default_2a_settlement for 24 hrs
+     Then offers, bids trades and stats are exported also for settlement and future markets

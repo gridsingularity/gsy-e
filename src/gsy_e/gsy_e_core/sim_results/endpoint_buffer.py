@@ -16,22 +16,24 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-from typing import Dict, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING, List
+
 from gsy_framework.constants_limits import (ConstSettings, DATE_TIME_UI_FORMAT, DATE_TIME_FORMAT,
                                             GlobalConfig)
 from gsy_framework.results_validator import results_validator
 from gsy_framework.sim_results.all_results import ResultsHandler
 from gsy_framework.utils import get_json_dict_memory_allocation_size
+from pendulum import DateTime
 
 from gsy_e.gsy_e_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant
-from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 from gsy_e.models.strategy.pv import PVStrategy
+from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 
 if TYPE_CHECKING:
@@ -156,6 +158,38 @@ class SimulationEndpointBuffer:
         return stats_dict
 
     @staticmethod
+    def _get_future_orders_from_timeslot(future_orders: List, time_slot: DateTime) -> List:
+        return [order.serializable_dict()
+                for order in future_orders
+                if order.time_slot == time_slot]
+
+    def _read_future_markets_stats_to_dict(self, area: "Area") -> Dict[str, Dict]:
+        """Read future markets and return market_stats in a dict."""
+
+        stats_dict = {}
+        if not area.future_markets:
+            return stats_dict
+
+        for time_slot in area.future_market_time_slots:
+            time_slot_str = time_slot.format(DATE_TIME_FORMAT)
+            stats_dict[time_slot_str] = {
+                "bids": self._get_future_orders_from_timeslot(
+                    area.future_markets.bid_history, time_slot),
+                "offers": self._get_future_orders_from_timeslot(
+                    area.future_markets.offer_history, time_slot),
+                "trades": self._get_future_orders_from_timeslot(
+                    area.future_markets.trades, time_slot),
+                "market_fee": area.future_markets.market_fee,
+                "const_fee_rate": (area.future_markets.const_fee_rate
+                                   if area.future_markets.const_fee_rate is not None else 0.),
+                "feed_in_tariff": GlobalConfig.FEED_IN_TARIFF,
+                "market_maker_rate": get_market_maker_rate_from_config(
+                    area.future_markets, time_slot=time_slot)
+            }
+
+        return stats_dict
+
+    @staticmethod
     def _read_market_stats_to_dict(market: "Market") -> Dict:
         """Read all market related stats to a dictionary."""
         stats_dict = {"bids": [], "offers": [], "trades": [], "market_fee": 0.0}
@@ -187,6 +221,10 @@ class SimulationEndpointBuffer:
             if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
                 core_stats_dict["settlement_market_stats"] = (
                     self._read_settlement_markets_stats_to_dict(area))
+            if GlobalConfig.FUTURE_MARKET_DURATION_HOURS > 0:
+                core_stats_dict["future_market_stats"] = (
+                    self._read_future_markets_stats_to_dict(area)
+                )
 
         if area.strategy is None:
             core_stats_dict["area_throughput"] = {
