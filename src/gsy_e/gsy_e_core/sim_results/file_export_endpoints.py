@@ -83,6 +83,8 @@ class FutureMarketsDataExporter(BaseDataExporter):
 
     @property
     def rows(self):
+        if not self.future_markets.market_time_slots:
+            return []
         time_slot = self.future_markets.market_time_slots[0]
         return [self._row(time_slot)]
 
@@ -199,7 +201,7 @@ class FileExportEndpoints:
             return (UpperLevelDataExporter(area.past_settlement_markets.values())
                     if len(area.children) > 0
                     else LeafDataExporter(area, area.parent.past_settlement_markets.values()))
-        if past_market_type == AvailableMarketTypes.FUTURE:
+        if past_market_type == AvailableMarketTypes.FUTURE and area.future_markets:
             return FutureMarketsDataExporter(area.future_markets)
 
     def _get_stats_from_market_data(self, out_dict: Dict, area: Area,

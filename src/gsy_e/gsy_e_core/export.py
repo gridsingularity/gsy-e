@@ -138,7 +138,7 @@ class ExportAndPlot:
         self.plot_all_unmatched_loads()
         PlotAverageTradePrice(
             self.file_stats_endpoint, self.plot_dir).plot(self.area, self.plot_dir)
-        PlotESSSocHistory(
+        PlotESSSOCHistory(
             self.file_stats_endpoint, self.plot_dir).plot(self.area, self.plot_dir)
         PlotESSEnergyTrace(self.plot_dir).plot(self.area, self.plot_dir)
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
@@ -343,7 +343,8 @@ class ExportAndPlot:
     def _export_future_offers_bid_trades_to_csv_files(
             future_markets: "FutureMarkets", market_member: str, file_path: dir,
             labels: Tuple, is_first: bool = False) -> None:
-        """ Export files containing individual future offers, bids (*-bids*/*-offers*.csv files).
+        """
+        Export files containing individual future offers, bids (*-bids*/*-offers*.csv files).
         """
         try:
             with open(file_path, "a", encoding="utf-8") as csv_file:
@@ -512,7 +513,7 @@ class ExportAndPlot:
         PlotlyGraph.plot_bar_graph(plot_desc, output_file)
 
 
-class PlotESSSocHistory:
+class PlotESSSOCHistory:
     """Plot the SOC history of the Storage"""
 
     def __init__(self, file_stats_endpoint, plot_dir):
@@ -612,11 +613,11 @@ class PlotESSEnergyTrace:
 
 class PlotSupplyDemandCurve:
     """Plot the supply demand curve of the asset"""
-    def __init__(self, file_stats_endpoint, plot_dir):
+    def __init__(self, file_stats_endpoint: "FileExportEndpoints", plot_dir: str):
         self._file_stats_endpoint = file_stats_endpoint
         self._plot_dir = plot_dir
 
-    def plot(self, area, subdir):
+    def plot(self, area: Area, subdir: str):
         """
         Wrapper for _plot_supply_demand_curve
         """
@@ -670,7 +671,8 @@ class PlotSupplyDemandCurve:
             PlotlyGraph.plot_line_graph(plot_desc, output_file, xmax)
 
     @classmethod
-    def _render_supply_demand_curve(cls, dataset, time, supply):
+    def _render_supply_demand_curve(cls, dataset: Dict, time: DateTime,
+                                    supply: bool) -> go.Scatter:
         rate, energy = cls._calc_supply_demand_curve(dataset, supply=supply)
         name = str(time) + "-" + ("supply" if supply else "demand")
         data_obj = go.Scatter(x=energy,
@@ -680,7 +682,7 @@ class PlotSupplyDemandCurve:
         return data_obj
 
     @staticmethod
-    def _calc_supply_demand_curve(dataset, supply=True):
+    def _calc_supply_demand_curve(dataset: Dict, supply: bool = True) -> Tuple[List, List]:
         sort_values = SortedDict(dataset)
         if supply:
             rate = list(sort_values.keys())
@@ -777,10 +779,10 @@ class PlotAverageTradePrice:
 class PlotOrderInfo:
     """Create plot for the order high resolution information"""
 
-    def __init__(self, endpoint_buffer):
+    def __init__(self, endpoint_buffer: "SimulationEndpointBuffer"):
         self._endpoint_buffer = endpoint_buffer
 
-    def plot_per_area_per_market_slot(self, area, plot_dir):
+    def plot_per_area_per_market_slot(self, area: "Area", plot_dir: str):
         """
         Wrapper for _plot_per_area_per_market_slot.
         """
@@ -793,7 +795,7 @@ class PlotOrderInfo:
                 continue
             self.plot_per_area_per_market_slot(child, new_sub_dir)
 
-    def _plot_per_area_per_market_slot(self, area, plot_dir):
+    def _plot_per_area_per_market_slot(self, area: Area, plot_dir: str):
         """
         Plots order stats for each knot in the hierarchy per market_slot
         """
@@ -813,7 +815,7 @@ class PlotOrderInfo:
         )
 
     @staticmethod
-    def _generate_tooltip_data_for_tick(info_dicts):
+    def _generate_tooltip_data_for_tick(info_dicts: Dict):
         for info_dict in info_dicts:
             if info_dict["tag"] == "bid":
                 tool_tip = (f"{info_dict['buyer_origin']} "
@@ -832,7 +834,7 @@ class PlotOrderInfo:
                 info_dict.update({"tool_tip": tool_tip})
 
     @staticmethod
-    def _plot_tooltip_for_tick(info_dicts, fig, tick_time):
+    def _plot_tooltip_for_tick(info_dicts: Dict, fig: go.Figure, tick_time: DateTime):
         for info_dict in info_dicts:
             size = 5 if info_dict["tag"] in ["offer", "bid"] else 10
             all_info_dicts = list([
@@ -857,7 +859,7 @@ class PlotOrderInfo:
 
 class PlotEnergyTradeProfileHR:
     """Plots the high resolution energy trade profile"""
-    def __init__(self, endpoint_buffer, plot_dir):
+    def __init__(self, endpoint_buffer: "SimulationEndpointBuffer", plot_dir: str):
         self._endpoint_buffer = endpoint_buffer
         self._plot_dir = plot_dir
 
