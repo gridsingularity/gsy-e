@@ -17,9 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from math import isclose
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, DEFAULT_PRECISION
 from gsy_framework.utils import convert_W_to_kWh
-from gsy_e.constants import DEFAULT_PRECISION
 
 
 @then('the storages buy energy for no more than the min PV selling rate')

@@ -20,8 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # pylint: disable=no-name-in-module
 from behave import then
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.constants_limits import DEFAULT_PRECISION
 
-from gsy_e.constants import DEFAULT_PRECISION
 from gsy_e.setup.strategy_tests.storage_strategy_break_even_hourly import (
     final_buying_rate_profile, final_selling_rate_profile, final_buying_rate_profile_2,
     final_selling_rate_profile_2)

@@ -16,7 +16,7 @@ from logging import getLogger
 from pathlib import Path
 from typing import Dict, Union
 
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, DEFAULT_PRECISION
 from gsy_framework.data_classes import Offer
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
@@ -27,7 +27,7 @@ from pendulum import duration
 from pendulum.datetime import DateTime
 
 from gsy_e import constants
-from gsy_e.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
+from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import GSyException, MarketException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import (get_market_maker_rate_from_config, should_read_profile_from_db)

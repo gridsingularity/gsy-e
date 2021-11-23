@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then, given
 from math import isclose
-from gsy_e import limit_float_precision
+from gsy_framework.utils import limit_float_precision
 from gsy_framework.utils import get_area_name_uuid_mapping
 from gsy_e.models.config import ConstSettings
 

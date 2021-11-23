@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from math import isclose
-from gsy_e import limit_float_precision
+from gsy_framework.utils import limit_float_precision
 
 
 def get_trade_rates_house1(context):
