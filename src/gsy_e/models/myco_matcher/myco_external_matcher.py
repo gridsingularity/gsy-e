@@ -52,10 +52,6 @@ class MycoExternalMatcher(MycoMatcherInterface):
     def __init__(self):
         super().__init__()
         self.simulation_id = gsy_e.constants.CONFIGURATION_ID
-        self.myco_ext_conn = None
-        self._channel_prefix = f"external-myco/{self.simulation_id}"
-        self._events_channel = f"{self._channel_prefix}/events/"
-        self._setup_redis_connection()
 
         # Dict[area_id-time_slot_str: market] mapping
         self.area_markets_mapping: Dict[str, TwoSidedMarket] = {}
@@ -66,6 +62,11 @@ class MycoExternalMatcher(MycoMatcherInterface):
             GlobalConfig.ticks_per_slot,
             gsy_e.constants.DISPATCH_MYCO_EVENT_TICK_FREQUENCY_PERCENT
         )
+
+        self.myco_ext_conn = None
+        self._channel_prefix = f"external-myco/{self.simulation_id}"
+        self._events_channel = f"{self._channel_prefix}/events/"
+        self._setup_redis_connection()
 
     def _setup_redis_connection(self):
         self.myco_ext_conn = ResettableCommunicator()
@@ -186,7 +187,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
         Publish the tick event to the Myco client. Should be performed after the tick event from
         all areas has been completed.
         """
-        current_tick_in_slot = kwargs.pop("current_tick_in_slot", True)
+        current_tick_in_slot = kwargs.pop("current_tick_in_slot", 0)
         # If External matching is enabled, limit the number of ticks dispatched.
         if not self._tick_counter.is_it_time_for_external_tick(current_tick_in_slot):
             return

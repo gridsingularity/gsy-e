@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_e.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
+import gsy_e.constants
 from gsy_e.gsy_e_core.util import (find_object_of_same_weekday_and_time,
                                    get_market_maker_rate_from_config, ExternalTickCounter)
 
@@ -34,7 +34,7 @@ class ExternalConnectionGlobalStatistics:
     def __call__(self, root_area, ticks_per_slot):
         self.root_area = root_area
         self.external_tick_counter = ExternalTickCounter(
-            ticks_per_slot, DISPATCH_EVENT_TICK_FREQUENCY_PERCENT)
+            ticks_per_slot, gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT)
 
     def _buffer_feed_in_tariff(self, area, current_market_slot):
         """

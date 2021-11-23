@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pendulum import now
 
+import gsy_e.constants
 import gsy_e.models.market.market_redis_connection
 from gsy_e.gsy_e_core.exceptions import MycoValidationException, InvalidBidOfferPairException
 from gsy_e.models.market import Offer, Bid
@@ -41,7 +42,8 @@ class TestMycoExternalMatcher:
         self.matcher.myco_ext_conn.sub_to_multiple_channels.assert_called_once_with(
             {
                 "external-myco/simulation-id/": self.matcher.publish_simulation_id,
-                f"{self.channel_prefix}offers-bids/": self.matcher.publish_orders,
+                f"{self.channel_prefix}offers-bids/":
+                    self.matcher._publish_orders_message_buffer.append,
                 f"{self.channel_prefix}recommendations/":
                     self.matcher._populate_recommendations
             }
@@ -55,10 +57,14 @@ class TestMycoExternalMatcher:
 
     def test_event_tick(self):
         data = {"event": "tick"}
+        self.matcher._tick_counter.is_it_time_for_external_tick = MagicMock(return_value=True)
         self.matcher.event_tick(current_tick_in_slot=6)
+        self.matcher._tick_counter.is_it_time_for_external_tick.assert_called_once_with(6)
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             self.events_channel, data)
+        self.matcher._tick_counter.is_it_time_for_external_tick = MagicMock(return_value=False)
         self.matcher.event_tick(current_tick_in_slot=7)
+        self.matcher._tick_counter.is_it_time_for_external_tick.assert_called_once_with(7)
         # should still be == 1 as the above won't trigger the publish_json method
         assert self.matcher.myco_ext_conn.publish_json.call_count == 1
 
@@ -116,7 +122,8 @@ class TestMycoExternalMatcher:
             "bids_offers": {"area1": {}}
         }
         self.matcher.update_area_uuid_markets_mapping({"area1": {"markets": [self.market]}})
-        self.matcher.publish_orders(payload)
+        self.matcher._publish_orders_message_buffer = [payload]
+        self.matcher._publish_orders()
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
         self.matcher.myco_ext_conn.publish_json.reset_mock()
@@ -131,7 +138,8 @@ class TestMycoExternalMatcher:
             "event": "offers_bids_response",
             "bids_offers": {}
         }
-        self.matcher.publish_orders(payload)
+        self.matcher._publish_orders_message_buffer = [payload]
+        self.matcher._publish_orders()
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
 
