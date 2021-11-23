@@ -130,4 +130,4 @@ plugins:
     - redirects:
         redirect_maps:
             # When trying to reach the generic index page, redirect to the documentation page
-            'index.md': 'documentation.md'
+            '': 'documentation.md'
