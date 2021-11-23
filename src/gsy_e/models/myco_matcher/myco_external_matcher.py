@@ -46,6 +46,7 @@ class ExternalMatcherEventsEnum(Enum):
     FINISH = "finish"
 
 
+# pylint: disable=too-many-instance-attributes
 class MycoExternalMatcher(MycoMatcherInterface):
     """Class responsible for external bids / offers matching."""
     def __init__(self):
@@ -70,8 +71,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
         self.myco_ext_conn = ResettableCommunicator()
         self.myco_ext_conn.sub_to_multiple_channels(
             {"external-myco/simulation-id/": self.publish_simulation_id,
-             f"{self._channel_prefix}/offers-bids/":
-                 lambda message: self._publish_orders_message_buffer.append(message),
+             f"{self._channel_prefix}/offers-bids/": self._publish_orders_message_buffer.append,
              f"{self._channel_prefix}/recommendations/": self._populate_recommendations})
 
     def _publish_orders(self):
@@ -83,7 +83,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
         """
         # Copy the original buffer in order to avoid concurrent access from the Redis thread
         publish_orders = copy(self._publish_orders_message_buffer)
-        self._publish_orders_messages = []
+        self._publish_orders_message_buffer.clear()
 
         for message in publish_orders:
             data = json.loads(message.get("data"))

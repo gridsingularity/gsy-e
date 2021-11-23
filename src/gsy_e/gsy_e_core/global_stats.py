@@ -21,7 +21,9 @@ from gsy_e.gsy_e_core.util import (find_object_of_same_weekday_and_time,
 
 
 class ExternalConnectionGlobalStatistics:
-
+    """
+    Aggregate global statistics that should be reported via the external connection
+    """
     def __init__(self):
         self.area_stats_tree_dict = {}
         self.root_area = None
@@ -40,6 +42,7 @@ class ExternalConnectionGlobalStatistics:
         uppermost level of the tree
         """
         # the lazy import is needed in order to avoid circular imports
+        # pylint: disable=import-outside-toplevel
         from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
         for child in area.children:
             if isinstance(child.strategy, InfiniteBusStrategy):
@@ -48,24 +51,27 @@ class ExternalConnectionGlobalStatistics:
                                                          current_market_slot)
                 return
 
-    def buffer_market_maker_rate(self):
+    def _buffer_market_maker_rate(self):
         if self.root_area.current_market:
             self.current_market_maker_rate = get_market_maker_rate_from_config(
                                                       self.root_area.current_market)
 
-    def update(self, market_cycle=False):
+    def update(self, market_cycle: bool = False) -> None:
+        """Update the global statistics"""
         if self.root_area.current_market is None:
             return
         self._create_grid_tree_dict(self.root_area, self.area_stats_tree_dict)
         if market_cycle:
             self._buffer_feed_in_tariff(self.root_area, self.root_area.current_market.time_slot)
-            self.buffer_market_maker_rate()
+            self._buffer_market_maker_rate()
 
-    def is_it_time_for_external_tick(self, current_tick_in_slot):
+    def is_it_time_for_external_tick(self, current_tick_in_slot: int) -> bool:
+        """Returns true if it is time for broadcasting event_tick to external strategies"""
         return self.external_tick_counter.is_it_time_for_external_tick(current_tick_in_slot)
 
     def _create_grid_tree_dict(self, area, outdict):
         # the lazy import is needed in order to avoid circular imports
+        # pylint: disable=import-outside-toplevel
         from gsy_e.models.strategy.external_strategies import ExternalMixin
         outdict[area.uuid] = {}
         if area.children:
