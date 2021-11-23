@@ -33,7 +33,7 @@ from gsy_e.gsy_e_core.exceptions import MarketException, GSyException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import (
     ResettableCommunicator, ExternalConnectionCommunicator)
-from gsy_e.models.market import Market
+from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.external_strategies.dof_filter import DegreesOfFreedomFilter
 
 if TYPE_CHECKING:
@@ -135,7 +135,7 @@ class ExternalMixin:
     # alternative is to include here the mixed-in class dependencies as type annotations
     area: "Area"
     owner: "Area"
-    spot_market: "Market"
+    spot_market: "MarketBase"
     deactivate: Callable
     get_state: Callable
     restore_state: Callable
@@ -286,14 +286,14 @@ class ExternalMixin:
             }
         return response
 
-    def _get_market_from_command_argument(self, arguments: Dict) -> Market:
+    def _get_market_from_command_argument(self, arguments: Dict) -> MarketBase:
         """Extract the time_slot from command argument and return the needed market."""
         if arguments.get("time_slot") is None:
             return self.spot_market
         time_slot = str_to_pendulum_datetime(arguments["time_slot"])
         return self._get_market_from_time_slot(time_slot)
 
-    def _get_market_from_time_slot(self, time_slot: DateTime) -> Market:
+    def _get_market_from_time_slot(self, time_slot: DateTime) -> MarketBase:
         """Get the market instance based on the time_slot."""
         market = self.area.get_market(time_slot)
 

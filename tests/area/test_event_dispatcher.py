@@ -28,7 +28,7 @@ from pendulum import duration
 from gsy_e.events.event_structures import MarketEvent, AreaEvent
 from gsy_e.models.area import Area
 from gsy_e.models.area.event_dispatcher import AreaDispatcher
-from gsy_e.models.market import Market
+from gsy_e.models.market import MarketBase
 from gsy_e.models.market.balancing import BalancingMarket
 from gsy_e.models.market.future import FutureMarkets
 from gsy_e.models.market.market_structures import AvailableMarketTypes
@@ -93,7 +93,7 @@ class TestAreaDispatcher:
     @staticmethod
     def _create_iaa_and_markets_for_time_slot(dispatcher_object: AreaDispatcher,
                                               time_slot: DateTime,
-                                              market_class: Market,
+                                              market_class: MarketBase,
                                               market_type: AvailableMarketTypes):
         """Helps to create iaas for testing."""
         first_time_slot = time_slot
@@ -120,7 +120,7 @@ class TestAreaDispatcher:
     ])
     def test_create_area_agents_creates_correct_objects(self, market_type: AvailableMarketTypes,
                                                         spot_market_type: SpotMarketTypeEnum,
-                                                        market_class: Market,
+                                                        market_class: MarketBase,
                                                         expected_agent_type: InterAreaAgent,
                                                         area_dispatcher):
         """Test if create_area_agents creates correct objects in the agent dicts."""
@@ -159,7 +159,7 @@ class TestAreaDispatcher:
         [AvailableMarketTypes.BALANCING, BalancingMarket],
                              ])
     def test_event_market_cycle_deletes_all_old_iaas(self, market_type: AvailableMarketTypes,
-                                                     market_class: Market,
+                                                     market_class: MarketBase,
                                                      area_dispatcher):
         """Test whether iaas are deleted from the agent dicts."""
 
