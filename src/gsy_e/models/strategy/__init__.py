@@ -752,6 +752,7 @@ class BidEnabledStrategy(BaseStrategy):
         Returns: The bid posted to the market
 
         """
+        self._assert_market_type_on_bid_event(market.id)
         if replace_existing:
             self._remove_existing_bids(market)
 
@@ -850,6 +851,7 @@ class BidEnabledStrategy(BaseStrategy):
 
     def remove_bid_from_pending(self, market_id: str, bid_id: str = None) -> List[str]:
         """Remove bid from pending bids dict"""
+        self._assert_market_type_on_bid_event(market_id)
         market = self.get_market_from_id(market_id)
         if market is None:
             return []
