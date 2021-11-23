@@ -32,7 +32,7 @@ from gsy_e.gsy_e_core.exceptions import GSyException, MarketException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import (get_market_maker_rate_from_config, should_read_profile_from_db)
 from gsy_e.models.base import AssetType
-from gsy_e.models.market import Market
+from gsy_e.models.market import MarketBase
 from gsy_e.models.state import SmartMeterState
 from gsy_e.models.strategy import BidEnabledStrategy, utils
 from gsy_e.models.strategy.update_frequency import (
@@ -535,7 +535,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
                 energy_rate_decrease_per_update=rate_change,
                 fit_to_limit=fit_to_limit)
 
-    def _offer_rate_can_be_accepted(self, offer: Offer, market_slot: Market):
+    def _offer_rate_can_be_accepted(self, offer: Offer, market_slot: MarketBase):
         """Check if the offer rate is less than what the device wants to pay."""
         max_affordable_offer_rate = self.bid_update.get_updated_rate(market_slot.time_slot)
         return (

@@ -97,6 +97,8 @@ class TestFutureMarketStrategy:
         storage_strategy_fixture = StorageStrategy()
         future_strategy = FutureMarketStrategy(storage_strategy_fixture.asset_type, 10, 50, 50, 20)
         self._setup_strategy_fixture(storage_strategy_fixture)
+        storage_strategy_fixture.state.offered_sell_kWh[self.time_slot] = 0.
+        storage_strategy_fixture.state.offered_buy_kWh[self.time_slot] = 0.
         storage_strategy_fixture.get_available_energy_to_buy_kWh = Mock(return_value=3)
         storage_strategy_fixture.get_available_energy_to_sell_kWh = Mock(return_value=2)
         future_strategy.event_market_cycle(storage_strategy_fixture)
@@ -131,6 +133,8 @@ class TestFutureMarketStrategy:
         if isinstance(future_strategy_fixture, StorageStrategy):
             future_strategy_fixture.get_available_energy_to_buy_kWh = Mock(return_value=3)
             future_strategy_fixture.get_available_energy_to_sell_kWh = Mock(return_value=2)
+            future_strategy_fixture.state.offered_sell_kWh[self.time_slot] = 0.
+            future_strategy_fixture.state.offered_buy_kWh[self.time_slot] = 0.
 
         future_strategy_fixture.area.current_tick = 0
         future_strategy_fixture.area.config = Mock()
