@@ -129,5 +129,5 @@ plugins:
 
     - redirects:
         redirect_maps:
-            # When trying to reach the generic index page, redirect to the documentation page
-            '': 'documentation.md'
+            # When trying to reach the root page, redirect to the documentation page
+            '': 'https://gridsingularity.github.io/gsy-e/documentation/'
