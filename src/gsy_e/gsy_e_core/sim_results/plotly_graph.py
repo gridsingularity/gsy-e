@@ -21,7 +21,7 @@ import pendulum
 import plotly as py
 import plotly.graph_objs as go
 
-from gsy_e import limit_float_precision
+from gsy_framework.utils import limit_float_precision
 from gsy_e.constants import TIME_ZONE
 from gsy_e.data_classes import PlotDescription
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy

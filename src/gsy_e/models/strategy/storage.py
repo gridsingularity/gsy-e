@@ -31,7 +31,7 @@ from gsy_framework.validators import StorageValidator
 from pendulum import duration
 
 from gsy_e import constants
-from gsy_e import limit_float_precision
+from gsy_framework.utils import limit_float_precision
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException

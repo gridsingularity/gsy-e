@@ -20,13 +20,13 @@ from statistics import mean, median
 from typing import Dict, List, Optional
 
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Offer
 from gsy_framework.utils import (
     area_name_from_area_or_ma_name, convert_pendulum_to_str_in_dict,
     convert_str_to_pendulum_in_dict)
-from gsy_framework.data_classes import Offer
+from gsy_framework.utils import limit_float_precision
 from pendulum import DateTime
 
-from gsy_e import limit_float_precision
 from gsy_e.gsy_e_core.util import add_or_create_key, area_sells_to_child, child_buys_from_area
 from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
