@@ -27,18 +27,18 @@ from uuid import uuid4
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import (Offer, Bid, Trade)
 from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.utils import limit_float_precision
 from pendulum import DateTime
 
-from gsy_e import constants, limit_float_precision
+from gsy_e import constants
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
-from gsy_e.gsy_e_core.device_registry import DeviceRegistry
-from gsy_e.gsy_e_core.exceptions import D3ARedisException
-from gsy_e.gsy_e_core.exceptions import SimulationException, MarketException
-from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
-from gsy_e.gsy_e_core.util import append_or_create_key
 from gsy_e.events import EventMixin
 from gsy_e.events.event_structures import AreaEvent, MarketEvent
+from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.gsy_e_core.exceptions import D3ARedisException, SimulationException, MarketException
+from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
+from gsy_e.gsy_e_core.util import append_or_create_key
 from gsy_e.models.base import AreaBehaviorBase
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.market import MarketBase
@@ -774,9 +774,10 @@ class BidEnabledStrategy(BaseStrategy):
         """Replace the rate of all bids in the market slot with the given updated rate."""
         existing_bids = list(self.get_posted_bids(market))
         for bid in existing_bids:
+            if abs(bid.energy_rate - updated_rate) <= FLOATING_POINT_TOLERANCE:
+                continue
             assert bid.buyer == self.owner.name
-            if bid.id in market.bids.keys():
-                bid = market.bids[bid.id]
+
             market.delete_bid(bid.id)
 
             self.remove_bid_from_pending(market.id, bid.id)
@@ -919,7 +920,7 @@ class BidEnabledStrategy(BaseStrategy):
         return [b for b in self._bids[market.id] if time_slot is None or b.time_slot == time_slot]
 
     def _assert_market_type_on_bid_event(self, market_id):
-        assert (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value or
+        assert (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value or
                 self.area.is_market_future(market_id) or
                 self.area.is_market_settlement(market_id)), (
             "Invalid state, cannot receive a bid if single sided market is globally configured or "

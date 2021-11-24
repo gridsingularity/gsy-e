@@ -49,7 +49,7 @@ class TwoSidedMarket(OneSidedMarket):
     """
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
-                 grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
+                 grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
                  grid_fees=None, name=None, in_sim_duration=True):
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name, in_sim_duration=in_sim_duration)

@@ -133,7 +133,7 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
                 enable_degrees_of_freedom=enable_dof)
 
         if compare_alt_pricing is True:
-            ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
+            ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
             # we need the seconds in the export dir name
             kwargs["export_subdir"] = DateTime.now(tz=TIME_ZONE).format(f"{DATE_TIME_FORMAT}:ss")
             processes = []

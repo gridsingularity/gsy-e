@@ -259,7 +259,7 @@ class Area:
     def _set_grid_fees(self, grid_fee_const, grid_fee_percentage):
         grid_fee_type = self.config.grid_fee_type \
             if self.config is not None \
-            else ConstSettings.IAASettings.GRID_FEE_TYPE
+            else ConstSettings.MASettings.GRID_FEE_TYPE
         if grid_fee_type == 1:
             grid_fee_percentage = None
         elif grid_fee_type == 2:
@@ -278,7 +278,7 @@ class Area:
         """Return the current grid fee for the area."""
         grid_fee_type = (
             self.config.grid_fee_type if self.config is not None
-            else ConstSettings.IAASettings.GRID_FEE_TYPE)
+            else ConstSettings.MASettings.GRID_FEE_TYPE)
 
         return self.grid_fee_constant if grid_fee_type == 1 else self.grid_fee_percentage
 
@@ -307,7 +307,7 @@ class Area:
 
         if self.budget_keeper:
             self.budget_keeper.activate()
-        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+        if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
             self._set_grid_fees(0, 0)
 
         # Cycle markets without triggering it's own event chain.
@@ -336,7 +336,7 @@ class Area:
         Trigger `MARKET_CYCLE` event to allow child markets to also cycle.
 
         It's important for this to happen from top to bottom of the `Area` tree
-        in order for the `InterAreaAgent`s to be connected correctly
+        in order for the `MarketAgent`s to be connected correctly
 
         `_trigger_event` is used internally to avoid multiple event chains during
         initial area activation.
@@ -434,7 +434,7 @@ class Area:
         Invoke aggregator commands consumer, publish market clearing, update events,
         update cached myco matcher markets and match trades recommendations.
         """
-        if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
+        if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
                 and not self.strategy):
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                 self.dispatcher.publish_market_clearing()

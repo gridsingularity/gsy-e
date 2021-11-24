@@ -88,9 +88,9 @@ class ExportAndPlot:
         try:
             if path is not None:
                 path = os.path.abspath(path)
-            if ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES is True:
+            if ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES is True:
                 subdir = os.path.join(subdir, alternative_pricing_subdirs[
-                                      ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME])
+                                      ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME])
 
             self.rootdir = pathlib.Path(path or str(pathlib.Path.home()) + "/gsy_e-simulation")
             self.directory = pathlib.Path(self.rootdir, subdir)
@@ -149,8 +149,8 @@ class ExportAndPlot:
         if ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
             PlotEnergyTradeProfileHR(
                 self.endpoint_buffer, self.plot_dir).plot(self.area, self.plot_dir)
-        if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
-                ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+        if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
+                ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
                 BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value and
                 ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS is True):
             PlotSupplyDemandCurve(
@@ -313,8 +313,8 @@ class ExportAndPlot:
         self._export_balancing_markets_stats(area, directory, is_first)
 
         if area.children:
-            if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED and
-                    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+            if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED and
+                    ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
                     BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value):
                 self._export_area_clearing_rate(area, directory, "market-clearing-rate", is_first)
 

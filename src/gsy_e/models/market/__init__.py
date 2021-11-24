@@ -62,7 +62,7 @@ def lock_market_action(function):
 class MarketBase:
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
-                 grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
+                 grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
                  grid_fees: GridFee = None, name=None):
         self.name = name
         self.bc_interface = bc
@@ -100,7 +100,7 @@ class MarketBase:
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             self.redis_api = (
                 MarketRedisEventSubscriber(self)
-                if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
+                if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
                 else TwoSidedMarketRedisEventSubscriber(self))
         setattr(self, RLOCK_MEMBER_NAME, RLock())
 

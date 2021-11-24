@@ -20,14 +20,14 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from gsy_framework.utils import find_object_of_same_weekday_and_time
+from gsy_framework.utils import find_object_of_same_weekday_and_time, limit_float_precision
 from gsy_framework.validators.smart_meter_validator import SmartMeterValidator
 from numpy import random
 from pendulum import duration
 from pendulum.datetime import DateTime
 
 from gsy_e import constants
-from gsy_e.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
+from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import GSyException, MarketException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import (get_market_maker_rate_from_config, should_read_profile_from_db)
@@ -205,7 +205,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         for market in self.area.all_markets:
             self._post_offer(market)
             # Only make bids in two-sided markets
-            if ConstSettings.IAASettings.MARKET_TYPE != 1:
+            if ConstSettings.MASettings.MARKET_TYPE != 1:
                 self._post_first_bid(market)
 
         self._delete_past_state()
@@ -230,7 +230,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         This method is triggered by the OFFER event.
         """
         # In two-sided markets, the device doesn't automatically react to offers (it actively bids)
-        if ConstSettings.IAASettings.MARKET_TYPE != 1:
+        if ConstSettings.MASettings.MARKET_TYPE != 1:
             return
 
         market = self.area.get_spot_or_future_market_by_id(market_id)
@@ -539,16 +539,16 @@ class SmartMeterStrategy(BidEnabledStrategy):
         """Check if the offer rate is less than what the device wants to pay."""
         max_affordable_offer_rate = self.bid_update.get_updated_rate(market_slot.time_slot)
         return (
-            round(offer.energy_rate, DEFAULT_PRECISION)
+            limit_float_precision(offer.energy_rate)
             <= max_affordable_offer_rate + FLOATING_POINT_TOLERANCE)
 
     def _event_tick_consumption(self):
         for market in self.area.all_markets:
             # One-sided market (only offers are posted)
-            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                 self._one_sided_market_event_tick(market)
             # Two-sided markets (both offers and bids are posted)
-            elif ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
+            elif ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
                 # Update the price of existing bids to reflect the new rates
                 self.bid_update.update(market, self)
 

@@ -18,8 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from behave import then
 from math import isclose
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.utils import convert_W_to_kWh
-from gsy_e.constants import DEFAULT_PRECISION
+from gsy_framework.utils import convert_W_to_kWh, limit_float_precision
 
 
 @then('the storages buy energy for no more than the min PV selling rate')
@@ -37,13 +36,13 @@ def storages_pv_final_selling_rate(context):
             assert trade.buyer != storage2.name
             if trade.buyer == storage1.name:
                 # Storage 1 should buy energy offers with rate more than the PV min sell rate
-                assert round(
-                    trade.offer_bid.energy_rate, DEFAULT_PRECISION) >= \
+                assert limit_float_precision(
+                    trade.offer_bid.energy_rate) >= \
                     pv.strategy.offer_update.final_rate[market.time_slot]
 
     for market in house2.past_markets:
         assert all(trade.seller == pv.name for trade in market.trades)
-        assert all(round(trade.offer_bid.energy_rate, DEFAULT_PRECISION) >=
+        assert all(limit_float_precision(trade.offer_bid.energy_rate) >=
                    pv.strategy.offer_update.final_rate[market.time_slot]
                    for trade in market.trades)
 

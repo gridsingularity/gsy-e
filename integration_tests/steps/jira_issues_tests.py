@@ -28,12 +28,12 @@ from gsy_framework.sim_results.cumulative_grid_trades import CumulativeGridTrade
 
 
 def get_areas_from_2_house_grid(context):
-    def filter_iaa(x):
+    def filter_ma(x):
         return x.name == "House 1" or \
                x.name == "House 2" or \
                x.name == "Grid"
 
-    return list(filter(filter_iaa,
+    return list(filter(filter_ma,
                        context.simulation.area.children))
 
 
@@ -203,22 +203,22 @@ def trades_on_all_markets_max_load_rate(context):
     for market in grid.past_markets:
         assert len(market.trades) == 1
         assert all(t.seller == "Commercial Energy Producer" for t in market.trades)
-        assert all(t.buyer == "IAA House 1" for t in market.trades)
+        assert all(t.buyer == "MA House 1" for t in market.trades)
         assert all(
             isclose(trade.offer_bid.energy_rate, max_rate[market.time_slot])
             for trade in market.trades)
 
     for market in house1.past_markets:
         assert len(market.trades) == 1
-        assert all(t.seller == "IAA House 1" for t in market.trades)
+        assert all(t.seller == "MA House 1" for t in market.trades)
         assert all(t.buyer == "H1 General Load" for t in market.trades)
         assert all(
             isclose(trade.offer_bid.energy_rate, max_rate[market.time_slot])
             for trade in market.trades)
 
 
-@then('the Load of House 1 should only buy energy from IAA between 5:00 and 8:00')
-def house1_load_only_from_iaa(context):
+@then('the Load of House 1 should only buy energy from MarketAgent between 5:00 and 8:00')
+def house1_load_only_from_ma(context):
     from gsy_framework.constants_limits import ConstSettings
     house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
     load1 = [child for child in house1.children if child.name == "H1 General Load"][0]

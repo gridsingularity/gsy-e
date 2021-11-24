@@ -17,14 +17,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then, given
 from math import isclose
-from gsy_e import limit_float_precision
+from gsy_framework.utils import limit_float_precision
 from gsy_framework.utils import get_area_name_uuid_mapping
 from gsy_e.models.config import ConstSettings
 
 
 @given('the market type is {market_type}')
 def set_market_type(context, market_type):
-    ConstSettings.IAASettings.MARKET_TYPE = int(market_type)
+    ConstSettings.MASettings.MARKET_TYPE = int(market_type)
 
 
 @then('Infinite Bus buys energy that is not needed from the PV and sells to the load')

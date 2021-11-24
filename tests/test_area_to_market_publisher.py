@@ -14,7 +14,7 @@ gsy_e.models.area.redis_dispatcher.area_to_market_publisher.BlockingCommunicator
 
 class TestAreaToMarketPublisher(unittest.TestCase):
     def setUp(self):
-        ConstSettings.IAASettings.MARKET_TYPE = 2
+        ConstSettings.MASettings.MARKET_TYPE = 2
         self.market1 = OneSidedMarket(name="test_market")
         self.market1.id = "id1"
         self.market2 = OneSidedMarket(name="test_market")
@@ -24,7 +24,7 @@ class TestAreaToMarketPublisher(unittest.TestCase):
         self.publisher = AreaToMarketEventPublisher(self.area)
 
     def tearDown(self):
-        ConstSettings.IAASettings.MARKET_TYPE = 1
+        ConstSettings.MASettings.MARKET_TYPE = 1
 
     def test_area_to_market_event_response(self):
         self.publisher.response_callback({

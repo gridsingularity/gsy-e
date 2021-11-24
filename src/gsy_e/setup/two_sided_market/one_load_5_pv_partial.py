@@ -28,15 +28,15 @@ with one solar panel on each, in order to not cover the load by one offer, but t
 partially cover the demand with each different offer.
 Expected result: when having set the log level to WARN, there should be 5 distinct trade chains
 on each market slot (on market slots that PVs can provide energy though). These trades should
-be a chain of bid and offer trades from the PVs to the load. For simplicity, the iaa_fee is set
-to 0 (it has to be set via the CLI, by configuring the cli argument iaa_fee to 0), and all the
+be a chain of bid and offer trades from the PVs to the load. For simplicity, the ma_fee is set
+to 0 (it has to be set via the CLI, by configuring the cli argument ma_fee to 0), and all the
 offer/bid trades should have the same energy rate (about 15 ct/kWh, depending on the
 interpolation of bids and offers).
 '''
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.PVSettings.FINAL_SELLING_RATE = 0
     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = 30
     ConstSettings.LoadSettings.INITIAL_BUYING_RATE = 0

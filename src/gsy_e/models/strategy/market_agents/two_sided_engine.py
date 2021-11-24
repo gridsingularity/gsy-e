@@ -23,20 +23,20 @@ from gsy_framework.data_classes import Bid
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import BidNotFoundException, MarketException
 from gsy_e.gsy_e_core.util import short_offer_bid_log_str
-from gsy_e.models.strategy.area_agents.one_sided_engine import IAAEngine
+from gsy_e.models.strategy.market_agents.one_sided_engine import MAEngine
 
 if TYPE_CHECKING:
-    from gsy_e.models.strategy.area_agents.inter_area_agent import InterAreaAgent
+    from gsy_e.models.strategy.market_agents.market_agent import MarketAgent
 
 BidInfo = namedtuple("BidInfo", ("source_bid", "target_bid"))
 
 
-class TwoSidedEngine(IAAEngine):
+class TwoSidedEngine(MAEngine):
     """Handle forwarding offers and bids to the connected two-sided market."""
     # pylint: disable = too-many-arguments
 
     def __init__(self, name: str, market_1, market_2, min_offer_age: int, min_bid_age: int,
-                 owner: "InterAreaAgent"):
+                 owner: "MarketAgent"):
         super().__init__(name, market_1, market_2, min_offer_age, owner)
         self.forwarded_bids: Dict[str, BidInfo] = {}
         self.bid_trade_residual: Dict[str, Bid] = {}
@@ -173,7 +173,7 @@ class TwoSidedEngine(IAAEngine):
             self._delete_forwarded_bids(bid_info)
             self.bid_age.pop(bid_info.source_bid.id, None)
         else:
-            raise Exception(f"Invalid bid state for IAA {self.owner.name}: "
+            raise Exception(f"Invalid bid state for MA {self.owner.name}: "
                             f"traded bid {bid_trade} was not in offered bids tuple {bid_info}")
 
     def event_bid_deleted(self, *, bid):
@@ -191,7 +191,7 @@ class TwoSidedEngine(IAAEngine):
             try:
                 self._delete_forwarded_bids(bid_info)
             except MarketException:
-                self.owner.log.exception("Error deleting InterAreaAgent bid")
+                self.owner.log.exception("Error deleting MarketAgent bid")
         self._delete_forwarded_bid_entries(bid_info.source_bid)
         self.bid_age.pop(bid_info.source_bid.id, None)
 

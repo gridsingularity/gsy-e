@@ -27,11 +27,11 @@ from gsy_e.models.strategy.storage import StorageStrategy
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.IAASettings.MIN_BID_AGE = 0
-    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
+    ConstSettings.MASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MIN_BID_AGE = 0
+    ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = \
         BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
-    ConstSettings.IAASettings.MIN_OFFER_AGE = 0
+    ConstSettings.MASettings.MIN_OFFER_AGE = 0
     area = Area(
         "Grid",
         [

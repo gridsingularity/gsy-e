@@ -52,7 +52,7 @@ device_registry_dict = {
 @pytest.fixture(scope="function", autouse=True)
 def device_registry_auto_fixture():
     DeviceRegistry.REGISTRY = device_registry_dict
-    ConstSettings.IAASettings.MARKET_TYPE = 1
+    ConstSettings.MASettings.MARKET_TYPE = 1
     yield
     DeviceRegistry.REGISTRY = {}
 
