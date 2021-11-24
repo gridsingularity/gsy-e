@@ -16,11 +16,11 @@ from logging import getLogger
 from pathlib import Path
 from typing import Dict, Union
 
-from gsy_framework.constants_limits import ConstSettings, DEFAULT_PRECISION
+from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from gsy_framework.utils import find_object_of_same_weekday_and_time
+from gsy_framework.utils import find_object_of_same_weekday_and_time, limit_float_precision
 from gsy_framework.validators.smart_meter_validator import SmartMeterValidator
 from numpy import random
 from pendulum import duration
@@ -539,7 +539,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         """Check if the offer rate is less than what the device wants to pay."""
         max_affordable_offer_rate = self.bid_update.get_updated_rate(market_slot.time_slot)
         return (
-            round(offer.energy_rate, DEFAULT_PRECISION)
+            limit_float_precision(offer.energy_rate)
             <= max_affordable_offer_rate + FLOATING_POINT_TOLERANCE)
 
     def _event_tick_consumption(self):

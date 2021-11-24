@@ -20,12 +20,13 @@ from collections import namedtuple
 from logging import getLogger
 from typing import Union, Dict  # NOQA
 
-from gsy_framework.constants_limits import ConstSettings, DEFAULT_PRECISION
+from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
-    convert_W_to_Wh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
+    limit_float_precision, convert_W_to_Wh, find_object_of_same_weekday_and_time,
+    key_in_dict_and_not_none)
 from gsy_framework.validators.load_validator import LoadValidator
 from numpy import random
 from pendulum import duration
@@ -290,7 +291,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         """Check if the offer rate is less than what the device wants to pay."""
         max_affordable_offer_rate = self.bid_update.get_updated_rate(market_slot.time_slot)
         return (
-            round(offer.energy_rate, DEFAULT_PRECISION)
+            limit_float_precision(offer.energy_rate)
             <= max_affordable_offer_rate + FLOATING_POINT_TOLERANCE)
 
     def _one_sided_market_event_tick(self, market, offer=None):
