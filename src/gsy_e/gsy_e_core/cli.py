@@ -157,4 +157,4 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
 
     except GSyException as ex:
         log.exception(ex)
-        raise click.ClickException(ex.args[0])
+        raise click.ClickException(str(ex))

@@ -74,3 +74,7 @@ class SettlementTemplateStrategiesConstants:
 
 class FutureTemplateStrategiesConstants(SettlementTemplateStrategiesConstants):
     """Constants related to the configuration of future template strategies"""
+    INITIAL_BUYING_RATE = 25
+    FINAL_BUYING_RATE = 25
+    INITIAL_SELLING_RATE = 25
+    FINAL_SELLING_RATE = 25
