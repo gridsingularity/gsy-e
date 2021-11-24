@@ -26,7 +26,7 @@ class AreaToMarketEventPublisher:
         self.event_response_uuids.append(response["transaction_uuid"])
 
     def publish_markets_clearing(self):
-        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             return
         for market in self.area._markets.markets.values():
             response_channel = f"{market.id}/CLEAR/RESPONSE"

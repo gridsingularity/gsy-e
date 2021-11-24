@@ -150,13 +150,13 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
 
     def event_tick(self):
         """Buy energy on market tick. This method is triggered by the TICK event."""
-        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             for market in self.area.all_markets:
                 self.buy_energy(market)
 
     def event_market_cycle(self):
         super().event_market_cycle()
-        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
             for market in self.area.all_markets:
                 try:
                     buy_rate = find_object_of_same_weekday_and_time(self.energy_buy_rate,

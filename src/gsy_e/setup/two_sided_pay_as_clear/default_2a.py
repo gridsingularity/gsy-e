@@ -25,8 +25,8 @@ from gsy_framework.enums import BidOfferMatchAlgoEnum
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
+    ConstSettings.MASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = \
         BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
     # ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS = False
     ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT = 3

@@ -15,7 +15,7 @@ Feature: Jira Issues Tests
     And storage final SOC is 100%
     And storage buys energy respecting the break even buy threshold
 
-  Scenario: D3ASIM-662, IAA should always track offers back to its source
+  Scenario: D3ASIM-662, MarketAgent should always track offers back to its source
      Given we have a scenario named strategy_tests/home_cp_ess_load
      And gsy-e is installed
      And export is_needed
@@ -53,11 +53,11 @@ Feature: Jira Issues Tests
      Then all load demands in setup was fulfilled on every market slot
 
   @disabled
-  Scenario: D3ASIM-874, alternative pricing can buy energy from IAA if there is not enough self-consumption
+  Scenario: D3ASIM-874, alternative pricing can buy energy from MarketAgent if there is not enough self-consumption
      Given we have a scenario named jira/d3asim_869
      And gsy-e is installed
      When we run the simulation with setup file jira.d3asim_869 and parameters [24, 60, 60]
-     Then the Load of House 1 should only buy energy from IAA between 5:00 and 8:00
+     Then the Load of House 1 should only buy energy from MarketAgent between 5:00 and 8:00
      And the Commercial Producer should never sell energy
 
   # TODO: re-enable in context of bug/D3ASIM-3534

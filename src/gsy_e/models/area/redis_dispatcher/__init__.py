@@ -71,7 +71,7 @@ class RedisEventDispatcherBase(ABC):
     @abstractmethod
     def broadcast_event_redis(self, event_type, **kwargs):
         """
-        Responsible for broadcasting an event to the child areas and to the IAAs of the area.
+        Responsible for broadcasting an event to the child areas and to the MAs of the area.
         :param event_type: Type of the event that is broadcasted
         :param kwargs: Arguments of the event
         :return: None
