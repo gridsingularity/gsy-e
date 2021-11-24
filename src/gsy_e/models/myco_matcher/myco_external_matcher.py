@@ -15,11 +15,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
 import json
+import logging
+from copy import copy
 from enum import Enum
 from typing import Dict, List
 
+from gsy_framework.constants_limits import GlobalConfig
 from gsy_framework.data_classes import BidOfferMatch
 
 import gsy_e.constants
@@ -27,8 +29,10 @@ from gsy_e.gsy_e_core.exceptions import (
     InvalidBidOfferPairException, MycoValidationException)
 from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import (
     ResettableCommunicator)
+from gsy_e.gsy_e_core.util import ExternalTickCounter
 from gsy_e.models.market.two_sided import TwoSidedMarket
 from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
+
 
 # pylint: disable=fixme
 
@@ -42,71 +46,84 @@ class ExternalMatcherEventsEnum(Enum):
     FINISH = "finish"
 
 
+# pylint: disable=too-many-instance-attributes
 class MycoExternalMatcher(MycoMatcherInterface):
     """Class responsible for external bids / offers matching."""
     def __init__(self):
         super().__init__()
         self.simulation_id = gsy_e.constants.CONFIGURATION_ID
+
+        # Dict[area_id-time_slot_str: market] mapping
+        self.area_markets_mapping: Dict[str, TwoSidedMarket] = {}
+        self._recommendations = []
+        self._publish_orders_message_buffer = []
+
+        self._tick_counter = ExternalTickCounter(
+            GlobalConfig.ticks_per_slot,
+            gsy_e.constants.DISPATCH_MYCO_EVENT_TICK_FREQUENCY_PERCENT
+        )
+
         self.myco_ext_conn = None
         self._channel_prefix = f"external-myco/{self.simulation_id}"
         self._events_channel = f"{self._channel_prefix}/events/"
         self._setup_redis_connection()
 
-        # Dict[area_id-time_slot_str: market] mapping
-        self.area_markets_mapping: Dict[str, TwoSidedMarket] = {}
-        self._recommendations = []
-
     def _setup_redis_connection(self):
         self.myco_ext_conn = ResettableCommunicator()
         self.myco_ext_conn.sub_to_multiple_channels(
             {"external-myco/simulation-id/": self.publish_simulation_id,
-             f"{self._channel_prefix}/offers-bids/": self.publish_orders,
+             f"{self._channel_prefix}/offers-bids/": self._publish_orders_message_buffer.append,
              f"{self._channel_prefix}/recommendations/": self._populate_recommendations})
 
-    def publish_orders(self, message):
+    def _publish_orders(self):
         """Publish open offers and bids.
 
         Published data are of the following format:
         {"bids_offers": {'area_uuid' : {'time_slot': {"bids": [], "offers": []}}}}
 
         """
-        response_data = {"event": ExternalMatcherEventsEnum.OFFERS_BIDS_RESPONSE.value}
-        data = json.loads(message.get("data"))
-        filters = data.get("filters", {})
-        # IDs of markets (Areas) the client is interested in
-        filtered_areas_uuids = filters.get("markets")
-        market_orders_list_mapping = {}
-        for area_uuid, area_data in self.area_uuid_markets_mapping.items():
-            if filtered_areas_uuids and area_uuid not in filtered_areas_uuids:
-                # Client is uninterested in this Area -> skip
-                continue
-            # Cache the market (needed while matching)
-            for market in area_data["markets"]:
-                self.area_markets_mapping.update(
-                    {f"{area_uuid}-{market.time_slot_str}": market})
-                if area_uuid not in market_orders_list_mapping:
-                    market_orders_list_mapping[area_uuid] = {}
-                market_orders_list_mapping[area_uuid].update(
-                    self._get_orders(market, filters))
+        # Copy the original buffer in order to avoid concurrent access from the Redis thread
+        publish_orders = copy(self._publish_orders_message_buffer)
+        self._publish_orders_message_buffer.clear()
 
-            if area_data.get("future_markets"):
-                # Future markets
-                market = area_data["future_markets"]
-                self.area_markets_mapping.update(
-                    {f"{area_uuid}-{time_slot_str}": market
-                     for time_slot_str in market.orders_per_slot().keys()})
-                if area_uuid not in market_orders_list_mapping:
-                    market_orders_list_mapping[area_uuid] = {}
-                market_orders_list_mapping[area_uuid].update(
-                    self._get_orders(market, filters))
-        self.area_uuid_markets_mapping = {}
-        # TODO: change the `bids_offers` key and the channel to `orders`
-        response_data.update({
-            "bids_offers": market_orders_list_mapping,
-        })
+        for message in publish_orders:
+            data = json.loads(message.get("data"))
+            response_data = {"event": ExternalMatcherEventsEnum.OFFERS_BIDS_RESPONSE.value}
+            filters = data.get("filters", {})
+            # IDs of markets (Areas) the client is interested in
+            filtered_areas_uuids = filters.get("markets")
+            market_orders_list_mapping = {}
+            for area_uuid, area_data in self.area_uuid_markets_mapping.items():
+                if filtered_areas_uuids and area_uuid not in filtered_areas_uuids:
+                    # Client is uninterested in this Area -> skip
+                    continue
+                # Cache the market (needed while matching)
+                for market in area_data["markets"]:
+                    self.area_markets_mapping.update(
+                        {f"{area_uuid}-{market.time_slot_str}": market})
+                    if area_uuid not in market_orders_list_mapping:
+                        market_orders_list_mapping[area_uuid] = {}
+                    market_orders_list_mapping[area_uuid].update(
+                        self._get_orders(market, filters))
 
-        channel = f"{self._channel_prefix}/offers-bids/response/"
-        self.myco_ext_conn.publish_json(channel, response_data)
+                if area_data.get("future_markets"):
+                    # Future markets
+                    market = area_data["future_markets"]
+                    self.area_markets_mapping.update(
+                        {f"{area_uuid}-{time_slot_str}": market
+                         for time_slot_str in market.orders_per_slot().keys()})
+                    if area_uuid not in market_orders_list_mapping:
+                        market_orders_list_mapping[area_uuid] = {}
+                    market_orders_list_mapping[area_uuid].update(
+                        self._get_orders(market, filters))
+            self.area_uuid_markets_mapping = {}
+            # TODO: change the `bids_offers` key and the channel to `orders`
+            response_data.update({
+                "bids_offers": market_orders_list_mapping,
+            })
+
+            channel = f"{self._channel_prefix}/offers-bids/response/"
+            self.myco_ext_conn.publish_json(channel, response_data)
 
     def _populate_recommendations(self, message):
         """Receive trade recommendations and store them to be consumed in a later stage."""
@@ -131,11 +148,14 @@ class MycoExternalMatcher(MycoMatcherInterface):
         response_data.update(
             MycoExternalMatcherValidator.validate_and_report(self, recommendations))
         if response_data["status"] != "success":
+            logging.debug("All recommendations failed: %s", response_data)
             self.myco_ext_conn.publish_json(channel, response_data)
             return
+
         for recommendation in response_data["recommendations"]:
             try:
                 if recommendation["status"] != "success":
+                    logging.debug("Ignoring recommendation: %s", recommendation)
                     continue
                 recommendation.pop("status")
                 # market_id refers to the area_id (Area that has no strategy)
@@ -163,16 +183,22 @@ class MycoExternalMatcher(MycoMatcherInterface):
         self.myco_ext_conn.publish_json(channel, {"simulation_id": self.simulation_id})
 
     def event_tick(self, **kwargs):
-        """Publish the tick event to the Myco client."""
-        is_it_time_for_external_tick = kwargs.pop("is_it_time_for_external_tick", True)
+        """
+        Publish the tick event to the Myco client. Should be performed after the tick event from
+        all areas has been completed.
+        """
+        current_tick_in_slot = kwargs.pop("current_tick_in_slot", 0)
         # If External matching is enabled, limit the number of ticks dispatched.
-        if not is_it_time_for_external_tick:
+        if not self._tick_counter.is_it_time_for_external_tick(current_tick_in_slot):
             return
         data = {"event": ExternalMatcherEventsEnum.TICK.value, **kwargs}
         self.myco_ext_conn.publish_json(self._events_channel, data)
+        # Publish the orders of the market at the end of the tick, in order for the external
+        # commands and aggregator commands to have already been processed
+        self._publish_orders()
 
     def event_market_cycle(self, **kwargs):
-        """Publish the market event to the Myco client and clear finished markets cache.."""
+        """Publish the market event to the Myco client and clear finished markets cache."""
 
         self.area_markets_mapping = {}  # clear finished markets
         data = {"event": ExternalMatcherEventsEnum.MARKET.value, **kwargs}
