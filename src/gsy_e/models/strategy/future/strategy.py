@@ -92,11 +92,16 @@ class FutureMarketStrategyInterface:
     def event_tick(self, strategy: "BidEnabledStrategy") -> None:
         """Base class method for handling the tick"""
 
+    def update_and_populate_price_settings(self, strategy: "BidEnabledStrategy") -> None:
+        """Base class method for updating/populating price settings"""
+
 
 def future_strategy_bid_updater_factory(
         initial_buying_rate: float, final_buying_rate: float, asset_type: AssetType
 ) -> Union[TemplateStrategyUpdaterInterface, FutureTemplateStrategyBidUpdater]:
-
+    """
+    Factory method for the bid updater, disables the updater if the strategy does not support bids
+    """
     _update_interval = FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN
     if asset_type in [AssetType.CONSUMER, AssetType.PROSUMER]:
         return FutureTemplateStrategyBidUpdater(
@@ -112,7 +117,10 @@ def future_strategy_bid_updater_factory(
 def future_strategy_offer_updater_factory(
         initial_selling_rate: float, final_selling_rate: float, asset_type: AssetType
 ) -> Union[TemplateStrategyUpdaterInterface, FutureTemplateStrategyOfferUpdater]:
-
+    """
+    Factory method for the offer updater, disables the updater if the strategy does not support
+    offers
+    """
     _update_interval = FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN
     if asset_type in [AssetType.PRODUCER, AssetType.PROSUMER]:
         return FutureTemplateStrategyOfferUpdater(
@@ -146,6 +154,14 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             initial_buying_rate, final_buying_rate, asset_type
         )
 
+    def update_and_populate_price_settings(self, strategy):
+        """
+        Updates and populates the price settings of the bid / offer updaters. Should be called
+        on every market cycle, and during the live event handling process of each strategy.
+        """
+        self._bid_updater.update_and_populate_price_settings(strategy.area)
+        self._offer_updater.update_and_populate_price_settings(strategy.area)
+
     def event_market_cycle(self, strategy: "BidEnabledStrategy") -> None:
         """
         Should be called by the event_market_cycle of the asset strategy class, posts
@@ -158,8 +174,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         """
         if not strategy.area.future_markets:
             return
-        self._bid_updater.update_and_populate_price_settings(strategy.area)
-        self._offer_updater.update_and_populate_price_settings(strategy.area)
+        self.update_and_populate_price_settings(strategy)
         for time_slot in strategy.area.future_markets.market_time_slots:
             if strategy.asset_type == AssetType.CONSUMER:
                 required_energy_kWh = strategy.state.get_energy_requirement_Wh(time_slot) / 1000.0

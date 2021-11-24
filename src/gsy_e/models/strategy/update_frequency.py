@@ -23,7 +23,8 @@ from gsy_framework.utils import find_object_of_same_weekday_and_time
 from pendulum import duration, DateTime, Duration
 
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
-from gsy_e.gsy_e_core.util import write_default_to_dict, is_time_slot_in_past_markets
+from gsy_e.gsy_e_core.util import (write_default_to_dict, is_time_slot_in_past_markets,
+                                   is_time_slot_in_simulation_duration)
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
@@ -125,6 +126,8 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
 
     def _populate_profiles(self, area: "Area") -> None:
         for time_slot in self._get_all_time_slots(area):
+            if not is_time_slot_in_simulation_duration(area.config, time_slot):
+                continue
             if self.fit_to_limit is False:
                 self.energy_rate_change_per_update[time_slot] = (
                     find_object_of_same_weekday_and_time(

@@ -36,7 +36,8 @@ from gsy_e import constants
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
-from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
+from gsy_e.gsy_e_core.util import (get_market_maker_rate_from_config,
+                                   is_time_slot_in_simulation_duration)
 from gsy_e.models.base import AssetType
 from gsy_e.models.market import MarketBase
 from gsy_e.models.state import LoadState
@@ -140,6 +141,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
                         fit_to_limit):
         # all parameters have to be validated for each time slot starting from the current time
         for time_slot in initial_rate.keys():
+            if not is_time_slot_in_simulation_duration(self.area.config, time_slot):
+                continue
+
             if self.area and \
                     self.area.current_market and time_slot < self.area.current_market.time_slot:
                 continue
@@ -157,6 +161,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.event_activate_price()
         self.bid_update.update_and_populate_price_settings(self.area)
         self.event_activate_energy()
+        self._future_market_strategy.update_and_populate_price_settings(self)
 
     def event_market_cycle(self):
         if self.use_market_maker_rate:

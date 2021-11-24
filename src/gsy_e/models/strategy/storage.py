@@ -583,6 +583,7 @@ class StorageStrategy(BidEnabledStrategy):
         self.bid_update.update_and_populate_price_settings(self.area)
         self.state.add_default_values_to_state_profiles([
             self.spot_market_time_slot, *self.area.future_market_time_slots])
+        self._future_market_strategy.update_and_populate_price_settings(self)
 
     def event_offer(self, *, market_id, offer):
         super().event_offer(market_id=market_id, offer=offer)
