@@ -24,7 +24,9 @@ from typing import Union
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from gsy_framework.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
+from gsy_framework.utils import (
+    area_name_from_area_or_ma_name, key_in_dict_and_not_none,
+    find_object_of_same_weekday_and_time)
 from gsy_framework.validators import StorageValidator
 from pendulum import duration
 
@@ -33,7 +35,6 @@ from gsy_e import limit_float_precision
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
-from gsy_e.gsy_e_core.util import area_name_from_area_or_iaa_name
 from gsy_e.models.base import AssetType
 from gsy_e.models.state import StorageState, ESSEnergyOrigin, EnergyOrigin
 from gsy_e.models.strategy import BidEnabledStrategy
@@ -263,23 +264,21 @@ class StorageStrategy(BidEnabledStrategy):
         self.event_activate_price()
 
     def _set_alternative_pricing_scheme(self):
-        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+        if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
             for market in self.area.all_markets:
                 time_slot = market.time_slot
-                if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
+                if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME == 1:
                     self.bid_update.set_parameters(initial_rate=0,
                                                    final_rate=0)
                     self.offer_update.set_parameters(initial_rate=0,
                                                      final_rate=0)
-                elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
+                elif ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME == 2:
                     rate = (self.simulation_config.market_maker_rate[time_slot] *
-                            ConstSettings.IAASettings.AlternativePricing.
+                            ConstSettings.MASettings.AlternativePricing.
                             FEED_IN_TARIFF_PERCENTAGE / 100)
-                    self.bid_update.set_parameters(initial_rate=0,
-                                                   final_rate=rate)
-                    self.offer_update.set_parameters(initial_rate=rate,
-                                                     final_rate=rate)
-                elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
+                    self.bid_update.set_parameters(initial_rate=0, final_rate=rate)
+                    self.offer_update.set_parameters(initial_rate=rate, final_rate=rate)
+                elif ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME == 3:
                     rate = self.simulation_config.market_maker_rate[time_slot]
                     self.bid_update.set_parameters(initial_rate=0, final_rate=rate)
                     self.offer_update.set_parameters(initial_rate=rate, final_rate=rate)
@@ -377,7 +376,7 @@ class StorageStrategy(BidEnabledStrategy):
         self._assert_if_trade_offer_price_is_too_low(market_id, trade)
 
         if trade.buyer == self.owner.name:
-            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                 # in order to omit double counting this is only applied for one sided market
                 self._track_energy_bought_type(trade)
         if trade.seller == self.owner.name:
@@ -406,7 +405,7 @@ class StorageStrategy(BidEnabledStrategy):
                 energy = 0
 
     def _track_energy_bought_type(self, trade):
-        if area_name_from_area_or_iaa_name(trade.seller) == self.area.name:
+        if area_name_from_area_or_ma_name(trade.seller) == self.area.name:
             self.state.update_used_storage_share(trade.offer_bid.energy, ESSEnergyOrigin.EXTERNAL)
         elif self._is_local(trade):
             self.state.update_used_storage_share(trade.offer_bid.energy, ESSEnergyOrigin.LOCAL)
@@ -479,10 +478,10 @@ class StorageStrategy(BidEnabledStrategy):
             # Can early return here, because the offers are sorted according to energy rate
             # therefore the following offers will be more expensive
             return True
-        alt_pricing_settings = ConstSettings.IAASettings.AlternativePricing
+        alt_pricing_settings = ConstSettings.MASettings.AlternativePricing
         if (offer.seller == alt_pricing_settings.ALT_PRICING_MARKET_MAKER_NAME and
                 alt_pricing_settings.PRICING_SCHEME != 0):
-            # don't buy from IAA if alternative pricing scheme is activated
+            # don't buy from MA if alternative pricing scheme is activated
             return
 
         try:
@@ -541,7 +540,7 @@ class StorageStrategy(BidEnabledStrategy):
         return self.state.energy_to_buy_dict[time_slot]
 
     def _buy_energy_two_sided_spot_market(self):
-        if ConstSettings.IAASettings.MARKET_TYPE != SpotMarketTypeEnum.TWO_SIDED.value:
+        if ConstSettings.MASettings.MARKET_TYPE != SpotMarketTypeEnum.TWO_SIDED.value:
             return
         market = self.area.spot_market
         time_slot = self.spot_market_time_slot
@@ -587,7 +586,7 @@ class StorageStrategy(BidEnabledStrategy):
 
     def event_offer(self, *, market_id, offer):
         super().event_offer(market_id=market_id, offer=offer)
-        if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
+        if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
                 and not self.area.is_market_future(market_id)):
             market = self.area.get_spot_or_future_market_by_id(market_id)
             if not market:

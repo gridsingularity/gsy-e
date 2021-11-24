@@ -23,7 +23,7 @@ from gsy_framework.constants_limits import ConstSettings
 
 def get_setup(config):
     # Two sided market
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.LoadSettings.INITIAL_BUYING_RATE = 15
     ConstSettings.LoadSettings.FINAL_BUYING_RATE = 35
 

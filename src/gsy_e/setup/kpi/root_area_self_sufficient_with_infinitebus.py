@@ -25,7 +25,7 @@ from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 1
+    ConstSettings.MASettings.MARKET_TYPE = 1
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
 
     Houses_initial_buying_rate = 6

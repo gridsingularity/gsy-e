@@ -25,13 +25,13 @@ from gsy_framework.enums import BidOfferMatchAlgoEnum
 
 def get_setup(config):
     ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS = True
-    ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
+    ConstSettings.MASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = \
         BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
-    ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
+    ConstSettings.MASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
     ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT = 1
-    ConstSettings.IAASettings.MIN_OFFER_AGE = 0
-    ConstSettings.IAASettings.MIN_BID_AGE = 0
+    ConstSettings.MASettings.MIN_OFFER_AGE = 0
+    ConstSettings.MASettings.MIN_BID_AGE = 0
 
     area = Area(
         "Grid",

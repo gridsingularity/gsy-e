@@ -21,7 +21,7 @@ from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 def get_setup(config):
 
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 1
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
 
     area = Area(
         "Grid",

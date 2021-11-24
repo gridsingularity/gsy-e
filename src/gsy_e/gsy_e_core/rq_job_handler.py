@@ -87,9 +87,9 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
         bid_offer_match_algo = settings.get("bid_offer_match_algo")
 
         if spot_market_type:
-            ConstSettings.IAASettings.MARKET_TYPE = spot_market_type
+            ConstSettings.MASettings.MARKET_TYPE = spot_market_type
         if bid_offer_match_algo:
-            ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = bid_offer_match_algo
+            ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = bid_offer_match_algo
 
         ConstSettings.SettlementMarketSettings.RELATIVE_STD_FROM_FORECAST_FLOAT = (
             settings.get(

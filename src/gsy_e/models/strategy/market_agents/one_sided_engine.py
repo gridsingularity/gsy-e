@@ -31,7 +31,7 @@ Markets = namedtuple("Markets", ("source", "target"))
 ResidualInfo = namedtuple("ResidualInfo", ("forwarded", "age"))
 
 
-class IAAEngine:
+class MAEngine:
     """Handle forwarding offers to the connected one-sided market."""
     # pylint: disable = too-many-arguments
 
@@ -47,7 +47,7 @@ class IAAEngine:
         self.trade_residual: Dict[str, Offer] = {}
 
     def __repr__(self):
-        return "<IAAEngine [{s.owner.name}] {s.name} {s.markets.source.time_slot:%H:%M}>".format(
+        return "<MAEngine [{s.owner.name}] {s.name} {s.markets.source.time_slot:%H:%M}>".format(
             s=self
         )
 
@@ -129,7 +129,7 @@ class IAAEngine:
                 continue
 
             # Should never reach this point.
-            # This means that the IAA is forwarding offers with the same seller and buyer name.
+            # This means that the MA is forwarding offers with the same seller and buyer name.
             # If we ever again reach a situation like this, we should never forward the offer.
             if self.owner.name == offer.seller:
                 self.offer_age.pop(offer_id, None)
@@ -155,7 +155,7 @@ class IAAEngine:
                 f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
             try:
-                if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+                if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                     # One sided market should subtract the fees
                     trade_offer_rate = trade.offer_bid.energy_rate - \
                                        trade.fee_price / trade.offer_bid.energy
@@ -193,7 +193,7 @@ class IAAEngine:
             except OfferNotFoundException:
                 pass
             except MarketException:
-                self.owner.log.exception("Error deleting InterAreaAgent offer:")
+                self.owner.log.exception("Error deleting MarketAgent offer:")
 
             self._delete_forwarded_offer_entries(offer_info.source_offer)
             self.offer_age.pop(offer_info.source_offer.id, None)
@@ -221,7 +221,7 @@ class IAAEngine:
                 self.owner.delete_offer(self.markets.target, offer_info.target_offer)
                 self._delete_forwarded_offer_entries(offer_info.source_offer)
             except MarketException:
-                self.owner.log.exception("Error deleting InterAreaAgent offer")
+                self.owner.log.exception("Error deleting MarketAgent offer")
         # TODO: Should potentially handle the flip side, by not deleting the source market offer
         # but by deleting the offered_offers entries
 
@@ -281,7 +281,7 @@ class IAAEngine:
         self.forwarded_offers[target_offer.id] = offer_info
 
 
-class BalancingEngine(IAAEngine):
+class BalancingEngine(MAEngine):
     """Handle forwarding offers to the connected balancing market."""
 
     def _forward_offer(self, offer):

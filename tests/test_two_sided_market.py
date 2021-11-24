@@ -225,7 +225,7 @@ class TestTwoSidedMarket:
             market.bid(10, -1, "someone", "someone")
 
     def test_double_sided_pay_as_clear_market_works_with_floats(self, pac_market):
-        ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
+        ConstSettings.MASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
         offers = [
             Offer("id1", pendulum.now(), 1.1, 1, "other").serializable_dict(),
             Offer("id2", pendulum.now(), 2.2, 1, "other").serializable_dict(),
@@ -341,7 +341,7 @@ class TestTwoSidedMarket:
     @pytest.mark.parametrize("algorithm", [1])
     def test_double_sided_market_performs_pay_as_clear_matching(
             self, pac_market, offer, bid, mcp_rate, mcp_energy, algorithm):
-        ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = algorithm
+        ConstSettings.MASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = algorithm
         offers = [Offer("id1", pendulum.now(), offer[0], 1, "other").serializable_dict(),
                   Offer("id2", pendulum.now(), offer[1], 1, "other").serializable_dict(),
                   Offer("id3", pendulum.now(), offer[2], 1, "other").serializable_dict(),

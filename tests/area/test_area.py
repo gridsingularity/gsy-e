@@ -64,8 +64,8 @@ class TestArea:
 
     @staticmethod
     def teardown_method():
-        ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
-        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
+        ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
+        ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
         ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS = False
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 
@@ -171,14 +171,14 @@ class TestArea:
         manager.attach_mock(area._update_myco_matcher, "update_matcher")
         manager.attach_mock(mock_match_recommendations, "match")
 
-        ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
+        ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
         area.tick()
         assert manager.mock_calls == []
 
         # TWO Sided markets with internal matching, the order should be ->
         # consume commands from aggregator -> update myco cache -> call myco clearing
         manager.reset_mock()
-        ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
+        ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
         area.strategy = None
         area.tick()
         assert manager.mock_calls == [call.update_matcher(), call.match()]
@@ -186,7 +186,7 @@ class TestArea:
         # TWO Sided markets with external matching, the order should be ->
         # call myco clearing -> consume commands from aggregator -> update myco cache
         manager.reset_mock()
-        ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.EXTERNAL.value
+        ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.EXTERNAL.value
         area.tick()
         assert manager.mock_calls == [call.match(), call.update_matcher()]
 

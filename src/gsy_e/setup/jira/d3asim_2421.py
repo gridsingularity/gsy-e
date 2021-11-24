@@ -22,7 +22,7 @@ from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR = True
 
     area = Area(

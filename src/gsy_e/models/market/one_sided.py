@@ -41,7 +41,7 @@ class OneSidedMarket(MarketBase):
     Only devices that supply energy (producers) are able to place offers on the markets.
     """
     def __init__(self, time_slot=None, bc=None, notification_listener=None,
-                 readonly=False, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
+                 readonly=False, grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
                  grid_fees=None, name=None, in_sim_duration=True):
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name)
@@ -236,7 +236,7 @@ class OneSidedMarket(MarketBase):
 
     def determine_offer_price(self, energy_portion, energy, trade_rate,
                               trade_bid_info, orig_offer_price):
-        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             return self._update_offer_fee_and_calculate_final_price(
                 energy, trade_rate, energy_portion, orig_offer_price
             )

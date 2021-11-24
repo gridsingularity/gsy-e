@@ -195,13 +195,13 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
 class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
 
     def setUp(self):
-        ConstSettings.IAASettings.MARKET_TYPE = 2
+        ConstSettings.MASettings.MARKET_TYPE = 2
         self.market = OneSidedMarket(name="test_market", time_slot=now())
         self.market.id = "id"
         self.subscriber = TwoSidedMarketRedisEventSubscriber(self.market)
 
     def tearDown(self):
-        ConstSettings.IAASettings.MARKET_TYPE = 1
+        ConstSettings.MASettings.MARKET_TYPE = 1
 
     def test_subscribes_to_market_channels(self):
         self.subscriber.redis_db.sub_to_multiple_channels.assert_called_once_with(

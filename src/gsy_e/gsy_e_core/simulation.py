@@ -584,7 +584,7 @@ def run_simulation(setup_module_name="", simulation_config=None, simulation_even
                    slot_length_realtime=None, kwargs=None):
     try:
         if "pricing_scheme" in kwargs:
-            ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = \
+            ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME = \
                 kwargs.pop("pricing_scheme")
 
         if saved_sim_state is None:

@@ -27,8 +27,8 @@ def get_setup(config):
     ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = True
     ConstSettings.SettlementMarketSettings.RELATIVE_STD_FROM_FORECAST_FLOAT = 90
     ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS = 1
-    ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
+    ConstSettings.MASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
     area = Area(
         "Grid",
         [
