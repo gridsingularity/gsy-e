@@ -500,7 +500,7 @@ class ExternalMixin:
             "offer": self._offer_aggregator,
             "delete_offer": self._delete_offer_aggregator,
             "list_offers": self._list_offers_aggregator,
-            "device_info": self._device_info,
+            "device_info": self._device_info_aggregator,
         }
 
     def trigger_aggregator_commands(self, command: Dict) -> Dict:

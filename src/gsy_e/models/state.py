@@ -26,7 +26,7 @@ from gsy_framework.utils import (
     convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict, convert_kW_to_kWh)
 from pendulum import DateTime
 
-from gsy_e import limit_float_precision
+from gsy_framework.utils import limit_float_precision
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.util import is_time_slot_in_past_markets, write_default_to_dict
 
