@@ -117,15 +117,10 @@ class FutureMarkets(TwoSidedMarket):
         self._delete_order_dict_market_slot(current_market_time_slot,
                                             self.slot_trade_mapping, Trade)
 
-        self.offers = self._remove_old_orders_from_dict(self.offers, current_market_time_slot)
-        self.bids = self._remove_old_orders_from_dict(self.bids, current_market_time_slot)
-
         self.offer_history = self._remove_old_orders_from_list(
             self.offer_history, current_market_time_slot)
         self.bid_history = self._remove_old_orders_from_list(
             self.bid_history, current_market_time_slot)
-        self.trades = self._remove_old_orders_from_list(
-            self.trades, current_market_time_slot)
 
     def _delete_order_dict_market_slot(self, current_market_time_slot: DateTime,
                                        order_dict:
