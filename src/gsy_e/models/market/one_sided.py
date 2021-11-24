@@ -29,12 +29,12 @@ from gsy_e.gsy_e_core.exceptions import (
     InvalidOffer, MarketReadOnlyException, OfferNotFoundException, InvalidTrade, MarketException)
 from gsy_e.gsy_e_core.util import short_offer_bid_log_str
 from gsy_e.events.event_structures import MarketEvent
-from gsy_e.models.market import Market, lock_market_action
+from gsy_e.models.market import MarketBase, lock_market_action
 
 log = getLogger(__name__)
 
 
-class OneSidedMarket(Market):
+class OneSidedMarket(MarketBase):
     """Class responsible for dealing with one sided markets.
 
     The default market type that D3A simulation uses.

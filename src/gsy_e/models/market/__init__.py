@@ -59,7 +59,7 @@ def lock_market_action(function):
     return wrapper
 
 
-class Market:
+class MarketBase:
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
                  grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
@@ -188,7 +188,7 @@ class Market:
         self._avg_offer_price = None
 
     def __repr__(self):  # pragma: no cover
-        return "<Market{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>".format(
+        return "<MarketBase{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>".format(
             " {}".format(self.time_slot_str),
             len(self.offers),
             sum(o.energy for o in self.offers.values()),

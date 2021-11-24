@@ -19,7 +19,7 @@ from typing import Optional
 
 from numpy.random import random
 
-from gsy_e.models.market import Market
+from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.area_agents.inter_area_agent import InterAreaAgent
 from gsy_e.models.strategy.area_agents.one_sided_engine import IAAEngine
 
@@ -39,7 +39,7 @@ class OneSidedAgent(InterAreaAgent):
         """Prevent IAAEngines from trading their counterpart's offers"""
         return all(offer.id not in engine.forwarded_offers.keys() for engine in self.engines)
 
-    def get_market_from_market_id(self, market_id: str) -> Optional[Market]:
+    def get_market_from_market_id(self, market_id: str) -> Optional[MarketBase]:
         """Return Market object from market_id."""
         if self.lower_market.id == market_id:
             return self.lower_market

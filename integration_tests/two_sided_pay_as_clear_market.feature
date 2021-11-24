@@ -29,12 +29,6 @@ Feature: Two sided pay_as_clear market tests
      When we run the gsy-e simulation on console with two_sided_pay_as_clear.default_2a for 2 hrs
      Then there are files with offers, bids & market_clearing_rate for every area
 
-  Scenario: Test offers, bids trades and stats are exported also for settlement markets.
-     Given we have a scenario named settlement_market/default_2a_settlement
-     And gsy-e is installed
-     When we run the gsy-e simulation on console with settlement_market.default_2a_settlement for 2 hrs
-     Then offers, bids trades and stats are exported also for settlement markets
-
   @slow
   Scenario: Supply Demand Curve
      Given we have a scenario named two_sided_pay_as_clear/test_clearing_energy
