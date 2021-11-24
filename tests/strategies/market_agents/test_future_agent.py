@@ -24,8 +24,8 @@ from gsy_framework.constants_limits import GlobalConfig
 
 from gsy_e.models.area import Area
 from gsy_e.models.market.future import FutureMarkets
-from gsy_e.models.strategy.area_agents.future_agent import FutureAgent
-from gsy_e.models.strategy.area_agents.future_engine import FutureEngine
+from gsy_e.models.strategy.market_agents.future_agent import FutureAgent
+from gsy_e.models.strategy.market_agents.future_engine import FutureEngine
 
 
 @pytest.fixture(name="future_agent")

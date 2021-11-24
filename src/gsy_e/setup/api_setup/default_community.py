@@ -22,7 +22,7 @@ print(platform.python_implementation())
 def get_setup(config):
 
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 1
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = 22
 
     area = Area(

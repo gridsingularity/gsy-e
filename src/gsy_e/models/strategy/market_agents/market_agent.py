@@ -21,16 +21,16 @@ from gsy_framework.constants_limits import ConstSettings
 from numpy.random import random
 
 from gsy_e.constants import TIME_FORMAT
-from gsy_e.gsy_e_core.util import make_iaa_name
+from gsy_e.gsy_e_core.util import make_ma_name
 from gsy_e.models.strategy import BaseStrategy, _TradeLookerUpper
 
 
-class InterAreaAgent(BaseStrategy):
+class MarketAgent(BaseStrategy):
     """Base class for inter area agents implementations."""
     parameters = ("owner", "higher_market", "lower_market", "min_offer_age")
 
     def __init__(self, *, owner, higher_market, lower_market,
-                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE):
+                 min_offer_age=ConstSettings.MASettings.MIN_OFFER_AGE):
         """
         :param min_offer_age: Minimum age of offer before transferring
         """
@@ -44,7 +44,7 @@ class InterAreaAgent(BaseStrategy):
         self.min_offer_age = min_offer_age
 
         self._create_engines()
-        self.name = make_iaa_name(owner)
+        self.name = make_ma_name(owner)
         self.uuid = owner.uuid
 
     def _create_engines(self):
@@ -74,4 +74,4 @@ class InterAreaAgent(BaseStrategy):
         return _TradeLookerUpper(self.name)
 
     def __repr__(self):
-        return f"<InterAreaAgent {self.name} {self.time_slot_str}>"
+        return f"<MarketAgent {self.name} {self.time_slot_str}>"

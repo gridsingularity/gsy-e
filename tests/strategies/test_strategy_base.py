@@ -33,7 +33,7 @@ from gsy_e.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
 
 
 def teardown_function():
-    ConstSettings.IAASettings.MARKET_TYPE = 1
+    ConstSettings.MASettings.MARKET_TYPE = 1
 
 
 class FakeLog:
@@ -269,7 +269,7 @@ def test_add_bid_to_bought(base):
 
 
 def test_bid_events_fail_for_one_sided_market(base):
-    ConstSettings.IAASettings.MARKET_TYPE = 1
+    ConstSettings.MASettings.MARKET_TYPE = 1
     test_bid = Bid("123", pendulum.now(), 12, 23, 'A', 'B')
     with pytest.raises(AssertionError):
         base.event_bid_traded(market_id=123, bid_trade=test_bid)
@@ -281,7 +281,7 @@ def test_bid_events_fail_for_one_sided_market(base):
 
 
 def test_bid_deleted_removes_bid_from_posted(base):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     test_bid = Bid("123", pendulum.now(), 12, 23, base.owner.name, 'B')
     market = FakeMarket(raises=False, id=21)
     base.area._market = market
@@ -291,7 +291,7 @@ def test_bid_deleted_removes_bid_from_posted(base):
 
 
 def test_bid_split_adds_bid_to_posted(base):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     test_bid = Bid("123", pendulum.now(), 12, 12, base.owner.name, 'B')
     accepted_bid = Bid("123", pendulum.now(), 8, 8, base.owner.name, 'B')
     residual_bid = Bid("456", pendulum.now(), 4, 4, base.owner.name, 'B')
@@ -304,7 +304,7 @@ def test_bid_split_adds_bid_to_posted(base):
 
 
 def test_bid_traded_moves_bid_from_posted_to_traded(base):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     test_bid = Bid("123", pendulum.now(), 12, 23, base.owner.name, 'B')
     trade = MagicMock()
     trade.buyer = base.owner.name
@@ -432,7 +432,7 @@ def test_post_offer_with_replace_existing(market_class):
 
 
 def test_energy_traded_and_cost_traded(base):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     market = FakeMarket(raises=True)
     base.area._market = market
     o1 = Offer('id', pendulum.now(), price=1, energy=23, seller='A')

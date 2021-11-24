@@ -30,8 +30,9 @@ from click.types import ParamType
 from gsy_framework.constants_limits import GlobalConfig, RangeLimit, ConstSettings
 from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.exceptions import GSyException
-from gsy_framework.utils import iterate_over_all_modules, str_to_pendulum_datetime, \
-    format_datetime, find_object_of_same_weekday_and_time
+from gsy_framework.utils import (
+    area_name_from_area_or_ma_name, iterate_over_all_modules, str_to_pendulum_datetime,
+    format_datetime, find_object_of_same_weekday_and_time)
 from pendulum import duration, from_format, instance, DateTime
 from rex import rex
 
@@ -159,8 +160,8 @@ class NonBlockingConsole:
         return False
 
 
-def make_iaa_name(owner):
-    return f"IAA {owner.name}"
+def make_ma_name(owner):
+    return f"MA {owner.name}"
 
 
 def make_ba_name(owner):
@@ -173,10 +174,6 @@ def make_sa_name(owner):
 
 def make_fa_name(owner):
     return f"FA {owner.name}"
-
-
-def area_name_from_area_or_iaa_name(name):
-    return name[4:] if name[:4] == 'IAA ' else name
 
 
 def is_time_slot_in_simulation_duration(config, time_slot):
@@ -273,6 +270,10 @@ def constsettings_to_dict():
         for key, value in dict(class_object.__dict__).items():
             if key.startswith("__"):
                 continue
+
+            if class_name not in settings_dict:
+                settings_dict[class_name] = {}
+
             if inspect.isclass(value):
                 convert_nested_settings(value, key, settings_dict[class_name])
             else:
@@ -326,16 +327,16 @@ def validate_const_settings_for_simulation():
     # If schemes are not compared and an individual scheme is selected
     # And the market type is not single sided market
     # This is a wrong configuration and an exception is raised
-    if not ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES and \
-       ConstSettings.IAASettings.MARKET_TYPE != 1 and \
-       ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+    if not ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES and \
+       ConstSettings.MASettings.MARKET_TYPE != 1 and \
+       ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
         assert False, "Alternate pricing schemes are only usable with an one sided market."
 
     # If an alternate price is selected on compare schemes
     # There should be a single sided market
-    if ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES and \
-       ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-        ConstSettings.IAASettings.MARKET_TYPE = 1
+    if ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES and \
+       ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
+        ConstSettings.MASettings.MARKET_TYPE = 1
 
 
 def round_floats_for_ui(number):
@@ -419,13 +420,15 @@ def export_default_settings_to_json_file():
 
 
 def area_sells_to_child(trade, area_name, child_names):
-    return area_name_from_area_or_iaa_name(trade.seller) == \
-            area_name and area_name_from_area_or_iaa_name(trade.buyer) in child_names
+    return (
+        area_name_from_area_or_ma_name(trade.seller) == area_name
+        and area_name_from_area_or_ma_name(trade.buyer) in child_names)
 
 
 def child_buys_from_area(trade, area_name, child_names):
-    return area_name_from_area_or_iaa_name(trade.buyer) == \
-        area_name and area_name_from_area_or_iaa_name(trade.seller) in child_names
+    return (
+        area_name_from_area_or_ma_name(trade.buyer) == area_name
+        and area_name_from_area_or_ma_name(trade.seller) in child_names)
 
 
 def if_not_in_list_append(target_list, obj):
@@ -461,17 +464,13 @@ def get_simulation_queue_name():
 
 class ExternalTickCounter:
 
-    def __init__(self, ticks_per_slot):
-        self.ticks_per_slot = ticks_per_slot
-
-    @property
-    def _dispatch_tick_frequency(self) -> int:
-        return int(
-            self.ticks_per_slot *
-            (gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT / 100)
+    def __init__(self, ticks_per_slot: int, dispatch_frequency_percent: int):
+        self._dispatch_tick_frequency = int(
+            ticks_per_slot *
+            (dispatch_frequency_percent / 100)
         )
 
-    def is_it_time_for_external_tick(self, current_tick_in_slot) -> bool:
+    def is_it_time_for_external_tick(self, current_tick_in_slot: int) -> bool:
         return current_tick_in_slot % self._dispatch_tick_frequency == 0
 
 
@@ -483,7 +482,7 @@ def is_external_matching_enabled():
     """Checks if the bid offer match type is set to external
     Returns True if both are matched
     """
-    return (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+    return (ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
             BidOfferMatchAlgoEnum.EXTERNAL.value)
 
 

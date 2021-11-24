@@ -24,7 +24,7 @@ from gsy_e.models.config import ConstSettings
 
 @given('the market type is {market_type}')
 def set_market_type(context, market_type):
-    ConstSettings.IAASettings.MARKET_TYPE = int(market_type)
+    ConstSettings.MASettings.MARKET_TYPE = int(market_type)
 
 
 @then('Infinite Bus buys energy that is not needed from the PV and sells to the load')

@@ -33,11 +33,11 @@ def get_setup(config):
     ConstSettings.BalancingSettings.FLEXIBLE_LOADS_SUPPORT = False
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     # Two sided market
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.LoadSettings.INITIAL_BUYING_RATE = 0
     ConstSettings.LoadSettings.FINAL_BUYING_RATE = 35
-    ConstSettings.IAASettings.MIN_BID_AGE = 0
-    ConstSettings.IAASettings.MIN_OFFER_AGE = 0
+    ConstSettings.MASettings.MIN_BID_AGE = 0
+    ConstSettings.MASettings.MIN_OFFER_AGE = 0
 
     area = Area(
         "Grid",

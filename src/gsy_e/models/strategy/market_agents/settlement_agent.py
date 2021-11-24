@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from gsy_framework.constants_limits import ConstSettings
 
 from gsy_e.gsy_e_core.util import make_sa_name
-from gsy_e.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
-from gsy_e.models.strategy.area_agents.two_sided_engine import TwoSidedEngine
+from gsy_e.models.strategy.market_agents.two_sided_agent import TwoSidedAgent
+from gsy_e.models.strategy.market_agents.two_sided_engine import TwoSidedEngine
 
 
 class SettlementAgent(TwoSidedAgent):
@@ -28,8 +28,8 @@ class SettlementAgent(TwoSidedAgent):
     forward bids and offers from one settlement market to another.
     """
     def __init__(self, owner, higher_market, lower_market,
-                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
-                 min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE):
+                 min_offer_age=ConstSettings.MASettings.MIN_OFFER_AGE,
+                 min_bid_age=ConstSettings.MASettings.MIN_BID_AGE):
 
         super().__init__(owner=owner,
                          higher_market=higher_market,
