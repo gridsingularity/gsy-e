@@ -375,10 +375,9 @@ class Simulation:
                     global_objects.external_global_stats.update()
 
                 self.area.tick_and_dispatch()
-                self.area.update_clock_on_markets()
+                self.area.execute_actions_after_tick_event()
                 bid_offer_matcher.event_tick(
-                    is_it_time_for_external_tick=global_objects.external_global_stats.
-                    is_it_time_for_external_tick(current_tick_in_slot),
+                    current_tick_in_slot=current_tick_in_slot,
                     slot_completion=f"{int((tick_no / config.ticks_per_slot) * 100)}%",
                     market_slot=self.progress_info.next_slot_str)
                 self.simulation_config.external_redis_communicator.\

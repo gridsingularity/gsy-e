@@ -464,17 +464,13 @@ def get_simulation_queue_name():
 
 class ExternalTickCounter:
 
-    def __init__(self, ticks_per_slot):
-        self.ticks_per_slot = ticks_per_slot
-
-    @property
-    def _dispatch_tick_frequency(self) -> int:
-        return int(
-            self.ticks_per_slot *
-            (gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT / 100)
+    def __init__(self, ticks_per_slot: int, dispatch_frequency_percent: int):
+        self._dispatch_tick_frequency = int(
+            ticks_per_slot *
+            (dispatch_frequency_percent / 100)
         )
 
-    def is_it_time_for_external_tick(self, current_tick_in_slot) -> bool:
+    def is_it_time_for_external_tick(self, current_tick_in_slot: int) -> bool:
         return current_tick_in_slot % self._dispatch_tick_frequency == 0
 
 
