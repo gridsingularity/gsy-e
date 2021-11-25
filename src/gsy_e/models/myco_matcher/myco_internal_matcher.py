@@ -46,14 +46,14 @@ class MycoInternalMatcher(MycoMatcherInterface):
         :raises:
             WrongMarketTypeException
         """
-        if (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+        if (ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
                 BidOfferMatchAlgoEnum.PAY_AS_BID.value):
             return PayAsBidMatchingAlgorithm()
-        if (ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE ==
+        if (ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
                 BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value):
             return PayAsClearMatchingAlgorithm()
         raise WrongMarketTypeException("Wrong market type setting flag "
-                                       f"{ConstSettings.IAASettings.MARKET_TYPE}")
+                                       f"{ConstSettings.MASettings.MARKET_TYPE}")
 
     def match_recommendations(self, **kwargs):
         """Request trade recommendations and match them in the relevant market."""

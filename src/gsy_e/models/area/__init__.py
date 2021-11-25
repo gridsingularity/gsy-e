@@ -259,7 +259,7 @@ class Area:
     def _set_grid_fees(self, grid_fee_const, grid_fee_percentage):
         grid_fee_type = self.config.grid_fee_type \
             if self.config is not None \
-            else ConstSettings.IAASettings.GRID_FEE_TYPE
+            else ConstSettings.MASettings.GRID_FEE_TYPE
         if grid_fee_type == 1:
             grid_fee_percentage = None
         elif grid_fee_type == 2:
@@ -278,7 +278,7 @@ class Area:
         """Return the current grid fee for the area."""
         grid_fee_type = (
             self.config.grid_fee_type if self.config is not None
-            else ConstSettings.IAASettings.GRID_FEE_TYPE)
+            else ConstSettings.MASettings.GRID_FEE_TYPE)
 
         return self.grid_fee_constant if grid_fee_type == 1 else self.grid_fee_percentage
 
@@ -307,7 +307,7 @@ class Area:
 
         if self.budget_keeper:
             self.budget_keeper.activate()
-        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+        if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
             self._set_grid_fees(0, 0)
 
         # Cycle markets without triggering it's own event chain.
@@ -336,7 +336,7 @@ class Area:
         Trigger `MARKET_CYCLE` event to allow child markets to also cycle.
 
         It's important for this to happen from top to bottom of the `Area` tree
-        in order for the `InterAreaAgent`s to be connected correctly
+        in order for the `MarketAgent`s to be connected correctly
 
         `_trigger_event` is used internally to avoid multiple event chains during
         initial area activation.
@@ -434,23 +434,18 @@ class Area:
         Invoke aggregator commands consumer, publish market clearing, update events,
         update cached myco matcher markets and match trades recommendations.
         """
-        if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
+        if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
                 and not self.strategy):
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-                self._consume_commands_from_aggregator()
                 self.dispatcher.publish_market_clearing()
             elif is_external_matching_enabled():
                 # If external matching is enabled, clear before placing orders
                 bid_offer_matcher.match_recommendations()
-                self._consume_commands_from_aggregator()
                 self._update_myco_matcher()
             else:
                 # If internal matching is enabled, place orders before clearing
-                self._consume_commands_from_aggregator()
                 self._update_myco_matcher()
                 bid_offer_matcher.match_recommendations()
-        else:
-            self._consume_commands_from_aggregator()
 
         self.events.update_events(self.now)
 
@@ -463,20 +458,23 @@ class Area:
                             "future_markets": self.future_markets,
                             "current_time": self.now}})
 
-    def update_clock_on_markets(self) -> None:
+    def execute_actions_after_tick_event(self) -> None:
         """
-        Update clock on markets with self.now member.
-        Returns:
+        Execute actions that are needed after the tick event has been processed and dispatched
+        to all areas. The actions performed for now is consuming the aggregator commands, and
+        updating the clock on markets with self.now member
+        Returns: None
 
         """
         self.current_tick += 1
+        self._consume_commands_from_aggregator()
         if self.children:
             self.spot_market.update_clock(self.now)
 
             for market in self._markets.settlement_markets.values():
                 market.update_clock(self.now)
         for child in self.children:
-            child.update_clock_on_markets()
+            child.execute_actions_after_tick_event()
 
     def tick_and_dispatch(self):
         """Invoke tick handler and broadcast the event to children."""

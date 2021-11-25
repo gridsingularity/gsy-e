@@ -21,7 +21,7 @@ from gsy_e.models.area import Area
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 
-ConstSettings.IAASettings.MARKET_TYPE = 2
+ConstSettings.MASettings.MARKET_TYPE = 2
 
 
 def get_setup(config):

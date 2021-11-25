@@ -64,8 +64,8 @@ house3_load_dict = {
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.IAASettings.BID_OFFER_MATCH_TYPE = \
+    ConstSettings.MASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = \
         BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
     area = Area(
             "Grid",

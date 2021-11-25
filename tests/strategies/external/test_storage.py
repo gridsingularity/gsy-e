@@ -31,9 +31,9 @@ from tests.strategies.external.utils import (
 @pytest.fixture(name="external_storage")
 def external_storage_fixture():
     """Create a StorageExternalStrategy instance in a two-sided market."""
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     yield create_areas_markets_for_strategy_fixture(StorageExternalStrategy())
-    ConstSettings.IAASettings.MARKET_TYPE = 1
+    ConstSettings.MASettings.MARKET_TYPE = 1
 
 
 class TestStorageExternalStrategy:

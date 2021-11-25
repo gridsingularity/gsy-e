@@ -26,7 +26,7 @@ from gsy_e.models.strategy.storage import StorageStrategy
 
 def get_setup(config):
     ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = True
-    ConstSettings.IAASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
+    ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
 
     area = Area(
         "Grid",

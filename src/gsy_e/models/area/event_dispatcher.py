@@ -34,13 +34,13 @@ from gsy_e.models.area.redis_dispatcher.market_notify_event_subscriber import (
     MarketNotifyEventSubscriber)
 from gsy_e.models.market import MarketBase
 from gsy_e.models.market.market_structures import AvailableMarketTypes
-from gsy_e.models.strategy.area_agents.balancing_agent import BalancingAgent
-from gsy_e.models.strategy.area_agents.future_agent import FutureAgent
-from gsy_e.models.strategy.area_agents.one_sided_agent import OneSidedAgent
-from gsy_e.models.strategy.area_agents.one_sided_alternative_pricing_agent import (
+from gsy_e.models.strategy.market_agents.balancing_agent import BalancingAgent
+from gsy_e.models.strategy.market_agents.future_agent import FutureAgent
+from gsy_e.models.strategy.market_agents.one_sided_agent import OneSidedAgent
+from gsy_e.models.strategy.market_agents.one_sided_alternative_pricing_agent import (
     OneSidedAlternativePricingAgent)
-from gsy_e.models.strategy.area_agents.settlement_agent import SettlementAgent
-from gsy_e.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
+from gsy_e.models.strategy.market_agents.settlement_agent import SettlementAgent
+from gsy_e.models.strategy.market_agents.two_sided_agent import TwoSidedAgent
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
@@ -57,20 +57,20 @@ class AreaDispatcher:
     dicts with interarea agents for each market type.
     """
     def __init__(self, area: "Area"):
-        self._inter_area_agents: Dict[DateTime, OneSidedAgent] = {}
+        self._spot_agents: Dict[DateTime, OneSidedAgent] = {}
         self._balancing_agents: Dict[DateTime, BalancingAgent] = {}
         self._settlement_agents: Dict[DateTime, SettlementAgent] = {}
         self._future_agent: Optional[FutureAgent] = None
         self.area = area
 
     @property
-    def interarea_agents(self) -> Dict[DateTime, OneSidedAgent]:
-        """Return spot market inter area agents."""
-        return self._inter_area_agents
+    def spot_agents(self) -> Dict[DateTime, OneSidedAgent]:
+        """Return market agents of spot markets."""
+        return self._spot_agents
 
     @property
     def balancing_agents(self) -> Dict[DateTime, BalancingAgent]:
-        """Return balancing market inter area agents"""
+        """Return balancing market inter area agents."""
         return self._balancing_agents
 
     @property
@@ -80,7 +80,7 @@ class AreaDispatcher:
 
     @property
     def settlement_agents(self) -> Dict[DateTime, SettlementAgent]:
-        """Return settlement market inter area agents"""
+        """Return settlement market inter area agents."""
         return self._settlement_agents
 
     def broadcast_activate(self, **kwargs) -> None:
@@ -122,7 +122,7 @@ class AreaDispatcher:
             for time_slot, agent in agent_dict.items():
                 if time_slot not in agent_area.get_market_instances_from_class_type(
                         market_type):
-                    # exclude past IAAs
+                    # exclude past MAs
                     continue
 
                 agent.event_listener(event_type, **kwargs)
@@ -149,13 +149,13 @@ class AreaDispatcher:
         Broadcast all market and area events to the event_listener methods of the
         child dispatcher classes first (in order to propagate the event to the children of the
         area) and then to the Inter Area Agents of the children and this dispatcher's area.
-        Strategy event methods (e.g. event_offer) should have precedence over IAA's event methods.
-        Reason for that is that the IAA offer / bid  forwarding with MIN_BID/OFFER_AGE=0 setting
+        Strategy event methods (e.g. event_offer) should have precedence over MA's event methods.
+        Reason for that is that the MA offer / bid  forwarding with MIN_BID/OFFER_AGE=0 setting
         enabled is expected to forward the offer / bid on the same tick that the offer is posted.
-        If the IAA event method is called before the strategy event method, then the offer / bid
+        If the MA event method is called before the strategy event method, then the offer / bid
         will not be forwarded on the same tick, but on the next one.
         For a similar reason (a market area should clear all offers and bids posted by its children
-        before forwarding) the IAA event method is called after all children event methods have
+        before forwarding) the MA event method is called after all children event methods have
         been called.
         Args:
             event_type: Type of the event that will be broadcasted
@@ -228,21 +228,21 @@ class AreaDispatcher:
             "owner": owner,
             "higher_market": higher_market,
             "lower_market": lower_market,
-            "min_offer_age": ConstSettings.IAASettings.MIN_OFFER_AGE
+            "min_offer_age": ConstSettings.MASettings.MIN_OFFER_AGE
         }
 
         if market_type == AvailableMarketTypes.SPOT:
-            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
-                if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+                if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
                     return OneSidedAlternativePricingAgent(**agent_constructor_arguments)
                 return OneSidedAgent(**agent_constructor_arguments)
-            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
+            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
                 return TwoSidedAgent(
                     **agent_constructor_arguments,
-                    min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE
+                    min_bid_age=ConstSettings.MASettings.MIN_BID_AGE
                 )
             raise WrongMarketTypeException("Wrong market type setting flag "
-                                           f"{ConstSettings.IAASettings.MARKET_TYPE}")
+                                           f"{ConstSettings.MASettings.MARKET_TYPE}")
         if market_type == AvailableMarketTypes.SETTLEMENT:
             return SettlementAgent(**agent_constructor_arguments)
         if market_type == AvailableMarketTypes.BALANCING:
@@ -257,7 +257,7 @@ class AreaDispatcher:
             dispatcher_object, market_type: AvailableMarketTypes
     ) -> Dict[DateTime, Union[OneSidedAgent, BalancingAgent, SettlementAgent]]:
         if market_type == AvailableMarketTypes.SPOT:
-            return dispatcher_object.interarea_agents
+            return dispatcher_object.spot_agents
         if market_type == AvailableMarketTypes.BALANCING:
             return dispatcher_object.balancing_agents
         if market_type == AvailableMarketTypes.SETTLEMENT:
@@ -276,27 +276,27 @@ class AreaDispatcher:
             return False
         return True
 
-    def create_area_agents_for_future_markets(self, market: MarketBase) -> None:
+    def create_market_agents_for_future_markets(self, market: MarketBase) -> None:
         """Create area agents for future markets; There should only be one per Area at any time."""
         if not self._should_agent_be_created:
             return
 
-        iaa = self._create_agent_object(
+        market_agent = self._create_agent_object(
             owner=self.area,
             higher_market=self.area.parent.future_markets,
             lower_market=market,
             market_type=AvailableMarketTypes.FUTURE
         )
 
-        self._future_agent = iaa
+        self._future_agent = market_agent
 
-    def create_area_agents(self, market_type: AvailableMarketTypes, market: MarketBase) -> None:
+    def create_market_agents(self, market_type: AvailableMarketTypes, market: MarketBase) -> None:
         """
-        Create interarea agents for all market types, and store their reference to the respective
+        Create market agents for all market types, and store their reference to the respective
         dict.
         Args:
             market_type: Type of the market (spot/settlement/balancing/future)
-            market: MarketBase object that will be associated with this interarea agent
+            market: MarketBase object that will be associated with this market agent
 
         Returns: None
 
@@ -304,33 +304,32 @@ class AreaDispatcher:
         if not self._should_agent_be_created:
             return
 
-        interarea_agents = self._get_agents_for_market_type(self, market_type)
+        market_agents = self._get_agents_for_market_type(self, market_type)
         parent_markets = self.area.parent.get_market_instances_from_class_type(
             market_type)
-        if market.time_slot in interarea_agents or market.time_slot not in parent_markets:
+        if market.time_slot in market_agents or market.time_slot not in parent_markets:
             return
 
-        iaa = self._create_agent_object(
+        market_agent = self._create_agent_object(
             owner=self.area,
             higher_market=parent_markets[market.time_slot],
             lower_market=market,
             market_type=market_type
         )
 
-        # Attach agent to own IAA dict
-        interarea_agents[market.time_slot] = iaa
+        # Attach agent to own MA dict
+        market_agents[market.time_slot] = market_agent
 
     def event_market_cycle(self) -> None:
         """Called every market cycle. Recycles old area agents."""
-        self._delete_past_agents(self._inter_area_agents)
+        self._delete_past_agents(self._spot_agents)
         self._delete_past_agents(self._balancing_agents)
         self._delete_past_agents(self._settlement_agents)
 
     def _delete_past_agents(
-            self, area_agent_member: Dict[DateTime,
-                                          Union[OneSidedAgent, BalancingAgent, SettlementAgent]]
-    ) -> None:
-        delete_agents = [(pm, agents_list) for pm, agents_list in area_agent_member.items() if
+            self, market_agent_member: Dict[DateTime, Union[
+                OneSidedAgent, BalancingAgent, SettlementAgent]]) -> None:
+        delete_agents = [(pm, agents_list) for pm, agents_list in market_agent_member.items() if
                          self.area.current_market and pm < self.area.current_market.time_slot]
         for pm, agent in delete_agents:
             if hasattr(agent, "engines"):
@@ -338,7 +337,7 @@ class AreaDispatcher:
                 del agent.engines
             agent.higher_market = None
             agent.lower_market = None
-            del area_agent_member[pm]
+            del market_agent_member[pm]
 
 
 class RedisAreaDispatcher(AreaDispatcher):

@@ -20,23 +20,23 @@ from typing import Optional
 from numpy.random import random
 
 from gsy_e.models.market import MarketBase
-from gsy_e.models.strategy.area_agents.inter_area_agent import InterAreaAgent
-from gsy_e.models.strategy.area_agents.one_sided_engine import IAAEngine
+from gsy_e.models.strategy.market_agents.market_agent import MarketAgent
+from gsy_e.models.strategy.market_agents.one_sided_engine import MAEngine
 
 
-class OneSidedAgent(InterAreaAgent):
+class OneSidedAgent(MarketAgent):
     """Inter area agent implementation for the one sided case."""
 
     def _create_engines(self):
         self.engines = [
-            IAAEngine("High -> Low", self.higher_market, self.lower_market,
-                      self.min_offer_age, self),
-            IAAEngine("Low -> High", self.lower_market, self.higher_market,
-                      self.min_offer_age, self),
+            MAEngine("High -> Low", self.higher_market, self.lower_market,
+                     self.min_offer_age, self),
+            MAEngine("Low -> High", self.lower_market, self.higher_market,
+                     self.min_offer_age, self),
         ]
 
     def usable_offer(self, offer):
-        """Prevent IAAEngines from trading their counterpart's offers"""
+        """Prevent MAEngines from trading their counterpart's offers"""
         return all(offer.id not in engine.forwarded_offers.keys() for engine in self.engines)
 
     def get_market_from_market_id(self, market_id: str) -> Optional[MarketBase]:

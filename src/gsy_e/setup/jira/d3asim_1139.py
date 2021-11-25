@@ -6,7 +6,7 @@ from gsy_framework.constants_limits import ConstSettings
 
 def get_setup(config):
     market_maker_rate = 3
-    ConstSettings.IAASettings.MARKET_TYPE = 1
+    ConstSettings.MASettings.MARKET_TYPE = 1
     config.update_config_parameters(market_maker_rate=market_maker_rate)
 
     houses_1 = [Area(f"House 1 {i}", children=[

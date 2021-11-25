@@ -27,18 +27,18 @@ from uuid import uuid4
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import (Offer, Bid, Trade)
 from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.utils import limit_float_precision
 from pendulum import DateTime
 
-from gsy_e import constants, limit_float_precision
+from gsy_e import constants
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
-from gsy_e.gsy_e_core.device_registry import DeviceRegistry
-from gsy_e.gsy_e_core.exceptions import D3ARedisException
-from gsy_e.gsy_e_core.exceptions import SimulationException, MarketException
-from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
-from gsy_e.gsy_e_core.util import append_or_create_key
 from gsy_e.events import EventMixin
 from gsy_e.events.event_structures import AreaEvent, MarketEvent
+from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.gsy_e_core.exceptions import D3ARedisException, SimulationException, MarketException
+from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
+from gsy_e.gsy_e_core.util import append_or_create_key
 from gsy_e.models.base import AreaBehaviorBase
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.market import MarketBase
@@ -752,6 +752,7 @@ class BidEnabledStrategy(BaseStrategy):
         Returns: The bid posted to the market
 
         """
+        self._assert_bid_can_be_posted_on_market(market.id)
         if replace_existing:
             self._remove_existing_bids(market)
 
@@ -774,9 +775,10 @@ class BidEnabledStrategy(BaseStrategy):
         """Replace the rate of all bids in the market slot with the given updated rate."""
         existing_bids = list(self.get_posted_bids(market))
         for bid in existing_bids:
+            if abs(bid.energy_rate - updated_rate) <= FLOATING_POINT_TOLERANCE:
+                continue
             assert bid.buyer == self.owner.name
-            if bid.id in market.bids.keys():
-                bid = market.bids[bid.id]
+
             market.delete_bid(bid.id)
 
             self.remove_bid_from_pending(market.id, bid.id)
@@ -850,6 +852,7 @@ class BidEnabledStrategy(BaseStrategy):
 
     def remove_bid_from_pending(self, market_id: str, bid_id: str = None) -> List[str]:
         """Remove bid from pending bids dict"""
+        self._assert_bid_can_be_posted_on_market(market_id)
         market = self.get_market_from_id(market_id)
         if market is None:
             return []
@@ -918,7 +921,7 @@ class BidEnabledStrategy(BaseStrategy):
             return []
         return [b for b in self._bids[market.id] if time_slot is None or b.time_slot == time_slot]
 
-    def _assert_market_type_on_bid_event(self, market_id):
+    def _assert_bid_can_be_posted_on_market(self, market_id):
         assert (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value or
                 self.area.is_market_future(market_id) or
                 self.area.is_market_settlement(market_id)), (
@@ -926,7 +929,7 @@ class BidEnabledStrategy(BaseStrategy):
             "if it is not a future or settlement market bid.")
 
     def event_bid_deleted(self, *, market_id: str, bid: Bid) -> None:
-        self._assert_market_type_on_bid_event(market_id)
+        self._assert_bid_can_be_posted_on_market(market_id)
 
         if bid.buyer != self.owner.name:
             return
@@ -935,7 +938,7 @@ class BidEnabledStrategy(BaseStrategy):
     # pylint: disable=unused-argument
     def event_bid_split(self, *, market_id: str, original_bid: Bid, accepted_bid: Bid,
                         residual_bid: Bid) -> None:
-        self._assert_market_type_on_bid_event(market_id)
+        self._assert_bid_can_be_posted_on_market(market_id)
 
         if accepted_bid.buyer != self.owner.name:
             return
@@ -947,7 +950,7 @@ class BidEnabledStrategy(BaseStrategy):
 
         This method is triggered by the MarketEvent.BID_TRADED event.
         """
-        self._assert_market_type_on_bid_event(market_id)
+        self._assert_bid_can_be_posted_on_market(market_id)
 
         if bid_trade.buyer == self.owner.name:
             self.add_bid_to_bought(bid_trade.offer_bid, market_id)

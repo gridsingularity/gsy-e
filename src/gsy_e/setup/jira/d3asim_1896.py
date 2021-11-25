@@ -24,7 +24,7 @@ from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 def get_setup(config):
     import gsy_e.constants
     gsy_e.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = True
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 1
     ConstSettings.GeneralSettings.MIN_UPDATE_INTERVAL = 1
     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = 30

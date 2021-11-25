@@ -18,16 +18,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from gsy_framework.constants_limits import ConstSettings
 from numpy.random import random
 
-from gsy_e.models.strategy.area_agents.one_sided_agent import OneSidedAgent
-from gsy_e.models.strategy.area_agents.two_sided_engine import TwoSidedEngine
+from gsy_e.models.strategy.market_agents.one_sided_agent import OneSidedAgent
+from gsy_e.models.strategy.market_agents.two_sided_engine import TwoSidedEngine
 
 
 class TwoSidedAgent(OneSidedAgent):
     """Handles order forwarding between two sided markets."""
 
     def __init__(self, *, owner, higher_market, lower_market,
-                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
-                 min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE):
+                 min_offer_age=ConstSettings.MASettings.MIN_OFFER_AGE,
+                 min_bid_age=ConstSettings.MASettings.MIN_BID_AGE):
 
         self.min_bid_age = min_bid_age
         super().__init__(owner=owner,
@@ -46,7 +46,7 @@ class TwoSidedAgent(OneSidedAgent):
         ]
 
     def usable_bid(self, bid):
-        """Prevent IAAEngines from trading their counterpart's bids."""
+        """Prevent MAEngines from trading their counterpart's bids."""
         return all(bid.id not in engine.forwarded_bids.keys() for engine in self.engines)
 
     # pylint: disable=unused-argument

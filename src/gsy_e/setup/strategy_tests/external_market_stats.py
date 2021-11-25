@@ -22,7 +22,7 @@ from gsy_e.models.strategy.external_strategies.pv import PVExternalStrategy
 from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from gsy_framework.constants_limits import ConstSettings
 
-ConstSettings.IAASettings.MARKET_TYPE = 2
+ConstSettings.MASettings.MARKET_TYPE = 2
 
 
 def get_setup(config):

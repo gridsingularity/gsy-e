@@ -16,8 +16,7 @@ see <http://www.gnu.org/licenses/>.
 import random
 
 from gsy_framework.constants_limits import ConstSettings
-
-from gsy_e.constants import DEFAULT_PRECISION
+from gsy_framework.utils import limit_float_precision
 
 
 def compute_altered_energy(
@@ -41,4 +40,4 @@ def compute_altered_energy(
     if (altered_energy_kWh > 0) != (energy_kWh > 0):
         return 0
 
-    return round(altered_energy_kWh, DEFAULT_PRECISION)
+    return limit_float_precision(altered_energy_kWh)

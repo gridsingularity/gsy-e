@@ -369,7 +369,7 @@ class ExternalMixin:
             # Trade does not concern this device, skip it.
             return
 
-        if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
+        if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
                 ((trade.buyer == self.device.name and trade.is_offer_trade) or
                  (trade.seller == self.device.name and trade.is_bid_trade))):
             # Do not track a 2-sided market trade that is originating from an Offer to a
@@ -500,7 +500,7 @@ class ExternalMixin:
             "offer": self._offer_aggregator,
             "delete_offer": self._delete_offer_aggregator,
             "list_offers": self._list_offers_aggregator,
-            "device_info": self._device_info,
+            "device_info": self._device_info_aggregator,
         }
 
     def trigger_aggregator_commands(self, command: Dict) -> Dict:
