@@ -1,4 +1,4 @@
-##Installing Grid Singularity energy exchange on Linux Ubuntu 18.04:
+##Installing Grid Singularity Exchange on Linux Ubuntu 18.04:
 
 ###Step 1: In case you have not already installed git, python3.8 and pip (otherwise please go directly to step 2):
 
@@ -18,12 +18,12 @@ sudo apt-get install python3-pip -y
 pip3 install virtualenv
 mkdir envs
 cd envs
-virtualenv -p /usr/bin/python3.8 d3a
+virtualenv -p /usr/bin/python3.8 gsy-e
 ```
 
 ####How to activate the environment:
 ```
-source d3a/bin/activate
+source gsy-e/bin/activate
 ```
 
 ####How to deactivate the environment:
@@ -38,17 +38,17 @@ export LC_ALL=C.UTF-8
 export LANG=C.UTF-8
 ```
 
-###Step 4: Clone the Grid Singularity repository to a directory of your choice:
+###Step 4: Clone the Grid Singularity Exchange repository, gsy-e, to a directory of your choice:
 ```
-git clone https://github.com/gridsingularity/d3a.git
+git clone https://github.com/gridsingularity/gsy-e.git
 ```
 
-###Step 5: Install the Grid Singularity energy exchange:
+###Step 5: Install
 
 ####Activate your virtual environment and go into the d3a repository
 
 ```
-source d3a/bin/activate
+source gsy-e/bin/activate
 ```
 
 ####Install pip-tools
@@ -63,19 +63,21 @@ pip3 install pendulum pip-tools
 pip install -e.
 ```
 
-Now, if you run `d3a run -–help` , the help of d3a should be shown.
+Now, if you run `gsy-e run -–help` , the help of gsy-e should be shown.
 
-##Installing Grid Singularity energy exchange on Linux Ubuntu 20.04:
 
-Please follow the installation instructions for [Ubuntu 18.04](https://gridsingularity.github.io/d3a/installation-instructions/#ubuntu-1804) 
+##Installing Grid Singularity Exchange on Linux Ubuntu 20.04:
 
-If case  you encounter the following error 
+
+Please follow the installation instructions for [Ubuntu 18.04](https://gridsingularity.github.io/d3a/installation-instructions/#ubuntu-1804)
+
+If case  you encounter the following error
 
 ```
 error: command 'x86_64-linux-gnu-gcc' failed with exit status 1
 ```
 
-please install the following package: 
+please install the following package:
 
 ```
 sudo apt-get install build-essential python3.8-dev -y

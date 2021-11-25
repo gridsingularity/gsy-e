@@ -35,7 +35,7 @@ Create a new-folder that you want to share across guest and host machines.
 
 Add the Vagrantfile from Grid Singularity Exchange repository into your newly created folder.
 
-Open a terminal and go into your newly-created folder with: 
+Open a terminal and go into your newly-created folder with:
 
 ```
 cd <path-to-your-folder>
@@ -44,12 +44,12 @@ cd <path-to-your-folder>
 If it is your first time do:
 
 ```
-vagrant up  
+vagrant up
 ```
 
 If vagrant was already running, please delete re-initialize with the following steps first :
 
-* Delete old vagrant images via : 
+* Delete old vagrant images via :
 
 ```
 vagrant destroy --force
@@ -64,7 +64,7 @@ vagrant box remove ubuntu/<your-box-name> --all --force
 ###Step 4: Reload your virtual machine:
 
 ```
-vagrant reload 
+vagrant reload
 ```
 
 ###Step 5: Access your virtual machine terminal to run Grid Singularity Exchange:
@@ -76,48 +76,48 @@ vagrant ssh
 ###Step 6: Share folder to Windows host by running these three commands:
 
 ```
-cp -r /home/vagrant/d3a /vagrant/
+cp -r /home/vagrant/gsy-e/vagrant/
 ```
 
-Share d3a-api-client :
+Share gsy-e-sdk:
 
 ```
-cp -r /home/vagrant/d3a-api-client /vagrant/
+cp -r /home/vagrant/gsy-e-sdk/vagrant/
 ```
 
-If you have results you want to export to windows :
+If you have results you want to export to Windows :
 
 ```
-cd /home/vagrant/d3a-simulation/
+cd /home/vagrant/gsy-e-simulation/
 zip -r <your-zip-filename>.zip ./<folder-to-be-zipped>/
 cp -r <your-zip-filename>.zip /vagrant/
 ```
 
-###Step 7: Run Grid Singularity D3A simulation
+###Step 7: Run a gsy-e simulation
 
-Activate the D3A environment:
+Activate the gsy-e environment:
 
 ```
-source /home/vagrant/envs/d3a/bin/activate
+source /home/vagrant/envs/gsy-e/bin/activate
 ```
 
 Run simulation with:
 
 ```
-cd /vagrant/d3a
-d3a run
+cd /vagrant/gsy-e
+gsy-e run
 ```
 
-###Step 8: Run the Grid Singularity Exchange API client in Vagrant
+###Step 8: Run the Grid Singularity Exchange SDK in Vagrant
 
-Activate the API-client environment:
-
-```
-source /home/vagrant/envs/api-client/bin/activate
-```
-
-To run your API script, run the following command (template here):
+Activate the Exchange SDK environment:
 
 ```
-python your_api_script.py
+source /home/vagrant/envs/exchange-sdk/bin/activate
+```
+
+To run your SDK script, run the following command (template here):
+
+```
+python your_sdk_script.py
 ```

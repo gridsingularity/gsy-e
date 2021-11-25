@@ -50,23 +50,23 @@ echo -e 'BREW_PREFIX="$(brew --prefix openssl)"\nexport CFLAGS="-I${BREW_PREFIX}
 
 ###Step 9: Close and re-open the terminal
 
-###Step 10: Clone Grid Singularity D3A repository (do this inside the directory where you want the project to be):
+###Step 10: Clone gsy-e repository (do this inside the directory where you want the project to be):
 
 ```
-git clone "https://github.com/gridsingularity/d3a.git"
-cd d3a
+git clone "https://github.com/gridsingularity/gsy-e.git"
+cd gsy-e
 ```
 
-###Step 11: Create and initialize d3a virtualenv
+###Step 11: Create and initialize gsy-e virtualenv
 
 ```
-brew install npm 
+brew install npm
 npm install --global ganache-cli
-mkvirtualenv d3a
+mkvirtualenv gsy-e
 pip install pendulum pip-tools
-pip install -e . 
+pip install -e .
 ```
 
-You now should have a working d3a setup.
+You now should have a working gsy-e setup.
 
-For help in the terminal ani to test your installation, run `d3a run -–help`.
+For help in the terminal ani to test your installation, run `gsy-e run -–help`.

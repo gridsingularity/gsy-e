@@ -2,11 +2,15 @@ The constant grid fee is a market based fee, defined in **€/kWh** and added to
 
 ![alt_text](img/grid-fee-constant-1.png)
 
-The rate of a bid or offer changes as that bid or offer is propagated into different [markets](model-markets.md). The offer rate increases to account for the added fees for the relevant market, ensuring that the seller receives a revenue equal or greater than the original offer. The bid rate decreases for the same reason. 
+***Figure 3.15***. *Constant grid fee calculation in the Grid Singularity Exchange.*
+
+The rate of a bid or offer changes as that bid or offer is propagated into different [markets](model-markets.md). The offer rate increases to account for the added fees for the relevant market, ensuring that the seller receives a revenue equal or greater than the original offer. The bid rate decreases for the same reason.
 
 ##Example Calculation in One-Sided Pay-as-Offer Market
 
 ![alt_text](img/grid-fee-constant-2.png)
+
+***Figure 3.16***. *Constant Grid Fee Example Calculation in One-Sided Pay-as-Offer Market.*
 
 In an [One-Sided Pay-as-Offer](one-sided-pay-as-offer.md) market, there are no bids, only offers. Offers are propagated throughout the markets in the hierarchy shown in the figure above. Grid fees are accounted for when an offer is forwarded to the higher market, adding that market’s grid fees to any previously accumulated fees. The formula to calculate the new offer rate when placing an offer to a higher market is the following:
 
@@ -14,7 +18,7 @@ In an [One-Sided Pay-as-Offer](one-sided-pay-as-offer.md) market, there are no b
 offer_rate_after_fees (€/kWh) = offer_rate (€/kWh) + grid_fee (€/kWh)
 ```
 
-If the offer is not purchased after two [ticks](markets.md#market-ticks), it is moved into the next market, with the total rate incremented by the amount of that market's grid fee. In the example above, the PV offer of 0.10 €/kWh is first placed into the House 2 Market where it gains zero fees. Then it moves into the Neighborhood 2 Market, gaining a fee of 0.01 €/kWh to become 0.11 €/kWh. Then, if not purchased, it moves into the Grid Market, gaining a fee of 0.02 €/kWh to become 0.13 €/kWh. Continuing into the Neighborhood 1 Market, the offer gains a fee of 0.01 €/kWh to become 0.14 €/kWh. Continuing into the House 1 Market, the offer gains zero fees. The Load ultimately buys the offer in the House 1 Market at the Clearing Rate of 0.14 €/kWh.
+If the offer is not purchased after two [ticks](market-types.md#market-ticks), it is moved into the next market, with the total rate incremented by the amount of that market's grid fee. In the example above, the PV offer of 0.10 €/kWh is first placed into the House 2 Market where it gains zero fees. Then it moves into the Neighborhood 2 Market, gaining a fee of 0.01 €/kWh to become 0.11 €/kWh. Then, if not purchased, it moves into the Grid Market, gaining a fee of 0.02 €/kWh to become 0.13 €/kWh. Continuing into the Neighborhood 1 Market, the offer gains a fee of 0.01 €/kWh to become 0.14 €/kWh. Continuing into the House 1 Market, the offer gains zero fees. The Load ultimately buys the offer in the House 1 Market at the Clearing Rate of 0.14 €/kWh.
 
 The trade price is calculated by adding the original offer rate (`0.10 €/kWh`) and the total fees (`(0.01+0.02+0.01) = 0.04 €/kWh`), then multiplying by the amount of energy traded (`1 kWh`) to yield the Trade Price of 0.14€.
 
@@ -44,13 +48,15 @@ House 2 Market = (0.10 + 0)*1 = 0.10
 
 ![alt_text](img/grid-fee-constant-3.png)
 
+***Figure 3.17***. *Constant Grid Fee Example Calculation in Two-Sided Pay-as-Bid Market.*
+
 In the [Two-Sided Pay-as-Bid](two-sided-pay-as-bid.md) market, there are both bids and offers, and both are propagated through the markets in the hierarchy. If a bid or offer is not matched after two [ticks](markets.md#market-ticks), it is moved into the next market. In order to prevent the double accounting of a market's grid fee when a bid and an offer are matched in that market, market fees are added to offers when they enter a new market (target market), and they are subtracted from bids when they leave a market (source market) and enter another one. The formula for propagating the offers is the same as for the one-sided market :
 
 ```
 offer_rate_after_fees (€/kWh) = offer_rate (€/kWh) + grid_fee (€/kWh)
 ```
 
-The IAA subtracts the fees from the bid before propagating the bid to the higher market, based on the following formula: 
+The IAA subtracts the fees from the bid before propagating the bid to the higher market, based on the following formula:
 
 ```
 bid_rate_after_fees (€/kWh) = bid_rate (€/kWh) - grid_fee (€/kWh)
@@ -69,7 +75,7 @@ demand_side_fee (€/kWh) = original_bid_rate (€/kWh) - forwarded_bid_rate (�
 supply_side_fee (€/kWh) = forwarded_offer_rate (€/kWh) - original_offer_rate (€/kWh)
 ```
 
-For the example, we have the following values: 
+For the example, we have the following values:
 
 ```
 supply_side_fee = 0.13 - 0.10 = 0.03 €/kWh
@@ -105,9 +111,3 @@ House 2 Market = (0.26 + 0)*1 = 0.26.
 ```
 
 The Load pays the Trade Price of 0.30€, which includes 0.26€ revenue for the PV, 0.01€ fees for Neighborhood Market 1, 0.02€ fees for the Grid Market, and 0.01€ fees for the Neighborhood Market 2.
-
-
-##Example Calculation in Two-Sided Pay-as-Clear Market
-
-
-This market clearing type is currently in development. We welcome your suggestions on its design!

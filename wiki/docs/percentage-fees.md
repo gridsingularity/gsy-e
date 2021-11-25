@@ -2,15 +2,18 @@ The percentage grid fee is a market based fee, defined as a **ratio (%)** of the
 
 ![alt_text](img/grid-fee-percentage-1.png)
 
-The price of a bid or offer changes as it is propagated into different [markets](model-markets.md) to account for market fees. This way, a trading agent posting an offer will never receive less than offered and an agent making a bid will never pay more than bid.
+***Figure 3.18***. *Percentage grid fee calculation in the Grid Singularity Exchange.*
+
+The price of a bid or offer changes as it is propagated into different markets to account for market fees. This way, a trading agent posting an offer will never receive less than offered and an agent making a bid will never pay more than bid.
 
 ##Example Calculation in One-Sided Pay-as-Offer Market
 
 
 ![alt_text](img/grid-fee-percentage-2.png)
 
+***Figure 3.19***. *Percentage Grid Fee Example Calculation in One-Sided Pay-as-Offer Market.*
 
-In the One-Sided Pay-as-Offer market, there are no bids, only offers. The offers are propagated throughout the markets in the hierarchy. The grid fees are taken into account when an offer is forwarded to the higher market, by the higher market itself. Therefore the agent is not responsible for adapting the offer price to include the grid fees. The grid fees' unit is a ratio of the original offer price, therefore the formula to calculate the new offer price when placing an offer to a market is the following:
+In the [One-Sided Pay-as-Offer market](one-sided-pay-as-offer.md), there are no bids, only offers. The offers are propagated throughout the markets in the hierarchy. The grid fees are taken into account when an offer is forwarded to the higher market, by the higher market itself. Therefore the agent is not responsible for adapting the offer price to include the grid fees. The grid fees' unit is a ratio of the original offer price, therefore the formula to calculate the new offer price when placing an offer to a market is the following:
 
 ```
 offer_price_after_fees = offer_price + original_price * grid_fee_ratio
@@ -32,14 +35,16 @@ trade_price = energy * trade_rate
 
 ![alt_text](img/grid-fee-percentage-3.png)
 
+***Figure 3.20***. *Percentage Grid Fee Example Calculation in Two-Sided Pay-as-Bid Market.*
 
-In the Two-Sided Pay-as-Bid market, both bids and offers are propagated through the markets in the hierarchy. If a bid or offer is not purchased after two [ticks](markets.md#market-ticks), it propagates into the next market. In order to prevent double accounting of a market's grid fee when a bid and an offer are matched in that market, market fees are added to offers when they enter that market (target market) and subtracted from bids when they leave that market and enter another (source market). The formula for propagating the offers is the same as for the one-sided market:
+
+In the [Two-Sided Pay-as-Bid market](two-sided-pay-as-bid.md), both bids and offers are propagated through the markets in the hierarchy. If a bid or offer is not purchased after two [ticks](market-types.md#market-ticks), it propagates into the next market. In order to prevent double accounting of a market's grid fee when a bid and an offer are matched in that market, market fees are added to offers when they enter that market (target market) and subtracted from bids when they leave that market and enter another (source market). The formula for propagating the offers is the same as for the one-sided market:
 
 ```
 offer_price_after_fees = offer_price + original_price * grid_fee_ratio
 ```
 
-The IAA subtracts the fees from the bid before propagating it to a higher market. The formula for an area to update the bid to include grid fees is the following: 
+The Market Agent (MA) subtracts the fees from the bid before propagating it to a higher market. The formula for an area to update the bid to include grid fees is the following:
 
 ```
 bid_price_after_fees = bid_price - original_price * grid_fee_ratio
@@ -47,7 +52,7 @@ bid_price_after_fees = bid_price - original_price * grid_fee_ratio
 
 In the case of the Two-Sided Pay-as-Bid market, the offer has moved into the Grid Market by the same mechanism as for the One-Sided Pay-as-Offer market. The bid of 0.30€ follows a similar mechanism and is placed into the House 1 Market where there are zero fees. If the bid is not purchased after two ticks, it is moved into the Neighborhood 1 Market. As explained above, only the fees from the source market are added, which are zero in this case. Hence the bid remains at 0.30€. Next, the bid is moved to the Grid Market, and incurs the fees of the source market, the Neighborhood 1 Market of 5% to `0.30-0.30*0.05=0.285€`.
 
-In the example above, the bid and offer are matched in the Grid Market. When the offer entered the Grid Market, its price was immediately updated to account for the Grid Market's fees `0.10*0.10+0.105=0.115€`. The bid, however, did not add the 10% fee as only the fees from the source markets are added. In the case that the bid was not matched in the Grid Market and moved into the Neighborhood 2 Market, the 10% fee from the Grid Market would be added to the bid. In this case, the bid would become `0.285-0.30*0.10=0.255€`. 
+In the example above, the bid and offer are matched in the Grid Market. When the offer entered the Grid Market, its price was immediately updated to account for the Grid Market's fees `0.10*0.10+0.105=0.115€`. The bid, however, did not add the 10% fee as only the fees from the source markets are added. In the case that the bid was not matched in the Grid Market and moved into the Neighborhood 2 Market, the 10% fee from the Grid Market would be added to the bid. In this case, the bid would become `0.285-0.30*0.10=0.255€`.
 
 In the Grid Market, the Load bid is listed as 0.285€ and the PV offer is listed as 0.115€. As the bid rate is greater than the offer rate, a trade can be scheduled. The trade clears at the bid rate, resulting in a Clearing Price of 0.285€.
 
@@ -58,7 +63,7 @@ demand_side_fee = 1 - (forwarded_bid_rate / original_bid_rate)
 supply_side_fee = (forwarded_offer_rate / original_offer_rate) - 1
 ```
 
-The provided example has the following values: 
+The provided example has the following values:
 
 ```
 supply_side_fee=(0.115/0.1)-1=0.15
@@ -92,14 +97,10 @@ trade_price = energy * trade_rate
 In the provided example, the trade price for each market is:
 ```
 Grid Market = 0.25 * (1 + 0.15) = 0.2875
-Neighborhood 2 Market = 0.25 * (1 + 0.05) = 0.2625 
+Neighborhood 2 Market = 0.25 * (1 + 0.05) = 0.2625
 Neighborhood 1 Market = 0.25 * (1 + 0.2) = 0.3
 House 1 Market = 0.25 * (1 + 0.2) = 0.3
 House 2 Market = 0.25 * (1 + 0) = 0.25
 ```
 
 The Load pays the Trade Price of 0.30€, which includes 0.25€ revenue for the PV, 0.0125€ fees for the Neighborhood Market 1, 0.025€ fees for the Grid Market, and 0.0125€ fees for the Neighborhood Market 2.
-
-##Example Calculation in Two-Sided Pay-as-Clear Market
-
-This market clearing type is currently in development. We welcome your suggestions on its design!
