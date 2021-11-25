@@ -23,12 +23,12 @@ from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStra
 from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 from gsy_framework.constants_limits import ConstSettings
 
-ConstSettings.IAASettings.MARKET_TYPE = 2
+ConstSettings.MASettings.MARKET_TYPE = 2
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.MIN_BID_AGE = 0
-    ConstSettings.IAASettings.MIN_OFFER_AGE = 0
+    ConstSettings.MASettings.MIN_BID_AGE = 0
+    ConstSettings.MASettings.MIN_OFFER_AGE = 0
     area = Area(
         "Grid",
         [

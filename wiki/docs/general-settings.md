@@ -138,10 +138,10 @@ Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market ty
 ```python
 from gsy_framework.constants_limits import ConstSettings
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.LoadSettings.MIN_ENERGY_RATE = 0
     ConstSettings.LoadSettings.MAX_ENERGY_RATE = 35
-    ConstSettings.IAASettings.GRID_FEE_TYPE = 1
+    ConstSettings.MASettings.GRID_FEE_TYPE = 1
 ```
 
 ###d3a-settings.json

@@ -328,18 +328,18 @@ class PVStrategy(BidEnabledStrategy):
         self._settlement_market_strategy.event_bid_traded(self, market_id, bid_trade)
 
     def _set_alternative_pricing_scheme(self):
-        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+        if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
             for market in self.area.all_markets:
                 time_slot = market.time_slot
-                if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
+                if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME == 1:
                     self.offer_update.set_parameters(initial_rate=0, final_rate=0)
-                elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
+                elif ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME == 2:
                     rate = (
                         self.simulation_config.market_maker_rate[time_slot] *
-                        ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE /
+                        ConstSettings.MASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE /
                         100)
                     self.offer_update.set_parameters(initial_rate=rate, final_rate=rate)
-                elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
+                elif ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME == 3:
                     rate = self.area.config.market_maker_rate[time_slot]
                     self.offer_update.set_parameters(initial_rate=rate, final_rate=rate)
                 else:

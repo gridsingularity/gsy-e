@@ -20,7 +20,7 @@ from typing import Dict
 
 from pendulum import DateTime
 
-from gsy_e.models.strategy.area_agents.two_sided_engine import TwoSidedEngine
+from gsy_e.models.strategy.market_agents.two_sided_engine import TwoSidedEngine
 
 BidInfo = namedtuple("BidInfo", ("source_bid", "target_bid"))
 

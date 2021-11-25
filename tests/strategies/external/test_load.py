@@ -29,9 +29,9 @@ from tests.strategies.external.utils import (
 
 @pytest.fixture(name="external_load")
 def external_load_fixture():
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     yield create_areas_markets_for_strategy_fixture(LoadHoursExternalStrategy(100))
-    ConstSettings.IAASettings.MARKET_TYPE = 1
+    ConstSettings.MASettings.MARKET_TYPE = 1
 
 
 class TestLoadForecastExternalStrategy:

@@ -42,7 +42,7 @@ class TestMarketRotation:
         config.tick_length = duration(seconds=15)
         config.ticks_per_slot = 60
         config.start_date = today(tz=TIME_ZONE)
-        config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
+        config.grid_fee_type = ConstSettings.MASettings.GRID_FEE_TYPE
         config.end_date = config.start_date + duration(days=1)
         child = Area(name="test_market_area", config=config, strategy=StorageStrategy())
         area = Area(name="parent_area", children=[child], config=config)

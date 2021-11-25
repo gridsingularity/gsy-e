@@ -23,7 +23,7 @@ from gsy_framework.constants_limits import ConstSettings
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = 1
+    ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME = 1
     area = Area(
         "Grid",
         [

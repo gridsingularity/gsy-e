@@ -39,7 +39,7 @@ def ext_strategy_fixture(request):
     config.tick_length = duration(seconds=15)
     config.ticks_per_slot = 60
     config.start_date = GlobalConfig.start_date
-    config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
+    config.grid_fee_type = ConstSettings.MASettings.GRID_FEE_TYPE
     config.end_date = GlobalConfig.start_date + duration(days=1)
     area = Area(name="forecast_pv", config=config, strategy=strategy,
                 external_connection_available=True)
