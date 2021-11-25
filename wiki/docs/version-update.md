@@ -1,5 +1,5 @@
 
-##Grid Singularity [energy exchange engine](https://github.com/gridsingularity/d3a) (D3A) Update
+##Grid Singularity [Exchange](https://github.com/gridsingularity/gsy-e) Update
 
 Please start by opening a terminal and activating the Grid Singularity D3A virtual environment as described in the Installation Instructions. Then type:
 ```
@@ -13,16 +13,16 @@ If fab sync does not work on your machine, please try:
 pip install -e .
 ```
 
-##Grid Singularity [API](https://github.com/gridsingularity/d3a-api-client) Client Update
+##Grid Singularity Exchange [SDK](https://github.com/gridsingularity/gsy-e-sdk) Update
 
-Please start by opening a terminal and activating the API client virtual environment as described in the API Installation Instructions. Then type:
+Please start by opening a terminal and activating the Exchange SDK virtual environment as described in the API Installation Instructions. Then type:
 
 ```
-pip uninstall d3a-api-client
+pip uninstall gsy-e-sdk
 ```
 
 Press y when prompted. Once the uninstall is complete, type:
 
 ```
-pip install git+https://github.com/gridsingularity/d3a-api-client.git
+pip install git+https://github.com/gridsingularity/gsy-e-sdk.git
 ```

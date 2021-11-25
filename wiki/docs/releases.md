@@ -25,7 +25,7 @@ The following features were implemented :
 
 * Time Resolution setting for graphs: Users can choose to **view data** in the graphs in 2 hour, 1 hour, or 15 minutes time resolution. This allows for **faster** loading of the graphs as the simulation run time is extended. Users can change the time resolution for the Energy Trade Profile, Energy Pricing, and Asset Profile graphs.
 * Add a Library as an [Event](events.md): Users can add **grid components** from the Library into their simulation while it is running.
-* [Canary Network](canary-network.md) Enhancements: Canary Networks are automatically restarted in the event of a software deploy or other system disruption. Users can view previous weeks of Canary Network data and [download the results](data-download.md). Canary Network simulations can run for weeks at a time and store all data for future analysis and research.
+* [Canary Network](canary-network.md) Enhancements: Canary Networks are automatically restarted in the event of a software deploy or other system disruption. Users can view previous weeks of Canary Network data and [download the results](results-download.md). Canary Network simulations can run for weeks at a time and store all data for future analysis and research.
 * Users can trade through the Grid Singularity [Asset](assets-api.md) and [Grid Operator](grid-operator-api.md) APIs through a cloud web service. This feature allows users to **automate** their trading algorithms and connect to the API from the cloud instead of hosting and monitoring on a local computer.
 
 

@@ -1,24 +1,36 @@
-Collaboration is a type of simulation in the [Grid Singularity UI](https://www.d3a.io/) that allows multiple users to participate in the same environment. These users can act in a **collaborative** or **competitive** way, aiming to optimize specific metrics. Users can connect through the [API client](api-overview.md) to actively engage in the collaboration.
+*Note: Collaborations are only available at Grid Singularity’s previous interface ([d3a.io](https://www.d3a.io/)) at the moment, and we will update this document as soon as the tool is migrated to the new interface.*
 
-##User roles
+Collaboration is a type of simulation in the Grid Singularity user interface that allows multiple users to participate in the same environment. These users can act in a collaborative or competitive way, aiming to optimize specific metrics, for instance the cost of [energy bill](bills-traded-energy.md) or peak congestion. Users can connect through the [Grid Singularity API](APIs-introduction.md) to actively engage in the collaboration, assuming one of the following roles:
 
 ###Exchange Operator
 
-The exchange operator (EO) is responsible for **building the digital twin of the electrical grid**, including energy assets and markets in the modelling page. Once the setup is complete, the EO facilitates the approval of other users to register to manage a set of markets and energy assets, and subsequently launches the collaboration.The EO is also in charge of expanding the grid (with [events](events.md)) or registering new users desiring to connect to the exchange over the course of a simulation.
+The exchange operator (EO) is responsible for building the digital twin representation of the electrical grid, including energy assets and (sub)markets. Once the setup is complete, the EO facilitates the approval of other users to register to manage a set of (sub)markets and energy assets, and subsequently launches the collaboration. The EO is also in charge of expanding the grid (see [events](events.md)) or registering new energy assets in the course of a simulated collaboration.
 
 ###Grid Operator
 
-The grid operator role is designed specifically for Distribution System Operators (DSOs) and Transmission System Operators (TSOs). Those users have the possibility to register to different markets, on different grid levels in the collaboration. Once registered and approved by the EO, they can **manage the relevant markets** by using the Grid Operator API to change [grid fees](grid-fees.md) in order to influence trades to optimize specific metrics (e.g. [peak percentage](peak-percentage.md)).
+The grid operator role is designed specifically for Distribution System Operators (DSOs), Distribution Network Operators (DNOs), Independent System Operators (ISOs) and Transmission System Operators (TSOs), which can register to manage different (sub)markets, on different grid levels in the collaboration. Once registered and approved by the EO, they can manage the relevant markets by using the Grid Operator API to change grid fees to manage the grid congestion in the local energy market by optimizing specific metrics, such as peak percentage.
 
-###Researcher
+###Aggregator
 
-The researcher role is designed to represent smart meters, PV and battery vendors, community leaders, energy management companies, data scientists and aggregators in collaborations. Researchers can claim assets ([Load](model-load.md), [PV](model-pv.md) and [Storage](model-storage.md)) and, once approved by the Exchange Operator, are responsible for **buying and selling energy for the assets** they manage on markets through the Asset API.
+The aggregator role is designed for aggregator companies participating in the Grid Singularity Exchange. Aggregators can apply to manage energy assets (Load i.e. [energy  consumption](consumption.md), [PV](solar-panels.md) and Storage i.e. [batteries](battery.md)) owned by communities, consumers, producers and prosumers. Once approved by the Exchange Operator, aggregators are responsible for buying and selling energy on behalf of their customers by connecting their energy assets with set trading preferences through the [Asset API]('configure-trading-strategies-walkthrough.md').
 
-##How to connect
+To create a Collaboration in the Grid Singularity user interface, follow these steps:
 
-If you wish to connect to a collaboration in the framework of an event (e.g. [Energy Singularity Chaos Experiment](https://gridsingularity.medium.com/en-route-to-energy-singularity-odyssey-momentum-learnings-from-the-2020-chaos-experiment-8dc38ff26869)) or to a [Canary Test Network](canary-network.md) in the framework of a live running exchange please follow these steps:
+* Log-in to Grid Singularity Exchange (as noted, the full functionality is still available only via our previous interface: d3a.io) with your Grid Singularity credentials to automatically access previously created simulations.
 
-* Login on the [User-Interface](https://www.d3a.io/)
-* Go to the Collaborations (or Canary Test Network page), where you will see a list of all active collaborations. For each, any user may view the settings and the grid setup.
-* If the collaboration the user wishes to join is public, they can click on **Registry** and **Scoreboard**. On this page, each market and asset of the collaboration is listed. The user can apply to manage the trading strategies of assets or the grid fee strategy of markets on the Registry. The EO is able to either approve or deny the request.
-* Once approved, the user can start the API script and wait until the EO starts the collaboration / canary network, when trading will begin.
+* Select the simulation that you want to set up as a Collaboration by clicking on *Edit → Create a Collaboration*. If you have not yet created a simulation or want to create a new one, please follow the instructions [here](community.md).
+
+*Currently, this step is managed manually. A personal account of an external user does not have the admin rights to create a Collaboration. We are currently working on automating the functionalities of a Collaboration (i.e., connection with API). Please contact us at contact@gridsingularity.com for technical support and provide us with the following information:*
+
+- *Your Name*
+- *Grid Singularity account email address*
+- *Company name*
+- *Location of the community*
+- *Size of the community (number of participants, assets)*
+- *Current utility / grid operator*
+- *Purpose of the Collaboration*
+- *Simulation URL*
+
+The simulation URL should look like this at the moment:
+
+![alt_text](img/simulation-URL.png)

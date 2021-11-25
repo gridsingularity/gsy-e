@@ -8,9 +8,12 @@ Grid Singularity’s exchange engine has a built-in template trading agent. The 
 * energy_rate_decrease_per_update
 * fit_to_limit
 
-The following plot shows the changing energy rate in a [spot market](markets.md) slot (slot_length = 15min) for four different trading settings.
+The following plot shows the changing energy rate in a [spot market][] slot (slot_length = 15min) for four different trading settings.
 
 ![alt_text](img/default-trading-2.png)
+
+**Figure 3.13**. *Four different generation trading settings in a spot market slot (slot_length = 15 min).*
+
 
 If `fit_to_limit` is set to `True`, `energy_rate_decrease_per_update` is ignored and a rate decrease per time is calculated, starting at `initial_selling_rate` and ending at `final_selling_rate` while updating the rate at each `update_interval`.
 
@@ -26,10 +29,13 @@ The following plot shows the energy rate change in a spot market slot (slot_leng
 
 ![alt_text](img/default-trading-1.png)
 
+**Figure 3.14**. *Four different load trading settings in a spot market slot (slot_length = 15 min).*
 
 Assets can also deploy more intelligent trading strategies, as demonstrated in the 2020 Energy Singularity Challenge, described in the following two articles:
 
 * Grid Singularity. (September 10, 2020). _[En Route to Energy Singularity Odyssey Momentum: Learnings from the 2020 Chaos Experiment](https://gridsingularity.medium.com/en-route-to-energy-singularity-odyssey-momentum-learnings-from-the-2020-chaos-experiment-8dc38ff26869 )_
-* Grid Singularity. (November 25, 2020). _[Energy Singularity Challenge 2020: Social Energy Networks](https://gridsingularity.medium.com/energy-singularity-challenge-2020-social-energy-networks-157b390e5f39 )_  
+* Grid Singularity. (November 25, 2020). _[Energy Singularity Challenge 2020: Social Energy Networks](https://gridsingularity.medium.com/energy-singularity-challenge-2020-social-energy-networks-157b390e5f39 )_
 
-Information on how to set up and train intelligent trading strategies through the Grid Singularity Asset API is available [here](assets-api.md).
+Information on how to set up and train intelligent trading strategies through the Grid Singularity Asset API is available [here](configure-trading-strategies-walkthrough.md).
+
+[]: spot-market.md
