@@ -26,7 +26,7 @@ from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
     limit_float_precision, convert_W_to_Wh, find_object_of_same_weekday_and_time,
-    key_in_dict_and_not_none)
+    key_in_dict_and_not_none, is_time_slot_in_simulation_duration)
 from gsy_framework.validators.load_validator import LoadValidator
 from numpy import random
 from pendulum import duration
@@ -36,8 +36,7 @@ from gsy_e import constants
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
-from gsy_e.gsy_e_core.util import (get_market_maker_rate_from_config,
-                                   is_time_slot_in_simulation_duration)
+from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.base import AssetType
 from gsy_e.models.market import MarketBase
 from gsy_e.models.state import LoadState
@@ -141,7 +140,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                         fit_to_limit):
         # all parameters have to be validated for each time slot starting from the current time
         for time_slot in initial_rate.keys():
-            if not is_time_slot_in_simulation_duration(self.area.config, time_slot):
+            if not is_time_slot_in_simulation_duration(time_slot, self.area.config):
                 continue
 
             if self.area and \

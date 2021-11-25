@@ -44,6 +44,8 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
     @staticmethod
     def _get_all_time_slots(area: "Area") -> List[DateTime]:
         """Override to return all future market available time slots"""
+        if not area.future_markets:
+            return []
         return area.future_markets.market_time_slots
 
     def update(self, market: "FutureMarkets", strategy: "BidEnabledStrategy") -> None:
@@ -69,6 +71,8 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
     @staticmethod
     def _get_all_time_slots(area: "Area") -> List[DateTime]:
         """Override to return all future market available time slots"""
+        if not area.future_markets:
+            return []
         return area.future_markets.market_time_slots
 
     def update(self, market: "FutureMarkets", strategy: "BidEnabledStrategy") -> None:
