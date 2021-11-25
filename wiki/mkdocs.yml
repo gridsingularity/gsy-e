@@ -85,7 +85,7 @@ nav:
                 - 'Registration - Simulations run on the Backend': 'registration-asset-api-backend.md'
         - 'Implement dynamic grid fees through the Grid Singlarity Grid Operator API':
             - 'Walkthrough': 'implement-grid-fees-walkthrough.md'
-            - 'Grid Operator API.md':
+            - 'Grid Operator API.':
                 - 'Grid Operator API Events': 'grid-operator-api-events.md'
                 - 'Grid Operator API Commands': 'grid-operator-api-commands.md'
                 - 'Grid Operator API Template Script': 'grid-operator-api-template-script.md'
