@@ -22,10 +22,10 @@ from typing import Dict, List, Union, Optional, Tuple, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
 from gsy_framework.data_classes import Bid, Offer, Trade, BaseBidOffer, TradeBidOfferInfo
+from gsy_framework.utils import is_time_slot_in_simulation_duration
 from pendulum import DateTime, duration
 
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
-from gsy_e.gsy_e_core.util import is_time_slot_in_simulation_duration
 from gsy_e.models.market import GridFee
 from gsy_e.models.market import lock_market_action
 from gsy_e.models.market.two_sided import TwoSidedMarket
@@ -161,7 +161,7 @@ class FutureMarkets(TwoSidedMarket):
         most_future_slot = future_time_slot + GlobalConfig.future_market_duration
         while future_time_slot <= most_future_slot:
             if (future_time_slot not in self.slot_bid_mapping and
-                    is_time_slot_in_simulation_duration(config, future_time_slot)):
+                    is_time_slot_in_simulation_duration(future_time_slot, config)):
                 self.slot_bid_mapping[future_time_slot] = []
                 self.slot_offer_mapping[future_time_slot] = []
                 self.slot_trade_mapping[future_time_slot] = []

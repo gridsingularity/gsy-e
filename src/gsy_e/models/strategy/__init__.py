@@ -42,6 +42,7 @@ from gsy_e.gsy_e_core.util import append_or_create_key
 from gsy_e.models.base import AreaBehaviorBase
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.market import MarketBase
+from gsy_e.models.strategy.future.strategy import FutureMarketStrategyInterface
 from gsy_e.models.strategy.settlement.strategy import SettlementMarketStrategyInterface
 
 log = getLogger(__name__)
@@ -456,6 +457,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         self.event_responses = []
         self._market_adapter = market_strategy_connection_adapter_factory()
         self._settlement_market_strategy = self._create_settlement_market_strategy()
+        self._future_market_strategy = self._create_future_market_strategy()
 
     parameters = None
 
@@ -471,6 +473,10 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
     @classmethod
     def _create_settlement_market_strategy(cls):
         return SettlementMarketStrategyInterface()
+
+    @classmethod
+    def _create_future_market_strategy(cls):
+        return FutureMarketStrategyInterface()
 
     def energy_traded(self, market_id: str, time_slot: DateTime = None) -> float:
         """Get the traded energy on the market"""

@@ -26,7 +26,7 @@ from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
     limit_float_precision, convert_W_to_Wh, find_object_of_same_weekday_and_time,
-    key_in_dict_and_not_none)
+    key_in_dict_and_not_none, is_time_slot_in_simulation_duration)
 from gsy_framework.validators.load_validator import LoadValidator
 from numpy import random
 from pendulum import duration
@@ -80,7 +80,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         :param use_market_maker_rate: If set to True, Load would track its final buying rate
         as per utility's trading rate
         """
-
+        super().__init__()
         LoadValidator.validate_energy(
             avg_power_W=avg_power_W, hrs_per_day=hrs_per_day, hrs_of_day=hrs_of_day)
         self._state = LoadState()
@@ -101,11 +101,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._calculate_active_markets()
         self._cycled_market = set()
         self._simulation_start_timestamp = None
-        self._future_market_strategy = future_market_strategy_factory(self.asset_type)
 
     @classmethod
     def _create_settlement_market_strategy(cls):
         return settlement_market_strategy_factory()
+
+    def _create_future_market_strategy(self):
+        return future_market_strategy_factory(self.asset_type)
 
     @property
     def state(self) -> LoadState:
@@ -140,6 +142,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
                         fit_to_limit):
         # all parameters have to be validated for each time slot starting from the current time
         for time_slot in initial_rate.keys():
+            if not is_time_slot_in_simulation_duration(time_slot, self.area.config):
+                continue
+
             if self.area and \
                     self.area.current_market and time_slot < self.area.current_market.time_slot:
                 continue
@@ -157,6 +162,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.event_activate_price()
         self.bid_update.update_and_populate_price_settings(self.area)
         self.event_activate_energy()
+        self._future_market_strategy.update_and_populate_price_settings(self)
 
     def event_market_cycle(self):
         if self.use_market_maker_rate:

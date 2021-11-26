@@ -334,13 +334,14 @@ def area_test66():
 
 @pytest.fixture()
 def pv_test66(area_test66):
+    original_future_markets_duration = GlobalConfig.FUTURE_MARKET_DURATION_HOURS
     GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
     p = PVStrategy()
     p.area = area_test66
     p.owner = area_test66
     p.offers.posted = {}
     yield p
-    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = original_future_markets_duration
 
 
 def testing_produced_energy_forecast_real_data(pv_test66):
