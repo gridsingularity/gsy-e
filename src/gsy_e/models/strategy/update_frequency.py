@@ -172,6 +172,11 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
 
     def update_and_populate_price_settings(self, area: "Area") -> None:
         """Populate the price profiles for every available time slot."""
+
+        # Handling the case where future markets are disabled during a simulation.
+        if self._time_slot_duration_in_seconds <= 0:
+            return
+
         assert (ConstSettings.GeneralSettings.MIN_UPDATE_INTERVAL * 60 <=
                 self.update_interval.seconds < self._time_slot_duration_in_seconds)
 

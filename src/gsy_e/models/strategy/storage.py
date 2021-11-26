@@ -103,7 +103,7 @@ class StorageStrategy(BidEnabledStrategy):
         if isinstance(update_interval, int):
             update_interval = duration(minutes=update_interval)
 
-        BidEnabledStrategy.__init__(self)
+        super().__init__()
 
         self.offer_update = TemplateStrategyOfferUpdater(
             initial_rate=initial_selling_rate, final_rate=final_selling_rate,
@@ -133,7 +133,9 @@ class StorageStrategy(BidEnabledStrategy):
             min_allowed_soc=min_allowed_soc)
         self.cap_price_strategy = cap_price_strategy
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
-        self._future_market_strategy = future_market_strategy_factory(self.asset_type)
+
+    def _create_future_market_strategy(self):
+        return future_market_strategy_factory(self.asset_type)
 
     @property
     def state(self) -> StorageState:

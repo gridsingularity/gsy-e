@@ -80,7 +80,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         :param use_market_maker_rate: If set to True, Load would track its final buying rate
         as per utility's trading rate
         """
-
+        super().__init__()
         LoadValidator.validate_energy(
             avg_power_W=avg_power_W, hrs_per_day=hrs_per_day, hrs_of_day=hrs_of_day)
         self._state = LoadState()
@@ -101,11 +101,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._calculate_active_markets()
         self._cycled_market = set()
         self._simulation_start_timestamp = None
-        self._future_market_strategy = future_market_strategy_factory(self.asset_type)
 
     @classmethod
     def _create_settlement_market_strategy(cls):
         return settlement_market_strategy_factory()
+
+    def _create_future_market_strategy(self):
+        return future_market_strategy_factory(self.asset_type)
 
     @property
     def state(self) -> LoadState:

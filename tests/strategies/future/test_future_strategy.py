@@ -40,6 +40,7 @@ class TestFutureMarketStrategy:
 
     def setup_method(self) -> None:
         """Preparation for the tests execution"""
+        self._original_future_markets = GlobalConfig.FUTURE_MARKET_DURATION_HOURS
         GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
         self.time_slot = today(tz=TIME_ZONE).at(hour=12, minute=0, second=0)
         self.area_mock = Mock()
@@ -51,10 +52,9 @@ class TestFutureMarketStrategy:
         self.future_markets.market_time_slots = [self.time_slot]
         self.future_markets.id = str(uuid.uuid4())
 
-    @staticmethod
-    def teardown_method() -> None:
+    def teardown_method(self) -> None:
         """Test cleanup"""
-        GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
+        GlobalConfig.FUTURE_MARKET_DURATION_HOURS = self._original_future_markets
 
     def _setup_strategy_fixture(self, future_strategy_fixture: "BaseStrategy") -> None:
         future_strategy_fixture.owner = self.area_mock
