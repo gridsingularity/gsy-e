@@ -16,18 +16,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
-from typing import List, Dict, Optional, TYPE_CHECKING
+from typing import List, Dict, Optional, Union, TYPE_CHECKING
 from uuid import uuid4
 
 from gsy_framework.area_validator import validate_area
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.exceptions import GSyAreaException, GSyDeviceException
 from gsy_framework.utils import key_in_dict_and_not_none
 from pendulum import DateTime, duration, today
 from slugify import slugify
 
 import gsy_e.constants
-from cached_property import cached_property
 from gsy_e.gsy_e_core.blockchain_interface import blockchain_interface_factory
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import AreaException
@@ -40,17 +40,18 @@ from gsy_e.models.area.redis_external_market_connection import RedisMarketExtern
 from gsy_e.models.area.stats import AreaStats
 from gsy_e.models.area.throughput_parameters import ThroughputParameters
 from gsy_e.models.config import SimulationConfig
+from gsy_e.models.market.future import FutureMarkets
 from gsy_e.models.market.market_structures import AvailableMarketTypes
 from gsy_e.models.strategy import BaseStrategy
 from gsy_e.models.strategy.external_strategies import ExternalMixin
-from gsy_e.models.market.future import FutureMarkets
+
 log = getLogger(__name__)
 
-
 if TYPE_CHECKING:
-    from d3a.models.market import Market
+    from d3a.models.market import MarketBase
 
 
+# pylint: disable=fixme
 # TODO: As this is only used in the unittests, please remove it here and replace the usages
 #       of this class with gsy-framework.constants_limits.GlobalConfig class:
 DEFAULT_CONFIG = SimulationConfig(
@@ -79,6 +80,8 @@ def check_area_name_exists_in_parent_area(parent_area, name):
 
 
 class AreaChildrenList(list):
+    """Class to define the children of an area."""
+
     def __init__(self, parent_area, *args, **kwargs):
         self.parent_area = parent_area
         super().__init__(*args, **kwargs)
@@ -96,15 +99,22 @@ class AreaChildrenList(list):
         super().insert(index, item)
 
 
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-public-methods
 class Area:
+    """Generic class to define both market areas and devices.
 
+    Important: this class should not be used in setup files. Please use Market or Asset instead.
+    """
+
+    # pylint: disable=too-many-arguments
     def __init__(self, name: str = None, children: List["Area"] = None,
                  uuid: str = None,
                  strategy: BaseStrategy = None,
                  config: SimulationConfig = None,
                  budget_keeper=None,
                  balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
-                 event_list=[],
+                 event_list=None,
                  grid_fee_percentage: float = None,
                  grid_fee_constant: float = None,
                  external_connection_available: bool = False,
@@ -130,6 +140,7 @@ class Area:
             raise AreaException("A leaf area can not have children.")
         self.strategy = strategy
         self._config = config
+        event_list = event_list if event_list is not None else []
         self.events = Events(event_list, self)
         self.budget_keeper = budget_keeper
         if budget_keeper:
@@ -148,6 +159,7 @@ class Area:
 
     @property
     def name(self):
+        """Return the name of the area."""
         return self.__name
 
     @name.setter
@@ -158,6 +170,7 @@ class Area:
         self.__name = new_name
 
     def get_state(self):
+        """Get the current state of the area."""
         state = {}
         if self.strategy is not None:
             state = self.strategy.get_state()
@@ -169,6 +182,7 @@ class Area:
         return state
 
     def restore_state(self, saved_state):
+        """Restore a previously-saved state."""
         self.current_tick = saved_state["current_tick"]
         self.stats.restore_state(saved_state["area_stats"])
         if self.strategy is not None:
@@ -221,28 +235,31 @@ class Area:
                             export_capacity_kVA=export_capacity_kVA
                         )
 
-        except Exception as ex:
+        except (GSyAreaException, GSyDeviceException) as ex:
             log.error(ex)
-            return
+            return None
 
         self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
         self.throughput = throughput
-        self._update_descendants_strategy_prices()
+        self.update_descendants_strategy_prices()
 
-    def _update_descendants_strategy_prices(self):
+        return None
+
+    def update_descendants_strategy_prices(self):
+        """Recursively update the strategy prices of all descendants of the area."""
         try:
             if self.strategy is not None:
                 self.strategy.event_activate_price()
             for child in self.children:
-                child._update_descendants_strategy_prices()
+                child.update_descendants_strategy_prices()
         except Exception:
-            log.exception("area._update_descendants_strategy_prices failed.")
+            log.exception("area.update_descendants_strategy_prices failed.")
             return
 
     def _set_grid_fees(self, grid_fee_const, grid_fee_percentage):
         grid_fee_type = self.config.grid_fee_type \
             if self.config is not None \
-            else ConstSettings.IAASettings.GRID_FEE_TYPE
+            else ConstSettings.MASettings.GRID_FEE_TYPE
         if grid_fee_type == 1:
             grid_fee_percentage = None
         elif grid_fee_type == 2:
@@ -250,22 +267,27 @@ class Area:
         self.grid_fee_constant = grid_fee_const
         self.grid_fee_percentage = grid_fee_percentage
 
-    def get_path_to_root_fees(self):
+    def get_path_to_root_fees(self) -> float:
+        """Return the cumulative fees value from the current area to its root."""
         if self.parent is not None:
             grid_fee_constant = self.grid_fee_constant if self.grid_fee_constant else 0
             return grid_fee_constant + self.parent.get_path_to_root_fees()
         return self.grid_fee_constant if self.grid_fee_constant else 0
 
     def get_grid_fee(self):
-        grid_fee_type = self.config.grid_fee_type \
-            if self.config is not None \
-            else ConstSettings.IAASettings.GRID_FEE_TYPE
+        """Return the current grid fee for the area."""
+        grid_fee_type = (
+            self.config.grid_fee_type if self.config is not None
+            else ConstSettings.MASettings.GRID_FEE_TYPE)
+
         return self.grid_fee_constant if grid_fee_type == 1 else self.grid_fee_percentage
 
     def set_events(self, event_list):
+        """Set events for the area."""
         self.events = Events(event_list, self)
 
     def activate(self, bc=None, current_tick=None, simulation_id=None):
+        """Activate the area and broadcast the activation event."""
         if current_tick is not None:
             self.current_tick = current_tick
 
@@ -285,7 +307,7 @@ class Area:
 
         if self.budget_keeper:
             self.budget_keeper.activate()
-        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+        if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
             self._set_grid_fees(0, 0)
 
         # Cycle markets without triggering it's own event chain.
@@ -301,6 +323,7 @@ class Area:
             self.redis_ext_conn.sub_to_external_channels()
 
     def deactivate(self):
+        """Deactivate the area."""
         self.cycle_markets(deactivate=True)
         if self.redis_ext_conn is not None:
             self.redis_ext_conn.deactivate()
@@ -313,7 +336,7 @@ class Area:
         Trigger `MARKET_CYCLE` event to allow child markets to also cycle.
 
         It's important for this to happen from top to bottom of the `Area` tree
-        in order for the `InterAreaAgent`s to be connected correctly
+        in order for the `MarketAgent`s to be connected correctly
 
         `_trigger_event` is used internally to avoid multiple event chains during
         initial area activation.
@@ -386,6 +409,7 @@ class Area:
         self.stats.calculate_energy_deviances()
 
     def publish_market_cycle_to_external_clients(self):
+        """Recursively notify children and external clients about the market cycle event."""
         if self.strategy and isinstance(self.strategy, ExternalMixin):
             self.strategy.publish_market_cycle()
         elif not self.strategy and self.external_connection_available:
@@ -410,23 +434,18 @@ class Area:
         Invoke aggregator commands consumer, publish market clearing, update events,
         update cached myco matcher markets and match trades recommendations.
         """
-        if (ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
+        if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
                 and not self.strategy):
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-                self._consume_commands_from_aggregator()
                 self.dispatcher.publish_market_clearing()
             elif is_external_matching_enabled():
                 # If external matching is enabled, clear before placing orders
                 orders_matcher.match_recommendations()
-                self._consume_commands_from_aggregator()
                 self._update_myco_matcher()
             else:
                 # If internal matching is enabled, place orders before clearing
-                self._consume_commands_from_aggregator()
                 self._update_myco_matcher()
                 orders_matcher.match_recommendations()
-        else:
-            self._consume_commands_from_aggregator()
 
         self.events.update_events(self.now)
 
@@ -439,20 +458,23 @@ class Area:
                             "future_markets": self.future_markets,
                             "current_time": self.now}})
 
-    def update_clock_on_markets(self) -> None:
+    def execute_actions_after_tick_event(self) -> None:
         """
-        Update clock on markets with self.now member.
-        Returns:
+        Execute actions that are needed after the tick event has been processed and dispatched
+        to all areas. The actions performed for now is consuming the aggregator commands, and
+        updating the clock on markets with self.now member
+        Returns: None
 
         """
         self.current_tick += 1
+        self._consume_commands_from_aggregator()
         if self.children:
             self.spot_market.update_clock(self.now)
 
             for market in self._markets.settlement_markets.values():
                 market.update_clock(self.now)
         for child in self.children:
-            child.update_clock_on_markets()
+            child.execute_actions_after_tick_event()
 
     def tick_and_dispatch(self):
         """Invoke tick handler and broadcast the event to children."""
@@ -464,25 +486,28 @@ class Area:
             self.dispatcher.broadcast_tick()
 
     def __repr__(self):
-        return "<Area '{s.name}' markets: {markets}>".format(
-            s=self,
-            markets=[t.format(gsy_e.constants.TIME_FORMAT) for t in self._markets.markets.keys()]
-        )
+        return (
+            f"<Area '{self.name}' markets: "
+            f"{[t.format(gsy_e.constants.TIME_FORMAT) for t in self._markets.markets]}>")
 
     @property
     def all_markets(self):
-        return [m for m in self._markets.markets.values() if m.in_sim_duration]
+        """Return all markets that the area is involved with."""
+        return [market for market in self._markets.markets.values() if market.in_sim_duration]
 
     @property
-    def current_slot(self):
+    def current_slot(self) -> int:
+        """Return the number of the current market slot."""
         return self.current_tick // self.config.ticks_per_slot
 
     @property
     def current_tick_in_slot(self):
+        """Return the number of the current tick in the current market slot."""
         return self.current_tick % self.config.ticks_per_slot
 
     @property
-    def config(self):
+    def config(self) -> Union[SimulationConfig, GlobalConfig]:
+        """Return the configuration used by the area."""
         if self._config:
             return self._config
         if self.parent:
@@ -491,20 +516,10 @@ class Area:
 
     @property
     def bc(self):
+        """Return the blockchain interface used by the area."""
         if self._bc is not None:
             return self._bc
         return None
-
-    @cached_property
-    def child_by_slug(self):
-        slug_map = {}
-        areas = [self]
-        while areas:
-            for area in list(areas):
-                slug_map[area.slug] = area
-                areas.remove(area)
-                areas.extend(area.children)
-        return slug_map
 
     @property
     def now(self) -> DateTime:
@@ -521,28 +536,30 @@ class Area:
 
     @property
     def past_markets(self) -> List:
+        """Return the past markets of the area."""
         return list(self._markets.past_markets.values())
 
     def get_market(self, time_slot):
+        """Return the market of the area that occurred at the specified time slot."""
         return self._markets.markets.get(time_slot)
 
-    def get_past_market(self, time_slot):
-        return self._markets.past_markets[time_slot]
-
     def get_balancing_market(self, time_slot):
+        """Return the balancing market of the area that occurred at the specified time slot."""
         return self._markets.balancing_markets[time_slot]
 
     @property
     def balancing_markets(self) -> List:
+        """Return the balancing markets of the area."""
         return list(self._markets.balancing_markets.values())
 
     @property
     def past_balancing_markets(self) -> List:
+        """Return the past balancing markets of the area."""
         return list(self._markets.past_balancing_markets.values())
 
     @property
     def spot_market(self):
-        """Returns the "current" market (i.e. the one currently "running")"""
+        """Return the "current" market (i.e. the one currently "running")."""
         try:
             return self.all_markets[-1]
         except IndexError:
@@ -550,8 +567,7 @@ class Area:
 
     @property
     def current_market(self):
-        """Returns the "most recent past market" market
-        (i.e. the one that has been finished last)"""
+        """Return the "most recent past market" (the one that has been finished last)."""
         try:
             return list(self._markets.past_markets.values())[-1]
         except IndexError:
@@ -559,16 +575,17 @@ class Area:
 
     @property
     def current_balancing_market(self):
-        """Returns the "current" balancing market (i.e. the one currently "running")"""
+        """Return the "current" balancing market (i.e. the one currently "running")"""
         try:
             return list(self._markets.past_balancing_markets.values())[-1]
         except IndexError:
             return None
 
     def get_future_market_from_id(self, _id):
+        """Return the future market that corresponds to the provided ID."""
         return self._markets.indexed_future_markets.get(_id, None)
 
-    def get_spot_or_future_market_by_id(self, market_id: str) -> Optional["Market"]:
+    def get_spot_or_future_market_by_id(self, market_id: str) -> Optional["MarketBase"]:
         if self.is_market_spot(market_id):
             return self.spot_market
         if self.is_market_future(market_id):
@@ -580,6 +597,7 @@ class Area:
 
     @property
     def last_past_market(self):
+        """Return the most recent of the area's past markets."""
         try:
             return list(self._markets.past_markets.values())[-1]
         except IndexError:
@@ -587,18 +605,22 @@ class Area:
 
     @property
     def future_market_time_slots(self) -> List[DateTime]:
+        """Return the future markets time slots of the area."""
         return self._markets.future_markets.market_time_slots
 
     @property
     def future_markets(self) -> FutureMarkets:
+        """Return the future markets of the area."""
         return self._markets.future_markets
 
     @property
     def settlement_markets(self) -> Dict:
+        """Return the settlement markets of the area."""
         return self._markets.settlement_markets
 
     @property
     def last_past_settlement_market(self):
+        """Return the most recent of the area's past settlement markets."""
         try:
             return list(self._markets.past_settlement_markets.items())[-1]
         except IndexError:
@@ -606,9 +628,11 @@ class Area:
 
     @property
     def past_settlement_markets(self) -> Dict:
+        """Return the past settlement markets of the area."""
         return self._markets.past_settlement_markets
 
     def get_settlement_market(self, time_slot):
+        """Return the settlement market of the area that occurred at the specified time slot."""
         return self._markets.settlement_markets.get(time_slot)
 
     def get_market_instances_from_class_type(self, market_type: AvailableMarketTypes) -> Dict:
@@ -618,11 +642,11 @@ class Area:
             market_type: Selected market type (spot/balancing/settlement/future)
 
         Returns: Dicts with market objects for the selected market type
-
         """
         return self._markets.get_market_instances_from_class_type(market_type)
 
     def update_config(self, **kwargs):
+        """Update the configuration of the area using the provided arguments."""
         if not self.config:
             return
         self.config.update_config_parameters(**kwargs)
@@ -646,3 +670,17 @@ class Area:
     def is_market_future(self, market_id: str) -> bool:
         """Return True if market_id belongs to a FUTURE market."""
         return market_id == self.future_markets.id
+
+
+class Market(Area):
+    """Class to define geographical market areas that can contain children (areas or assets)."""
+
+
+class Asset(Area):
+    """Class to define assets (devices). These instances cannot contain children."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if self.children:
+            raise ValueError(f"{self.__class__.__name__} instances can't have children.")

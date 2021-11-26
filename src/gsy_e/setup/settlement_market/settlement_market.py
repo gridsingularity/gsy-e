@@ -28,8 +28,8 @@ from gsy_e.models.strategy.storage import StorageStrategy
 
 def get_setup(config):
     ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = True
-    ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.IAASettings.ORDERS_MATCH_TYPE = OrdersMatchAlgoEnum.PAY_AS_BID.value
+    ConstSettings.MASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.ORDERS_MATCH_TYPE = OrdersMatchAlgoEnum.PAY_AS_BID.value
     area = Area(
         "Grid",
         [

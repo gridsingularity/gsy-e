@@ -20,8 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # pylint: disable=no-name-in-module
 from behave import then
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.utils import limit_float_precision
 
-from gsy_e.constants import DEFAULT_PRECISION
 from gsy_e.setup.strategy_tests.storage_strategy_break_even_hourly import (
     final_buying_rate_profile, final_selling_rate_profile, final_buying_rate_profile_2,
     final_selling_rate_profile_2)
@@ -104,14 +104,12 @@ def check_capacity_dependant_sell_rate(context):
         for trade in market.trades:
             if trade.seller == storage.name:
                 trades_sold.append(trade)
-                trade_rate = round(
-                    trade.order.energy_rate, DEFAULT_PRECISION)
+                trade_rate = limit_float_precision(trade.order.energy_rate)
                 break_even_sell = (
-                    round(storage.strategy.offer_update.final_rate[market.time_slot],
-                          DEFAULT_PRECISION))
+                    limit_float_precision(
+                        storage.strategy.offer_update.final_rate[market.time_slot]))
                 market_maker_rate = (
-                    round(context.simulation.area.config.market_maker_rate[slot],
-                          DEFAULT_PRECISION))
+                    limit_float_precision(context.simulation.area.config.market_maker_rate[slot]))
                 assert trade_rate >= break_even_sell
                 assert trade_rate <= market_maker_rate
     assert len(trades_sold) == len(house1.past_markets)

@@ -21,7 +21,7 @@ from gsy_framework.constants_limits import ConstSettings
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.GeneralSettings.EXPORT_ORDERS_TRADE_HR = True
 
     area = Area(

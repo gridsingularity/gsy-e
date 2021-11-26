@@ -36,7 +36,7 @@ class SimulationConfig:
                  cloud_coverage: int,
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  pv_user_profile=None, start_date: DateTime = today(tz=TIME_ZONE),
-                 capacity_kW=None, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
+                 capacity_kW=None, grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
                  external_connection_enabled=True, aggregator_device_mapping=None,
                  enable_degrees_of_freedom: bool = True):
         """

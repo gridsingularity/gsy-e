@@ -63,7 +63,7 @@ The user can add more nested submarkets recursively by adding more instances of 
     *   House 2
         *   H2 General Load
 
-Bold instances in the outline above are [markets](model-markets.md) (`Area` component). For each of these markets, an [inter-area-agent](inter-area-agent.md) is created in the background to execute offer/bid forwarding and matching.
+Bold instances in the outline above are [markets](model-markets.md) (`Area` component). For each of these markets, an [inter-area-agent](market-agent.md) is created in the background to execute offer/bid forwarding and matching.
 
 In the following, the corresponding setup-file is shown.
 
@@ -138,10 +138,10 @@ Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market ty
 ```python
 from gsy_framework.constants_limits import ConstSettings
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.LoadSettings.MIN_ENERGY_RATE = 0
     ConstSettings.LoadSettings.MAX_ENERGY_RATE = 35
-    ConstSettings.IAASettings.GRID_FEE_TYPE = 1
+    ConstSettings.MASettings.GRID_FEE_TYPE = 1
 ```
 
 ###d3a-settings.json

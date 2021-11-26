@@ -53,7 +53,7 @@ def ext_strategy_fixture(request):
     config.tick_length = duration(seconds=15)
     config.ticks_per_slot = 60
     config.start_date = GlobalConfig.start_date
-    config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
+    config.grid_fee_type = ConstSettings.MASettings.GRID_FEE_TYPE
     config.end_date = GlobalConfig.start_date + duration(days=1)
     area = Area(name="forecast_pv", config=config, strategy=strategy,
                 external_connection_available=True)
@@ -84,7 +84,7 @@ class TestExternalMixin:
         self.area.get_future_market_from_id = lambda _: market
 
     def teardown_method(self) -> None:
-        ConstSettings.IAASettings.MARKET_TYPE = 1
+        ConstSettings.MASettings.MARKET_TYPE = 1
 
     def test_dispatch_tick_frequency_gets_calculated_correctly(self):
         self.external_strategy = LoadHoursExternalStrategy(100)
@@ -225,7 +225,7 @@ class TestExternalMixin:
         [StorageExternalStrategy(),
          Offer("offer_id", now(), 20, 1.0, "test_area")]
     ])
-    def test_dispatch_event_trade_to_external_aggregator(self, strategy, offer_bid):
+    def test_dispatch_event_trade_to_external_aggregator(self, strategy, order):
         strategy._track_energy_sell_type = lambda _: None
         self._create_and_activate_strategy_area(strategy)
         strategy.redis.aggregator.is_controlling_device = lambda _: True
@@ -235,14 +235,14 @@ class TestExternalMixin:
         strategy.state.pledged_sell_kWh = {market.time_slot: 0.0}
         strategy.state.offered_sell_kWh = {market.time_slot: 0.0}
         current_time = now()
-        if isinstance(offer_bid, Bid):
-            self.area.strategy.add_bid_to_posted(market.id, offer_bid)
-            trade = Trade("id", current_time, offer_bid,
+        if isinstance(order, Bid):
+            self.area.strategy.add_bid_to_posted(market.id, order)
+            trade = Trade("id", current_time, order,
                           "parent_area", "test_area", fee_price=0.23, seller_id=self.area.uuid,
                           buyer_id=self.parent.uuid)
         else:
-            self.area.strategy.offers.post(offer_bid, market.id)
-            trade = Trade("id", current_time, offer_bid,
+            self.area.strategy.offers.post(order, market.id)
+            trade = Trade("id", current_time, order,
                           "test_area", "parent_area", fee_price=0.23, buyer_id=self.area.uuid,
                           seller_id=self.parent.uuid)
 
@@ -265,7 +265,7 @@ class TestExternalMixin:
         assert call_args["time"] == current_time.isoformat()
         assert call_args["residual_bid_id"] == "None"
         assert call_args["residual_offer_id"] == "None"
-        if isinstance(offer_bid, Bid):
+        if isinstance(order, Bid):
             assert call_args["bid_id"] == trade.order.id
             assert call_args["offer_id"] == "None"
             assert call_args["seller"] == trade.seller
@@ -314,7 +314,7 @@ class TestExternalMixin:
         [StorageExternalStrategy()]
     ])
     def test_skip_dispatch_double_event_trade_to_external_agent_two_sided_market(self, strategy):
-        ConstSettings.IAASettings.MARKET_TYPE = 2
+        ConstSettings.MASettings.MARKET_TYPE = 2
         strategy._track_energy_sell_type = lambda _: None
         self._create_and_activate_strategy_area(strategy)
         market = self.area.get_future_market_from_id(1)

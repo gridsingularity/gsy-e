@@ -41,7 +41,7 @@ def auto_fixture():
     GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
     yield
     GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
-    ConstSettings.IAASettings.MARKET_TYPE = 1
+    ConstSettings.MASettings.MARKET_TYPE = 1
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
     DeviceRegistry.REGISTRY = {}
 
@@ -355,7 +355,7 @@ def testing_event_tick_buy_energy(bus_test4, area_test1):
 
 
 def testing_event_market_cycle_posting_bids(bus_test4, area_test1):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     bus_test4.event_activate()
     bus_test4.event_market_cycle()
     assert len(bus_test4._bids) == 1

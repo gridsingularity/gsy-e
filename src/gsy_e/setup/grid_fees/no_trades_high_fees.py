@@ -26,9 +26,9 @@ Test for constant_fee in pay as bid
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.GRID_FEE_TYPE = 1
+    ConstSettings.MASettings.GRID_FEE_TYPE = 1
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 3
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
 
     area = Area(
         "Grid",

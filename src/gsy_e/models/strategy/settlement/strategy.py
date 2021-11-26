@@ -21,7 +21,7 @@ from pendulum import duration
 
 from gsy_e.constants import SettlementTemplateStrategiesConstants
 from gsy_e.gsy_e_core.exceptions import MarketException
-from gsy_e.models.market import Market  # NOQA
+from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.update_frequency import (TemplateStrategyBidUpdater,
                                                     TemplateStrategyOfferUpdater)
 
@@ -34,7 +34,7 @@ class SettlementTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
     """Version of TemplateStrategyBidUpdater class for settlement markets"""
 
     @staticmethod
-    def get_all_markets(area: "Area") -> Iterable[Market]:
+    def get_all_markets(area: "Area") -> Iterable[MarketBase]:
         return area.settlement_markets.values()
 
     @staticmethod
@@ -46,7 +46,7 @@ class SettlementTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
     """Version of TemplateStrategyOfferUpdater class for settlement markets"""
 
     @staticmethod
-    def get_all_markets(area: "Area") -> Iterable[Market]:
+    def get_all_markets(area: "Area") -> Iterable[MarketBase]:
         return area.settlement_markets.values()
 
     @staticmethod
@@ -165,7 +165,7 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
 
     @staticmethod
     def _get_settlement_market_by_id(strategy: "BidEnabledStrategy",
-                                     market_id: str) -> Optional["Market"]:
+                                     market_id: str) -> Optional["MarketBase"]:
         markets = [market for market in strategy.area.settlement_markets.values()
                    if market.id == market_id]
         if not markets:

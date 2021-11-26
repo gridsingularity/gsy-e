@@ -27,21 +27,21 @@ from pendulum import DateTime
 
 from gsy_e.gsy_e_core.exceptions import (
     InvalidOffer, MarketReadOnlyException, OfferNotFoundException, InvalidTrade, MarketException)
-from gsy_e.gsy_e_core.util import short_offer_bid_log_str
+from gsy_e.gsy_e_core.util import short_orders_log_str
 from gsy_e.events.event_structures import MarketEvent
-from gsy_e.models.market import Market, lock_market_action
+from gsy_e.models.market import MarketBase, lock_market_action
 
 log = getLogger(__name__)
 
 
-class OneSidedMarket(Market):
+class OneSidedMarket(MarketBase):
     """Class responsible for dealing with one sided markets.
 
     The default market type that D3A simulation uses.
     Only devices that supply energy (producers) are able to place offers on the markets.
     """
     def __init__(self, time_slot=None, bc=None, notification_listener=None,
-                 readonly=False, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
+                 readonly=False, grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
                  grid_fees=None, name=None, in_sim_duration=True):
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name)
@@ -220,9 +220,9 @@ class OneSidedMarket(Market):
 
         log.debug(f"{self._debug_log_market_type_identifier}[OFFER][SPLIT]"
                   f"[{self.time_slot_str}, {self.name}] "
-                  f"({short_offer_bid_log_str(original_offer)} into "
-                  f"{short_offer_bid_log_str(accepted_offer)} and "
-                  f"{short_offer_bid_log_str(residual_offer)}")
+                  f"({short_orders_log_str(original_offer)} into "
+                  f"{short_orders_log_str(accepted_offer)} and "
+                  f"{short_orders_log_str(residual_offer)}")
 
         self.bc_interface.change_offer(accepted_offer, original_offer, residual_offer)
 
@@ -236,7 +236,7 @@ class OneSidedMarket(Market):
 
     def determine_offer_price(self, energy_portion, energy, trade_rate,
                               trade_bid_info, orig_offer_price):
-        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             return self._update_offer_fee_and_calculate_final_price(
                 energy, trade_rate, energy_portion, orig_offer_price
             )

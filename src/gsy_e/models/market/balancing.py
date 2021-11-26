@@ -27,7 +27,7 @@ from gsy_framework.data_classes import BalancingOffer, BalancingTrade
 from gsy_e.gsy_e_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidBalancingTradeException, \
     DeviceNotInRegistryError
-from gsy_e.gsy_e_core.util import short_offer_bid_log_str
+from gsy_e.gsy_e_core.util import short_orders_log_str
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_framework.constants_limits import ConstSettings
@@ -37,7 +37,7 @@ log = getLogger(__name__)
 
 class BalancingMarket(OneSidedMarket):
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
-                 grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
+                 grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
                  grid_fees=None, name=None, in_sim_duration=True):
         self.unmatched_energy_upward = 0
         self.unmatched_energy_downward = 0
@@ -130,9 +130,9 @@ class BalancingMarket(OneSidedMarket):
                                               requirements=original_offer.requirements)
 
         log.debug(f"[BALANCING_OFFER][SPLIT][{self.time_slot_str}, {self.name}] "
-                  f"({short_offer_bid_log_str(original_offer)} into "
-                  f"{short_offer_bid_log_str(accepted_offer)} and "
-                  f"{short_offer_bid_log_str(residual_offer)}")
+                  f"({short_orders_log_str(original_offer)} into "
+                  f"{short_orders_log_str(accepted_offer)} and "
+                  f"{short_orders_log_str(residual_offer)}")
 
         self.bc_interface.change_offer(accepted_offer, original_offer, residual_offer)
 

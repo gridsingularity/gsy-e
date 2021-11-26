@@ -8,7 +8,7 @@ import os
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
@@ -18,10 +18,10 @@ current_dir = os.path.dirname(__file__)
 
 
 def get_setup(config):
-
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 1
-    ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.IAASettings.MIN_OFFER_AGE = 1
+    ConstSettings.MASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MIN_OFFER_AGE = 1
 
     area = Area(
         "Grid",

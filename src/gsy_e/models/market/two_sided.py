@@ -30,7 +30,7 @@ from pendulum import DateTime
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import (
     BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade, MarketException)
-from gsy_e.gsy_e_core.util import short_offer_bid_log_str, is_external_matching_enabled
+from gsy_e.gsy_e_core.util import short_orders_log_str, is_external_matching_enabled
 from gsy_e.events.event_structures import MarketEvent
 from gsy_e.models.market import lock_market_action
 from gsy_e.models.market.one_sided import OneSidedMarket
@@ -49,7 +49,7 @@ class TwoSidedMarket(OneSidedMarket):
     """
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
-                 grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
+                 grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
                  grid_fees=None, name=None, in_sim_duration=True):
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name, in_sim_duration=in_sim_duration)
@@ -180,9 +180,9 @@ class TwoSidedMarket(OneSidedMarket):
 
         log.debug(f"{self._debug_log_market_type_identifier}[BID][SPLIT]"
                   f"[{self.time_slot_str}, {self.name}] "
-                  f"({short_offer_bid_log_str(original_bid)} into "
-                  f"{short_offer_bid_log_str(accepted_bid)} and "
-                  f"{short_offer_bid_log_str(residual_bid)}")
+                  f"({short_orders_log_str(original_bid)} into "
+                  f"{short_orders_log_str(accepted_bid)} and "
+                  f"{short_orders_log_str(residual_bid)}")
 
         self._notify_listeners(MarketEvent.BID_SPLIT,
                                original_bid=original_bid,

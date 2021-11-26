@@ -70,8 +70,8 @@ def before_scenario(context, scenario):
     context.simdir = "./gsy_e-simulation/integration_tests/"
     os.makedirs(context.simdir, exist_ok=True)
     context.resource_manager = contextlib.ExitStack()
-    ConstSettings.IAASettings.MIN_OFFER_AGE = 0
-    ConstSettings.IAASettings.MIN_BID_AGE = 0
+    ConstSettings.MASettings.MIN_OFFER_AGE = 0
+    ConstSettings.MASettings.MIN_BID_AGE = 0
     constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
     context.no_export = True
     context.raise_exception_when_running_sim = True

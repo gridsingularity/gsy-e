@@ -48,7 +48,7 @@ DeviceRegistry.REGISTRY = {
 def auto_fixture():
     yield
     GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
-    ConstSettings.IAASettings.MARKET_TYPE = 1
+    ConstSettings.MASettings.MARKET_TYPE = 1
 
 
 class FakeArea:

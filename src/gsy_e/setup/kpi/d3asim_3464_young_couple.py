@@ -26,9 +26,9 @@ from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant
 
 def get_setup(config):
 
-    ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.IAASettings.MIN_OFFER_AGE = 0
-    ConstSettings.IAASettings.MIN_BID_AGE = 0
+    ConstSettings.MASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MIN_OFFER_AGE = 0
+    ConstSettings.MASettings.MIN_BID_AGE = 0
 
     area = Area(
         "Grid",

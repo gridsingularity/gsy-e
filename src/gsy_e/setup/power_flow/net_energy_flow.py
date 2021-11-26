@@ -24,7 +24,7 @@ from gsy_e.models.area.throughput_parameters import ThroughputParameters
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     area = Area("Grid", children=[
         Area("Community", children=[
             Area("House 1", children=[

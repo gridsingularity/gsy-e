@@ -20,14 +20,15 @@ from statistics import mean, median
 from typing import Dict, List, Optional
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
 from gsy_framework.data_classes import Offer
+from gsy_framework.utils import (
+    area_name_from_area_or_ma_name, convert_pendulum_to_str_in_dict,
+    convert_str_to_pendulum_in_dict)
+from gsy_framework.utils import limit_float_precision
 from pendulum import DateTime
 
-from gsy_e import limit_float_precision
-from gsy_e.gsy_e_core.util import area_name_from_area_or_iaa_name, add_or_create_key, \
-    area_sells_to_child, child_buys_from_area
-from gsy_e.models.market import Market
+from gsy_e.gsy_e_core.util import add_or_create_key, area_sells_to_child, child_buys_from_area
+from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 
@@ -137,7 +138,7 @@ class AreaStats:
         return out_dict
 
     @property
-    def current_market(self) -> Market:
+    def current_market(self) -> MarketBase:
         """Return the current market object"""
         past_markets = list(self._markets.past_markets.values())
         return past_markets[-1] if len(past_markets) > 0 else None
@@ -167,7 +168,7 @@ class AreaStats:
         self.imported_traded_energy_kwh = {}
         self.exported_traded_energy_kwh = {}
 
-        child_names = [area_name_from_area_or_iaa_name(c.name) for c in self._area.children]
+        child_names = [area_name_from_area_or_ma_name(c.name) for c in self._area.children]
         if getattr(self.current_market, "trades", None) is not None:
             for trade in self.current_market.trades:
                 if child_buys_from_area(trade, self._area.name, child_names):

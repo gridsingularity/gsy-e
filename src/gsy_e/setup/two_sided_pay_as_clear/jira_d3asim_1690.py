@@ -27,8 +27,8 @@ from gsy_framework.enums import OrdersMatchAlgoEnum
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.IAASettings.ORDERS_MATCH_TYPE = \
+    ConstSettings.MASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.ORDERS_MATCH_TYPE = \
         OrdersMatchAlgoEnum.PAY_AS_CLEAR.value
     ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT = 1
     ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS = False

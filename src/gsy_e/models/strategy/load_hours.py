@@ -25,19 +25,20 @@ from gsy_framework.data_classes import Offer
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
-    convert_W_to_Wh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
+    limit_float_precision, convert_W_to_Wh, find_object_of_same_weekday_and_time,
+    key_in_dict_and_not_none)
 from gsy_framework.validators.load_validator import LoadValidator
 from numpy import random
 from pendulum import duration
 from pendulum.datetime import DateTime
 
 from gsy_e import constants
-from gsy_e.constants import FLOATING_POINT_TOLERANCE, DEFAULT_PRECISION
+from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.base import AssetType
-from gsy_e.models.market import Market
+from gsy_e.models.market import MarketBase
 from gsy_e.models.state import LoadState
 from gsy_e.models.strategy import BidEnabledStrategy, utils
 from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
@@ -166,7 +167,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         super().event_market_cycle()
         self.add_entry_in_hrs_per_day()
         self.bid_update.update_and_populate_price_settings(self.area)
-        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             self.bid_update.reset(self)
         self._calculate_active_markets()
         self._update_energy_requirement_future_markets()
@@ -286,11 +287,11 @@ class LoadHoursStrategy(BidEnabledStrategy):
         offers = market.most_affordable_offers
         return random.choice(offers)
 
-    def _offer_rate_can_be_accepted(self, offer: Offer, market_slot: Market):
+    def _offer_rate_can_be_accepted(self, offer: Offer, market_slot: MarketBase):
         """Check if the offer rate is less than what the device wants to pay."""
         max_affordable_offer_rate = self.bid_update.get_updated_rate(market_slot.time_slot)
         return (
-            round(offer.energy_rate, DEFAULT_PRECISION)
+            limit_float_precision(offer.energy_rate)
             <= max_affordable_offer_rate + FLOATING_POINT_TOLERANCE)
 
     def _one_sided_market_event_tick(self, market, offer=None):
@@ -328,9 +329,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def event_tick(self):
         """Post bids on market tick. This method is triggered by the TICK event."""
         for market in self.active_markets:
-            if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                 self._one_sided_market_event_tick(market)
-            elif ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
+            elif ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
                 self._double_sided_market_event_tick(market)
 
         self.bid_update.increment_update_counter_all_markets(self)
@@ -344,7 +345,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         """
         super().event_offer(market_id=market_id, offer=offer)
         # In two-sided markets, the device doesn't automatically react to offers (it actively bids)
-        if ConstSettings.IAASettings.MARKET_TYPE != 1:
+        if ConstSettings.MASettings.MARKET_TYPE != 1:
             return
 
         market = self.area.get_spot_or_future_market_by_id(market_id)
@@ -364,14 +365,14 @@ class LoadHoursStrategy(BidEnabledStrategy):
         return offer.seller != self.owner.name and offer.seller != self.area.name
 
     def _set_alternative_pricing_scheme(self):
-        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+        if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
             time_slot = self.area.spot_market.time_slot
             final_rate = self.simulation_config.market_maker_rate[time_slot]
             self.bid_update.set_parameters(initial_rate=0,
                                            final_rate=final_rate)
 
     def _post_first_bid(self):
-        if ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             return
         for market in self.active_markets:
             if (

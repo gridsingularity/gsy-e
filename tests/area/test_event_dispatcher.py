@@ -28,19 +28,19 @@ from pendulum import duration
 from gsy_e.events.event_structures import MarketEvent, AreaEvent
 from gsy_e.models.area import Area
 from gsy_e.models.area.event_dispatcher import AreaDispatcher
-from gsy_e.models.market import Market
+from gsy_e.models.market import MarketBase
 from gsy_e.models.market.balancing import BalancingMarket
 from gsy_e.models.market.future import FutureMarkets
 from gsy_e.models.market.market_structures import AvailableMarketTypes
 from gsy_e.models.market.one_sided import OneSidedMarket
 from gsy_e.models.market.settlement import SettlementMarket
 from gsy_e.models.market.two_sided import TwoSidedMarket
-from gsy_e.models.strategy.area_agents.balancing_agent import BalancingAgent
-from gsy_e.models.strategy.area_agents.future_agent import FutureAgent
-from gsy_e.models.strategy.area_agents.inter_area_agent import InterAreaAgent
-from gsy_e.models.strategy.area_agents.one_sided_agent import OneSidedAgent
-from gsy_e.models.strategy.area_agents.settlement_agent import SettlementAgent
-from gsy_e.models.strategy.area_agents.two_sided_agent import TwoSidedAgent
+from gsy_e.models.strategy.market_agents.balancing_agent import BalancingAgent
+from gsy_e.models.strategy.market_agents.future_agent import FutureAgent
+from gsy_e.models.strategy.market_agents.market_agent import MarketAgent
+from gsy_e.models.strategy.market_agents.one_sided_agent import OneSidedAgent
+from gsy_e.models.strategy.market_agents.settlement_agent import SettlementAgent
+from gsy_e.models.strategy.market_agents.two_sided_agent import TwoSidedAgent
 
 
 # pylint: disable=W0212
@@ -53,7 +53,7 @@ def area_with_markets_fixture():
     config.tick_length = duration(seconds=15)
     config.ticks_per_slot = 60
     config.start_date = GlobalConfig.start_date
-    config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
+    config.grid_fee_type = ConstSettings.MASettings.GRID_FEE_TYPE
     config.end_date = GlobalConfig.start_date + duration(days=1)
 
     area = Area("name", config=config)
@@ -81,9 +81,9 @@ class TestAreaDispatcher:
     def _get_agents_for_market_type(
             dispatcher_object, market_type: AvailableMarketTypes
     ) -> Dict[DateTime, Union[OneSidedAgent, BalancingAgent, SettlementAgent]]:
-        """Select the correct IAA dict in the AreaDispatcher depending on the market_type"""
+        """Select the correct agent dict in the AreaDispatcher depending on the market_type"""
         if market_type == AvailableMarketTypes.SPOT:
-            return dispatcher_object.interarea_agents
+            return dispatcher_object.spot_agents
         if market_type == AvailableMarketTypes.BALANCING:
             return dispatcher_object.balancing_agents
         if market_type == AvailableMarketTypes.SETTLEMENT:
@@ -91,11 +91,11 @@ class TestAreaDispatcher:
         assert False, f"Market type not supported {market_type}"
 
     @staticmethod
-    def _create_iaa_and_markets_for_time_slot(dispatcher_object: AreaDispatcher,
-                                              time_slot: DateTime,
-                                              market_class: Market,
-                                              market_type: AvailableMarketTypes):
-        """Helps to create iaas for testing."""
+    def _create_ma_and_markets_for_time_slot(dispatcher_object: AreaDispatcher,
+                                             time_slot: DateTime,
+                                             market_class: MarketBase,
+                                             market_type: AvailableMarketTypes):
+        """Helps to create MAs for testing."""
         first_time_slot = time_slot
         lower_market = MagicMock(autospec=market_class)
         lower_market.time_slot = first_time_slot
@@ -105,7 +105,7 @@ class TestAreaDispatcher:
         dispatcher_object.area.parent.get_market_instances_from_class_type = Mock(
             return_value={first_time_slot: higher_market})
 
-        dispatcher_object.create_area_agents(market_type, lower_market)
+        dispatcher_object.create_market_agents(market_type, lower_market)
 
     # pylint: disable=too-many-arguments
     @pytest.mark.parametrize("market_type, spot_market_type, market_class, expected_agent_type", [
@@ -118,21 +118,22 @@ class TestAreaDispatcher:
         [AvailableMarketTypes.BALANCING, SpotMarketTypeEnum.TWO_SIDED.value, BalancingMarket,
          BalancingAgent]
     ])
-    def test_create_area_agents_creates_correct_objects(self, market_type: AvailableMarketTypes,
-                                                        spot_market_type: SpotMarketTypeEnum,
-                                                        market_class: Market,
-                                                        expected_agent_type: InterAreaAgent,
-                                                        area_dispatcher):
-        """Test if create_area_agents creates correct objects in the agent dicts."""
-        original_matching_type = ConstSettings.IAASettings.MARKET_TYPE
-        ConstSettings.IAASettings.MARKET_TYPE = spot_market_type
+    def test_create_market_agents_creates_correct_objects(
+            self, market_type: AvailableMarketTypes,
+            spot_market_type: SpotMarketTypeEnum,
+            market_class: MarketBase,
+            expected_agent_type: MarketAgent,
+            area_dispatcher):
+        """Test if create_market_agents creates correct objects in the agent dicts."""
+        original_matching_type = ConstSettings.MASettings.MARKET_TYPE
+        ConstSettings.MASettings.MARKET_TYPE = spot_market_type
 
         lower_market = MagicMock(autospec=market_class)
         higher_market = MagicMock(autospec=market_class)
         area_dispatcher.area.parent.get_market_instances_from_class_type = Mock(
             return_value={lower_market.time_slot: higher_market})
 
-        area_dispatcher.create_area_agents(market_type, lower_market)
+        area_dispatcher.create_market_agents(market_type, lower_market)
 
         agent_dict = self._get_agents_for_market_type(area_dispatcher, market_type)
 
@@ -142,14 +143,14 @@ class TestAreaDispatcher:
         assert agent.higher_market == higher_market
         assert agent.lower_market == lower_market
 
-        ConstSettings.IAASettings.MARKET_TYPE = original_matching_type
+        ConstSettings.MASettings.MARKET_TYPE = original_matching_type
 
     @staticmethod
-    def test_create_area_agents_for_future_markets(area_dispatcher):
+    def test_create_market_agents_for_future_markets(area_dispatcher):
         """Test if the future agent is correctly created."""
         area_dispatcher.area.parent = Mock()
         area_dispatcher.area.parent.future_markets = MagicMock(autospec=FutureMarkets)
-        area_dispatcher.create_area_agents_for_future_markets(MagicMock(autospec=FutureMarkets))
+        area_dispatcher.create_market_agents_for_future_markets(MagicMock(autospec=FutureMarkets))
         assert isinstance(area_dispatcher.future_agent, FutureAgent)
 
     @pytest.mark.parametrize("market_type, market_class", [
@@ -158,17 +159,17 @@ class TestAreaDispatcher:
         [AvailableMarketTypes.SETTLEMENT, SettlementMarket],
         [AvailableMarketTypes.BALANCING, BalancingMarket],
                              ])
-    def test_event_market_cycle_deletes_all_old_iaas(self, market_type: AvailableMarketTypes,
-                                                     market_class: Market,
-                                                     area_dispatcher):
-        """Test whether iaas are deleted from the agent dicts."""
+    def test_event_market_cycle_deletes_all_old_mas(self, market_type: AvailableMarketTypes,
+                                                    market_class: MarketBase,
+                                                    area_dispatcher):
+        """Test whether MAs are deleted from the agent dicts."""
 
         first_time_slot = datetime(2021, 10, 27)
-        self._create_iaa_and_markets_for_time_slot(area_dispatcher, first_time_slot,
-                                                   market_class, market_type)
+        self._create_ma_and_markets_for_time_slot(area_dispatcher, first_time_slot,
+                                                  market_class, market_type)
         second_time_slot = first_time_slot.add(minutes=15)
-        self._create_iaa_and_markets_for_time_slot(area_dispatcher, second_time_slot,
-                                                   market_class, market_type)
+        self._create_ma_and_markets_for_time_slot(area_dispatcher, second_time_slot,
+                                                  market_class, market_type)
 
         agent_dict = self._get_agents_for_market_type(area_dispatcher, market_type)
         assert first_time_slot in agent_dict
