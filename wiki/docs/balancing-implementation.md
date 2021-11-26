@@ -1,6 +1,5 @@
 ![alt_text](img/balancing-market-implementation-1.png)
-
-Figure: Structure of Balancing Market in Grid Singularity energy exchange
+***Figure 3.1***. *Structure of Balancing Market in Grid Singularity exchange*
 
 Grid Singularity energy exchange bottom-up market design allows participants to engage in Local Energy Market (LEM) for energy trading, providing energy balance at a local level. Grid Singularity Exchange flexibility trading also facilitates the procurement of flexibility locally from participants to assist distribution grid operation in balancing the grid.
 
@@ -12,11 +11,9 @@ In the Grid Singularity Exchange, balancing has been implemented using:
 *   Battery storage
 *   Commercial power plants
 
-The trading strategies of energy assets like [Loads](model-load.md), [Storages](model-storage.md) and [Power Plants](model-power-plant.md) can be used to balance the grid by placing balancing offers. These assets participate in the balancing market only if they are registered in the [Asset Registry](balancing-implementation.md#asset-registry).
+The trading strategies of energy assets like [Loads](consumption.md), [Storages](battery.md) and [Power Plants](power-plant.md) can be used to balance the grid by placing balancing offers. These assets participate in the balancing market only if they are registered in the [Asset Registry](balancing-implementation.md#asset-registry).
 
 ##Asset Registry
-
-How to register an energy asset in the registry in the the setup file:
 
 The balancing asset registry is a dictionary that contains the names of assets as keys and the balancing rates as tuple values: (demand balancing rate, supply balancing rate).
 
@@ -39,7 +36,7 @@ The balancing agent follows the lead of the _spot_market_trade_ of its lower hie
 
 ##Constant Parameters
 
-The following are the constant parameters related to the balancing market, with defaults available [here](https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py#L176-L189).
+The following are the constant parameters related to the balancing market, with defaults available [here](https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/constants_limits.py).
 
 ENABLE_BALANCING_MARKET →  (Default: False) (It enables the simulation with Balancing Market)
 
@@ -49,6 +46,6 @@ BALANCING_OFFER_DEMAND_RATIO → (Default: 0.1) (It dictates the ratio of _spot_
 
 BALANCING_OFFER_SUPPLY_RATIO → (Default: 0.1) (It dictates the ratio of _spot_market_energy_ to be offered in balancing market as _supply_balancing_offer_)
 
-BALANCING_FLEXIBLE_LOADS_SUPPORT → (Default: True) (It enables [Load Strategy](model-load.md) to place _supply_balancing_offer_ (effectively curtailing it's load))
+BALANCING_FLEXIBLE_LOADS_SUPPORT → (Default: True) (It enables [Load Strategy](consumption.md) to place _supply_balancing_offer_ (effectively curtailing it's load))
 
-Multiple examples of balancing market setup are available [here](https://github.com/gridsingularity/d3a/tree/master/src/d3a/setup/balancing_market).
+Multiple examples of balancing market setup are available [here](https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup/balancing_market).

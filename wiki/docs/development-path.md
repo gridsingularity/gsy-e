@@ -2,7 +2,7 @@ Grid Singularity Exchange is built as an [open source GPL v.3 codebase](https://
 
 ![alt_text](img/development-path.png)
 
-Figure 1.1: Information flow between aggregator, Grid Singularity exchange and matching algorithm provider (to be sourced through Data and Algorithm Marketplace). IPFS or RDBMS will likely be used for off-chain storage of the order book. The matching algorithms will be run off-chain or in an instance of SubstraTEE. The Grid Singularity Exchange will operate as a pallet on a Substrate-based parachain or another network that provides the best security and privacy combined with execution efficiency.
+***Figure 1.1***: *Information flow between aggregator, Grid Singularity exchange and matching algorithm provider (to be sourced through Data and Algorithm Marketplace). IPFS or RDBMS will likely be used for off-chain storage of the order book. The matching algorithms will be run off-chain or in an instance of SubstraTEE. The Grid Singularity Exchange will operate as a pallet on a Substrate-based parachain or another network that provides the best security and privacy combined with execution efficiency.*
 
 Grid Singularity is implementing Symbiotic Energy Markets in stages, adding or adapting modules to its codebase to take advantage of advancements in blockchain technology, [increasing regulatory interest to enable bottom-up markets](https://gridsingularity.medium.com/energy-communities-a-game-changer-for-the-european-electricity-grid-fd588a3063b0) and the proliferation of connected energy resources. We rely on open source innovation and ecosystem collaboration to develop an inclusive, efficient, accountable and secure energy exchange:
 
