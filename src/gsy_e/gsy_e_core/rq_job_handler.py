@@ -84,7 +84,7 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
         config = SimulationConfig(**config_settings)
 
         spot_market_type = settings.get("spot_market_type")
-        orders_match_algo = settings.get("orders_match_algo")
+        orders_match_algo = settings.get("bid_offer_match_algo")
 
         if spot_market_type:
             ConstSettings.MASettings.MARKET_TYPE = spot_market_type
