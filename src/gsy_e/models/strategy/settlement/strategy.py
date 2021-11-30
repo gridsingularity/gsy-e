@@ -218,8 +218,8 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
     def get_unsettled_deviation_dict(self, strategy: "BidEnabledStrategy") -> Dict:
         return {
             "unsettled_deviation_kWh": {
-                format_datetime(time_slot): strategy.state.get_unsettled_deviation_kWh(
-                    time_slot)
+                format_datetime(time_slot):
+                    strategy.state.get_signed_unsettled_deviation_kWh(time_slot)
                 for time_slot in strategy.area.settlement_markets
             }
         }

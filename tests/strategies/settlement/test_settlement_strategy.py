@@ -167,4 +167,4 @@ class TestSettlementMarketStrategy:
         assert (list(unsettled_deviation_dict["unsettled_deviation_kWh"].keys()) ==
                 [format_datetime(self.time_slot)])
         assert (list(unsettled_deviation_dict["unsettled_deviation_kWh"].values()) ==
-                [strategy_fixture.state.get_unsettled_deviation_kWh(self.time_slot)])
+                [strategy_fixture.state.get_signed_unsettled_deviation_kWh(self.time_slot)])
