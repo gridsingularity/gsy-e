@@ -235,7 +235,7 @@ def test_accept_offer_handles_market_exception(base, offer_to_accept):
     assert len(base.offers.bought.keys()) == 0
 
 
-@patch("gsy_framework.constants_limits.ConstSettings.IAASettings.MARKET_TYPE",
+@patch("gsy_framework.constants_limits.ConstSettings.MASettings.MARKET_TYPE",
        SpotMarketTypeEnum.TWO_SIDED.value)
 def test_accept_post_bid(base):
     market = FakeMarket(raises=True)
@@ -249,7 +249,7 @@ def test_accept_post_bid(base):
     assert bid.buyer == 'FakeOwner'
 
 
-@patch("gsy_framework.constants_limits.ConstSettings.IAASettings.MARKET_TYPE",
+@patch("gsy_framework.constants_limits.ConstSettings.MASettings.MARKET_TYPE",
        SpotMarketTypeEnum.TWO_SIDED.value)
 def test_remove_bid_from_pending(base):
     market = FakeMarket(raises=True)
@@ -261,7 +261,7 @@ def test_remove_bid_from_pending(base):
     assert not base.are_bids_posted(market.id)
 
 
-@patch("gsy_framework.constants_limits.ConstSettings.IAASettings.MARKET_TYPE",
+@patch("gsy_framework.constants_limits.ConstSettings.MASettings.MARKET_TYPE",
        SpotMarketTypeEnum.TWO_SIDED.value)
 def test_add_bid_to_bought(base):
     market = FakeMarket(raises=True)
@@ -342,7 +342,7 @@ def test_can_offer_be_posted(market_class):
 
 
 @pytest.mark.parametrize('market_class', [TwoSidedMarket])
-@patch("gsy_framework.constants_limits.ConstSettings.IAASettings.MARKET_TYPE",
+@patch("gsy_framework.constants_limits.ConstSettings.MASettings.MARKET_TYPE",
        SpotMarketTypeEnum.TWO_SIDED.value)
 def test_can_bid_be_posted(market_class, base):
     market = market_class(time_slot=pendulum.now())
@@ -357,7 +357,7 @@ def test_can_bid_be_posted(market_class, base):
 
 
 @pytest.mark.parametrize('market_class', [TwoSidedMarket])
-@patch("gsy_framework.constants_limits.ConstSettings.IAASettings.MARKET_TYPE",
+@patch("gsy_framework.constants_limits.ConstSettings.MASettings.MARKET_TYPE",
        SpotMarketTypeEnum.TWO_SIDED.value)
 def test_post_bid_with_replace_existing(market_class, base):
     """Calling post_bid with replace_existing=True triggers the removal of the existing bids."""
@@ -374,7 +374,7 @@ def test_post_bid_with_replace_existing(market_class, base):
 
 
 @pytest.mark.parametrize('market_class', [TwoSidedMarket])
-@patch("gsy_framework.constants_limits.ConstSettings.IAASettings.MARKET_TYPE",
+@patch("gsy_framework.constants_limits.ConstSettings.MASettings.MARKET_TYPE",
        SpotMarketTypeEnum.TWO_SIDED.value)
 def test_post_bid_without_replace_existing(market_class, base):
     """Calling post_bid with replace_existing=False does not trigger the removal of the existing
