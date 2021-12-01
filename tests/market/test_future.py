@@ -32,9 +32,9 @@ DEFAULT_SLOT_LENGTH = duration(minutes=15)
 @pytest.fixture(name="future_market")
 def active_future_market() -> FutureMarkets:
     """Return future market object."""
-    orig_future_market_duration = GlobalConfig.future_market_duration
+    orig_future_market_duration = GlobalConfig.FUTURE_MARKET_DURATION_HOURS
     orig_start_date = GlobalConfig.start_date
-    GlobalConfig.future_market_duration = duration(hours=1)
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 1
     area = Area("test_area")
     area.config.start_date = DEFAULT_CURRENT_MARKET_SLOT
     area.config.end_date = area.config.start_date + area.config.sim_duration
@@ -50,7 +50,7 @@ def active_future_market() -> FutureMarkets:
         DEFAULT_CURRENT_MARKET_SLOT, DEFAULT_SLOT_LENGTH, area.config)
     yield future_market
 
-    GlobalConfig.future_market_duration = orig_future_market_duration
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = orig_future_market_duration
     GlobalConfig.start_date = orig_start_date
 
 
@@ -78,7 +78,8 @@ class TestFutureMarkets:
             assert len(buffer.keys()) == 5
             future_time_slot = DEFAULT_CURRENT_MARKET_SLOT.add(
                 minutes=DEFAULT_SLOT_LENGTH.total_minutes())
-            most_future_slot = future_time_slot + GlobalConfig.future_market_duration
+            most_future_slot = (future_time_slot +
+                                duration(hours=GlobalConfig.FUTURE_MARKET_DURATION_HOURS))
             assert all(future_time_slot <= time_slot <= most_future_slot for time_slot in buffer)
 
     @staticmethod
