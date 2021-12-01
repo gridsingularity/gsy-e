@@ -27,7 +27,7 @@ ConstSettings.MASettings.MARKET_TYPE = 2
 def get_setup(config):
     """Return the setup to be used for the simulation."""
 
-    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 1
     area = Area(
         "Grid",
         [
