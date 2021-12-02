@@ -318,7 +318,7 @@ class TwoSidedMarket(OneSidedMarket):
                 #  on a matching algorithm setting
                 if is_external_matching_enabled():
                     # re-raise exception to be handled by the external matcher
-                    raise InvalidBidOfferPairException from invalid_bop_exception
+                    raise invalid_bop_exception
 
             market_offers = iter(market_offers)
             market_bids = iter(market_bids)
