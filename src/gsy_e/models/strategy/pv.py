@@ -76,11 +76,13 @@ class PVStrategy(BidEnabledStrategy):
         self._init_price_update(update_interval, initial_selling_rate, final_selling_rate,
                                 use_market_maker_rate, fit_to_limit,
                                 energy_rate_decrease_per_update)
-        self._future_market_strategy = future_market_strategy_factory(self.asset_type)
 
     @classmethod
     def _create_settlement_market_strategy(cls):
         return settlement_market_strategy_factory()
+
+    def _create_future_market_strategy(self):
+        return future_market_strategy_factory(self.asset_type)
 
     @property
     def state(self) -> PVState:
@@ -189,6 +191,7 @@ class PVStrategy(BidEnabledStrategy):
         self.event_activate_price()
         self.event_activate_energy()
         self.offer_update.update_and_populate_price_settings(self.area)
+        self._future_market_strategy.update_and_populate_price_settings(self)
 
     def event_activate_price(self):
         # If use_market_maker_rate is true, overwrite initial_selling_rate to market maker rate
@@ -219,7 +222,7 @@ class PVStrategy(BidEnabledStrategy):
         self._future_market_strategy.event_tick(self)
 
     def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
-        # This forecast ist based on the real PV system data provided by enphase
+        # This forecast is based on the real PV system data provided by enphase
         # They can be found in the tools folder
         # A fit of a gaussian function to those data results in a formula Energy(time)
         market = self.area.spot_market

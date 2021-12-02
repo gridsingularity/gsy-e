@@ -176,11 +176,6 @@ def make_fa_name(owner):
     return f"FA {owner.name}"
 
 
-def is_time_slot_in_simulation_duration(config, time_slot):
-    return config.start_date <= time_slot < config.end_date or \
-           GlobalConfig.IS_CANARY_NETWORK
-
-
 def format_interval(interval, show_day=True):
     if interval.days and show_day:
         template = "{i.days:02d}:{i.hours:02d}:{i.minutes:02d}:{i.remaining_seconds:02d}"

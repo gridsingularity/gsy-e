@@ -20,9 +20,9 @@ from typing import Dict, TYPE_CHECKING, Optional, List
 
 from gsy_framework.constants_limits import ConstSettings, TIME_FORMAT
 from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.utils import is_time_slot_in_simulation_duration
 from pendulum import DateTime
 
-from gsy_e.gsy_e_core.util import is_time_slot_in_simulation_duration
 from gsy_e.models.area.market_rotators import (BaseRotator, DefaultMarketRotator,
                                                SettlementMarketRotator, FutureMarketRotator)
 from gsy_e.models.market import GridFee, MarketBase
@@ -176,7 +176,7 @@ class AreaMarkets:
             grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
                               grid_fee_const=area.grid_fee_constant),
             name=area.name,
-            in_sim_duration=is_time_slot_in_simulation_duration(area.config, time_slot)
+            in_sim_duration=is_time_slot_in_simulation_duration(time_slot, area.config)
         )
 
         area.dispatcher.create_market_agents(market_type, market)

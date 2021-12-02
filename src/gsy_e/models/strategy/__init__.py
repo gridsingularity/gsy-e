@@ -42,6 +42,7 @@ from gsy_e.gsy_e_core.util import append_or_create_key
 from gsy_e.models.base import AreaBehaviorBase
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.market import MarketBase
+from gsy_e.models.strategy.future.strategy import FutureMarketStrategyInterface
 from gsy_e.models.strategy.settlement.strategy import SettlementMarketStrategyInterface
 
 log = getLogger(__name__)
@@ -456,6 +457,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         self.event_responses = []
         self._market_adapter = market_strategy_connection_adapter_factory()
         self._settlement_market_strategy = self._create_settlement_market_strategy()
+        self._future_market_strategy = self._create_future_market_strategy()
 
     parameters = None
 
@@ -471,6 +473,10 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
     @classmethod
     def _create_settlement_market_strategy(cls):
         return SettlementMarketStrategyInterface()
+
+    @classmethod
+    def _create_future_market_strategy(cls):
+        return FutureMarketStrategyInterface()
 
     def energy_traded(self, market_id: str, time_slot: DateTime = None) -> float:
         """Get the traded energy on the market"""
@@ -752,6 +758,7 @@ class BidEnabledStrategy(BaseStrategy):
         Returns: The bid posted to the market
 
         """
+        self._assert_bid_can_be_posted_on_market(market.id)
         if replace_existing:
             self._remove_existing_bids(market)
 
@@ -851,6 +858,7 @@ class BidEnabledStrategy(BaseStrategy):
 
     def remove_bid_from_pending(self, market_id: str, bid_id: str = None) -> List[str]:
         """Remove bid from pending bids dict"""
+        self._assert_bid_can_be_posted_on_market(market_id)
         market = self.get_market_from_id(market_id)
         if market is None:
             return []
@@ -919,7 +927,7 @@ class BidEnabledStrategy(BaseStrategy):
             return []
         return [b for b in self._bids[market.id] if time_slot is None or b.time_slot == time_slot]
 
-    def _assert_market_type_on_bid_event(self, market_id):
+    def _assert_bid_can_be_posted_on_market(self, market_id):
         assert (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value or
                 self.area.is_market_future(market_id) or
                 self.area.is_market_settlement(market_id)), (
@@ -927,7 +935,7 @@ class BidEnabledStrategy(BaseStrategy):
             "if it is not a future or settlement market bid.")
 
     def event_bid_deleted(self, *, market_id: str, bid: Bid) -> None:
-        self._assert_market_type_on_bid_event(market_id)
+        self._assert_bid_can_be_posted_on_market(market_id)
 
         if bid.buyer != self.owner.name:
             return
@@ -936,7 +944,7 @@ class BidEnabledStrategy(BaseStrategy):
     # pylint: disable=unused-argument
     def event_bid_split(self, *, market_id: str, original_bid: Bid, accepted_bid: Bid,
                         residual_bid: Bid) -> None:
-        self._assert_market_type_on_bid_event(market_id)
+        self._assert_bid_can_be_posted_on_market(market_id)
 
         if accepted_bid.buyer != self.owner.name:
             return
@@ -948,7 +956,7 @@ class BidEnabledStrategy(BaseStrategy):
 
         This method is triggered by the MarketEvent.BID_TRADED event.
         """
-        self._assert_market_type_on_bid_event(market_id)
+        self._assert_bid_can_be_posted_on_market(market_id)
 
         if bid_trade.buyer == self.owner.name:
             self.add_bid_to_bought(bid_trade.offer_bid, market_id)

@@ -66,6 +66,9 @@ class TestSettlementMarketStrategy:
         strategy_fixture.area.config = Mock()
         strategy_fixture.simulation_config.ticks_per_slot = 60
         strategy_fixture.simulation_config.tick_length = duration(seconds=15)
+        strategy_fixture.simulation_config.start_date = today()
+        strategy_fixture.simulation_config.sim_duration = duration(days=1)
+        strategy_fixture.simulation_config.end_date = today() + duration(days=1)
 
     def teardown_method(self):
         ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = False
@@ -104,9 +107,6 @@ class TestSettlementMarketStrategy:
             strategy_fixture, can_post_settlement_bid, can_post_settlement_offer)
 
         strategy_fixture.area.current_tick = 0
-        strategy_fixture.area.config = Mock()
-        strategy_fixture.simulation_config.ticks_per_slot = 60
-        strategy_fixture.simulation_config.tick_length = duration(seconds=15)
         self.settlement_strategy.event_market_cycle(strategy_fixture)
 
         strategy_fixture.area.current_tick = 30
@@ -167,4 +167,4 @@ class TestSettlementMarketStrategy:
         assert (list(unsettled_deviation_dict["unsettled_deviation_kWh"].keys()) ==
                 [format_datetime(self.time_slot)])
         assert (list(unsettled_deviation_dict["unsettled_deviation_kWh"].values()) ==
-                [strategy_fixture.state.get_unsettled_deviation_kWh(self.time_slot)])
+                [strategy_fixture.state.get_signed_unsettled_deviation_kWh(self.time_slot)])

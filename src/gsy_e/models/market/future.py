@@ -15,17 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+# pylint: disable=too-many-instance-attributes, too-many-arguments, too-many-locals
 from copy import deepcopy
 from logging import getLogger
 from typing import Dict, List, Union, Optional, Tuple, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
 from gsy_framework.data_classes import Bid, Offer, Trade, BaseBidOffer, TradeBidOfferInfo
+from gsy_framework.utils import is_time_slot_in_simulation_duration
 from pendulum import DateTime, duration
 
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
-from gsy_e.gsy_e_core.util import is_time_slot_in_simulation_duration
 from gsy_e.models.market import GridFee
 from gsy_e.models.market import lock_market_action
 from gsy_e.models.market.two_sided import TwoSidedMarket
@@ -153,10 +153,11 @@ class FutureMarkets(TwoSidedMarket):
                               config: "SimulationConfig") -> None:
         """Add sub dicts in order dictionaries for future market slots."""
         future_time_slot = current_market_time_slot.add(minutes=slot_length.total_minutes())
-        most_future_slot = future_time_slot + GlobalConfig.future_market_duration
+        most_future_slot = (future_time_slot +
+                            duration(hours=GlobalConfig.FUTURE_MARKET_DURATION_HOURS))
         while future_time_slot <= most_future_slot:
             if (future_time_slot not in self.slot_bid_mapping and
-                    is_time_slot_in_simulation_duration(config, future_time_slot)):
+                    is_time_slot_in_simulation_duration(future_time_slot, config)):
                 self.slot_bid_mapping[future_time_slot] = []
                 self.slot_offer_mapping[future_time_slot] = []
                 self.slot_trade_mapping[future_time_slot] = []

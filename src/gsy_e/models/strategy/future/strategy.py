@@ -25,7 +25,7 @@ from gsy_e.models.strategy.update_frequency import (
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
-    from gsy_e.models.strategy import BidEnabledStrategy
+    from gsy_e.models.strategy import BaseStrategy
     from gsy_e.models.market.future import FutureMarkets
 
 
@@ -44,9 +44,11 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
     @staticmethod
     def _get_all_time_slots(area: "Area") -> List[DateTime]:
         """Override to return all future market available time slots"""
+        if not area.future_markets:
+            return []
         return area.future_markets.market_time_slots
 
-    def update(self, market: "FutureMarkets", strategy: "BidEnabledStrategy") -> None:
+    def update(self, market: "FutureMarkets", strategy: "BaseStrategy") -> None:
         """Update the price of existing bids to reflect the new rates."""
         for time_slot in strategy.area.future_markets.market_time_slots:
             if self.time_for_price_update(strategy, time_slot):
@@ -69,9 +71,11 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
     @staticmethod
     def _get_all_time_slots(area: "Area") -> List[DateTime]:
         """Override to return all future market available time slots"""
+        if not area.future_markets:
+            return []
         return area.future_markets.market_time_slots
 
-    def update(self, market: "FutureMarkets", strategy: "BidEnabledStrategy") -> None:
+    def update(self, market: "FutureMarkets", strategy: "BaseStrategy") -> None:
         """Update the price of existing offers to reflect the new rates."""
         for time_slot in strategy.area.future_markets.market_time_slots:
             if self.time_for_price_update(strategy, time_slot):
@@ -86,17 +90,22 @@ class FutureMarketStrategyInterface:
     def __init__(self, *args, **kwargs):
         pass
 
-    def event_market_cycle(self, strategy: "BidEnabledStrategy") -> None:
+    def event_market_cycle(self, strategy: "BaseStrategy") -> None:
         """Base class method for handling the market cycle"""
 
-    def event_tick(self, strategy: "BidEnabledStrategy") -> None:
+    def event_tick(self, strategy: "BaseStrategy") -> None:
         """Base class method for handling the tick"""
+
+    def update_and_populate_price_settings(self, strategy: "BaseStrategy") -> None:
+        """Base class method for updating/populating price settings"""
 
 
 def future_strategy_bid_updater_factory(
         initial_buying_rate: float, final_buying_rate: float, asset_type: AssetType
 ) -> Union[TemplateStrategyUpdaterInterface, FutureTemplateStrategyBidUpdater]:
-
+    """
+    Factory method for the bid updater, disables the updater if the strategy does not support bids
+    """
     _update_interval = FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN
     if asset_type in [AssetType.CONSUMER, AssetType.PROSUMER]:
         return FutureTemplateStrategyBidUpdater(
@@ -112,7 +121,10 @@ def future_strategy_bid_updater_factory(
 def future_strategy_offer_updater_factory(
         initial_selling_rate: float, final_selling_rate: float, asset_type: AssetType
 ) -> Union[TemplateStrategyUpdaterInterface, FutureTemplateStrategyOfferUpdater]:
-
+    """
+    Factory method for the offer updater, disables the updater if the strategy does not support
+    offers
+    """
     _update_interval = FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN
     if asset_type in [AssetType.PRODUCER, AssetType.PROSUMER]:
         return FutureTemplateStrategyOfferUpdater(
@@ -146,7 +158,15 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             initial_buying_rate, final_buying_rate, asset_type
         )
 
-    def event_market_cycle(self, strategy: "BidEnabledStrategy") -> None:
+    def update_and_populate_price_settings(self, strategy):
+        """
+        Update and populate the price settings of the bid / offer updaters. Should be called
+        on every market cycle, and during the live event handling process of each strategy.
+        """
+        self._bid_updater.update_and_populate_price_settings(strategy.area)
+        self._offer_updater.update_and_populate_price_settings(strategy.area)
+
+    def event_market_cycle(self, strategy: "BaseStrategy") -> None:
         """
         Should be called by the event_market_cycle of the asset strategy class, posts
         settlement bids and offers on markets that do not have posted bids and offers yet
@@ -158,8 +178,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         """
         if not strategy.area.future_markets:
             return
-        self._bid_updater.update_and_populate_price_settings(strategy.area)
-        self._offer_updater.update_and_populate_price_settings(strategy.area)
+        self.update_and_populate_price_settings(strategy)
         for time_slot in strategy.area.future_markets.market_time_slots:
             if strategy.asset_type == AssetType.CONSUMER:
                 required_energy_kWh = strategy.state.get_energy_requirement_Wh(time_slot) / 1000.0
@@ -182,7 +201,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         self._offer_updater.increment_update_counter_all_markets(strategy)
 
     def _post_consumer_first_bid(
-            self, strategy: "BidEnabledStrategy", time_slot: DateTime,
+            self, strategy: "BaseStrategy", time_slot: DateTime,
             available_buy_energy_kWh: float) -> None:
         if available_buy_energy_kWh <= 0.0:
             return
@@ -195,7 +214,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             time_slot=time_slot)
 
     def _post_producer_first_offer(
-            self, strategy: "BidEnabledStrategy", time_slot: DateTime,
+            self, strategy: "BaseStrategy", time_slot: DateTime,
             available_sell_energy_kWh: float) -> None:
         if available_sell_energy_kWh <= 0.0:
             return
@@ -209,7 +228,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             time_slot=time_slot
         )
 
-    def event_tick(self, strategy: "BidEnabledStrategy") -> None:
+    def event_tick(self, strategy: "BaseStrategy") -> None:
         """
         Update posted settlement bids and offers on market tick.
         Order matters here:

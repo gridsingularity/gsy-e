@@ -40,19 +40,21 @@ class TestFutureMarketStrategy:
 
     def setup_method(self) -> None:
         """Preparation for the tests execution"""
+        self._original_future_markets_duration = GlobalConfig.FUTURE_MARKET_DURATION_HOURS
         GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
         self.time_slot = today(tz=TIME_ZONE).at(hour=12, minute=0, second=0)
         self.area_mock = Mock()
         self.area_mock.name = "test_name"
         self.area_mock.uuid = str(uuid.uuid4())
+        GlobalConfig.end_date = GlobalConfig.start_date + GlobalConfig.sim_duration
+        self.area_mock.config = GlobalConfig
         self.future_markets = MagicMock(spec=FutureMarkets)
         self.future_markets.market_time_slots = [self.time_slot]
         self.future_markets.id = str(uuid.uuid4())
 
-    @staticmethod
-    def teardown_method() -> None:
+    def teardown_method(self) -> None:
         """Test cleanup"""
-        GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
+        GlobalConfig.FUTURE_MARKET_DURATION_HOURS = self._original_future_markets_duration
 
     def _setup_strategy_fixture(self, future_strategy_fixture: "BaseStrategy") -> None:
         future_strategy_fixture.owner = self.area_mock
@@ -61,7 +63,7 @@ class TestFutureMarketStrategy:
         future_strategy_fixture.area = Mock()
         future_strategy_fixture.area.future_markets = self.future_markets
         future_strategy_fixture.area.current_tick = 0
-        future_strategy_fixture.area.config = Mock()
+        future_strategy_fixture.area.config = GlobalConfig
         future_strategy_fixture.area.config.tick_length = duration(seconds=15)
 
     def test_event_market_cycle_posts_bids_load(self) -> None:
@@ -137,8 +139,6 @@ class TestFutureMarketStrategy:
             future_strategy_fixture.state.offered_buy_kWh[self.time_slot] = 0.
 
         future_strategy_fixture.area.current_tick = 0
-        future_strategy_fixture.area.config = Mock()
-        future_strategy_fixture.area.config.tick_length = duration(seconds=15)
         future_strategy.event_market_cycle(future_strategy_fixture)
 
         ticks_for_update = FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN * 60 / 15

@@ -19,7 +19,8 @@ from typing import TYPE_CHECKING, Callable, List
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.read_user_profile import InputProfileTypes
-from gsy_framework.utils import find_object_of_same_weekday_and_time
+from gsy_framework.utils import (find_object_of_same_weekday_and_time,
+                                 is_time_slot_in_simulation_duration)
 from pendulum import duration, DateTime, Duration
 
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
@@ -125,6 +126,8 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
 
     def _populate_profiles(self, area: "Area") -> None:
         for time_slot in self._get_all_time_slots(area):
+            if not is_time_slot_in_simulation_duration(time_slot, area.config):
+                continue
             if self.fit_to_limit is False:
                 self.energy_rate_change_per_update[time_slot] = (
                     find_object_of_same_weekday_and_time(
@@ -169,6 +172,11 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
 
     def update_and_populate_price_settings(self, area: "Area") -> None:
         """Populate the price profiles for every available time slot."""
+
+        # Handling the case where future markets are disabled during a simulation.
+        if self._time_slot_duration_in_seconds <= 0:
+            return
+
         assert (ConstSettings.GeneralSettings.MIN_UPDATE_INTERVAL * 60 <=
                 self.update_interval.seconds < self._time_slot_duration_in_seconds)
 

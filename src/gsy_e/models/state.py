@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from enum import Enum
-from math import isclose
-from typing import Dict
+from math import isclose, copysign
+from typing import Dict, Optional
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.utils import (
@@ -163,6 +163,23 @@ class ProsumptionInterface(StateInterface, ABC):
 
         """
         return self._unsettled_deviation_kWh.get(time_slot)
+
+    def get_signed_unsettled_deviation_kWh(
+            self, time_slot: DateTime) -> Optional[float]:
+        """
+        Get the unsettled energy deviation of forecasted energy from measurement by the device
+        in the given market slot including the correct sign that shows the direction
+        of the deviation.
+        Args:
+            time_slot: Time slot of the unsettled deviation
+
+        Returns: Unsettled energy deviation, in kWh
+
+        """
+        unsettled_deviation = self._unsettled_deviation_kWh.get(time_slot)
+        forecast_measurement_deviation = self._forecast_measurement_deviation_kWh.get(time_slot)
+        if unsettled_deviation and forecast_measurement_deviation:
+            return copysign(unsettled_deviation, forecast_measurement_deviation)
 
     def decrement_unsettled_deviation(
             self, purchased_energy_kWh: float, time_slot: DateTime) -> None:

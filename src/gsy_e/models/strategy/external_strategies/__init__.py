@@ -35,6 +35,7 @@ from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import (
     ResettableCommunicator, ExternalConnectionCommunicator)
 from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.external_strategies.dof_filter import DegreesOfFreedomFilter
+from gsy_e.models.strategy.future.strategy import FutureMarketStrategyInterface
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
@@ -152,6 +153,14 @@ class ExternalMixin:
         super().__init__(*args, **kwargs)
         self.pending_requests: deque = deque()
         self._lock: Lock = Lock()
+
+    # pylint: disable=no-self-use
+    def _create_future_market_strategy(self):
+        """
+        Disable future market template strategy in order to leave this respsonsibility
+        to the client. This is achieved by overwriting BaseStrategy._create_future_market_strategy.
+        """
+        return FutureMarketStrategyInterface()
 
     def get_state(self) -> Dict:
         """Get the state of the asset/market."""
@@ -500,7 +509,7 @@ class ExternalMixin:
             "offer": self._offer_aggregator,
             "delete_offer": self._delete_offer_aggregator,
             "list_offers": self._list_offers_aggregator,
-            "device_info": self._device_info,
+            "device_info": self._device_info_aggregator,
         }
 
     def trigger_aggregator_commands(self, command: Dict) -> Dict:
