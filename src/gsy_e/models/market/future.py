@@ -81,17 +81,26 @@ class FutureMarkets(TwoSidedMarket):
     def orders_per_slot(self) -> Dict[str, Dict]:
         """Return all orders in the market per time slot."""
         orders_dict = {}
-        for time_slot, bids_list in self.slot_bid_mapping.items():
-            time_slot = time_slot.format(DATE_TIME_FORMAT)
-            if time_slot not in orders_dict:
-                orders_dict[time_slot] = {"bids": [], "offers": []}
-            orders_dict[time_slot]["bids"].extend([bid.serializable_dict() for bid in bids_list])
-        for time_slot, offers_list in self.slot_offer_mapping.items():
-            time_slot = time_slot.format(DATE_TIME_FORMAT)
-            if time_slot not in orders_dict:
-                orders_dict[time_slot] = {"bids": [], "offers": []}
-            orders_dict[time_slot]["offers"].extend(
-                [offer.serializable_dict() for offer in offers_list])
+        for offer in self.offers.values():
+            if offer.time_slot.format(DATE_TIME_FORMAT) not in orders_dict:
+                orders_dict[offer.time_slot.format(DATE_TIME_FORMAT)] = {"bids": [], "offers": []}
+            orders_dict[offer.time_slot.format(DATE_TIME_FORMAT)]["offers"].append(offer.serializable_dict())
+        for bid in self.bids.values():
+            if bid.time_slot.format(DATE_TIME_FORMAT) not in orders_dict:
+                orders_dict[bid.time_slot.format(DATE_TIME_FORMAT)] = {"bids": [], "offers": []}
+            orders_dict[bid.time_slot.format(DATE_TIME_FORMAT)]["bids"].append(bid.serializable_dict())
+        # for time_slot, bids_list in self.slot_bid_mapping.items():
+        #     time_slot = time_slot.format(DATE_TIME_FORMAT)
+        #     if time_slot not in orders_dict:
+        #         orders_dict[time_slot] = {"bids": [], "offers": []}
+        #     orders_dict[time_slot]["bids"].extend(
+        #         [bid.serializable_dict() for bid in bids_list if bid.id in self.bids])
+        # for time_slot, offers_list in self.slot_offer_mapping.items():
+        #     time_slot = time_slot.format(DATE_TIME_FORMAT)
+        #     if time_slot not in orders_dict:
+        #         orders_dict[time_slot] = {"bids": [], "offers": []}
+        #     orders_dict[time_slot]["offers"].extend(
+        #         [offer.serializable_dict() for offer in offers_list if offer.id in self.offers])
         return orders_dict
 
     @staticmethod

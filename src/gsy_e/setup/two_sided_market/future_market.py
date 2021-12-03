@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from pendulum import duration
 
 from gsy_e.models.area import Area
@@ -26,8 +26,9 @@ from gsy_e.models.strategy.storage import StorageStrategy
 
 def get_setup(config):
     # Two sided market
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = 30
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 10
 
     area = Area(
         "Grid",

@@ -4,4 +4,4 @@ Feature: Future market tests
     And gsy-e is installed
     And export is_needed
     When we run the simulation with setup file two_sided_market.future_market and parameters [24, 60, 6]
-    Then hi
+    Then the future strategy correctly posted orders and made trades
