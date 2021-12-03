@@ -367,8 +367,7 @@ class TwoSidedMarket(OneSidedMarket):
                     selected_energy=selected_energy)):
             # If no requirement dict is satisfied
             raise InvalidBidOfferPairException(
-                f"OFFER: {offer.serializable_dict()} & BID: {bid.serializable_dict()} "
-                "requirements failed the validation.")
+                "The requirements failed the validation.")
 
     @classmethod
     def validate_bid_offer_match(
