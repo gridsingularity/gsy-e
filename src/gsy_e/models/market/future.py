@@ -15,13 +15,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-# pylint: disable=too-many-instance-attributes, too-many-arguments, too-many-locals
+# pylint: disable=too-many-instance-attributes, too-many-arguments, too-many-locals, no-member
+from collections import UserDict
 from copy import deepcopy
 from logging import getLogger
-from typing import Dict, List, Union, Optional, Tuple, TYPE_CHECKING
+from typing import Dict, List, Optional, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
-from gsy_framework.data_classes import Bid, Offer, Trade, BaseBidOffer, TradeBidOfferInfo
+from gsy_framework.data_classes import Bid, Offer
 from gsy_framework.utils import is_time_slot_in_simulation_duration
 from pendulum import DateTime, duration
 
@@ -41,6 +42,39 @@ class FutureMarketException(Exception):
     """Exception specific to the Future markets."""
 
 
+class FutureOrders(UserDict):
+    """Special mapping object to keep track of a future market's orders."""
+    def __init__(self, *args, **kwargs):
+        self.slot_order_mapping = {}
+        super().__init__(*args, **kwargs)
+
+    def __setitem__(self, order_id, order):
+        self.data[order_id] = order
+        if order.time_slot not in self.slot_order_mapping:
+            self.slot_order_mapping[order.time_slot] = []
+        self.slot_order_mapping[order.time_slot].append(order)
+
+    def __delitem__(self, order_id):
+        order = self.data.pop(order_id, None)
+        if order:
+            self.slot_order_mapping[order.time_slot].remove(order)
+
+    def expire(self, current_market_time_slot: DateTime) -> Dict:
+        """Remove old orders (time_slot in the past)."""
+        data = {}
+        slot_order_mapping = deepcopy(self.slot_order_mapping)
+        for order_id, order in self.data.items():
+            if order.time_slot > current_market_time_slot:
+                data[order_id] = order
+
+        for time_slot in self.slot_order_mapping.keys():
+            if time_slot <= current_market_time_slot:
+                del slot_order_mapping[time_slot]
+
+        self.data = data
+        self.slot_order_mapping = slot_order_mapping
+
+
 class FutureMarkets(TwoSidedMarket):
     """Class responsible for future markets."""
 
@@ -54,9 +88,46 @@ class FutureMarkets(TwoSidedMarket):
                          readonly=readonly, grid_fee_type=grid_fee_type,
                          grid_fees=grid_fees, name=name, in_sim_duration=True)
 
-        self.slot_bid_mapping: Dict[DateTime, List[Bid]] = {}
-        self.slot_offer_mapping: Dict[DateTime, List[Offer]] = {}
-        self.slot_trade_mapping: Dict[DateTime, List[Trade]] = {}
+        self._offers = FutureOrders()
+        self._bids = FutureOrders()
+
+    @property
+    def offers(self) -> FutureOrders:
+        """Return the {offer_id: offer} mapping."""
+        return self._offers
+
+    @offers.setter
+    def offers(self, orders) -> None:
+        """Wrap the setter of _orders in order to build a FutureOrders object."""
+        self._offers = FutureOrders(orders)
+
+    @property
+    def bids(self) -> FutureOrders:
+        """Return the {bid_id: bid} mapping."""
+        return self._bids
+
+    @bids.setter
+    def bids(self, orders) -> None:
+        """Wrap the setter of _orders in order to build a FutureOrders object."""
+        self._bids = FutureOrders(orders)
+
+    @property
+    def slot_bid_mapping(self):
+        """Return the {time_slot: [bids_list]} mapping."""
+        return self.bids.slot_order_mapping
+
+    @property
+    def slot_offer_mapping(self) -> Dict:
+        """Return the {time_slot: [offers_list]} mapping."""
+        return self.offers.slot_order_mapping
+
+    @property
+    def slot_trade_mapping(self) -> Dict:
+        """Return the {time_slot: [trades_list]} mapping."""
+        mapping = {time_slot: [] for time_slot in self.slot_bid_mapping.keys()}
+        for trade in self.trades:
+            mapping[trade.time_slot].append(trade)
+        return mapping
 
     def __repr__(self):  # pragma: no cover
         return (f"<{self._class_name} bids:{self.slot_bid_mapping}"
@@ -71,36 +142,20 @@ class FutureMarkets(TwoSidedMarket):
         """Return list of all time slots of future markets."""
         return list(self.slot_bid_mapping.keys())
 
-    def open_bids_and_offers(self, **kwargs) -> Tuple[List, List]:
-        if kwargs.get("time_slot") is None:
-            return [], []
-
-        return (self.slot_bid_mapping[kwargs["time_slot"]],
-                self.slot_offer_mapping[kwargs["time_slot"]])
-
     def orders_per_slot(self) -> Dict[str, Dict]:
         """Return all orders in the market per time slot."""
         orders_dict = {}
-        for offer in self.offers.values():
-            if offer.time_slot.format(DATE_TIME_FORMAT) not in orders_dict:
-                orders_dict[offer.time_slot.format(DATE_TIME_FORMAT)] = {"bids": [], "offers": []}
-            orders_dict[offer.time_slot.format(DATE_TIME_FORMAT)]["offers"].append(offer.serializable_dict())
-        for bid in self.bids.values():
-            if bid.time_slot.format(DATE_TIME_FORMAT) not in orders_dict:
-                orders_dict[bid.time_slot.format(DATE_TIME_FORMAT)] = {"bids": [], "offers": []}
-            orders_dict[bid.time_slot.format(DATE_TIME_FORMAT)]["bids"].append(bid.serializable_dict())
-        # for time_slot, bids_list in self.slot_bid_mapping.items():
-        #     time_slot = time_slot.format(DATE_TIME_FORMAT)
-        #     if time_slot not in orders_dict:
-        #         orders_dict[time_slot] = {"bids": [], "offers": []}
-        #     orders_dict[time_slot]["bids"].extend(
-        #         [bid.serializable_dict() for bid in bids_list if bid.id in self.bids])
-        # for time_slot, offers_list in self.slot_offer_mapping.items():
-        #     time_slot = time_slot.format(DATE_TIME_FORMAT)
-        #     if time_slot not in orders_dict:
-        #         orders_dict[time_slot] = {"bids": [], "offers": []}
-        #     orders_dict[time_slot]["offers"].extend(
-        #         [offer.serializable_dict() for offer in offers_list if offer.id in self.offers])
+        for time_slot, bids_list in self.slot_bid_mapping.items():
+            time_slot = time_slot.format(DATE_TIME_FORMAT)
+            if time_slot not in orders_dict:
+                orders_dict[time_slot] = {"bids": [], "offers": []}
+            orders_dict[time_slot]["bids"].extend([bid.serializable_dict() for bid in bids_list])
+        for time_slot, offers_list in self.slot_offer_mapping.items():
+            time_slot = time_slot.format(DATE_TIME_FORMAT)
+            if time_slot not in orders_dict:
+                orders_dict[time_slot] = {"bids": [], "offers": []}
+            orders_dict[time_slot]["offers"].extend(
+                [offer.serializable_dict() for offer in offers_list])
         return orders_dict
 
     @staticmethod
@@ -109,53 +164,18 @@ class FutureMarkets(TwoSidedMarket):
             order for order in order_list if order.time_slot > current_market_time_slot
         ]
 
-    @staticmethod
-    def _remove_old_orders_from_dict(order_dict: Dict, current_market_time_slot: DateTime) -> Dict:
-        return {
-            order_id: order
-            for order_id, order in order_dict.items()
-            if order.time_slot > current_market_time_slot
-        }
-
     def delete_orders_in_old_future_markets(self, current_market_time_slot: DateTime) -> None:
         """Delete order and trade buffers."""
-        self._delete_order_dict_market_slot(current_market_time_slot,
-                                            self.slot_bid_mapping, Bid)
-        self._delete_order_dict_market_slot(current_market_time_slot,
-                                            self.slot_offer_mapping, Offer)
-        self._delete_order_dict_market_slot(current_market_time_slot,
-                                            self.slot_trade_mapping, Trade)
+
+        self.offers.expire(current_market_time_slot)
+        self.bids.expire(current_market_time_slot)
 
         self.offer_history = self._remove_old_orders_from_list(
             self.offer_history, current_market_time_slot)
         self.bid_history = self._remove_old_orders_from_list(
             self.bid_history, current_market_time_slot)
-
-    def _delete_order_dict_market_slot(self, current_market_time_slot: DateTime,
-                                       order_dict:
-                                       Dict[DateTime, List[Union[BaseBidOffer, Trade]]],
-                                       order_type: Union[BaseBidOffer, Trade]) -> None:
-        """Empty order_dicts of order and trades for non-future time_stamps."""
-        delete_time_slots = []
-        for time_slot, orders in order_dict.items():
-            if time_slot <= current_market_time_slot:
-                self._delete_list_of_orders_from_market(orders, order_type)
-                delete_time_slots.append(time_slot)
-        for time_slot in delete_time_slots:
-            del order_dict[time_slot]
-
-    def _delete_list_of_orders_from_market(self, delete_orders: List,
-                                           order_type: Union[BaseBidOffer, Trade]) -> None:
-        """Delete orders/trades from traditional market order dicts."""
-        if order_type == Trade:
-            current_market_trades = self.trades
-            for trade in delete_orders:
-                current_market_trades.remove(trade)
-                del trade
-        else:
-            current_market_orders = self.offers if order_type is Offer else self.bids
-            for order in delete_orders:
-                current_market_orders.pop(order.id, None)
+        self.trades = self._remove_old_orders_from_list(
+            self.trades, current_market_time_slot)
 
     def create_future_markets(self, current_market_time_slot: DateTime,
                               slot_length: duration,
@@ -167,9 +187,8 @@ class FutureMarkets(TwoSidedMarket):
         while future_time_slot <= most_future_slot:
             if (future_time_slot not in self.slot_bid_mapping and
                     is_time_slot_in_simulation_duration(future_time_slot, config)):
-                self.slot_bid_mapping[future_time_slot] = []
-                self.slot_offer_mapping[future_time_slot] = []
-                self.slot_trade_mapping[future_time_slot] = []
+                self.bids.slot_order_mapping[future_time_slot] = []
+                self.offers.slot_order_mapping[future_time_slot] = []
             future_time_slot = future_time_slot.add(minutes=slot_length.total_minutes())
 
     @lock_market_action
@@ -202,7 +221,6 @@ class FutureMarkets(TwoSidedMarket):
                           add_to_history=True, adapt_price_with_fees=adapt_price_with_fees,
                           buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
                           attributes=attributes, requirements=requirements, time_slot=time_slot)
-        self.slot_bid_mapping[time_slot].append(bid)
         return bid
 
     @lock_market_action
@@ -224,69 +242,4 @@ class FutureMarkets(TwoSidedMarket):
         offer = super().offer(price, energy, seller, seller_origin, offer_id, original_price,
                               dispatch_event, adapt_price_with_fees, add_to_history,
                               seller_origin_id, seller_id, attributes, requirements, time_slot)
-        self.slot_offer_mapping[time_slot].append(offer)
         return offer
-
-    def delete_bid(self, bid_or_id: Union[str, Bid]) -> None:
-        """Delete bid object from all buffers."""
-        bid = bid_or_id if isinstance(bid_or_id, Bid) else self.bids.get(bid_or_id)
-        if bid:
-            self.slot_bid_mapping[bid.time_slot].remove(bid)
-        super().delete_bid(bid_or_id)
-
-    def delete_offer(self, offer_or_id: Union[str, Offer]) -> None:
-        """Delete offer object from all buffers."""
-        offer = offer_or_id if isinstance(offer_or_id, Offer) else self.offers.get(offer_or_id)
-        if offer:
-            self.slot_offer_mapping[offer.time_slot].remove(offer)
-        super().delete_offer(offer_or_id)
-
-    def accept_bid(self, bid: Bid,
-                   energy: Optional[float] = None,
-                   seller: Optional[str] = None,
-                   buyer: Optional[str] = None,
-                   already_tracked: bool = False,
-                   trade_rate: Optional[float] = None,
-                   trade_offer_info: Optional[TradeBidOfferInfo] = None,
-                   seller_origin: Optional[str] = None,
-                   seller_origin_id: Optional[str] = None,
-                   seller_id: Optional[str] = None) -> Trade:
-        """Call superclass accept_bid and buffer returned trade object."""
-        trade = super().accept_bid(bid=bid, energy=energy, seller=seller, buyer=buyer,
-                                   already_tracked=already_tracked, trade_rate=trade_rate,
-                                   trade_offer_info=trade_offer_info, seller_origin=seller_origin,
-                                   seller_origin_id=seller_origin_id, seller_id=seller_id)
-
-        if bid.id not in self.bids:
-            self.slot_bid_mapping[bid.time_slot].remove(bid)
-
-        if already_tracked is False:
-            self.slot_trade_mapping[trade.time_slot].append(trade)
-        return trade
-
-    def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *,
-                     energy: Optional[float] = None,
-                     already_tracked: bool = False,
-                     trade_rate: Optional[float] = None,
-                     trade_bid_info: Optional[TradeBidOfferInfo] = None,
-                     buyer_origin: Optional[str] = None,
-                     buyer_origin_id: Optional[str] = None,
-                     buyer_id: Optional[str] = None) -> Trade:
-        """Call superclass accept_offer and buffer returned trade object."""
-
-        if isinstance(offer_or_id, Offer):
-            offer_or_id = offer_or_id.id
-        offer = self.offers.get(offer_or_id, None)
-
-        trade = super().accept_offer(offer_or_id=offer_or_id,
-                                     buyer=buyer, energy=energy,
-                                     already_tracked=already_tracked, trade_rate=trade_rate,
-                                     trade_bid_info=trade_bid_info, buyer_origin=buyer_origin,
-                                     buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
-
-        if offer.id not in self.offers:
-            self.slot_offer_mapping[offer.time_slot].remove(offer)
-
-        if already_tracked is False:
-            self.slot_trade_mapping[trade.time_slot].append(trade)
-        return trade
