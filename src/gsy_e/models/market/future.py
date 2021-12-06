@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-# pylint: disable=too-many-instance-attributes, too-many-arguments, too-many-locals
+# pylint: disable=too-many-instance-attributes, too-many-arguments, too-many-locals, no-member
 from collections import UserDict
 from copy import deepcopy
 from logging import getLogger
@@ -55,10 +55,9 @@ class FutureOrders(UserDict):
         self.slot_order_mapping[order.time_slot].append(order)
 
     def __delitem__(self, order_id):
-        order = self.data.get(order_id)
+        order = self.data.pop(order_id, None)
         if order:
             self.slot_order_mapping[order.time_slot].remove(order)
-        super().__delitem__(order_id)
 
     def expire(self, current_market_time_slot: DateTime) -> Dict:
         """Remove old orders (time_slot in the past)."""
