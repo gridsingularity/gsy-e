@@ -316,6 +316,113 @@ class ExternalMixin:
                 f"settlement markets")
         return market
 
+    def _offer_aggregator_impl(
+            self, arguments: Dict, market: "MarketBase", available_energy: float) -> Dict:
+        """Post offer in the market for aggregator connection to load or PV."""
+        response_message = ""
+        arguments, filtered_fields = self.filter_degrees_of_freedom_arguments(arguments)
+        if filtered_fields:
+            response_message = (
+                "The following arguments are not supported for this market and have been "
+                f"removed from your order: {filtered_fields}.")
+
+        required_args = {"price", "energy", "type", "transaction_id"}
+        allowed_args = required_args.union({"replace_existing",
+                                            "time_slot",
+                                            "attributes",
+                                            "requirements"})
+        try:
+            # Check that all required arguments have been provided
+            assert all(arg in arguments.keys() for arg in required_args)
+            # Check that every provided argument is allowed
+            assert all(arg in allowed_args for arg in arguments.keys())
+
+            replace_existing = arguments.pop("replace_existing", True)
+
+            assert self.can_offer_be_posted(
+                arguments["energy"],
+                arguments["price"],
+                available_energy,
+                market,
+                replace_existing=replace_existing)
+
+            offer_arguments = {k: v
+                               for k, v in arguments.items()
+                               if k not in ["transaction_id", "type", "time_slot"]}
+
+            offer = self.post_offer(
+                market, replace_existing=replace_existing, **offer_arguments)
+
+            response = {
+                "command": "offer",
+                "status": "ready",
+                "offer": offer.to_json_string(replace_existing=replace_existing),
+                "transaction_id": arguments.get("transaction_id"),
+                "area_uuid": self.device.uuid,
+                "message": response_message}
+        except (AssertionError, GSyException):
+            logging.exception("Failed to post PV offer.")
+            response = {
+                "command": "offer", "status": "error",
+                "error_message": "Error when handling offer create "
+                                 f"on area {self.device.name} with arguments {arguments}.",
+                "area_uuid": self.device.uuid,
+                "transaction_id": arguments.get("transaction_id")}
+        return response
+
+    def _bid_aggregator_impl(
+            self, arguments: Dict, market: "MarketBase", required_energy: float) -> Dict:
+        """Post bid in the market for aggregator connection to load or PV."""
+        response_message = ""
+        arguments, filtered_fields = self.filter_degrees_of_freedom_arguments(arguments)
+        if filtered_fields:
+            response_message = (
+                "The following arguments are not supported for this market and have been "
+                f"removed from your order: {filtered_fields}.")
+
+        required_args = {"price", "energy", "type", "transaction_id"}
+        allowed_args = required_args.union({"replace_existing",
+                                            "time_slot",
+                                            "attributes",
+                                            "requirements"})
+
+        try:
+            # Check that all required arguments have been provided
+            assert all(arg in arguments.keys() for arg in required_args)
+            # Check that every provided argument is allowed
+            assert all(arg in allowed_args for arg in arguments.keys())
+
+            replace_existing = arguments.pop("replace_existing", True)
+            assert self.can_bid_be_posted(
+                arguments["energy"],
+                arguments["price"],
+                required_energy,
+                market,
+                replace_existing=replace_existing)
+            bid = self.post_bid(
+                market,
+                arguments["price"],
+                arguments["energy"],
+                replace_existing=replace_existing,
+                attributes=arguments.get("attributes"),
+                requirements=arguments.get("requirements")
+            )
+            response = {
+                "command": "bid", "status": "ready",
+                "bid": bid.to_json_string(replace_existing=replace_existing),
+                "area_uuid": self.device.uuid,
+                "transaction_id": arguments.get("transaction_id"),
+                "message": response_message}
+        except (AssertionError, GSyException):
+            logging.exception("Error when handling bid on area %s", self.device.name)
+            response = {
+                "command": "bid", "status": "error",
+                "area_uuid": self.device.uuid,
+                "error_message": "Error when handling bid create "
+                                 f"on area {self.device.name} with arguments {arguments}.",
+                "transaction_id": arguments.get("transaction_id")}
+        return response
+
     @property
     def device(self) -> "Area":
         """Return the asset/market area instance that owns this strategy."""

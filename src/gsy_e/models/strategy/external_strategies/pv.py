@@ -26,7 +26,8 @@ from pendulum import duration
 from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.strategy.external_strategies import (
-    ExternalMixin, IncomingRequest, ExternalStrategyConnectionManager, default_market_info)
+    ExternalMixin, IncomingRequest, ExternalStrategyConnectionManager, default_market_info,
+    CommandTypeNotSupported)
 from gsy_e.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from gsy_e.models.strategy.pv import PVStrategy
@@ -314,57 +315,55 @@ class PVExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id")}
         return response
 
-    def _offer_aggregator(self, arguments: Dict) -> Dict:
-        response_message = ""
-        arguments, filtered_fields = self.filter_degrees_of_freedom_arguments(arguments)
-        if filtered_fields:
-            response_message = (
-                "The following arguments are not supported for this market and have been "
-                f"removed from your order: {filtered_fields}.")
-
-        required_args = {"price", "energy", "type", "transaction_id"}
-        allowed_args = required_args.union({"replace_existing",
-                                            "time_slot",
-                                            "attributes",
-                                            "requirements"})
+    def _bid_aggregator(self, arguments: Dict) -> Dict:
+        """Callback for the bid endpoint when sent by aggregator."""
         try:
-            # Check that all required arguments have been provided
-            assert all(arg in arguments.keys() for arg in required_args)
-            # Check that every provided argument is allowed
-            assert all(arg in allowed_args for arg in arguments.keys())
-
-            replace_existing = arguments.pop("replace_existing", True)
             market = self._get_market_from_command_argument(arguments)
+            if self.area.is_market_settlement(market.id):
+                assert self.state.can_post_settlement_bid(market.time_slot), (
+                        "The PV did not produce too little energy, "
+                        "settlement bid can not be posted.")
+                response = (
+                    self._bid_aggregator_impl(
+                        arguments, market, self.state.get_unsettled_deviation_kWh(
+                            market.time_slot)))
+            else:
+                raise CommandTypeNotSupported("Offer not supported for Loads on spot markets.")
 
-            assert self.can_offer_be_posted(
-                arguments["energy"],
-                arguments["price"],
-                self.state.get_available_energy_kWh(market.time_slot),
-                market,
-                replace_existing=replace_existing)
-
-            offer_arguments = {k: v
-                               for k, v in arguments.items()
-                               if k not in ["transaction_id", "type", "time_slot"]}
-
-            offer = self.post_offer(
-                market, replace_existing=replace_existing, **offer_arguments)
-
-            response = {
-                "command": "offer",
-                "status": "ready",
-                "offer": offer.to_json_string(replace_existing=replace_existing),
-                "transaction_id": arguments.get("transaction_id"),
-                "area_uuid": self.device.uuid,
-                "message": response_message}
-        except (AssertionError, GSyException):
-            logging.exception("Failed to post PV offer.")
+        except (AssertionError, CommandTypeNotSupported) as ex:
             response = {
                 "command": "offer", "status": "error",
-                "error_message": "Error when handling offer create "
-                                 f"on area {self.device.name} with arguments {arguments}.",
                 "area_uuid": self.device.uuid,
+                "error_message": "Error when handling offer create "
+                                 f"on area {self.device.name} with arguments {arguments}:"
+                                 f"{ex}",
                 "transaction_id": arguments.get("transaction_id")}
+
+        return response
+
+    def _offer_aggregator(self, arguments: Dict) -> Dict:
+        """Callback for the offer endpoint when sent by aggregator."""
+        try:
+            market = self._get_market_from_command_argument(arguments)
+            if self.area.is_market_settlement(market.id):
+                assert self.state.can_post_settlement_offer(market.time_slot), (
+                        "The PV did not produce too much energy, "
+                        "settlement offer can not be posted.")
+                available_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
+            else:
+                available_energy_kWh = self.state.get_available_energy_kWh(market.time_slot)
+
+            response = self._offer_aggregator_impl(arguments, market, available_energy_kWh)
+
+        except AssertionError as ex:
+            response = {
+                "command": "offer", "status": "error",
+                "area_uuid": self.device.uuid,
+                "error_message": "Error when handling offer create "
+                                 f"on area {self.device.name} with arguments {arguments}:"
+                                 f"{ex}",
+                "transaction_id": arguments.get("transaction_id")}
+
         return response
 
 
