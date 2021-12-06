@@ -67,8 +67,11 @@ class FutureOrders(UserDict):
         for order_id, order in self.data.items():
             if order.time_slot > current_market_time_slot:
                 data[order_id] = order
-            else:
-                del slot_order_mapping[order.time_slot]
+
+        for time_slot in self.slot_order_mapping.keys():
+            if time_slot <= current_market_time_slot:
+                del slot_order_mapping[time_slot]
+
         self.data = data
         self.slot_order_mapping = slot_order_mapping
 
@@ -90,22 +93,22 @@ class FutureMarkets(TwoSidedMarket):
         self._bids = FutureOrders()
 
     @property
-    def offers(self):
+    def offers(self) -> FutureOrders:
         """Return the {offer_id: offer} mapping."""
         return self._offers
 
     @offers.setter
-    def offers(self, orders):
+    def offers(self, orders) -> None:
         """Wrap the setter of _orders in order to build a FutureOrders object."""
         self._offers = FutureOrders(orders)
 
     @property
-    def bids(self):
+    def bids(self) -> FutureOrders:
         """Return the {bid_id: bid} mapping."""
         return self._bids
 
     @bids.setter
-    def bids(self, orders):
+    def bids(self, orders) -> None:
         """Wrap the setter of _orders in order to build a FutureOrders object."""
         self._bids = FutureOrders(orders)
 
@@ -115,12 +118,12 @@ class FutureMarkets(TwoSidedMarket):
         return self.bids.slot_order_mapping
 
     @property
-    def slot_offer_mapping(self):
+    def slot_offer_mapping(self) -> Dict:
         """Return the {time_slot: [offers_list]} mapping."""
         return self.offers.slot_order_mapping
 
     @property
-    def slot_trade_mapping(self):
+    def slot_trade_mapping(self) -> Dict:
         """Return the {time_slot: [trades_list]} mapping."""
         mapping = {time_slot: [] for time_slot in self.slot_bid_mapping.keys()}
         for trade in self.trades:
