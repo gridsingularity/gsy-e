@@ -88,14 +88,11 @@ class TestFutureMarkets:
         for time_slot in future_market.slot_bid_mapping:
             bid = Bid(f"bid{time_slot}", time_slot, 1, 1, "buyer", time_slot=time_slot)
             future_market.bids[bid.id] = bid
-            future_market.slot_bid_mapping[time_slot].append(bid)
             offer = Offer(f"oid{time_slot}", time_slot, 1, 1, "seller", time_slot=time_slot)
             future_market.offers[offer.id] = offer
-            future_market.slot_offer_mapping[time_slot].append(offer)
             trade = Trade(f"tid{time_slot}", time_slot, offer, "seller", "buyer",
                           time_slot=time_slot)
             future_market.trades.append(trade)
-            future_market.slot_trade_mapping[time_slot].append(trade)
 
         count_orders_in_buffers(future_market, 5)
         first_future_market = next(iter(future_market.slot_bid_mapping))
@@ -203,10 +200,10 @@ class TestFutureMarkets:
         """Test whether the orders_per_slot method returns order in format format."""
         time_slot1 = now()
         time_slot2 = time_slot1.add(minutes=15)
-        future_market.slot_bid_mapping = {
-            time_slot1: [Bid("bid1", time_slot1, 10, 10, "buyer", time_slot=time_slot1)]}
-        future_market.slot_offer_mapping = {
-            time_slot2: [Offer("offer1", time_slot2, 10, 10, "seller", time_slot=time_slot2)]}
+        future_market.bids = {"bid1": Bid(
+            "bid1", time_slot1, 10, 10, "buyer", time_slot=time_slot1)}
+        future_market.offers = {"offer1": Offer(
+            "offer1", time_slot2, 10, 10, "seller", time_slot=time_slot2)}
         assert future_market.orders_per_slot() == {
             time_slot1.format(DATE_TIME_FORMAT): {
                 "bids": [{"attributes": None,
