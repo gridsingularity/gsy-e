@@ -330,15 +330,23 @@ def test_can_offer_be_posted(market_class):
     base.owner = FakeOwner()
     base.area = FakeArea()
 
-    market = market_class(time_slot=pendulum.now())
+    time_slot = pendulum.now()
+    market = market_class(time_slot=time_slot)
 
-    base.offers.post(Offer('id', pendulum.now(), price=1, energy=12, seller='A'), market.id)
-    base.offers.post(Offer('id2', pendulum.now(), price=1, energy=13, seller='A'), market.id)
-    base.offers.post(Offer('id3', pendulum.now(), price=1, energy=20, seller='A'), market.id)
+    base.offers.post(Offer('id', time_slot.add(seconds=1), price=1, energy=12, seller='A',
+                           time_slot=time_slot), market.id)
+    base.offers.post(Offer('id2', time_slot.add(seconds=2), price=1, energy=13, seller='A',
+                           time_slot=time_slot), market.id)
+    base.offers.post(Offer('id3', time_slot.add(seconds=3), price=1, energy=20, seller='A',
+                           time_slot=time_slot), market.id)
 
-    assert base.can_offer_be_posted(4.999, 1, 50, market) is True
-    assert base.can_offer_be_posted(5.0, 1, 50, market) is True
-    assert base.can_offer_be_posted(5.001, 1, 50, market) is False
+    assert base.can_offer_be_posted(4.999, 1, 50, market, time_slot=None) is True
+    assert base.can_offer_be_posted(5.0, 1, 50,  market, time_slot=None) is True
+    assert base.can_offer_be_posted(5.001, 1, 50,  market, time_slot=None) is False
+
+    assert base.can_offer_be_posted(4.999, 1, 50, market, time_slot=time_slot) is True
+    assert base.can_offer_be_posted(5.0, 1, 50,  market, time_slot=time_slot) is True
+    assert base.can_offer_be_posted(5.001, 1, 50,  market, time_slot=time_slot) is False
 
 
 @pytest.mark.parametrize('market_class', [TwoSidedMarket])

@@ -302,6 +302,10 @@ class ExternalMixin:
         time_slot = str_to_pendulum_datetime(arguments["time_slot"])
         return self._get_market_from_time_slot(time_slot)
 
+    def _get_time_slot_from_external_arguments(self, arguments: Dict) -> DateTime:
+        if arguments.get("time_slot"):
+            return str_to_pendulum_datetime(arguments["time_slot"])
+
     def _get_market_from_time_slot(self, time_slot: DateTime) -> MarketBase:
         """Get the market instance based on the time_slot."""
         market = self.area.get_market(time_slot)
@@ -317,7 +321,8 @@ class ExternalMixin:
         return market
 
     def _offer_aggregator_impl(
-            self, arguments: Dict, market: "MarketBase", available_energy: float) -> Dict:
+            self, arguments: Dict, market: "MarketBase", time_slot: DateTime,
+            available_energy: float) -> Dict:
         """Post offer in the market for aggregator connection to load or PV."""
         response_message = ""
         arguments, filtered_fields = self.filter_degrees_of_freedom_arguments(arguments)
@@ -344,6 +349,7 @@ class ExternalMixin:
                 arguments["price"],
                 available_energy,
                 market,
+                time_slot=time_slot,
                 replace_existing=replace_existing)
 
             offer_arguments = {k: v
@@ -371,7 +377,8 @@ class ExternalMixin:
         return response
 
     def _bid_aggregator_impl(
-            self, arguments: Dict, market: "MarketBase", required_energy: float) -> Dict:
+            self, arguments: Dict, market: "MarketBase", time_slot: DateTime,
+            required_energy: float) -> Dict:
         """Post bid in the market for aggregator connection to load or PV."""
         response_message = ""
         arguments, filtered_fields = self.filter_degrees_of_freedom_arguments(arguments)
@@ -398,6 +405,7 @@ class ExternalMixin:
                 arguments["price"],
                 required_energy,
                 market,
+                time_slot=time_slot,
                 replace_existing=replace_existing)
             bid = self.post_bid(
                 market,

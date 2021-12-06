@@ -302,7 +302,8 @@ class LoadExternalMixin(ExternalMixin):
                         "settlement offer can not be posted")
                 response = (
                     self._offer_aggregator_impl(
-                        arguments, market, self.state.get_unsettled_deviation_kWh(
+                        arguments, market, self._get_time_slot_from_external_arguments(arguments),
+                        self.state.get_unsettled_deviation_kWh(
                             market.time_slot)))
             else:
                 raise CommandTypeNotSupported("Offer not supported for Loads on spot markets.")
@@ -331,7 +332,10 @@ class LoadExternalMixin(ExternalMixin):
                 required_energy_kWh = (
                         self.state.get_energy_requirement_Wh(market.time_slot) / 1000.)
 
-            response = self._bid_aggregator_impl(arguments, market, required_energy_kWh)
+            response = (
+                self._bid_aggregator_impl(arguments, market,
+                                          self._get_time_slot_from_external_arguments(arguments),
+                                          required_energy_kWh))
 
         except AssertionError as ex:
             response = {
