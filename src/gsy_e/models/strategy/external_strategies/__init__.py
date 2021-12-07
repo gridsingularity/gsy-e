@@ -349,13 +349,10 @@ class ExternalMixin:
 
             replace_existing = arguments.pop("replace_existing", True)
 
-            if not self.can_offer_be_posted(arguments["energy"],
-                                            arguments["price"],
-                                            available_energy,
-                                            market,
-                                            time_slot=time_slot,
-                                            replace_existing=replace_existing):
-                raise OrderCanNotBePosted()
+            if not self.can_offer_be_posted(
+                    arguments["energy"], arguments["price"], available_energy, market,
+                    time_slot=time_slot, replace_existing=replace_existing):
+                raise OrderCanNotBePosted
 
             offer_arguments = {k: v
                                for k, v in arguments.items()
@@ -405,13 +402,10 @@ class ExternalMixin:
             assert all(arg in allowed_args for arg in arguments.keys())
 
             replace_existing = arguments.pop("replace_existing", True)
-            if not self.can_bid_be_posted(arguments["energy"],
-                                          arguments["price"],
-                                          required_energy,
-                                          market,
-                                          time_slot=time_slot,
-                                          replace_existing=replace_existing):
-                raise OrderCanNotBePosted()
+            if not self.can_bid_be_posted(
+                    arguments["energy"], arguments["price"], required_energy, market,
+                    time_slot=time_slot, replace_existing=replace_existing):
+                raise OrderCanNotBePosted
             bid = self.post_bid(
                 market,
                 arguments["price"],
