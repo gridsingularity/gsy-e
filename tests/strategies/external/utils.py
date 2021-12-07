@@ -15,16 +15,18 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+# pylint: disable=missing-function-docstring
 import json
 import uuid
 from collections import deque
 from typing import Dict
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
+
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from pendulum import duration
 
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.external_strategies import IncomingRequest
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from pendulum import duration
 
 
 def create_areas_markets_for_strategy_fixture(strategy):
@@ -40,8 +42,6 @@ def create_areas_markets_for_strategy_fixture(strategy):
     parent = Area(name="parent_area", children=[area], config=config)
     parent.activate()
     strategy.connected = True
-    market = MagicMock()
-    market.time_slot = GlobalConfig.start_date
     return strategy
 
 

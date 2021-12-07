@@ -297,9 +297,9 @@ class LoadExternalMixin(ExternalMixin):
         try:
             market = self._get_market_from_command_argument(arguments)
             if self.area.is_market_settlement(market.id):
-                assert self.state.can_post_settlement_offer(market.time_slot), (
-                        "The load did not consume too much energy, ",
-                        "settlement offer can not be posted")
+                if not self.state.can_post_settlement_offer(market.time_slot):
+                    raise OrderCanNotBePosted("The load did not consume too much energy, ",
+                                              "settlement offer can not be posted")
                 response = (
                     self._offer_aggregator_impl(
                         arguments, market, self._get_time_slot_from_external_arguments(arguments),
@@ -308,7 +308,7 @@ class LoadExternalMixin(ExternalMixin):
             else:
                 raise CommandTypeNotSupported("Offer not supported for Loads on spot markets.")
 
-        except (AssertionError, CommandTypeNotSupported) as ex:
+        except (OrderCanNotBePosted, CommandTypeNotSupported) as ex:
             response = {
                 "command": "offer", "status": "error",
                 "area_uuid": self.device.uuid,
