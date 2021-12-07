@@ -181,7 +181,7 @@ def offer1_fixture():
     return Offer("id", pendulum.now(), 1, 3, "FakeOwner", "market")
 
 
-@pytest.fixture(name="offer3")
+@pytest.fixture(name="offers3")
 def offers3_fixture(offer1):
     fixture = Offers(FakeStrategy())
     fixture.post(offer1, "market")
