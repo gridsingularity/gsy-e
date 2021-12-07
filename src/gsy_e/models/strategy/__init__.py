@@ -380,7 +380,7 @@ class Offers:
 
         posted_energy = (offer_energy
                          + posted_offer_energy
-                         - self.sold_offer_energy(market.id, time_slot))
+                         + self.sold_offer_energy(market.id, time_slot))
 
         return posted_energy <= available_energy and offer_price >= 0.0
 
