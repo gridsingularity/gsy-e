@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-# pylint: disable=missing-function-docstring
 import json
 import uuid
 from collections import deque
@@ -30,6 +29,7 @@ from gsy_e.models.strategy.external_strategies import IncomingRequest
 
 
 def create_areas_markets_for_strategy_fixture(strategy):
+    """Return externally connected Strategy with connected and activated area and parent area."""
     config = Mock()
     config.slot_length = duration(minutes=15)
     config.tick_length = duration(seconds=15)
@@ -48,6 +48,7 @@ def create_areas_markets_for_strategy_fixture(strategy):
 def check_external_command_endpoint_with_correct_payload_succeeds(ext_strategy_fixture,
                                                                   command: str,
                                                                   arguments: Dict):
+    """Check if external command endpoint with correct payload succeeds."""
     transaction_id = str(uuid.uuid4())
     arguments.update({"transaction_id": transaction_id})
     payload = {"data": json.dumps(arguments)}
@@ -60,6 +61,7 @@ def check_external_command_endpoint_with_correct_payload_succeeds(ext_strategy_f
 
 
 def assert_bid_offer_aggregator_commands_return_value(return_value, is_offer):
+    """Check return value of bid_aggregator and offer_aggregator commands. """
     command_name = "offer" if is_offer else "bid"
     assert return_value["status"] == "ready"
     assert return_value["command"] == command_name
