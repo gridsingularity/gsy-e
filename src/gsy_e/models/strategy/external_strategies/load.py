@@ -26,7 +26,7 @@ from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.strategy.external_strategies import (
     ExternalMixin, IncomingRequest, default_market_info, ExternalStrategyConnectionManager,
-    CommandTypeNotSupported)
+    CommandTypeNotSupported, OrderCanNotBePosted)
 from gsy_e.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
@@ -324,9 +324,9 @@ class LoadExternalMixin(ExternalMixin):
         try:
             market = self._get_market_from_command_argument(arguments)
             if self.area.is_market_settlement(market.id):
-                assert self.state.can_post_settlement_bid(market.time_slot), (
-                        "The load did not consume to little energy, "
-                        "settlement bid can not be posted.")
+                if not self.state.can_post_settlement_bid(market.time_slot):
+                    raise OrderCanNotBePosted("The load did not consume to little energy, "
+                                              "settlement bid can not be posted.")
                 required_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
             else:
                 required_energy_kWh = (
@@ -337,7 +337,7 @@ class LoadExternalMixin(ExternalMixin):
                                           self._get_time_slot_from_external_arguments(arguments),
                                           required_energy_kWh))
 
-        except AssertionError as ex:
+        except OrderCanNotBePosted as ex:
             response = {
                 "command": "offer", "status": "error",
                 "area_uuid": self.device.uuid,

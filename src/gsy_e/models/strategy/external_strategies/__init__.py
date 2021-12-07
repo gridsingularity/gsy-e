@@ -19,7 +19,7 @@ import json
 import logging
 from collections import deque, namedtuple
 from threading import Lock
-from typing import Callable, Dict, List, Tuple, TYPE_CHECKING
+from typing import Callable, Dict, List, Tuple, TYPE_CHECKING, Optional
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Trade
@@ -52,6 +52,10 @@ default_market_info = {"device_info": None,
 
 class CommandTypeNotSupported(Exception):
     """Exception raised when a unsupported command is received."""
+
+
+class OrderCanNotBePosted(Exception):
+    """Exception raised when an order can not be posted."""
 
 
 class ExternalStrategyConnectionManager:
@@ -302,9 +306,10 @@ class ExternalMixin:
         time_slot = str_to_pendulum_datetime(arguments["time_slot"])
         return self._get_market_from_time_slot(time_slot)
 
-    def _get_time_slot_from_external_arguments(self, arguments: Dict) -> DateTime:
+    def _get_time_slot_from_external_arguments(self, arguments: Dict) -> Optional[DateTime]:
         if arguments.get("time_slot"):
             return str_to_pendulum_datetime(arguments["time_slot"])
+        return None
 
     def _get_market_from_time_slot(self, time_slot: DateTime) -> MarketBase:
         """Get the market instance based on the time_slot."""
@@ -344,13 +349,13 @@ class ExternalMixin:
 
             replace_existing = arguments.pop("replace_existing", True)
 
-            assert self.can_offer_be_posted(
-                arguments["energy"],
-                arguments["price"],
-                available_energy,
-                market,
-                time_slot=time_slot,
-                replace_existing=replace_existing)
+            if not self.can_offer_be_posted(arguments["energy"],
+                                            arguments["price"],
+                                            available_energy,
+                                            market,
+                                            time_slot=time_slot,
+                                            replace_existing=replace_existing):
+                raise OrderCanNotBePosted()
 
             offer_arguments = {k: v
                                for k, v in arguments.items()
@@ -366,8 +371,8 @@ class ExternalMixin:
                 "transaction_id": arguments.get("transaction_id"),
                 "area_uuid": self.device.uuid,
                 "message": response_message}
-        except (AssertionError, GSyException):
-            logging.exception("Failed to post PV offer.")
+        except (OrderCanNotBePosted, GSyException):
+            logging.exception("Error when handling offer on area %s", self.device.name)
             response = {
                 "command": "offer", "status": "error",
                 "error_message": "Error when handling offer create "
@@ -400,13 +405,13 @@ class ExternalMixin:
             assert all(arg in allowed_args for arg in arguments.keys())
 
             replace_existing = arguments.pop("replace_existing", True)
-            assert self.can_bid_be_posted(
-                arguments["energy"],
-                arguments["price"],
-                required_energy,
-                market,
-                time_slot=time_slot,
-                replace_existing=replace_existing)
+            if not self.can_bid_be_posted(arguments["energy"],
+                                          arguments["price"],
+                                          required_energy,
+                                          market,
+                                          time_slot=time_slot,
+                                          replace_existing=replace_existing):
+                raise OrderCanNotBePosted()
             bid = self.post_bid(
                 market,
                 arguments["price"],
@@ -421,7 +426,7 @@ class ExternalMixin:
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id"),
                 "message": response_message}
-        except (AssertionError, GSyException):
+        except (OrderCanNotBePosted, GSyException):
             logging.exception("Error when handling bid on area %s", self.device.name)
             response = {
                 "command": "bid", "status": "error",
