@@ -50,11 +50,12 @@ log = getLogger(__name__)
 BalancingRatio = namedtuple("BalancingRatio", ("demand", "supply"))
 
 
+# pylint: disable=too-many-instance-attributes
 class LoadHoursStrategy(BidEnabledStrategy):
     parameters = ("avg_power_W", "hrs_per_day", "hrs_of_day", "fit_to_limit",
                   "energy_rate_increase_per_update", "update_interval", "initial_buying_rate",
                   "final_buying_rate", "balancing_energy_ratio", "use_market_maker_rate")
-
+    # pylint: disable=too-many-arguments
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
                  fit_to_limit=True, energy_rate_increase_per_update=None,
                  update_interval=None,
