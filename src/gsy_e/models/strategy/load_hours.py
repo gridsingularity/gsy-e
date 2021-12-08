@@ -47,7 +47,7 @@ from gsy_e.models.strategy.update_frequency import TemplateStrategyBidUpdater
 
 log = getLogger(__name__)
 
-BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
+BalancingRatio = namedtuple("BalancingRatio", ("demand", "supply"))
 
 
 class LoadHoursStrategy(BidEnabledStrategy):
@@ -217,36 +217,36 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.bid_update.delete_past_state_values(self.area.current_market.time_slot)
 
     def _area_reconfigure_prices(self, **kwargs):
-        if key_in_dict_and_not_none(kwargs, 'initial_buying_rate'):
+        if key_in_dict_and_not_none(kwargs, "initial_buying_rate"):
             initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                  kwargs['initial_buying_rate'])
+                                                  kwargs["initial_buying_rate"])
         else:
             initial_rate = self.bid_update.initial_rate_profile_buffer
-        if key_in_dict_and_not_none(kwargs, 'final_buying_rate'):
+        if key_in_dict_and_not_none(kwargs, "final_buying_rate"):
             final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                kwargs['final_buying_rate'])
+                                                kwargs["final_buying_rate"])
         else:
             final_rate = self.bid_update.final_rate_profile_buffer
-        if key_in_dict_and_not_none(kwargs, 'energy_rate_increase_per_update'):
+        if key_in_dict_and_not_none(kwargs, "energy_rate_increase_per_update"):
             energy_rate_change_per_update = read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs['energy_rate_increase_per_update'])
+                InputProfileTypes.IDENTITY, kwargs["energy_rate_increase_per_update"])
         else:
             energy_rate_change_per_update = (self.bid_update.
                                              energy_rate_change_per_update_profile_buffer)
-        if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
-            fit_to_limit = kwargs['fit_to_limit']
+        if key_in_dict_and_not_none(kwargs, "fit_to_limit"):
+            fit_to_limit = kwargs["fit_to_limit"]
         else:
             fit_to_limit = self.bid_update.fit_to_limit
-        if key_in_dict_and_not_none(kwargs, 'update_interval'):
-            if isinstance(kwargs['update_interval'], int):
-                update_interval = duration(minutes=kwargs['update_interval'])
+        if key_in_dict_and_not_none(kwargs, "update_interval"):
+            if isinstance(kwargs["update_interval"], int):
+                update_interval = duration(minutes=kwargs["update_interval"])
             else:
-                update_interval = kwargs['update_interval']
+                update_interval = kwargs["update_interval"]
         else:
             update_interval = self.bid_update.update_interval
 
-        if key_in_dict_and_not_none(kwargs, 'use_market_maker_rate'):
-            self.use_market_maker_rate = kwargs['use_market_maker_rate']
+        if key_in_dict_and_not_none(kwargs, "use_market_maker_rate"):
+            self.use_market_maker_rate = kwargs["use_market_maker_rate"]
 
         try:
             self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
@@ -266,12 +266,12 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def area_reconfigure_event(self, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
-        if (key_in_dict_and_not_none(kwargs, 'hrs_per_day') or
-                key_in_dict_and_not_none(kwargs, 'hrs_of_day')):
-            self.assign_hours_of_per_day(kwargs['hrs_of_day'], kwargs['hrs_per_day'])
+        if (key_in_dict_and_not_none(kwargs, "hrs_per_day") or
+                key_in_dict_and_not_none(kwargs, "hrs_of_day")):
+            self.assign_hours_of_per_day(kwargs["hrs_of_day"], kwargs["hrs_per_day"])
             self.add_entry_in_hrs_per_day(overwrite=True)
-        if key_in_dict_and_not_none(kwargs, 'avg_power_W'):
-            self.avg_power_W = kwargs['avg_power_W']
+        if key_in_dict_and_not_none(kwargs, "avg_power_W"):
+            self.avg_power_W = kwargs["avg_power_W"]
             self._update_energy_requirement_future_markets()
         self._area_reconfigure_prices(**kwargs)
         self.bid_update.update_and_populate_price_settings(self.area)
