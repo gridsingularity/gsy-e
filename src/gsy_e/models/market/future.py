@@ -193,16 +193,6 @@ class FutureMarkets(TwoSidedMarket):
             future_time_slot = future_time_slot.add(minutes=slot_length.total_minutes())
 
     @lock_market_action
-    def get_bids_per_slot(self, time_slot: DateTime) -> List[Bid]:
-        """Return list of bids for a specific market slot."""
-        return deepcopy(self.slot_bid_mapping[time_slot])
-
-    @lock_market_action
-    def get_offers_per_slot(self, time_slot: DateTime) -> List[Offer]:
-        """Return list of offers for a specific market slot."""
-        return deepcopy(self.slot_offer_mapping[time_slot])
-
-    @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, buyer_origin: str,
             bid_id: Optional[str] = None,
             original_price: Optional[float] = None,
