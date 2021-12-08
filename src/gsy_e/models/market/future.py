@@ -55,9 +55,10 @@ class FutureOrders(UserDict):
         self.slot_order_mapping[order.time_slot].append(order)
 
     def __delitem__(self, order_id):
-        order = self.data.pop(order_id, None)
+        order = self.data.get(order_id, None)
         if order:
             self.slot_order_mapping[order.time_slot].remove(order)
+        del self.data[order_id]
 
     def expire(self, current_market_time_slot: DateTime) -> Dict:
         """Remove old orders (time_slot in the past)."""

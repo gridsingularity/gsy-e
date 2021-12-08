@@ -23,7 +23,7 @@ from pendulum import datetime, duration, now
 
 from gsy_e.models.area import Area
 from gsy_e.models.market import GridFee
-from gsy_e.models.market.future import FutureMarkets, FutureMarketException
+from gsy_e.models.market.future import FutureMarkets, FutureMarketException, FutureOrders
 
 DEFAULT_CURRENT_MARKET_SLOT = datetime(2021, 10, 19, 0, 0)
 DEFAULT_SLOT_LENGTH = duration(minutes=15)
@@ -52,6 +52,20 @@ def active_future_market() -> FutureMarkets:
 
     GlobalConfig.FUTURE_MARKET_DURATION_HOURS = orig_future_market_duration
     GlobalConfig.start_date = orig_start_date
+
+
+@pytest.fixture(name="offer")
+def offer_fixture() -> Offer:
+    """Return an offer instance."""
+    return Offer("id1", datetime(2021, 10, 19, 0, 0),
+                 10, 10, seller="seller", time_slot=datetime(2021, 10, 19, 0, 0))
+
+
+@pytest.fixture(name="bid")
+def bid_fixture() -> Bid:
+    """Return a bid instance."""
+    return Bid("id1", datetime(2021, 10, 19, 0, 0),
+               10, 10, buyer="buyer", time_slot=datetime(2021, 10, 19, 0, 0))
 
 
 def count_orders_in_buffers(future_markets: FutureMarkets, expected_count: int) -> None:
@@ -235,3 +249,73 @@ class TestFutureMarkets:
                             "seller_origin_id": None,
                             "creation_time": datetime_to_string_incl_seconds(time_slot2),
                             "type": "Offer"}]}}
+
+    @staticmethod
+    def test_offers_setter(future_market, offer):
+        """Test reassigning the offers member of the future market."""
+        assert isinstance(future_market.offers, FutureOrders)
+        future_market.offers = {
+            str(offer.id): offer}
+        assert isinstance(future_market.offers, FutureOrders)
+        assert future_market.offers[str(offer.id)] == offer
+
+    @staticmethod
+    def test_bids_setter(future_market, bid):
+        """Test reassigning the bids member of the future market."""
+        assert isinstance(future_market.bids, FutureOrders)
+        future_market.bids = {
+            str(bid.id): bid}
+        assert isinstance(future_market.bids, FutureOrders)
+        assert future_market.bids[str(bid.id)] == bid
+
+
+class TestFutureOrders:
+    """Tester class for the future orders dictionary."""
+
+    @staticmethod
+    def test_init(offer):
+        """Check whether slot_order_mapping is populated on initializing."""
+        offers = FutureOrders({str(offer.id): offer})
+        assert offers[str(offer.id)] == offer
+        assert offer in offers.slot_order_mapping[offer.time_slot]
+
+    @staticmethod
+    def test_future_orders_set_item(offer):
+        """Check whether setting an item will correctly set it in the slot_order_mapping."""
+        offers = FutureOrders()
+        offers[str(offer.id)] = offer
+        assert offers[str(offer.id)] == offer
+        assert offer in offers.slot_order_mapping[offer.time_slot]
+
+    @staticmethod
+    def test_future_orders_update(offer):
+        """Check whether calling .update will correctly update the slot_order_mapping."""
+        offers = FutureOrders()
+        offers.update({str(offer.id): offer})
+        assert offers[str(offer.id)] == offer
+        assert offer in offers.slot_order_mapping[offer.time_slot]
+
+    @staticmethod
+    def test_future_orders_pop_item(offer):
+        """Check whether popping an item will correctly pop it from the slot_order_mapping."""
+        offers = FutureOrders({str(offer.id): offer})
+        offers.pop(str(offer.id))
+        assert str(offer.id) not in offers
+        assert offer not in offers.slot_order_mapping[offer.time_slot]
+
+    @staticmethod
+    def test_future_orders_delete_item(offer):
+        """Check whether deleting an item will correctly delete it from the slot_order_mapping."""
+        offers = FutureOrders({str(offer.id): offer})
+        del offers[str(offer.id)]
+        assert str(offer.id) not in offers
+        assert offer not in offers.slot_order_mapping[offer.time_slot]
+
+    @staticmethod
+    def test_expire(offer):
+        """Test whether the expire method is deleting old timeslots and orders."""
+        offers = FutureOrders({str(offer.id): offer})
+        current_time_slot = offer.time_slot.add(minutes=15)
+        offers.expire(current_time_slot)
+        assert str(offer.id) not in offers
+        assert offer.time_slot not in offers.slot_order_mapping
