@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
 from logging import getLogger
-from typing import Union, Dict  # NOQA
+from typing import Union, Dict, List  # NOQA
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
@@ -52,6 +52,7 @@ BalancingRatio = namedtuple("BalancingRatio", ("demand", "supply"))
 
 # pylint: disable=too-many-instance-attributes
 class LoadHoursStrategy(BidEnabledStrategy):
+    """Strategy for the load assets that can consume energy in predefined hrs of day."""
     parameters = ("avg_power_W", "hrs_per_day", "hrs_of_day", "fit_to_limit",
                   "energy_rate_increase_per_update", "update_interval", "initial_buying_rate",
                   "final_buying_rate", "balancing_energy_ratio", "use_market_maker_rate")
@@ -94,6 +95,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.energy_per_slot_Wh = None
         self.hrs_per_day = {}  # type: Dict[int, int]
 
+        self.hrs_of_day = None
+        self._initial_hrs_per_day = None
         self.assign_hours_of_per_day(hrs_of_day, hrs_per_day)
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
         self.use_market_maker_rate = use_market_maker_rate
@@ -146,8 +149,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
             if not is_time_slot_in_simulation_duration(time_slot, self.area.config):
                 continue
 
-            if self.area and \
-                    self.area.current_market and time_slot < self.area.current_market.time_slot:
+            if (self.area and
+                    self.area.current_market
+                    and time_slot < self.area.current_market.time_slot):
                 continue
             rate_change = (None if fit_to_limit else
                            find_object_of_same_weekday_and_time(
@@ -186,11 +190,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._future_market_strategy.event_market_cycle(self)
 
     def add_entry_in_hrs_per_day(self, overwrite=False):
+        """Add the current day (in simulation) with the mapped hrs_per_day."""
         current_day = self._get_day_of_timestamp(self.area.spot_market.time_slot)
         if current_day not in self.hrs_per_day or overwrite:
             self.hrs_per_day[current_day] = self._initial_hrs_per_day
 
     def update_state(self):
+        """Update the state of the strategy."""
         self._post_first_bid()
         if self.area.current_market:
             self._cycled_market = {self.area.current_market.time_slot}
@@ -239,10 +245,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
         else:
             fit_to_limit = self.bid_update.fit_to_limit
         if kwargs.get("update_interval") is not None:
-            if isinstance(kwargs["update_interval"], int):
-                update_interval = duration(minutes=kwargs["update_interval"])
-            else:
-                update_interval = kwargs["update_interval"]
+            update_interval = (
+                duration(minutes=kwargs["update_interval"])
+                if isinstance(kwargs["update_interval"], int)
+                else kwargs["update_interval"])
         else:
             update_interval = self.bid_update.update_interval
 
@@ -277,6 +283,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.bid_update.update_and_populate_price_settings(self.area)
 
     def event_activate_price(self):
+        """Update the strategy prices upon the activation and validate them afterwards."""
         # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
         if self.use_market_maker_rate:
             self._area_reconfigure_prices(
@@ -464,6 +471,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                                                          self.owner.name)
 
     def event_activate_energy(self):
+        """Update energy requirement upon the activation event."""
         self.hrs_per_day = {0: self._initial_hrs_per_day}
         self._simulation_start_timestamp = self.area.now
         self._update_energy_requirement_future_markets()
@@ -488,15 +496,15 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 (not self.area.current_market or
                  market.time_slot >= self.area.current_market.time_slot))
 
-    def assign_hours_of_per_day(self, hrs_of_day, hrs_per_day):
+    def assign_hours_of_per_day(self, hrs_of_day: List[int], hrs_per_day: List[int]):
+        """Validate and assign the values of hrs_of_day and hrs_per_day."""
         if hrs_of_day is None:
             hrs_of_day = list(range(24))
 
         # be a parameter on the constructor or if we want to deal in percentages
         if hrs_per_day is None:
             hrs_per_day = len(hrs_of_day)
-        if hrs_of_day is None:
-            hrs_of_day = list(range(24))
+
         self.hrs_of_day = hrs_of_day
         self._initial_hrs_per_day = hrs_per_day
 
