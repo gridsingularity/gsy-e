@@ -700,10 +700,11 @@ class StorageState(StateInterface):
         Simulate actual Energy flow by removing pledged storage and adding bought energy to the
         used_storage
         """
-        # In case the future market is enabled, the current time_slot will already be populated
-        # So we need to reset this time_slot values to defaults
-        self._delete_time_slot(current_time_slot)
-        self.add_default_values_to_state_profiles([current_time_slot, *all_future_time_slots])
+        if all_future_time_slots:
+            # In case the future market is enabled, the current time_slot will already be populated
+            # So we need to reset this time_slot values to defaults
+            self._delete_time_slot(current_time_slot)
+            self.add_default_values_to_state_profiles([current_time_slot, *all_future_time_slots])
 
         if past_time_slot:
             self._used_storage -= self.pledged_sell_kWh[past_time_slot]
