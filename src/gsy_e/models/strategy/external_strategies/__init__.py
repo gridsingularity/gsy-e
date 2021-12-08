@@ -19,7 +19,7 @@ import json
 import logging
 from collections import deque, namedtuple
 from threading import Lock
-from typing import Callable, Dict, List, Tuple, TYPE_CHECKING
+from typing import Callable, Dict, List, Tuple, TYPE_CHECKING, Optional
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Trade
@@ -52,6 +52,10 @@ default_market_info = {"device_info": None,
 
 class CommandTypeNotSupported(Exception):
     """Exception raised when a unsupported command is received."""
+
+
+class OrderCanNotBePosted(Exception):
+    """Exception raised when an order can not be posted."""
 
 
 class ExternalStrategyConnectionManager:
@@ -302,6 +306,11 @@ class ExternalMixin:
         time_slot = str_to_pendulum_datetime(arguments["time_slot"])
         return self._get_market_from_time_slot(time_slot)
 
+    def _get_time_slot_from_external_arguments(self, arguments: Dict) -> Optional[DateTime]:
+        if arguments.get("time_slot"):
+            return str_to_pendulum_datetime(arguments["time_slot"])
+        return None
+
     def _get_market_from_time_slot(self, time_slot: DateTime) -> MarketBase:
         """Get the market instance based on the time_slot."""
         market = self.area.get_market(time_slot)
@@ -315,6 +324,111 @@ class ExternalMixin:
                 f"Timeslot {time_slot} is not currently in the spot, future or "
                 f"settlement markets")
         return market
+
+    def _offer_aggregator_impl(
+            self, arguments: Dict, market: "MarketBase", time_slot: DateTime,
+            available_energy: float) -> Dict:
+        """Post offer in the market for aggregator connection to load or PV."""
+        response_message = ""
+        arguments, filtered_fields = self.filter_degrees_of_freedom_arguments(arguments)
+        if filtered_fields:
+            response_message = (
+                "The following arguments are not supported for this market and have been "
+                f"removed from your order: {filtered_fields}.")
+
+        required_args = {"price", "energy", "type", "transaction_id"}
+        allowed_args = required_args.union({"replace_existing",
+                                            "time_slot",
+                                            "attributes",
+                                            "requirements"})
+        try:
+            # Check that all required arguments have been provided
+            assert all(arg in arguments.keys() for arg in required_args)
+            # Check that every provided argument is allowed
+            assert all(arg in allowed_args for arg in arguments.keys())
+
+            replace_existing = arguments.pop("replace_existing", True)
+
+            if not self.can_offer_be_posted(
+                    arguments["energy"], arguments["price"], available_energy, market,
+                    time_slot=time_slot, replace_existing=replace_existing):
+                raise OrderCanNotBePosted
+
+            offer_arguments = {k: v
+                               for k, v in arguments.items()
+                               if k not in ["transaction_id", "type", "time_slot"]}
+
+            offer = self.post_offer(
+                market, replace_existing=replace_existing, **offer_arguments)
+
+            response = {
+                "command": "offer",
+                "status": "ready",
+                "offer": offer.to_json_string(replace_existing=replace_existing),
+                "transaction_id": arguments.get("transaction_id"),
+                "area_uuid": self.device.uuid,
+                "message": response_message}
+        except (OrderCanNotBePosted, GSyException):
+            logging.exception("Error when handling offer on area %s", self.device.name)
+            response = {
+                "command": "offer", "status": "error",
+                "error_message": "Error when handling offer create "
+                                 f"on area {self.device.name} with arguments {arguments}.",
+                "area_uuid": self.device.uuid,
+                "transaction_id": arguments.get("transaction_id")}
+        return response
+
+    def _bid_aggregator_impl(
+            self, arguments: Dict, market: "MarketBase", time_slot: DateTime,
+            required_energy: float) -> Dict:
+        """Post bid in the market for aggregator connection to load or PV."""
+        response_message = ""
+        arguments, filtered_fields = self.filter_degrees_of_freedom_arguments(arguments)
+        if filtered_fields:
+            response_message = (
+                "The following arguments are not supported for this market and have been "
+                f"removed from your order: {filtered_fields}.")
+
+        required_args = {"price", "energy", "type", "transaction_id"}
+        allowed_args = required_args.union({"replace_existing",
+                                            "time_slot",
+                                            "attributes",
+                                            "requirements"})
+
+        try:
+            # Check that all required arguments have been provided
+            assert all(arg in arguments.keys() for arg in required_args)
+            # Check that every provided argument is allowed
+            assert all(arg in allowed_args for arg in arguments.keys())
+
+            replace_existing = arguments.pop("replace_existing", True)
+            if not self.can_bid_be_posted(
+                    arguments["energy"], arguments["price"], required_energy, market,
+                    time_slot=time_slot, replace_existing=replace_existing):
+                raise OrderCanNotBePosted
+            bid = self.post_bid(
+                market,
+                arguments["price"],
+                arguments["energy"],
+                replace_existing=replace_existing,
+                attributes=arguments.get("attributes"),
+                requirements=arguments.get("requirements")
+            )
+            response = {
+                "command": "bid", "status": "ready",
+                "bid": bid.to_json_string(replace_existing=replace_existing),
+                "area_uuid": self.device.uuid,
+                "transaction_id": arguments.get("transaction_id"),
+                "message": response_message}
+        except (OrderCanNotBePosted, GSyException):
+            logging.exception("Error when handling bid on area %s", self.device.name)
+            response = {
+                "command": "bid", "status": "error",
+                "area_uuid": self.device.uuid,
+                "error_message": "Error when handling bid create "
+                                 f"on area {self.device.name} with arguments {arguments}.",
+                "transaction_id": arguments.get("transaction_id")}
+        return response
 
     @property
     def device(self) -> "Area":

@@ -25,7 +25,8 @@ from pendulum import duration
 from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.strategy.external_strategies import (
-    ExternalMixin, IncomingRequest, default_market_info, ExternalStrategyConnectionManager)
+    ExternalMixin, IncomingRequest, default_market_info, ExternalStrategyConnectionManager,
+    CommandTypeNotSupported, OrderCanNotBePosted)
 from gsy_e.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
@@ -194,7 +195,7 @@ class LoadExternalMixin(ExternalMixin):
             assert self.can_bid_be_posted(
                 arguments["energy"],
                 arguments["price"],
-                self.state.get_energy_requirement_Wh(market.time_slot) / 1000.0,
+                self.get_energy_requirement_kWh_from_market(market),
                 market,
                 replace_existing=replace_existing)
 
@@ -291,58 +292,60 @@ class LoadExternalMixin(ExternalMixin):
         if self.should_use_default_strategy:
             super().event_offer(market_id=market_id, offer=offer)
 
-    def _bid_aggregator(self, arguments: Dict) -> Dict:
-        """Callback for the bid endpoint when sent by aggregator."""
-        response_message = ""
-        arguments, filtered_fields = self.filter_degrees_of_freedom_arguments(arguments)
-        if filtered_fields:
-            response_message = (
-                "The following arguments are not supported for this market and have been "
-                f"removed from your order: {filtered_fields}.")
-
-        required_args = {"price", "energy", "type", "transaction_id"}
-        allowed_args = required_args.union({"replace_existing",
-                                            "time_slot",
-                                            "attributes",
-                                            "requirements"})
-
+    def _offer_aggregator(self, arguments: Dict) -> Dict:
+        """Callback for the offer endpoint when sent by aggregator."""
         try:
             market = self._get_market_from_command_argument(arguments)
-            # Check that all required arguments have been provided
-            assert all(arg in arguments.keys() for arg in required_args)
-            # Check that every provided argument is allowed
-            assert all(arg in allowed_args for arg in arguments.keys())
+            if self.area.is_market_settlement(market.id):
+                if not self.state.can_post_settlement_offer(market.time_slot):
+                    raise OrderCanNotBePosted("The load did not consume too much energy, ",
+                                              "settlement offer can not be posted")
+                response = (
+                    self._offer_aggregator_impl(
+                        arguments, market, self._get_time_slot_from_external_arguments(arguments),
+                        self.state.get_unsettled_deviation_kWh(
+                            market.time_slot)))
+            else:
+                raise CommandTypeNotSupported("Offer not supported for Loads on spot markets.")
 
-            replace_existing = arguments.pop("replace_existing", True)
-            assert self.can_bid_be_posted(
-                arguments["energy"],
-                arguments["price"],
-                self.state.get_energy_requirement_Wh(market.time_slot) / 1000.0,
-                market,
-                replace_existing=replace_existing)
-
-            bid = self.post_bid(
-                market,
-                arguments["price"],
-                arguments["energy"],
-                replace_existing=replace_existing,
-                attributes=arguments.get("attributes"),
-                requirements=arguments.get("requirements")
-            )
+        except (OrderCanNotBePosted, CommandTypeNotSupported) as ex:
             response = {
-                "command": "bid", "status": "ready",
-                "bid": bid.to_json_string(replace_existing=replace_existing),
+                "command": "offer", "status": "error",
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id"),
-                "message": response_message}
-        except (AssertionError, GSyException):
-            logging.exception("Error when handling bid on area %s", self.device.name)
+                "error_message": "Error when handling offer create "
+                                 f"on area {self.device.name} with arguments {arguments}:"
+                                 f"{ex}",
+                "transaction_id": arguments.get("transaction_id")}
+
+        return response
+
+    def _bid_aggregator(self, arguments: Dict) -> Dict:
+        """Callback for the bid endpoint when sent by aggregator."""
+        try:
+            market = self._get_market_from_command_argument(arguments)
+            if self.area.is_market_settlement(market.id):
+                if not self.state.can_post_settlement_bid(market.time_slot):
+                    raise OrderCanNotBePosted("The load did not consume to little energy, "
+                                              "settlement bid can not be posted.")
+                required_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
+            else:
+                required_energy_kWh = (
+                        self.state.get_energy_requirement_Wh(market.time_slot) / 1000.)
+
+            response = (
+                self._bid_aggregator_impl(arguments, market,
+                                          self._get_time_slot_from_external_arguments(arguments),
+                                          required_energy_kWh))
+
+        except OrderCanNotBePosted as ex:
             response = {
-                "command": "bid", "status": "error",
+                "command": "offer", "status": "error",
                 "area_uuid": self.device.uuid,
                 "error_message": "Error when handling bid create "
-                                 f"on area {self.device.name} with arguments {arguments}.",
+                                 f"on area {self.device.name} with arguments {arguments}:"
+                                 f"{ex}",
                 "transaction_id": arguments.get("transaction_id")}
+
         return response
 
     def _delete_bid_aggregator(self, arguments: Dict) -> Dict:
