@@ -378,11 +378,11 @@ class Offers:
         else:
             posted_offer_energy = self.posted_offer_energy(market.id, time_slot)
 
-        posted_energy = (offer_energy
-                         + posted_offer_energy
-                         + self.sold_offer_energy(market.id, time_slot))
+        posted_and_traded_offer_energy = (offer_energy
+                                          + posted_offer_energy
+                                          + self.sold_offer_energy(market.id, time_slot))
 
-        return posted_energy <= available_energy and offer_price >= 0.0
+        return posted_and_traded_offer_energy <= available_energy and offer_price >= 0.0
 
     def post(self, offer: Offer, market_id: str) -> None:
         """Add offer to the posted dict"""
