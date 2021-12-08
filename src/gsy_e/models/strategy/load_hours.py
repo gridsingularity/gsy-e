@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import traceback
 from collections import namedtuple
 from logging import getLogger
 from typing import Union, Dict  # NOQA
@@ -23,6 +22,7 @@ from typing import Union, Dict  # NOQA
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
 from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
     limit_float_precision, convert_W_to_Wh, find_object_of_same_weekday_and_time,
@@ -251,9 +251,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         try:
             self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
                                  fit_to_limit)
-        except Exception as e:
-            log.error(f"LoadHours._area_reconfigure_prices failed. Exception: {e}. "
-                      f"Traceback: {traceback.format_exc()}")
+        except GSyDeviceException:
+            log.exception("LoadHours._area_reconfigure_prices failed. Exception: ")
             return
 
         self.bid_update.set_parameters(
