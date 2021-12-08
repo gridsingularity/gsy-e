@@ -26,7 +26,7 @@ from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
     limit_float_precision, convert_W_to_Wh, find_object_of_same_weekday_and_time,
-    key_in_dict_and_not_none, is_time_slot_in_simulation_duration)
+    is_time_slot_in_simulation_duration)
 from gsy_framework.validators.load_validator import LoadValidator
 from numpy import random
 from pendulum import duration
@@ -55,6 +55,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
     parameters = ("avg_power_W", "hrs_per_day", "hrs_of_day", "fit_to_limit",
                   "energy_rate_increase_per_update", "update_interval", "initial_buying_rate",
                   "final_buying_rate", "balancing_energy_ratio", "use_market_maker_rate")
+
     # pylint: disable=too-many-arguments
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
                  fit_to_limit=True, energy_rate_increase_per_update=None,
@@ -217,27 +218,27 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.bid_update.delete_past_state_values(self.area.current_market.time_slot)
 
     def _area_reconfigure_prices(self, **kwargs):
-        if key_in_dict_and_not_none(kwargs, "initial_buying_rate"):
+        if kwargs.get("initial_buying_rate") is not None:
             initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                   kwargs["initial_buying_rate"])
         else:
             initial_rate = self.bid_update.initial_rate_profile_buffer
-        if key_in_dict_and_not_none(kwargs, "final_buying_rate"):
+        if kwargs.get("final_buying_rate") is not None:
             final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                 kwargs["final_buying_rate"])
         else:
             final_rate = self.bid_update.final_rate_profile_buffer
-        if key_in_dict_and_not_none(kwargs, "energy_rate_increase_per_update"):
+        if kwargs.get("energy_rate_increase_per_update") is not None:
             energy_rate_change_per_update = read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, kwargs["energy_rate_increase_per_update"])
         else:
             energy_rate_change_per_update = (self.bid_update.
                                              energy_rate_change_per_update_profile_buffer)
-        if key_in_dict_and_not_none(kwargs, "fit_to_limit"):
+        if kwargs.get("fit_to_limit") is not None:
             fit_to_limit = kwargs["fit_to_limit"]
         else:
             fit_to_limit = self.bid_update.fit_to_limit
-        if key_in_dict_and_not_none(kwargs, "update_interval"):
+        if kwargs.get("update_interval") is not None:
             if isinstance(kwargs["update_interval"], int):
                 update_interval = duration(minutes=kwargs["update_interval"])
             else:
@@ -245,7 +246,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         else:
             update_interval = self.bid_update.update_interval
 
-        if key_in_dict_and_not_none(kwargs, "use_market_maker_rate"):
+        if kwargs.get("use_market_maker_rate") is not None:
             self.use_market_maker_rate = kwargs["use_market_maker_rate"]
 
         try:
@@ -265,11 +266,11 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
-        if (key_in_dict_and_not_none(kwargs, "hrs_per_day") or
-                key_in_dict_and_not_none(kwargs, "hrs_of_day")):
+        if (kwargs.get("hrs_per_day") is not None or
+                kwargs.get("hrs_of_day") is not None):
             self.assign_hours_of_per_day(kwargs["hrs_of_day"], kwargs["hrs_per_day"])
             self.add_entry_in_hrs_per_day(overwrite=True)
-        if key_in_dict_and_not_none(kwargs, "avg_power_W"):
+        if kwargs.get("avg_power_W") is not None:
             self.avg_power_W = kwargs["avg_power_W"]
             self._update_energy_requirement_future_markets()
         self._area_reconfigure_prices(**kwargs)
