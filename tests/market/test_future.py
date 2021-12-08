@@ -258,6 +258,7 @@ class TestFutureMarkets:
             str(offer.id): offer}
         assert isinstance(future_market.offers, FutureOrders)
         assert future_market.offers[str(offer.id)] == offer
+        assert offer in future_market.offers.slot_order_mapping[offer.time_slot]
 
     @staticmethod
     def test_bids_setter(future_market, bid):
@@ -267,6 +268,7 @@ class TestFutureMarkets:
             str(bid.id): bid}
         assert isinstance(future_market.bids, FutureOrders)
         assert future_market.bids[str(bid.id)] == bid
+        assert bid in future_market.bids.slot_order_mapping[bid.time_slot]
 
 
 class TestFutureOrders:
