@@ -367,7 +367,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         return self._is_market_active(market) and self.state.can_buy_more_energy(market.time_slot)
 
     def _offer_comes_from_different_seller(self, offer):
-        return offer.seller != self.owner.name and offer.seller != self.area.name
+        return offer.seller not in [self.owner.name, self.area.name]
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
