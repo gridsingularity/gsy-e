@@ -179,11 +179,6 @@ class MAEngine:
                 )
 
             except OfferNotFoundException as ex:
-                print(self.markets.source.time_slot_str)
-                print(self.name)
-                print(self.owner)
-                print(f"Offer {offer_info.source_offer.id} {offer_info.source_offer.time_slot}")
-                print(self.markets.source)
                 raise OfferNotFoundException() from ex
             self.owner.log.debug(
                 f"[{self.markets.source.time_slot_str}] Offer accepted {trade_source}")
