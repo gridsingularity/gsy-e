@@ -21,7 +21,7 @@ from enum import Enum
 from math import isclose, copysign
 from typing import Dict, Optional, List
 
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.utils import (
     convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict, convert_kW_to_kWh)
 from gsy_framework.utils import limit_float_precision
@@ -700,7 +700,7 @@ class StorageState(StateInterface):
         Simulate actual Energy flow by removing pledged storage and adding bought energy to the
         used_storage
         """
-        if all_future_time_slots:
+        if GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
             # In case the future market is enabled, the current time_slot will already be populated
             # So we need to reset this time_slot values to defaults
             self._delete_time_slot(current_time_slot)
