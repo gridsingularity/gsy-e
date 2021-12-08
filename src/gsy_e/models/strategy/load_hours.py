@@ -262,7 +262,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
             update_interval=update_interval
         )
 
-    def area_reconfigure_event(self, **kwargs):
+    def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
         if (key_in_dict_and_not_none(kwargs, "hrs_per_day") or
                 key_in_dict_and_not_none(kwargs, "hrs_of_day")):
