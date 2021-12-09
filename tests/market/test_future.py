@@ -312,12 +312,3 @@ class TestFutureOrders:
         del offers[str(offer.id)]
         assert str(offer.id) not in offers
         assert offer not in offers.slot_order_mapping[offer.time_slot]
-
-    @staticmethod
-    def test_expire(offer):
-        """Test whether the expire method is deleting old timeslots and orders."""
-        offers = FutureOrders({str(offer.id): offer})
-        current_time_slot = offer.time_slot.add(minutes=15)
-        offers.expire(current_time_slot)
-        assert str(offer.id) not in offers
-        assert offer.time_slot not in offers.slot_order_mapping

@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-# pylint: disable=too-many-instance-attributes, too-many-arguments, too-many-locals, no-member
+# pylint: disable=too-many-arguments, too-many-locals, no-member
 from collections import UserDict
 from copy import deepcopy
 from logging import getLogger
@@ -59,21 +59,6 @@ class FutureOrders(UserDict):
         if order:
             self.slot_order_mapping[order.time_slot].remove(order)
         del self.data[order_id]
-
-    def expire(self, current_market_time_slot: DateTime) -> Dict:
-        """Remove old orders (time_slot in the past)."""
-        data = {}
-        slot_order_mapping = deepcopy(self.slot_order_mapping)
-        for order_id, order in self.data.items():
-            if order.time_slot > current_market_time_slot:
-                data[order_id] = order
-
-        for time_slot in self.slot_order_mapping.keys():
-            if time_slot <= current_market_time_slot:
-                del slot_order_mapping[time_slot]
-
-        self.data = data
-        self.slot_order_mapping = slot_order_mapping
 
 
 class FutureMarkets(TwoSidedMarket):
@@ -165,11 +150,22 @@ class FutureMarkets(TwoSidedMarket):
             order for order in order_list if order.time_slot > current_market_time_slot
         ]
 
+    def _expire_orders(self, orders: "FutureOrders", current_market_time_slot: DateTime) -> None:
+        """Remove old orders (time_slot in the past)."""
+        for order_id, order in deepcopy(list(orders.items())):
+            if order.time_slot <= current_market_time_slot:
+                if isinstance(order, Offer):
+                    self.delete_offer(order_id)
+                else:
+                    self.delete_bid(order_id)
+        for time_slot in deepcopy(list(orders.slot_order_mapping.keys())):
+            if time_slot <= current_market_time_slot:
+                del orders.slot_order_mapping[time_slot]
+
     def delete_orders_in_old_future_markets(self, current_market_time_slot: DateTime) -> None:
         """Delete order and trade buffers."""
-
-        self.offers.expire(current_market_time_slot)
-        self.bids.expire(current_market_time_slot)
+        self._expire_orders(self.offers, current_market_time_slot)
+        self._expire_orders(self.bids, current_market_time_slot)
 
         self.offer_history = self._remove_old_orders_from_list(
             self.offer_history, current_market_time_slot)
