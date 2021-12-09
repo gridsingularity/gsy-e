@@ -704,9 +704,8 @@ class StorageState(StateInterface):
         if GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
             # In case the future market is enabled, the future orders have to be deleted once
             # the market becomes a spot market
-            del self.offered_buy_kWh[current_time_slot]
-            del self.offered_sell_kWh[current_time_slot]
-            all_future_time_slots.insert(0, current_time_slot)
+            self.offered_buy_kWh[current_time_slot] = 0
+            self.offered_sell_kWh[current_time_slot] = 0
         self.add_default_values_to_state_profiles(all_future_time_slots)
 
         if past_time_slot:
