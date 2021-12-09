@@ -121,9 +121,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
                            initial_buying_rate, final_buying_rate):
 
-        # Instantiate instance variables that should not be shared with child classes
-        self.fit_to_limit = fit_to_limit
-
         LoadValidator.validate_rate(
             fit_to_limit=fit_to_limit,
             energy_rate_increase_per_update=energy_rate_increase_per_update)
