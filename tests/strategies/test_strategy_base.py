@@ -326,7 +326,7 @@ def test_bid_traded_moves_bid_from_posted_to_traded(base):
 
 
 @pytest.mark.parametrize("market_class", [OneSidedMarket, TwoSidedMarket])
-def test_can_offer_be_posted_no_trades(market_class):
+def test_can_offer_be_posted(market_class):
     base = BaseStrategy()
     base.owner = FakeOwner()
     base.area = FakeArea()
@@ -340,45 +340,6 @@ def test_can_offer_be_posted_no_trades(market_class):
                            time_slot=time_slot), market.id)
     base.offers.post(Offer("id3", time_slot.add(seconds=3), price=1, energy=20, seller="A",
                            time_slot=time_slot), market.id)
-
-    assert base.can_offer_be_posted(4.999, 1, 50, market, time_slot=None) is True
-    assert base.can_offer_be_posted(5.0, 1, 50,  market, time_slot=None) is True
-    assert base.can_offer_be_posted(5.001, 1, 50,  market, time_slot=None) is False
-
-    assert base.can_offer_be_posted(4.999, 1, 50, market, time_slot=time_slot) is True
-    assert base.can_offer_be_posted(5.0, 1, 50,  market, time_slot=time_slot) is True
-    assert base.can_offer_be_posted(5.001, 1, 50,  market, time_slot=time_slot) is False
-
-    assert base.can_offer_be_posted(
-        5.001, 1, 50, market, time_slot=time_slot, replace_existing=True) is True
-    assert base.can_offer_be_posted(
-        50, 1, 50, market, time_slot=time_slot, replace_existing=True) is True
-    assert base.can_offer_be_posted(
-        50.001, 1, 50, market, time_slot=time_slot, replace_existing=True) is False
-
-
-@pytest.mark.parametrize("market_class", [OneSidedMarket, TwoSidedMarket])
-def test_can_offer_be_posted_trades(market_class):
-    base = BaseStrategy()
-    base.owner = FakeOwner()
-    base.area = FakeArea()
-
-    time_slot = pendulum.now(tz=TIME_ZONE)
-    market = market_class(time_slot=time_slot)
-
-    offer1 = Offer("id", time_slot.add(seconds=1), price=1, energy=12, seller="A",
-                   time_slot=time_slot)
-    offer2 = Offer("id2", time_slot.add(seconds=2), price=1, energy=13, seller="A",
-                   time_slot=time_slot)
-    base.offers.post(offer1, market.id)
-    base.offers.post(offer2, market.id)
-    base.offers.post(Offer("id3", time_slot.add(seconds=3), price=1, energy=20, seller="A",
-                           time_slot=time_slot), market.id)
-
-    trade1 = Trade("trade_id", pendulum.now(tz=TIME_ZONE), offer1, offer1.seller, "buyer")
-    trade2 = Trade("trade_id", pendulum.now(tz=TIME_ZONE), offer2, offer2.seller, "buyer")
-    base.offers.on_trade(market.id, trade1)
-    base.offers.on_trade(market.id, trade2)
 
     assert base.can_offer_be_posted(4.999, 1, 50, market, time_slot=None) is True
     assert base.can_offer_be_posted(5.0, 1, 50,  market, time_slot=None) is True
