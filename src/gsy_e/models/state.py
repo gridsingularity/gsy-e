@@ -695,16 +695,19 @@ class StorageState(StateInterface):
                                    ESSEnergyOrigin.LOCAL: 0.,
                                    ESSEnergyOrigin.EXTERNAL: 0.})
 
-    def market_cycle(self, past_time_slot, current_time_slot: DateTime, all_future_time_slots):
+    def market_cycle(self, past_time_slot, current_time_slot: DateTime,
+                     all_future_time_slots: List[DateTime]):
         """
         Simulate actual Energy flow by removing pledged storage and adding bought energy to the
         used_storage
         """
         if GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
-            # In case the future market is enabled, the current time_slot will already be populated
-            # So we need to reset this time_slot values to defaults
-            self._delete_time_slot(current_time_slot)
-            self.add_default_values_to_state_profiles([current_time_slot, *all_future_time_slots])
+            # In case the future market is enabled, the future orders have to be deleted once
+            # the market becomes a spot market
+            del self.offered_buy_kWh[current_time_slot]
+            del self.offered_sell_kWh[current_time_slot]
+            all_future_time_slots.insert(0, current_time_slot)
+        self.add_default_values_to_state_profiles(all_future_time_slots)
 
         if past_time_slot:
             self._used_storage -= self.pledged_sell_kWh[past_time_slot]
@@ -717,26 +720,22 @@ class StorageState(StateInterface):
             for energy_type in self._used_storage_share:
                 self.time_series_ess_share[past_time_slot][energy_type.origin] += energy_type.value
 
-    def _delete_time_slot(self, time_slot: DateTime) -> None:
-        """Delete the time_slot key from the state's mappings."""
-        self.pledged_sell_kWh.pop(time_slot, None)
-        self.offered_sell_kWh.pop(time_slot, None)
-        self.pledged_buy_kWh.pop(time_slot, None)
-        self.offered_buy_kWh.pop(time_slot, None)
-        self.charge_history.pop(time_slot, None)
-        self.charge_history_kWh.pop(time_slot, None)
-        self.offered_history.pop(time_slot, None)
-        self.used_history.pop(time_slot, None)
-        self.energy_to_buy_dict.pop(time_slot, None)
-        self.energy_to_sell_dict.pop(time_slot, None)
-
     def delete_past_state_values(self, current_time_slot: DateTime):
         to_delete = []
         for market_slot in self.pledged_sell_kWh:
             if is_time_slot_in_past_markets(market_slot, current_time_slot):
                 to_delete.append(market_slot)
         for market_slot in to_delete:
-            self._delete_time_slot(market_slot)
+            self.pledged_sell_kWh.pop(market_slot, None)
+            self.offered_sell_kWh.pop(market_slot, None)
+            self.pledged_buy_kWh.pop(market_slot, None)
+            self.offered_buy_kWh.pop(market_slot, None)
+            self.charge_history.pop(market_slot, None)
+            self.charge_history_kWh.pop(market_slot, None)
+            self.offered_history.pop(market_slot, None)
+            self.used_history.pop(market_slot, None)
+            self.energy_to_buy_dict.pop(market_slot, None)
+            self.energy_to_sell_dict.pop(market_slot, None)
 
 
 class UnexpectedStateException(Exception):
