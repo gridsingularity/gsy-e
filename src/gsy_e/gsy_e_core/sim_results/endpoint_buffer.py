@@ -26,7 +26,8 @@ from gsy_framework.utils import get_json_dict_memory_allocation_size
 from pendulum import DateTime
 
 from gsy_e.gsy_e_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
-from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
+from gsy_e.gsy_e_core.util import (
+    get_market_maker_rate_from_config, get_feed_in_tariff_rate_from_config)
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
@@ -48,6 +49,8 @@ _NO_VALUE = {
 }
 
 
+# pylint: disable=too-many-instance-attributes, unidiomatic-typecheck, too-many-branches
+# pylint: disable=logging-too-many-args, fixme
 class SimulationEndpointBuffer:
     """Handles collecting and buffering of all results for all areas."""
 
@@ -84,16 +87,16 @@ class SimulationEndpointBuffer:
 
         message_size = get_json_dict_memory_allocation_size(result_report)
         if message_size > 64000:
-            logging.error(f"Do not publish message bigger than 64 MB, "
-                          f"current message size {message_size / 1000.0} MB.")
+            logging.error("Do not publish message bigger than 64 MB, "
+                          "current message size MB.", (message_size / 1000.0))
             return {}
-        logging.debug(f"Publishing {message_size} KB of data via Redis.")
+        logging.debug("Publishing %s KB of data via Redis.", message_size)
         return result_report
 
     @staticmethod
     def _structure_results_from_area_object(target_area: "Area") -> Dict:
         """Add basic information about the area in the area_tree_dict."""
-        area_dict = dict()
+        area_dict = {}
         area_dict["name"] = target_area.name
         area_dict["uuid"] = target_area.uuid
         area_dict["parent_uuid"] = (target_area.parent.uuid
@@ -182,7 +185,8 @@ class SimulationEndpointBuffer:
                 "market_fee": area.future_markets.market_fee,
                 "const_fee_rate": (area.future_markets.const_fee_rate
                                    if area.future_markets.const_fee_rate is not None else 0.),
-                "feed_in_tariff": GlobalConfig.FEED_IN_TARIFF,
+                "feed_in_tariff": get_feed_in_tariff_rate_from_config(
+                    area.future_markets, time_slot=time_slot),
                 "market_maker_rate": get_market_maker_rate_from_config(
                     area.future_markets, time_slot=time_slot)
             }
@@ -203,10 +207,11 @@ class SimulationEndpointBuffer:
         stats_dict["market_fee"] = market.market_fee
         stats_dict["const_fee_rate"] = (market.const_fee_rate
                                         if market.const_fee_rate is not None else 0.)
-        stats_dict["feed_in_tariff"] = GlobalConfig.FEED_IN_TARIFF
+        stats_dict["feed_in_tariff"] = get_feed_in_tariff_rate_from_config(market)
         stats_dict["market_maker_rate"] = get_market_maker_rate_from_config(market)
         return stats_dict
 
+    # pylint: disable=too-many-branches
     def _populate_core_stats_and_sim_state(self, area: "Area") -> None:
         """Populate all area statistics and state into self.flattened_area_core_stats_dict and
         self.simulation_state."""
