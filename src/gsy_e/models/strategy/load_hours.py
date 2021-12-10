@@ -15,18 +15,18 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import traceback
 from collections import namedtuple
 from logging import getLogger
-from typing import Union, Dict  # NOQA
+from typing import Union, Dict, List  # NOQA
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
 from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
     limit_float_precision, convert_W_to_Wh, find_object_of_same_weekday_and_time,
-    key_in_dict_and_not_none, is_time_slot_in_simulation_duration)
+    is_time_slot_in_simulation_duration)
 from gsy_framework.validators.load_validator import LoadValidator
 from numpy import random
 from pendulum import duration
@@ -47,14 +47,17 @@ from gsy_e.models.strategy.update_frequency import TemplateStrategyBidUpdater
 
 log = getLogger(__name__)
 
-BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
+BalancingRatio = namedtuple("BalancingRatio", ("demand", "supply"))
 
 
+# pylint: disable=too-many-instance-attributes
 class LoadHoursStrategy(BidEnabledStrategy):
+    """Strategy for the load assets that can consume energy in predefined hrs of day."""
     parameters = ("avg_power_W", "hrs_per_day", "hrs_of_day", "fit_to_limit",
                   "energy_rate_increase_per_update", "update_interval", "initial_buying_rate",
                   "final_buying_rate", "balancing_energy_ratio", "use_market_maker_rate")
 
+    # pylint: disable=too-many-arguments
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
                  fit_to_limit=True, energy_rate_increase_per_update=None,
                  update_interval=None,
@@ -92,11 +95,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.energy_per_slot_Wh = None
         self.hrs_per_day = {}  # type: Dict[int, int]
 
+        self.hrs_of_day = None
+        self._initial_hrs_per_day = None
         self.assign_hours_of_per_day(hrs_of_day, hrs_per_day)
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
-
+        self.use_market_maker_rate = use_market_maker_rate
         self._init_price_update(fit_to_limit, energy_rate_increase_per_update, update_interval,
-                                use_market_maker_rate, initial_buying_rate, final_buying_rate)
+                                initial_buying_rate, final_buying_rate)
 
         self._calculate_active_markets()
         self._cycled_market = set()
@@ -114,11 +119,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         return self._state
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
-                           use_market_maker_rate, initial_buying_rate, final_buying_rate):
-
-        # Instantiate instance variables that should not be shared with child classes
-        self.use_market_maker_rate = use_market_maker_rate
-        self.fit_to_limit = fit_to_limit
+                           initial_buying_rate, final_buying_rate):
 
         LoadValidator.validate_rate(
             fit_to_limit=fit_to_limit,
@@ -145,8 +146,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
             if not is_time_slot_in_simulation_duration(time_slot, self.area.config):
                 continue
 
-            if self.area and \
-                    self.area.current_market and time_slot < self.area.current_market.time_slot:
+            if (self.area and
+                    self.area.current_market
+                    and time_slot < self.area.current_market.time_slot):
                 continue
             rate_change = (None if fit_to_limit else
                            find_object_of_same_weekday_and_time(
@@ -185,11 +187,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._future_market_strategy.event_market_cycle(self)
 
     def add_entry_in_hrs_per_day(self, overwrite=False):
+        """Add the current day (in simulation) with the mapped hrs_per_day."""
         current_day = self._get_day_of_timestamp(self.area.spot_market.time_slot)
         if current_day not in self.hrs_per_day or overwrite:
             self.hrs_per_day[current_day] = self._initial_hrs_per_day
 
     def update_state(self):
+        """Update the state of the strategy."""
         self._post_first_bid()
         if self.area.current_market:
             self._cycled_market = {self.area.current_market.time_slot}
@@ -217,43 +221,42 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.bid_update.delete_past_state_values(self.area.current_market.time_slot)
 
     def _area_reconfigure_prices(self, **kwargs):
-        if key_in_dict_and_not_none(kwargs, 'initial_buying_rate'):
+        if kwargs.get("initial_buying_rate") is not None:
             initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                  kwargs['initial_buying_rate'])
+                                                  kwargs["initial_buying_rate"])
         else:
             initial_rate = self.bid_update.initial_rate_profile_buffer
-        if key_in_dict_and_not_none(kwargs, 'final_buying_rate'):
+        if kwargs.get("final_buying_rate") is not None:
             final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                kwargs['final_buying_rate'])
+                                                kwargs["final_buying_rate"])
         else:
             final_rate = self.bid_update.final_rate_profile_buffer
-        if key_in_dict_and_not_none(kwargs, 'energy_rate_increase_per_update'):
+        if kwargs.get("energy_rate_increase_per_update") is not None:
             energy_rate_change_per_update = read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs['energy_rate_increase_per_update'])
+                InputProfileTypes.IDENTITY, kwargs["energy_rate_increase_per_update"])
         else:
             energy_rate_change_per_update = (self.bid_update.
                                              energy_rate_change_per_update_profile_buffer)
-        if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
-            fit_to_limit = kwargs['fit_to_limit']
+        if kwargs.get("fit_to_limit") is not None:
+            fit_to_limit = kwargs["fit_to_limit"]
         else:
             fit_to_limit = self.bid_update.fit_to_limit
-        if key_in_dict_and_not_none(kwargs, 'update_interval'):
-            if isinstance(kwargs['update_interval'], int):
-                update_interval = duration(minutes=kwargs['update_interval'])
-            else:
-                update_interval = kwargs['update_interval']
+        if kwargs.get("update_interval") is not None:
+            update_interval = (
+                duration(minutes=kwargs["update_interval"])
+                if isinstance(kwargs["update_interval"], int)
+                else kwargs["update_interval"])
         else:
             update_interval = self.bid_update.update_interval
 
-        if key_in_dict_and_not_none(kwargs, 'use_market_maker_rate'):
-            self.use_market_maker_rate = kwargs['use_market_maker_rate']
+        if kwargs.get("use_market_maker_rate") is not None:
+            self.use_market_maker_rate = kwargs["use_market_maker_rate"]
 
         try:
             self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
                                  fit_to_limit)
-        except Exception as e:
-            log.error(f"LoadHours._area_reconfigure_prices failed. Exception: {e}. "
-                      f"Traceback: {traceback.format_exc()}")
+        except GSyDeviceException:
+            log.exception("LoadHours._area_reconfigure_prices failed. Exception: ")
             return
 
         self.bid_update.set_parameters(
@@ -264,19 +267,20 @@ class LoadHoursStrategy(BidEnabledStrategy):
             update_interval=update_interval
         )
 
-    def area_reconfigure_event(self, **kwargs):
+    def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
-        if (key_in_dict_and_not_none(kwargs, 'hrs_per_day') or
-                key_in_dict_and_not_none(kwargs, 'hrs_of_day')):
-            self.assign_hours_of_per_day(kwargs['hrs_of_day'], kwargs['hrs_per_day'])
+        if (kwargs.get("hrs_per_day") is not None or
+                kwargs.get("hrs_of_day") is not None):
+            self.assign_hours_of_per_day(kwargs["hrs_of_day"], kwargs["hrs_per_day"])
             self.add_entry_in_hrs_per_day(overwrite=True)
-        if key_in_dict_and_not_none(kwargs, 'avg_power_W'):
-            self.avg_power_W = kwargs['avg_power_W']
+        if kwargs.get("avg_power_W") is not None:
+            self.avg_power_W = kwargs["avg_power_W"]
             self._update_energy_requirement_future_markets()
         self._area_reconfigure_prices(**kwargs)
         self.bid_update.update_and_populate_price_settings(self.area)
 
     def event_activate_price(self):
+        """Update the strategy prices upon the activation and validate them afterwards."""
         # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
         if self.use_market_maker_rate:
             self._area_reconfigure_prices(
@@ -368,7 +372,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         return self._is_market_active(market) and self.state.can_buy_more_energy(market.time_slot)
 
     def _offer_comes_from_different_seller(self, offer):
-        return offer.seller != self.owner.name and offer.seller != self.area.name
+        return offer.seller not in [self.owner.name, self.area.name]
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
@@ -464,6 +468,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                                                          self.owner.name)
 
     def event_activate_energy(self):
+        """Update energy requirement upon the activation event."""
         self.hrs_per_day = {0: self._initial_hrs_per_day}
         self._simulation_start_timestamp = self.area.now
         self._update_energy_requirement_future_markets()
@@ -488,19 +493,19 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 (not self.area.current_market or
                  market.time_slot >= self.area.current_market.time_slot))
 
-    def assign_hours_of_per_day(self, hrs_of_day, hrs_per_day):
+    def assign_hours_of_per_day(self, hrs_of_day: List[int], hrs_per_day: List[int]):
+        """Validate and assign the values of hrs_of_day and hrs_per_day."""
         if hrs_of_day is None:
             hrs_of_day = list(range(24))
 
         # be a parameter on the constructor or if we want to deal in percentages
         if hrs_per_day is None:
             hrs_per_day = len(hrs_of_day)
-        if hrs_of_day is None:
-            hrs_of_day = list(range(24))
+
         self.hrs_of_day = hrs_of_day
         self._initial_hrs_per_day = hrs_per_day
 
-        if not all([0 <= h <= 23 for h in hrs_of_day]):
+        if not all(0 <= h <= 23 for h in hrs_of_day):
             raise ValueError("Hrs_of_day list should contain integers between 0 and 23.")
 
         if len(hrs_of_day) < hrs_per_day:
