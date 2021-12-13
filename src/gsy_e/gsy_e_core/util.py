@@ -169,12 +169,12 @@ def make_ma_name(owner):
 
 
 def make_ba_name(owner):
-    """Make balanncing agent name."""
+    """Make balancing agent name."""
     return f"BA {owner.name}"
 
 
 def make_sa_name(owner):
-    """Make settement agent name."""
+    """Make settlement agent name."""
     return f"SA {owner.name}"
 
 
@@ -300,7 +300,8 @@ def constsettings_to_dict():
 
 
 def retry_function(max_retries=3):
-    """Retry function."""
+    """Decorator that retries the execution of the function until it returns without
+    raising an exception."""
     def decorator_with_max_retries(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
@@ -310,7 +311,8 @@ def retry_function(max_retries=3):
 
 
 def recursive_retry(functor, retry_count, max_retries, *args, **kwargs):
-    """Recursive retry."""
+    """Recursive function that retries the execution of "functor" function if an exception is
+    raised from it."""
     try:
         return functor(*args, **kwargs)
     except (AssertionError, GSyException) as e:

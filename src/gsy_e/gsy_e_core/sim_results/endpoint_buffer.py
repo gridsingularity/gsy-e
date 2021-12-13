@@ -86,7 +86,7 @@ class SimulationEndpointBuffer:
         message_size = get_json_dict_memory_allocation_size(result_report)
         if message_size > 64000:
             logging.error("Do not publish message bigger than 64 MB, "
-                          "current message size MB.", (message_size / 1000.0))
+                          "current message size %s MB.", (message_size / 1000.0))
             return {}
         logging.debug("Publishing %s KB of data via Redis.", message_size)
         return result_report
