@@ -410,3 +410,8 @@ def test_infinite_bus_buying_rate_set_as_profile(bus_test6):
     assert len(bus_test6.energy_buy_rate) == 96
     assert list(bus_test6.energy_buy_rate.values())[0] == 10
     assert list(bus_test6.energy_buy_rate.values())[15] == 15
+
+
+def test_feed_in_tariff_set_as_infinite_bus_buying_rate(bus_test6):
+    bus_test6.event_activate()
+    assert GlobalConfig.FEED_IN_TARIFF == bus_test6.energy_buy_rate
