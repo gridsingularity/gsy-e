@@ -25,6 +25,7 @@ import termios
 import tty
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
+from typing import TYPE_CHECKING
 
 from click.types import ParamType
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, RangeLimit
@@ -39,7 +40,10 @@ from rex import rex
 import gsy_e
 import gsy_e.constants
 from gsy_e import setup as d3a_setup
-from gsy_e.models.market import MarketBase
+
+if TYPE_CHECKING:
+    from gsy_e.models.market import MarketBase
+
 
 d3a_path = os.path.dirname(inspect.getsourcefile(gsy_e))
 
