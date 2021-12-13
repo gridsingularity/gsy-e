@@ -74,11 +74,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             GlobalConfig.market_maker_rate = self.energy_rate
 
     def _set_global_feed_in_tariff_rate(self):
-        if self.buying_rate_profile is not None:
-            GlobalConfig.FEED_IN_TARIFF = read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, self.buying_rate_profile)
-        elif self.energy_buy_rate is not None:
-            GlobalConfig.FEED_IN_TARIFF = self.energy_buy_rate
+        GlobalConfig.FEED_IN_TARIFF = self.energy_buy_rate
 
     def _read_or_rotate_profiles(self, reconfigure=False):
         if (self.energy_buy_rate_input is None and
