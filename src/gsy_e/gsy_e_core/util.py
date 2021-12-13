@@ -39,6 +39,7 @@ from rex import rex
 import gsy_e
 import gsy_e.constants
 from gsy_e import setup as d3a_setup
+from gsy_e.models.market import MarketBase
 
 d3a_path = os.path.dirname(inspect.getsourcefile(gsy_e))
 
@@ -479,7 +480,8 @@ def get_market_maker_rate_from_config(next_market, default_value=None, time_slot
     return GlobalConfig.market_maker_rate
 
 
-def get_feed_in_tariff_rate_from_config(next_market, default_value=None, time_slot=None):
+def get_feed_in_tariff_rate_from_config(next_market: "MarketBase",
+                                        default_value=None, time_slot=None):
     """Get feed in tariff rate from config."""
     if next_market is None:
         return default_value
