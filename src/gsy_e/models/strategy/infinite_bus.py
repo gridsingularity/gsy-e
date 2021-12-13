@@ -32,7 +32,7 @@ from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 
 # pylint: disable=missing-class-docstring, too-many-instance-attributes, too-many-arguments
 class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
-    """Implemenntationn for infinite bus to participate in GSy Exchange."""
+    """Implementation for infinite bus to participate in GSy Exchange."""
     parameters = ("energy_sell_rate", "energy_rate_profile", "energy_buy_rate",
                   "buying_rate_profile", "buying_rate_profile_uuid", "energy_rate_profile_uuid")
 
