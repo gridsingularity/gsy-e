@@ -30,9 +30,7 @@ from gsy_e.gsy_e_core.util import (
     get_market_maker_rate_from_config, get_feed_in_tariff_rate_from_config)
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant
-from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
-from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
@@ -49,7 +47,7 @@ _NO_VALUE = {
 }
 
 
-# pylint: disable=too-many-instance-attributes, unidiomatic-typecheck, too-many-branches
+# pylint: disable=too-many-instance-attributes
 # pylint: disable=logging-too-many-args, fixme
 class SimulationEndpointBuffer:
     """Handles collecting and buffering of all results for all areas."""
@@ -283,18 +281,18 @@ class SimulationEndpointBuffer:
                 for trade in area.strategy.trades[area.parent.current_market]:
                     core_stats_dict["trades"].append(trade.serializable_dict())
 
-        elif type(area.strategy) == FinitePowerPlant:
-            core_stats_dict["production_kWh"] = area.strategy.energy_per_slot_kWh
-            if area.parent.current_market is not None:
-                for trade in area.strategy.trades[area.parent.current_market]:
-                    core_stats_dict["trades"].append(trade.serializable_dict())
-
-        elif type(area.strategy) in [InfiniteBusStrategy, MarketMakerStrategy, CommercialStrategy]:
-            if area.parent.current_market is not None:
-                core_stats_dict["energy_rate"] = (
-                    area.strategy.energy_rate.get(area.parent.current_market.time_slot, None))
-                for trade in area.strategy.trades[area.parent.current_market]:
-                    core_stats_dict["trades"].append(trade.serializable_dict())
+        elif isinstance(area.strategy, CommercialStrategy):
+            if isinstance(area.strategy, FinitePowerPlant):
+                core_stats_dict["production_kWh"] = area.strategy.energy_per_slot_kWh
+                if area.parent.current_market is not None:
+                    for trade in area.strategy.trades[area.parent.current_market]:
+                        core_stats_dict["trades"].append(trade.serializable_dict())
+            else:
+                if area.parent.current_market is not None:
+                    core_stats_dict["energy_rate"] = (
+                        area.strategy.energy_rate.get(area.parent.current_market.time_slot, None))
+                    for trade in area.strategy.trades[area.parent.current_market]:
+                        core_stats_dict["trades"].append(trade.serializable_dict())
 
         self.flattened_area_core_stats_dict[area.uuid] = core_stats_dict
 

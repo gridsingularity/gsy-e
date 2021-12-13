@@ -76,11 +76,8 @@ setLoggerClass(TraceLogger)
 log = getLogger(__name__)
 
 
-# pylint: disable=useless-super-delegation
 class TaggedLogWrapper(LoggerAdapter):
     """TaggedLogWrapper"""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     def process(self, msg, kwargs):
         msg = f"[{self.extra}] {msg}"
@@ -103,44 +100,46 @@ class DateType(ParamType):
         else:
             raise ValueError(f"Invalid date_type. Choices: {gsy_e.constants.DATE_FORMAT} ")
 
-    # pylint: disable=inconsistent-return-statements
     def convert(self, value, param, ctx):
         try:
-            return from_format(value, gsy_e.constants.DATE_FORMAT)
+            converted_format = from_format(value, gsy_e.constants.DATE_FORMAT)
         except ValueError:
             self.fail(
                 f"'{value}' is not a valid date. Allowed formats: {self.allowed_formats}")
+        return converted_format
 
 
-# pylint: disable=redefined-builtin
 class IntervalType(ParamType):
     """IntervalType"""
     name = "interval"
 
-    def __init__(self, type):
-        if type == "H:M":
+    def __init__(self, interval_type):
+        if interval_type == "H:M":
             self.re = INTERVAL_HM_RE
             self.allowed_formats = "'XXh', 'XXm', 'XXhYYm', 'XX:YY'"
-        elif type == "D:H":
+        elif interval_type == "D:H":
             self.re = INTERVAL_DH_RE
             self.allowed_formats = "'XXh', 'XXd', 'XXdYYh'"
-        elif type == "M:S":
+        elif interval_type == "M:S":
             self.re = INTERVAL_MS_RE
             self.allowed_formats = "'XXm', 'XXs', 'XXmYYs', 'XX:YY'"
         else:
             raise ValueError("Invalid date_type. Choices: 'H:M', 'M:S', 'D:H'")
 
-    # pylint: disable=inconsistent-return-statements
     def convert(self, value, param, ctx):
+        converted_duration = None
         match = self.re(value)
         if match:
-            return duration(**{
-                k: int(v) if v else 0
-                for k, v in match.items()
-                if isinstance(k, str)
-            })
-        self.fail(
-            f"'{value}' is not a valid duration. Allowed formats: {self.allowed_formats}")
+            try:
+                converted_duration = duration(**{
+                    k: int(v) if v else 0
+                    for k, v in match.items()
+                    if isinstance(k, str)
+                })
+            except ValueError:
+                self.fail(
+                    f"'{value}' is not a valid duration. Allowed formats: {self.allowed_formats}")
+        return converted_duration
 
 
 # pylint: disable=attribute-defined-outside-init
@@ -353,31 +352,31 @@ def round_floats_for_ui(number):
     return round(number, 3)
 
 
-def add_or_create_key(dict, key, value):
+def add_or_create_key(indict, key, value):
     """Add value or create key."""
-    if key in dict:
-        dict[key] += value
+    if key in indict:
+        indict[key] += value
     else:
-        dict[key] = value
-    return dict
+        indict[key] = value
+    return indict
 
 
-def subtract_or_create_key(dict, key, value):
+def subtract_or_create_key(indict, key, value):
     """Subtract value of create key."""
-    if key in dict:
-        dict[key] -= value
+    if key in indict:
+        indict[key] -= value
     else:
-        dict[key] = 0 - value
-    return dict
+        indict[key] = 0 - value
+    return indict
 
 
-def append_or_create_key(dict, key, obj):
+def append_or_create_key(data_dict, key, obj):
     """Append value or create key."""
-    if key in dict:
-        dict[key].append(obj)
+    if key in data_dict:
+        data_dict[key].append(obj)
     else:
-        dict[key] = [obj]
-    return dict
+        data_dict[key] = [obj]
+    return data_dict
 
 
 def create_subdict_or_update(indict, key, subdict):
