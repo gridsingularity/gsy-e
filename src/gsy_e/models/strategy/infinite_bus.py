@@ -111,12 +111,10 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         self._set_global_market_maker_rate()
         self._set_global_feed_in_tariff_rate()
 
-    # pylint: disable=fixme
     def _populate_selling_rate(self):
         if self.energy_rate_profile is not None:
             self.energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                       self.energy_rate_profile)
-            # TODO: to be checked via deleting in case increased memory is observed during runtime
             del self.energy_rate_profile
         elif self.energy_rate is not None:
             self.energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
@@ -124,12 +122,10 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         else:
             self.energy_rate = self.simulation_config.market_maker_rate
 
-    # pylint: disable=fixme
     def _populate_buying_rate(self):
         if self.buying_rate_profile is not None:
             self.energy_buy_rate = read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, self.buying_rate_profile)
-            # TODO: to be checked via deleting in case increased memory is observed during runtime
             del self.buying_rate_profile
         elif self.energy_buy_rate is not None:
             self.energy_buy_rate = read_arbitrary_profile(
