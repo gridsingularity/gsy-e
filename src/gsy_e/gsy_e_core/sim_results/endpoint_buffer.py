@@ -48,7 +48,7 @@ _NO_VALUE = {
 
 
 # pylint: disable=too-many-instance-attributes
-# pylint: disable=logging-too-many-args, fixme
+# pylint: disable=logging-too-many-args
 class SimulationEndpointBuffer:
     """Handles collecting and buffering of all results for all areas."""
 
@@ -122,7 +122,6 @@ class SimulationEndpointBuffer:
 
     def generate_result_report(self) -> Dict:
         """Create dict that contains all statistics that are sent to the gsy-web."""
-        # TODO: In D3ASIM-2288, add unix_time=True to convert_pendulum_to_str_in_dict
         return {
             "job_id": self.job_id,
             "current_market": self.current_market_time_slot_str,
