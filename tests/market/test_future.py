@@ -111,7 +111,7 @@ class TestFutureMarkets:
         for buffer in [future_market.slot_bid_mapping,
                        future_market.slot_offer_mapping,
                        future_market.slot_trade_mapping]:
-            assert len(buffer.keys()) == 5
+            assert len(buffer.keys()) == 4
             future_time_slot = DEFAULT_CURRENT_MARKET_SLOT.add(
                 minutes=DEFAULT_SLOT_LENGTH.total_minutes())
             most_future_slot = (future_time_slot +
@@ -130,10 +130,10 @@ class TestFutureMarkets:
                           time_slot=time_slot)
             future_market.trades.append(trade)
 
-        count_orders_in_buffers(future_market, 5)
+        count_orders_in_buffers(future_market, 4)
         first_future_market = next(iter(future_market.slot_bid_mapping))
         future_market.delete_orders_in_old_future_markets(first_future_market)
-        count_orders_in_buffers(future_market, 4)
+        count_orders_in_buffers(future_market, 3)
 
     @staticmethod
     def test_offer_is_posted_correctly(future_market):
