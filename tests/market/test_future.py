@@ -15,6 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from unittest.mock import patch, MagicMock
+
 import pytest
 from gsy_framework.constants_limits import GlobalConfig, DATE_TIME_FORMAT
 from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo
@@ -84,8 +86,28 @@ class TestFutureMarkets:
     """Tests that target the future markets."""
 
     @staticmethod
+    @patch("gsy_e.models.market.future.is_time_slot_in_simulation_duration",
+           MagicMock())
     def test_create_future_markets(future_market):
         """Test if all future time_slots are created in the order buffers."""
+        future_market.offers = {}
+        future_market.bids = {}
+
+        with patch("gsy_e.models.market.future.GlobalConfig."
+                   "FUTURE_MARKET_DURATION_HOURS", 0):
+            future_market.create_future_markets(
+                DEFAULT_CURRENT_MARKET_SLOT, DEFAULT_SLOT_LENGTH, MagicMock()
+            )
+        for buffer in [future_market.slot_bid_mapping,
+                       future_market.slot_offer_mapping,
+                       future_market.slot_trade_mapping]:
+            assert len(buffer.keys()) == 0
+
+        with patch("gsy_e.models.market.future.GlobalConfig."
+                   "FUTURE_MARKET_DURATION_HOURS", 1):
+            future_market.create_future_markets(
+                DEFAULT_CURRENT_MARKET_SLOT, DEFAULT_SLOT_LENGTH, MagicMock()
+            )
         for buffer in [future_market.slot_bid_mapping,
                        future_market.slot_offer_mapping,
                        future_market.slot_trade_mapping]:
