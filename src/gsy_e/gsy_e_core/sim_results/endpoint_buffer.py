@@ -182,8 +182,8 @@ class SimulationEndpointBuffer:
                 "market_fee": area.future_markets.market_fee,
                 "const_fee_rate": (area.future_markets.const_fee_rate
                                    if area.future_markets.const_fee_rate is not None else 0.),
-                "feed_in_tariff": get_feed_in_tariff_rate_from_config(
-                    area.future_markets, time_slot=time_slot),
+                "feed_in_tariff": get_feed_in_tariff_rate_from_config(area.future_markets,
+                                                                      time_slot=time_slot),
                 "market_maker_rate": get_market_maker_rate_from_config(
                     area.future_markets, time_slot=time_slot)
             }

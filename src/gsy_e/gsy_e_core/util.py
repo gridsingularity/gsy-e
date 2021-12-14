@@ -484,18 +484,17 @@ def get_market_maker_rate_from_config(next_market, default_value=None, time_slot
     return GlobalConfig.market_maker_rate
 
 
-def get_feed_in_tariff_rate_from_config(next_market: "MarketBase",
-                                        default_value=None, time_slot=None):
+def get_feed_in_tariff_rate_from_config(next_market: "MarketBase", time_slot=None):
     """Get feed in tariff rate from config."""
     if next_market is None:
-        return default_value
+        return 0.
     if isinstance(GlobalConfig.FEED_IN_TARIFF, dict):
         if time_slot is None:
             try:
                 time_slot = next_market.time_slot
-            except AttributeError as e:
-                logging.exception("time_slot parameter is required for future markets.")
-                raise e
+            except AttributeError:
+                logging.error("time_slot parameter is missing to get feed-in tariff")
+                return 0.
         return find_object_of_same_weekday_and_time(GlobalConfig.FEED_IN_TARIFF,
                                                     time_slot) or 0.
     return GlobalConfig.FEED_IN_TARIFF
