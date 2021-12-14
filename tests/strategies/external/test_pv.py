@@ -15,10 +15,15 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+# pylint: disable=missing-function-docstring, protected-access, missing-class-docstring
 import uuid
 
 import pytest
+from gsy_framework.constants_limits import DATE_TIME_FORMAT
+from pendulum import datetime
 
+from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
+from gsy_e.models.market.settlement import SettlementMarket
 from gsy_e.models.strategy.external_strategies.pv import PVExternalStrategy
 from tests.strategies.external.utils import (
     check_external_command_endpoint_with_correct_payload_succeeds,
@@ -28,6 +33,12 @@ from tests.strategies.external.utils import (
 @pytest.fixture(name="external_pv")
 def external_pv_fixture():
     return create_areas_markets_for_strategy_fixture(PVExternalStrategy())
+
+
+@pytest.fixture(name="settlement_market")
+def settlement_market_fixture():
+    return SettlementMarket(bc=NonBlockchainInterface(str(uuid.uuid4())),
+                            time_slot=datetime(2021, 12, 7, 12, 00))
 
 
 class TestPVForecastExternalStrategy:
@@ -47,6 +58,66 @@ class TestPVForecastExternalStrategy:
     def test_delete_offer_succeeds(external_pv):
         check_external_command_endpoint_with_correct_payload_succeeds(
             external_pv, "delete_offer", {})
+
+    @staticmethod
+    def test_bid_aggregator_can_not_place_bid_to_spot_market(external_pv):
+        return_value = external_pv.trigger_aggregator_commands(
+            {
+                "type": "bid",
+                "price": 200.0,
+                "energy": 0.5,
+                "transaction_id": str(uuid.uuid4())
+            }
+        )
+        assert return_value["status"] == "error"
+        assert "Bid not supported for PV on spot markets." in return_value["error_message"]
+
+    @staticmethod
+    def test_bid_aggregator_places_settlement_bid(external_pv, settlement_market):
+        unsettled_energy_kWh = 0.5
+        external_pv.area._markets.settlement_market_ids = [settlement_market.id]
+        external_pv.area._markets.settlement_markets = {
+            settlement_market.time_slot: settlement_market}
+        external_pv.state._forecast_measurement_deviation_kWh[settlement_market.time_slot] = (
+            unsettled_energy_kWh)
+        external_pv.state._unsettled_deviation_kWh[settlement_market.time_slot] = (
+            unsettled_energy_kWh)
+        return_value = external_pv.trigger_aggregator_commands(
+            {
+                "type": "bid",
+                "price": 200.0,
+                "energy": unsettled_energy_kWh,
+                "time_slot": settlement_market.time_slot.format(DATE_TIME_FORMAT),
+                "transaction_id": str(uuid.uuid4())
+            }
+        )
+
+        assert return_value["status"] == "ready"
+        assert len(settlement_market.bids.values()) == 1
+        assert list(settlement_market.bids.values())[0].energy == unsettled_energy_kWh
+
+    @staticmethod
+    def test_offer_aggregator_places_settlement_offer(external_pv, settlement_market):
+        unsettled_energy_kWh = 0.5
+        external_pv.area._markets.settlement_market_ids = [settlement_market.id]
+        external_pv.area._markets.settlement_markets = {
+            settlement_market.time_slot: settlement_market}
+        external_pv.state._forecast_measurement_deviation_kWh[settlement_market.time_slot] = (
+            -1 * unsettled_energy_kWh)
+        external_pv.state._unsettled_deviation_kWh[settlement_market.time_slot] = (
+            unsettled_energy_kWh)
+        return_value = external_pv.trigger_aggregator_commands(
+            {
+                "type": "offer",
+                "price": 200.0,
+                "energy": unsettled_energy_kWh,
+                "time_slot": settlement_market.time_slot.format(DATE_TIME_FORMAT),
+                "transaction_id": str(uuid.uuid4())
+            }
+        )
+        assert return_value["status"] == "ready"
+        assert len(settlement_market.offers.values()) == 1
+        assert list(settlement_market.offers.values())[0].energy == unsettled_energy_kWh
 
     @staticmethod
     def test_offer_aggregator(external_pv):

@@ -333,7 +333,7 @@ class Offers:
     def posted_offer_energy(self, market_id: str, time_slot: DateTime = None) -> float:
         """Get energy of all posted offers"""
         return sum(o.energy
-                   for o in self.posted_in_market(market_id)
+                   for o in self.posted_in_market(market_id, time_slot)
                    if time_slot is None or o.time_slot == time_slot)
 
     def sold_offer_energy(self, market_id: str, time_slot: DateTime = None) -> float:
@@ -374,15 +374,14 @@ class Offers:
 
         if replace_existing:
             # Do not consider previous open offers, since they would be replaced by the current one
-            posted_offer_energy = self.sold_offer_energy(market.id, time_slot)
+            posted_offer_energy = 0.0
         else:
             posted_offer_energy = self.posted_offer_energy(market.id, time_slot)
 
-        posted_energy = (offer_energy
-                         + posted_offer_energy
-                         - self.sold_offer_energy(market.id))
+        total_posted_energy = offer_energy + posted_offer_energy
 
-        return posted_energy <= available_energy and offer_price >= 0.0
+        return ((total_posted_energy - available_energy) < FLOATING_POINT_TOLERANCE
+                and offer_price >= 0.0)
 
     def post(self, offer: Offer, market_id: str) -> None:
         """Add offer to the posted dict"""
@@ -641,10 +640,12 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
 
     # pylint: disable=too-many-arguments
     def can_offer_be_posted(self, offer_energy: float, offer_price: float, available_energy: float,
-                            market: "OneSidedMarket", replace_existing: bool = False) -> bool:
+                            market: "OneSidedMarket", time_slot: Optional[DateTime],
+                            replace_existing: bool = False) -> bool:
         """Check if an offer with the selected attributes can be posted"""
         return self.offers.can_offer_be_posted(
-            offer_energy, offer_price, available_energy, market, replace_existing=replace_existing)
+            offer_energy, offer_price, available_energy, market, time_slot=time_slot,
+            replace_existing=replace_existing)
 
     def can_settlement_offer_be_posted(
             self, offer_energy: float, offer_price: float,
@@ -662,7 +663,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             return False
         unsettled_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
         return self.offers.can_offer_be_posted(
-            offer_energy, offer_price, unsettled_energy_kWh, market,
+            offer_energy, offer_price, unsettled_energy_kWh, market, time_slot=market.time_slot,
             replace_existing=replace_existing)
 
     @property
@@ -794,13 +795,14 @@ class BidEnabledStrategy(BaseStrategy):
 
     # pylint: disable=too-many-arguments
     def can_bid_be_posted(self, bid_energy: float, bid_price: float, required_energy_kWh: float,
-                          market: "TwoSidedMarket", replace_existing: bool = False) -> bool:
+                          market: "TwoSidedMarket", replace_existing: bool = False,
+                          time_slot: Optional[DateTime] = None) -> bool:
         """Check if a bid can be posted to the market"""
 
         if replace_existing:
             posted_bid_energy = 0.0
         else:
-            posted_bid_energy = self.posted_bid_energy(market.id)
+            posted_bid_energy = self.posted_bid_energy(market.id, time_slot)
 
         total_posted_energy = (bid_energy + posted_bid_energy)
 
@@ -822,7 +824,7 @@ class BidEnabledStrategy(BaseStrategy):
             return False
         unsettled_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
         return self.can_bid_be_posted(
-            bid_energy, bid_price, unsettled_energy_kWh, market,
+            bid_energy, bid_price, unsettled_energy_kWh, market, time_slot=market.time_slot,
             replace_existing=replace_existing)
 
     def is_bid_posted(self, market: "TwoSidedMarket", bid_id: str) -> bool:

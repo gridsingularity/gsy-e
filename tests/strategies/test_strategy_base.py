@@ -15,19 +15,20 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+# pylint: disable=missing-function-docstring, protected-access, missing-class-docstring
+# pylint: disable=no-self-use, redefined-builtin, unused-argument, too-many-arguments
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pendulum
 import pytest
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Offer, Trade, Bid
 from gsy_framework.enums import SpotMarketTypeEnum
 
 from gsy_e.constants import TIME_ZONE
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
 from gsy_e.gsy_e_core.exceptions import MarketException
-from gsy_framework.data_classes import Offer, Trade, Bid
 from gsy_e.models.market.one_sided import OneSidedMarket
 from gsy_e.models.market.two_sided import TwoSidedMarket
 from gsy_e.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
@@ -52,7 +53,7 @@ class FakeOwner:
 
     @property
     def name(self):
-        return 'FakeOwner'
+        return "FakeOwner"
 
 
 class FakeArea:
@@ -71,7 +72,7 @@ class FakeArea:
 
     @property
     def name(self):
-        return 'FakeArea'
+        return "FakeArea"
 
 
 class FakeStrategy:
@@ -107,13 +108,13 @@ class FakeMarket:
         offer = offer_or_id
         if self.raises:
             raise MarketException
-        else:
-            if energy is None:
-                energy = offer.energy
-            offer.energy = energy
-            return Trade('trade', 0, offer, offer.seller, 'FakeOwner',
-                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
-                         buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
+
+        if energy is None:
+            energy = offer.energy
+        offer.energy = energy
+        return Trade("trade", 0, offer, offer.seller, "FakeOwner",
+                     seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
+                     buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
 
     def bid(self, price, energy, buyer, original_price=None,
             buyer_origin=None, buyer_origin_id=None, buyer_id=None,
@@ -124,11 +125,11 @@ class FakeMarket:
                    time_slot=time_slot)
 
 
-@pytest.fixture
-def offers():
-    market = FakeMarket(raises=False, id='market')
+@pytest.fixture(name="offers")
+def offers_fixture():
+    market = FakeMarket(raises=False, id="market")
     fixture = Offers(FakeStrategy())
-    fixture.post(FakeOffer('id'), market.id)
+    fixture.post(FakeOffer("id"), market.id)
     fixture.__fake_market = market
     return fixture
 
@@ -137,75 +138,75 @@ def test_offers_open(offers):
     assert len(offers.open) == 1
     market = offers.__fake_market
     old_offer = offers.posted_in_market(market.id)[0]
-    offers.sold_offer(old_offer, 'market')
+    offers.sold_offer(old_offer, "market")
     assert len(offers.open) == 0
 
 
 def test_offers_replace_open_offer(offers):
     market = offers.__fake_market
     old_offer = offers.posted_in_market(market.id)[0]
-    new_offer = FakeOffer('new_id')
+    new_offer = FakeOffer("new_id")
     offers.replace(old_offer, new_offer, market.id)
-    assert offers.posted_in_market(market.id)[0].id == 'new_id'
-    assert 'id' not in offers.posted
+    assert offers.posted_in_market(market.id)[0].id == "new_id"
+    assert "id" not in offers.posted
 
 
 def test_offers_does_not_replace_sold_offer(offers):
-    old_offer = offers.posted_in_market('market')[0]
-    new_offer = FakeOffer('new_id')
-    offers.sold_offer(old_offer, 'market')
-    offers.replace(old_offer, new_offer, 'market')
+    old_offer = offers.posted_in_market("market")[0]
+    new_offer = FakeOffer("new_id")
+    offers.sold_offer(old_offer, "market")
+    offers.replace(old_offer, new_offer, "market")
     assert old_offer in offers.posted and new_offer not in offers.posted
 
 
-@pytest.fixture
-def offers2():
+@pytest.fixture(name="offers2")
+def offers2_fixture():
     fixture = Offers(FakeStrategy())
-    fixture.post(FakeOffer('id'), 'market')
-    fixture.post(FakeOffer('id2'), 'market')
-    fixture.post(FakeOffer('id3'), 'market2')
+    fixture.post(FakeOffer("id"), "market")
+    fixture.post(FakeOffer("id2"), "market")
+    fixture.post(FakeOffer("id3"), "market2")
     return fixture
 
 
 def test_offers_in_market(offers2):
-    old_offer = next(o for o in offers2.posted_in_market('market') if o.id == "id2")
-    assert len(offers2.posted_in_market('market')) == 2
-    offers2.sold_offer(old_offer, 'market')
-    assert len(offers2.sold_in_market('market')) == 1
-    assert len(offers2.sold_in_market('market2')) == 0
+    old_offer = next(o for o in offers2.posted_in_market("market") if o.id == "id2")
+    assert len(offers2.posted_in_market("market")) == 2
+    offers2.sold_offer(old_offer, "market")
+    assert len(offers2.sold_in_market("market")) == 1
+    assert len(offers2.sold_in_market("market2")) == 0
 
 
-@pytest.fixture
-def offer1():
-    return Offer('id', pendulum.now(), 1, 3, 'FakeOwner', 'market')
+@pytest.fixture(name="offer1")
+def offer1_fixture():
+    return Offer("id", pendulum.now(), 1, 3, "FakeOwner", "market")
 
 
-@pytest.fixture
-def offers3(offer1):
+@pytest.fixture(name="offers3")
+def offers3_fixture(offer1):
     fixture = Offers(FakeStrategy())
-    fixture.post(offer1, 'market')
-    fixture.post(Offer('id2', pendulum.now(), 1, 1, 'FakeOwner', 'market'), 'market')
-    fixture.post(Offer('id3', pendulum.now(), 1, 1, 'FakeOwner', 'market2'), 'market2')
+    fixture.post(offer1, "market")
+    fixture.post(Offer("id2", pendulum.now(), 1, 1, "FakeOwner", "market"), "market")
+    fixture.post(Offer("id3", pendulum.now(), 1, 1, "FakeOwner", "market2"), "market2")
     return fixture
 
 
 def test_offers_partial_offer(offer1, offers3):
-    accepted_offer = Offer('id', pendulum.now(), 1, 0.6, offer1.seller, 'market')
-    residual_offer = Offer('new_id', pendulum.now(), 1, 1.2, offer1.seller, 'market')
-    offers3.on_offer_split(offer1, accepted_offer, residual_offer, 'market')
-    trade = Trade('trade_id', pendulum.now(tz=TIME_ZONE), accepted_offer, offer1.seller, 'buyer')
-    offers3.on_trade('market', trade)
-    assert len(offers3.sold_in_market('market')) == 1
-    assert accepted_offer in offers3.sold_in_market('market')
+    accepted_offer = Offer("id", pendulum.now(), 1, 0.6, offer1.seller, "market")
+    residual_offer = Offer("new_id", pendulum.now(), 1, 1.2, offer1.seller, "market")
+    offers3.on_offer_split(offer1, accepted_offer, residual_offer, "market")
+    trade = Trade("trade_id", pendulum.now(tz=TIME_ZONE), accepted_offer, offer1.seller, "buyer")
+    offers3.on_trade("market", trade)
+    assert len(offers3.sold_in_market("market")) == 1
+    assert accepted_offer in offers3.sold_in_market("market")
 
 
-@pytest.fixture
-def offer_to_accept():
-    return Offer('new', pendulum.now(), 1.0, 0.5, 'someone')
+@pytest.fixture(name="offer_to_accept")
+def offer_to_accept_fixture():
+    return Offer("new", pendulum.now(), 1.0, 0.5, "someone")
 
 
-@pytest.fixture
-def base():
+@pytest.fixture(name="base")
+def base_strategy_fixture():
     base = BidEnabledStrategy()
     base.owner = FakeOwner()
     base.area = FakeArea()
@@ -246,7 +247,7 @@ def test_accept_post_bid(base):
     assert base.get_posted_bids(market)[0] == bid
     assert bid.energy == 5
     assert bid.price == 10
-    assert bid.buyer == 'FakeOwner'
+    assert bid.buyer == "FakeOwner"
 
 
 @patch("gsy_framework.constants_limits.ConstSettings.MASettings.MARKET_TYPE",
@@ -277,7 +278,7 @@ def test_add_bid_to_bought(base):
 
 def test_bid_events_fail_for_one_sided_market(base):
     ConstSettings.MASettings.MARKET_TYPE = 1
-    test_bid = Bid("123", pendulum.now(), 12, 23, 'A', 'B')
+    test_bid = Bid("123", pendulum.now(), 12, 23, "A", "B")
     with pytest.raises(AssertionError):
         base.event_bid_traded(market_id=123, bid_trade=test_bid)
     with pytest.raises(AssertionError):
@@ -289,7 +290,7 @@ def test_bid_events_fail_for_one_sided_market(base):
 
 def test_bid_deleted_removes_bid_from_posted(base):
     ConstSettings.MASettings.MARKET_TYPE = 2
-    test_bid = Bid("123", pendulum.now(), 12, 23, base.owner.name, 'B')
+    test_bid = Bid("123", pendulum.now(), 12, 23, base.owner.name, "B")
     market = FakeMarket(raises=False, id=21)
     base.area._market = market
     base._bids[market.id] = [test_bid]
@@ -299,9 +300,9 @@ def test_bid_deleted_removes_bid_from_posted(base):
 
 def test_bid_split_adds_bid_to_posted(base):
     ConstSettings.MASettings.MARKET_TYPE = 2
-    test_bid = Bid("123", pendulum.now(), 12, 12, base.owner.name, 'B')
-    accepted_bid = Bid("123", pendulum.now(), 8, 8, base.owner.name, 'B')
-    residual_bid = Bid("456", pendulum.now(), 4, 4, base.owner.name, 'B')
+    test_bid = Bid("123", pendulum.now(), 12, 12, base.owner.name, "B")
+    accepted_bid = Bid("123", pendulum.now(), 8, 8, base.owner.name, "B")
+    residual_bid = Bid("456", pendulum.now(), 4, 4, base.owner.name, "B")
     market = FakeMarket(raises=False, id=21)
     base.area._market = market
     base._bids[market.id] = []
@@ -312,7 +313,7 @@ def test_bid_split_adds_bid_to_posted(base):
 
 def test_bid_traded_moves_bid_from_posted_to_traded(base):
     ConstSettings.MASettings.MARKET_TYPE = 2
-    test_bid = Bid("123", pendulum.now(), 12, 23, base.owner.name, 'B')
+    test_bid = Bid("123", pendulum.now(), 12, 23, base.owner.name, "B")
     trade = MagicMock()
     trade.buyer = base.owner.name
     trade.offer_bid = test_bid
@@ -324,24 +325,39 @@ def test_bid_traded_moves_bid_from_posted_to_traded(base):
     assert base._get_traded_bids_from_market(market.id) == [test_bid]
 
 
-@pytest.mark.parametrize('market_class', [OneSidedMarket, TwoSidedMarket])
+@pytest.mark.parametrize("market_class", [OneSidedMarket, TwoSidedMarket])
 def test_can_offer_be_posted(market_class):
     base = BaseStrategy()
     base.owner = FakeOwner()
     base.area = FakeArea()
 
-    market = market_class(time_slot=pendulum.now())
+    time_slot = pendulum.now(tz=TIME_ZONE)
+    market = market_class(time_slot=time_slot)
 
-    base.offers.post(Offer('id', pendulum.now(), price=1, energy=12, seller='A'), market.id)
-    base.offers.post(Offer('id2', pendulum.now(), price=1, energy=13, seller='A'), market.id)
-    base.offers.post(Offer('id3', pendulum.now(), price=1, energy=20, seller='A'), market.id)
+    base.offers.post(Offer("id", time_slot.add(seconds=1), price=1, energy=12, seller="A",
+                           time_slot=time_slot), market.id)
+    base.offers.post(Offer("id2", time_slot.add(seconds=2), price=1, energy=13, seller="A",
+                           time_slot=time_slot), market.id)
+    base.offers.post(Offer("id3", time_slot.add(seconds=3), price=1, energy=20, seller="A",
+                           time_slot=time_slot), market.id)
 
-    assert base.can_offer_be_posted(4.999, 1, 50, market) is True
-    assert base.can_offer_be_posted(5.0, 1, 50, market) is True
-    assert base.can_offer_be_posted(5.001, 1, 50, market) is False
+    assert base.can_offer_be_posted(4.999, 1, 50, market, time_slot=None) is True
+    assert base.can_offer_be_posted(5.0, 1, 50,  market, time_slot=None) is True
+    assert base.can_offer_be_posted(5.001, 1, 50,  market, time_slot=None) is False
+
+    assert base.can_offer_be_posted(4.999, 1, 50, market, time_slot=time_slot) is True
+    assert base.can_offer_be_posted(5.0, 1, 50,  market, time_slot=time_slot) is True
+    assert base.can_offer_be_posted(5.001, 1, 50,  market, time_slot=time_slot) is False
+
+    assert base.can_offer_be_posted(
+        5.001, 1, 50, market, time_slot=time_slot, replace_existing=True) is True
+    assert base.can_offer_be_posted(
+        50, 1, 50, market, time_slot=time_slot, replace_existing=True) is True
+    assert base.can_offer_be_posted(
+        50.001, 1, 50, market, time_slot=time_slot, replace_existing=True) is False
 
 
-@pytest.mark.parametrize('market_class', [TwoSidedMarket])
+@pytest.mark.parametrize("market_class", [TwoSidedMarket])
 @patch("gsy_framework.constants_limits.ConstSettings.MASettings.MARKET_TYPE",
        SpotMarketTypeEnum.TWO_SIDED.value)
 def test_can_bid_be_posted(market_class, base):
@@ -351,12 +367,16 @@ def test_can_bid_be_posted(market_class, base):
     base.post_bid(market, price=1, energy=27, replace_existing=False)
     base.post_bid(market, price=1, energy=10, replace_existing=False)
 
-    assert base.can_bid_be_posted(9.999, 1, 70, market) is True
-    assert base.can_bid_be_posted(10.0, 1, 70, market) is True
-    assert base.can_bid_be_posted(10.001, 1, 70, market) is False
+    assert base.can_bid_be_posted(9.999, 1, 70, market, replace_existing=False) is True
+    assert base.can_bid_be_posted(10.0, 1, 70, market, replace_existing=False) is True
+    assert base.can_bid_be_posted(10.001, 1, 70, market, replace_existing=False) is False
+
+    assert base.can_bid_be_posted(10.001, 1, 70, market, replace_existing=True) is True
+    assert base.can_bid_be_posted(70, 1, 70, market, replace_existing=True) is True
+    assert base.can_bid_be_posted(70.001, 1, 70, market, replace_existing=True) is False
 
 
-@pytest.mark.parametrize('market_class', [TwoSidedMarket])
+@pytest.mark.parametrize("market_class", [TwoSidedMarket])
 @patch("gsy_framework.constants_limits.ConstSettings.MASettings.MARKET_TYPE",
        SpotMarketTypeEnum.TWO_SIDED.value)
 def test_post_bid_with_replace_existing(market_class, base):
@@ -373,7 +393,7 @@ def test_post_bid_with_replace_existing(market_class, base):
     assert base.get_posted_bids(market) == [bid_3, bid_4]
 
 
-@pytest.mark.parametrize('market_class', [TwoSidedMarket])
+@pytest.mark.parametrize("market_class", [TwoSidedMarket])
 @patch("gsy_framework.constants_limits.ConstSettings.MASettings.MARKET_TYPE",
        SpotMarketTypeEnum.TWO_SIDED.value)
 def test_post_bid_without_replace_existing(market_class, base):
@@ -390,7 +410,7 @@ def test_post_bid_without_replace_existing(market_class, base):
     assert base.get_posted_bids(market) == [bid_1, bid_2, bid_3]
 
 
-@pytest.mark.parametrize('market_class', [OneSidedMarket, TwoSidedMarket])
+@pytest.mark.parametrize("market_class", [OneSidedMarket, TwoSidedMarket])
 def test_post_offer_creates_offer_with_correct_parameters(market_class):
     """Calling post_offer with replace_existing=False does not trigger the removal of the existing
     offers.
@@ -403,18 +423,18 @@ def test_post_offer_creates_offer_with_correct_parameters(market_class):
     strategy.area._market = market
 
     offer_args = {
-        'price': 1, 'energy': 1, 'seller': 'seller-name', 'seller_origin': 'seller-origin-name'}
+        "price": 1, "energy": 1, "seller": "seller-name", "seller_origin": "seller-origin-name"}
 
     offer = strategy.post_offer(market, replace_existing=False, **offer_args)
 
     # The offer is created with the expected parameters
     assert offer.price == 1
     assert offer.energy == 1
-    assert offer.seller == 'seller-name'
-    assert offer.seller_origin == 'seller-origin-name'
+    assert offer.seller == "seller-name"
+    assert offer.seller_origin == "seller-origin-name"
 
 
-@pytest.mark.parametrize('market_class', [OneSidedMarket, TwoSidedMarket])
+@pytest.mark.parametrize("market_class", [OneSidedMarket, TwoSidedMarket])
 def test_post_offer_with_replace_existing(market_class):
     """Calling post_offer with replace_existing triggers the removal of the existing offers."""
 
@@ -427,19 +447,19 @@ def test_post_offer_with_replace_existing(market_class):
 
     # Post a first offer on the market
     offer_1_args = {
-        'price': 1, 'energy': 1, 'seller': 'seller-name', 'seller_origin': 'seller-origin-name'}
+        "price": 1, "energy": 1, "seller": "seller-name", "seller_origin": "seller-origin-name"}
     offer = strategy.post_offer(market, replace_existing=False, **offer_1_args)
     assert strategy.offers.open_in_market(market.id) == [offer]
 
     # Post a new offer not replacing the previous ones
     offer_2_args = {
-        'price': 1, 'energy': 1, 'seller': 'seller-name', 'seller_origin': 'seller-origin-name'}
+        "price": 1, "energy": 1, "seller": "seller-name", "seller_origin": "seller-origin-name"}
     offer_2 = strategy.post_offer(market, replace_existing=False, **offer_2_args)
     assert strategy.offers.open_in_market(market.id) == [offer, offer_2]
 
     # Post a new offer replacing the previous ones (default behavior)
     offer_3_args = {
-        'price': 1, 'energy': 1, 'seller': 'seller-name', 'seller_origin': 'seller-origin-name'}
+        "price": 1, "energy": 1, "seller": "seller-name", "seller_origin": "seller-origin-name"}
     offer_3 = strategy.post_offer(market, **offer_3_args)
     assert strategy.offers.open_in_market(market.id) == [offer_3]
 
@@ -448,9 +468,9 @@ def test_energy_traded_and_cost_traded(base):
     ConstSettings.MASettings.MARKET_TYPE = 2
     market = FakeMarket(raises=True)
     base.area._market = market
-    o1 = Offer('id', pendulum.now(), price=1, energy=23, seller='A')
-    o2 = Offer('id2', pendulum.now(), price=1, energy=27, seller='A')
-    o3 = Offer('id3', pendulum.now(), price=1, energy=10, seller='A')
+    o1 = Offer("id", pendulum.now(), price=1, energy=23, seller="A")
+    o2 = Offer("id2", pendulum.now(), price=1, energy=27, seller="A")
+    o3 = Offer("id3", pendulum.now(), price=1, energy=10, seller="A")
     base.offers.sold_offer(o1, market.id)
     base.offers.sold_offer(o2, market.id)
     base.offers.sold_offer(o3, market.id)

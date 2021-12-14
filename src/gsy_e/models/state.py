@@ -19,14 +19,14 @@ from abc import ABC, abstractmethod
 from collections import namedtuple
 from enum import Enum
 from math import isclose, copysign
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.utils import (
     convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict, convert_kW_to_kWh)
+from gsy_framework.utils import limit_float_precision
 from pendulum import DateTime
 
-from gsy_framework.utils import limit_float_precision
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.util import is_time_slot_in_past_markets, write_default_to_dict
 
@@ -76,6 +76,7 @@ class ProsumptionInterface(StateInterface, ABC):
         self._unsettled_deviation_kWh: Dict[DateTime, float] = {}
         self._forecast_measurement_deviation_kWh: Dict[DateTime, float] = {}
 
+    # pylint: disable=unused-argument, no-self-use
     def _calculate_unsettled_energy_kWh(
             self, measured_energy_kWh: float, time_slot: DateTime) -> float:
         """
@@ -102,8 +103,8 @@ class ProsumptionInterface(StateInterface, ABC):
         self._energy_measurement_kWh[time_slot] = energy_kWh
         self._forecast_measurement_deviation_kWh[time_slot] = self._calculate_unsettled_energy_kWh(
             energy_kWh, time_slot)
-        self._unsettled_deviation_kWh[time_slot] = \
-            abs(self._forecast_measurement_deviation_kWh[time_slot])
+        self._unsettled_deviation_kWh[time_slot] = (
+            abs(self._forecast_measurement_deviation_kWh[time_slot]))
 
     def get_energy_measurement_kWh(self, time_slot: DateTime) -> float:
         """
@@ -180,6 +181,7 @@ class ProsumptionInterface(StateInterface, ABC):
         forecast_measurement_deviation = self._forecast_measurement_deviation_kWh.get(time_slot)
         if unsettled_deviation and forecast_measurement_deviation:
             return copysign(unsettled_deviation, forecast_measurement_deviation)
+        return None
 
     def decrement_unsettled_deviation(
             self, purchased_energy_kWh: float, time_slot: DateTime) -> None:
@@ -204,10 +206,10 @@ class ConsumptionState(ProsumptionInterface):
     def __init__(self):
         super().__init__()
         # Energy that the load wants to consume (given by the profile or live energy requirements)
-        self._desired_energy_Wh = {}
+        self._desired_energy_Wh: Dict = {}
         # Energy that the load needs to consume. It's reduced when new energy is bought
-        self._energy_requirement_Wh = {}
-        self._total_energy_demanded_Wh = 0
+        self._energy_requirement_Wh: Dict = {}
+        self._total_energy_demanded_Wh: int = 0
 
     def get_state(self) -> Dict:
         """Return the current state of the device. Extends super implementation."""
@@ -229,19 +231,23 @@ class ConsumptionState(ProsumptionInterface):
             state_dict["desired_energy_Wh"]))
         self._total_energy_demanded_Wh = state_dict["total_energy_demanded_Wh"]
 
-    def get_energy_requirement_Wh(self, time_slot, default_value=0.0):
+    def get_energy_requirement_Wh(self, time_slot: DateTime, default_value: float = 0.0) -> float:
+        """Return the energy requirement in a specific time_slot."""
         return self._energy_requirement_Wh.get(time_slot, default_value)
 
-    def set_desired_energy(self, energy, time_slot, overwrite=False):
+    def set_desired_energy(self, energy: float, time_slot: DateTime, overwrite=False) -> None:
+        """Set the energy_requirement_Wh and desired_energy_Wh in a specific time_slot."""
         if overwrite is False and time_slot in self._energy_requirement_Wh:
             return
         self._energy_requirement_Wh[time_slot] = energy
         self._desired_energy_Wh[time_slot] = energy
 
-    def update_total_demanded_energy(self, time_slot):
+    def update_total_demanded_energy(self, time_slot: DateTime) -> None:
+        """Accumulate the _total_energy_demanded_Wh based on the desired energy per time_slot."""
         self._total_energy_demanded_Wh += self._desired_energy_Wh.get(time_slot, 0.)
 
-    def can_buy_more_energy(self, time_slot):
+    def can_buy_more_energy(self, time_slot: DateTime) -> bool:
+        """Check whether the consumer can but more energy in the passed time_slot."""
         if time_slot not in self._energy_requirement_Wh:
             return False
 
@@ -265,7 +271,7 @@ class ConsumptionState(ProsumptionInterface):
     def delete_past_state_values(self, current_time_slot: DateTime):
         """Delete data regarding energy consumption for past market slots."""
         to_delete = []
-        for market_slot in self._energy_requirement_Wh.keys():
+        for market_slot in self._energy_requirement_Wh:
             if is_time_slot_in_past_markets(market_slot, current_time_slot):
                 to_delete.append(market_slot)
 
@@ -301,6 +307,7 @@ class ProductionState(ProsumptionInterface):
         return state
 
     def restore_state(self, state_dict: Dict):
+        """Update the state of the device using the provided dictionary."""
         super().restore_state(state_dict)
 
         self._available_energy_kWh.update(
@@ -308,7 +315,12 @@ class ProductionState(ProsumptionInterface):
         self._energy_production_forecast_kWh.update(
             convert_str_to_pendulum_in_dict(state_dict["energy_production_forecast_kWh"]))
 
-    def set_available_energy(self, energy_kWh, time_slot, overwrite=False):
+    def set_available_energy(self, energy_kWh: float, time_slot: DateTime,
+                             overwrite: bool = False) -> None:
+        """Set the available energy in the passed time_slot.
+
+        If overwrite is True, set the available energy even if the time_slot is already tracked.
+        """
         if overwrite is False and time_slot in self._energy_production_forecast_kWh:
             return
         self._energy_production_forecast_kWh[time_slot] = energy_kWh
@@ -316,13 +328,16 @@ class ProductionState(ProsumptionInterface):
 
         assert self._energy_production_forecast_kWh[time_slot] >= 0.0
 
-    def get_available_energy_kWh(self, time_slot, default_value=0.0):
+    def get_available_energy_kWh(self, time_slot: DateTime, default_value: float = 0.0) -> float:
+        """Return the available energy in a specific time_slot."""
         available_energy = self._available_energy_kWh.get(time_slot, default_value)
 
         assert available_energy >= -FLOATING_POINT_TOLERANCE
         return available_energy
 
-    def decrement_available_energy(self, sold_energy_kWh, time_slot, area_name):
+    def decrement_available_energy(self, sold_energy_kWh: float, time_slot: DateTime,
+                                   area_name: str) -> None:
+        """Decrement the available energy after a successful trade."""
         self._available_energy_kWh[time_slot] -= sold_energy_kWh
         assert self._available_energy_kWh[time_slot] >= -FLOATING_POINT_TOLERANCE, (
             f"Available energy for device {area_name} fell below zero "
@@ -331,7 +346,7 @@ class ProductionState(ProsumptionInterface):
     def delete_past_state_values(self, current_time_slot: DateTime):
         """Delete data regarding energy production for past market slots."""
         to_delete = []
-        for market_slot in self._available_energy_kWh.keys():
+        for market_slot in self._available_energy_kWh:
             if is_time_slot_in_past_markets(market_slot, current_time_slot):
                 to_delete.append(market_slot)
 
@@ -368,14 +383,15 @@ class PVState(ProductionState):
 
 
 class LoadState(ConsumptionState):
-    def __init__(self):
-        super().__init__()
+    """State for the load asset."""
 
     @property
-    def total_energy_demanded_Wh(self):
+    def total_energy_demanded_Wh(self) -> float:
+        """Return the total energy demanded in Wh."""
         return self._total_energy_demanded_Wh
 
-    def get_desired_energy(self, time_slot):
+    def get_desired_energy(self, time_slot: DateTime) -> float:
+        """Return the desired energy (based on profile data)."""
         return self._desired_energy_Wh[time_slot]
 
     def _calculate_unsettled_energy_kWh(
@@ -395,9 +411,6 @@ class LoadState(ConsumptionState):
 
 class SmartMeterState(ConsumptionState, ProductionState):
     """State for the Smart Meter device."""
-
-    def __init__(self):
-        super().__init__()
 
     @property
     def market_slots(self):
@@ -434,6 +447,7 @@ class SmartMeterState(ConsumptionState, ProductionState):
 
 
 class ESSEnergyOrigin(Enum):
+    """Enum for the storage's possible sources of energy."""
     LOCAL = 1
     EXTERNAL = 2
     UNKNOWN = 3
@@ -442,7 +456,10 @@ class ESSEnergyOrigin(Enum):
 EnergyOrigin = namedtuple("EnergyOrigin", ("origin", "value"))
 
 
+# pylint: disable= too-many-instance-attributes, too-many-arguments
 class StorageState(StateInterface):
+    """State for the storage asset."""
+
     def __init__(self,
                  initial_soc=StorageSettings.MIN_ALLOWED_SOC,
                  initial_energy_origin=ESSEnergyOrigin.EXTERNAL,
@@ -528,41 +545,47 @@ class StorageState(StateInterface):
         """
         return self._used_storage
 
-    def update_used_storage_share(self, energy, source=ESSEnergyOrigin.UNKNOWN):
+    def update_used_storage_share(self, energy: float, source=ESSEnergyOrigin.UNKNOWN) -> None:
+        """Add an EnergyOrigin instance to the _used_storage_share list."""
         self._used_storage_share.append(EnergyOrigin(source, energy))
 
     @property
-    def get_used_storage_share(self):
+    def get_used_storage_share(self) -> List:
+        """Return the _used_storage_share list."""
         return self._used_storage_share
 
     def free_storage(self, time_slot):
         """
         Storage, that has not been promised or occupied
         """
-        in_use = self._used_storage \
-            - self.pledged_sell_kWh[time_slot] \
-            + self.pledged_buy_kWh[time_slot]
+        in_use = (self._used_storage
+                  - self.pledged_sell_kWh[time_slot]
+                  + self.pledged_buy_kWh[time_slot])
         return self.capacity - in_use
 
-    def max_offer_energy_kWh(self, time_slot):
-        return self._battery_energy_per_slot - self.pledged_sell_kWh[time_slot] \
-               - self.offered_sell_kWh[time_slot]
+    def max_offer_energy_kWh(self, time_slot: DateTime) -> float:
+        """Return the max tracked offered energy."""
+        return (self._battery_energy_per_slot - self.pledged_sell_kWh[time_slot]
+                - self.offered_sell_kWh[time_slot])
 
-    def max_buy_energy_kWh(self, time_slot):
-        return self._battery_energy_per_slot - self.pledged_buy_kWh[time_slot] \
-               - self.offered_buy_kWh[time_slot]
+    def max_buy_energy_kWh(self, time_slot: DateTime) -> float:
+        """Return the min tracked bid energy."""
+        return (self._battery_energy_per_slot - self.pledged_buy_kWh[time_slot]
+                - self.offered_buy_kWh[time_slot])
 
-    def set_battery_energy_per_slot(self, slot_length):
+    def set_battery_energy_per_slot(self, slot_length: int) -> None:
+        """Set the battery energy in kWh per current time_slot."""
         self._battery_energy_per_slot = convert_kW_to_kWh(self.max_abs_battery_power_kW,
                                                           slot_length)
 
-    def has_battery_reached_max_power(self, energy, time_slot):
+    def has_battery_reached_max_power(self, energy: float, time_slot: DateTime) -> bool:
+        """Check whether the storage can withhold the passed energy value."""
         return limit_float_precision(abs(energy
                                      + self.pledged_sell_kWh[time_slot]
                                      + self.offered_sell_kWh[time_slot]
                                      - self.pledged_buy_kWh[time_slot]
-                                     - self.offered_buy_kWh[time_slot])) > \
-               self._battery_energy_per_slot
+                                     - self.offered_buy_kWh[time_slot])
+                                     ) > self._battery_energy_per_slot
 
     def clamp_energy_to_sell_kWh(self, market_slot_time_list):
         """
@@ -574,10 +597,10 @@ class StorageState(StateInterface):
             accumulated_pledged += self.pledged_sell_kWh[time_slot]
             accumulated_offered += self.offered_sell_kWh[time_slot]
 
-        energy = self.used_storage \
-            - accumulated_pledged \
-            - accumulated_offered \
-            - self.min_allowed_soc_ratio * self.capacity
+        energy = (self.used_storage
+                  - accumulated_pledged
+                  - accumulated_offered
+                  - self.min_allowed_soc_ratio * self.capacity)
         storage_dict = {}
         for time_slot in market_slot_time_list:
             storage_dict[time_slot] = limit_float_precision(min(
@@ -627,7 +650,8 @@ class StorageState(StateInterface):
         assert 0 <= limit_float_precision(self.pledged_buy_kWh[time_slot]) <= max_value
         assert 0 <= limit_float_precision(self.offered_buy_kWh[time_slot]) <= max_value
 
-    def lose(self, loss_function, loss_per_hour):
+    def lose(self, loss_function: int, loss_per_hour: float) -> None:
+        """Batteries normally lose some energy by time, this method represents this behavior."""
         if loss_function == 1:
             if self._used_storage * (1.0 - loss_per_hour) >= 0:
                 self._used_storage *= 1.0 - loss_per_hour
@@ -639,16 +663,19 @@ class StorageState(StateInterface):
             else:
                 self._used_storage = 0
 
-    def tick(self, area, time_slot):
+    def tick(self, area, time_slot: DateTime) -> None:
+        """Handler for the tick event."""
         self.check_state(time_slot)
         self.lose(self.loss_function,
                   self.loss_per_hour * area.config.tick_length.in_seconds() / 3600)
 
-    def calculate_soc_for_time_slot(self, time_slot):
+    def calculate_soc_for_time_slot(self, time_slot: DateTime) -> None:
+        """Update the soc history for the passed time_slot."""
         self.charge_history[time_slot] = 100.0 * self.used_storage / self.capacity
         self.charge_history_kWh[time_slot] = self.used_storage
 
-    def add_default_values_to_state_profiles(self, future_time_slots):
+    def add_default_values_to_state_profiles(self, future_time_slots: List):
+        """Add default values to the state profiles if time_slot key doesn't exist."""
         for time_slot in future_time_slots:
             write_default_to_dict(self.pledged_sell_kWh, time_slot, 0)
             write_default_to_dict(self.pledged_buy_kWh, time_slot, 0)
@@ -668,11 +695,17 @@ class StorageState(StateInterface):
                                    ESSEnergyOrigin.LOCAL: 0.,
                                    ESSEnergyOrigin.EXTERNAL: 0.})
 
-    def market_cycle(self, past_time_slot, current_time_slot: DateTime, all_future_time_slots):
+    def market_cycle(self, past_time_slot, current_time_slot: DateTime,
+                     all_future_time_slots: List[DateTime]):
         """
         Simulate actual Energy flow by removing pledged storage and adding bought energy to the
         used_storage
         """
+        if GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
+            # In case the future market is enabled, the future orders have to be deleted once
+            # the market becomes a spot market
+            self.offered_buy_kWh[current_time_slot] = 0
+            self.offered_sell_kWh[current_time_slot] = 0
         self.add_default_values_to_state_profiles(all_future_time_slots)
 
         if past_time_slot:
@@ -688,7 +721,7 @@ class StorageState(StateInterface):
 
     def delete_past_state_values(self, current_time_slot: DateTime):
         to_delete = []
-        for market_slot in self.pledged_sell_kWh.keys():
+        for market_slot in self.pledged_sell_kWh:
             if is_time_slot_in_past_markets(market_slot, current_time_slot):
                 to_delete.append(market_slot)
         for market_slot in to_delete:

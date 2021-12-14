@@ -19,15 +19,17 @@ import json
 import uuid
 from collections import deque
 from typing import Dict
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
-from gsy_e.models.area import Area
-from gsy_e.models.strategy.external_strategies import IncomingRequest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from pendulum import duration
 
+from gsy_e.models.area import Area
+from gsy_e.models.strategy.external_strategies import IncomingRequest
+
 
 def create_areas_markets_for_strategy_fixture(strategy):
+    """Return externally connected Strategy with connected and activated area and parent area."""
     config = Mock()
     config.slot_length = duration(minutes=15)
     config.tick_length = duration(seconds=15)
@@ -40,14 +42,13 @@ def create_areas_markets_for_strategy_fixture(strategy):
     parent = Area(name="parent_area", children=[area], config=config)
     parent.activate()
     strategy.connected = True
-    market = MagicMock()
-    market.time_slot = GlobalConfig.start_date
     return strategy
 
 
 def check_external_command_endpoint_with_correct_payload_succeeds(ext_strategy_fixture,
                                                                   command: str,
                                                                   arguments: Dict):
+    """Check if external command endpoint with correct payload succeeds."""
     transaction_id = str(uuid.uuid4())
     arguments.update({"transaction_id": transaction_id})
     payload = {"data": json.dumps(arguments)}
@@ -60,6 +61,7 @@ def check_external_command_endpoint_with_correct_payload_succeeds(ext_strategy_f
 
 
 def assert_bid_offer_aggregator_commands_return_value(return_value, is_offer):
+    """Check return value of bid_aggregator and offer_aggregator commands. """
     command_name = "offer" if is_offer else "bid"
     assert return_value["status"] == "ready"
     assert return_value["command"] == command_name
