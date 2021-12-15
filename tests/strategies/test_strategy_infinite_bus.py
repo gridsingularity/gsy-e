@@ -23,13 +23,13 @@ from uuid import uuid4
 import pendulum
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid
 
 from gsy_e import constants
 from gsy_e.constants import TIME_ZONE
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.util import d3a_path
 from gsy_e.models.area import DEFAULT_CONFIG
-from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
@@ -46,11 +46,12 @@ def auto_fixture():
     DeviceRegistry.REGISTRY = {}
 
 
+# pylint: disable=too-many-instance-attributes
 class FakeArea:
-    def __init__(self, count):
+    def __init__(self):
         self.current_tick = 2
         self.appliance = None
-        self.name = 'FakeArea'
+        self.name = "FakeArea"
         self.uuid = str(uuid4())
         self.test_market = FakeMarket(0)
         self.test_balancing_market = FakeMarket(1)
@@ -95,8 +96,8 @@ class FakeMarket:
         self.count = count
         self.created_offers = []
         self.created_balancing_offers = []
-        self.sorted_offers = [Offer('id', pendulum.now(), 25., 1., 'other'),
-                              Offer('id', pendulum.now(), 26., 1., 'other')]
+        self.sorted_offers = [Offer("id", pendulum.now(), 25., 1., "other"),
+                              Offer("id", pendulum.now(), 26., 1., "other")]
         self.traded_offers = []
         self._bids = {TIME: []}
 
@@ -115,16 +116,16 @@ class FakeMarket:
         return offer
 
     def balancing_offer(self, price, energy, seller):
-        offer = BalancingOffer('id', pendulum.now(), price, energy, seller)
+        offer = BalancingOffer("id", pendulum.now(), price, energy, seller)
         self.created_balancing_offers.append(offer)
-        offer.id = 'id'
+        offer.id = "id"
         return offer
 
     def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
                      trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
                      buyer_origin_id=None, buyer_id=None):
         offer = offer_or_id
-        trade = Trade('trade_id', time, offer, offer.seller, buyer,
+        trade = Trade("trade_id", time, offer, offer.seller, buyer,
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
                       buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
         self.traded_offers.append(trade)
@@ -139,13 +140,9 @@ class FakeMarket:
         return bid
 
 
-"""COPY of CEP tests below"""
-"""TEST1"""
-
-
 @pytest.fixture()
 def area_test1():
-    return FakeArea(0)
+    return FakeArea()
 
 
 @pytest.fixture()
@@ -187,7 +184,7 @@ def test_balancing_offers_are_not_sent_to_all_markets_if_device_not_in_registry(
 def test_balancing_offers_are_sent_to_all_markets_if_device_in_registry(bus_test1, area_test1):
 
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
-    DeviceRegistry.REGISTRY = {'FakeArea': (30, 40)}
+    DeviceRegistry.REGISTRY = {"FakeArea": (30, 40)}
     bus_test1.event_activate()
     bus_test1.event_market_cycle()
     assert len(area_test1.test_balancing_market.created_balancing_offers) == 1
@@ -223,12 +220,9 @@ def test_event_market_cycle_creates_balancing_offer_on_last_market_if_in_registr
         sys.maxsize * 50
 
 
-"""TEST2"""
-
-
 @pytest.fixture()
 def area_test2():
-    return FakeArea(0)
+    return FakeArea()
 
 
 @pytest.fixture()
@@ -259,11 +253,11 @@ def test_event_trade(area_test2, bus_test2):
 def test_on_offer_changed(area_test2, bus_test2):
     bus_test2.event_activate()
     original_offer = Offer(
-        id='id', creation_time=pendulum.now(), price=20, energy=1, seller='FakeArea')
+        id="id", creation_time=pendulum.now(), price=20, energy=1, seller="FakeArea")
     accepted_offer = Offer(
-        id='new', creation_time=pendulum.now(), price=15, energy=0.75, seller='FakeArea')
-    residual_offer = Offer(id='new_id', creation_time=pendulum.now(), price=5,
-                           energy=0.25, seller='FakeArea')
+        id="new", creation_time=pendulum.now(), price=15, energy=0.75, seller="FakeArea")
+    residual_offer = Offer(id="new_id", creation_time=pendulum.now(), price=5,
+                           energy=0.25, seller="FakeArea")
     bus_test2.event_offer_split(market_id=area_test2.test_market.id,
                                 original_offer=original_offer,
                                 accepted_offer=accepted_offer,
@@ -309,15 +303,9 @@ def test_validate_posted_offers_get_updated_on_offer_energy_method(area_test2, b
     assert list(bus_test2.offers.posted.values())[0] == area_test2.test_market.id
 
 
-"""COPY of CEP tests above"""
-
-
-"""TEST3"""
-
-
 @pytest.fixture()
 def area_test3():
-    return FakeArea(0)
+    return FakeArea()
 
 
 @pytest.fixture()
@@ -334,9 +322,6 @@ def testing_event_market_cycle_post_offers(bus_test3, area_test3):
     assert len(area_test3.test_market.created_offers) == 1
     assert area_test3.test_market.created_offers[-1].energy == sys.maxsize
     assert area_test3.test_market.created_offers[-1].price == float(30 * sys.maxsize)
-
-
-"""TEST4"""
 
 
 @pytest.fixture()
@@ -370,9 +355,6 @@ def test_global_market_maker_rate_single_value(bus_test4):
         for v in GlobalConfig.market_maker_rate.values())
 
 
-"""TEST5"""
-
-
 @pytest.fixture()
 def bus_test5(area_test1):
     c = InfiniteBusStrategy(
@@ -392,9 +374,6 @@ def test_global_market_maker_rate_profile_and_infinite_bus_selling_rate_profile(
     assert list(bus_test5.energy_rate.values())[-1] == 595.0
 
 
-"""TEST6"""
-
-
 @pytest.fixture()
 def bus_test6(area_test1):
     c = InfiniteBusStrategy(
@@ -410,3 +389,8 @@ def test_infinite_bus_buying_rate_set_as_profile(bus_test6):
     assert len(bus_test6.energy_buy_rate) == 96
     assert list(bus_test6.energy_buy_rate.values())[0] == 10
     assert list(bus_test6.energy_buy_rate.values())[15] == 15
+
+
+def test_feed_in_tariff_set_as_infinite_bus_buying_rate(bus_test6):
+    bus_test6.event_activate()
+    assert GlobalConfig.FEED_IN_TARIFF == bus_test6.energy_buy_rate
