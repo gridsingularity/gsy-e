@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from collections import UserDict
 from copy import deepcopy
 from logging import getLogger
-from typing import Dict, List, Optional, TYPE_CHECKING
+from typing import Dict, List, Optional, TYPE_CHECKING, Union
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
 from gsy_framework.data_classes import Bid, Offer
@@ -27,6 +27,7 @@ from gsy_framework.utils import is_time_slot_in_simulation_duration
 from pendulum import DateTime, duration
 
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
+from gsy_e.gsy_e_core.exceptions import OfferNotFoundException, BidNotFoundException
 from gsy_e.models.market import GridFee
 from gsy_e.models.market import lock_market_action
 from gsy_e.models.market.two_sided import TwoSidedMarket
@@ -230,3 +231,25 @@ class FutureMarkets(TwoSidedMarket):
                               dispatch_event, adapt_price_with_fees, add_to_history,
                               seller_origin_id, seller_id, attributes, requirements, time_slot)
         return offer
+
+    @lock_market_action
+    def delete_bid(self, bid_or_id: Union[str, Bid]) -> None:
+        """Delete a bid from the market and dispatch the listeners (MA)"""
+        try:
+            super().delete_bid(bid_or_id)
+        except BidNotFoundException:
+            # In the future agents/markets, the expiration of old orders is already handled
+            # So the delete_bid may raise an BidNotFoundException when trying to dispatch
+            # the deletion event of bid that was already deleted elsewhere too
+            pass
+
+    @lock_market_action
+    def delete_offer(self, offer_or_id: Union[str, Offer]) -> None:
+        """Delete an offer from the market and dispatch the listeners (MA)"""
+        try:
+            super().delete_offer(offer_or_id)
+        except OfferNotFoundException:
+            # In the future agents/markets, the expiration of old orders is already handled
+            # So the delete_offer may raise an OfferNotFoundException when trying to dispatch
+            # the deletion event of offer that was already deleted elsewhere too
+            pass
