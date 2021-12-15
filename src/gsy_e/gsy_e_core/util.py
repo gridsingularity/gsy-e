@@ -490,11 +490,9 @@ def get_feed_in_tariff_rate_from_config(next_market: "MarketBase", time_slot=Non
         return 0.
     if isinstance(GlobalConfig.FEED_IN_TARIFF, dict):
         if time_slot is None:
-            try:
-                time_slot = next_market.time_slot
-            except AttributeError:
-                logging.error("time_slot parameter is missing to get feed-in tariff")
-                return 0.
+            time_slot = next_market.time_slot
+            assert time_slot, "time_slot parameter is missing to get feed-in tariff"
+
         return find_object_of_same_weekday_and_time(GlobalConfig.FEED_IN_TARIFF,
                                                     time_slot) or 0.
     return GlobalConfig.FEED_IN_TARIFF
