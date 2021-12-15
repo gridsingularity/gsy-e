@@ -30,7 +30,9 @@ from gsy_e.models.strategy import BidEnabledStrategy, INF_ENERGY
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 
 
+# pylint: disable=missing-class-docstring, too-many-instance-attributes, too-many-arguments
 class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
+    """Implementation for infinite bus to participate in GSy Exchange."""
     parameters = ("energy_sell_rate", "energy_rate_profile", "energy_buy_rate",
                   "buying_rate_profile", "buying_rate_profile_uuid", "energy_rate_profile_uuid")
 
@@ -71,6 +73,9 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         elif self.energy_rate is not None:
             GlobalConfig.market_maker_rate = self.energy_rate
 
+    def _set_global_feed_in_tariff_rate(self):
+        GlobalConfig.FEED_IN_TARIFF = self.energy_buy_rate
+
     def _read_or_rotate_profiles(self, reconfigure=False):
         if (self.energy_buy_rate_input is None and
                 self.buying_rate_profile is None and
@@ -104,12 +109,12 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
                         profile_uuid=self.energy_rate_profile_uuid)))
 
         self._set_global_market_maker_rate()
+        self._set_global_feed_in_tariff_rate()
 
     def _populate_selling_rate(self):
         if self.energy_rate_profile is not None:
             self.energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                       self.energy_rate_profile)
-            # TODO: to be checked via deleting in case increased memory is observed during runtime
             del self.energy_rate_profile
         elif self.energy_rate is not None:
             self.energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
@@ -121,7 +126,6 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         if self.buying_rate_profile is not None:
             self.energy_buy_rate = read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, self.buying_rate_profile)
-            # TODO: to be checked via deleting in case increased memory is observed during runtime
             del self.buying_rate_profile
         elif self.energy_buy_rate is not None:
             self.energy_buy_rate = read_arbitrary_profile(
@@ -130,10 +134,12 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             self.energy_buy_rate = self.simulation_config.market_maker_rate
 
     def event_activate(self, **kwargs):
+        """Event activate."""
         self._populate_selling_rate()
         self._populate_buying_rate()
 
     def buy_energy(self, market):
+        """Buy energy."""
         for offer in market.sorted_offers:
             if offer.seller == self.owner.name:
                 # Don't buy our own offer
