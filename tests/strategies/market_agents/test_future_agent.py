@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from typing import Generator
-from unittest.mock import Mock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 from gsy_framework.constants_limits import GlobalConfig
@@ -48,12 +48,3 @@ class TestFutureAgent:
         """Test whether __init__ creates list of engines off type FutureEngine."""
         for engine in future_agent.engines:
             assert isinstance(engine, FutureEngine)
-
-    @staticmethod
-    def test_event_market_cycle_calls_engine_clean_up_buffers(future_agent: FutureAgent) -> None:
-        """Test whether event_market_cycle calls clean_up_buffers of all engines."""
-        for engine in future_agent.engines:
-            engine.clean_up_order_buffers = Mock()
-        future_agent.event_market_cycle()
-        for engine in future_agent.engines:
-            engine.clean_up_order_buffers.assert_called_once()
