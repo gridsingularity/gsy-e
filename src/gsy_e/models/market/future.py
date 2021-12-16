@@ -178,8 +178,10 @@ class FutureMarkets(TwoSidedMarket):
                               slot_length: duration,
                               config: "SimulationConfig") -> None:
         """Add sub dicts in order dictionaries for future market slots."""
+        if not GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
+            return
         future_time_slot = current_market_time_slot.add(minutes=slot_length.total_minutes())
-        most_future_slot = (future_time_slot +
+        most_future_slot = (current_market_time_slot +
                             duration(hours=GlobalConfig.FUTURE_MARKET_DURATION_HOURS))
         while future_time_slot <= most_future_slot:
             if (future_time_slot not in self.slot_bid_mapping and
