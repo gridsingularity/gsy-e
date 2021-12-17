@@ -207,7 +207,8 @@ class FutureMarkets(TwoSidedMarket):
                                         "method in future markets.")
         bid = super().bid(price=price, energy=energy, buyer=buyer, buyer_origin=buyer_origin,
                           bid_id=bid_id, original_price=original_price,
-                          add_to_history=True, adapt_price_with_fees=adapt_price_with_fees,
+                          add_to_history=add_to_history,
+                          adapt_price_with_fees=adapt_price_with_fees,
                           buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
                           attributes=attributes, requirements=requirements, time_slot=time_slot)
         return bid
