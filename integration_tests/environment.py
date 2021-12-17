@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,11 +20,11 @@ import os
 import shutil
 from time import sleep
 
-import d3a.constants
-from d3a import constants
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.d3a_core.util import update_advanced_settings, constsettings_to_dict
-from d3a_interface.constants_limits import GlobalConfig, ConstSettings
+import gsy_e.constants
+from gsy_e import constants
+from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.gsy_e_core.util import update_advanced_settings, constsettings_to_dict
+from gsy_framework.constants_limits import GlobalConfig, ConstSettings
 
 """
 before_step(context, step), after_step(context, step)
@@ -40,7 +40,7 @@ before_tag(context, tag), after_tag(context, tag)
 """
 
 
-if d3a.constants.CONNECT_TO_PROFILES_DB is True:
+if gsy_e.constants.CONNECT_TO_PROFILES_DB is True:
     # profiles_handler needs to be a singleton in the integration tests:
     from integration_tests.write_user_profiles import TestProfileDBConnectionHandler
     profiles_handler = TestProfileDBConnectionHandler()
@@ -51,7 +51,7 @@ def before_feature(context, feature):
     # TODO: Ignore the following if one has only selected an individual scenario with
     #  behave integration_tests -n ""
     if feature.name == "User Profiles Tests":
-        d3a.constants.CONNECT_TO_PROFILES_DB = True
+        gsy_e.constants.CONNECT_TO_PROFILES_DB = True
         os.environ["PROFILE_DB_USER"] = "d3a_profiles_user"
         os.environ["PROFILE_DB_PASSWORD"] = ""
         os.environ["PROFILE_DB_NAME"] = "d3a_profiles"
@@ -61,22 +61,22 @@ def before_feature(context, feature):
 
 def after_feature(context, feature):
     if feature.name == "User Profiles Tests":
-        d3a.constants.CONNECT_TO_PROFILES_DB = False
+        gsy_e.constants.CONNECT_TO_PROFILES_DB = False
         os.system("docker-compose -f integration_tests/compose/docker_compose_postgres.yml down")
         os.system("docker rmi compose_postgres:latest")
 
 
 def before_scenario(context, scenario):
-    context.simdir = "./d3a-simulation/integration_tests/"
+    context.simdir = "./gsy_e-simulation/integration_tests/"
     os.makedirs(context.simdir, exist_ok=True)
     context.resource_manager = contextlib.ExitStack()
-    ConstSettings.IAASettings.MIN_OFFER_AGE = 0
-    ConstSettings.IAASettings.MIN_BID_AGE = 0
+    ConstSettings.MASettings.MIN_OFFER_AGE = 0
+    ConstSettings.MASettings.MIN_BID_AGE = 0
     constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
     context.no_export = True
     context.raise_exception_when_running_sim = True
     if os.environ.get("DISPATCH_EVENTS_BOTTOM_TO_TOP") == "False":
-        d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = False
+        gsy_e.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = False
 
 
 def after_scenario(context, scenario):
@@ -91,6 +91,7 @@ def after_scenario(context, scenario):
 def before_all(context):
     context.default_const_settings = constsettings_to_dict()
     context.config.setup_logging()
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
     constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
     if os.environ.get("DISPATCH_EVENTS_BOTTOM_TO_TOP") == "False":
-        d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = False
+        gsy_e.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = False

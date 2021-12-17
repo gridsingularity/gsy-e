@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -15,12 +15,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from behave import then
 from math import isclose
-from d3a_interface.read_user_profile import _str_to_datetime
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a_interface.constants_limits import DATE_TIME_FORMAT
-from d3a_interface.utils import scenario_representation_traversal
+
+from behave import then
+from gsy_framework.constants_limits import DATE_TIME_FORMAT
+from gsy_framework.read_user_profile import _str_to_datetime
+from gsy_framework.utils import scenario_representation_traversal
+
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 
 
 @then('all load demands in setup was fulfilled on every market slot')
@@ -50,13 +52,13 @@ def device_partially_fulfill_bid(context, device):
         # Assert one trade for each PV
         assert len(house1_trades) == 5
         assert all(trade['buyer'] == device for trade in house1_trades)
-        assert all(trade['seller'] == "IAA House 1" for trade in house1_trades)
+        assert all(trade['seller'] == "MA House 1" for trade in house1_trades)
         assert len(grid_trades) == 5
-        assert all(trade['buyer'] == "IAA House 1" for trade in grid_trades)
-        assert all(trade['seller'] == "IAA House 2" for trade in grid_trades)
+        assert all(trade['buyer'] == "MA House 1" for trade in grid_trades)
+        assert all(trade['seller'] == "MA House 2" for trade in grid_trades)
 
         pv_names = ['H2 PV1', 'H2 PV2', 'H2 PV3', 'H2 PV4', 'H2 PV5']
-        assert all(trade['buyer'] == "IAA House 2" for trade in house2_trades)
+        assert all(trade['buyer'] == "MA House 2" for trade in house2_trades)
         assert all(trade['seller'] in pv_names for trade in house2_trades)
 
 

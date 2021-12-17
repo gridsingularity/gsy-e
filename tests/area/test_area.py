@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -15,32 +15,45 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import unittest
-from collections import OrderedDict
-from unittest.mock import MagicMock
+# pylint: disable=missing-function-docstring
+from unittest.mock import MagicMock, patch, Mock, call
 
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.data_classes import Offer
-from parameterized import parameterized
+import pytest
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.enums import SpotMarketTypeEnum, BidOfferMatchAlgoEnum
 from pendulum import duration, today
 
-from d3a import constants
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.events.event_structures import AreaEvent, MarketEvent
-from d3a.models.area import Area, check_area_name_exists_in_parent_area
-from d3a.models.area.event_dispatcher import AreaDispatcher
-from d3a.models.area.events import Events
-from d3a.models.area.markets import AreaMarkets
-from d3a.models.area.stats import AreaStats
-from d3a.models.config import SimulationConfig
-from d3a.models.market import Market
-from d3a.models.market.market_structures import AvailableMarketTypes
-from d3a.models.strategy.storage import StorageStrategy
+from gsy_e import constants
+from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.events.event_structures import AreaEvent, MarketEvent
+from gsy_e.models.area import Area, Asset, Market, check_area_name_exists_in_parent_area
+from gsy_e.models.area.events import Events
+from gsy_e.models.config import SimulationConfig
+from gsy_e.models.market.market_structures import AvailableMarketTypes
+from gsy_e.models.strategy.storage import StorageStrategy
 
 
-class TestAreaClass(unittest.TestCase):
+class TestArea:
+    """Test the Area class behavior and state controllers."""
 
-    def setUp(self):
+    @staticmethod
+    @pytest.fixture(name="config")
+    def config_fixture():
+        """Instantiate a mocked configuration."""
+        config = MagicMock(spec=SimulationConfig)
+        config.slot_length = duration(minutes=15)
+        config.tick_length = duration(seconds=15)
+        config.ticks_per_slot = int(config.slot_length.seconds / config.tick_length.seconds)
+        config.start_date = today(tz=constants.TIME_ZONE)
+        config.sim_duration = duration(days=1)
+        config.grid_fee_type = 1
+        config.end_date = config.start_date + config.sim_duration
+
+        return config
+
+    @staticmethod
+    def setup_method():
+        GlobalConfig.sim_duration = duration(days=1)
         ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
         DeviceRegistry.REGISTRY = {
             "H1 General Load": (33, 35),
@@ -49,142 +62,72 @@ class TestAreaClass(unittest.TestCase):
             "H1 Storage2": (23, 25),
         }
 
-        self.strategy = MagicMock(spec=StorageStrategy)
-        self.config = MagicMock(spec=SimulationConfig)
-        self.config.slot_length = duration(minutes=15)
-        self.config.tick_length = duration(seconds=15)
-        self.config.ticks_per_slot = int(self.config.slot_length.seconds /
-                                         self.config.tick_length.seconds)
-        self.config.start_date = today(tz=constants.TIME_ZONE)
-        GlobalConfig.sim_duration = duration(days=1)
-        self.config.sim_duration = duration(days=1)
-        self.config.grid_fee_type = 1
-        self.config.end_date = self.config.start_date + self.config.sim_duration
-        self.area = Area("test_area", None, None, self.strategy,
-                         self.config, None, grid_fee_percentage=1)
-        self.area_child = Area("test_area_c", None, None, self.strategy,
-                               self.config, None, grid_fee_percentage=1)
-        self.area_child.parent = self.area
-        self.area.children = [self.area_child]
-        self.area.grid_fee_percentage = 1
-        self.dispatcher = AreaDispatcher(self.area)
-        self.stats = AreaStats(self.area._markets, self.area)
-
-    def tearDown(self):
-        GlobalConfig.market_count = GlobalConfig.MARKET_COUNT
+    @staticmethod
+    def teardown_method():
+        ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
+        ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
+        ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS = False
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 
-    def test_respective_area_grid_fee_is_applied(self):
-        self.config.grid_fee_type = 2
-        self.area = Area(name="Street", children=[Area(name="House")],
-                         grid_fee_percentage=5, config=self.config)
-        self.area.parent = Area(name="GRID", config=self.config)
-        self.area.config.market_count = 1
-        self.area.activate()
-        assert self.area.next_market.fee_class.grid_fee_rate == 0.05
-        self.area.next_market.offer(1, 1, "test", "test")
-        assert list(self.area.next_market.offers.values())[0].price == 1.05
+    @staticmethod
+    def test_respective_area_grid_fee_is_applied(config):
+        config.grid_fee_type = 2
+        area = Area(name="Street", children=[Area(name="House")],
+                         grid_fee_percentage=5, config=config)
+        area.parent = Area(name="GRID", config=config)
+        area.activate()
+        assert area.spot_market.fee_class.grid_fee_rate == 0.05
+        area.spot_market.offer(1, 1, "test", "test")
+        assert list(area.spot_market.offers.values())[0].price == 1.05
 
-    def test_markets_are_cycled_according_to_market_count(self):
-        self.area._bc = None
-        for i in range(2, 97):
-            self.config.market_count = i
-            self.config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
-            self.area.cycle_markets(False, False)
-            assert len(self.area.all_markets) == i
-
-    def test_delete_past_markets_instead_of_last(self):
+    @staticmethod
+    def test_delete_past_markets_instead_of_last(config):
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
-        self.area = Area(name="Street", children=[Area(name="House")],
-                         config=self.config, grid_fee_percentage=5)
-        self.area.config.market_count = 1
-        self.area.activate()
-        self.area._bc = None
+        area = Area(name="Street", children=[Area(name="House")],
+                         config=config, grid_fee_percentage=5)
+        area.activate()
+        area._bc = None
 
-        self.area.cycle_markets(False, False, False)
-        assert len(self.area.past_markets) == 0
+        area.cycle_markets(False, False, False)
+        assert len(area.past_markets) == 0
 
-        current_time = today(tz=constants.TIME_ZONE).add(minutes=self.config.slot_length.minutes)
-        self.area._markets.rotate_markets(current_time)
-        assert len(self.area.past_markets) == 1
+        current_time = today(tz=constants.TIME_ZONE).add(minutes=config.slot_length.minutes)
+        area._markets.rotate_markets(current_time)
+        assert len(area.past_markets) == 1
 
-        self.area._markets.create_future_markets(
-            current_time, AvailableMarketTypes.SPOT, self.area)
-        current_time = today(tz=constants.TIME_ZONE).add(minutes=2*self.config.slot_length.minutes)
-        self.area._markets.rotate_markets(current_time)
-        assert len(self.area.past_markets) == 1
-        assert (list(self.area.past_markets)[-1].time_slot ==
-                today(tz=constants.TIME_ZONE).add(minutes=self.config.slot_length.minutes))
+        area._markets.create_new_spot_market(
+            current_time, AvailableMarketTypes.SPOT, area)
+        current_time = today(tz=constants.TIME_ZONE).add(minutes=2*config.slot_length.minutes)
+        area._markets.rotate_markets(current_time)
+        assert len(area.past_markets) == 1
+        assert (list(area.past_markets)[-1].time_slot ==
+                today(tz=constants.TIME_ZONE).add(minutes=config.slot_length.minutes))
 
-    def test_keep_past_markets(self):
+    @staticmethod
+    def test_keep_past_markets(config):
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
-        self.area = Area(name="Street", children=[Area(name="House")],
-                         config=self.config, grid_fee_percentage=5)
-        self.area.config.market_count = 1
-        self.area.activate()
-        self.area._bc = None
+        area = Area(name="Street", children=[Area(name="House")],
+                         config=config, grid_fee_percentage=5)
+        area.activate()
+        area._bc = None
 
-        self.area.cycle_markets(False, False, False)
-        assert len(self.area.past_markets) == 0
+        area.cycle_markets(False, False, False)
+        assert len(area.past_markets) == 0
 
         current_time = today(tz=constants.TIME_ZONE).add(
-            minutes=self.config.slot_length.total_minutes())
-        self.area._markets.rotate_markets(current_time)
-        assert len(self.area.past_markets) == 1
+            minutes=config.slot_length.total_minutes())
+        area._markets.rotate_markets(current_time)
+        assert len(area.past_markets) == 1
 
-        self.area._markets.create_future_markets(
-            current_time, AvailableMarketTypes.SPOT, self.area)
+        area._markets.create_new_spot_market(
+            current_time, AvailableMarketTypes.SPOT, area)
         current_time = today(tz=constants.TIME_ZONE).add(
-            minutes=2*self.config.slot_length.total_minutes())
-        self.area._markets.rotate_markets(current_time)
-        assert len(self.area.past_markets) == 2
+            minutes=2*config.slot_length.total_minutes())
+        area._markets.rotate_markets(current_time)
+        assert len(area.past_markets) == 2
 
-    def test_market_with_most_expensive_offer(self):
-        m1 = MagicMock(spec=Market)
-        m1.in_sim_duration = True
-        o1 = MagicMock(spec=Offer)
-        o1.price = 12
-        o1.energy = 1
-        o1.energy_rate = 12
-        m2 = MagicMock(spec=Market)
-        m2.in_sim_duration = True
-        o2 = MagicMock(spec=Offer)
-        o2.price = 12
-        o2.energy = 1
-        o2.energy_rate = 12
-        m3 = MagicMock(spec=Market)
-        m3.in_sim_duration = True
-        o3 = MagicMock(spec=Offer)
-        o3.price = 12
-        o3.energy = 1
-        o3.energy_rate = 12
-        markets = OrderedDict()
-        td = today(tz=constants.TIME_ZONE)
-        td1 = td + self.config.slot_length
-        m1.time_slot = td1
-        markets[m1.time_slot] = m1
-        td2 = td1 + self.config.slot_length
-        m2.time_slot = td2
-        markets[m2.time_slot] = m2
-        td3 = td2 + self.config.slot_length
-        m3.time_slot = td3
-        markets[m3.time_slot] = m3
-        self.area._markets = MagicMock(spec=AreaMarkets)
-        self.area._markets.markets = markets
-        m1.sorted_offers = [o1, o1]
-        m2.sorted_offers = [o2, o2]
-        m3.sorted_offers = [o3, o3]
-        assert self.area.market_with_most_expensive_offer is m1
-        o1.energy_rate = 19
-        o2.energy_rate = 20
-        o3.energy_rate = 18
-        assert self.area.market_with_most_expensive_offer is m2
-        o1.energy_rate = 18
-        o2.energy_rate = 19
-        o3.energy_rate = 20
-        assert self.area.market_with_most_expensive_offer is m3
-
-    def test_get_restore_state_get_called_on_all_areas(self):
+    @staticmethod
+    def test_get_restore_state_get_called_on_all_areas():
         strategy = MagicMock(spec=StorageStrategy)
         bat = Area(name="battery", strategy=strategy)
 
@@ -211,131 +154,203 @@ class TestAreaClass(unittest.TestCase):
         bat.get_state()
         strategy.get_state.assert_called_once()
 
+    @staticmethod
+    @patch("gsy_e.models.area.Area._consume_commands_from_aggregator", Mock())
+    @patch("gsy_e.models.area.Area._update_myco_matcher", Mock())
+    @patch("gsy_e.models.area.bid_offer_matcher.match_recommendations")
+    def test_tick(mock_match_recommendations, config):
+        """Test the correct chain of function calls in the Area's tick function."""
+        manager = Mock()
+        strategy = MagicMock(spec=StorageStrategy)
+        area = Area("test_area", None, None, strategy, config, None, grid_fee_percentage=1)
+        area_child = Area("test_area_c", None, None, strategy, config, None, grid_fee_percentage=1)
+        area_child.parent = area
+        area.children = [area_child]
+        area.grid_fee_percentage = 1
 
-class TestEventDispatcher(unittest.TestCase):
+        manager.attach_mock(area._update_myco_matcher, "update_matcher")
+        manager.attach_mock(mock_match_recommendations, "match")
 
-    def test_area_dispatches_activate_to_strategies_despite_connect_enable(self):
-        self.area = Area(name="test_area")
-        self.area.events = MagicMock(spec=Events)
-        self.area.events.is_enabled = False
-        self.area.events.is_connected = False
-        assert self.area.dispatcher._should_dispatch_to_strategies(AreaEvent.ACTIVATE)
-        self.area.events.is_enabled = True
-        self.area.events.is_connected = True
-        assert self.area.dispatcher._should_dispatch_to_strategies(AreaEvent.ACTIVATE)
-        self.area.events.is_enabled = True
-        self.area.events.is_connected = False
-        assert self.area.dispatcher._should_dispatch_to_strategies(AreaEvent.ACTIVATE)
-        self.area.events.is_enabled = False
-        self.area.events.is_connected = True
-        assert self.area.dispatcher._should_dispatch_to_strategies(AreaEvent.ACTIVATE)
+        ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
+        area.tick()
+        assert manager.mock_calls == []
 
-    def test_are_dispatches_other_events_only_if_connected_and_enabled(self):
-        self.area = Area(name="test_area")
-        self.area.events = MagicMock(spec=Events)
-        self.area.events.is_enabled = False
-        self.area.events.is_connected = False
-        assert not self.area.dispatcher._should_dispatch_to_strategies(
-            AreaEvent.MARKET_CYCLE)
-        self.area.events.is_enabled = True
-        self.area.events.is_connected = False
-        assert not self.area.dispatcher._should_dispatch_to_strategies(
-            AreaEvent.MARKET_CYCLE)
-        self.area.events.is_enabled = False
-        self.area.events.is_connected = True
-        assert not self.area.dispatcher._should_dispatch_to_strategies(
-            AreaEvent.MARKET_CYCLE)
-        self.area.events.is_enabled = True
-        self.area.events.is_connected = True
-        assert self.area.dispatcher._should_dispatch_to_strategies(
-            AreaEvent.MARKET_CYCLE)
+        # TWO Sided markets with internal matching, the order should be ->
+        # consume commands from aggregator -> update myco cache -> call myco clearing
+        manager.reset_mock()
+        ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
+        area.strategy = None
+        area.tick()
+        assert manager.mock_calls == [call.update_matcher(), call.match()]
 
-    @parameterized.expand([(AreaEvent.MARKET_CYCLE, "cycle_markets"),
-                           (AreaEvent.ACTIVATE, "activate"),
-                           (AreaEvent.TICK, "tick")])
-    def test_event_listener_calls_area_methods_for_area_events(self, event_type, area_method):
+        # TWO Sided markets with external matching, the order should be ->
+        # call myco clearing -> consume commands from aggregator -> update myco cache
+        manager.reset_mock()
+        ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.EXTERNAL.value
+        area.tick()
+        assert manager.mock_calls == [call.match(), call.update_matcher()]
+
+
+class TestEventDispatcher:
+    """Test the dispatching of area events."""
+
+    @staticmethod
+    @pytest.fixture(name="strategy_mock")
+    def strategy_fixture():
+        strategy_mock = MagicMock()
+        strategy_mock.event_listener = MagicMock()
+        area = Area(name="test_area")
+        area.strategy = strategy_mock
+        area.events = MagicMock(spec=Events)
+
+        return area
+
+    @staticmethod
+    def test_area_dispatches_activate_to_strategies_despite_connect_enable():
+        area = Area(name="test_area")
+        area.events = MagicMock(spec=Events)
+        area.events.is_enabled = False
+        area.events.is_connected = False
+        assert area.dispatcher._should_dispatch_to_strategies(AreaEvent.ACTIVATE)
+        area.events.is_enabled = True
+        area.events.is_connected = True
+        assert area.dispatcher._should_dispatch_to_strategies(AreaEvent.ACTIVATE)
+        area.events.is_enabled = True
+        area.events.is_connected = False
+        assert area.dispatcher._should_dispatch_to_strategies(AreaEvent.ACTIVATE)
+        area.events.is_enabled = False
+        area.events.is_connected = True
+        assert area.dispatcher._should_dispatch_to_strategies(AreaEvent.ACTIVATE)
+
+    @staticmethod
+    def test_are_dispatches_other_events_only_if_connected_and_enabled():
+        area = Area(name="test_area")
+        area.events = MagicMock(spec=Events)
+        area.events.is_enabled = False
+        area.events.is_connected = False
+        assert not area.dispatcher._should_dispatch_to_strategies(AreaEvent.MARKET_CYCLE)
+
+        area.events.is_enabled = True
+        area.events.is_connected = False
+        assert not area.dispatcher._should_dispatch_to_strategies(AreaEvent.MARKET_CYCLE)
+
+        area.events.is_enabled = False
+        area.events.is_connected = True
+        assert not area.dispatcher._should_dispatch_to_strategies(AreaEvent.MARKET_CYCLE)
+
+        area.events.is_enabled = True
+        area.events.is_connected = True
+        assert area.dispatcher._should_dispatch_to_strategies(AreaEvent.MARKET_CYCLE)
+
+    @staticmethod
+    @pytest.mark.parametrize("event_type, area_method", [
+        (AreaEvent.MARKET_CYCLE, "cycle_markets"), (AreaEvent.ACTIVATE, "activate"),
+        (AreaEvent.TICK, "tick")])
+    def test_event_listener_calls_area_methods_for_area_events(event_type, area_method):
         function_mock = MagicMock(name=area_method)
         area = Area(name="test_area")
         setattr(area, area_method, function_mock)
         area.dispatcher.event_listener(event_type)
         assert function_mock.call_count == 1
 
-    def strategy_mock(self):
-        strategy_mock = MagicMock()
-        strategy_mock.event_listener = MagicMock()
-        area = Area(name="test_area")
-        area.strategy = strategy_mock
-        area.events = MagicMock(spec=Events)
-        return area
-
-    @parameterized.expand([(MarketEvent.OFFER, ),
-                           (MarketEvent.TRADE, ),
-                           (MarketEvent.OFFER_SPLIT, ),
-                           (MarketEvent.BID_TRADED, ),
-                           (MarketEvent.BID_DELETED, ),
-                           (MarketEvent.OFFER_DELETED, )])
-    def test_event_listener_dispatches_to_strategy_if_enabled_connected(
-            self, event_type
-    ):
-        area = self.strategy_mock()
+    @staticmethod
+    @pytest.mark.parametrize("event_type", [
+        (MarketEvent.OFFER, ),
+        (MarketEvent.OFFER_TRADED,),
+        (MarketEvent.OFFER_SPLIT, ),
+        (MarketEvent.BID_TRADED, ),
+        (MarketEvent.BID_DELETED, ),
+        (MarketEvent.OFFER_DELETED, )])
+    def test_event_listener_dispatches_to_strategy_if_enabled_connected(event_type, strategy_mock):
+        area = strategy_mock
         area.events.is_enabled = True
         area.events.is_connected = True
         area.dispatcher.event_listener(event_type)
         assert area.strategy.event_listener.call_count == 1
 
-    @parameterized.expand([(MarketEvent.OFFER, ),
-                           (MarketEvent.TRADE, ),
-                           (MarketEvent.OFFER_SPLIT, ),
-                           (MarketEvent.BID_TRADED, ),
-                           (MarketEvent.BID_DELETED, ),
-                           (MarketEvent.OFFER_DELETED, )])
-    def test_event_listener_doesnt_dispatch_to_strategy_if_not_enabled(self, event_type):
-        area = self.strategy_mock()
+    @staticmethod
+    @pytest.mark.parametrize("event_type", [
+        (MarketEvent.OFFER, ),
+        (MarketEvent.OFFER_TRADED,),
+        (MarketEvent.OFFER_SPLIT, ),
+        (MarketEvent.BID_TRADED, ),
+        (MarketEvent.BID_DELETED, ),
+        (MarketEvent.OFFER_DELETED, )])
+    def test_event_listener_doesnt_dispatch_to_strategy_if_not_enabled(event_type, strategy_mock):
+        area = strategy_mock
         area.events.is_enabled = False
         area.events.is_connected = True
         area.dispatcher.event_listener(event_type)
         assert area.strategy.event_listener.call_count == 0
 
-    @parameterized.expand([(MarketEvent.OFFER, ),
-                           (MarketEvent.TRADE, ),
-                           (MarketEvent.OFFER_SPLIT, ),
-                           (MarketEvent.BID_TRADED, ),
-                           (MarketEvent.BID_DELETED, ),
-                           (MarketEvent.OFFER_DELETED, )])
+    @staticmethod
+    @pytest.mark.parametrize("event_type", [
+        (MarketEvent.OFFER, ),
+        (MarketEvent.OFFER_TRADED,),
+        (MarketEvent.OFFER_SPLIT, ),
+        (MarketEvent.BID_TRADED, ),
+        (MarketEvent.BID_DELETED, ),
+        (MarketEvent.OFFER_DELETED, )])
     def test_event_listener_doesnt_dispatch_to_strategy_if_not_connected(
-            self, event_type
-    ):
-        area = self.strategy_mock()
+            event_type, strategy_mock):
+        area = strategy_mock
         area.events.is_enabled = True
         area.events.is_connected = False
         area.dispatcher.event_listener(event_type)
         assert area.strategy.event_listener.call_count == 0
 
-    def test_event_on_disabled_area_triggered_for_market_cycle_on_disabled_area(self):
-        area = self.strategy_mock()
+    @staticmethod
+    def test_event_on_disabled_area_triggered_for_market_cycle_on_disabled_area(strategy_mock):
+        area = strategy_mock
         area.strategy.event_on_disabled_area = MagicMock()
         area.events.is_enabled = False
         area.events.is_connected = True
         area.dispatcher.event_listener(AreaEvent.MARKET_CYCLE)
         assert area.strategy.event_on_disabled_area.call_count == 1
 
-    def test_duplicate_area_in_the_same_parent_append(self):
+    @staticmethod
+    def test_duplicate_area_in_the_same_parent_append():
         area = Area(name="Street", children=[Area(name="House")], )
-        with self.assertRaises(Exception) as exception:
+        with pytest.raises(Exception) as exception:
             area.children.append(Area(name="House", children=[Area(name="House")], ))
-            self.assertEqual(exception, "Area name should be unique inside the same Parent Area")
+            assert exception == "Area name should be unique inside the same Parent Area"
 
-    def test_duplicate_area_in_the_same_parent_change_name(self):
+    @staticmethod
+    def test_duplicate_area_in_the_same_parent_change_name():
         child = Area(name="Street", )
-        parent = Area(name="Community", children=[child, Area(name="Street 2")]) # noqa
-        with self.assertRaises(Exception) as exception:
+        with pytest.raises(Exception) as exception:
             child.name = "Street 2"
-            self.assertEqual(exception, "Area name should be unique inside the same Parent Area")
+            assert exception == "Area name should be unique inside the same Parent Area"
 
 
-class TestFunctions(unittest.TestCase):
-
-    def test_check_area_name_exists_in_parent_area(self):
+class TestFunctions:
+    """Test utility functions in the area module."""
+    @staticmethod
+    def test_check_area_name_exists_in_parent_area():
         area = Area(name="Street", children=[Area(name="House")], )
-        self.assertTrue(check_area_name_exists_in_parent_area(area, "House"))
-        self.assertFalse(check_area_name_exists_in_parent_area(area, "House 2"))
+        assert check_area_name_exists_in_parent_area(area, "House") is True
+        assert check_area_name_exists_in_parent_area(area, "House 2") is False
+
+
+class TestMarket:
+    """Tests for the Market class."""
+
+    @staticmethod
+    def test_init_with_children():
+        """The class can be correctly instantiated with children."""
+        Market(name="Street", children=[Area(name="House")])
+
+
+class TestAsset:
+    """Tests for the Asset class."""
+
+    @staticmethod
+    def test_init_fails_with_children():
+        """The class can't be initialized with children."""
+        with pytest.raises(ValueError):
+            Asset(name="Street", children=[Area(name="House")])
+
+    @staticmethod
+    def test_init_succeeds_without():
+        """The class can be initialized without children."""
+        Asset(name="Some device")

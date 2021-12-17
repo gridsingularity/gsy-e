@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@ import os
 import glob
 from math import isclose
 from behave import then
-from d3a.d3a_core.myco_singleton import bid_offer_matcher
-from d3a.d3a_core.util import make_iaa_name
+from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
+from gsy_e.gsy_e_core.util import make_ma_name
 
 
 @then('all trades are equal to market_clearing_rate')
@@ -34,9 +34,9 @@ def test_traded_energy_rate(context):
         assert all(has_one_of_clearing_rates(trade, match_algo)
                    for market in child.past_markets
                    for trade in market.trades
-                   if trade.buyer == make_iaa_name(child) and
-                   trade.time in match_algo.state.clearing and
-                   match_algo.state.clearing[trade.time] != 0)
+                   if trade.buyer == make_ma_name(child) and
+                   trade.creation_time in match_algo.state.clearing and
+                   match_algo.state.clearing[trade.creation_time] != 0)
 
 
 @then('buyers and sellers are not same')

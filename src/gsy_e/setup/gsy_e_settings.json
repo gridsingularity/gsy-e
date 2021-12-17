@@ -1,0 +1,260 @@
+{
+  "basic_settings": {
+    "sim_duration": "24h",
+    "slot_length": "15m",
+    "tick_length": "15s",
+    "cloud_coverage": 0,
+    "start_date": "2021-11-19"
+  },
+  "advanced_settings": {
+    "GeneralSettings": {
+      "DEFAULT_MARKET_MAKER_RATE": 30,
+      "DEFAULT_UPDATE_INTERVAL": 1,
+      "MIN_UPDATE_INTERVAL": 1,
+      "MARKET_CLEARING_FREQUENCY_PER_SLOT": 3,
+      "EXPORT_SUPPLY_DEMAND_PLOTS": true,
+      "ENERGY_RATE_DECREASE_PER_UPDATE": 1,
+      "SETUP_FILE_PATH": null,
+      "EXPORT_DEVICE_PLOTS": true,
+      "EXPORT_ENERGY_TRADE_PROFILE_HR": false,
+      "EXPORT_OFFER_BID_TRADE_HR": false,
+      "RUN_REAL_TIME": false,
+      "EVENT_DISPATCHING_VIA_REDIS": false,
+      "RATE_CHANGE_PER_UPDATE_LIMIT": [
+        0,
+        1000
+      ],
+      "ENERGY_PROFILE_LIMIT": [
+        0,
+        9223372036854775807
+      ],
+      "MIN_NUM_TICKS": 10,
+      "MIN_SLOT_LENGTH_M": 2,
+      "MAX_SLOT_LENGTH_M": 60,
+      "MIN_TICK_LENGTH_S": 1,
+      "REDIS_PUBLISH_FULL_RESULTS": false
+    },
+    "SettlementMarketSettings": {
+      "MAX_AGE_SETTLEMENT_MARKET_HOURS": 1,
+      "ENABLE_SETTLEMENT_MARKETS": false,
+      "RELATIVE_STD_FROM_FORECAST_FLOAT": 10.0
+    },
+    "FutureMarketSettings": {
+      "FUTURE_MARKET_CLEARING_INTERVAL_MINUTES": 15
+    },
+    "AreaSettings": {
+      "PERCENTAGE_FEE_LIMIT": [
+        0,
+        100
+      ],
+      "CONSTANT_FEE_LIMIT": [
+        0,
+        9223372036854775807
+      ]
+    },
+    "CommercialProducerSettings": {
+      "ENERGY_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "MAX_POWER_KW_LIMIT": [
+        0,
+        10000000
+      ]
+    },
+    "StorageSettings": {
+      "MIN_SOC_LIMIT": [
+        0,
+        99
+      ],
+      "INITIAL_CHARGE_LIMIT": [
+        0,
+        100
+      ],
+      "CAPACITY": 1.2,
+      "CAPACITY_LIMIT": [
+        0.0001,
+        2000000
+      ],
+      "MAX_ABS_POWER": 5,
+      "MAX_ABS_POWER_RANGE": [
+        0.0001,
+        2000000
+      ],
+      "BUYING_RATE_RANGE": [
+        0,
+        24.9
+      ],
+      "INITIAL_BUYING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "FINAL_BUYING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "SELLING_RATE_RANGE": [
+        30,
+        25
+      ],
+      "INITIAL_SELLING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "FINAL_SELLING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "MIN_ALLOWED_SOC": 10,
+      "LOSS_FUNCTION": 1,
+      "LOSS_FUNCTION_LIMIT": [
+        1,
+        2
+      ],
+      "LOSS_PER_HOUR": 0,
+      "LOSS_PER_HOUR_ABSOLUTE_LIMIT": [
+        0,
+        10000
+      ],
+      "LOSS_PER_HOUR_RELATIVE_LIMIT": [
+        0,
+        1
+      ]
+    },
+    "LoadSettings": {
+      "AVG_POWER_LIMIT": [
+        0,
+        9223372036854775807
+      ],
+      "HOURS_LIMIT": [
+        0,
+        24
+      ],
+      "BUYING_RATE_RANGE": [
+        0,
+        35
+      ],
+      "INITIAL_BUYING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "FINAL_BUYING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "LOAD_PENALTY_RATE": 29.2
+    },
+    "PVSettings": {
+      "DEFAULT_PANEL_COUNT": 1,
+      "PANEL_COUNT_LIMIT": [
+        1,
+        10000
+      ],
+      "FINAL_SELLING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "INITIAL_SELLING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "CAPACITY_KW_LIMIT": [
+        0,
+        9223372036854775807
+      ],
+      "MAX_PANEL_OUTPUT_W_LIMIT": [
+        0,
+        9223372036854775807
+      ],
+      "SELLING_RATE_RANGE": [
+        30,
+        0
+      ],
+      "DEFAULT_POWER_PROFILE": 0,
+      "CLOUD_COVERAGE_LIMIT": [
+        0,
+        4
+      ],
+      "DEFAULT_CAPACITY_KW": 5,
+      "MAX_PANEL_OUTPUT_W": 160,
+      "PV_PENALTY_RATE": 0,
+      "AZIMUTH_LIMIT": [
+        0,
+        360
+      ],
+      "TILT_LIMIT": [
+        0,
+        90
+      ]
+    },
+    "SmartMeterSettings": {
+      "SELLING_RATE_RANGE": [
+        30,
+        0
+      ],
+      "INITIAL_SELLING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "FINAL_SELLING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "BUYING_RATE_RANGE": [
+        0,
+        35
+      ],
+      "INITIAL_BUYING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "FINAL_BUYING_RATE_LIMIT": [
+        0,
+        10000
+      ]
+    },
+    "WindSettings": {
+      "FINAL_SELLING_RATE": 0,
+      "MAX_WIND_TURBINE_OUTPUT_W": 160
+    },
+    "MASettings": {
+      "GRID_FEE_TYPE": 1,
+      "VALID_FEE_TYPES": [
+        1,
+        2
+      ],
+      "MARKET_TYPE": 1,
+      "MARKET_TYPE_LIMIT": [
+        1,
+        2
+      ],
+      "BID_OFFER_MATCH_TYPE": 1,
+      "BID_OFFER_MATCH_TYPE_LIMIT": [
+        1,
+        3
+      ],
+      "PAY_AS_CLEAR_AGGREGATION_ALGORITHM": 1,
+      "MIN_OFFER_AGE": 2,
+      "MIN_BID_AGE": 2,
+      "AlternativePricing": {
+        "COMPARE_PRICING_SCHEMES": false,
+        "PRICING_SCHEME": 0,
+        "FEED_IN_TARIFF_PERCENTAGE": 50,
+        "ALT_PRICING_MARKET_MAKER_NAME": "AGENT"
+      }
+    },
+    "BlockchainSettings": {
+      "BC_INSTALLED": true,
+      "URL": "http://127.0.0.1:8545",
+      "START_LOCAL_CHAIN": true,
+      "TIMEOUT": 30
+    },
+    "BalancingSettings": {
+      "ENABLE_BALANCING_MARKET": false,
+      "SPOT_TRADE_RATIO": 0.2,
+      "OFFER_DEMAND_RATIO": 0.1,
+      "OFFER_SUPPLY_RATIO": 0.1,
+      "FLEXIBLE_LOADS_SUPPORT": true
+    }
+  }
+}

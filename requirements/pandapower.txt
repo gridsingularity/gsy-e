@@ -4,47 +4,52 @@
 #
 #    pip-compile --max-rounds=100 --no-emit-index-url requirements/pandapower.in
 #
--e git+https://github.com/gridsingularity/d3a-interface@master#egg=d3a_interface
+-e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework
     # via -r requirements/dev.txt
-appdirs==1.4.4
+astroid==2.8.4
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
-    #   virtualenv
-attrs==20.3.0
+    #   pylint
+attrs==21.2.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   jsonschema
 awesome-slugify==1.6.5
     # via -r requirements/dev.txt
+backports.entry-points-selectable==1.1.0
+    # via
+    #   -r requirements/dev.txt
+    #   gsy-framework
+    #   virtualenv
 bcrypt==3.2.0
     # via
     #   -r requirements/dev.txt
     #   paramiko
 cached-property==1.5.2
     # via -r requirements/dev.txt
-certifi==2020.12.5
+certifi==2021.10.8
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   requests
-cffi==1.14.6
+cffi==1.15.0
     # via
     #   -r requirements/dev.txt
     #   bcrypt
     #   cryptography
     #   pynacl
-cfgv==3.3.0
+cfgv==3.3.1
     # via
     #   -r requirements/dev.txt
+    #   gsy-framework
     #   pre-commit
-chardet==3.0.4
+chardet==4.0.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   requests
-click==7.1.2
+click==8.0.3
     # via
     #   -r requirements/dev.txt
     #   click-default-group
@@ -53,54 +58,84 @@ click-default-group==1.2.2
     # via -r requirements/dev.txt
 colorlog==4.7.2
     # via -r requirements/dev.txt
-cryptography==3.4.7
+cryptography==35.0.0
     # via
     #   -r requirements/dev.txt
     #   pandapower
     #   paramiko
-cycler==0.10.0
+cycler==0.11.0
     # via matplotlib
-distlib==0.3.1
+distlib==0.3.3
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   virtualenv
+entrypoints==0.3
+    # via
+    #   -r requirements/dev.txt
+    #   flake8
+    #   gsy-framework
 et-xmlfile==1.1.0
     # via openpyxl
 fabric3==1.14.post1
     # via -r requirements/dev.txt
-filelock==3.0.12
+filelock==3.3.2
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   tox
     #   virtualenv
-identify==2.2.13
+flake8==3.7.9
     # via
     #   -r requirements/dev.txt
+    #   flake8-tuple
+    #   gsy-framework
+flake8-tuple==0.4.1
+    # via
+    #   -r requirements/dev.txt
+    #   gsy-framework
+identify==2.3.3
+    # via
+    #   -r requirements/dev.txt
+    #   gsy-framework
     #   pre-commit
 idna==2.10
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   requests
-jsonschema==3.2.0
+isort==5.10.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   pylint
+jsonschema==4.1.2
+    # via
+    #   -r requirements/dev.txt
+    #   gsy-framework
 kafka-python==2.0.2
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
-kiwisolver==1.3.1
+    #   gsy-framework
+kiwisolver==1.3.2
     # via matplotlib
+lazy-object-proxy==1.6.0
+    # via
+    #   -r requirements/dev.txt
+    #   astroid
 matplotlib==3.4.0
     # via -r requirements/pandapower.in
-networkx==2.6.2
+mccabe==0.6.1
+    # via
+    #   -r requirements/dev.txt
+    #   flake8
+    #   gsy-framework
+    #   pylint
+networkx==2.6.3
     # via pandapower
 nodeenv==1.6.0
     # via
     #   -r requirements/dev.txt
+    #   gsy-framework
     #   pre-commit
 numpy==1.20.3
     # via
@@ -109,50 +144,70 @@ numpy==1.20.3
     #   pandapower
     #   pandas
     #   scipy
-openpyxl==3.0.7
+openpyxl==3.0.9
     # via pandapower
-packaging==20.7
+packaging==21.2
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   pandapower
     #   tox
 pandapower==2.7.0
     # via -r requirements/pandapower.in
-pandas==1.3.2
+pandas==1.3.4
     # via pandapower
-paramiko==2.7.2
+paramiko==2.8.0
     # via
     #   -r requirements/dev.txt
     #   fabric3
 pendulum==2.1.2
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
-pillow==8.3.1
+    #   gsy-framework
+pillow==8.4.0
     # via matplotlib
-plotly==5.2.1
-    # via -r requirements/dev.txt
-pluggy==0.13.1
+platformdirs==2.4.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
+    #   pylint
+    #   virtualenv
+plotly==5.3.1
+    # via -r requirements/dev.txt
+pluggy==1.0.0
+    # via
+    #   -r requirements/dev.txt
+    #   gsy-framework
     #   tox
 pony==0.7.14
     # via -r requirements/dev.txt
-pre-commit==2.14.0
-    # via -r requirements/dev.txt
-psutil==5.8.0
-    # via -r requirements/dev.txt
-py==1.9.0
+pre-commit==2.15.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
+psutil==5.8.0
+    # via -r requirements/dev.txt
+py==1.10.0
+    # via
+    #   -r requirements/dev.txt
+    #   gsy-framework
     #   tox
+pycodestyle==2.5.0
+    # via
+    #   -r requirements/dev.txt
+    #   flake8
+    #   gsy-framework
 pycparser==2.20
     # via
     #   -r requirements/dev.txt
     #   cffi
+pyflakes==2.1.1
+    # via
+    #   -r requirements/dev.txt
+    #   flake8
+    #   gsy-framework
+pylint==2.11.1
+    # via -r requirements/dev.txt
 pynacl==1.4.0
     # via
     #   -r requirements/dev.txt
@@ -160,61 +215,61 @@ pynacl==1.4.0
 pyparsing==2.4.7
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   matplotlib
     #   packaging
-pyrsistent==0.17.3
+pyrsistent==0.18.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   jsonschema
-python-dateutil==2.8.1
+python-dateutil==2.8.2
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   matplotlib
     #   pandas
     #   pendulum
 python-rex==0.4
     # via -r requirements/dev.txt
-pytz==2021.1
+pytz==2021.3
     # via
     #   -r requirements/dev.txt
     #   pandas
 pytzdata==2020.1
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   pendulum
-pyyaml==5.4.1
+pyyaml==6.0
     # via
     #   -r requirements/dev.txt
+    #   gsy-framework
     #   pre-commit
 redis==3.5.3
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   rq
-regex==2021.8.3
+regex==2021.10.23
     # via
     #   -r requirements/dev.txt
     #   awesome-slugify
 requests==2.25.1
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
-rq==1.9.0
+    #   gsy-framework
+rq==1.10.0
     # via -r requirements/dev.txt
 scipy==1.6.0
     # via pandapower
-six==1.15.0
+six==1.16.0
     # via
     #   -r requirements/dev.txt
     #   bcrypt
-    #   cycler
-    #   d3a-interface
     #   fabric3
-    #   jsonschema
+    #   flake8-tuple
+    #   gsy-framework
     #   plotly
     #   pynacl
     #   python-dateutil
@@ -223,6 +278,10 @@ six==1.15.0
     #   virtualenv
 sortedcontainers==2.4.0
     # via -r requirements/dev.txt
+tabulate==0.8.9
+    # via
+    #   -r requirements/dev.txt
+    #   gsy-framework
 tenacity==8.0.1
     # via
     #   -r requirements/dev.txt
@@ -230,36 +289,43 @@ tenacity==8.0.1
 toml==0.10.2
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   pre-commit
+    #   pylint
     #   tox
-tox==3.20.1
+tox==3.24.4
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
+typing-extensions==3.10.0.2
+    # via
+    #   -r requirements/dev.txt
+    #   astroid
+    #   pylint
 unidecode==0.4.21
     # via
     #   -r requirements/dev.txt
     #   awesome-slugify
-urllib3==1.26.4
+urllib3==1.26.7
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   requests
-virtualenv==20.2.2
+virtualenv==20.10.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
     #   pre-commit
     #   tox
-websockets==8.1
+websockets==10.0
     # via
     #   -r requirements/dev.txt
-    #   d3a-interface
+    #   gsy-framework
+wrapt==1.13.3
+    # via
+    #   -r requirements/dev.txt
+    #   astroid
 xlrd==2.0.1
     # via pandapower
-xlsxwriter==3.0.1
+xlsxwriter==3.0.2
     # via pandapower
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools

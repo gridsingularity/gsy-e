@@ -2,19 +2,19 @@
 Grid Singularity Energy Exchange
 ====================================
 
-.. image:: https://codecov.io/gh/gridsingularity/d3a/branch/master/graph/badge.svg?token=XTWK3DAKUA
-   :target: https://codecov.io/gh/gridsingularity/d3a
+.. image:: https://codecov.io/gh/gridsingularity/gsy-e/branch/master/graph/badge.svg?token=XTWK3DAKUA
+   :target: https://codecov.io/gh/gridsingularity/gsy-e
 
 The Grid Singularity Energy Exchange Engine is developed by `Grid Singularity <https://gridsingularity.com/>`__ as an interface (`Singularity Map <https://map.gridsingularity.com/singularity-map>`__) and open source codebase (see `Licensing <https://gridsingularity.github.io/d3a/licensing/>`__ to model, simulate, optimize and (coming soon) download and deploy interconnected, grid-aware energy marketplaces.
 Grid Singularity has been proclaimed the `World Tech Pioneer by the World Economic Forum <https://www.weforum.org/organizations/grid-singularity-gmbh-gsy-gmbh>`__ and is also known as a co-founder of the `Energy Web Foundation <https://www.energyweb.org/>`__ that gathers leading energy corporations globally co-developing a shared blockchain-based platform.
 
 Code of Conduct
 ===============
-Please refer to: https://github.com/gridsingularity/d3a/blob/master/CODE_OF_CONDUCT.md
+Please refer to: https://github.com/gridsingularity/gsy-e/blob/master/CODE_OF_CONDUCT.md
 
 How to contribute:
 ==================
-Please refer to: https://github.com/gridsingularity/d3a/blob/master/CONTRIBUTING.md
+Please refer to: https://github.com/gridsingularity/gsy-e/blob/master/CONTRIBUTING.md
 
 
 Basic setup
@@ -35,12 +35,12 @@ Running the simulation
 
 After installation the simulation can be run with the following command::
 
-    ~# d3a run
+    ~# gsy-e run
 
 There are various options available to control the simulation run.
 Help on there is available via::
 
-    ~# d3a run --help
+    ~# gsy-e run --help
 
 
 Controlling the simulation
@@ -100,19 +100,19 @@ Docker
 The repository contains a `docker`_ Dockerfile. To build an image use the
 following command (change into repository folder first)::
 
-    ~# docker build -t d3a .
+    ~# docker build -t gsy-e .
 
 
 After building is complete you can run the image with::
 
-    ~# docker run --rm -it d3a
+    ~# docker run --rm -it gsy-e
 
 
 Command line parameters can be given normally after the image name::
 
-    ~# docker run --rm d3a --help
-    ~# docker run --rm d3a run --help
-    ~# docker run --rm d3a run --setup default_2a -t15s
+    ~# docker run --rm gsy-e --help
+    ~# docker run --rm gsy-e run --help
+    ~# docker run --rm gsy-e run --setup default_2a -t15s
 
 
 There is also a handy script that deals with the building of the image and running the provided command::
@@ -123,13 +123,13 @@ There is also a handy script that deals with the building of the image and runni
 where you can provide the d3a_command and export path where the simulation results are stored.
 For example::
 
-    ~# ./run_d3a_on_docker.sh "d3a -l ERROR run --setup default_2a -t 15s" $HOME/d3a-simulation
+    ~# ./run_d3a_on_docker.sh "gsy-e -l ERROR run --setup default_2a -t 15s" $HOME/gsy-e-simulation
 
 
-builds a d3a docker image (if not already present),
+builds a gsy-e docker image (if not already present),
 runs the simulation with setup-file default_2a, tick-length 15s
-and stores the simulation output data into $HOME/d3a-simulation.
-If no export_path is provided, simulation results will be stored in $HOME/d3a-simulation.
+and stores the simulation output data into $HOME/gsy-e-simulation.
+If no export_path is provided, simulation results will be stored in $HOME/gsy-e-simulation.
 
 
 _`docker`: https://docker.io
@@ -137,4 +137,4 @@ _`docker`: https://docker.io
 
 Detailed Documentation
 ===============
-Please refer to: https://gridsingularity.github.io/d3a/d3a-documentation/
+Please refer to: https://gridsingularity.github.io/gsy-e/documentation/

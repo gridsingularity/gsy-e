@@ -1,69 +1,130 @@
 site_name: 'Grid Singularity Wiki'
 site_description: 'Documentation for the Grid Singularity Exchange'
 site_author: 'Grid Singularity'
-site_url: 'https://gridsingularity.github.io/d3a/d3a-documentation/'
+site_url: 'https://gridsingularity.github.io/gsy-e/documentation/'
 
 nav:
 - 'General Overview':
-    - 'Energy Market Design Challenge': 'd3a-documentation.md'
-    - 'Grid Singularity Vision': 'vision.md'
+    - 'Grid Singularity Mission': 'documentation.md'
     - 'Grid Singularity Technical Approach': 'technical-approach.md'
+    - 'Grid Singularity Development Path': 'development-path.md'
     - 'Licensing and Open Source Ethos': 'licensing.md'
-- 'Market Mechanism':
-    - 'Market Types: Spot, Balancing, and Futures': 'markets.md'
-    - 'Bids/Offers Process and Hierarchical Market Structure': 'inter-area-agent.md'
+- 'Set up a simulation of an active local energy market':
+    - 'Introduction to the Grid Singularity Exchange Interface: Singularity Map':
+        - 'Build a community': 'community.md'
+        - 'Assets configuration':
+          - 'Overview' : 'configuration.md'
+          - 'Home': 'home.md'
+          - 'Solar Panels (PVs)': 'solar-panels.md'
+          - 'Consumption (Load Profiles)': 'consumption.md'
+          - 'Battery (Storage)': 'battery.md'
+          - 'Power Plant': 'power-plant.md'
+        - 'Data Requirements and File Upload Format': 'data-requirements.md'
+        - 'Community Settings': 'community-settings.md'
+        - 'Grid Market Settings': 'grid-market-settings.md'
+        - 'Events (Adding Assets, Communities, etc.)': 'events.md'
+        - 'Results and Analysis':
+            - 'Results dashboard': 'results-dashboard'
+            - 'Community': 'results-community'
+            - 'Bills and traded energy': 'bills-traded-energy.md'
+            - 'Self-Sufficiency and Self-Consumption': 'self-sufficiency-self-consumption.md'
+            - 'Trade profile': 'trade-profile.md'
+            - 'Summary': 'summary.md'
+            - 'Price': 'price.md'
+            - 'Trades': 'trades.md'
+            - 'Results Download': 'results-download.md'
+    - 'Instructions for researchers on backend code':
+        - 'Backend Installation Instructions':
+            - 'Linux Installation Instructions': 'linux-installation-instructions.md'
+            - 'Mac Installation Instructions': 'ios-installation-instructions.md'
+            - 'Virtual Machine Installation Instructions': 'vm-installation-instructions.md'
+            - 'Version Updates': 'version-update.md'
+        - 'Backend Simulation Configuration':
+            - 'Setup Configuration': 'setup-configuration.md'
+            - 'Setting General Configuration Parameters': 'setting-configuration-parameters.md'
+            - 'Market Backend Configuration': 'market-backend-configuration.md'
+            - 'Assets Installation': 'assets-installation.md'
+        - 'Backend Results':
+            - 'Overview': 'backend-results-overview.md'
+            - 'Energy bills': 'backend-results-energy-bills.md'
+- 'Market Mechanisms':
+    - 'Market Types':
+      - 'Overview': 'market-types.md'
+      - 'Spot Market':
+          - 'Spot Maket Types': 'spot-market-types.md'
+          - 'One-Sided Pay-as-Offer Market': 'one-sided-pay-as-offer.md'
+          - 'Two-Sided Pay-as-Bid Market': 'two-sided-pay-as-bid.md'
+          - 'Two-Sided Pay-as-Clear Market': 'two-sided-pay-as-clear.md'
+      - 'Balancing Market':
+          - 'Balancing Market Structure': 'balancing-market.md'
+          - 'Balancing Market Implementation': 'balancing-implementation.md'
+      - 'Settlement Market':
+          - 'Settlement Market Structure': 'settlement-market-structure.md'
+          - 'Settlement Market Implementation' :
+              - 'Markets and rotation' : 'markets-rotation.md'
+              - 'Assets strategies' : 'assets-strategies.md'
+    - 'Bids/Offers Process and Hierarchical Market Structure': 'market-agent.md'
     - 'Trading Strategies': 'default-trading-strategy.md'
-    - 'Clearing Mechanisms':
-        - 'Clearing Mechanism Types': 'clearing-purpose.md'
-        - 'One-Sided Pay-as-Offer Market': 'one-sided-pay-as-offer.md'
-        - 'Two-Sided Pay-as-Bid Market': 'two-sided-pay-as-bid.md'
-        - 'Two-Sided Pay-as-Clear Market': 'two-sided-pay-as-clear.md'
     - 'Grid Fee Accounting':
         - 'Grid Fee Objectives': 'grid-fees.md'
         - 'Constant Grid Fee Calculation': 'constant-fees.md'
         - 'Percentage Grid Fee Calculation': 'percentage-fees.md'
-    - 'Balancing Market':
-        - 'Balancing Market Structure': 'balancing-market.md'
-        - 'Balancing Market Implementation': 'balancing-implementation.md'
-- 'Interfaces':
-    - 'APIs':
-        - 'Overview': 'api-overview.md'
-        - 'Asset API': 'assets-api.md'
-        - 'Grid Operator API': 'grid-operator-api.md'
-        - 'API agent on cloud': 'cloud-service-guide.md'
-    - 'Collaboration Tool': 'collaboration.md'
-    - 'Canary Test Network': 'canary-network.md'
-    - 'Blockchain Integration': 'blockchain.md'
-- 'Configuration general settings and installation':
-    - 'General Configuration Settings': 'general-settings.md'
-    - 'Data Requirements for Customized Simulations': 'data-requirements.md'
-    - 'Backend Installation Instructions':
-        - 'Linux Installation Instructions': 'linux-installation-instructions.md'
-        - 'Mac Installation Instructions': 'ios-installation-instructions.md'
-        - 'Virtual Machine Installation Instructions': 'vm-installation-instructions.md'
-        - 'Version Updates': 'version-update.md'
-    - 'Modelling':
-        - 'Setting up a simulation in the User Interface': 'ui-initialisation.md'
-        - 'Market Settings': 'model-markets.md'
-        - 'Energy Assets Configuration':
-            - 'Market Maker and Infinite Bus': 'model-market-maker.md'
-            - 'Load': 'model-load.md'
-            - 'PV': 'model-pv.md'
-            - 'Storage': 'model-storage.md'
-            - 'Power Plant': 'model-power-plant.md'
-        - 'Map': 'map.md'
-        - 'File Upload Format': 'upload-file-formats.md'
-        - 'Asset and Data Library': 'library.md'
-    - 'Events (adding assets, communities, etc.)': 'events.md'
-    - 'Results and Analysis':
-        - 'Results Dashboard': 'results.md'
-        - 'Key Performance Indicators (KPIs)':
-            - 'Self-Sufficiency and Self-Consumption': 'self-sufficiency-consumption.md'
-            - 'Peak Percentage': 'peak-percentage.md'
-            - 'Energy Bill': 'energy-bills.md'
-        - 'Data Download': 'data-download.md'
+        - 'Degrees of Freedom' : 'degrees-of-freedom.md'
+- 'Collaborations and APIs':
+    - 'Create a Grid Singularity Collaboration': 'collaboration.md'
+    - 'Connect to the Grid Singularity APIs':
+        - 'Introduction': 'APIs-introduction.md'
+        - 'Configure trading strategies through the Grid Singularity Asset API':
+            - 'Walkthrough': 'configure-trading-strategies-walkthrough.md'
+            - 'Asset API':
+                - 'Asset API Events': 'asset-api-events.md'
+                - 'Asset API Commands': 'asset-api-commands.md'
+                - 'Asset API Template Script': 'asset-api-template-script.md'
+            - 'Launch the Asset API':
+                - 'Registration - Simulations run on the User-Interface': 'registration-asset-api-user-interface.md'
+                - 'Registration - Simulations run on the Backend': 'registration-asset-api-backend.md'
+        - 'Implement dynamic grid fees through the Grid Singlarity Grid Operator API':
+            - 'Walkthrough': 'implement-grid-fees-walkthrough.md'
+            - 'Grid Operator API.':
+                - 'Grid Operator API Events': 'grid-operator-api-events.md'
+                - 'Grid Operator API Commands': 'grid-operator-api-commands.md'
+                - 'Grid Operator API Template Script': 'grid-operator-api-template-script.md'
+            - 'Launch the Grid Operator API':
+                - 'Registration - Simulations run on the User-Interface': 'registration-grid-operator-api-user-interface.md'
+                - 'Registration - Simulations run on the Backend': 'registration-grid-operator-api-backend.md'
+- 'Grid Singularity Canary Test Network':
+    - 'Connect to a Grid Singularity Canary Test Network': 'connect-ctn.md'
+    - 'Send live energy asset data streams to the Grid Singularity exchange':
+        - 'Establish a connection with your energy assets': 'connection-energy-assets.md'
+        - 'Send live data streams via the Exchange SDK': 'send-data-exchange-sdk.md'
+        - 'Send live data streams via the REST API': 'send-data-rest-api.md'
+- 'Blockchain Integration': 'blockchain.md'
 - 'References': 'references.md'
 - 'Releases Archive': 'releases.md'
+## - 'Not included':
+    ## - 'API agent on cloud': 'cloud-service-guide.md'
+    ## - 'Canary Test Network': 'canary-network.md'
+    ## - 'Configuration general settings and installation':
+        ## - 'General Configuration Settings': 'general-settings.md'
+        ## - 'Modelling':
+            ## - 'Setting up a simulation in the User Interface': 'ui-initialisation.md'
+            ## - 'Market Settings': 'model-markets.md'
+            ## - 'Energy Assets Configuration':
+                ## - 'Market Maker and Infinite Bus': 'model-market-maker.md'
+                ## - 'Load': 'model-load.md'
+                ## - 'PV': 'model-pv.md'
+                ## - 'Storage': 'model-storage.md'
+                ## - 'Power Plant': 'model-power-plant.md'
+            ## - 'Map': 'map.md'
+            ## - 'File Upload Format': 'upload-file-formats.md'
+            ## - 'Asset and Data Library': 'library.md'
+    ## - 'Results and Analysis':
+        ## - 'Results Dashboard': 'results.md'
+        ## - 'Key Performance Indicators (KPIs)':
+            ## - 'Self-Sufficiency and Self-Consumption': 'self-sufficiency-consumption.md'
+            ## - 'Peak Percentage': 'peak-percentage.md'
+            ## - 'Energy Bill': 'energy-bills.md'
+
 
 
 # Configuration for the Material theme
@@ -77,8 +138,8 @@ theme:
   font:
     text: 'PT Sans'
     code: 'Ubuntu Mono'
-  favicon: 'img/d3a-favicon.png'
-  logo: 'img/New_Logo_up.png'
+  favicon: 'img/Profile.png'
+  logo: 'img/Profile.png'
   feature:
     tabs: false
 
@@ -94,7 +155,7 @@ extra_javascript:
 # Repository that houses the source code for this site. This
 # is needed to render the nice GH link on the top right.
 repo_name: 'Grid Singularity Exchange'
-repo_url: 'https://github.com/gridsingularity/d3a/wiki'
+repo_url: 'https://github.com/gridsingularity/gsy-e/wiki'
 
 # Social links
 extra:
@@ -129,5 +190,5 @@ plugins:
 
     - redirects:
         redirect_maps:
-            '': 'https://gridsingularity.github.io/d3a/d3a-documentation/'
-
+            # When trying to reach the root page, redirect to the documentation page
+            '': 'https://gridsingularity.github.io/gsy-e/documentation/'

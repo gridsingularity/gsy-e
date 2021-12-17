@@ -4,20 +4,20 @@ from uuid import uuid4
 
 import pendulum
 import pytest
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import BidOfferMatch
-from d3a_interface.data_classes import TradeBidOfferInfo, Trade
-from d3a_interface.matching_algorithms import (
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import BidOfferMatch
+from gsy_framework.data_classes import TradeBidOfferInfo, Trade
+from gsy_framework.matching_algorithms import (
     PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
 )
 from pendulum import now
 
-from d3a.d3a_core.blockchain_interface import NonBlockchainInterface
-from d3a.d3a_core.exceptions import (
+from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
+from gsy_e.gsy_e_core.exceptions import (
     BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade, MarketException)
-from d3a.events import MarketEvent
-from d3a.models.market import Bid, Offer
-from d3a.models.market.two_sided import TwoSidedMarket
+from gsy_e.events import MarketEvent
+from gsy_e.models.market import Bid, Offer
+from gsy_e.models.market.two_sided import TwoSidedMarket
 
 
 @pytest.fixture
@@ -77,7 +77,7 @@ class TestTwoSidedMarket:
         }
         assert market.get_offers() == market.offers
 
-    @patch("d3a.models.market.two_sided.TwoSidedMarket._update_new_bid_price_with_fee",
+    @patch("gsy_e.models.market.two_sided.TwoSidedMarket._update_new_bid_price_with_fee",
            MagicMock(return_value=5))
     def test_bid(self, market):
         """Test the bid() method of TwoSidedMarket."""
@@ -159,14 +159,20 @@ class TestTwoSidedMarket:
         market.offers = {"offer1": Offer("id", pendulum.now(), 2, 2, "other", 2)}
 
         market.bids = {"bid1": Bid("bid_id", pendulum.now(), 9, 10, "B", buyer_origin="S")}
-        matched = market_matcher.get_matches_recommendations(
-            {market.id: {"bids": [bid.serializable_dict() for bid in market.bids.values()],
-             "offers": [offer.serializable_dict() for offer in market.offers.values()]}})
+        matched = market_matcher.get_matches_recommendations({
+            "Area1": {
+                market.time_slot_str: {
+                    "bids": [bid.serializable_dict() for bid in market.bids.values()],
+                    "offers": [offer.serializable_dict() for offer in
+                               market.offers.values()]}}})
         assert len(matched) == 0
         market.bids = {"bid1": Bid("bid_id", pendulum.now(), 11, 10, "B", buyer_origin="S")}
-        matched = market_matcher.get_matches_recommendations(
-            {market.id: {"bids": [bid.serializable_dict() for bid in market.bids.values()],
-             "offers": [offer.serializable_dict() for offer in market.offers.values()]}})
+        matched = market_matcher.get_matches_recommendations({
+            "Area1": {
+                market.time_slot_str: {
+                    "bids": [bid.serializable_dict() for bid in market.bids.values()],
+                    "offers": [offer.serializable_dict() for offer in market.offers.values()]}}
+        })
         assert len(matched) == 1
 
         assert len(matched[0]["bids"]) == 1
@@ -177,9 +183,13 @@ class TestTwoSidedMarket:
         market.bids = {"bid1": Bid("bid_id1", pendulum.now(), 11, 10, "B", buyer_origin="S"),
                        "bid2": Bid("bid_id2", pendulum.now(), 9, 10, "B", buyer_origin="S"),
                        "bid3": Bid("bid_id3", pendulum.now(), 12, 10, "B", buyer_origin="S")}
-        matched = market_matcher.get_matches_recommendations(
-            {market.id: {"bids": [bid.serializable_dict() for bid in market.bids.values()],
-             "offers": [offer.serializable_dict() for offer in market.offers.values()]}})
+        matched = market_matcher.get_matches_recommendations({
+            "Area1": {
+                market.time_slot_str: {
+                    "bids": [bid.serializable_dict() for bid in market.bids.values()],
+                    "offers": [offer.serializable_dict() for offer in market.offers.values()]
+                }
+            }})
         assert len(matched) == 1
         assert matched[0]["bids"][0]["id"] == "bid_id3"
         assert matched[0]["bids"][0]["energy_rate"] == 1.2
@@ -215,7 +225,7 @@ class TestTwoSidedMarket:
             market.bid(10, -1, "someone", "someone")
 
     def test_double_sided_pay_as_clear_market_works_with_floats(self, pac_market):
-        ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
+        ConstSettings.MASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
         offers = [
             Offer("id1", pendulum.now(), 1.1, 1, "other").serializable_dict(),
             Offer("id2", pendulum.now(), 2.2, 1, "other").serializable_dict(),
@@ -331,7 +341,7 @@ class TestTwoSidedMarket:
     @pytest.mark.parametrize("algorithm", [1])
     def test_double_sided_market_performs_pay_as_clear_matching(
             self, pac_market, offer, bid, mcp_rate, mcp_energy, algorithm):
-        ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = algorithm
+        ConstSettings.MASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = algorithm
         offers = [Offer("id1", pendulum.now(), offer[0], 1, "other").serializable_dict(),
                   Offer("id2", pendulum.now(), offer[1], 1, "other").serializable_dict(),
                   Offer("id3", pendulum.now(), offer[2], 1, "other").serializable_dict(),
@@ -361,13 +371,15 @@ class TestTwoSidedMarket:
                 selected_energy=1,
                 bids=[Bid("bid_id", pendulum.now(), 1, 1, "B").serializable_dict()],
                 trade_rate=1,
-                market_id="").serializable_dict(),
+                market_id="",
+                time_slot="").serializable_dict(),
             BidOfferMatch(
                 offers=[Offer("offer_id2", pendulum.now(), 2, 2, "S").serializable_dict()],
                 selected_energy=2,
                 bids=[Bid("bid_id2", pendulum.now(), 2, 2, "B").serializable_dict()],
                 trade_rate=1,
-                market_id="").serializable_dict()
+                market_id="",
+                time_slot="").serializable_dict()
         ]
         offer_trade = Trade("trade", 1, Offer("offer_id", pendulum.now(), 1, 1, "S"), "S", "B",
                             residual=Offer("residual_offer", pendulum.now(), 0.5, 0.5, "S"))
@@ -384,9 +396,9 @@ class TestTwoSidedMarket:
 @pytest.fixture()
 def two_sided_market_matching():
     patches = [
-        patch("d3a.models.market.two_sided.TwoSidedMarket.validate_bid_offer_match"),
-        patch("d3a.models.market.two_sided.TwoSidedMarket.accept_bid_offer_pair"),
-        patch("d3a.models.market.two_sided.TwoSidedMarket."
+        patch("gsy_e.models.market.two_sided.TwoSidedMarket.validate_bid_offer_match"),
+        patch("gsy_e.models.market.two_sided.TwoSidedMarket.accept_bid_offer_pair"),
+        patch("gsy_e.models.market.two_sided.TwoSidedMarket."
               "_replace_offers_bids_with_residual_in_recommendations_list"),
     ]
     for p in patches:
@@ -408,7 +420,8 @@ class TestTwoSidedMarketMatchRecommendations:
         recommendations = [
             BidOfferMatch(
                 bids=[bid.serializable_dict()], offers=[offer.serializable_dict()],
-                trade_rate=2, selected_energy=1, market_id=market.id).serializable_dict()
+                trade_rate=2, selected_energy=1, market_id=market.id,
+                time_slot="time_slot").serializable_dict()
         ]
         # The sent offer isn't in market offers, should be skipped
         market.match_recommendations(recommendations)
@@ -437,7 +450,8 @@ class TestTwoSidedMarketMatchRecommendations:
         recommendations = [
             BidOfferMatch(
                 bids=[bid.serializable_dict()], offers=[offer.serializable_dict()],
-                trade_rate=2, selected_energy=1, market_id=market.id).serializable_dict()
+                trade_rate=2, selected_energy=1, market_id=market.id,
+                time_slot="2021-10-06T12:00").serializable_dict()
         ]
         market.match_recommendations(recommendations)
         assert len(market.trades) == 1
@@ -455,7 +469,8 @@ class TestTwoSidedMarketMatchRecommendations:
             BidOfferMatch(
                 bids=[bid.serializable_dict()],
                 offers=[offer.serializable_dict() for offer in market.offers.values()],
-                trade_rate=2, selected_energy=1, market_id=market.id).serializable_dict()
+                trade_rate=2, selected_energy=1, market_id=market.id,
+                time_slot="2021-10-06T12:00").serializable_dict()
         ]
         market.match_recommendations(recommendations)
         assert len(market.trades) == 2
@@ -473,7 +488,8 @@ class TestTwoSidedMarketMatchRecommendations:
             BidOfferMatch(
                 bids=[bid.serializable_dict() for bid in market.bids.values()],
                 offers=[offer.serializable_dict() for offer in market.offers.values()],
-                trade_rate=1, selected_energy=1, market_id=market.id).serializable_dict()
+                trade_rate=1, selected_energy=1, market_id=market.id,
+                time_slot="2021-10-06T12:00").serializable_dict()
         ]
         market.match_recommendations(recommendations)
         assert len(market.trades) == 2
@@ -492,7 +508,8 @@ class TestTwoSidedMarketMatchRecommendations:
             BidOfferMatch(
                 bids=[bid.serializable_dict() for bid in market.bids.values()],
                 offers=[offer.serializable_dict() for offer in market.offers.values()],
-                trade_rate=1, selected_energy=2, market_id=market.id).serializable_dict()
+                trade_rate=1, selected_energy=2, market_id=market.id,
+                time_slot="2021-10-06T12:00").serializable_dict()
         ]
         market.match_recommendations(recommendations)
         assert len(market.trades) == 3
@@ -512,7 +529,8 @@ class TestTwoSidedMarketMatchRecommendations:
                 BidOfferMatch(
                     bids=[b.serializable_dict() for b in bids.values()],
                     offers=[o.serializable_dict() for o in offers.values()],
-                    trade_rate=1, selected_energy=2, market_id=market.id).serializable_dict()
+                    trade_rate=1, selected_energy=2, market_id=market.id,
+                    time_slot="2021-10-06T12:00").serializable_dict()
             ]
             market.match_recommendations(recommendations)
             assert len(market.trades) == 0

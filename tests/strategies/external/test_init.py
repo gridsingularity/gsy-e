@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,27 +18,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import uuid
 from collections import deque
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, PropertyMock, patch
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.data_classes import Trade, Offer, Bid
-from d3a_interface.utils import format_datetime
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.data_classes import Bid, Offer, Trade
+from gsy_framework.utils import format_datetime
 from parameterized import parameterized
-from pendulum import now, duration, datetime
+from pendulum import datetime, duration, now
+from redis.exceptions import RedisError
 
-import d3a.constants
-import d3a.d3a_core.util
-import d3a.models.strategy.external_strategies
-from d3a.d3a_core.global_objects_singleton import global_objects
-from d3a.models.area import Area
-from d3a.models.strategy import BidEnabledStrategy
-from d3a.models.strategy.external_strategies import IncomingRequest
-from d3a.models.strategy.external_strategies.load import (LoadHoursExternalStrategy,
-                                                          LoadForecastExternalStrategy)
-from d3a.models.strategy.external_strategies.pv import (PVExternalStrategy,
-                                                        PVForecastExternalStrategy)
-from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
+import gsy_e.constants
+import gsy_e.gsy_e_core.util
+from gsy_e.gsy_e_core.global_objects_singleton import global_objects
+from gsy_e.models.area import Area
+from gsy_e.models.strategy import BidEnabledStrategy
+from gsy_e.models.strategy.external_strategies import (
+    IncomingRequest, ExternalStrategyConnectionManager)
+from gsy_e.models.strategy.external_strategies.load import (
+    LoadForecastExternalStrategy, LoadHoursExternalStrategy, LoadProfileExternalStrategy)
+from gsy_e.models.strategy.external_strategies.pv import (
+    PVExternalStrategy, PVForecastExternalStrategy, PVPredefinedExternalStrategy,
+    PVUserProfileExternalStrategy)
+from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 
 transaction_id = str(uuid.uuid4())
 
@@ -51,9 +53,8 @@ def ext_strategy_fixture(request):
     config.tick_length = duration(seconds=15)
     config.ticks_per_slot = 60
     config.start_date = GlobalConfig.start_date
-    config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
+    config.grid_fee_type = ConstSettings.MASettings.GRID_FEE_TYPE
     config.end_date = GlobalConfig.start_date + duration(days=1)
-    config.market_count = 1
     area = Area(name="forecast_pv", config=config, strategy=strategy,
                 external_connection_available=True)
     parent = Area(name="parent_area", children=[area], config=config)
@@ -83,12 +84,12 @@ class TestExternalMixin:
         self.area.get_future_market_from_id = lambda _: market
 
     def teardown_method(self) -> None:
-        ConstSettings.IAASettings.MARKET_TYPE = 1
+        ConstSettings.MASettings.MARKET_TYPE = 1
 
     def test_dispatch_tick_frequency_gets_calculated_correctly(self):
         self.external_strategy = LoadHoursExternalStrategy(100)
         self._create_and_activate_strategy_area(self.external_strategy)
-        d3a.d3a_core.util.d3a.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
+        gsy_e.gsy_e_core.util.gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
         self.config.ticks_per_slot = 90
         global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
         assert global_objects.external_global_stats.\
@@ -105,7 +106,7 @@ class TestExternalMixin:
         global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
         assert global_objects.external_global_stats.\
             external_tick_counter._dispatch_tick_frequency == 19
-        d3a.d3a_core.util.d3a.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 50
+        gsy_e.gsy_e_core.util.gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 50
         self.config.ticks_per_slot = 90
         global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
         assert global_objects.external_global_stats.\
@@ -129,7 +130,7 @@ class TestExternalMixin:
         [StorageExternalStrategy()]
     ])
     def test_dispatch_event_tick_to_external_aggregator(self, strategy):
-        d3a.d3a_core.util.d3a.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
+        gsy_e.gsy_e_core.util.gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
         self._create_and_activate_strategy_area(strategy)
         strategy.redis.aggregator.is_controlling_device = lambda _: True
         self.config.ticks_per_slot = 90
@@ -149,7 +150,7 @@ class TestExternalMixin:
             self.area.uuid
         result = strategy.redis.aggregator.add_batch_tick_event.call_args_list[0][0][1]
         assert result == \
-            {"market_slot": GlobalConfig.start_date.format(d3a.constants.DATE_TIME_FORMAT),
+            {"market_slot": GlobalConfig.start_date.format(gsy_e.constants.DATE_TIME_FORMAT),
              "slot_completion": "20%"}
         strategy.redis.reset_mock()
         strategy.redis.aggregator.add_batch_tick_event.reset_mock()
@@ -163,7 +164,7 @@ class TestExternalMixin:
             self.area.uuid
         result = strategy.redis.aggregator.add_batch_tick_event.call_args_list[0][0][1]
         assert result == \
-            {"market_slot": GlobalConfig.start_date.format(d3a.constants.DATE_TIME_FORMAT),
+            {"market_slot": GlobalConfig.start_date.format(gsy_e.constants.DATE_TIME_FORMAT),
              "slot_completion": "40%"}
 
     @parameterized.expand([
@@ -172,7 +173,7 @@ class TestExternalMixin:
         [StorageExternalStrategy()]
     ])
     def test_dispatch_event_tick_to_external_agent(self, strategy):
-        d3a.d3a_core.util.d3a.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
+        gsy_e.gsy_e_core.util.gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
         self._create_and_activate_strategy_area(strategy)
         strategy.redis.aggregator.is_controlling_device = lambda _: False
         self.config.ticks_per_slot = 90
@@ -193,7 +194,7 @@ class TestExternalMixin:
         result.pop("area_uuid")
         assert result == \
             {"slot_completion": "20%",
-             "market_slot": GlobalConfig.start_date.format(d3a.constants.DATE_TIME_FORMAT),
+             "market_slot": GlobalConfig.start_date.format(gsy_e.constants.DATE_TIME_FORMAT),
              "event": "tick",
              "device_info": strategy._device_info_dict}
 
@@ -210,7 +211,7 @@ class TestExternalMixin:
         result.pop("area_uuid")
         assert result == \
             {"slot_completion": "40%",
-             "market_slot": GlobalConfig.start_date.format(d3a.constants.DATE_TIME_FORMAT),
+             "market_slot": GlobalConfig.start_date.format(gsy_e.constants.DATE_TIME_FORMAT),
              "event": "tick",
              "device_info": strategy._device_info_dict}
 
@@ -245,7 +246,7 @@ class TestExternalMixin:
                           "test_area", "parent_area", fee_price=0.23, buyer_id=self.area.uuid,
                           seller_id=self.parent.uuid)
 
-        strategy.event_trade(market_id="test_market", trade=trade)
+        strategy.event_offer_traded(market_id="test_market", trade=trade)
         assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
             self.area.uuid
 
@@ -292,7 +293,7 @@ class TestExternalMixin:
         current_time = now()
         trade = Trade("id", current_time, Offer("offer_id", now(), 20, 1.0, "test_area"),
                       "test_area", "parent_area", fee_price=0.23)
-        strategy.event_trade(market_id="test_market", trade=trade)
+        strategy.event_offer_traded(market_id="test_market", trade=trade)
         assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/events/trade"
         call_args = strategy.redis.publish_json.call_args_list[0][0][1]
         assert call_args["trade_id"] == trade.id
@@ -313,7 +314,7 @@ class TestExternalMixin:
         [StorageExternalStrategy()]
     ])
     def test_skip_dispatch_double_event_trade_to_external_agent_two_sided_market(self, strategy):
-        ConstSettings.IAASettings.MARKET_TYPE = 2
+        ConstSettings.MASettings.MARKET_TYPE = 2
         strategy._track_energy_sell_type = lambda _: None
         self._create_and_activate_strategy_area(strategy)
         market = self.area.get_future_market_from_id(1)
@@ -328,13 +329,13 @@ class TestExternalMixin:
             skipped_trade = (
                 Trade("id", current_time, bid, "test_area", "parent_area", fee_price=0.23))
 
-            strategy.event_trade(market_id=market.id, trade=skipped_trade)
+            strategy.event_offer_traded(market_id=market.id, trade=skipped_trade)
             call_args = strategy.redis.aggregator.add_batch_trade_event.call_args_list
             assert call_args == []
 
             published_trade = (
                 Trade("id", current_time, bid, "parent_area", "test_area", fee_price=0.23))
-            strategy.event_trade(market_id=market.id, trade=published_trade)
+            strategy.event_offer_traded(market_id=market.id, trade=published_trade)
             assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
                 self.area.uuid
         else:
@@ -344,33 +345,33 @@ class TestExternalMixin:
                 Trade("id", current_time, offer, "parent_area", "test_area", fee_price=0.23))
             strategy.offers.sold_offer(offer, market.id)
 
-            strategy.event_trade(market_id=market.id, trade=skipped_trade)
+            strategy.event_offer_traded(market_id=market.id, trade=skipped_trade)
             call_args = strategy.redis.aggregator.add_batch_trade_event.call_args_list
             assert call_args == []
 
             published_trade = (
                 Trade("id", current_time, offer, "test_area", "parent_area", fee_price=0.23))
-            strategy.event_trade(market_id=market.id, trade=published_trade)
+            strategy.event_offer_traded(market_id=market.id, trade=published_trade)
             assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
                 self.area.uuid
 
     def test_device_info_dict_for_load_strategy_reports_required_energy(self):
         strategy = LoadHoursExternalStrategy(100)
         self._create_and_activate_strategy_area(strategy)
-        strategy.state._energy_requirement_Wh[strategy.next_market.time_slot] = 0.987
+        strategy.state._energy_requirement_Wh[strategy.spot_market.time_slot] = 0.987
         assert strategy._device_info_dict["energy_requirement_kWh"] == 0.000987
 
     def test_device_info_dict_for_pv_strategy_reports_available_energy(self):
         strategy = PVExternalStrategy(2, capacity_kW=0.16)
         self._create_and_activate_strategy_area(strategy)
-        strategy.state._available_energy_kWh[strategy.next_market.time_slot] = 1.123
+        strategy.state._available_energy_kWh[strategy.spot_market.time_slot] = 1.123
         assert strategy._device_info_dict["available_energy_kWh"] == 1.123
 
     def test_device_info_dict_for_storage_strategy_reports_battery_stats(self):
         strategy = StorageExternalStrategy(battery_capacity_kWh=0.5)
         self._create_and_activate_strategy_area(strategy)
-        strategy.state.energy_to_sell_dict[strategy.next_market.time_slot] = 0.02
-        strategy.state.energy_to_buy_dict[strategy.next_market.time_slot] = 0.03
+        strategy.state.energy_to_sell_dict[strategy.spot_market.time_slot] = 0.02
+        strategy.state.energy_to_buy_dict[strategy.spot_market.time_slot] = 0.03
         strategy.state._used_storage = 0.01
         assert strategy._device_info_dict["energy_to_sell"] == 0.02
         assert strategy._device_info_dict["energy_to_buy"] == 0.03
@@ -389,10 +390,10 @@ class TestExternalMixin:
         self.device.strategy.owner = self.device
         assert self.device.strategy.connected is False
         self.device.strategy._register(payload)
-        self.device.strategy.register_on_market_cycle()
+        self.device.strategy._update_connection_status()
         assert self.device.strategy.connected is True
         self.device.strategy._unregister(payload)
-        self.device.strategy.register_on_market_cycle()
+        self.device.strategy._update_connection_status()
         assert self.device.strategy.connected is False
 
         payload = {"data": json.dumps({"transaction_id": None})}
@@ -423,7 +424,7 @@ class TestExternalMixin:
     def test_restore_state(self, strategy):
         strategy.state.restore_state = MagicMock()
         strategy.connected = True
-        strategy._connected = True
+        strategy._is_registered = True
         strategy._use_template_strategy = True
         state_dict = {
             "connected": False,
@@ -432,7 +433,7 @@ class TestExternalMixin:
         }
         strategy.restore_state(state_dict)
         assert strategy.connected is False
-        assert strategy._connected is False
+        assert strategy._is_registered is False
         assert strategy._use_template_strategy is False
         strategy.state.restore_state.assert_called_once_with(state_dict)
 
@@ -441,11 +442,11 @@ class TestExternalMixin:
         PVExternalStrategy(2, capacity_kW=0.16),
         StorageExternalStrategy()
     ])
-    def test_get_market_from_cmd_arg_returns_next_market_if_arg_missing(self, strategy):
+    def test_get_market_from_cmd_arg_returns_spot_market_if_arg_missing(self, strategy):
         strategy.area = Mock()
-        strategy.area.next_market = Mock()
+        strategy.area.spot_market = Mock()
         market = strategy._get_market_from_command_argument({})
-        assert market == strategy.area.next_market
+        assert market == strategy.area.spot_market
 
     @pytest.mark.parametrize("strategy", [
         LoadHoursExternalStrategy(100),
@@ -454,11 +455,11 @@ class TestExternalMixin:
     ])
     def test_get_market_from_cmd_arg_returns_spot_market(self, strategy):
         strategy.area = Mock()
-        strategy.area.next_market = Mock()
-        timeslot = format_datetime(now())
+        strategy.area.spot_market = Mock()
+        time_slot = format_datetime(now())
         market_mock = Mock()
         strategy.area.get_market = MagicMock(return_value=market_mock)
-        market = strategy._get_market_from_command_argument({"timeslot": timeslot})
+        market = strategy._get_market_from_command_argument({"time_slot": time_slot})
         assert market == market_mock
 
     @pytest.mark.parametrize("strategy", [
@@ -468,13 +469,44 @@ class TestExternalMixin:
     ])
     def test_get_market_from_cmd_arg_returns_settlement_market(self, strategy):
         strategy.area = Mock()
-        strategy.area.next_market = Mock()
-        timeslot = format_datetime(now())
+        strategy.area.spot_market = Mock()
+        time_slot = format_datetime(now())
         market_mock = Mock()
         strategy.area.get_market = MagicMock(return_value=None)
         strategy.area.get_settlement_market = MagicMock(return_value=market_mock)
-        market = strategy._get_market_from_command_argument({"timeslot": timeslot})
+        market = strategy._get_market_from_command_argument({"time_slot": time_slot})
         assert market == market_mock
+
+    @staticmethod
+    @pytest.mark.parametrize("strategy", [
+        LoadHoursExternalStrategy(100),
+        LoadProfileExternalStrategy(),
+        PVExternalStrategy(2, capacity_kW=0.16),
+        PVUserProfileExternalStrategy(),
+        PVPredefinedExternalStrategy(),
+        StorageExternalStrategy()])
+    def test_filter_degrees_of_freedom_arguments(strategy):
+        """Degrees of Freedom are correctly filtered in all external strategies."""
+        order_arguments = {
+            "type": "bid", "energy": 0.025, "price": 30, "replace_existing": True,
+            "attributes": {"energy_type": "PV"}, "requirements": [{"price": 12}],
+            "timeslot": None, "transaction_id": "some-id"}
+
+        strategy.area = Mock(spec=Area)
+        # Arguments are preserved when required
+        type(strategy.simulation_config).enable_degrees_of_freedom = PropertyMock(
+            return_value=True)
+        result = strategy.filter_degrees_of_freedom_arguments(order_arguments)
+        assert result == (order_arguments, [])
+
+        # Arguments are removed when required
+        type(strategy.simulation_config).enable_degrees_of_freedom = PropertyMock(
+            return_value=False)
+        result = strategy.filter_degrees_of_freedom_arguments(order_arguments)
+        assert result == ({
+            "type": "bid", "energy": 0.025, "price": 30, "replace_existing": True,
+            "timeslot": None, "transaction_id": "some-id"},
+            ["requirements", "attributes"])
 
 
 class TestForecastRelatedFeatures:
@@ -482,10 +514,10 @@ class TestForecastRelatedFeatures:
                                                       PVForecastExternalStrategy()], indirect=True)
     def test_set_energy_forecast_succeeds(self, ext_strategy_fixture):
         arguments = {"transaction_id": transaction_id,
-                     "energy_forecast": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
+                     "energy_forecast": {now().format(gsy_e.constants.DATE_TIME_FORMAT): 1}}
         payload = {"data": json.dumps(arguments)}
         assert ext_strategy_fixture.pending_requests == deque([])
-        ext_strategy_fixture.set_energy_forecast(payload)
+        ext_strategy_fixture._set_energy_forecast(payload)
         assert len(ext_strategy_fixture.pending_requests) > 0
         energy_forecast_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
                                            "response/set_energy_forecast"
@@ -499,7 +531,7 @@ class TestForecastRelatedFeatures:
         ext_strategy_fixture.redis.publish_json = Mock()
         ext_strategy_fixture.pending_requests = deque([])
         payload = {"data": json.dumps({"transaction_id": transaction_id})}
-        ext_strategy_fixture.set_energy_forecast(payload)
+        ext_strategy_fixture._set_energy_forecast(payload)
         energy_forecast_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
                                            "response/set_energy_forecast"
         ext_strategy_fixture.redis.publish_json.assert_called_with(
@@ -513,10 +545,10 @@ class TestForecastRelatedFeatures:
                                                       PVForecastExternalStrategy()], indirect=True)
     def test_set_energy_measurement_succeeds(self, ext_strategy_fixture):
         arguments = {"transaction_id": transaction_id,
-                     "energy_measurement": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
+                     "energy_measurement": {now().format(gsy_e.constants.DATE_TIME_FORMAT): 1}}
         payload = {"data": json.dumps(arguments)}
         assert ext_strategy_fixture.pending_requests == deque([])
-        ext_strategy_fixture.set_energy_measurement(payload)
+        ext_strategy_fixture._set_energy_measurement(payload)
         assert len(ext_strategy_fixture.pending_requests) > 0
         energy_measurement_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
                                               "response/set_energy_measurement"
@@ -531,7 +563,7 @@ class TestForecastRelatedFeatures:
         ext_strategy_fixture.redis.publish_json = Mock()
         ext_strategy_fixture.pending_requests = deque([])
         payload = {"data": json.dumps({"transaction_id": transaction_id})}
-        ext_strategy_fixture.set_energy_measurement(payload)
+        ext_strategy_fixture._set_energy_measurement(payload)
         energy_measurement_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
                                               "response/set_energy_measurement"
         ext_strategy_fixture.redis.publish_json.assert_called_with(
@@ -547,9 +579,9 @@ class TestForecastRelatedFeatures:
     def test_set_energy_forecast_impl_succeeds(self, ext_strategy_fixture):
         ext_strategy_fixture.redis.publish_json = Mock()
         arguments = {"transaction_id": transaction_id,
-                     "energy_forecast": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
+                     "energy_forecast": {now().format(gsy_e.constants.DATE_TIME_FORMAT): 1}}
         response_channel = "response_channel"
-        ext_strategy_fixture.set_energy_forecast_impl(arguments, response_channel)
+        ext_strategy_fixture._set_energy_forecast_impl(arguments, response_channel)
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
             response_channel, {"command": "set_energy_forecast",
                                "status": "ready",
@@ -563,7 +595,7 @@ class TestForecastRelatedFeatures:
         response_channel = "response_channel"
         arguments = {"transaction_id": transaction_id,
                      "energy_forecast": {"wrong:time:format": 1}}
-        ext_strategy_fixture.set_energy_forecast_impl(arguments, response_channel)
+        ext_strategy_fixture._set_energy_forecast_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_forecast_impl "
                          f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
@@ -579,8 +611,8 @@ class TestForecastRelatedFeatures:
         ext_strategy_fixture.redis.publish_json.reset_mock()
         response_channel = "response_channel"
         arguments = {"transaction_id": transaction_id,
-                     "energy_forecast": {now().format(d3a.constants.DATE_TIME_FORMAT): -1}}
-        ext_strategy_fixture.set_energy_forecast_impl(arguments, response_channel)
+                     "energy_forecast": {now().format(gsy_e.constants.DATE_TIME_FORMAT): -1}}
+        ext_strategy_fixture._set_energy_forecast_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_forecast_impl "
                          f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
@@ -595,9 +627,9 @@ class TestForecastRelatedFeatures:
         # test successful call of set_energy_measurement_impl:
         ext_strategy_fixture.redis.publish_json = Mock()
         arguments = {"transaction_id": transaction_id,
-                     "energy_measurement": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
+                     "energy_measurement": {now().format(gsy_e.constants.DATE_TIME_FORMAT): 1}}
         response_channel = "response_channel"
-        ext_strategy_fixture.set_energy_measurement_impl(arguments, response_channel)
+        ext_strategy_fixture._set_energy_measurement_impl(arguments, response_channel)
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
             response_channel, {"command": "set_energy_measurement",
                                "status": "ready",
@@ -611,7 +643,7 @@ class TestForecastRelatedFeatures:
         ext_strategy_fixture.redis.publish_json.reset_mock()
         arguments = {"transaction_id": transaction_id,
                      "energy_measurement": {"wrong:time:format": 1}}
-        ext_strategy_fixture.set_energy_measurement_impl(arguments, response_channel)
+        ext_strategy_fixture._set_energy_measurement_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_measurement_impl "
                          f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
@@ -627,8 +659,8 @@ class TestForecastRelatedFeatures:
         response_channel = "response_channel"
         ext_strategy_fixture.redis.publish_json.reset_mock()
         arguments = {"transaction_id": transaction_id,
-                     "energy_measurement": {now().format(d3a.constants.DATE_TIME_FORMAT): -1}}
-        ext_strategy_fixture.set_energy_measurement_impl(arguments, response_channel)
+                     "energy_measurement": {now().format(gsy_e.constants.DATE_TIME_FORMAT): -1}}
+        ext_strategy_fixture._set_energy_measurement_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_measurement_impl "
                          f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
@@ -668,3 +700,79 @@ class TestForecastRelatedFeatures:
         assert command_name in return_value
         assert argument_name in return_value[command_name]
         assert list(return_value[command_name][argument_name].values())[0] == 1234.0
+
+
+class TestAreaExternalConnectionManager:
+    """Test the AreaExternalConnectionManager class."""
+    def test_register(self):
+        """Test the register method of AreaExternalConnectionManager."""
+        redis_communicator = MagicMock()
+        # is_connected=True
+        assert ExternalStrategyConnectionManager.register(
+            redis_communicator, "channel1", is_connected=True,
+            transaction_id="transaction1", area_uuid="area1") is True
+        redis_communicator.publish_json.assert_not_called()
+
+        # is_connected=False
+        assert ExternalStrategyConnectionManager.register(
+            redis_communicator, "channel1", is_connected=False,
+            transaction_id="transaction1", area_uuid="area1") is True
+        redis_communicator.publish_json.assert_called_once_with(
+            "channel1/response/register_participant",
+            {"command": "register", "status": "ready", "registered": True,
+             "transaction_id": "transaction1", "device_uuid": "area1"}
+        )
+
+        # Exception raised
+        redis_communicator.reset_mock()
+        redis_communicator.publish_json.side_effect = RedisError
+        assert ExternalStrategyConnectionManager.register(
+            redis_communicator, "channel1", is_connected=False,
+            transaction_id="transaction1", area_uuid="area1") is False
+
+    @patch("gsy_e.models.strategy.external_strategies.ExternalStrategyConnectionManager."
+           "check_for_connected_and_reply")
+    def test_unregister(self, check_for_connected_mock):
+        """Test the unregister method of AreaExternalConnectionManager."""
+        redis_communicator = MagicMock()
+
+        # is_connected=False
+        check_for_connected_mock.return_value = False
+        assert ExternalStrategyConnectionManager.unregister(
+            redis_communicator, "channel1", is_connected=False,
+            transaction_id="transaction1") is False
+        redis_communicator.publish_json.assert_not_called()
+
+        # is_connected=True
+        check_for_connected_mock.return_value = True
+        assert ExternalStrategyConnectionManager.unregister(
+            redis_communicator, "channel1", is_connected=True,
+            transaction_id="transaction1") is False
+        redis_communicator.publish_json.assert_called_once_with(
+            "channel1/response/unregister_participant",
+            {"command": "unregister", "status": "ready", "unregistered": True,
+             "transaction_id": "transaction1"}
+        )
+
+        # Exception raised
+        redis_communicator.reset_mock()
+        redis_communicator.publish_json.side_effect = RedisError
+        assert ExternalStrategyConnectionManager.unregister(
+            redis_communicator, "channel1", is_connected=False,
+            transaction_id="transaction1") is False
+
+    def test_check_for_connected_and_reply(self):
+        """Test the check_for_connected_and_reply method of AreaExternalConnectionManager."""
+        redis_communicator = MagicMock()
+
+        assert ExternalStrategyConnectionManager.check_for_connected_and_reply(
+            redis_communicator, "channel1", is_connected=True) is True
+        redis_communicator.publish_json.assert_not_called()
+
+        assert ExternalStrategyConnectionManager.check_for_connected_and_reply(
+            redis_communicator, "channel1", is_connected=False) is False
+        redis_communicator.publish_json.assert_called_once_with(
+            "channel1",
+            {"status": "error",
+             "error_message": "Client should be registered in order to access this area."}
+        )

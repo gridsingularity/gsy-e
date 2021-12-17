@@ -4,30 +4,34 @@
 #
 #    pip-compile --max-rounds=100 --no-emit-index-url requirements/base.in
 #
--e git+https://github.com/gridsingularity/d3a-interface@master#egg=d3a_interface
+-e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework
     # via -r requirements/base.in
-appdirs==1.4.4
-    # via
-    #   d3a-interface
-    #   virtualenv
-attrs==20.3.0
+attrs==21.2.0
     # via
     #   -r requirements/base.in
-    #   d3a-interface
+    #   gsy-framework
     #   jsonschema
 awesome-slugify==1.6.5
     # via -r requirements/base.in
+backports.entry-points-selectable==1.1.0
+    # via
+    #   gsy-framework
+    #   virtualenv
 cached-property==1.5.2
     # via -r requirements/base.in
-certifi==2020.12.5
+certifi==2021.10.8
     # via
-    #   d3a-interface
+    #   gsy-framework
     #   requests
-chardet==3.0.4
+cfgv==3.3.1
     # via
-    #   d3a-interface
+    #   gsy-framework
+    #   pre-commit
+chardet==4.0.0
+    # via
+    #   gsy-framework
     #   requests
-click==7.1.2
+click==8.0.3
     # via
     #   -r requirements/base.in
     #   click-default-group
@@ -36,80 +40,120 @@ click-default-group==1.2.2
     # via -r requirements/base.in
 colorlog==4.7.2
     # via -r requirements/base.in
-distlib==0.3.1
+distlib==0.3.3
     # via
-    #   d3a-interface
+    #   gsy-framework
     #   virtualenv
-filelock==3.0.12
+entrypoints==0.3
     # via
-    #   d3a-interface
+    #   flake8
+    #   gsy-framework
+filelock==3.3.2
+    # via
+    #   gsy-framework
     #   tox
     #   virtualenv
+flake8==3.7.9
+    # via
+    #   flake8-tuple
+    #   gsy-framework
+flake8-tuple==0.4.1
+    # via gsy-framework
+identify==2.3.3
+    # via
+    #   gsy-framework
+    #   pre-commit
 idna==2.10
     # via
-    #   d3a-interface
+    #   gsy-framework
     #   requests
-jsonschema==3.2.0
-    # via d3a-interface
+jsonschema==4.1.2
+    # via gsy-framework
 kafka-python==2.0.2
-    # via d3a-interface
+    # via gsy-framework
+mccabe==0.6.1
+    # via
+    #   flake8
+    #   gsy-framework
+nodeenv==1.6.0
+    # via
+    #   gsy-framework
+    #   pre-commit
 numpy==1.20.3
     # via -r requirements/base.in
-packaging==20.7
+packaging==21.2
     # via
-    #   d3a-interface
+    #   gsy-framework
     #   tox
 pendulum==2.1.2
     # via
     #   -r requirements/base.in
-    #   d3a-interface
-plotly==5.2.1
-    # via -r requirements/base.in
-pluggy==0.13.1
+    #   gsy-framework
+platformdirs==2.4.0
     # via
-    #   d3a-interface
+    #   gsy-framework
+    #   virtualenv
+plotly==5.3.1
+    # via -r requirements/base.in
+pluggy==1.0.0
+    # via
+    #   gsy-framework
     #   tox
 pony==0.7.14
     # via -r requirements/base.in
-py==1.9.0
+pre-commit==2.15.0
+    # via gsy-framework
+py==1.10.0
     # via
-    #   d3a-interface
+    #   gsy-framework
     #   tox
+pycodestyle==2.5.0
+    # via
+    #   flake8
+    #   gsy-framework
+pyflakes==2.1.1
+    # via
+    #   flake8
+    #   gsy-framework
 pyparsing==2.4.7
     # via
-    #   d3a-interface
+    #   gsy-framework
     #   packaging
-pyrsistent==0.17.3
+pyrsistent==0.18.0
     # via
-    #   d3a-interface
+    #   gsy-framework
     #   jsonschema
-python-dateutil==2.8.1
+python-dateutil==2.8.2
     # via
-    #   d3a-interface
+    #   gsy-framework
     #   pendulum
 python-rex==0.4
     # via -r requirements/base.in
-pytz==2021.1
+pytz==2021.3
     # via -r requirements/base.in
 pytzdata==2020.1
     # via
-    #   d3a-interface
+    #   gsy-framework
     #   pendulum
+pyyaml==6.0
+    # via
+    #   gsy-framework
+    #   pre-commit
 redis==3.5.3
     # via
     #   -r requirements/base.in
-    #   d3a-interface
+    #   gsy-framework
     #   rq
-regex==2021.8.3
+regex==2021.10.23
     # via awesome-slugify
 requests==2.25.1
-    # via d3a-interface
-rq==1.9.0
+    # via gsy-framework
+rq==1.10.0
     # via -r requirements/base.in
-six==1.15.0
+six==1.16.0
     # via
-    #   d3a-interface
-    #   jsonschema
+    #   flake8-tuple
+    #   gsy-framework
     #   plotly
     #   python-dateutil
     #   python-rex
@@ -117,27 +161,27 @@ six==1.15.0
     #   virtualenv
 sortedcontainers==2.4.0
     # via -r requirements/base.in
+tabulate==0.8.9
+    # via gsy-framework
 tenacity==8.0.1
     # via plotly
 toml==0.10.2
     # via
-    #   d3a-interface
+    #   gsy-framework
+    #   pre-commit
     #   tox
-tox==3.20.1
-    # via d3a-interface
+tox==3.24.4
+    # via gsy-framework
 unidecode==0.4.21
     # via awesome-slugify
-urllib3==1.26.4
+urllib3==1.26.7
     # via
-    #   -r requirements/base.in
-    #   d3a-interface
+    #   gsy-framework
     #   requests
-virtualenv==20.2.2
+virtualenv==20.10.0
     # via
-    #   d3a-interface
+    #   gsy-framework
+    #   pre-commit
     #   tox
-websockets==8.1
-    # via d3a-interface
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
+websockets==10.0
+    # via gsy-framework
