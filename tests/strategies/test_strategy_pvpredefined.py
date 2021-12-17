@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,17 +23,17 @@ from uuid import uuid4
 
 import pendulum
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig, PROFILE_EXPANSION_DAYS
-from d3a_interface.data_classes import Offer
-from d3a_interface.exceptions import D3ADeviceException
-from d3a_interface.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from d3a_interface.utils import generate_market_slot_list
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.data_classes import Offer
+from gsy_framework.exceptions import GSyDeviceException
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.utils import generate_market_slot_list
 from pendulum import DateTime, duration, today, datetime
 
-from d3a.constants import TIME_ZONE, TIME_FORMAT
-from d3a.d3a_core.util import (d3a_path, change_global_config)
-from d3a.models.area import DEFAULT_CONFIG
-from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
+from gsy_e.constants import TIME_ZONE, TIME_FORMAT
+from gsy_e.gsy_e_core.util import (d3a_path, change_global_config)
+from gsy_e.models.area import DEFAULT_CONFIG
+from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 
 
 def setup_function():
@@ -61,8 +61,15 @@ class FakeArea:
         self.test_market = FakeMarket(0)
         self._spot_market = FakeMarket(0)
 
-    def get_future_market_from_id(self, id):
+    @property
+    def future_markets(self):
+        return None
+
+    def get_spot_or_future_market_by_id(self, _):
         return self.test_market
+
+    def is_market_spot_or_future(self, _):
+        return True
 
     @property
     def current_market(self):
@@ -326,6 +333,7 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
         pv_test6.state._energy_production_forecast_kWh[TIME]
     fake_trade = FakeTrade(market_test3.created_offers[0])
     fake_trade.seller = pv_test6.owner.name
+    fake_trade.time_slot = market_test3.time_slot
     pv_test6.event_offer_traded(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []
     pv_test6.event_tick()
@@ -375,53 +383,30 @@ def test_correct_interpolation_power_profile():
         assert abs((times[ii]-times[ii+1]).in_seconds()) == slot_length * 60
 
 
-def test_correct_time_expansion_read_arbitrary_profile():
-    # TODO: this test needs to move to d3a-interface
-    market_maker_rate = 30
-    if GlobalConfig.IS_CANARY_NETWORK:
-        GlobalConfig.sim_duration = duration(hours=3)
-        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS - 1,
-                                                          hours=23, minutes=45)
-        mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
-        assert list(mmr.keys())[-1] == expected_last_time_slot
-        GlobalConfig.sim_duration = duration(hours=30)
-        expected_last_time_slot = today(tz=TIME_ZONE).add(days=PROFILE_EXPANSION_DAYS - 1,
-                                                          hours=23, minutes=45)
-        mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
-        assert list(mmr.keys())[-1] == expected_last_time_slot
-    else:
-        GlobalConfig.sim_duration = duration(hours=3)
-        mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
-        assert (list(mmr.keys())[-1] - today(tz=TIME_ZONE)).days == 0
-        GlobalConfig.sim_duration = duration(hours=36)
-        mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
-        assert (list(mmr.keys())[-1] - today(tz=TIME_ZONE)).days == 1
-
-
 def test_predefined_pv_constructor_rejects_incorrect_parameters():
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         PVPredefinedStrategy(panel_count=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         pv = PVPredefinedStrategy(initial_selling_rate=5, final_selling_rate=15)
         pv.event_activate()
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         PVPredefinedStrategy(fit_to_limit=True, energy_rate_decrease_per_update=1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         PVPredefinedStrategy(fit_to_limit=False, energy_rate_decrease_per_update=-1)
 
 
 def test_pv_user_profile_constructor_rejects_incorrect_parameters():
     user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         PVUserProfileStrategy(power_profile=user_profile_path, panel_count=-1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         pv = PVUserProfileStrategy(power_profile=user_profile_path,
                                    initial_selling_rate=5, final_selling_rate=15)
         pv.event_activate()
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         PVUserProfileStrategy(power_profile=user_profile_path,
                               fit_to_limit=True, energy_rate_decrease_per_update=1)
-    with pytest.raises(D3ADeviceException):
+    with pytest.raises(GSyDeviceException):
         PVUserProfileStrategy(power_profile=user_profile_path,
                               fit_to_limit=False, energy_rate_decrease_per_update=-1)
 

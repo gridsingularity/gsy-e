@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,28 +18,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import uuid
 from collections import deque
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, Mock, PropertyMock, patch
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.data_classes import Trade, Offer, Bid
-from d3a_interface.utils import format_datetime
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.data_classes import Bid, Offer, Trade
+from gsy_framework.utils import format_datetime
 from parameterized import parameterized
-from pendulum import now, duration, datetime
+from pendulum import datetime, duration, now
+from redis.exceptions import RedisError
 
-import d3a.constants
-import d3a.d3a_core.util
-import d3a.models.strategy.external_strategies
-from d3a.d3a_core.global_objects_singleton import global_objects
-from d3a.models.area import Area
-from d3a.models.strategy import BidEnabledStrategy
-from d3a.models.strategy.external_strategies import (
+import gsy_e.constants
+import gsy_e.gsy_e_core.util
+from gsy_e.gsy_e_core.global_objects_singleton import global_objects
+from gsy_e.models.area import Area
+from gsy_e.models.strategy import BidEnabledStrategy
+from gsy_e.models.strategy.external_strategies import (
     IncomingRequest, ExternalStrategyConnectionManager)
-from d3a.models.strategy.external_strategies.load import (LoadHoursExternalStrategy,
-                                                          LoadForecastExternalStrategy)
-from d3a.models.strategy.external_strategies.pv import (PVExternalStrategy,
-                                                        PVForecastExternalStrategy)
-from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
+from gsy_e.models.strategy.external_strategies.load import (
+    LoadForecastExternalStrategy, LoadHoursExternalStrategy, LoadProfileExternalStrategy)
+from gsy_e.models.strategy.external_strategies.pv import (
+    PVExternalStrategy, PVForecastExternalStrategy, PVPredefinedExternalStrategy,
+    PVUserProfileExternalStrategy)
+from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 
 transaction_id = str(uuid.uuid4())
 
@@ -52,7 +53,7 @@ def ext_strategy_fixture(request):
     config.tick_length = duration(seconds=15)
     config.ticks_per_slot = 60
     config.start_date = GlobalConfig.start_date
-    config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
+    config.grid_fee_type = ConstSettings.MASettings.GRID_FEE_TYPE
     config.end_date = GlobalConfig.start_date + duration(days=1)
     area = Area(name="forecast_pv", config=config, strategy=strategy,
                 external_connection_available=True)
@@ -83,12 +84,12 @@ class TestExternalMixin:
         self.area.get_future_market_from_id = lambda _: market
 
     def teardown_method(self) -> None:
-        ConstSettings.IAASettings.MARKET_TYPE = 1
+        ConstSettings.MASettings.MARKET_TYPE = 1
 
     def test_dispatch_tick_frequency_gets_calculated_correctly(self):
         self.external_strategy = LoadHoursExternalStrategy(100)
         self._create_and_activate_strategy_area(self.external_strategy)
-        d3a.d3a_core.util.d3a.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
+        gsy_e.gsy_e_core.util.gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
         self.config.ticks_per_slot = 90
         global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
         assert global_objects.external_global_stats.\
@@ -105,7 +106,7 @@ class TestExternalMixin:
         global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
         assert global_objects.external_global_stats.\
             external_tick_counter._dispatch_tick_frequency == 19
-        d3a.d3a_core.util.d3a.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 50
+        gsy_e.gsy_e_core.util.gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 50
         self.config.ticks_per_slot = 90
         global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
         assert global_objects.external_global_stats.\
@@ -129,7 +130,7 @@ class TestExternalMixin:
         [StorageExternalStrategy()]
     ])
     def test_dispatch_event_tick_to_external_aggregator(self, strategy):
-        d3a.d3a_core.util.d3a.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
+        gsy_e.gsy_e_core.util.gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
         self._create_and_activate_strategy_area(strategy)
         strategy.redis.aggregator.is_controlling_device = lambda _: True
         self.config.ticks_per_slot = 90
@@ -149,7 +150,7 @@ class TestExternalMixin:
             self.area.uuid
         result = strategy.redis.aggregator.add_batch_tick_event.call_args_list[0][0][1]
         assert result == \
-            {"market_slot": GlobalConfig.start_date.format(d3a.constants.DATE_TIME_FORMAT),
+            {"market_slot": GlobalConfig.start_date.format(gsy_e.constants.DATE_TIME_FORMAT),
              "slot_completion": "20%"}
         strategy.redis.reset_mock()
         strategy.redis.aggregator.add_batch_tick_event.reset_mock()
@@ -163,7 +164,7 @@ class TestExternalMixin:
             self.area.uuid
         result = strategy.redis.aggregator.add_batch_tick_event.call_args_list[0][0][1]
         assert result == \
-            {"market_slot": GlobalConfig.start_date.format(d3a.constants.DATE_TIME_FORMAT),
+            {"market_slot": GlobalConfig.start_date.format(gsy_e.constants.DATE_TIME_FORMAT),
              "slot_completion": "40%"}
 
     @parameterized.expand([
@@ -172,7 +173,7 @@ class TestExternalMixin:
         [StorageExternalStrategy()]
     ])
     def test_dispatch_event_tick_to_external_agent(self, strategy):
-        d3a.d3a_core.util.d3a.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
+        gsy_e.gsy_e_core.util.gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
         self._create_and_activate_strategy_area(strategy)
         strategy.redis.aggregator.is_controlling_device = lambda _: False
         self.config.ticks_per_slot = 90
@@ -193,7 +194,7 @@ class TestExternalMixin:
         result.pop("area_uuid")
         assert result == \
             {"slot_completion": "20%",
-             "market_slot": GlobalConfig.start_date.format(d3a.constants.DATE_TIME_FORMAT),
+             "market_slot": GlobalConfig.start_date.format(gsy_e.constants.DATE_TIME_FORMAT),
              "event": "tick",
              "device_info": strategy._device_info_dict}
 
@@ -210,7 +211,7 @@ class TestExternalMixin:
         result.pop("area_uuid")
         assert result == \
             {"slot_completion": "40%",
-             "market_slot": GlobalConfig.start_date.format(d3a.constants.DATE_TIME_FORMAT),
+             "market_slot": GlobalConfig.start_date.format(gsy_e.constants.DATE_TIME_FORMAT),
              "event": "tick",
              "device_info": strategy._device_info_dict}
 
@@ -313,7 +314,7 @@ class TestExternalMixin:
         [StorageExternalStrategy()]
     ])
     def test_skip_dispatch_double_event_trade_to_external_agent_two_sided_market(self, strategy):
-        ConstSettings.IAASettings.MARKET_TYPE = 2
+        ConstSettings.MASettings.MARKET_TYPE = 2
         strategy._track_energy_sell_type = lambda _: None
         self._create_and_activate_strategy_area(strategy)
         market = self.area.get_future_market_from_id(1)
@@ -476,13 +477,44 @@ class TestExternalMixin:
         market = strategy._get_market_from_command_argument({"time_slot": time_slot})
         assert market == market_mock
 
+    @staticmethod
+    @pytest.mark.parametrize("strategy", [
+        LoadHoursExternalStrategy(100),
+        LoadProfileExternalStrategy(),
+        PVExternalStrategy(2, capacity_kW=0.16),
+        PVUserProfileExternalStrategy(),
+        PVPredefinedExternalStrategy(),
+        StorageExternalStrategy()])
+    def test_filter_degrees_of_freedom_arguments(strategy):
+        """Degrees of Freedom are correctly filtered in all external strategies."""
+        order_arguments = {
+            "type": "bid", "energy": 0.025, "price": 30, "replace_existing": True,
+            "attributes": {"energy_type": "PV"}, "requirements": [{"price": 12}],
+            "timeslot": None, "transaction_id": "some-id"}
+
+        strategy.area = Mock(spec=Area)
+        # Arguments are preserved when required
+        type(strategy.simulation_config).enable_degrees_of_freedom = PropertyMock(
+            return_value=True)
+        result = strategy.filter_degrees_of_freedom_arguments(order_arguments)
+        assert result == (order_arguments, [])
+
+        # Arguments are removed when required
+        type(strategy.simulation_config).enable_degrees_of_freedom = PropertyMock(
+            return_value=False)
+        result = strategy.filter_degrees_of_freedom_arguments(order_arguments)
+        assert result == ({
+            "type": "bid", "energy": 0.025, "price": 30, "replace_existing": True,
+            "timeslot": None, "transaction_id": "some-id"},
+            ["requirements", "attributes"])
+
 
 class TestForecastRelatedFeatures:
     @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
                                                       PVForecastExternalStrategy()], indirect=True)
     def test_set_energy_forecast_succeeds(self, ext_strategy_fixture):
         arguments = {"transaction_id": transaction_id,
-                     "energy_forecast": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
+                     "energy_forecast": {now().format(gsy_e.constants.DATE_TIME_FORMAT): 1}}
         payload = {"data": json.dumps(arguments)}
         assert ext_strategy_fixture.pending_requests == deque([])
         ext_strategy_fixture._set_energy_forecast(payload)
@@ -513,7 +545,7 @@ class TestForecastRelatedFeatures:
                                                       PVForecastExternalStrategy()], indirect=True)
     def test_set_energy_measurement_succeeds(self, ext_strategy_fixture):
         arguments = {"transaction_id": transaction_id,
-                     "energy_measurement": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
+                     "energy_measurement": {now().format(gsy_e.constants.DATE_TIME_FORMAT): 1}}
         payload = {"data": json.dumps(arguments)}
         assert ext_strategy_fixture.pending_requests == deque([])
         ext_strategy_fixture._set_energy_measurement(payload)
@@ -547,7 +579,7 @@ class TestForecastRelatedFeatures:
     def test_set_energy_forecast_impl_succeeds(self, ext_strategy_fixture):
         ext_strategy_fixture.redis.publish_json = Mock()
         arguments = {"transaction_id": transaction_id,
-                     "energy_forecast": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
+                     "energy_forecast": {now().format(gsy_e.constants.DATE_TIME_FORMAT): 1}}
         response_channel = "response_channel"
         ext_strategy_fixture._set_energy_forecast_impl(arguments, response_channel)
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
@@ -579,7 +611,7 @@ class TestForecastRelatedFeatures:
         ext_strategy_fixture.redis.publish_json.reset_mock()
         response_channel = "response_channel"
         arguments = {"transaction_id": transaction_id,
-                     "energy_forecast": {now().format(d3a.constants.DATE_TIME_FORMAT): -1}}
+                     "energy_forecast": {now().format(gsy_e.constants.DATE_TIME_FORMAT): -1}}
         ext_strategy_fixture._set_energy_forecast_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_forecast_impl "
                          f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
@@ -595,7 +627,7 @@ class TestForecastRelatedFeatures:
         # test successful call of set_energy_measurement_impl:
         ext_strategy_fixture.redis.publish_json = Mock()
         arguments = {"transaction_id": transaction_id,
-                     "energy_measurement": {now().format(d3a.constants.DATE_TIME_FORMAT): 1}}
+                     "energy_measurement": {now().format(gsy_e.constants.DATE_TIME_FORMAT): 1}}
         response_channel = "response_channel"
         ext_strategy_fixture._set_energy_measurement_impl(arguments, response_channel)
         ext_strategy_fixture.redis.publish_json.assert_called_once_with(
@@ -627,7 +659,7 @@ class TestForecastRelatedFeatures:
         response_channel = "response_channel"
         ext_strategy_fixture.redis.publish_json.reset_mock()
         arguments = {"transaction_id": transaction_id,
-                     "energy_measurement": {now().format(d3a.constants.DATE_TIME_FORMAT): -1}}
+                     "energy_measurement": {now().format(gsy_e.constants.DATE_TIME_FORMAT): -1}}
         ext_strategy_fixture._set_energy_measurement_impl(arguments, response_channel)
         error_message = ("Error when handling _set_energy_measurement_impl "
                          f"on area {ext_strategy_fixture.device.name}. Arguments: {arguments}")
@@ -693,12 +725,12 @@ class TestAreaExternalConnectionManager:
 
         # Exception raised
         redis_communicator.reset_mock()
-        redis_communicator.publish_json.side_effect = Exception
+        redis_communicator.publish_json.side_effect = RedisError
         assert ExternalStrategyConnectionManager.register(
             redis_communicator, "channel1", is_connected=False,
             transaction_id="transaction1", area_uuid="area1") is False
 
-    @patch("d3a.models.strategy.external_strategies.ExternalStrategyConnectionManager."
+    @patch("gsy_e.models.strategy.external_strategies.ExternalStrategyConnectionManager."
            "check_for_connected_and_reply")
     def test_unregister(self, check_for_connected_mock):
         """Test the unregister method of AreaExternalConnectionManager."""
@@ -724,7 +756,7 @@ class TestAreaExternalConnectionManager:
 
         # Exception raised
         redis_communicator.reset_mock()
-        redis_communicator.publish_json.side_effect = Exception
+        redis_communicator.publish_json.side_effect = RedisError
         assert ExternalStrategyConnectionManager.unregister(
             redis_communicator, "channel1", is_connected=False,
             transaction_id="transaction1") is False

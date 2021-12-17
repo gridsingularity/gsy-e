@@ -4,20 +4,20 @@ from uuid import uuid4
 
 import pendulum
 import pytest
-from d3a_interface.constants_limits import ConstSettings
-from d3a_interface.data_classes import BidOfferMatch
-from d3a_interface.data_classes import TradeBidOfferInfo, Trade
-from d3a_interface.matching_algorithms import (
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import BidOfferMatch
+from gsy_framework.data_classes import TradeBidOfferInfo, Trade
+from gsy_framework.matching_algorithms import (
     PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
 )
 from pendulum import now
 
-from d3a.d3a_core.blockchain_interface import NonBlockchainInterface
-from d3a.d3a_core.exceptions import (
+from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
+from gsy_e.gsy_e_core.exceptions import (
     BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade, MarketException)
-from d3a.events import MarketEvent
-from d3a.models.market import Bid, Offer
-from d3a.models.market.two_sided import TwoSidedMarket
+from gsy_e.events import MarketEvent
+from gsy_e.models.market import Bid, Offer
+from gsy_e.models.market.two_sided import TwoSidedMarket
 
 
 @pytest.fixture
@@ -77,7 +77,7 @@ class TestTwoSidedMarket:
         }
         assert market.get_offers() == market.offers
 
-    @patch("d3a.models.market.two_sided.TwoSidedMarket._update_new_bid_price_with_fee",
+    @patch("gsy_e.models.market.two_sided.TwoSidedMarket._update_new_bid_price_with_fee",
            MagicMock(return_value=5))
     def test_bid(self, market):
         """Test the bid() method of TwoSidedMarket."""
@@ -225,7 +225,7 @@ class TestTwoSidedMarket:
             market.bid(10, -1, "someone", "someone")
 
     def test_double_sided_pay_as_clear_market_works_with_floats(self, pac_market):
-        ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
+        ConstSettings.MASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
         offers = [
             Offer("id1", pendulum.now(), 1.1, 1, "other").serializable_dict(),
             Offer("id2", pendulum.now(), 2.2, 1, "other").serializable_dict(),
@@ -341,7 +341,7 @@ class TestTwoSidedMarket:
     @pytest.mark.parametrize("algorithm", [1])
     def test_double_sided_market_performs_pay_as_clear_matching(
             self, pac_market, offer, bid, mcp_rate, mcp_energy, algorithm):
-        ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = algorithm
+        ConstSettings.MASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = algorithm
         offers = [Offer("id1", pendulum.now(), offer[0], 1, "other").serializable_dict(),
                   Offer("id2", pendulum.now(), offer[1], 1, "other").serializable_dict(),
                   Offer("id3", pendulum.now(), offer[2], 1, "other").serializable_dict(),
@@ -396,9 +396,9 @@ class TestTwoSidedMarket:
 @pytest.fixture()
 def two_sided_market_matching():
     patches = [
-        patch("d3a.models.market.two_sided.TwoSidedMarket.validate_bid_offer_match"),
-        patch("d3a.models.market.two_sided.TwoSidedMarket.accept_bid_offer_pair"),
-        patch("d3a.models.market.two_sided.TwoSidedMarket."
+        patch("gsy_e.models.market.two_sided.TwoSidedMarket.validate_bid_offer_match"),
+        patch("gsy_e.models.market.two_sided.TwoSidedMarket.accept_bid_offer_pair"),
+        patch("gsy_e.models.market.two_sided.TwoSidedMarket."
               "_replace_offers_bids_with_residual_in_recommendations_list"),
     ]
     for p in patches:

@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,29 +18,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import os
 import tempfile
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.enums import SpotMarketTypeEnum
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.enums import SpotMarketTypeEnum
 from parameterized import parameterized
 from pendulum import datetime
 
-from d3a import setup as d3a_setup
-from d3a.d3a_core import util
-from d3a.d3a_core.cli import available_simulation_scenarios
-from d3a.d3a_core.util import (validate_const_settings_for_simulation, retry_function,
-                               get_simulation_queue_name, get_market_maker_rate_from_config,
-                               export_default_settings_to_json_file, constsettings_to_dict,
-                               convert_str_to_pause_after_interval)
+from gsy_e import setup as d3a_setup
+from gsy_e.gsy_e_core import util
+from gsy_e.gsy_e_core.cli import available_simulation_scenarios
+from gsy_e.gsy_e_core.util import (validate_const_settings_for_simulation, retry_function,
+                                   get_simulation_queue_name, get_market_maker_rate_from_config,
+                                   export_default_settings_to_json_file, constsettings_to_dict,
+                                   convert_str_to_pause_after_interval, FutureMarketCounter)
 
 
 @pytest.fixture(scope="function", autouse=True)
 def alternative_pricing_auto_fixture():
     yield
-    ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = False
-    ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = 0
-    ConstSettings.IAASettings.MARKET_TYPE = 1
+    ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = False
+    ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME = 0
+    ConstSettings.MASettings.MARKET_TYPE = 1
 
 
 class TestD3ACoreUtil:
@@ -72,9 +72,9 @@ class TestD3ACoreUtil:
                            (3, 3)])
     def test_validate_alternate_pricing_only_for_one_sided_market(
             self, market_type, alternative_pricing):
-        ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = False
-        ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = alternative_pricing
-        ConstSettings.IAASettings.MARKET_TYPE = market_type
+        ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = False
+        ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME = alternative_pricing
+        ConstSettings.MASettings.MARKET_TYPE = market_type
         with pytest.raises(AssertionError):
             validate_const_settings_for_simulation()
 
@@ -86,13 +86,13 @@ class TestD3ACoreUtil:
                            (3, 3)])
     def test_validate_one_sided_market_when_pricing_scheme_on_comparison(
             self, market_type, alt_pricing):
-        ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
-        ConstSettings.IAASettings.MARKET_TYPE = market_type
-        ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = alt_pricing
+        ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
+        ConstSettings.MASettings.MARKET_TYPE = market_type
+        ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME = alt_pricing
         validate_const_settings_for_simulation()
-        assert ConstSettings.IAASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
-        assert ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == alt_pricing
-        assert ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES
+        assert ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
+        assert ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME == alt_pricing
+        assert ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES
 
     def test_retry_function(self):
         retry_counter = 0
@@ -109,9 +109,9 @@ class TestD3ACoreUtil:
         assert retry_counter == 3
 
     def test_get_simulation_queue_name(self):
-        assert get_simulation_queue_name() == "d3a"
+        assert get_simulation_queue_name() == "exchange"
         os.environ["LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE"] = "no"
-        assert get_simulation_queue_name() == "d3a"
+        assert get_simulation_queue_name() == "exchange"
         os.environ["LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE"] = "yes"
         assert get_simulation_queue_name() == "canary_network"
 
@@ -133,8 +133,8 @@ class TestD3ACoreUtil:
         export_default_settings_to_json_file()
         setup_dir = os.path.join(temp_dir.name, "setup")
         assert os.path.exists(setup_dir)
-        assert set(os.listdir(setup_dir)) == {"d3a-settings.json"}
-        file_path = os.path.join(setup_dir, "d3a-settings.json")
+        assert set(os.listdir(setup_dir)) == {"gsy_e_settings.json"}
+        file_path = os.path.join(setup_dir, "gsy_e_settings.json")
         file_contents = json.load(open(file_path))
         assert file_contents["basic_settings"]["sim_duration"] == "24h"
         assert file_contents["basic_settings"]["slot_length"] == "15m"
@@ -157,7 +157,24 @@ class TestD3ACoreUtil:
                 ConstSettings.AreaSettings.PERCENTAGE_FEE_LIMIT)
         assert (settings_dict["StorageSettings"]["CAPACITY"] ==
                 ConstSettings.StorageSettings.CAPACITY)
-        assert (settings_dict["IAASettings"]["MARKET_TYPE"] ==
-                ConstSettings.IAASettings.MARKET_TYPE)
-        assert (settings_dict["IAASettings"]["AlternativePricing"]["COMPARE_PRICING_SCHEMES"] ==
-                ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES)
+        assert (settings_dict["MASettings"]["MARKET_TYPE"] ==
+                ConstSettings.MASettings.MARKET_TYPE)
+        assert (settings_dict["MASettings"]["AlternativePricing"]["COMPARE_PRICING_SCHEMES"] ==
+                ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES)
+
+    def test_future_market_counter(self):
+        """Test the counter of future market clearing."""
+        with patch("gsy_framework.constants_limits.ConstSettings.FutureMarketSettings."
+                   "FUTURE_MARKET_CLEARING_INTERVAL_MINUTES", 15):
+            future_market_counter = FutureMarketCounter()
+            current_time = datetime(year=2021, month=11, day=2,
+                                    hour=1, minute=1, second=0)
+            # When the _last_time_dispatched is None -> return True
+            assert future_market_counter.is_time_for_clearing(current_time) is True
+
+            # The interval time did not pass yet
+            assert future_market_counter.is_time_for_clearing(current_time) is False
+
+            # Skip the 15 minutes duration
+            current_time = current_time.add(minutes=15)
+            assert future_market_counter.is_time_for_clearing(current_time) is True

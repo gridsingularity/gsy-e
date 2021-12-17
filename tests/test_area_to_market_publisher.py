@@ -1,20 +1,20 @@
 import unittest
 from unittest.mock import MagicMock
 import json
-from d3a_interface.constants_limits import ConstSettings
-from d3a.d3a_core.exceptions import D3ARedisException
-from d3a.models.market.one_sided import OneSidedMarket
-from d3a.models.area import Area
-import d3a.models.area.redis_dispatcher.area_to_market_publisher
-from d3a.models.area.redis_dispatcher.area_to_market_publisher import \
+from gsy_framework.constants_limits import ConstSettings
+from gsy_e.gsy_e_core.exceptions import D3ARedisException
+from gsy_e.models.market.one_sided import OneSidedMarket
+from gsy_e.models.area import Area
+import gsy_e.models.area.redis_dispatcher.area_to_market_publisher
+from gsy_e.models.area.redis_dispatcher.area_to_market_publisher import \
     AreaToMarketEventPublisher
 
-d3a.models.area.redis_dispatcher.area_to_market_publisher.BlockingCommunicator = MagicMock
+gsy_e.models.area.redis_dispatcher.area_to_market_publisher.BlockingCommunicator = MagicMock
 
 
 class TestAreaToMarketPublisher(unittest.TestCase):
     def setUp(self):
-        ConstSettings.IAASettings.MARKET_TYPE = 2
+        ConstSettings.MASettings.MARKET_TYPE = 2
         self.market1 = OneSidedMarket(name="test_market")
         self.market1.id = "id1"
         self.market2 = OneSidedMarket(name="test_market")
@@ -24,7 +24,7 @@ class TestAreaToMarketPublisher(unittest.TestCase):
         self.publisher = AreaToMarketEventPublisher(self.area)
 
     def tearDown(self):
-        ConstSettings.IAASettings.MARKET_TYPE = 1
+        ConstSettings.MASettings.MARKET_TYPE = 1
 
     def test_area_to_market_event_response(self):
         self.publisher.response_callback({

@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -15,15 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from unittest.mock import Mock
+from unittest.mock import patch, MagicMock
 
 import pytest
-from d3a.models.area import Area
-from d3a.models.market import GridFee
-from d3a.models.market.future import FutureMarkets, FutureMarketException
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
-from d3a_interface.data_classes import Bid, Offer, Trade, TradeBidOfferInfo
-from pendulum import datetime, duration
+from gsy_framework.constants_limits import GlobalConfig, DATE_TIME_FORMAT
+from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo
+from gsy_framework.utils import datetime_to_string_incl_seconds
+from pendulum import datetime, duration, now
+
+from gsy_e.models.area import Area
+from gsy_e.models.market import GridFee
+from gsy_e.models.market.future import FutureMarkets, FutureMarketException, FutureOrders
 
 DEFAULT_CURRENT_MARKET_SLOT = datetime(2021, 10, 19, 0, 0)
 DEFAULT_SLOT_LENGTH = duration(minutes=15)
@@ -32,16 +34,12 @@ DEFAULT_SLOT_LENGTH = duration(minutes=15)
 @pytest.fixture(name="future_market")
 def active_future_market() -> FutureMarkets:
     """Return future market object."""
-    orig_future_market_duration = GlobalConfig.future_market_duration
-    GlobalConfig.future_market_duration = duration(hours=1)
-    config = Mock()
-    config.slot_length = duration(minutes=15)
-    config.tick_length = duration(seconds=15)
-    config.ticks_per_slot = 60
-    config.start_date = DEFAULT_CURRENT_MARKET_SLOT
-    config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
-    config.end_date = config.start_date + duration(days=1)
+    orig_future_market_duration = GlobalConfig.FUTURE_MARKET_DURATION_HOURS
+    orig_start_date = GlobalConfig.start_date
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 1
     area = Area("test_area")
+    area.config.start_date = DEFAULT_CURRENT_MARKET_SLOT
+    area.config.end_date = area.config.start_date + area.config.sim_duration
     area.activate()
     future_market = FutureMarkets(
             bc=area.bc,
@@ -50,10 +48,26 @@ def active_future_market() -> FutureMarkets:
             grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
                               grid_fee_const=area.grid_fee_constant),
             name=area.name)
-    future_market.create_future_markets(DEFAULT_CURRENT_MARKET_SLOT, DEFAULT_SLOT_LENGTH)
+    future_market.create_future_markets(
+        DEFAULT_CURRENT_MARKET_SLOT, DEFAULT_SLOT_LENGTH, area.config)
     yield future_market
 
-    GlobalConfig.future_market_duration = orig_future_market_duration
+    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = orig_future_market_duration
+    GlobalConfig.start_date = orig_start_date
+
+
+@pytest.fixture(name="offer")
+def offer_fixture() -> Offer:
+    """Return an offer instance."""
+    return Offer("id1", datetime(2021, 10, 19, 0, 0),
+                 10, 10, seller="seller", time_slot=datetime(2021, 10, 19, 0, 0))
+
+
+@pytest.fixture(name="bid")
+def bid_fixture() -> Bid:
+    """Return a bid instance."""
+    return Bid("id1", datetime(2021, 10, 19, 0, 0),
+               10, 10, buyer="buyer", time_slot=datetime(2021, 10, 19, 0, 0))
 
 
 def count_orders_in_buffers(future_markets: FutureMarkets, expected_count: int) -> None:
@@ -72,35 +86,54 @@ class TestFutureMarkets:
     """Tests that target the future markets."""
 
     @staticmethod
+    @patch("gsy_e.models.market.future.is_time_slot_in_simulation_duration",
+           MagicMock())
     def test_create_future_markets(future_market):
         """Test if all future time_slots are created in the order buffers."""
+        future_market.offers = {}
+        future_market.bids = {}
+
+        with patch("gsy_e.models.market.future.GlobalConfig."
+                   "FUTURE_MARKET_DURATION_HOURS", 0):
+            future_market.create_future_markets(
+                DEFAULT_CURRENT_MARKET_SLOT, DEFAULT_SLOT_LENGTH, MagicMock()
+            )
         for buffer in [future_market.slot_bid_mapping,
                        future_market.slot_offer_mapping,
                        future_market.slot_trade_mapping]:
-            assert len(buffer.keys()) == 5
+            assert len(buffer.keys()) == 0
+
+        with patch("gsy_e.models.market.future.GlobalConfig."
+                   "FUTURE_MARKET_DURATION_HOURS", 1):
+            future_market.create_future_markets(
+                DEFAULT_CURRENT_MARKET_SLOT, DEFAULT_SLOT_LENGTH, MagicMock()
+            )
+        for buffer in [future_market.slot_bid_mapping,
+                       future_market.slot_offer_mapping,
+                       future_market.slot_trade_mapping]:
+            assert len(buffer.keys()) == 4
             future_time_slot = DEFAULT_CURRENT_MARKET_SLOT.add(
                 minutes=DEFAULT_SLOT_LENGTH.total_minutes())
-            most_future_slot = future_time_slot + GlobalConfig.future_market_duration
+            most_future_slot = (future_time_slot +
+                                duration(hours=GlobalConfig.FUTURE_MARKET_DURATION_HOURS))
             assert all(future_time_slot <= time_slot <= most_future_slot for time_slot in buffer)
 
     @staticmethod
     def test_delete_old_future_markets(future_market):
         """Test if the correct markets slot buffers and their contents are deleted."""
         for time_slot in future_market.slot_bid_mapping:
-            bid = Bid(f"bid{time_slot}", time_slot, 1, 1, "buyer")
+            bid = Bid(f"bid{time_slot}", time_slot, 1, 1, "buyer", time_slot=time_slot)
             future_market.bids[bid.id] = bid
-            future_market.slot_bid_mapping[time_slot].append(bid)
-            offer = Offer(f"oid{time_slot}", time_slot, 1, 1, "seller")
+            offer = Offer(f"oid{time_slot}", time_slot, 1, 1, "seller", time_slot=time_slot)
             future_market.offers[offer.id] = offer
-            future_market.slot_offer_mapping[time_slot].append(offer)
-            trade = Trade(f"tid{time_slot}", time_slot, offer, "seller", "buyer")
+            trade = Trade(f"tid{time_slot}", time_slot, offer, "seller", "buyer",
+                          time_slot=time_slot)
             future_market.trades.append(trade)
-            future_market.slot_trade_mapping[time_slot].append(trade)
 
-        count_orders_in_buffers(future_market, 5)
+        count_orders_in_buffers(future_market, 4)
         first_future_market = next(iter(future_market.slot_bid_mapping))
         future_market.delete_orders_in_old_future_markets(first_future_market)
-        count_orders_in_buffers(future_market, 4)
+        count_orders_in_buffers(future_market, 3)
 
     @staticmethod
     def test_offer_is_posted_correctly(future_market):
@@ -197,3 +230,107 @@ class TestFutureMarkets:
         assert trade in future_market.trades
         assert len(future_market.slot_trade_mapping[first_future_market]) == 1
         assert trade in future_market.slot_trade_mapping[first_future_market]
+
+    @staticmethod
+    def test_orders_per_slot(future_market):
+        """Test whether the orders_per_slot method returns order in format format."""
+        time_slot1 = now()
+        time_slot2 = time_slot1.add(minutes=15)
+        future_market.bids = {"bid1": Bid(
+            "bid1", time_slot1, 10, 10, "buyer", time_slot=time_slot1)}
+        future_market.offers = {"offer1": Offer(
+            "offer1", time_slot2, 10, 10, "seller", time_slot=time_slot2)}
+        assert future_market.orders_per_slot() == {
+            time_slot1.format(DATE_TIME_FORMAT): {
+                "bids": [{"attributes": None,
+                          "buyer": "buyer",
+                          "buyer_id": None,
+                          "buyer_origin": None,
+                          "buyer_origin_id": None,
+                          "energy": 10,
+                          "energy_rate": 1.0,
+                          "id": "bid1",
+                          "original_price": 10,
+                          "requirements": None,
+                          "time_slot": datetime_to_string_incl_seconds(time_slot1),
+                          "creation_time": datetime_to_string_incl_seconds(time_slot1),
+                          "type": "Bid"}],
+                "offers": []},
+            time_slot2.format(DATE_TIME_FORMAT): {
+                "bids": [],
+                "offers": [{"attributes": None,
+                            "energy": 10,
+                            "energy_rate": 1.0,
+                            "id": "offer1",
+                            "original_price": 10,
+                            "requirements": None,
+                            "time_slot": datetime_to_string_incl_seconds(time_slot2),
+                            "seller": "seller",
+                            "seller_id": None,
+                            "seller_origin": None,
+                            "seller_origin_id": None,
+                            "creation_time": datetime_to_string_incl_seconds(time_slot2),
+                            "type": "Offer"}]}}
+
+    @staticmethod
+    def test_offers_setter(future_market, offer):
+        """Test reassigning the offers member of the future market."""
+        assert isinstance(future_market.offers, FutureOrders)
+        future_market.offers = {
+            str(offer.id): offer}
+        assert isinstance(future_market.offers, FutureOrders)
+        assert future_market.offers[str(offer.id)] == offer
+        assert offer in future_market.offers.slot_order_mapping[offer.time_slot]
+
+    @staticmethod
+    def test_bids_setter(future_market, bid):
+        """Test reassigning the bids member of the future market."""
+        assert isinstance(future_market.bids, FutureOrders)
+        future_market.bids = {
+            str(bid.id): bid}
+        assert isinstance(future_market.bids, FutureOrders)
+        assert future_market.bids[str(bid.id)] == bid
+        assert bid in future_market.bids.slot_order_mapping[bid.time_slot]
+
+
+class TestFutureOrders:
+    """Tester class for the future orders dictionary."""
+
+    @staticmethod
+    def test_init(offer):
+        """Check whether slot_order_mapping is populated on initializing."""
+        offers = FutureOrders({str(offer.id): offer})
+        assert offers[str(offer.id)] == offer
+        assert offer in offers.slot_order_mapping[offer.time_slot]
+
+    @staticmethod
+    def test_future_orders_set_item(offer):
+        """Check whether setting an item will correctly set it in the slot_order_mapping."""
+        offers = FutureOrders()
+        offers[str(offer.id)] = offer
+        assert offers[str(offer.id)] == offer
+        assert offer in offers.slot_order_mapping[offer.time_slot]
+
+    @staticmethod
+    def test_future_orders_update(offer):
+        """Check whether calling .update will correctly update the slot_order_mapping."""
+        offers = FutureOrders()
+        offers.update({str(offer.id): offer})
+        assert offers[str(offer.id)] == offer
+        assert offer in offers.slot_order_mapping[offer.time_slot]
+
+    @staticmethod
+    def test_future_orders_pop_item(offer):
+        """Check whether popping an item will correctly pop it from the slot_order_mapping."""
+        offers = FutureOrders({str(offer.id): offer})
+        offers.pop(str(offer.id))
+        assert str(offer.id) not in offers
+        assert offer not in offers.slot_order_mapping[offer.time_slot]
+
+    @staticmethod
+    def test_future_orders_delete_item(offer):
+        """Check whether deleting an item will correctly delete it from the slot_order_mapping."""
+        offers = FutureOrders({str(offer.id): offer})
+        del offers[str(offer.id)]
+        assert str(offer.id) not in offers
+        assert offer not in offers.slot_order_mapping[offer.time_slot]

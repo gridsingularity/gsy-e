@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,16 +19,16 @@ from unittest.mock import MagicMock, Mock
 import uuid
 import json
 import pytest
-from d3a.models.area import Area
-from d3a.models.strategy.external_strategies.load import (LoadForecastExternalStrategy,
-                                                          LoadHoursExternalStrategy)
-from d3a.models.strategy.external_strategies.pv import (PVForecastExternalStrategy,
-                                                        PVExternalStrategy)
-from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from gsy_e.models.area import Area
+from gsy_e.models.strategy.external_strategies.load import (LoadForecastExternalStrategy,
+                                                            LoadHoursExternalStrategy)
+from gsy_e.models.strategy.external_strategies.pv import (PVForecastExternalStrategy,
+                                                          PVExternalStrategy)
+from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from pendulum import now, duration
 from collections import deque
-from d3a.models.strategy.external_strategies import IncomingRequest
+from gsy_e.models.strategy.external_strategies import IncomingRequest
 
 
 @pytest.fixture
@@ -39,7 +39,7 @@ def ext_strategy_fixture(request):
     config.tick_length = duration(seconds=15)
     config.ticks_per_slot = 60
     config.start_date = GlobalConfig.start_date
-    config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
+    config.grid_fee_type = ConstSettings.MASettings.GRID_FEE_TYPE
     config.end_date = GlobalConfig.start_date + duration(days=1)
     area = Area(name="forecast_pv", config=config, strategy=strategy,
                 external_connection_available=True)

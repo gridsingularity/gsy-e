@@ -4,19 +4,21 @@ from concurrent.futures import Future
 from time import sleep
 from unittest.mock import MagicMock
 
-from d3a_interface.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings
 from deepdiff import DeepDiff
-from pendulum import now
+from pendulum import now, datetime
 
-import d3a.models.market.market_redis_connection
-from d3a.events import MarketEvent
-from d3a.models.market.market_redis_connection import MarketRedisEventPublisher, \
+import gsy_e.models.market.market_redis_connection
+from gsy_e.events import MarketEvent
+from gsy_e.models.market.market_redis_connection import MarketRedisEventPublisher, \
     MarketRedisEventSubscriber, TwoSidedMarketRedisEventSubscriber
-from d3a_interface.data_classes import Offer, Trade, Bid
-from d3a.models.market.one_sided import OneSidedMarket
+from gsy_framework.data_classes import Offer, Trade, Bid
+from gsy_e.models.market.one_sided import OneSidedMarket
 
-d3a.models.market.market_redis_connection.BlockingCommunicator = MagicMock
-d3a.models.market.market_redis_connection.ResettableCommunicator = MagicMock
+gsy_e.models.market.market_redis_connection.BlockingCommunicator = MagicMock
+gsy_e.models.market.market_redis_connection.ResettableCommunicator = MagicMock
+
+test_datetime = datetime(2021, 11, 3, 14, 0)
 
 
 class TestMarketRedisEventPublisher(unittest.TestCase):
@@ -71,7 +73,7 @@ class TestMarketRedisEventPublisher(unittest.TestCase):
 class TestMarketRedisEventSubscriber(unittest.TestCase):
 
     def setUp(self):
-        self.market = OneSidedMarket(name="test_market", time_slot=now())
+        self.market = OneSidedMarket(name="test_market", time_slot=test_datetime)
         self.market.id = "id"
         self.subscriber = MarketRedisEventSubscriber(self.market)
 
@@ -96,18 +98,18 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
         assert self.subscriber.futures == []
         self.subscriber.redis_db.terminate_connection.assert_called_once()
 
-    def test_sanitize_parameters(self):
+    def test_parse_order_objects(self):
         input_data = {
             "trade_bid_info": {
-                'original_bid_rate': 20, 'propagated_bid_rate': 30,
-                'original_offer_rate': 99, 'propagated_offer_rate': 10,
-                'trade_rate': 12},
+                "original_bid_rate": 20, "propagated_bid_rate": 30,
+                "original_offer_rate": 99, "propagated_offer_rate": 10,
+                "trade_rate": 12},
             "offer_or_id": json.dumps({"id": "offer_id2", "type": "Offer",
                                        "price": 123, "energy": 4321, "seller": "offer_seller2"}),
             "offer": json.dumps({"id": "offer_id", "type": "Offer",
                                  "price": 654, "energy": 765, "seller": "offer_seller"}),
         }
-        output_data = self.subscriber.sanitize_parameters(input_data, now())
+        output_data = self.subscriber._parse_order_objects(input_data)
         assert isinstance(output_data["offer"], Offer)
         assert isinstance(output_data["offer_or_id"], Offer)
         assert isinstance(output_data["trade_bid_info"], dict)
@@ -127,7 +129,7 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
         assert output_data["offer_or_id"].seller == "offer_seller2"
 
     def test_accept_offer_calls_market_method_and_publishes_response(self):
-        offer = Offer("o_id", now(), 12, 13, "o_seller")
+        offer = Offer("o_id", test_datetime, 12, 13, "o_seller")
         payload = {"data": json.dumps({
                 "buyer": "mykonos",
                 "energy": 12,
@@ -172,7 +174,7 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
         )
 
     def test_delete_offer_calls_market_method_and_publishes_response(self):
-        offer = Offer("o_id", now(), 32, 12, "o_seller")
+        offer = Offer("o_id", test_datetime, 32, 12, "o_seller")
         payload = {"data": json.dumps({
                 "offer_or_id": offer.to_json_string(),
                 "transaction_uuid": "trans_id"
@@ -193,13 +195,13 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
 class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
 
     def setUp(self):
-        ConstSettings.IAASettings.MARKET_TYPE = 2
+        ConstSettings.MASettings.MARKET_TYPE = 2
         self.market = OneSidedMarket(name="test_market", time_slot=now())
         self.market.id = "id"
         self.subscriber = TwoSidedMarketRedisEventSubscriber(self.market)
 
     def tearDown(self):
-        ConstSettings.IAASettings.MARKET_TYPE = 1
+        ConstSettings.MASettings.MARKET_TYPE = 1
 
     def test_subscribes_to_market_channels(self):
         self.subscriber.redis_db.sub_to_multiple_channels.assert_called_once_with(

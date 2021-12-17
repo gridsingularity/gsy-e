@@ -1,6 +1,6 @@
 """
 Copyright 2018 Grid Singularity
-This file is part of D3A.
+This file is part of Grid Singularity Exchange.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -15,23 +15,33 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+# pylint: disable=missing-function-docstring, protected-access
 import uuid
 
-from d3a_interface.constants_limits import ConstSettings
 import pytest
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import DATE_TIME_FORMAT
+from pendulum import datetime
 
-from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
+from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
+from gsy_e.models.market.settlement import SettlementMarket
+from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from tests.strategies.external.utils import (
-    assert_bid_offer_aggregator_commands_return_value,
     check_external_command_endpoint_with_correct_payload_succeeds,
-    create_areas_markets_for_strategy_fixture)
+    create_areas_markets_for_strategy_fixture, assert_bid_offer_aggregator_commands_return_value)
 
 
 @pytest.fixture(name="external_load")
 def external_load_fixture():
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     yield create_areas_markets_for_strategy_fixture(LoadHoursExternalStrategy(100))
-    ConstSettings.IAASettings.MARKET_TYPE = 1
+    ConstSettings.MASettings.MARKET_TYPE = 1
+
+
+@pytest.fixture(name="settlement_market")
+def settlement_market_fixture():
+    return SettlementMarket(bc=NonBlockchainInterface(str(uuid.uuid4())),
+                            time_slot=datetime(2021, 12, 7, 12, 00))
 
 
 class TestLoadForecastExternalStrategy:
@@ -67,9 +77,89 @@ class TestLoadForecastExternalStrategy:
         assert_bid_offer_aggregator_commands_return_value(return_value, False)
 
     @staticmethod
+    def test_offer_aggregator_can_not_place_offer_to_spot_market(external_load):
+        return_value = external_load.trigger_aggregator_commands(
+            {
+                "type": "offer",
+                "price": 200.0,
+                "energy": 0.5,
+                "transaction_id": str(uuid.uuid4())
+            }
+        )
+        assert return_value["status"] == "error"
+        assert "Offer not supported for Loads on spot markets." in return_value["error_message"]
+
+    @staticmethod
+    def test_bid_aggregator_places_settlement_bid(external_load, settlement_market):
+        unsettled_energy_kWh = 0.5
+        external_load.area._markets.settlement_market_ids = [settlement_market.id]
+        external_load.area._markets.settlement_markets = {
+            settlement_market.time_slot: settlement_market}
+        external_load.state._forecast_measurement_deviation_kWh[settlement_market.time_slot] = (
+            unsettled_energy_kWh)
+        external_load.state._unsettled_deviation_kWh[settlement_market.time_slot] = (
+            unsettled_energy_kWh)
+        return_value = external_load.trigger_aggregator_commands(
+            {
+                "type": "bid",
+                "price": 200.0,
+                "energy": unsettled_energy_kWh,
+                "time_slot": settlement_market.time_slot.format(DATE_TIME_FORMAT),
+                "transaction_id": str(uuid.uuid4())
+            }
+        )
+        assert return_value["status"] == "ready"
+        assert len(settlement_market.bids.values()) == 1
+        assert list(settlement_market.bids.values())[0].energy == unsettled_energy_kWh
+
+    @staticmethod
+    def test_offer_aggregator_places_settlement_offer(external_load, settlement_market):
+        unsettled_energy_kWh = 0.5
+        external_load.area._markets.settlement_market_ids = [settlement_market.id]
+        external_load.area._markets.settlement_markets = {
+            settlement_market.time_slot: settlement_market}
+        external_load.state._forecast_measurement_deviation_kWh[settlement_market.time_slot] = (
+            -1 * unsettled_energy_kWh)
+        external_load.state._unsettled_deviation_kWh[settlement_market.time_slot] = (
+            unsettled_energy_kWh)
+        return_value = external_load.trigger_aggregator_commands(
+            {
+                "type": "offer",
+                "price": 200.0,
+                "energy": unsettled_energy_kWh,
+                "time_slot": settlement_market.time_slot.format(DATE_TIME_FORMAT),
+                "transaction_id": str(uuid.uuid4())
+            }
+        )
+        assert return_value["status"] == "ready"
+        assert len(settlement_market.offers.values()) == 1
+        assert list(settlement_market.offers.values())[0].energy == unsettled_energy_kWh
+
+    @staticmethod
+    def test_bid_aggregator_succeeds_with_warning_if_dof_are_disabled(external_load):
+        """
+        The bid_aggregator command succeeds, but it shows a warning if Degrees of Freedom are
+        disabled and nevertheless provided.
+        """
+        external_load.simulation_config.enable_degrees_of_freedom = False
+        external_load.state._energy_requirement_Wh[
+            external_load.spot_market.time_slot] = 1000.0
+        return_value = external_load.trigger_aggregator_commands({
+            "type": "bid",
+            "price": 200.0,
+            "energy": 0.5,
+            "attributes": {"energy_type": "PV"},
+            "requirements": [{"price": 12}],
+            "transaction_id": str(uuid.uuid4())})
+
+        assert_bid_offer_aggregator_commands_return_value(return_value, False)
+        assert return_value["message"] == (
+            "The following arguments are not supported for this market and have been removed from "
+            "your order: ['requirements', 'attributes'].")
+
+    @staticmethod
     def test_delete_bid_aggregator(external_load):
         bid = external_load.post_bid(external_load.spot_market, 200.0, 1.0)
-
         return_value = external_load.trigger_aggregator_commands(
             {
                 "type": "delete_bid",
