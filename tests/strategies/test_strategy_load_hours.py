@@ -596,10 +596,10 @@ def test_assert_if_trade_rate_is_higher_than_bid_rate(load_hours_strategy_test3)
 def test_event_market_cycle_updates_measurement_and_forecast(load_hours_strategy_test1):
     """update_state sends command to update the simulated real energy of the device."""
     load_hours_strategy_test1._set_energy_measurement_of_last_market = Mock()
-    load_hours_strategy_test1._update_energy_requirement_spot_market = Mock()
+    load_hours_strategy_test1._update_energy_requirement_in_state = Mock()
     load_hours_strategy_test1.event_market_cycle()
     load_hours_strategy_test1._set_energy_measurement_of_last_market.assert_called_once()
-    load_hours_strategy_test1._update_energy_requirement_spot_market.assert_called_once()
+    load_hours_strategy_test1._update_energy_requirement_in_state.assert_called_once()
 
 
 @patch("gsy_e.models.strategy.load_hours.utils")

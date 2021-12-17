@@ -178,7 +178,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             self.bid_update.reset(self)
         self._calculate_active_markets()
-        self._update_energy_requirement_spot_market()
+        self._update_energy_requirement_in_state()
         # Provide energy values for the past market slot, to be used in the settlement market
         self._set_energy_measurement_of_last_market()
         self._set_alternative_pricing_scheme()
@@ -275,7 +275,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self.add_entry_in_hrs_per_day(overwrite=True)
         if kwargs.get("avg_power_W") is not None:
             self.avg_power_W = kwargs["avg_power_W"]
-            self._update_energy_requirement_spot_market()
+            self._update_energy_requirement_in_state()
         self._area_reconfigure_prices(**kwargs)
         self.bid_update.update_and_populate_price_settings(self.area)
 
@@ -471,7 +471,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         """Update energy requirement upon the activation event."""
         self.hrs_per_day = {0: self._initial_hrs_per_day}
         self._simulation_start_timestamp = self.area.now
-        self._update_energy_requirement_spot_market()
+        self._update_energy_requirement_in_state()
 
     @property
     def active_markets(self):
@@ -515,10 +515,19 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if not GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
             return
         for time_slot in self.area.future_market_time_slots:
-            desired_energy_Wh = (
-                self.energy_per_slot_Wh
-                if self._allowed_operating_hours(time_slot) else 0.0)
+            if self._allowed_operating_hours(time_slot):
+                current_day = self._get_day_of_timestamp(time_slot)
+                desired_energy_Wh = self.energy_per_slot_Wh
+                if (current_day not in self.hrs_per_day or
+                        self.hrs_per_day[current_day] <= FLOATING_POINT_TOLERANCE):
+                    desired_energy_Wh = 0.0
+            else:
+                desired_energy_Wh = 0.0
             self.state.set_desired_energy(desired_energy_Wh, time_slot, overwrite=True)
+
+    def _update_energy_requirement_in_state(self):
+        self._update_energy_requirement_spot_market()
+        self._update_energy_requirement_future_markets()
 
     def _update_energy_requirement_spot_market(self):
         self.energy_per_slot_Wh = convert_W_to_Wh(
