@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
 from logging import getLogger
-from typing import Union, Dict, List  # NOQA
+from typing import Union, Dict, List, Optional  # NOQA
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import Offer
@@ -93,10 +93,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.daily_energy_required = None
         # Energy consumed during the day ideally should not exceed daily_energy_required
         self.energy_per_slot_Wh = None
-        self.hrs_per_day = {}  # type: Dict[int, int]
 
-        self.hrs_of_day = None
-        self._initial_hrs_per_day = None
+        # Maps each simulation day to the number of active hours in that day
+        self.hrs_per_day: Dict[int, int] = {}
+
+        # List of active hours of day (values range from 0 to 23)
+        self.hrs_of_day: Optional[List[int]] = None
+        self._initial_hrs_per_day: Optional[int] = None
         self.assign_hours_of_per_day(hrs_of_day, hrs_per_day)
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
         self.use_market_maker_rate = use_market_maker_rate
@@ -493,8 +496,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 (not self.area.current_market or
                  market.time_slot >= self.area.current_market.time_slot))
 
-    def assign_hours_of_per_day(self, hrs_of_day: List[int], hrs_per_day: List[int]):
-        """Validate and assign the values of hrs_of_day and hrs_per_day."""
+    def assign_hours_of_per_day(self, hrs_of_day: List[int], hrs_per_day: int):
+        """Validate and assign the values of hrs_of_day and _initial_hrs_per_day."""
         if hrs_of_day is None:
             hrs_of_day = list(range(24))
 
