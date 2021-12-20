@@ -526,7 +526,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                     desired_energy_Wh = 0.0
             else:
                 desired_energy_Wh = 0.0
-            self.state.set_desired_energy(desired_energy_Wh, time_slot, overwrite=True)
+            self.state.set_desired_energy(desired_energy_Wh, time_slot)
 
     def _update_energy_requirement_in_state(self):
         self._update_energy_requirement_spot_market()
@@ -539,7 +539,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                              if self._allowed_operating_hours(self.area.spot_market.time_slot)
                              else 0.0)
         self.state.set_desired_energy(desired_energy_Wh,
-                                      self.area.spot_market.time_slot, overwrite=True)
+                                      self.area.spot_market.time_slot)
 
         for market in self.active_markets:
             current_day = self._get_day_of_timestamp(market.time_slot)
