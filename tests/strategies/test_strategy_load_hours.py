@@ -24,6 +24,7 @@ from uuid import uuid4
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.data_classes import Offer, BalancingOffer, Bid, Trade
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyDeviceException
 from pendulum import DateTime, duration, today, now
@@ -32,7 +33,6 @@ from gsy_e.constants import TIME_ZONE, TIME_FORMAT
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.util import d3a_path
 from gsy_e.models.area import DEFAULT_CONFIG, Area
-from gsy_framework.data_classes import Offer, BalancingOffer, Bid, Trade
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 
@@ -73,6 +73,10 @@ class FakeArea:
     @property
     def future_markets(self):
         return None
+
+    @property
+    def future_market_time_slots(self):
+        return []
 
     @property
     def all_markets(self):
@@ -592,10 +596,10 @@ def test_assert_if_trade_rate_is_higher_than_bid_rate(load_hours_strategy_test3)
 def test_event_market_cycle_updates_measurement_and_forecast(load_hours_strategy_test1):
     """update_state sends command to update the simulated real energy of the device."""
     load_hours_strategy_test1._set_energy_measurement_of_last_market = Mock()
-    load_hours_strategy_test1._update_energy_requirement_future_markets = Mock()
+    load_hours_strategy_test1._update_energy_requirement_in_state = Mock()
     load_hours_strategy_test1.event_market_cycle()
     load_hours_strategy_test1._set_energy_measurement_of_last_market.assert_called_once()
-    load_hours_strategy_test1._update_energy_requirement_future_markets.assert_called_once()
+    load_hours_strategy_test1._update_energy_requirement_in_state.assert_called_once()
 
 
 @patch("gsy_e.models.strategy.load_hours.utils")

@@ -110,7 +110,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         self._read_or_rotate_profiles()
         super().event_market_cycle()
 
-    def _update_energy_requirement_future_markets(self):
+    def _update_energy_requirement_spot_market(self):
         """
         Update required energy values for each market slot.
         :return: None
@@ -126,6 +126,17 @@ class DefinedLoadStrategy(LoadHoursStrategy):
             find_object_of_same_weekday_and_time(self._load_profile_kWh, slot_time)
         self.state.set_desired_energy(load_energy_kWh * 1000, slot_time, overwrite=False)
         self.state.update_total_demanded_energy(slot_time)
+        self._update_energy_requirement_future_markets()
+
+    def _update_energy_requirement_future_markets(self):
+        """Update energy requirements in the future markets."""
+        for time_slot in self.area.future_market_time_slots:
+            load_energy_kWh = (
+                find_object_of_same_weekday_and_time(
+                    self._load_profile_kWh, time_slot))
+            self.state.set_desired_energy(
+                load_energy_kWh * 1000, time_slot, overwrite=False)
+            self.state.update_total_demanded_energy(time_slot)
 
     def _operating_hours(self, energy_kWh):
         """
