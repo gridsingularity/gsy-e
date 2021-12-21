@@ -57,7 +57,3 @@ class FutureAgent(TwoSidedAgent):
             return
         for engine in self.engines:
             engine.clean_up_order_buffers(self.owner.current_market.time_slot)
-
-    def event_market_cycle(self):
-        super().event_market_cycle()
-        self.delete_engines()

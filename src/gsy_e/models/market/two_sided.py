@@ -260,7 +260,7 @@ class TwoSidedMarket(OneSidedMarket):
         if already_tracked is False:
             self._update_stats_after_trade(trade, bid, already_tracked)
             log.info(f"{self._debug_log_market_type_identifier}[TRADE][BID] [{self.name}] "
-                     f"[{self.time_slot_str}] {trade}")
+                     f"[{trade.time_slot}] {trade}")
 
         self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
         return trade

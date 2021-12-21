@@ -223,7 +223,8 @@ class AreaDispatcher:
     @staticmethod
     def _create_agent_object(owner: "Area", higher_market: MarketBase,
                              lower_market: MarketBase, market_type: AvailableMarketTypes
-                             ) -> Union[OneSidedAgent, SettlementAgent, BalancingAgent]:
+                             ) -> Union[OneSidedAgent, SettlementAgent,
+                                        BalancingAgent, FutureAgent]:
         agent_constructor_arguments = {
             "owner": owner,
             "higher_market": higher_market,
@@ -325,6 +326,8 @@ class AreaDispatcher:
         self._delete_past_agents(self._spot_agents)
         self._delete_past_agents(self._balancing_agents)
         self._delete_past_agents(self._settlement_agents)
+        if self._future_agent:
+            self._future_agent.delete_engines()
 
     def _delete_past_agents(
             self, market_agent_member: Dict[DateTime, Union[
