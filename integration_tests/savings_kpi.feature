@@ -9,4 +9,4 @@ Feature: Savings KPI integration tests
     | scenario                          | setup                               | saving_percentage |
     | Young Couple House                | kpi.d3asim_3464_young_couple        |     16.6667      |
     | Family 2 children with PV         | kpi.d3asim_3464_family_with_pv      |     28.427       |
-    | Family 2 children with PV + ESS   | kpi.d3asim_3464_family_with_pv_ess  |     28.12     |
+    | Family 2 children with PV + ESS   | kpi.d3asim_3464_family_with_pv_ess  |     28.14     |
