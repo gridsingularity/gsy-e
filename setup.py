@@ -24,7 +24,7 @@ else:
     REQUIREMENTS.append("psycopg2==2.9.1")
 
 # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 setup(
     name="gsy-e",

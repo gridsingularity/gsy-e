@@ -21,7 +21,7 @@ from collections import namedtuple
 from functools import wraps
 from logging import getLogger
 from threading import RLock
-from typing import Dict, List, Union, Tuple
+from typing import Dict, List, Union
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import Offer, Trade, Bid
@@ -131,9 +131,6 @@ class MarketBase:
     @property
     def _is_constant_fees(self):
         return isinstance(self.fee_class, ConstantGridFees)
-
-    def open_bids_and_offers(self, **kwargs) -> Tuple[List, List]:
-        return list(self.bids.values()), list(self.offers.values())
 
     def orders_per_slot(self) -> Dict[str, Dict]:
         """Return all orders in the market per time slot."""
