@@ -209,6 +209,7 @@ class LoadExternalMixin(ExternalMixin):
             response = {
                     "command": "bid", "status": "ready",
                     "bid": bid.to_json_string(replace_existing=replace_existing),
+                    "market_type": market.__class__.__name__,
                     "transaction_id": arguments.get("transaction_id"),
                     "message": response_message}
         except (AssertionError, GSyException):
@@ -217,6 +218,7 @@ class LoadExternalMixin(ExternalMixin):
             logging.exception(error_message)
             response = {"command": "bid", "status": "error",
                         "error_message": error_message,
+                        "market_type": market.__class__.__name__,
                         "transaction_id": arguments.get("transaction_id")}
         self.redis.publish_json(bid_response_channel, response)
 
@@ -311,6 +313,7 @@ class LoadExternalMixin(ExternalMixin):
         except (OrderCanNotBePosted, CommandTypeNotSupported) as ex:
             response = {
                 "command": "offer", "status": "error",
+                "market_type": market.__class__.__name__,
                 "area_uuid": self.device.uuid,
                 "error_message": "Error when handling offer create "
                                  f"on area {self.device.name} with arguments {arguments}:"
@@ -340,6 +343,7 @@ class LoadExternalMixin(ExternalMixin):
         except OrderCanNotBePosted as ex:
             response = {
                 "command": "offer", "status": "error",
+                "market_type": market.__class__.__name__,
                 "area_uuid": self.device.uuid,
                 "error_message": "Error when handling bid create "
                                  f"on area {self.device.name} with arguments {arguments}:"

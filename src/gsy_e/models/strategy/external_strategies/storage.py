@@ -217,6 +217,7 @@ class StorageExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer", "status": "ready",
+                 "market_type": market.__class__.__name__,
                  "offer": offer.to_json_string(replace_existing=replace_existing),
                  "transaction_id": arguments.get("transaction_id")})
         except Exception:
@@ -225,6 +226,7 @@ class StorageExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer", "status": "error",
+                 "market_type": market.__class__.__name__,
                  "error_message": f"Error when handling offer create "
                                   f"on area {self.device.name} with arguments {arguments}.",
                  "transaction_id": arguments.get("transaction_id")})
@@ -370,12 +372,14 @@ class StorageExternalMixin(ExternalMixin):
                 "command": "bid",
                 "status": "ready",
                 "bid": bid.to_json_string(replace_existing=replace_existing),
+                "market_type": market.__class__.__name__,
                 "transaction_id": arguments.get("transaction_id"),
                 "message": response_message}
         except Exception:
             logging.exception("Error when handling bid create on area %s: Bid Arguments: %s",
                               self.device.name, arguments)
             response = {"command": "bid", "status": "error",
+                        "market_type": market.__class__.__name__,
                         "error_message": "Error when handling bid create "
                                          f"on area {self.device.name} with arguments {arguments}.",
                         "transaction_id": arguments.get("transaction_id")}
@@ -552,6 +556,7 @@ class StorageExternalMixin(ExternalMixin):
                 response = {
                     "command": "offer",
                     "area_uuid": self.device.uuid,
+                    "market_type": market.__class__.__name__,
                     "status": "ready",
                     "offer": offer.to_json_string(replace_existing=replace_existing),
                     "transaction_id": arguments.get("transaction_id"),
@@ -559,6 +564,7 @@ class StorageExternalMixin(ExternalMixin):
             except Exception:
                 response = {
                     "command": "offer", "status": "error",
+                    "market_type": market.__class__.__name__,
                     "area_uuid": self.device.uuid,
                     "error_message": "Error when handling offer create "
                                      f"on area {self.device.name} with arguments {arguments}.",
@@ -603,12 +609,14 @@ class StorageExternalMixin(ExternalMixin):
             response = {
                 "command": "bid", "status": "ready",
                 "bid": bid.to_json_string(replace_existing=replace_existing),
+                "market_type": market.__class__.__name__,
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id"),
                 "message": response_message}
         except Exception:
             response = {
                 "command": "bid", "status": "error",
+                "market_type": market.__class__.__name__,
                 "area_uuid": self.device.uuid,
                 "error_message": "Error when handling bid create "
                                  f"on area {self.device.name} with arguments {arguments}.",
