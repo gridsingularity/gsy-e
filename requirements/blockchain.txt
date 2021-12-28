@@ -4,9 +4,9 @@
 #
 #    pip-compile --max-rounds=100 --no-emit-index-url requirements/blockchain.in
 #
--e git+https://github.com/gridsingularity/gsy-dex@master#egg=gsy_dex
+-e git+https://github.com/gridsingularity/gsy-dex@upgrade-flake8#egg=gsy_dex
     # via -r requirements/blockchain.in
--e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework
+-e git+https://github.com/gridsingularity/gsy-framework@upgrade-flake8#egg=gsy_framework
     # via -r requirements/base.txt
 attrs==21.2.0
     # via
