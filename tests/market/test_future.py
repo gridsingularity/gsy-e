@@ -254,6 +254,7 @@ class TestFutureMarkets:
                           "requirements": None,
                           "time_slot": datetime_to_string_incl_seconds(time_slot1),
                           "creation_time": datetime_to_string_incl_seconds(time_slot1),
+                          "selected_requirement": None,
                           "type": "Bid"}],
                 "offers": []},
             time_slot2.format(DATE_TIME_FORMAT): {
@@ -270,6 +271,7 @@ class TestFutureMarkets:
                             "seller_origin": None,
                             "seller_origin_id": None,
                             "creation_time": datetime_to_string_incl_seconds(time_slot2),
+                            "selected_requirement": None,
                             "type": "Offer"}]}}
 
     @staticmethod

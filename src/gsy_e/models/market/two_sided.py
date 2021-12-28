@@ -378,8 +378,26 @@ class TwoSidedMarket(OneSidedMarket):
         Raises:
             InvalidBidOfferPairException: Bid offer pair failed the validation
         """
-        bids_total_energy = sum([bid.energy for bid in bids])
-        offers_total_energy = sum([offer.energy for offer in offers])
+        bids_total_energy = 0
+        offers_total_energy = 0
+        for offer in offers:
+            if (offer.selected_requirement
+                    and offer.selected_requirement.get("energy")):
+                offers_total_energy += offer.selected_requirement.get("energy")
+            else:
+                offers_total_energy += offer.energy
+            if offer.energy_rate > (clearing_rate + FLOATING_POINT_TOLERANCE):
+                raise InvalidBidOfferPairException(
+                    f"Trade rate {clearing_rate} is higher than offer energy rate.")
+        for bid in bids:
+            if (bid.selected_requirement
+                    and bid.selected_requirement.get("energy")):
+                bids_total_energy += bid.selected_requirement.get("energy")
+            else:
+                bids_total_energy += bid.energy
+            if (bid.energy_rate + FLOATING_POINT_TOLERANCE) < clearing_rate:
+                raise InvalidBidOfferPairException(
+                    f"Trade rate {clearing_rate} is higher than bid energy rate.")
         if selected_energy > bids_total_energy:
             raise InvalidBidOfferPairException(
                 f"Energy traded {selected_energy} is higher than bids energy {bids_total_energy}.")
@@ -387,12 +405,6 @@ class TwoSidedMarket(OneSidedMarket):
             raise InvalidBidOfferPairException(
                 f"Energy traded {selected_energy} is higher than offers energy"
                 f" {offers_total_energy}.")
-        if any((bid.energy_rate + FLOATING_POINT_TOLERANCE) < clearing_rate for bid in bids):
-            raise InvalidBidOfferPairException(
-                f"Trade rate {clearing_rate} is higher than bid energy rate.")
-        if any((offer.energy_rate > clearing_rate + FLOATING_POINT_TOLERANCE for offer in offers)):
-            raise InvalidBidOfferPairException(
-                f"Trade rate {clearing_rate} is higher than offer energy rate.")
 
         # All combinations of bids and offers [(bid, offer), (bid, offer)...]
         # Example List1: [A, B], List2: [C, D] -> combinations: [(A, C), (A, D), (B, C), (B, D)]
