@@ -83,7 +83,7 @@ filelock==3.3.2
     #   gsy-framework
     #   tox
     #   virtualenv
-flake8==3.9.2
+flake8==4.0.1
     # via
     #   -r requirements/dev.txt
     #   flake8-tuple
@@ -188,7 +188,7 @@ py==1.10.0
     #   gsy-framework
     #   pytest
     #   tox
-pycodestyle==2.7.0
+pycodestyle==2.8.0
     # via
     #   -r requirements/dev.txt
     #   flake8
@@ -197,7 +197,7 @@ pycparser==2.20
     # via
     #   -r requirements/dev.txt
     #   cffi
-pyflakes==2.3.1
+pyflakes==2.4.0
     # via
     #   -r requirements/dev.txt
     #   flake8

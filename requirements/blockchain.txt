@@ -70,7 +70,7 @@ filelock==3.3.2
     #   gsy-framework
     #   tox
     #   virtualenv
-flake8==3.9.2
+flake8==4.0.1
     # via
     #   -r requirements/base.txt
     #   flake8-tuple
@@ -172,13 +172,13 @@ py-sr25519-bindings==0.1.3
     # via
     #   gsy-dex
     #   substrate-interface
-pycodestyle==2.7.0
+pycodestyle==2.8.0
     # via
     #   -r requirements/base.txt
     #   flake8
     #   gsy-dex
     #   gsy-framework
-pyflakes==2.3.1
+pyflakes==2.4.0
     # via
     #   -r requirements/base.txt
     #   flake8
