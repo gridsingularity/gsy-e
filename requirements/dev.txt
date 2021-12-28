@@ -60,11 +60,6 @@ distlib==0.3.3
     #   -r requirements/base.txt
     #   gsy-framework
     #   virtualenv
-entrypoints==0.3
-    # via
-    #   -r requirements/base.txt
-    #   flake8
-    #   gsy-framework
 fabric3==1.14.post1
     # via -r requirements/dev.in
 filelock==3.3.2
@@ -73,7 +68,7 @@ filelock==3.3.2
     #   gsy-framework
     #   tox
     #   virtualenv
-flake8==3.7.9
+flake8==3.9.2
     # via
     #   -r requirements/base.txt
     #   flake8-tuple
@@ -146,7 +141,6 @@ pony==0.7.14
 pre-commit==2.15.0
     # via
     #   -r requirements/base.txt
-    #   -r requirements/dev.in
     #   gsy-framework
 psutil==5.8.0
     # via -r requirements/dev.in
@@ -155,14 +149,14 @@ py==1.10.0
     #   -r requirements/base.txt
     #   gsy-framework
     #   tox
-pycodestyle==2.5.0
+pycodestyle==2.7.0
     # via
     #   -r requirements/base.txt
     #   flake8
     #   gsy-framework
 pycparser==2.20
     # via cffi
-pyflakes==2.1.1
+pyflakes==2.3.1
     # via
     #   -r requirements/base.txt
     #   flake8

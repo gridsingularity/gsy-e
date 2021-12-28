@@ -44,16 +44,12 @@ distlib==0.3.3
     # via
     #   gsy-framework
     #   virtualenv
-entrypoints==0.3
-    # via
-    #   flake8
-    #   gsy-framework
 filelock==3.3.2
     # via
     #   gsy-framework
     #   tox
     #   virtualenv
-flake8==3.7.9
+flake8==3.9.2
     # via
     #   flake8-tuple
     #   gsy-framework
@@ -107,11 +103,11 @@ py==1.10.0
     # via
     #   gsy-framework
     #   tox
-pycodestyle==2.5.0
+pycodestyle==2.7.0
     # via
     #   flake8
     #   gsy-framework
-pyflakes==2.1.1
+pyflakes==2.3.1
     # via
     #   flake8
     #   gsy-framework
