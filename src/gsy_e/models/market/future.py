@@ -233,3 +233,8 @@ class FutureMarkets(TwoSidedMarket):
                               dispatch_event, adapt_price_with_fees, add_to_history,
                               seller_origin_id, seller_id, attributes, requirements, time_slot)
         return offer
+
+    @staticmethod
+    def representation_name():
+        """Return the market type representation."""
+        return "Future Market"
