@@ -158,6 +158,21 @@ class TestTwoSidedMarket:
             market._validate_requirements_satisfied.assert_not_called()
 
     @staticmethod
+    def test_validate_bid_offer_match_considers_selected_requirement(
+            market):
+        offer = Offer("id", pendulum.now(), price=2, energy=2, seller="other")
+        bid = Bid("bid_id", pendulum.now(),
+                  price=2, energy=3, buyer="B", requirements=[{"price": 1}])
+
+        with pytest.raises(InvalidBidOfferPairException):
+            # This failed because the clearing_rate is higher than bid's rate (2/3)
+            market.validate_bid_offer_match([bid], [offer], 1, 1)
+
+        # Now it will resort to the selected requirement (rate=1)
+        bid.selected_requirement = bid.requirements[0]
+        market.validate_bid_offer_match([bid], [offer], 1, 1)
+
+    @staticmethod
     def test_double_sided_performs_pay_as_bid_matching(
             market: TwoSidedMarket, market_matcher):
         market.offers = {"offer1": Offer("id", pendulum.now(), 2, 2, "other", 2)}

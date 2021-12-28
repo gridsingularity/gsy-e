@@ -386,16 +386,25 @@ class TwoSidedMarket(OneSidedMarket):
                 offers_total_energy += offer.selected_requirement.get("energy")
             else:
                 offers_total_energy += offer.energy
-            if offer.energy_rate > (clearing_rate + FLOATING_POINT_TOLERANCE):
+            if offer.selected_requirement and offer.selected_requirement.get("price"):
+                energy_rate = offer.selected_requirement.get("price") / selected_energy
+            else:
+                energy_rate = offer.energy_rate
+            if energy_rate > (clearing_rate + FLOATING_POINT_TOLERANCE):
                 raise InvalidBidOfferPairException(
-                    f"Trade rate {clearing_rate} is higher than offer energy rate.")
+                    f"Trade rate {clearing_rate} is less than offer energy rate.")
         for bid in bids:
             if (bid.selected_requirement
                     and bid.selected_requirement.get("energy")):
                 bids_total_energy += bid.selected_requirement.get("energy")
             else:
                 bids_total_energy += bid.energy
-            if (bid.energy_rate + FLOATING_POINT_TOLERANCE) < clearing_rate:
+
+            if bid.selected_requirement and bid.selected_requirement.get("price"):
+                energy_rate = bid.selected_requirement.get("price") / selected_energy
+            else:
+                energy_rate = bid.energy_rate
+            if (energy_rate + FLOATING_POINT_TOLERANCE) < clearing_rate:
                 raise InvalidBidOfferPairException(
                     f"Trade rate {clearing_rate} is higher than bid energy rate.")
         if selected_energy > bids_total_energy:
