@@ -70,11 +70,6 @@ distlib==0.3.3
     #   -r requirements/dev.txt
     #   gsy-framework
     #   virtualenv
-entrypoints==0.3
-    # via
-    #   -r requirements/dev.txt
-    #   flake8
-    #   gsy-framework
 et-xmlfile==1.1.0
     # via openpyxl
 fabric3==1.14.post1
@@ -85,7 +80,7 @@ filelock==3.3.2
     #   gsy-framework
     #   tox
     #   virtualenv
-flake8==3.7.9
+flake8==4.0.1
     # via
     #   -r requirements/dev.txt
     #   flake8-tuple
@@ -192,7 +187,7 @@ py==1.10.0
     #   -r requirements/dev.txt
     #   gsy-framework
     #   tox
-pycodestyle==2.5.0
+pycodestyle==2.8.0
     # via
     #   -r requirements/dev.txt
     #   flake8
@@ -201,7 +196,7 @@ pycparser==2.20
     # via
     #   -r requirements/dev.txt
     #   cffi
-pyflakes==2.1.1
+pyflakes==2.4.0
     # via
     #   -r requirements/dev.txt
     #   flake8
