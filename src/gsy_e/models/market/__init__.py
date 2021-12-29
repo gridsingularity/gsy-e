@@ -276,6 +276,6 @@ class MarketBase:
         }
 
     @staticmethod
-    def representation_name():
+    def type_name():
         """Return the market type representation."""
         return "Market"

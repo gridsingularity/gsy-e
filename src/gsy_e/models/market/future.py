@@ -235,6 +235,6 @@ class FutureMarkets(TwoSidedMarket):
         return offer
 
     @staticmethod
-    def representation_name():
+    def type_name():
         """Return the market type representation."""
         return "Future Market"

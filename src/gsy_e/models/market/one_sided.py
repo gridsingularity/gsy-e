@@ -337,6 +337,6 @@ class OneSidedMarket(MarketBase):
         return trade
 
     @staticmethod
-    def representation_name():
+    def type_name():
         """Return the market type representation."""
         return "Spot Market"

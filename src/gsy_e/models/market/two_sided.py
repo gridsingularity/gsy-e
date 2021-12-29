@@ -429,8 +429,3 @@ class TwoSidedMarket(OneSidedMarket):
             recommendations = [replace_recommendations_with_residuals(recommendation)
                                for recommendation in recommendations]
         return recommendations
-
-    @staticmethod
-    def representation_name():
-        """Return the market type representation."""
-        return "Spot Market"
