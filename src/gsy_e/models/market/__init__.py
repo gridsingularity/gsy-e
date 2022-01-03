@@ -275,7 +275,7 @@ class MarketBase:
             "trades": [t.serializable_dict() for t in self.trades]
         }
 
-    @staticmethod
-    def type_name():
+    @property
+    def type_name(self):
         """Return the market type representation."""
         return "Market"

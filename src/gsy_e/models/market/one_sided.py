@@ -336,7 +336,7 @@ class OneSidedMarket(MarketBase):
         self._notify_listeners(MarketEvent.OFFER_TRADED, trade=trade)
         return trade
 
-    @staticmethod
-    def type_name():
+    @property
+    def type_name(self):
         """Return the market type representation."""
         return "Spot Market"

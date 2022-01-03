@@ -234,7 +234,7 @@ class FutureMarkets(TwoSidedMarket):
                               seller_origin_id, seller_id, attributes, requirements, time_slot)
         return offer
 
-    @staticmethod
-    def type_name():
+    @property
+    def type_name(self):
         """Return the market type representation."""
         return "Future Market"
