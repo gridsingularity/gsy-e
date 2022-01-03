@@ -367,11 +367,13 @@ class ExternalMixin:
                 "offer": offer.to_json_string(replace_existing=replace_existing),
                 "transaction_id": arguments.get("transaction_id"),
                 "area_uuid": self.device.uuid,
+                "market_type": market.type_name,
                 "message": response_message}
         except (OrderCanNotBePosted, GSyException):
             logging.exception("Error when handling offer on area %s", self.device.name)
             response = {
                 "command": "offer", "status": "error",
+                "market_type": market.type_name,
                 "error_message": "Error when handling offer create "
                                  f"on area {self.device.name} with arguments {arguments}.",
                 "area_uuid": self.device.uuid,
@@ -419,12 +421,14 @@ class ExternalMixin:
                 "bid": bid.to_json_string(replace_existing=replace_existing),
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id"),
+                "market_type": market.type_name,
                 "message": response_message}
         except (OrderCanNotBePosted, GSyException):
             logging.exception("Error when handling bid on area %s", self.device.name)
             response = {
                 "command": "bid", "status": "error",
                 "area_uuid": self.device.uuid,
+                "market_type": market.type_name,
                 "error_message": "Error when handling bid create "
                                  f"on area {self.device.name} with arguments {arguments}.",
                 "transaction_id": arguments.get("transaction_id")}

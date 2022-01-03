@@ -274,3 +274,8 @@ class MarketBase:
             "offers": [o.serializable_dict() for o in self.offer_history],
             "trades": [t.serializable_dict() for t in self.trades]
         }
+
+    @staticmethod
+    def type_name():
+        """Return the market type representation."""
+        return "Market"

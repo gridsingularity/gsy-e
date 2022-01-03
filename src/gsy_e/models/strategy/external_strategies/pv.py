@@ -189,6 +189,7 @@ class PVExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer", "status": "ready",
+                 "market_type": market.type_name,
                  "offer": offer.to_json_string(replace_existing=replace_existing),
                  "transaction_id": arguments.get("transaction_id")})
         except (AssertionError, GSyException):
@@ -198,6 +199,7 @@ class PVExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer", "status": "error",
+                 "market_type": market.type_name,
                  "error_message": error_message,
                  "transaction_id": arguments.get("transaction_id")})
 
@@ -336,6 +338,7 @@ class PVExternalMixin(ExternalMixin):
             response = {
                 "command": "offer", "status": "error",
                 "area_uuid": self.device.uuid,
+                "market_type": market.type_name,
                 "error_message": "Error when handling offer create "
                                  f"on area {self.device.name} with arguments {arguments}:"
                                  f"{ex}",
@@ -363,6 +366,7 @@ class PVExternalMixin(ExternalMixin):
         except OrderCanNotBePosted as ex:
             response = {
                 "command": "offer", "status": "error",
+                "market_type": market.type_name,
                 "area_uuid": self.device.uuid,
                 "error_message": "Error when handling offer create "
                                  f"on area {self.device.name} with arguments {arguments}:"
