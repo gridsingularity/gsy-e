@@ -69,7 +69,7 @@ nav:
         - 'Grid Fee Objectives': 'grid-fees.md'
         - 'Constant Grid Fee Calculation': 'constant-fees.md'
         - 'Percentage Grid Fee Calculation': 'percentage-fees.md'
-        - 'Degrees of Freedom' : 'degrees-of-freedom.md'
+    - 'Degrees of Freedom' : 'degrees-of-freedom.md'
 - 'Collaborations and APIs':
     - 'Create a Grid Singularity Collaboration': 'collaboration.md'
     - 'Connect to the Grid Singularity APIs':
