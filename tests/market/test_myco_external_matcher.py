@@ -156,6 +156,7 @@ class TestMycoExternalMatcher:
             "status": "success", "recommendations": []}
         self.matcher._populate_recommendations(payload)
         self.matcher.match_recommendations()
+        assert not self.matcher._recommendations
         mock_market_match_recommendations.assert_not_called()
         self.matcher.myco_ext_conn.publish_json.assert_not_called()
 
@@ -167,6 +168,7 @@ class TestMycoExternalMatcher:
         payload = {"data": json.dumps({"recommended_matches": [{}, {}]})}
         self.matcher._populate_recommendations(payload)
         self.matcher.match_recommendations()
+        assert not self.matcher._recommendations
         expected_data = {
             "event": "match", "status": "fail",
             "recommendations": [],
@@ -183,6 +185,7 @@ class TestMycoExternalMatcher:
                                  "time_slot": self.market.time_slot_str}]}
         self.matcher._populate_recommendations(payload)
         self.matcher.match_recommendations()
+        assert not self.matcher._recommendations
         expected_data = {
             "event": "match", "status": "success",
             "recommendations": [{"market_id": self.market_id,
