@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 import json
 from unittest.mock import MagicMock, patch
 
@@ -197,9 +198,10 @@ class TestMycoExternalMatcher:
 
 
 class TestMycoExternalMatcherValidator:
+    @staticmethod
     @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcherValidator."
            "_validate")
-    def test_validate_and_report(self, mock_validate):
+    def test_validate_and_report(mock_validate):
         recommendations = []
         expected_data = {"status": "success", "recommendations": []}
         assert MycoExternalMatcherValidator.validate_and_report(
@@ -234,8 +236,9 @@ class TestMycoExternalMatcherValidator:
         assert MycoExternalMatcherValidator.validate_and_report(
             None, recommendations) == expected_data
 
+    @staticmethod
     @patch("gsy_e.models.myco_matcher.myco_external_matcher.BidOfferMatch.is_valid_dict")
-    def test_validate_valid_dict(self, mock_is_valid_dict):
+    def test_validate_valid_dict(mock_is_valid_dict):
         mock_is_valid_dict.return_value = True
         assert MycoExternalMatcherValidator._validate_valid_dict(None, {}) is None
 
@@ -243,8 +246,9 @@ class TestMycoExternalMatcherValidator:
         with pytest.raises(MycoValidationException):
             MycoExternalMatcherValidator._validate_valid_dict(None, {})
 
+    @staticmethod
     @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
-    def test_validate_market_exists(self, mock_myco_external_matcher):
+    def test_validate_market_exists(mock_myco_external_matcher):
         market = MagicMock()
         market.time_slot_str = "2021-10-06T12:00"
         mock_myco_external_matcher.area_markets_mapping = {"market-2021-10-06T12:00": market}
@@ -257,8 +261,9 @@ class TestMycoExternalMatcherValidator:
             MycoExternalMatcherValidator._validate_market_exists(
                 mock_myco_external_matcher, recommendation)
 
+    @staticmethod
     @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
-    def test_validate_orders_exist_in_market(self, mock_myco_external_matcher):
+    def test_validate_orders_exist_in_market(mock_myco_external_matcher):
         market = MagicMock()
         market.time_slot_str = "2021-10-06T12:00"
         market.offers = {"offer1": MagicMock()}
