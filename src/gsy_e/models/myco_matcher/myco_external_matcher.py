@@ -150,6 +150,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
         if response_data["status"] != "success":
             logging.debug("All recommendations failed: %s", response_data)
             self.myco_ext_conn.publish_json(channel, response_data)
+            self._recommendations = []
             return
 
         for recommendation in response_data["recommendations"]:
