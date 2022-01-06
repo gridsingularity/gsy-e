@@ -25,6 +25,6 @@ pip install git+https://github.com/gridsingularity/gsy-e-sdk.git
 
 ![alt_text](img/configure-trading-strategies-2.png)
 
-- Edit the [Asset SDK Script template](asset-api-script-template.md) developed by Grid Singularity to customize the trading strategies.
+- Edit the [Asset SDK Script template](asset-api-template-script.md) developed by Grid Singularity to customize the trading strategies.
 - [Launch the Asset SDK Script](registration-grid-operator-api-user-interface.md) to connect with the Grid Singularity Collaboration / Canary Test Network. A video tutorial is also available [here](https://www.youtube.com/watch?v=oCcQ6pYFd5w&feature=youtu.be).
 - Run the Collaboration or notify Grid Singularity that you are ready.
