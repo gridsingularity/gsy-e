@@ -21,7 +21,6 @@ from gsy_framework.constants_limits import ConstSettings
 from numpy.random import random
 
 from gsy_e.constants import TIME_FORMAT
-from gsy_e.gsy_e_core.util import make_ma_name
 from gsy_e.models.strategy import BaseStrategy, _TradeLookerUpper
 
 
@@ -44,7 +43,7 @@ class MarketAgent(BaseStrategy):
         self.min_offer_age = min_offer_age
 
         self._create_engines()
-        self.name = make_ma_name(owner)
+        self.name = owner.name
         self.uuid = owner.uuid
 
     def _create_engines(self):

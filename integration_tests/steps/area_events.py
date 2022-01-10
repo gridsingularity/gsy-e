@@ -85,7 +85,7 @@ def load_uses_battery_before(context, hour):
         if market.time_slot.hour >= hour:
             continue
         assert len(market.trades) == 2
-        assert all(t.seller == "MA House 1" for t in market.trades)
+        assert all(t.seller == "House 1" for t in market.trades)
 
 
 @then('load and battery use energy from grid after {hour}:00')
@@ -97,7 +97,7 @@ def load_uses_battery_after(context, hour):
         if market.time_slot.hour < hour:
             continue
         assert len(market.trades) == 1
-        assert all(t.seller == "MA House 1" and t.buyer == "H1 General Load"
+        assert all(t.seller == "House 1" and t.buyer == "H1 General Load"
                    for t in market.trades)
 
 
@@ -130,7 +130,7 @@ def load_consumes_following_cloud_profile(context, cloud_coverage, start_time, e
     for market in context.simulation.area.past_markets:
         if not start_time <= market.time_slot.hour < end_time:
             continue
-        assert market.trades[0].seller == "MA House 1" and \
+        assert market.trades[0].seller == "House 1" and \
             market.trades[0].buyer == "Grid Load"
         assert market.trades[0].offer_bid.energy == profile[int(market.time_slot.hour)]
 
@@ -144,7 +144,7 @@ def load_consumes_less_than_between(context, energy, start_time, end_time):
     for market in context.simulation.area.past_markets:
         if not start_time <= market.time_slot.hour < end_time:
             continue
-        assert market.trades[0].seller == "MA House 1" and \
+        assert market.trades[0].seller == "House 1" and \
             market.trades[0].buyer == "Grid Load"
         assert market.trades[0].offer_bid.energy <= energy
 
@@ -159,7 +159,7 @@ def load_consumes_between(context, energy, start_time, end_time):
         if not start_time <= market.time_slot.hour < end_time:
             continue
         assert len(market.trades) == 1
-        assert market.trades[0].seller == "MA House 1" and \
+        assert market.trades[0].seller == "House 1" and \
             market.trades[0].buyer == "H1 General Load"
         assert market.trades[0].offer_bid.energy == energy
 
@@ -173,7 +173,7 @@ def grid_load_consumes_between(context, energy, start_time, end_time):
     for market in context.simulation.area.past_markets:
         if not start_time <= market.time_slot.hour < end_time:
             continue
-        assert market.trades[0].seller == "MA House 1" and \
+        assert market.trades[0].seller == "House 1" and \
             market.trades[0].buyer == "Grid Load"
         assert market.trades[0].offer_bid.energy == energy
 
@@ -190,7 +190,7 @@ def load_consumes_variable_energy_with_rate_between(context, energy, rate, start
         if not start_time <= market.time_slot.hour < end_time:
             continue
         assert len(market.trades) == 1
-        assert market.trades[0].seller == "MA House 1" and \
+        assert market.trades[0].seller == "House 1" and \
             market.trades[0].buyer == "Grid Load"
         assert isclose(market.trades[0].offer_bid.energy, energy)
         assert isclose(

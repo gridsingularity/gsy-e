@@ -19,7 +19,6 @@ from behave import given, then
 from math import isclose
 from functools import reduce
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
-from gsy_e.gsy_e_core.util import make_ba_name
 from gsy_framework.constants_limits import ConstSettings
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 
@@ -58,7 +57,7 @@ def number_of_balancing_trades(context, area, b_trade_nr, s_trade_nr):
         if len(market.trades) == 0:
             continue
         reduced_trades = reduce(
-            lambda acc, t: acc + 1 if t.buyer == make_ba_name(area_object) else acc,
+            lambda acc, t: acc + 1 if t.buyer == area_object.name else acc,
             market.trades,
             0
         )

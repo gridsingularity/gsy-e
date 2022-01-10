@@ -203,14 +203,14 @@ def trades_on_all_markets_max_load_rate(context):
     for market in grid.past_markets:
         assert len(market.trades) == 1
         assert all(t.seller == "Commercial Energy Producer" for t in market.trades)
-        assert all(t.buyer == "MA House 1" for t in market.trades)
+        assert all(t.buyer == "House 1" for t in market.trades)
         assert all(
             isclose(trade.offer_bid.energy_rate, max_rate[market.time_slot])
             for trade in market.trades)
 
     for market in house1.past_markets:
         assert len(market.trades) == 1
-        assert all(t.seller == "MA House 1" for t in market.trades)
+        assert all(t.seller == "House 1" for t in market.trades)
         assert all(t.buyer == "H1 General Load" for t in market.trades)
         assert all(
             isclose(trade.offer_bid.energy_rate, max_rate[market.time_slot])
