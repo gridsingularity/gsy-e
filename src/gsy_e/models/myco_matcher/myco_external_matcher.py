@@ -97,6 +97,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
                 if filtered_areas_uuids and area_uuid not in filtered_areas_uuids:
                     # Client is uninterested in this Area -> skip
                     continue
+
                 # Cache the market (needed while matching)
                 for market in area_data["markets"]:
                     self.area_markets_mapping.update(
@@ -116,6 +117,16 @@ class MycoExternalMatcher(MycoMatcherInterface):
                         market_orders_list_mapping[area_uuid] = {}
                     market_orders_list_mapping[area_uuid].update(
                         self._get_orders(market, filters))
+
+                for market in area_data.get("settlement_markets", []):
+                    self.area_markets_mapping.update(
+                        {f"{area_uuid}-{time_slot_str}": market
+                         for time_slot_str in market.orders_per_slot().keys()})
+                    if area_uuid not in market_orders_list_mapping:
+                        market_orders_list_mapping[area_uuid] = {}
+                    market_orders_list_mapping[area_uuid].update(
+                        self._get_orders(market, filters))
+
             self.area_uuid_markets_mapping = {}
             # TODO: change the `bids_offers` key and the channel to `orders`
             response_data.update({
