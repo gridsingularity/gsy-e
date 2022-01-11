@@ -99,7 +99,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
                     continue
 
                 # Cache the market (needed while matching)
-                for market in area_data["markets"]:
+                for market in area_data["markets"] + area_data.get("settlement_markets", []):
                     self.area_markets_mapping.update(
                         {f"{area_uuid}-{market.time_slot_str}": market})
                     if area_uuid not in market_orders_list_mapping:
@@ -110,15 +110,6 @@ class MycoExternalMatcher(MycoMatcherInterface):
                 if area_data.get("future_markets"):
                     # Future markets
                     market = area_data["future_markets"]
-                    self.area_markets_mapping.update(
-                        {f"{area_uuid}-{time_slot_str}": market
-                         for time_slot_str in market.orders_per_slot().keys()})
-                    if area_uuid not in market_orders_list_mapping:
-                        market_orders_list_mapping[area_uuid] = {}
-                    market_orders_list_mapping[area_uuid].update(
-                        self._get_orders(market, filters))
-
-                for market in area_data.get("settlement_markets", []):
                     self.area_markets_mapping.update(
                         {f"{area_uuid}-{time_slot_str}": market
                          for time_slot_str in market.orders_per_slot().keys()})
