@@ -2,7 +2,7 @@ import platform
 
 from setuptools import find_packages, setup
 
-gsy_framework_branch = "refactoring/GSYE-140"
+gsy_framework_branch = "master"
 
 try:
     with open("requirements/dev.txt", encoding="utf-8") as req:
