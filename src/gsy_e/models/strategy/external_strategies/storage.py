@@ -441,7 +441,7 @@ class StorageExternalMixin(ExternalMixin):
         if not self.connected and not self.is_aggregator_controlled:
             super().event_tick()
         else:
-            self.state.tick(self.area, self.spot_market.time_slot)
+            self.state.check_state(self.spot_market.time_slot)
             self.state.clamp_energy_to_sell_kWh([self.spot_market.time_slot])
             self.state.clamp_energy_to_buy_kWh([self.spot_market.time_slot])
 
