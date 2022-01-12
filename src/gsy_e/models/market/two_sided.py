@@ -302,8 +302,8 @@ class TwoSidedMarket(OneSidedMarket):
             selected_energy = recommended_pair.selected_energy
             clearing_rate = recommended_pair.trade_rate
             market_offers = [
-                self.offers.get(offer["id"]) for offer in recommended_pair.offers]
-            market_bids = [self.bids.get(bid["id"]) for bid in recommended_pair.bids]
+                self.offers.get(recommended_pair.offer["id"])]
+            market_bids = [self.bids.get(recommended_pair.bid["id"])]
 
             if not (all(market_offers) and all(market_bids)):
                 # If not all offers bids exist in the market, skip the current recommendation
@@ -417,12 +417,10 @@ class TwoSidedMarket(OneSidedMarket):
         """
 
         def replace_recommendations_with_residuals(recommendation: Dict):
-            for index, offer in enumerate(recommendation["offers"]):
-                if offer["id"] == offer_trade.offer_bid.id:
-                    recommendation["offers"][index] = offer_trade.residual.serializable_dict()
-            for index, bid in enumerate(recommendation["bids"]):
-                if bid["id"] == bid_trade.offer_bid.id:
-                    recommendation["bids"][index] = bid_trade.residual.serializable_dict()
+            if recommendation["offer"]["id"] == offer_trade.offer_bid.id:
+                recommendation["offer"] = offer_trade.residual.serializable_dict()
+            if recommendation["bid"]["id"] == bid_trade.offer_bid.id:
+                recommendation["bid"] = bid_trade.residual.serializable_dict()
             return recommendation
 
         if offer_trade.residual or bid_trade.residual:

@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 import json
 from unittest.mock import MagicMock, patch
 
@@ -146,7 +147,7 @@ class TestMycoExternalMatcher:
     @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcherValidator."
            "validate_and_report")
     @patch("gsy_e.models.myco_matcher.myco_external_matcher.TwoSidedMarket."
-           "match_recommendations", return_value=None)
+           "match_recommendations", return_value=True)
     def test_match_recommendations(
             self, mock_market_match_recommendations, mock_validate_and_report):
         channel = f"{self.channel_prefix}recommendations/response/"
@@ -156,6 +157,7 @@ class TestMycoExternalMatcher:
             "status": "success", "recommendations": []}
         self.matcher._populate_recommendations(payload)
         self.matcher.match_recommendations()
+        assert not self.matcher._recommendations
         mock_market_match_recommendations.assert_not_called()
         self.matcher.myco_ext_conn.publish_json.assert_not_called()
 
@@ -167,6 +169,7 @@ class TestMycoExternalMatcher:
         payload = {"data": json.dumps({"recommended_matches": [{}, {}]})}
         self.matcher._populate_recommendations(payload)
         self.matcher.match_recommendations()
+        assert not self.matcher._recommendations
         expected_data = {
             "event": "match", "status": "fail",
             "recommendations": [],
@@ -183,6 +186,7 @@ class TestMycoExternalMatcher:
                                  "time_slot": self.market.time_slot_str}]}
         self.matcher._populate_recommendations(payload)
         self.matcher.match_recommendations()
+        assert not self.matcher._recommendations
         expected_data = {
             "event": "match", "status": "success",
             "recommendations": [{"market_id": self.market_id,
@@ -194,9 +198,10 @@ class TestMycoExternalMatcher:
 
 
 class TestMycoExternalMatcherValidator:
+    @staticmethod
     @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcherValidator."
            "_validate")
-    def test_validate_and_report(self, mock_validate):
+    def test_validate_and_report(mock_validate):
         recommendations = []
         expected_data = {"status": "success", "recommendations": []}
         assert MycoExternalMatcherValidator.validate_and_report(
@@ -231,8 +236,9 @@ class TestMycoExternalMatcherValidator:
         assert MycoExternalMatcherValidator.validate_and_report(
             None, recommendations) == expected_data
 
+    @staticmethod
     @patch("gsy_e.models.myco_matcher.myco_external_matcher.BidOfferMatch.is_valid_dict")
-    def test_validate_valid_dict(self, mock_is_valid_dict):
+    def test_validate_valid_dict(mock_is_valid_dict):
         mock_is_valid_dict.return_value = True
         assert MycoExternalMatcherValidator._validate_valid_dict(None, {}) is None
 
@@ -240,8 +246,9 @@ class TestMycoExternalMatcherValidator:
         with pytest.raises(MycoValidationException):
             MycoExternalMatcherValidator._validate_valid_dict(None, {})
 
+    @staticmethod
     @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
-    def test_validate_market_exists(self, mock_myco_external_matcher):
+    def test_validate_market_exists(mock_myco_external_matcher):
         market = MagicMock()
         market.time_slot_str = "2021-10-06T12:00"
         mock_myco_external_matcher.area_markets_mapping = {"market-2021-10-06T12:00": market}
@@ -254,8 +261,9 @@ class TestMycoExternalMatcherValidator:
             MycoExternalMatcherValidator._validate_market_exists(
                 mock_myco_external_matcher, recommendation)
 
+    @staticmethod
     @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
-    def test_validate_orders_exist_in_market(self, mock_myco_external_matcher):
+    def test_validate_orders_exist_in_market(mock_myco_external_matcher):
         market = MagicMock()
         market.time_slot_str = "2021-10-06T12:00"
         market.offers = {"offer1": MagicMock()}
@@ -264,11 +272,11 @@ class TestMycoExternalMatcherValidator:
         recommendation = {
             "market_id": "market",
             "time_slot": "2021-10-06T12:00",
-            "offers": [{"id": "offer1"}], "bids": [{"id": "bid1"}]}
+            "offer": {"id": "offer1"}, "bid": {"id": "bid1"}}
         assert MycoExternalMatcherValidator._validate_orders_exist_in_market(
             mock_myco_external_matcher, recommendation) is None
 
-        recommendation["offers"].append({"id": "offer2"})
+        recommendation["offer"] = {"id": "offer2"}
         with pytest.raises(InvalidBidOfferPairException):
             MycoExternalMatcherValidator._validate_orders_exist_in_market(
                 mock_myco_external_matcher, recommendation

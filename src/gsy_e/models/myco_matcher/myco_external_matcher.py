@@ -97,8 +97,9 @@ class MycoExternalMatcher(MycoMatcherInterface):
                 if filtered_areas_uuids and area_uuid not in filtered_areas_uuids:
                     # Client is uninterested in this Area -> skip
                     continue
+
                 # Cache the market (needed while matching)
-                for market in area_data["markets"]:
+                for market in area_data["markets"] + area_data.get("settlement_markets", []):
                     self.area_markets_mapping.update(
                         {f"{area_uuid}-{market.time_slot_str}": market})
                     if area_uuid not in market_orders_list_mapping:
@@ -116,6 +117,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
                         market_orders_list_mapping[area_uuid] = {}
                     market_orders_list_mapping[area_uuid].update(
                         self._get_orders(market, filters))
+
             self.area_uuid_markets_mapping = {}
             # TODO: change the `bids_offers` key and the channel to `orders`
             response_data.update({
@@ -150,6 +152,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
         if response_data["status"] != "success":
             logging.debug("All recommendations failed: %s", response_data)
             self.myco_ext_conn.publish_json(channel, response_data)
+            self._recommendations = []
             return
 
         for recommendation in response_data["recommendations"]:
@@ -162,8 +165,11 @@ class MycoExternalMatcher(MycoMatcherInterface):
                 # TODO: rename market_id to area_id in the BidOfferMatch dataclass
                 market = self.area_markets_mapping.get(
                     f"{recommendation['market_id']}-{recommendation['time_slot']}")
-                market.match_recommendations([recommendation])
-                recommendation["status"] = "success"
+                were_trades_performed = market.match_recommendations([recommendation])
+                if were_trades_performed:
+                    recommendation["status"] = "success"
+                else:
+                    recommendation["status"] = "Fail"
             except InvalidBidOfferPairException as exception:
                 recommendation["status"] = "Fail"
                 recommendation["message"] = str(exception)
@@ -257,11 +263,10 @@ class MycoExternalMatcherValidator:
 
         market = matcher.area_markets_mapping.get(
             f"{recommendation.get('market_id')}-{recommendation.get('time_slot')}")
-        market_offers = [
-            market.offers.get(offer["id"]) for offer in recommendation["offers"]]
-        market_bids = [market.bids.get(bid["id"]) for bid in recommendation["bids"]]
+        market_offer = market.offers.get(recommendation["offer"]["id"])
+        market_bid = market.bids.get(recommendation["bid"]["id"])
 
-        if not (all(market_offers) and all(market_bids)):
+        if not (market_offer and market_bid):
             # If not all offers bids exist in the market, skip the current recommendation
             raise InvalidBidOfferPairException(
                 "Not all bids and offers exist in the market.")
