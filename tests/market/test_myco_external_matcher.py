@@ -147,7 +147,7 @@ class TestMycoExternalMatcher:
     @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcherValidator."
            "validate_and_report")
     @patch("gsy_e.models.myco_matcher.myco_external_matcher.TwoSidedMarket."
-           "match_recommendations", return_value=None)
+           "match_recommendations", return_value=True)
     def test_match_recommendations(
             self, mock_market_match_recommendations, mock_validate_and_report):
         channel = f"{self.channel_prefix}recommendations/response/"
@@ -272,11 +272,11 @@ class TestMycoExternalMatcherValidator:
         recommendation = {
             "market_id": "market",
             "time_slot": "2021-10-06T12:00",
-            "offers": [{"id": "offer1"}], "bids": [{"id": "bid1"}]}
+            "offer": {"id": "offer1"}, "bid": {"id": "bid1"}}
         assert MycoExternalMatcherValidator._validate_orders_exist_in_market(
             mock_myco_external_matcher, recommendation) is None
 
-        recommendation["offers"].append({"id": "offer2"})
+        recommendation["offer"] = {"id": "offer2"}
         with pytest.raises(InvalidBidOfferPairException):
             MycoExternalMatcherValidator._validate_orders_exist_in_market(
                 mock_myco_external_matcher, recommendation
