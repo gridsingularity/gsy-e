@@ -646,10 +646,6 @@ class StorageState(StateInterface):
         assert 0 <= limit_float_precision(self.pledged_buy_kWh[time_slot]) <= max_value
         assert 0 <= limit_float_precision(self.offered_buy_kWh[time_slot]) <= max_value
 
-    def tick(self, area, time_slot: DateTime) -> None:
-        """Handler for the tick event."""
-        self.check_state(time_slot)
-
     def calculate_soc_for_time_slot(self, time_slot: DateTime) -> None:
         """Update the soc history for the passed time_slot."""
         self.charge_history[time_slot] = 100.0 * self.used_storage / self.capacity

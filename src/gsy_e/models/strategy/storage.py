@@ -353,7 +353,7 @@ class StorageStrategy(BidEnabledStrategy):
         market = self.area.spot_market
         self._buy_energy_two_sided_spot_market()
 
-        self.state.tick(self.area, market.time_slot)
+        self.state.check_state(market.time_slot)
         if self.cap_price_strategy is False:
             self.offer_update.update(market, self)
 
