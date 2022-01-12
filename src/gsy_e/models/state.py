@@ -465,8 +465,6 @@ class StorageState(StateInterface):
                  initial_energy_origin=ESSEnergyOrigin.EXTERNAL,
                  capacity=StorageSettings.CAPACITY,
                  max_abs_battery_power_kW=StorageSettings.MAX_ABS_POWER,
-                 loss_per_hour=0.01,
-                 loss_function=1,
                  min_allowed_soc=StorageSettings.MIN_ALLOWED_SOC):
 
         self.initial_soc = initial_soc
@@ -475,8 +473,6 @@ class StorageState(StateInterface):
         self.min_allowed_soc_ratio = min_allowed_soc / 100
 
         self.capacity = capacity
-        self.loss_per_hour = loss_per_hour
-        self.loss_function = loss_function
         self.max_abs_battery_power_kW = max_abs_battery_power_kW
 
         # storage capacity, that is already sold:
@@ -650,24 +646,9 @@ class StorageState(StateInterface):
         assert 0 <= limit_float_precision(self.pledged_buy_kWh[time_slot]) <= max_value
         assert 0 <= limit_float_precision(self.offered_buy_kWh[time_slot]) <= max_value
 
-    def lose(self, loss_function: int, loss_per_hour: float) -> None:
-        """Batteries normally lose some energy by time, this method represents this behavior."""
-        if loss_function == 1:
-            if self._used_storage * (1.0 - loss_per_hour) >= 0:
-                self._used_storage *= 1.0 - loss_per_hour
-            else:
-                self._used_storage = 0
-        else:
-            if self._used_storage >= loss_per_hour:
-                self._used_storage += - loss_per_hour
-            else:
-                self._used_storage = 0
-
     def tick(self, area, time_slot: DateTime) -> None:
         """Handler for the tick event."""
         self.check_state(time_slot)
-        self.lose(self.loss_function,
-                  self.loss_per_hour * area.config.tick_length.in_seconds() / 3600)
 
     def calculate_soc_for_time_slot(self, time_slot: DateTime) -> None:
         """Update the soc history for the passed time_slot."""
