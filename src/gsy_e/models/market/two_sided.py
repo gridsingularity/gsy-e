@@ -356,7 +356,7 @@ class TwoSidedMarket(OneSidedMarket):
     def validate_bid_offer_match(
             cls, bid: Bid, offer: Offer,
             clearing_rate: float, selected_energy: float) -> None:
-        """Basic validation function for bids against offers.
+        """Basic validation function for a bid against an offer.
 
         Raises:
             InvalidBidOfferPairException: Bid offer pair failed the validation
