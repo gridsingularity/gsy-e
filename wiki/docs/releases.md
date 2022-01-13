@@ -26,7 +26,7 @@ The following features were implemented :
 * Time Resolution setting for graphs: Users can choose to **view data** in the graphs in 2 hour, 1 hour, or 15 minutes time resolution. This allows for **faster** loading of the graphs as the simulation run time is extended. Users can change the time resolution for the Energy Trade Profile, Energy Pricing, and Asset Profile graphs.
 * Add a Library as an [Event](events.md): Users can add **grid components** from the Library into their simulation while it is running.
 * [Canary Network](canary-network.md) Enhancements: Canary Networks are automatically restarted in the event of a software deploy or other system disruption. Users can view previous weeks of Canary Network data and [download the results](results-download.md). Canary Network simulations can run for weeks at a time and store all data for future analysis and research.
-* Users can trade through the Grid Singularity [Asset](assets-api.md) and [Grid Operator](grid-operator-api.md) APIs through a cloud web service. This feature allows users to **automate** their trading algorithms and connect to the API from the cloud instead of hosting and monitoring on a local computer.
+* Users can trade through the Grid Singularity [Asset](configure-trading-strategies-walkthrough.md) and [Grid Operator](implement-grid-fees-walkthrough.md) APIs through a cloud web service. This feature allows users to **automate** their trading algorithms and connect to the API from the cloud instead of hosting and monitoring on a local computer.
 
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/b2LGxgnEAcM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
@@ -34,7 +34,7 @@ The following features were implemented :
 ##Version 0.10.0
 The following features were implemented :
 
-* [Canary Networks](canary-network.md): An admin user can create a Canary Network simulation, which duplicates a [collaboration](collaboration.md) simulation and allows the admin to connect each energy asset in the grid to its **live data stream** in order to simulate trading on the asset's live metered data readings. The Canary Network runs in **real-time**, with incoming data collected during each 15 minute market slot. Researcher users can trade on behalf of energy assets using the registry to connect to the live data stream which broadcasts the energy required for each asset through the [Asset API](assets-api.md). Grid Operator users can change the grid fees and grid parameters of each grid market using the registry which connects them to their markets through the [Grid Operator API](grid-operator-api.md). Therefore, the Canary Network realizes the digital twin model of an energy asset and enables Researcher users to trade in real-time on behalf of their assets as a proof of concept. Once a Canary Network is established, it continues to run and agents can trade over weeks and months of time, for long term study of energy asset data and agent and market behavior. Previous weeks of data and results are saved in the results page weekly history.
+* [Canary Networks](canary-network.md): An admin user can create a Canary Network simulation, which duplicates a [collaboration](collaboration.md) simulation and allows the admin to connect each energy asset in the grid to its **live data stream** in order to simulate trading on the asset's live metered data readings. The Canary Network runs in **real-time**, with incoming data collected during each 15 minute market slot. Researcher users can trade on behalf of energy assets using the registry to connect to the live data stream which broadcasts the energy required for each asset through the [Asset API](configure-trading-strategies-walkthrough.md). Grid Operator users can change the grid fees and grid parameters of each grid market using the registry which connects them to their markets through the [Grid Operator API](implement-grid-fees-walkthrough.md). Therefore, the Canary Network realizes the digital twin model of an energy asset and enables Researcher users to trade in real-time on behalf of their assets as a proof of concept. Once a Canary Network is established, it continues to run and agents can trade over weeks and months of time, for long term study of energy asset data and agent and market behavior. Previous weeks of data and results are saved in the results page weekly history.
 * Island or Grid-connect a [Market Maker](model-market-maker.md) as an event: Users can now change the role and mode of the Market Maker as an event, allowing users to simulate **blackouts** by changing the Market Maker to an islanding role, or simulating other impacts resulting from a change in the Market Maker parameters, such as showing the effect of connecting an islanded Market Maker to the grid.
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/kHacTJvTRwM" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
@@ -42,8 +42,8 @@ The following features were implemented :
 ##Version 0.9.0
 The following features were implemented :
 
-* [Market API](grid-operator-api.md), which allows grid operators and researchers to monitor metrics and set grid fees in the select local energy market simulation collaboration
-* Easier registration for researchers and grid operators to manage multiple assets and use market [API](api-overview.md) through the Registry page.
+* [Market API](implement-grid-fees-walkthrough.md), which allows grid operators and researchers to monitor metrics and set grid fees in the select local energy market simulation collaboration
+* Easier registration for researchers and grid operators to manage multiple assets and use market [API](APIs-introduction.md) through the Registry page.
 * Bids and offers are prioritised in their first market by setting a wait time of 2 ticks before allowing them to propagate to higher markets in the grid hierarchy. This wait time is set in the backend as the minimum bid or offer age parameter.
 * [Grid fees](constant-fees.md) integrated in the Results page - [Energy Pricing](results.md#energy-pricing) graph for each market
 * Total grid fees reported in the Scoreboard page that demonstrates market performance metrics for each collaboration simulation.
@@ -69,7 +69,7 @@ The following features were implemented :
 * [Detailed energy trade profile graph](results.md#detailed-energy-trade-profile). Zoom in to each 15 minute market slot to view the scheduled trades with 1 minute resolution.
 * Grid Operator user can change grid parameters inside a collaboration and while it is running, like [grid fees](constant-fees.md) or the transformer capacity.
 * Allow collaboration participants to register for [events](events.md) while the simulation is running. Allows users to simulate a growing community.
-* Information Aggregator to compile and send average market measurements to assist data scientists in building smart strategies to trade through the [API](assets-api.md).
+* Information Aggregator to compile and send average market measurements to assist data scientists in building smart strategies to trade through the [API](configure-trading-strategies-walkthrough.md).
 
 
 
@@ -107,7 +107,7 @@ The following features were implemented :
 
 * [Grid fees](grid-fees.md) configuration
 * User roles, including 'Collaborations' feature for multi user testing and Grid Singularity-hosted challenges
-* [API](assets-api.md) connection to energy devices allowing bids and offers to be submitted by external algorithms
+* [API](configure-trading-strategies-walkthrough.md) connection to energy devices allowing bids and offers to be submitted by external algorithms
 
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/8un6qw_CGjI" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

@@ -69,9 +69,9 @@ Now, if you run `gsy-e run -–help` , the help of gsy-e should be shown.
 ##Installing Grid Singularity Exchange on Linux Ubuntu 20.04:
 
 
-Please follow the installation instructions for [Ubuntu 18.04](https://gridsingularity.github.io/d3a/installation-instructions/#ubuntu-1804)
+Please follow the installation instructions for Ubuntu 18.04.
 
-If case  you encounter the following error
+In case  you encounter the following error:
 
 ```
 error: command 'x86_64-linux-gnu-gcc' failed with exit status 1
