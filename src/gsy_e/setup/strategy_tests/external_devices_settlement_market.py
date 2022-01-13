@@ -59,7 +59,7 @@ def get_setup(config):
 
                 ], external_connection_available=True,
             ),
-            Market("Cell Tower", strategy=LoadHoursStrategy(avg_power_W=100,
+            Market("Community Load", strategy=LoadHoursStrategy(avg_power_W=100,
                                                             hrs_per_day=24,
                                                             hrs_of_day=list(range(0, 24)),
                                                             final_buying_rate=35)
