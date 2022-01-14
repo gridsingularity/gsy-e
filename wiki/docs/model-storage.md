@@ -33,9 +33,9 @@ The storage configuration interface is shown below:
 
 ##Backend Configuration
 
-To implement the storage in a backend simulation one option is available: 
+To implement the storage in a backend simulation one option is available:
 
-[Energy Storage System](https://github.com/gridsingularity/d3a/blob/master/src/d3a/models/strategy/storage.py)
+[Energy Storage System](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/storage.py)
 
 
 ```python
@@ -69,6 +69,6 @@ On each tick, the storage scans the connected market for affordable offers* if t
 
 On each tick, the storage either places a bid for the quantity of energy it needs to reach 100% SOC or updates the price of an existing bid in the market where the bid rate depends on the `initial_buying_rate`, `final_buying_rate`, `energy_rate_decrease_per_update` and `update_interval` setting.
 
-###Selling Energy 
+###Selling Energy
 
 At the beginning of each market slot, the storage places an offer for all the energy it has stored (not including the energy that is needed to keep the storage at least at min_allowed_soc). This offer is updated at each `update_interval` pursuant to the rate decrease settings. This mechanism applies in both one and two-sided market types. Consequently, it is possible for the storage to have both an offer and a bid placed in the same market.
