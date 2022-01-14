@@ -1089,7 +1089,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../markets-rotation.md" title="Markets and rotation" class="md-nav__link">
+    <a href="../markets-rotation/" title="Markets and rotation" class="md-nav__link">
       Markets and rotation
     </a>
   </li>
@@ -1976,14 +1976,14 @@
 <li>Time Resolution setting for graphs: Users can choose to <strong>view data</strong> in the graphs in 2 hour, 1 hour, or 15 minutes time resolution. This allows for <strong>faster</strong> loading of the graphs as the simulation run time is extended. Users can change the time resolution for the Energy Trade Profile, Energy Pricing, and Asset Profile graphs.</li>
 <li>Add a Library as an <a href="../events/">Event</a>: Users can add <strong>grid components</strong> from the Library into their simulation while it is running.</li>
 <li><a href="../canary-network/">Canary Network</a> Enhancements: Canary Networks are automatically restarted in the event of a software deploy or other system disruption. Users can view previous weeks of Canary Network data and <a href="../results-download/">download the results</a>. Canary Network simulations can run for weeks at a time and store all data for future analysis and research.</li>
-<li>Users can trade through the Grid Singularity <a href="../assets-api/">Asset</a> and <a href="../grid-operator-api/">Grid Operator</a> APIs through a cloud web service. This feature allows users to <strong>automate</strong> their trading algorithms and connect to the API from the cloud instead of hosting and monitoring on a local computer.</li>
+<li>Users can trade through the Grid Singularity <a href="../configure-trading-strategies-walkthrough/">Asset</a> and <a href="../implement-grid-fees-walkthrough/">Grid Operator</a> APIs through a cloud web service. This feature allows users to <strong>automate</strong> their trading algorithms and connect to the API from the cloud instead of hosting and monitoring on a local computer.</li>
 </ul>
 <iframe width="560" height="315" src="https://www.youtube.com/embed/b2LGxgnEAcM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 <h2 id="version-0100">Version 0.10.0<a class="headerlink" href="#version-0100" title="Permanent link">&para;</a></h2>
 <p>The following features were implemented :</p>
 <ul>
-<li><a href="../canary-network/">Canary Networks</a>: An admin user can create a Canary Network simulation, which duplicates a <a href="../collaboration/">collaboration</a> simulation and allows the admin to connect each energy asset in the grid to its <strong>live data stream</strong> in order to simulate trading on the asset's live metered data readings. The Canary Network runs in <strong>real-time</strong>, with incoming data collected during each 15 minute market slot. Researcher users can trade on behalf of energy assets using the registry to connect to the live data stream which broadcasts the energy required for each asset through the <a href="../assets-api/">Asset API</a>. Grid Operator users can change the grid fees and grid parameters of each grid market using the registry which connects them to their markets through the <a href="../grid-operator-api/">Grid Operator API</a>. Therefore, the Canary Network realizes the digital twin model of an energy asset and enables Researcher users to trade in real-time on behalf of their assets as a proof of concept. Once a Canary Network is established, it continues to run and agents can trade over weeks and months of time, for long term study of energy asset data and agent and market behavior. Previous weeks of data and results are saved in the results page weekly history.</li>
+<li><a href="../canary-network/">Canary Networks</a>: An admin user can create a Canary Network simulation, which duplicates a <a href="../collaboration/">collaboration</a> simulation and allows the admin to connect each energy asset in the grid to its <strong>live data stream</strong> in order to simulate trading on the asset's live metered data readings. The Canary Network runs in <strong>real-time</strong>, with incoming data collected during each 15 minute market slot. Researcher users can trade on behalf of energy assets using the registry to connect to the live data stream which broadcasts the energy required for each asset through the <a href="../configure-trading-strategies-walkthrough/">Asset API</a>. Grid Operator users can change the grid fees and grid parameters of each grid market using the registry which connects them to their markets through the <a href="../implement-grid-fees-walkthrough/">Grid Operator API</a>. Therefore, the Canary Network realizes the digital twin model of an energy asset and enables Researcher users to trade in real-time on behalf of their assets as a proof of concept. Once a Canary Network is established, it continues to run and agents can trade over weeks and months of time, for long term study of energy asset data and agent and market behavior. Previous weeks of data and results are saved in the results page weekly history.</li>
 <li>Island or Grid-connect a <a href="../model-market-maker/">Market Maker</a> as an event: Users can now change the role and mode of the Market Maker as an event, allowing users to simulate <strong>blackouts</strong> by changing the Market Maker to an islanding role, or simulating other impacts resulting from a change in the Market Maker parameters, such as showing the effect of connecting an islanded Market Maker to the grid.</li>
 </ul>
 <iframe width="560" height="315" src="https://www.youtube.com/embed/kHacTJvTRwM" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
@@ -1991,8 +1991,8 @@
 <h2 id="version-090">Version 0.9.0<a class="headerlink" href="#version-090" title="Permanent link">&para;</a></h2>
 <p>The following features were implemented :</p>
 <ul>
-<li><a href="../grid-operator-api/">Market API</a>, which allows grid operators and researchers to monitor metrics and set grid fees in the select local energy market simulation collaboration</li>
-<li>Easier registration for researchers and grid operators to manage multiple assets and use market <a href="../api-overview/">API</a> through the Registry page.</li>
+<li><a href="../implement-grid-fees-walkthrough/">Market API</a>, which allows grid operators and researchers to monitor metrics and set grid fees in the select local energy market simulation collaboration</li>
+<li>Easier registration for researchers and grid operators to manage multiple assets and use market <a href="../APIs-introduction/">API</a> through the Registry page.</li>
 <li>Bids and offers are prioritised in their first market by setting a wait time of 2 ticks before allowing them to propagate to higher markets in the grid hierarchy. This wait time is set in the backend as the minimum bid or offer age parameter.</li>
 <li><a href="../constant-fees/">Grid fees</a> integrated in the Results page - <a href="../results/#energy-pricing">Energy Pricing</a> graph for each market</li>
 <li>Total grid fees reported in the Scoreboard page that demonstrates market performance metrics for each collaboration simulation.</li>
@@ -2015,7 +2015,7 @@
 <li><a href="../results/#detailed-energy-trade-profile">Detailed energy trade profile graph</a>. Zoom in to each 15 minute market slot to view the scheduled trades with 1 minute resolution.</li>
 <li>Grid Operator user can change grid parameters inside a collaboration and while it is running, like <a href="../constant-fees/">grid fees</a> or the transformer capacity.</li>
 <li>Allow collaboration participants to register for <a href="../events/">events</a> while the simulation is running. Allows users to simulate a growing community.</li>
-<li>Information Aggregator to compile and send average market measurements to assist data scientists in building smart strategies to trade through the <a href="../assets-api/">API</a>.</li>
+<li>Information Aggregator to compile and send average market measurements to assist data scientists in building smart strategies to trade through the <a href="../configure-trading-strategies-walkthrough/">API</a>.</li>
 </ul>
 <iframe width="560" height="315" src="https://www.youtube.com/embed/RrYMdITH1CA" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
@@ -2048,7 +2048,7 @@
 <ul>
 <li><a href="../grid-fees/">Grid fees</a> configuration</li>
 <li>User roles, including 'Collaborations' feature for multi user testing and Grid Singularity-hosted challenges</li>
-<li><a href="../assets-api/">API</a> connection to energy devices allowing bids and offers to be submitted by external algorithms</li>
+<li><a href="../configure-trading-strategies-walkthrough/">API</a> connection to energy devices allowing bids and offers to be submitted by external algorithms</li>
 </ul>
 <iframe width="560" height="315" src="https://www.youtube.com/embed/8un6qw_CGjI" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 

@@ -1089,7 +1089,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../markets-rotation.md" title="Markets and rotation" class="md-nav__link">
+    <a href="../markets-rotation/" title="Markets and rotation" class="md-nav__link">
       Markets and rotation
     </a>
   </li>
@@ -1789,13 +1789,13 @@
 <p>The Market Maker configuration interface is shown below:</p>
 <p><img alt="alt_text" src="../img/model-market-maker-1.png" style="height:500px;width:275px" /></p>
 <h2 id="backend-configuration">Backend Configuration<a class="headerlink" href="#backend-configuration" title="Permanent link">&para;</a></h2>
-<p>To implement a market maker in a backend simulation, two methods are available : </p>
-<p><a href="https://github.com/gridsingularity/d3a/blob/master/src/d3a/models/strategy/market_maker_strategy.py">infinite power plant</a>:</p>
+<p>To implement a market maker in a backend simulation, two methods are available :</p>
+<p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/market_maker_strategy.py">infinite power plant</a>:</p>
 <pre class="codehilite"><code class="language-python">Market ('Market Maker', strategy=MarketMakerStrategy(energy_rate=selling_rate,
 grid_connected=True))
 </code></pre>
 
-<p><a href="https://github.com/gridsingularity/d3a/blob/master/src/d3a/models/strategy/infinite_bus.py">infinite bus </a>:</p>
+<p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/infinite_bus.py">infinite bus </a>:</p>
 <pre class="codehilite"><code class="language-python">Market ('Market Maker', strategy=InfiniteBusStrategy(energy_buy_rate=22, energy_sell_rate=22))
 </code></pre>
                 

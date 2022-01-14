@@ -1089,7 +1089,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../markets-rotation.md" title="Markets and rotation" class="md-nav__link">
+    <a href="../markets-rotation/" title="Markets and rotation" class="md-nav__link">
       Markets and rotation
     </a>
   </li>
@@ -1808,7 +1808,7 @@
                 
                   <h1>General settings</h1>
                 
-                <p>Grid Singularity exchange engine can be used to simulate, collaborate and optimize grid-aware local energy markets (LEMs). The simulation tool is freely available through our User Interface (UI) at <a href="https://map.gridsingularity.com/singularity-map">map.gridsingularity</a> and our <a href="https://github.com/gridsingularity/d3a">backend codebase</a> is open source under <a href="https://github.com/gridsingularity/d3a/blob/master/LICENSE">GNU general public license</a>.</p>
+                <p>Grid Singularity exchange engine can be used to simulate, collaborate and optimize grid-aware local energy markets (LEMs). The simulation tool is freely available through our User Interface (UI) at <a href="https://map.gridsingularity.com/singularity-map">map.gridsingularity</a> and our <a href="https://github.com/gridsingularity/gsy-e">backend codebase</a> is open source under <a href="https://www.gnu.org/licenses/gpl-3.0.en.html">GNU general public license</a>.</p>
 <p>This section will focus on a step-by-step guide to create and simulate LEMs using our software, starting with an explanation and guide for the UI, followed by a more technical tutorial to reproduce in the backend.</p>
 <h2 id="user-interface-simulation-configuration">User-Interface Simulation Configuration<a class="headerlink" href="#user-interface-simulation-configuration" title="Permanent link">&para;</a></h2>
 <p>When creating a new simulation, simulation collaboration or a simulation in the Canary Test Network, the user needs to define the following general settings:</p>
@@ -1841,7 +1841,7 @@
 <p>After adding the first market the user has to select a <a href="../model-market-maker/">Market Maker</a> rate. Subsequently, the user can model the simulation by configuring multiple submarkets and energy assets in a hierarchical electrical grid.</p>
 <p>Once the modelling is completed, the user goes to the <a href="../results/">Results page</a> to initiate the simulation and view results.</p>
 <h2 id="backend-simulation-configuration">Backend Simulation Configuration<a class="headerlink" href="#backend-simulation-configuration" title="Permanent link">&para;</a></h2>
-<p>In the backend, the simulation process is slightly different. There is no need to login to set up a simulation. The user first needs to download the code from our Github Repository (Installation Instructions for <a href="../linux-installation-instructions/">Linux</a>, <a href="../ios-installation-instructions/">Mac</a> and <a href="../vm-installation-instructions/">Windows</a>). In the setup-file (in Python programming language), general and <a href="../default-trading-strategy/">trading strategy</a> settings can be defined. Examples can be found in the relevant <a href="https://github.com/gridsingularity/d3a/tree/master/src/d3a/setup">Grid Singularity GitHub</a> folder.</p>
+<p>In the backend, the simulation process is slightly different. There is no need to login to set up a simulation. The user first needs to download the code from our Github Repository (Installation Instructions for <a href="../linux-installation-instructions/">Linux</a>, <a href="../ios-installation-instructions/">Mac</a> and <a href="../vm-installation-instructions/">Windows</a>). In the setup-file (in Python programming language), general and <a href="../default-trading-strategy/">trading strategy</a> settings can be defined. Examples can be found in the relevant <a href="https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup">Grid Singularity GitHub</a> folder.</p>
 <p>This is the most basic skeleton for a setup-file:</p>
 <pre class="codehilite"><code class="language-python">```python
 from gsy_e.models.area import Area
@@ -1866,7 +1866,7 @@ def get_setup(config):
 </ul>
 </li>
 </ul>
-<p>Bold instances in the outline above are <a href="../model-markets/">markets</a> (<code>Area</code> component). For each of these markets, an <a href="../market-agent/">inter-area-agent</a> is created in the background to execute offer/bid forwarding and matching.</p>
+<p>Bold instances in the outline above are markets (<code>Area</code> component). For each of these markets, an <a href="../market-agent/">inter-area-agent</a> is created in the background to execute offer/bid forwarding and matching.</p>
 <p>In the following, the corresponding setup-file is shown.</p>
 <pre class="codehilite"><code class="language-python">```python
 from gsy_e.models.area import Area
@@ -1943,7 +1943,7 @@ def get_setup(config):
 <h3 id="d3a-settingsjson">d3a-settings.json<a class="headerlink" href="#d3a-settingsjson" title="Permanent link">&para;</a></h3>
 <p>These general settings can also be parsed via a settings file in JSON format, which contains all constants in the advanced_settings branch. An example can be found here: src/d3a/setup/d3a-settings.json The settings JSON file can be parsed via the --settings-file keyword</p>
 <h4 id="setting-general-configuration-parameters">Setting General Configuration Parameters<a class="headerlink" href="#setting-general-configuration-parameters" title="Permanent link">&para;</a></h4>
-<p>The following parameters are part of <a href="https://github.com/gridsingularity/d3a/blob/master/src/d3a/models/config.py#L32">Simulation Config</a> and are initialised before updating any <a href="https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py">ConstSettings</a>:</p>
+<p>The following parameters are part of <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/config.py#L32">Simulation Config</a> and are initialised before updating any <a href="https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/constants_limits.py">ConstSettings</a>:</p>
 <ul>
 <li>sim_duration</li>
 <li>slot_length</li>
