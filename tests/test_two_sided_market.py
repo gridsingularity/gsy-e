@@ -126,19 +126,25 @@ class TestTwoSidedMarket:
                       attributes={"energy_type": "Green"})
         bid = Bid("bid_id", pendulum.now(), 9, 10, "B", 9,
                   buyer_id="bid_id", requirements=[], attributes={})
+        recommendation = BidOfferMatch(offer=offer, bid=bid, market_id="market",
+                                       time_slot="2022-01-17T12:00",
+                                       matching_requirements={
+                                           "offer_requirement": offer.requirements[0]},
+                                       selected_energy=2, trade_rate=0.5)
         with pytest.raises(InvalidBidOfferPairException):
             # should raise an exception as buyer_id is not in trading_partners
-            market._validate_requirements_satisfied(bid, offer)
+            market._validate_requirements_satisfied(recommendation)
         bid.buyer_id = "bid_id2"
-        market._validate_requirements_satisfied(bid, offer)  # Should not raise any exceptions
-        bid.requirements.append({"energy_type": ["Grey"]})
+        market._validate_requirements_satisfied(recommendation)  # Should not raise any exceptions
+        # bid.requirements.append({"energy_type": ["Grey"]})
+        recommendation.matching_requirements["bid_requirement"] = {"energy_type": ["Grey"]}
         with pytest.raises(InvalidBidOfferPairException):
             # should raise an exception as energy_type of offer needs to be in [Grey, ]
-            market._validate_requirements_satisfied(bid, offer)
+            market._validate_requirements_satisfied(recommendation)
 
         # Adding another requirement that is satisfied, should not raise an exception
-        bid.requirements.append({"energy_type": ["Green"]})
-        market._validate_requirements_satisfied(bid, offer)
+        recommendation.matching_requirements["bid_requirement"] = {"energy_type": ["Green"]}
+        market._validate_requirements_satisfied(recommendation)
 
     @staticmethod
     def test_validate_bid_offer_match_orders_do_not_exist(market):
@@ -431,8 +437,10 @@ class TestTwoSidedMarketMatchRecommendations:
     @staticmethod
     def test_match_recommendations(market):
         """Test match_recommendations() method of TwoSidedMarket."""
-        bid = Bid("bid_id1", pendulum.now(), price=2, energy=1, buyer="Buyer")
-        offer = Offer("offer_id1", pendulum.now(), price=2, energy=1, seller="Seller")
+        bid = Bid("bid_id1", pendulum.now(),
+                  price=2, energy=1, buyer="Buyer", time_slot="2021-10-06T12:00")
+        offer = Offer("offer_id1", pendulum.now(),
+                      price=2, energy=1, seller="Seller", time_slot="2021-10-06T12:00")
 
         market.bids = {"bid_id1": bid}
         market.offers = {"offer_id1": offer}

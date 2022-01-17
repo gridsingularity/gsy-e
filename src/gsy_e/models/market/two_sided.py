@@ -330,20 +330,29 @@ class TwoSidedMarket(OneSidedMarket):
 
     @staticmethod
     def _validate_requirements_satisfied(
-            bid: Bid, offer: Offer, clearing_rate: float = None,
-            selected_energy: float = None) -> None:
+            recommendation: BidOfferMatch) -> None:
         """Validate if both trade parties satisfy each other's requirements.
 
         :raises:
             InvalidBidOfferPairException: Bid offer pair failed the validation
         """
-        if ((offer.requirements or bid.requirements) and
-                not RequirementsSatisfiedChecker.is_satisfied(
-                    offer=offer, bid=bid, clearing_rate=clearing_rate,
-                    selected_energy=selected_energy)):
-            # If no requirement dict is satisfied
+        offer_requirement = {}
+        bid_requirement = {}
+        if (recommendation.matching_requirements or {}).get("offer_requirement"):
+            offer_requirement = recommendation.matching_requirements["offer_requirement"]
+        if (recommendation.matching_requirements or {}).get("bid_requirement"):
+            bid_requirement = recommendation.matching_requirements["bid_requirement"]
+        if not (
+                RequirementsSatisfiedChecker.is_bid_requirement_satisfied(
+                    recommendation.offer, recommendation.bid, bid_requirement,
+                    recommendation.trade_rate, recommendation.selected_energy) and
+                RequirementsSatisfiedChecker.is_offer_requirement_satisfied(
+                    recommendation.offer, recommendation.bid, offer_requirement,
+                    recommendation.trade_rate, recommendation.selected_energy)):
+            # If requirements are not satisfied
             raise InvalidBidOfferPairException(
-                "The requirements failed the validation.")
+                "The requirements failed the validation."
+                f"{offer_requirement} || {bid_requirement}")
 
     def validate_bid_offer_match(
             self, recommendation: BidOfferMatch) -> None:
@@ -360,7 +369,7 @@ class TwoSidedMarket(OneSidedMarket):
         if not (market_offer and market_bid):
             # If not all offers bids exist in the market, skip the current recommendation
             raise InvalidBidOfferPairException("Not all bids and offers exist in the market.")
-        bid_energy = market_bid.energy
+        bid_energy = recommendation.bid_energy
         offer_energy = market_offer.energy
         if selected_energy > bid_energy:
             raise InvalidBidOfferPairException(
@@ -368,16 +377,14 @@ class TwoSidedMarket(OneSidedMarket):
         if selected_energy > offer_energy:
             raise InvalidBidOfferPairException(
                 f"Energy traded {selected_energy} is higher than offers energy {offer_energy}.")
-        if market_bid.energy_rate + FLOATING_POINT_TOLERANCE < clearing_rate:
+        if recommendation.bid_energy_rate + FLOATING_POINT_TOLERANCE < clearing_rate:
             raise InvalidBidOfferPairException(
                 f"Trade rate {clearing_rate} is higher than bid energy rate.")
         if market_offer.energy_rate > clearing_rate + FLOATING_POINT_TOLERANCE:
             raise InvalidBidOfferPairException(
                 f"Trade rate {clearing_rate} is higher than offer energy rate.")
 
-        self._validate_requirements_satisfied(
-            bid=market_bid, offer=market_offer, clearing_rate=clearing_rate,
-            selected_energy=selected_energy)
+        self._validate_requirements_satisfied(recommendation)
 
     @classmethod
     def _replace_offers_bids_with_residual_in_recommendations_list(
