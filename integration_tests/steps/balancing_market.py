@@ -90,8 +90,8 @@ def grid_has_balancing_trade_h1_h2(context):
             continue
 
         assert len(market.trades) == 1
-        assert market.trades[0].buyer == "BA House 2"
-        assert market.trades[0].seller == "BA House 1"
+        assert market.trades[0].buyer == "House 2"
+        assert market.trades[0].seller == "House 1"
 
         assert len(context.simulation.area._markets.past_markets[market.time_slot].trades) == 1
 
@@ -104,8 +104,8 @@ def grid_has_balancing_trades_h1_h2(context, b_t_count):
             continue
 
         assert len(market.trades) == b_t_count
-        assert market.trades[0].buyer == "BA House 2"
-        assert market.trades[0].seller == "BA House 1"
+        assert market.trades[0].buyer == "House 2"
+        assert market.trades[0].seller == "House 1"
 
         past_market = context.simulation.area._markets.past_markets[market.time_slot]
         assert len(past_market.trades) == int(b_t_count / 2)

@@ -31,7 +31,7 @@ class BalancingAgent(OneSidedAgent):
                          higher_market=higher_market,
                          lower_market=lower_market,
                          min_offer_age=min_offer_age)
-        self.name = self.owner
+        self.name = self.owner.name
 
     def _create_engines(self):
         self.engines = [
