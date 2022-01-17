@@ -22,7 +22,7 @@ The user can add more nested submarkets recursively by adding more instances of 
     *   House 2
         *   H2 General Load
 
-Bold instances in the outline above are [markets](model-markets.md). For each of these markets, an [market-agent](market-agent.md) is created in the background to execute offer/bid forwarding and matching.
+Bold instances in the outline above are markets. For each of these markets, a [market-agent](market-agent.md) is created in the background to execute offer/bid forwarding and matching.
 
 In the following, the corresponding setup-file is shown.
 

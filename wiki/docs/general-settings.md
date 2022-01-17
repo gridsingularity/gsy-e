@@ -1,4 +1,4 @@
-Grid Singularity exchange engine can be used to simulate, collaborate and optimize grid-aware local energy markets (LEMs). The simulation tool is freely available through our User Interface (UI) at [map.gridsingularity](https://map.gridsingularity.com/singularity-map) and our [backend codebase](https://github.com/gridsingularity/d3a) is open source under [GNU general public license](https://github.com/gridsingularity/d3a/blob/master/LICENSE).
+Grid Singularity exchange engine can be used to simulate, collaborate and optimize grid-aware local energy markets (LEMs). The simulation tool is freely available through our User Interface (UI) at [map.gridsingularity](https://map.gridsingularity.com/singularity-map) and our [backend codebase](https://github.com/gridsingularity/gsy-e) is open source under [GNU general public license](https://www.gnu.org/licenses/gpl-3.0.en.html).
 
 This section will focus on a step-by-step guide to create and simulate LEMs using our software, starting with an explanation and guide for the UI, followed by a more technical tutorial to reproduce in the backend.
 
@@ -41,7 +41,7 @@ Once the modelling is completed, the user goes to the [Results page](results.md)
 
 ##Backend Simulation Configuration
 
-In the backend, the simulation process is slightly different. There is no need to login to set up a simulation. The user first needs to download the code from our Github Repository (Installation Instructions for [Linux](linux-installation-instructions.md), [Mac](ios-installation-instructions.md) and [Windows](vm-installation-instructions.md)). In the setup-file (in Python programming language), general and [trading strategy](default-trading-strategy.md) settings can be defined. Examples can be found in the relevant [Grid Singularity GitHub](https://github.com/gridsingularity/d3a/tree/master/src/d3a/setup) folder.
+In the backend, the simulation process is slightly different. There is no need to login to set up a simulation. The user first needs to download the code from our Github Repository (Installation Instructions for [Linux](linux-installation-instructions.md), [Mac](ios-installation-instructions.md) and [Windows](vm-installation-instructions.md)). In the setup-file (in Python programming language), general and [trading strategy](default-trading-strategy.md) settings can be defined. Examples can be found in the relevant [Grid Singularity GitHub](https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup) folder.
 
 This is the most basic skeleton for a setup-file:
 
@@ -63,7 +63,7 @@ The user can add more nested submarkets recursively by adding more instances of 
     *   House 2
         *   H2 General Load
 
-Bold instances in the outline above are [markets](model-markets.md) (`Area` component). For each of these markets, an [inter-area-agent](market-agent.md) is created in the background to execute offer/bid forwarding and matching.
+Bold instances in the outline above are markets (`Area` component). For each of these markets, an [inter-area-agent](market-agent.md) is created in the background to execute offer/bid forwarding and matching.
 
 In the following, the corresponding setup-file is shown.
 
@@ -150,7 +150,7 @@ These general settings can also be parsed via a settings file in JSON format, wh
 
 ####Setting General Configuration Parameters
 
-The following parameters are part of [Simulation Config](https://github.com/gridsingularity/d3a/blob/master/src/d3a/models/config.py#L32) and are initialised before updating any [ConstSettings](https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py):
+The following parameters are part of [Simulation Config](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/config.py#L32) and are initialised before updating any [ConstSettings](https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/constants_limits.py):
 
 *   sim_duration
 *   slot_length
