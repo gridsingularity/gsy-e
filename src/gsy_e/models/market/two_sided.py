@@ -336,23 +336,21 @@ class TwoSidedMarket(OneSidedMarket):
         :raises:
             InvalidBidOfferPairException: Bid offer pair failed the validation
         """
-        offer_requirement = {}
-        bid_requirement = {}
+        requirements_satisfied = True
         if (recommendation.matching_requirements or {}).get("offer_requirement"):
             offer_requirement = recommendation.matching_requirements["offer_requirement"]
+            requirements_satisfied &= RequirementsSatisfiedChecker.is_offer_requirement_satisfied(
+                recommendation.offer, recommendation.bid, offer_requirement,
+                recommendation.trade_rate, recommendation.selected_energy)
         if (recommendation.matching_requirements or {}).get("bid_requirement"):
             bid_requirement = recommendation.matching_requirements["bid_requirement"]
-        if not (
-                RequirementsSatisfiedChecker.is_bid_requirement_satisfied(
+            requirements_satisfied &= RequirementsSatisfiedChecker.is_bid_requirement_satisfied(
                     recommendation.offer, recommendation.bid, bid_requirement,
-                    recommendation.trade_rate, recommendation.selected_energy) and
-                RequirementsSatisfiedChecker.is_offer_requirement_satisfied(
-                    recommendation.offer, recommendation.bid, offer_requirement,
-                    recommendation.trade_rate, recommendation.selected_energy)):
+                    recommendation.trade_rate, recommendation.selected_energy)
+        if not requirements_satisfied:
             # If requirements are not satisfied
             raise InvalidBidOfferPairException(
-                "The requirements failed the validation."
-                f"{offer_requirement} || {bid_requirement}")
+                "The requirements failed the validation.")
 
     def validate_bid_offer_match(
             self, recommendation: BidOfferMatch) -> None:
