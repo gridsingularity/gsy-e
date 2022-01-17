@@ -138,6 +138,18 @@ class TestTwoSidedMarket:
         bid.requirements.append({"energy_type": ["Green"]})
         market._validate_requirements_satisfied(bid, offer)
 
+    def test_validate_bid_offer_match_orders_do_not_exist(self, market):
+        offer = Offer("id", pendulum.now(), 2, 1, "other", 2)
+        bid = Bid("bid_id", pendulum.now(), 2, 1, "B", 8)
+        recommendation = BidOfferMatch(bid=bid.serializable_dict(),
+                                       offer=offer.serializable_dict(),
+                                       trade_rate=2,
+                                       selected_energy=1, market_id="market",
+                                       time_slot="2022-01-17T12:00")
+        with pytest.raises(InvalidBidOfferPairException) as exception:
+            market.validate_bid_offer_match(recommendation)
+            assert "Not all bids and offers exist in the market." in str(exception.value)
+
     @pytest.mark.parametrize(
         "bid_energy, offer_energy, clearing_rate, selected_energy", [
             (2, 3, 2, 2.5),
@@ -149,10 +161,15 @@ class TestTwoSidedMarket:
             self, market, bid_energy, offer_energy, clearing_rate, selected_energy):
         offer = Offer("id", pendulum.now(), 2, offer_energy, "other", 2)
         bid = Bid("bid_id", pendulum.now(), 2, bid_energy, "B", 8)
-        market._validate_requirements_satisfied = MagicMock()
+        market.bids = {"bid_id": bid}
+        market.offers = {"id": offer}
+        recommendation = BidOfferMatch(bid=bid.serializable_dict(),
+                                       offer=offer.serializable_dict(),
+                                       trade_rate=clearing_rate,
+                                       selected_energy=selected_energy, market_id="market",
+                                       time_slot="2022-01-17T12:00")
         with pytest.raises(InvalidBidOfferPairException):
-            market.validate_bid_offer_match(bid, offer, clearing_rate, selected_energy)
-            market._validate_requirements_satisfied.assert_not_called()
+            market.validate_bid_offer_match(recommendation)
 
     def test_double_sided_performs_pay_as_bid_matching(
             self, market: TwoSidedMarket, market_matcher):
@@ -391,51 +408,8 @@ class TestTwoSidedMarket:
         assert matches[1]["bid"]["id"] == "residual_bid_2"
 
 
-@pytest.fixture()
-def two_sided_market_matching():
-    patches = [
-        patch("gsy_e.models.market.two_sided.TwoSidedMarket.validate_bid_offer_match"),
-        patch("gsy_e.models.market.two_sided.TwoSidedMarket.accept_bid_offer_pair"),
-        patch("gsy_e.models.market.two_sided.TwoSidedMarket."
-              "_replace_offers_bids_with_residual_in_recommendations_list"),
-    ]
-    for p in patches:
-        p.start()
-    yield
-    for p in patches:
-        p.stop()
-
-
 class TestTwoSidedMarketMatchRecommendations:
     """Class Responsible for testing two sided market's matching functionality."""
-    def test_match_recommendations_fake_offer_bid(self, market, two_sided_market_matching):
-        """Test the case when an offer or bid which don't belong to market is sent."""
-        bid = Bid("bid_id1", pendulum.now(), price=2, energy=1, buyer="B")
-        offer = Offer("id", pendulum.now(), price=2, energy=1, seller="other")
-
-        market.bids = {"bid_id1": bid}
-
-        recommendations = [
-            BidOfferMatch(
-                bid=bid.serializable_dict(), offer=offer.serializable_dict(),
-                trade_rate=2, selected_energy=1, market_id=market.id,
-                time_slot="time_slot").serializable_dict()
-        ]
-        # The sent offer isn't in market offers, should be skipped
-        market.match_recommendations(recommendations)
-        assert len(market.trades) == 0
-        assert not market.validate_bid_offer_match.called
-        assert not market.accept_bid_offer_pair.called
-        assert not market._replace_offers_bids_with_residual_in_recommendations_list.called
-
-        market.offers = {offer.id: offer}
-        market.bids = {}
-        # The sent bid isn't in market offers, should be skipped
-        market.match_recommendations(recommendations)
-        assert len(market.trades) == 0
-        assert not market.validate_bid_offer_match.called
-        assert not market.accept_bid_offer_pair.called
-        assert not market._replace_offers_bids_with_residual_in_recommendations_list.called
 
     def test_match_recommendations(self, market):
         """Test match_recommendations() method of TwoSidedMarket."""
