@@ -1,3 +1,4 @@
+# pylint: disable=missing-function-docstring, protected-access, too-many-public-methods, fixme
 from math import isclose
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
@@ -20,43 +21,40 @@ from gsy_e.models.market import Bid, Offer
 from gsy_e.models.market.two_sided import TwoSidedMarket
 
 
-@pytest.fixture
-def market():
+@pytest.fixture(name="market")
+def fixture_market():
     return TwoSidedMarket(time_slot=pendulum.now(), bc=NonBlockchainInterface(str(uuid4())))
 
 
-@pytest.fixture
-def pac_market():
+@pytest.fixture(name="pac_market")
+def fixture_pac_market():
     return PayAsClearMatchingAlgorithm()
 
 
-@pytest.fixture
-def market_matcher():
+@pytest.fixture(name="market_matcher")
+def fixture_market_matcher():
     return PayAsBidMatchingAlgorithm()
 
 
 class TestTwoSidedMarket:
     """Class Responsible for testing two sided market"s functionality."""
 
-    def test_two_sided_market_repr(self, market):
+    @staticmethod
+    def test_two_sided_market_repr(market):
         """Test the __repr__ value of TwoSidedMarket."""
         assert market.__repr__() == (
-            "<TwoSidedMarket{} bids: {} (E: {} kWh V:{}) "
-            "offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>".format(
-                " {}".format(market.time_slot_str),
-                len(market.bids),
-                sum(b.energy for b in market.bids.values()),
-                sum(b.price for b in market.bids.values()),
-                len(market.offers),
-                sum(o.energy for o in market.offers.values()),
-                sum(o.price for o in market.offers.values()),
-                len(market.trades),
-                market.accumulated_trade_energy,
-                market.accumulated_trade_price
-            )
+            f"<TwoSidedMarket {market.time_slot_str} bids: {len(market.bids)}"
+            f" (E: {sum(b.energy for b in market.bids.values())} kWh"
+            f" V:{sum(b.price for b in market.bids.values())}) "
+            f"offers: {len(market.offers)}"
+            f" (E: {sum(o.energy for o in market.offers.values())} kWh"
+            f" V: {sum(o.price for o in market.offers.values())})"
+            f" trades: {len(market.trades)} (E: {market.accumulated_trade_energy} kWh,"
+            f" V: {market.accumulated_trade_price})>"
         )
 
-    def test_get_bids(self, market):
+    @staticmethod
+    def test_get_bids(market):
         """Test the get_bids() method of TwoSidedMarket."""
         market.bids = {
             "bid1": Bid("bid1", pendulum.now(), 9, 10, "B", 9,
@@ -68,7 +66,8 @@ class TestTwoSidedMarket:
         }
         assert market.get_bids() == market.bids
 
-    def test_get_offers(self, market):
+    @staticmethod
+    def test_get_offers(market):
         """Test the get_offers() method of TwoSidedMarket."""
         market.offers = {
             "offer1": Offer("offer1", pendulum.now(), 2, 2, "other", 2,),
@@ -77,9 +76,10 @@ class TestTwoSidedMarket:
         }
         assert market.get_offers() == market.offers
 
+    @staticmethod
     @patch("gsy_e.models.market.two_sided.TwoSidedMarket._update_new_bid_price_with_fee",
            MagicMock(return_value=5))
-    def test_bid(self, market):
+    def test_bid(market):
         """Test the bid() method of TwoSidedMarket."""
         # if energy < 0
         assert len(market.bids) == 0
@@ -100,7 +100,8 @@ class TestTwoSidedMarket:
         assert bid in market.bid_history
         assert market._update_new_bid_price_with_fee.called
 
-    def test_delete_bid(self, market):
+    @staticmethod
+    def test_delete_bid(market):
         """Test the delete_bid method of TwoSidedMarket."""
         bid1 = Bid("bid1", pendulum.now(), 9, 10, "B", 9,
                    buyer_id="bid_id")
@@ -118,7 +119,8 @@ class TestTwoSidedMarket:
         with pytest.raises(BidNotFoundException):
             market.delete_bid(bid2)
 
-    def test_double_sided_validate_requirements_satisfied(self, market):
+    @staticmethod
+    def test_double_sided_validate_requirements_satisfied(market):
         offer = Offer("id", pendulum.now(), 2, 2, "other", 2,
                       requirements=[{"trading_partners": ["bid_id2"]}],
                       attributes={"energy_type": "Green"})
@@ -138,7 +140,8 @@ class TestTwoSidedMarket:
         bid.requirements.append({"energy_type": ["Green"]})
         market._validate_requirements_satisfied(bid, offer)
 
-    def test_validate_bid_offer_match_orders_do_not_exist(self, market):
+    @staticmethod
+    def test_validate_bid_offer_match_orders_do_not_exist(market):
         offer = Offer("id", pendulum.now(), 2, 1, "other", 2)
         bid = Bid("bid_id", pendulum.now(), 2, 1, "B", 8)
         recommendation = BidOfferMatch(bid=bid.serializable_dict(),
@@ -150,6 +153,7 @@ class TestTwoSidedMarket:
             market.validate_bid_offer_match(recommendation)
             assert "Not all bids and offers exist in the market." in str(exception.value)
 
+    @staticmethod
     @pytest.mark.parametrize(
         "bid_energy, offer_energy, clearing_rate, selected_energy", [
             (2, 3, 2, 2.5),
@@ -158,7 +162,7 @@ class TestTwoSidedMarket:
             (2, 2.5, 2, 2),
         ])
     def test_validate_bid_offer_match_raises_exception(
-            self, market, bid_energy, offer_energy, clearing_rate, selected_energy):
+            market, bid_energy, offer_energy, clearing_rate, selected_energy):
         offer = Offer("id", pendulum.now(), 2, offer_energy, "other", 2)
         bid = Bid("bid_id", pendulum.now(), 2, bid_energy, "B", 8)
         market.bids = {"bid_id": bid}
@@ -171,8 +175,9 @@ class TestTwoSidedMarket:
         with pytest.raises(InvalidBidOfferPairException):
             market.validate_bid_offer_match(recommendation)
 
+    @staticmethod
     def test_double_sided_performs_pay_as_bid_matching(
-            self, market: TwoSidedMarket, market_matcher):
+            market: TwoSidedMarket, market_matcher):
         market.offers = {"offer1": Offer("id", pendulum.now(), 2, 2, "other", 2)}
 
         market.bids = {"bid1": Bid("bid_id", pendulum.now(), 9, 10, "B", buyer_origin="S")}
@@ -211,7 +216,8 @@ class TestTwoSidedMarket:
         assert matched[0]["bid"]["energy"] == 10
         assert matched[0]["offer"] == list(market.offers.values())[0].serializable_dict()
 
-    def test_market_bid(self, market: TwoSidedMarket):
+    @staticmethod
+    def test_market_bid(market: TwoSidedMarket):
         bid = market.bid(1, 2, "bidder", "bidder")
         assert market.bids[bid.id] == bid
         assert bid.price == 1
@@ -219,7 +225,8 @@ class TestTwoSidedMarket:
         assert bid.buyer == "bidder"
         assert len(bid.id) == 36
 
-    def test_market_bid_accepts_bid_id(self, market: TwoSidedMarket):
+    @staticmethod
+    def test_market_bid_accepts_bid_id(market: TwoSidedMarket):
         bid = market.bid(1, 2, "bidder", "bidder", bid_id="123")
         assert market.bids["123"] == bid
         assert bid.id == "123"
@@ -235,11 +242,13 @@ class TestTwoSidedMarket:
         assert bid.energy == 4
         assert bid.buyer == "updated_bidder"
 
-    def test_market_bid_invalid(self, market: TwoSidedMarket):
+    @staticmethod
+    def test_market_bid_invalid(market: TwoSidedMarket):
         with pytest.raises(InvalidBid):
             market.bid(10, -1, "someone", "someone")
 
-    def test_double_sided_pay_as_clear_market_works_with_floats(self, pac_market):
+    @staticmethod
+    def test_double_sided_pay_as_clear_market_works_with_floats(pac_market):
         ConstSettings.MASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
         offers = [
             Offer("id1", pendulum.now(), 1.1, 1, "other").serializable_dict(),
@@ -254,8 +263,9 @@ class TestTwoSidedMarket:
         matched = pac_market.get_clearing_point(bids, offers, now(), str(uuid4()))
         assert matched.rate == 2.2
 
-    def test_market_bid_trade(self, market=TwoSidedMarket(bc=MagicMock(),
-                                                          time_slot=pendulum.now())):
+    @staticmethod
+    def test_market_bid_trade():
+        market = TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())
         bid = market.bid(20, 10, "A", "A", original_price=20)
         trade_offer_info = TradeBidOfferInfo(2, 2, 0.5, 0.5, 2)
         trade = market.accept_bid(bid, energy=10, seller="B", trade_offer_info=trade_offer_info)
@@ -268,8 +278,9 @@ class TestTwoSidedMarket:
         assert trade.buyer == "A"
         assert not trade.residual
 
+    @staticmethod
     def test_market_trade_bid_not_found(
-            self, market=TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())):
+            market=TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())):
         bid = market.bid(20, 10, "A", "A")
         trade_offer_info = TradeBidOfferInfo(2, 2, 1, 1, 2)
         assert market.accept_bid(bid, 10, "B", trade_offer_info=trade_offer_info)
@@ -277,8 +288,9 @@ class TestTwoSidedMarket:
         with pytest.raises(BidNotFoundException):
             market.accept_bid(bid, 10, "B", trade_offer_info=trade_offer_info)
 
+    @staticmethod
     def test_market_trade_bid_partial(
-            self, market=TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())):
+            market=TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())):
         bid = market.bid(20, 20, "A", "A", original_price=20)
         trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
         trade = market.accept_bid(bid, energy=5, seller="B", trade_offer_info=trade_offer_info)
@@ -297,13 +309,14 @@ class TestTwoSidedMarket:
         assert isclose(market.bids[trade.residual.id].price, 15)
         assert market.bids[trade.residual.id].buyer == "A"
 
+    @staticmethod
     def test_market_accept_bid_emits_bid_split_on_partial_bid(
-            self, called, market=TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())):
+            called, market=TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())):
         market.add_listener(called)
         bid = market.bid(20, 20, "A", "A")
         trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
         trade = market.accept_bid(bid, energy=1, trade_offer_info=trade_offer_info)
-        assert all([ev != repr(MarketEvent.BID_DELETED) for c in called.calls for ev in c[0]])
+        assert all((ev != repr(MarketEvent.BID_DELETED) for c in called.calls for ev in c[0]))
         assert len(called.calls) == 2
         assert called.calls[0][0] == (repr(MarketEvent.BID_SPLIT),)
         assert called.calls[1][0] == (repr(MarketEvent.BID_TRADED),)
@@ -312,11 +325,12 @@ class TestTwoSidedMarket:
             "bid_trade": repr(trade),
         }
 
+    @staticmethod
     @pytest.mark.parametrize("market_method", ("_update_accumulated_trade_price_energy",
                                                "_update_min_max_avg_trade_prices"))
     def test_market_accept_bid_always_updates_trade_stats(
-            self, called, market_method, market=TwoSidedMarket(bc=MagicMock(),
-                                                               time_slot=pendulum.now())):
+            called, market_method, market=TwoSidedMarket(bc=MagicMock(),
+                                                         time_slot=pendulum.now())):
         setattr(market, market_method, called)
 
         bid = market.bid(20, 20, "A", "A")
@@ -325,22 +339,25 @@ class TestTwoSidedMarket:
         assert trade
         assert len(getattr(market, market_method).calls) == 1
 
+    @staticmethod
     @pytest.mark.parametrize("energy", (0, 21, 100, -20))
     def test_market_trade_partial_bid_invalid(
-            self, energy, market=TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())):
+            energy, market=TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())):
         bid = market.bid(20, 20, "A", "A")
         trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
         with pytest.raises(InvalidTrade):
             market.accept_bid(bid, energy=energy, seller="A", trade_offer_info=trade_offer_info)
 
+    @staticmethod
     def test_market_accept_bid_yields_partial_bid_trade(
-            self, market=TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())):
+            market=TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())):
         bid = market.bid(2.0, 4, "buyer", "buyer")
         trade_offer_info = TradeBidOfferInfo(2, 2, 1, 1, 2)
         trade = market.accept_bid(bid, energy=1, seller="seller",
                                   trade_offer_info=trade_offer_info)
         assert trade.offer_bid.id == bid.id and trade.offer_bid.energy == 1
 
+    @staticmethod
     @pytest.mark.parametrize("offer, bid, mcp_rate, mcp_energy", [
         ([1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 5, 6, 7], 4, 4),
         ([1, 2, 3, 4, 5, 6, 7], [7, 6, 5, 4, 3, 2, 1], 4, 4),
@@ -353,10 +370,9 @@ class TestTwoSidedMarket:
         # ([2, 3, 6, 7, 7, 7, 7], [7, 5, 5, 2, 2, 2, 2], 5, 2),
         # ([2, 2, 4, 4, 4, 4, 6], [6, 6, 6, 6, 2, 2, 2], 4, 4),
     ])
-    @pytest.mark.parametrize("algorithm", [1])
     def test_double_sided_market_performs_pay_as_clear_matching(
-            self, pac_market, offer, bid, mcp_rate, mcp_energy, algorithm):
-        ConstSettings.MASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = algorithm
+            pac_market, offer, bid, mcp_rate, mcp_energy):
+        ConstSettings.MASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
         offers = [Offer("id1", pendulum.now(), offer[0], 1, "other").serializable_dict(),
                   Offer("id2", pendulum.now(), offer[1], 1, "other").serializable_dict(),
                   Offer("id3", pendulum.now(), offer[2], 1, "other").serializable_dict(),
@@ -379,7 +395,8 @@ class TestTwoSidedMarket:
         assert clearing.rate == mcp_rate
         assert clearing.energy == mcp_energy
 
-    def test_matching_list_gets_updated_with_residual_offers(self):
+    @staticmethod
+    def test_matching_list_gets_updated_with_residual_offers():
         matches = [
             BidOfferMatch(
                 offer=Offer("offer_id", pendulum.now(), 1, 1, "S").serializable_dict(),
@@ -411,7 +428,8 @@ class TestTwoSidedMarket:
 class TestTwoSidedMarketMatchRecommendations:
     """Class Responsible for testing two sided market's matching functionality."""
 
-    def test_match_recommendations(self, market):
+    @staticmethod
+    def test_match_recommendations(market):
         """Test match_recommendations() method of TwoSidedMarket."""
         bid = Bid("bid_id1", pendulum.now(), price=2, energy=1, buyer="Buyer")
         offer = Offer("offer_id1", pendulum.now(), price=2, energy=1, seller="Seller")
