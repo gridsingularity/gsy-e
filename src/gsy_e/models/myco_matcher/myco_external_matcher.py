@@ -169,9 +169,9 @@ class MycoExternalMatcher(MycoMatcherInterface):
                 if were_trades_performed:
                     recommendation["status"] = "success"
                 else:
-                    recommendation["status"] = "Fail"
+                    recommendation["status"] = "fail"
             except InvalidBidOfferPairException as exception:
-                recommendation["status"] = "Fail"
+                recommendation["status"] = "fail"
                 recommendation["message"] = str(exception)
                 continue
         self._recommendations = []
