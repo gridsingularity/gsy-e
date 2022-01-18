@@ -386,19 +386,6 @@ class TestMABid:
         assert market_agent_bid.higher_market.bid_call_count == 1
 
     @staticmethod
-    def test_ma_does_not_forward_bids_if_the_MA_name_is_the_same_as_the_target_market(
-            market_agent_bid):
-        assert market_agent_bid.lower_market.bid_call_count == 2
-        assert market_agent_bid.higher_market.bid_call_count == 1
-        engine = next(filter(lambda e: e.name == "Low -> High", market_agent_bid.engines))
-        engine.owner.name = "TARGET MARKET"
-        market_agent_bid.higher_market.name = "TARGET MARKET"
-        bid = Bid("id", pendulum.now(), 1, 1, "this")
-        engine._forward_bid(bid)
-        assert market_agent_bid.lower_market.bid_call_count == 2
-        assert market_agent_bid.higher_market.bid_call_count == 1
-
-    @staticmethod
     def test_ma_forwarded_bids_adhere_to_ma_overhead(market_agent_bid):
         assert market_agent_bid.higher_market.bid_call_count == 1
         expected_price = (
