@@ -297,26 +297,18 @@ class TwoSidedMarket(OneSidedMarket):
         were_trades_performed = False
         while recommendations:
             recommended_pair = BidOfferMatch.from_dict(recommendations.pop(0))
-            selected_energy = recommended_pair.selected_energy
-            clearing_rate = recommended_pair.trade_rate
             market_offer = self.offers.get(recommended_pair.offer["id"])
             market_bid = self.bids.get(recommended_pair.bid["id"])
-
-            if not market_offer and market_bid:
-                # If not all offers bids exist in the market, skip the current recommendation
-                continue
-
             try:
                 self.validate_bid_offer_match(
-                    market_bid, market_offer,
-                    clearing_rate, selected_energy)
+                    recommended_pair)
             except InvalidBidOfferPairException as invalid_bop_exception:
                 # TODO: Refactor this. The behaviour of the market should not be dependant
                 #  on a matching algorithm setting
                 if is_external_matching_enabled():
                     # re-raise exception to be handled by the external matcher
                     raise invalid_bop_exception
-
+                continue
             original_bid_rate = market_bid.original_price / market_bid.energy
             trade_bid_info = TradeBidOfferInfo(
                 original_bid_rate=original_bid_rate,
@@ -326,8 +318,9 @@ class TwoSidedMarket(OneSidedMarket):
                 trade_rate=original_bid_rate)
 
             bid_trade, offer_trade = self.accept_bid_offer_pair(
-                market_bid, market_offer, clearing_rate,
-                trade_bid_info, min(selected_energy, market_offer.energy, market_bid.energy))
+                market_bid, market_offer, recommended_pair.trade_rate,
+                trade_bid_info, min(recommended_pair.selected_energy,
+                                    market_offer.energy, market_bid.energy))
             were_trades_performed = True
             recommendations = (
                 self._replace_offers_bids_with_residual_in_recommendations_list(
@@ -337,48 +330,61 @@ class TwoSidedMarket(OneSidedMarket):
 
     @staticmethod
     def _validate_requirements_satisfied(
-            bid: Bid, offer: Offer, clearing_rate: float = None,
-            selected_energy: float = None) -> None:
+            recommendation: BidOfferMatch) -> None:
         """Validate if both trade parties satisfy each other's requirements.
 
         :raises:
             InvalidBidOfferPairException: Bid offer pair failed the validation
         """
-        if ((offer.requirements or bid.requirements) and
-                not RequirementsSatisfiedChecker.is_satisfied(
-                    offer=offer, bid=bid, clearing_rate=clearing_rate,
-                    selected_energy=selected_energy)):
-            # If no requirement dict is satisfied
+        requirements_satisfied = True
+        if (recommendation.matching_requirements or {}).get("offer_requirement"):
+            offer_requirement = recommendation.matching_requirements["offer_requirement"]
+            requirements_satisfied &= RequirementsSatisfiedChecker.is_offer_requirement_satisfied(
+                recommendation.offer, recommendation.bid, offer_requirement,
+                recommendation.trade_rate, recommendation.selected_energy)
+        if (recommendation.matching_requirements or {}).get("bid_requirement"):
+            bid_requirement = recommendation.matching_requirements["bid_requirement"]
+            requirements_satisfied &= RequirementsSatisfiedChecker.is_bid_requirement_satisfied(
+                    recommendation.offer, recommendation.bid, bid_requirement,
+                    recommendation.trade_rate, recommendation.selected_energy)
+        if not requirements_satisfied:
+            # If requirements are not satisfied
             raise InvalidBidOfferPairException(
                 "The requirements failed the validation.")
 
-    @classmethod
     def validate_bid_offer_match(
-            cls, bid: Bid, offer: Offer,
-            clearing_rate: float, selected_energy: float) -> None:
+            self, recommendation: BidOfferMatch) -> None:
         """Basic validation function for a bid against an offer.
 
         Raises:
             InvalidBidOfferPairException: Bid offer pair failed the validation
         """
-        bid_energy = bid.energy
-        offer_energy = offer.energy
+        selected_energy = recommendation.selected_energy
+        clearing_rate = recommendation.trade_rate
+        market_offer = self.offers.get(recommendation.offer["id"])
+        market_bid = self.bids.get(recommendation.bid["id"])
+
+        if not (market_offer and market_bid):
+            # If not all offers bids exist in the market, skip the current recommendation
+            raise InvalidBidOfferPairException("Not all bids and offers exist in the market.")
+        bid_energy = recommendation.bid_energy
+        offer_energy = market_offer.energy
         if selected_energy > bid_energy:
             raise InvalidBidOfferPairException(
                 f"Energy traded {selected_energy} is higher than bids energy {bid_energy}.")
         if selected_energy > offer_energy:
             raise InvalidBidOfferPairException(
                 f"Energy traded {selected_energy} is higher than offers energy {offer_energy}.")
-        if bid.energy_rate + FLOATING_POINT_TOLERANCE < clearing_rate:
+        if recommendation.bid_energy_rate + FLOATING_POINT_TOLERANCE < clearing_rate:
             raise InvalidBidOfferPairException(
-                f"Trade rate {clearing_rate} is higher than bid energy rate.")
-        if offer.energy_rate > clearing_rate + FLOATING_POINT_TOLERANCE:
+                f"Trade rate {clearing_rate} is higher than bid energy rate "
+                f"{recommendation.bid_energy_rate}.")
+        if market_offer.energy_rate > clearing_rate + FLOATING_POINT_TOLERANCE:
             raise InvalidBidOfferPairException(
-                f"Trade rate {clearing_rate} is higher than offer energy rate.")
+                f"Trade rate {clearing_rate} is higher than offer energy rate "
+                f"{market_offer.energy_rate}.")
 
-        cls._validate_requirements_satisfied(
-            bid=bid, offer=offer, clearing_rate=clearing_rate,
-            selected_energy=selected_energy)
+        self._validate_requirements_satisfied(recommendation)
 
     @classmethod
     def _replace_offers_bids_with_residual_in_recommendations_list(
