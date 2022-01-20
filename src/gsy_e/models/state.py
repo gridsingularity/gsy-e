@@ -565,14 +565,19 @@ class StorageState(StateInterface):
         self._battery_energy_per_slot = convert_kW_to_kWh(self.max_abs_battery_power_kW,
                                                           slot_length)
 
-    def _has_battery_reached_max_power(self, energy: float, time_slot: DateTime) -> bool:
-        """Check whether the storage can withhold the passed energy value."""
-        return limit_float_precision(abs(energy
-                                     + self.pledged_sell_kWh[time_slot]
-                                     + self.offered_sell_kWh[time_slot]
-                                     - self.pledged_buy_kWh[time_slot]
-                                     - self.offered_buy_kWh[time_slot])
-                                     ) > self._battery_energy_per_slot
+    def _has_battery_reached_max_discharge_power(self, energy: float, time_slot: DateTime) -> bool:
+        """Check whether the storage can withhold the passed energy discharge value."""
+        energy_balance_kWh = abs(
+            energy + self.pledged_sell_kWh[time_slot] + self.offered_sell_kWh[time_slot]
+            - self.pledged_buy_kWh[time_slot] - self.offered_buy_kWh[time_slot])
+        return energy_balance_kWh - self._battery_energy_per_slot > FLOATING_POINT_TOLERANCE
+
+    def _has_battery_reached_max_charge_power(self, energy: float, time_slot: DateTime) -> bool:
+        """Check whether the storage can withhold the passed energy charge value."""
+        energy_balance_kWh = abs(
+            energy + self.pledged_buy_kWh[time_slot] + self.offered_buy_kWh[time_slot]
+            - self.pledged_sell_kWh[time_slot] - self.offered_sell_kWh[time_slot])
+        return energy_balance_kWh - self._battery_energy_per_slot > FLOATING_POINT_TOLERANCE
 
     def _clamp_energy_to_sell_kWh(self, market_slot_time_list):
         """
@@ -787,7 +792,7 @@ class StorageState(StateInterface):
 
         self._clamp_energy_to_buy_kWh([time_slot])
         energy_kWh = self.energy_to_buy_dict[time_slot]
-        if self._has_battery_reached_max_power(abs(energy_kWh), time_slot):
+        if self._has_battery_reached_max_charge_power(abs(energy_kWh), time_slot):
             return 0.0
         return energy_kWh
 
@@ -797,7 +802,7 @@ class StorageState(StateInterface):
             return 0.0
         energy_sell_dict = self._clamp_energy_to_sell_kWh([time_slot])
         energy_kWh = energy_sell_dict[time_slot]
-        if self._has_battery_reached_max_power(energy_kWh, time_slot):
+        if self._has_battery_reached_max_discharge_power(energy_kWh, time_slot):
             return 0.0
         return energy_kWh
 

@@ -655,8 +655,10 @@ def test_has_battery_reached_max_power(storage_strategy_test11):
     storage_strategy_test11.state.offered_sell_kWh[time_slot] = 5
     storage_strategy_test11.state.pledged_buy_kWh[time_slot] = 5
     storage_strategy_test11.state.offered_buy_kWh[time_slot] = 5
-    assert storage_strategy_test11.state._has_battery_reached_max_power(1, time_slot) is True
-    assert storage_strategy_test11.state._has_battery_reached_max_power(0.25, time_slot) is False
+    assert storage_strategy_test11.state._has_battery_reached_max_discharge_power(
+        1, time_slot) is True
+    assert storage_strategy_test11.state._has_battery_reached_max_discharge_power(
+        0.25, time_slot) is False
 
 
 """TEST12"""

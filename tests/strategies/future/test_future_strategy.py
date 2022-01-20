@@ -101,8 +101,10 @@ class TestFutureMarketStrategy:
         self._setup_strategy_fixture(storage_strategy_fixture)
         storage_strategy_fixture.state.offered_sell_kWh[self.time_slot] = 0.
         storage_strategy_fixture.state.offered_buy_kWh[self.time_slot] = 0.
-        storage_strategy_fixture.get_available_energy_to_buy_kWh = Mock(return_value=3)
-        storage_strategy_fixture.get_available_energy_to_sell_kWh = Mock(return_value=2)
+        storage_strategy_fixture.state.pledged_sell_kWh[self.time_slot] = 0.
+        storage_strategy_fixture.state.pledged_buy_kWh[self.time_slot] = 0.
+        storage_strategy_fixture.state.get_available_energy_to_buy_kWh = Mock(return_value=3)
+        storage_strategy_fixture.state.get_available_energy_to_sell_kWh = Mock(return_value=2)
         future_strategy.event_market_cycle(storage_strategy_fixture)
         self.future_markets.offer.assert_called_once_with(
             price=50.0 * 2, energy=2, seller=self.area_mock.name,
@@ -137,6 +139,8 @@ class TestFutureMarketStrategy:
             future_strategy_fixture.get_available_energy_to_sell_kWh = Mock(return_value=2)
             future_strategy_fixture.state.offered_sell_kWh[self.time_slot] = 0.
             future_strategy_fixture.state.offered_buy_kWh[self.time_slot] = 0.
+            future_strategy_fixture.state.pledged_sell_kWh[self.time_slot] = 0.
+            future_strategy_fixture.state.pledged_buy_kWh[self.time_slot] = 0.
 
         future_strategy_fixture.area.current_tick = 0
         future_strategy.event_market_cycle(future_strategy_fixture)
