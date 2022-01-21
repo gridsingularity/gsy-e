@@ -386,6 +386,7 @@ def storage_strategy_test6(area_test6, market_test6, called):
     s.area = area_test6
     s.accept_offer = called
     s.offers.post(market_test6.trade.offer_bid, market_test6.id)
+    s.event_activate()
     return s
 
 
@@ -630,6 +631,7 @@ def storage_strategy_test11(area_test11, called):
     s.owner = area_test11
     s.area = area_test11
     s.accept_offer = called
+    s.event_activate()
     return s
 
 

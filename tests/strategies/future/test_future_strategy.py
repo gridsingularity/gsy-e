@@ -99,6 +99,7 @@ class TestFutureMarketStrategy:
         storage_strategy_fixture = StorageStrategy()
         future_strategy = FutureMarketStrategy(storage_strategy_fixture.asset_type, 10, 50, 50, 20)
         self._setup_strategy_fixture(storage_strategy_fixture)
+        storage_strategy_fixture.state.activate(duration(minutes=15), self.time_slot)
         storage_strategy_fixture.state.offered_sell_kWh[self.time_slot] = 0.
         storage_strategy_fixture.state.offered_buy_kWh[self.time_slot] = 0.
         storage_strategy_fixture.state.pledged_sell_kWh[self.time_slot] = 0.
@@ -135,6 +136,7 @@ class TestFutureMarketStrategy:
         if isinstance(future_strategy_fixture, PVStrategy):
             future_strategy_fixture.state.set_available_energy(300.0, self.time_slot)
         if isinstance(future_strategy_fixture, StorageStrategy):
+            future_strategy_fixture.state.activate(duration(minutes=15), self.time_slot)
             future_strategy_fixture.get_available_energy_to_buy_kWh = Mock(return_value=3)
             future_strategy_fixture.get_available_energy_to_sell_kWh = Mock(return_value=2)
             future_strategy_fixture.state.offered_sell_kWh[self.time_slot] = 0.

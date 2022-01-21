@@ -22,6 +22,7 @@ from typing import Union
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.exceptions import GSyException
 from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
 from gsy_framework.utils import (
     find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
@@ -185,7 +186,7 @@ class StorageStrategy(BidEnabledStrategy):
                                  initial_buying_rate, final_buying_rate,
                                  energy_rate_increase_per_update, energy_rate_decrease_per_update,
                                  bid_fit_to_limit, offer_fit_to_limit)
-        except Exception as ex:
+        except GSyException as ex:
             log.exception("StorageStrategy._area_reconfigure_prices failed. Exception: %s.", ex)
             return
 
@@ -252,7 +253,10 @@ class StorageStrategy(BidEnabledStrategy):
 
     def event_activate_energy(self):
         """Set the battery energy for each slot when the ACTIVATE event is triggered."""
-        self.state.set_battery_energy_per_slot(self.simulation_config.slot_length)
+        self.state.activate(
+            self.simulation_config.slot_length,
+            self.area.current_market.time_slot
+            if self.area.current_market else self.area.config.start_date)
 
     def event_activate(self, **kwargs):
         self._update_profiles_with_default_values()

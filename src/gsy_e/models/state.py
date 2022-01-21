@@ -495,6 +495,7 @@ class StorageState(StateInterface):
         self._used_storage = self.initial_capacity_kWh
         self._battery_energy_per_slot = 0.0
         self._used_storage_share = [EnergyOrigin(initial_energy_origin, self.initial_capacity_kWh)]
+        self._current_market_slot = None
 
     def get_state(self) -> Dict:
         return {
@@ -560,10 +561,11 @@ class StorageState(StateInterface):
         return (self._battery_energy_per_slot - self.pledged_buy_kWh[time_slot]
                 - self.offered_buy_kWh[time_slot])
 
-    def set_battery_energy_per_slot(self, slot_length: int) -> None:
+    def activate(self, slot_length: int, current_time_slot: DateTime) -> None:
         """Set the battery energy in kWh per current time_slot."""
         self._battery_energy_per_slot = convert_kW_to_kWh(self.max_abs_battery_power_kW,
                                                           slot_length)
+        self._current_market_slot = current_time_slot
 
     def _has_battery_reached_max_discharge_power(self, energy: float, time_slot: DateTime) -> bool:
         """Check whether the storage can withhold the passed energy discharge value."""
@@ -585,22 +587,29 @@ class StorageState(StateInterface):
         """
         accumulated_pledged = 0
         accumulated_offered = 0
-        for time_slot in market_slot_time_list:
-            accumulated_pledged += self.pledged_sell_kWh[time_slot]
-            accumulated_offered += self.offered_sell_kWh[time_slot]
+        for time_slot, offered_sell_energy in self.offered_sell_kWh.items():
+            if time_slot >= self._current_market_slot:
+                accumulated_pledged += self.pledged_sell_kWh[time_slot]
+                accumulated_offered += offered_sell_energy
 
-        energy = (self.used_storage
-                  - accumulated_pledged
-                  - accumulated_offered
-                  - self.min_allowed_soc_ratio * self.capacity)
+        available_energy_for_all_slots = (
+                self.used_storage
+                - accumulated_pledged
+                - accumulated_offered
+                - self.min_allowed_soc_ratio * self.capacity)
+
         storage_dict = {}
         for time_slot in market_slot_time_list:
-            storage_dict[time_slot] = limit_float_precision(min(
-                                                            energy / len(market_slot_time_list),
-                                                            self._max_offer_energy_kWh(time_slot),
-                                                            self._battery_energy_per_slot))
+            if available_energy_for_all_slots < -FLOATING_POINT_TOLERANCE:
+                break
+            storage_dict[time_slot] = limit_float_precision(
+                min(
+                    available_energy_for_all_slots / len(market_slot_time_list),
+                    self._max_offer_energy_kWh(time_slot),
+                    self._battery_energy_per_slot)
+            )
             self.energy_to_sell_dict[time_slot] = storage_dict[time_slot]
-
+            available_energy_for_all_slots -= storage_dict[time_slot]
         return storage_dict
 
     def _clamp_energy_to_buy_kWh(self, market_slot_time_list):
@@ -611,19 +620,25 @@ class StorageState(StateInterface):
 
         accumulated_bought = 0
         accumulated_sought = 0
-        for time_slot in market_slot_time_list:
-            accumulated_bought += self.pledged_buy_kWh[time_slot]
-            accumulated_sought += self.offered_buy_kWh[time_slot]
-        energy = limit_float_precision((self.capacity
-                                        - self.used_storage
-                                        - accumulated_bought
-                                        - accumulated_sought) / len(market_slot_time_list))
+
+        for time_slot, offered_buy_energy in self.offered_buy_kWh.items():
+            if time_slot >= self._current_market_slot:
+                accumulated_bought += self.pledged_buy_kWh[time_slot]
+                accumulated_sought += offered_buy_energy
+        available_energy_for_all_slots = limit_float_precision(
+            (self.capacity - self.used_storage
+             - accumulated_bought - accumulated_sought) / len(market_slot_time_list))
 
         for time_slot in market_slot_time_list:
+            if available_energy_for_all_slots < -FLOATING_POINT_TOLERANCE:
+                break
             clamped_energy = limit_float_precision(
-                min(energy, self._max_buy_energy_kWh(time_slot), self._battery_energy_per_slot))
+                min(available_energy_for_all_slots,
+                    self._max_buy_energy_kWh(time_slot),
+                    self._battery_energy_per_slot))
             clamped_energy = max(clamped_energy, 0)
             self.energy_to_buy_dict[time_slot] = clamped_energy
+            available_energy_for_all_slots -= clamped_energy
 
     def check_state(self, time_slot):
         """
@@ -640,6 +655,7 @@ class StorageState(StateInterface):
         assert limit_float_precision(self.used_storage) <= self.capacity or \
             isclose(self.used_storage, self.capacity, rel_tol=1e-06), \
             f"Battery used_storage ({self.used_storage}) surpassed the capacity ({self.capacity})"
+
         assert 0 <= limit_float_precision(self.offered_sell_kWh[time_slot]) <= max_value
         assert 0 <= limit_float_precision(self.pledged_sell_kWh[time_slot]) <= max_value
         assert 0 <= limit_float_precision(self.pledged_buy_kWh[time_slot]) <= max_value
@@ -677,6 +693,7 @@ class StorageState(StateInterface):
         Simulate actual Energy flow by removing pledged storage and adding bought energy to the
         used_storage
         """
+        self._current_market_slot = current_time_slot
         if GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
             # In case the future market is enabled, the future orders have to be deleted once
             # the market becomes a spot market
@@ -721,19 +738,25 @@ class StorageState(StateInterface):
 
     def register_energy_from_posted_bid(self, energy: float, time_slot: DateTime):
         """Register the energy from a posted bid on the market."""
+        assert energy >= -FLOATING_POINT_TOLERANCE
         self.offered_buy_kWh[time_slot] += energy
+        self._clamp_energy_to_buy_kWh([time_slot])
 
     def register_energy_from_posted_offer(self, energy: float, time_slot: DateTime):
         """Register the energy from a posted offer on the market."""
+        assert energy >= -FLOATING_POINT_TOLERANCE
         self.offered_sell_kWh[time_slot] += energy
+        self._clamp_energy_to_sell_kWh([time_slot])
 
     def reset_offered_sell_energy(self, energy: float, time_slot: DateTime):
         """Reset the offered sell energy amount."""
+        assert energy >= -FLOATING_POINT_TOLERANCE
         self.offered_sell_kWh[time_slot] = energy
         self._clamp_energy_to_sell_kWh([time_slot])
 
     def reset_offered_buy_energy(self, energy: float, time_slot: DateTime):
         """Reset the offered buy energy amount."""
+        assert energy >= -FLOATING_POINT_TOLERANCE
         self.offered_buy_kWh[time_slot] = energy
         self._clamp_energy_to_buy_kWh([time_slot])
 
@@ -741,7 +764,9 @@ class StorageState(StateInterface):
         """
         Unregister the energy from a deleted offer, in order to be available for following offers.
         """
+        assert energy >= -FLOATING_POINT_TOLERANCE
         self.offered_sell_kWh[time_slot] -= energy
+        self._clamp_energy_to_sell_kWh([time_slot])
 
     def register_energy_from_one_sided_market_accept_offer(
             self, energy: float, time_slot: DateTime,
@@ -752,22 +777,28 @@ class StorageState(StateInterface):
         one-sided markets (because there is no concept of bid, the storage never actually offers
         energy, the buyers with access to the market can accept it).
         """
+        assert energy >= -FLOATING_POINT_TOLERANCE
         self.pledged_buy_kWh[time_slot] += energy
         self._track_energy_bought_type(energy, energy_origin)
+        self._clamp_energy_to_buy_kWh([time_slot])
 
     def register_energy_from_bid_trade(
             self, energy: float, time_slot: DateTime,
             energy_origin: ESSEnergyOrigin = ESSEnergyOrigin.UNKNOWN):
         """Register energy from a bid trade event."""
+        assert energy >= -FLOATING_POINT_TOLERANCE
         self.pledged_buy_kWh[time_slot] += energy
         self.offered_buy_kWh[time_slot] -= energy
         self._track_energy_bought_type(energy, energy_origin)
+        self._clamp_energy_to_buy_kWh([time_slot])
 
     def register_energy_from_offer_trade(self, energy: float, time_slot: DateTime):
         """Register energy from an offer trade event."""
+        assert energy >= -FLOATING_POINT_TOLERANCE
         self.pledged_sell_kWh[time_slot] += energy
         self.offered_sell_kWh[time_slot] -= energy
         self._track_energy_sell_type(energy)
+        self._clamp_energy_to_sell_kWh([time_slot])
 
     def _track_energy_bought_type(self, energy: float, energy_origin: ESSEnergyOrigin):
         self._used_storage_share.append(EnergyOrigin(energy_origin, energy))
@@ -794,6 +825,7 @@ class StorageState(StateInterface):
         energy_kWh = self.energy_to_buy_dict[time_slot]
         if self._has_battery_reached_max_charge_power(abs(energy_kWh), time_slot):
             return 0.0
+        assert energy_kWh > -FLOATING_POINT_TOLERANCE
         return energy_kWh
 
     def get_available_energy_to_sell_kWh(self, time_slot: DateTime) -> float:
@@ -804,6 +836,7 @@ class StorageState(StateInterface):
         energy_kWh = energy_sell_dict[time_slot]
         if self._has_battery_reached_max_discharge_power(energy_kWh, time_slot):
             return 0.0
+        assert energy_kWh >= -FLOATING_POINT_TOLERANCE
         return energy_kWh
 
     def get_soc_level(self, time_slot: DateTime) -> float:
