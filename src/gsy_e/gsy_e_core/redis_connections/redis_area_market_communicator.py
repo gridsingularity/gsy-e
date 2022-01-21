@@ -15,19 +15,23 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from redis import StrictRedis
-from threading import Event, Lock
-import logging
 import json
+import logging
+from threading import Event, Lock
 from time import time
-from gsy_e.gsy_e_core.redis_connections.redis_communication import REDIS_URL
-from gsy_e.gsy_e_core.redis_connections.aggregator_connection import AggregatorHandler
-from gsy_e.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
+
 import gsy_e.constants
+from gsy_e.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
+from gsy_e.gsy_e_core.redis_connections.aggregator_connection import AggregatorHandler
+from gsy_e.gsy_e_core.redis_connections.redis_communication import REDIS_URL
+from redis import StrictRedis
+from rq import Queue
 
 log = logging.getLogger(__name__)
 REDIS_THREAD_JOIN_TIMEOUT = 2
 REDIS_POLL_TIMEOUT = 0.01
+SDK_COM_QUEUE_NAME = "sdk-events-responses"
+SEND_SDK_MESSAGES_VIA_RQ = True
 
 
 class RedisCommunicator:
@@ -91,7 +95,14 @@ class ResettableCommunicator(RedisCommunicator):
         self.thread = thread
 
     def publish_json(self, channel, data):
-        self.publish(channel, json.dumps(data))
+        if SEND_SDK_MESSAGES_VIA_RQ:
+            self.send_to_queue(channel, json.dumps(data))
+        else:
+            self.publish(channel, json.dumps(data))
+
+    def send_to_queue(self, channel, data):
+        queue = Queue(SDK_COM_QUEUE_NAME, connection=self.redis_db)
+        queue.enqueue(channel, data)
 
 
 class ExternalConnectionCommunicator(ResettableCommunicator):
