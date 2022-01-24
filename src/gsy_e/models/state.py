@@ -646,7 +646,7 @@ class StorageState(StateInterface):
         """
         self._clamp_energy_to_sell_kWh([time_slot])
         self._clamp_energy_to_buy_kWh([time_slot])
-        self._calculate_soc_for_time_slot(time_slot)
+        self._calculate_and_update_soc(time_slot)
         charge = limit_float_precision(self.used_storage / self.capacity)
         max_value = self.capacity - self.min_allowed_soc_ratio * self.capacity
         assert self.min_allowed_soc_ratio <= charge or \
@@ -661,8 +661,8 @@ class StorageState(StateInterface):
         assert 0 <= limit_float_precision(self.pledged_buy_kWh[time_slot]) <= max_value
         assert 0 <= limit_float_precision(self.offered_buy_kWh[time_slot]) <= max_value
 
-    def _calculate_soc_for_time_slot(self, time_slot: DateTime) -> None:
-        """Update the soc history for the passed time_slot."""
+    def _calculate_and_update_soc(self, time_slot: DateTime) -> None:
+        """Calculate the soc of the storage and update the soc history."""
         self.charge_history[time_slot] = 100.0 * self.used_storage / self.capacity
         self.charge_history_kWh[time_slot] = self.used_storage
 
@@ -707,7 +707,7 @@ class StorageState(StateInterface):
 
         self._clamp_energy_to_sell_kWh([current_time_slot, *all_future_time_slots])
         self._clamp_energy_to_buy_kWh([current_time_slot, *all_future_time_slots])
-        self._calculate_soc_for_time_slot(current_time_slot)
+        self._calculate_and_update_soc(current_time_slot)
 
         self.offered_history[current_time_slot] = self.offered_sell_kWh[current_time_slot]
 
