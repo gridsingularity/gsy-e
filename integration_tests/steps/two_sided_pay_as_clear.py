@@ -20,7 +20,6 @@ import glob
 from math import isclose
 from behave import then
 from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
-from gsy_e.gsy_e_core.util import make_ma_name
 
 
 @then('all trades are equal to market_clearing_rate')
@@ -34,7 +33,7 @@ def test_traded_energy_rate(context):
         assert all(has_one_of_clearing_rates(trade, match_algo)
                    for market in child.past_markets
                    for trade in market.trades
-                   if trade.buyer == make_ma_name(child) and
+                   if trade.buyer == child.name and
                    trade.creation_time in match_algo.state.clearing and
                    match_algo.state.clearing[trade.creation_time] != 0)
 

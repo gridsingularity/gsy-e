@@ -322,7 +322,7 @@ class TestTwoSidedMarket:
         bid = market.bid(20, 20, "A", "A")
         trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
         trade = market.accept_bid(bid, energy=1, trade_offer_info=trade_offer_info)
-        assert all((ev != repr(MarketEvent.BID_DELETED) for c in called.calls for ev in c[0]))
+        assert all(ev != repr(MarketEvent.BID_DELETED) for c in called.calls for ev in c[0])
         assert len(called.calls) == 2
         assert called.calls[0][0] == (repr(MarketEvent.BID_SPLIT),)
         assert called.calls[1][0] == (repr(MarketEvent.BID_TRADED),)

@@ -119,7 +119,7 @@ def test_baa_unmatched_event_trade(balancing_agent_2):
                   pendulum.now(tz=TIME_ZONE),
                   Offer("A", pendulum.now(), 2, 2, "B"),
                   "someone_else",
-                  "MA owner")
+                  "owner")
     fake_spot_market = FakeMarket([])
     fake_spot_market.set_time_slot(balancing_agent_2.lower_market.time_slot)
     balancing_agent_2.owner.fake_spot_market = fake_spot_market

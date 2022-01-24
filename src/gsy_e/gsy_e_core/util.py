@@ -168,26 +168,6 @@ class NonBlockingConsole:
         return False
 
 
-def make_ma_name(owner):
-    """Make market agent name."""
-    return f"MA {owner.name}"
-
-
-def make_ba_name(owner):
-    """Make balancing agent name."""
-    return f"BA {owner.name}"
-
-
-def make_sa_name(owner):
-    """Make settlement agent name."""
-    return f"SA {owner.name}"
-
-
-def make_fa_name(owner):
-    """Make future market agent name."""
-    return f"FA {owner.name}"
-
-
 def format_interval(interval, show_day=True):
     """Format interval."""
     if interval.days and show_day:

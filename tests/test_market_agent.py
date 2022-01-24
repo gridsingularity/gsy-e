@@ -386,19 +386,6 @@ class TestMABid:
         assert market_agent_bid.higher_market.bid_call_count == 1
 
     @staticmethod
-    def test_ma_does_not_forward_bids_if_the_MA_name_is_the_same_as_the_target_market(
-            market_agent_bid):
-        assert market_agent_bid.lower_market.bid_call_count == 2
-        assert market_agent_bid.higher_market.bid_call_count == 1
-        engine = next(filter(lambda e: e.name == "Low -> High", market_agent_bid.engines))
-        engine.owner.name = "TARGET MARKET"
-        market_agent_bid.higher_market.name = "TARGET MARKET"
-        bid = Bid("id", pendulum.now(), 1, 1, "this")
-        engine._forward_bid(bid)
-        assert market_agent_bid.lower_market.bid_call_count == 2
-        assert market_agent_bid.higher_market.bid_call_count == 1
-
-    @staticmethod
     def test_ma_forwarded_bids_adhere_to_ma_overhead(market_agent_bid):
         assert market_agent_bid.higher_market.bid_call_count == 1
         expected_price = (
@@ -579,8 +566,8 @@ class TestMAOffer:
     @pytest.fixture(name="market_agent")
     def market_agent_fixture():
         lower_market = FakeMarket([Offer("id", pendulum.now(), 1, 1, "other", 1)])
-        higher_market = FakeMarket([Offer("id2", pendulum.now(), 3, 3, "owner", 3),
-                                    Offer("id3", pendulum.now(), 0.5, 1, "owner", 0.5)])
+        higher_market = FakeMarket([Offer("id2", pendulum.now(), 3, 3, "higher", 3),
+                                    Offer("id3", pendulum.now(), 0.5, 1, "higher", 0.5)])
         owner = FakeArea("owner")
         maa = OneSidedAgent(owner=owner,
                             higher_market=higher_market,
@@ -618,7 +605,7 @@ class TestMAOffer:
                 "trade_id",
                 pendulum.now(tz=TIME_ZONE),
                 market_agent.higher_market.offers["id3"],
-                "owner",
+                "higher",
                 "someone_else"),
             market_id=market_agent.higher_market.id)
         assert len(market_agent.lower_market.delete_offer.calls) == 1
