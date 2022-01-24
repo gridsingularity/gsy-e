@@ -19,7 +19,6 @@ from typing import TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings
 
-from gsy_e.gsy_e_core.util import make_fa_name
 from gsy_e.models.strategy.market_agents.future_engine import FutureEngine
 from gsy_e.models.strategy.market_agents.two_sided_agent import TwoSidedAgent
 
@@ -41,7 +40,7 @@ class FutureAgent(TwoSidedAgent):
                          lower_market=lower_market,
                          min_offer_age=min_offer_age,
                          min_bid_age=min_bid_age)
-        self.name = make_fa_name(self.owner)
+        self.name = self.owner.name
 
     def _create_engines(self):
         self.engines = [

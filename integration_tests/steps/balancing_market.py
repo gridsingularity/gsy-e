@@ -19,7 +19,6 @@ from behave import given, then
 from math import isclose
 from functools import reduce
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
-from gsy_e.gsy_e_core.util import make_ba_name
 from gsy_framework.constants_limits import ConstSettings
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 
@@ -58,7 +57,7 @@ def number_of_balancing_trades(context, area, b_trade_nr, s_trade_nr):
         if len(market.trades) == 0:
             continue
         reduced_trades = reduce(
-            lambda acc, t: acc + 1 if t.buyer == make_ba_name(area_object) else acc,
+            lambda acc, t: acc + 1 if t.buyer == area_object.name else acc,
             market.trades,
             0
         )
@@ -91,8 +90,8 @@ def grid_has_balancing_trade_h1_h2(context):
             continue
 
         assert len(market.trades) == 1
-        assert market.trades[0].buyer == "BA House 2"
-        assert market.trades[0].seller == "BA House 1"
+        assert market.trades[0].buyer == "House 2"
+        assert market.trades[0].seller == "House 1"
 
         assert len(context.simulation.area._markets.past_markets[market.time_slot].trades) == 1
 
@@ -105,8 +104,8 @@ def grid_has_balancing_trades_h1_h2(context, b_t_count):
             continue
 
         assert len(market.trades) == b_t_count
-        assert market.trades[0].buyer == "BA House 2"
-        assert market.trades[0].seller == "BA House 1"
+        assert market.trades[0].buyer == "House 2"
+        assert market.trades[0].seller == "House 1"
 
         past_market = context.simulation.area._markets.past_markets[market.time_slot]
         assert len(past_market.trades) == int(b_t_count / 2)
