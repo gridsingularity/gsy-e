@@ -69,9 +69,6 @@ class OneSidedMarket(MarketBase):
     def _debug_log_market_type_identifier(self):
         return "[ONE_SIDED]"
 
-    def balancing_offer(self, price, energy, seller, from_agent):
-        assert False
-
     def _update_new_offer_price_with_fee(self, price, original_price, energy):
         """
         Override one sided market private method to abstract away the grid fee calculation
@@ -171,12 +168,6 @@ class OneSidedMarket(MarketBase):
             fees = self.fee_class.grid_fee_rate * original_price * energy_portion
         return fees, energy * trade_rate
 
-    @classmethod
-    def _calculate_original_prices(cls, offer):
-        return offer.original_price \
-            if offer.original_price is not None \
-            else offer.price
-
     def split_offer(self, original_offer, energy, orig_offer_price):
         """Split offer into two, one with provided energy, the other with the residual."""
         self.offers.pop(original_offer.id, None)
@@ -275,7 +266,7 @@ class OneSidedMarket(MarketBase):
         if trade_rate is None:
             trade_rate = offer.energy_rate
 
-        orig_offer_price = self._calculate_original_prices(offer)
+        orig_offer_price = offer.original_price or offer.price
 
         try:
             if energy == 0:
