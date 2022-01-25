@@ -152,7 +152,7 @@ class BalancingMarket(OneSidedMarket):
 
         return accepted_offer, residual_offer
 
-    def determine_offer_price(
+    def _determine_offer_price(
             self, energy_portion, energy, trade_rate,
             trade_bid_info, orig_offer_price):
         return self._update_offer_fee_and_calculate_final_price(
@@ -198,7 +198,7 @@ class BalancingMarket(OneSidedMarket):
 
                 accepted_offer, residual_offer = self.split_offer(offer, energy, orig_offer_price)
 
-                fees, trade_price = self.determine_offer_price(
+                fees, trade_price = self._determine_offer_price(
                     energy / offer.energy, energy, trade_rate, trade_bid_info, orig_offer_price)
                 offer = accepted_offer
                 offer.update_price(trade_price)
