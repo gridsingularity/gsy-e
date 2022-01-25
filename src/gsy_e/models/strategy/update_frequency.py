@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import logging
 from typing import TYPE_CHECKING, Callable, List
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
@@ -23,6 +24,7 @@ from gsy_framework.utils import (find_object_of_same_weekday_and_time,
                                  is_time_slot_in_simulation_duration)
 from pendulum import duration, DateTime, Duration
 
+import gsy_e.constants
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import write_default_to_dict, is_time_slot_in_past_markets
 
@@ -133,22 +135,38 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
                     find_object_of_same_weekday_and_time(
                         self.energy_rate_change_per_update_profile_buffer, time_slot)
                 )
-            self.initial_rate[time_slot] = find_object_of_same_weekday_and_time(
+            initial_rate = find_object_of_same_weekday_and_time(
                 self.initial_rate_profile_buffer, time_slot)
-            self.final_rate[time_slot] = find_object_of_same_weekday_and_time(
+            final_rate = find_object_of_same_weekday_and_time(
                 self.final_rate_profile_buffer, time_slot)
+
+            if not initial_rate or not final_rate:
+                logging.warning(
+                    "Failed to read initial or final rate profile for simulation %s and area %s. "
+                    "Reloading profiles from the database.",
+                    gsy_e.constants.CONFIGURATION_ID, area.uuid)
+                self._read_or_rotate_rate_profiles()
+                initial_rate = find_object_of_same_weekday_and_time(
+                    self.initial_rate_profile_buffer, time_slot)
+                final_rate = find_object_of_same_weekday_and_time(
+                    self.final_rate_profile_buffer, time_slot)
+
+            self.initial_rate[time_slot] = initial_rate
+            self.final_rate[time_slot] = final_rate
+
             self._set_or_update_energy_rate_change_per_update(time_slot)
             write_default_to_dict(self.update_counter, time_slot, 0)
 
     def _set_or_update_energy_rate_change_per_update(self, time_slot: DateTime) -> None:
         energy_rate_change_per_update = {}
         if self.fit_to_limit:
-            energy_rate_change_per_update[time_slot] = \
-                (find_object_of_same_weekday_and_time(
-                    self.initial_rate_profile_buffer, time_slot) -
-                 find_object_of_same_weekday_and_time(
-                     self.final_rate_profile_buffer, time_slot)) / \
-                self.number_of_available_updates
+            initial_rate = find_object_of_same_weekday_and_time(
+                self.initial_rate_profile_buffer, time_slot)
+            final_rate = find_object_of_same_weekday_and_time(
+                self.final_rate_profile_buffer, time_slot)
+            energy_rate_change_per_update[time_slot] = (
+                    (initial_rate - final_rate) / self.number_of_available_updates
+            )
         else:
             if self.rate_limit_object is min:
                 energy_rate_change_per_update[time_slot] = \
@@ -180,8 +198,8 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
         assert (ConstSettings.GeneralSettings.MIN_UPDATE_INTERVAL * 60 <=
                 self.update_interval.seconds < self._time_slot_duration_in_seconds)
 
-        self.number_of_available_updates = \
-            self._calculate_number_of_available_updates_per_slot
+        self.number_of_available_updates = (
+            self._calculate_number_of_available_updates_per_slot)
 
         self._populate_profiles(area)
 
@@ -225,24 +243,17 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
                        update_interval: int = None) -> None:
         """Update the parameters of the class without the need to destroy and recreate
         the object."""
-        should_update = False
         if initial_rate is not None:
             self.initial_rate_input = initial_rate
-            should_update = True
         if final_rate is not None:
             self.final_rate_input = final_rate
-            should_update = True
         if energy_rate_change_per_update is not None:
             self.energy_rate_change_per_update_input = energy_rate_change_per_update
-            should_update = True
         if fit_to_limit is not None:
             self.fit_to_limit = fit_to_limit
-            should_update = True
         if update_interval is not None:
             self.update_interval = update_interval
-            should_update = True
-        if should_update:
-            self._read_or_rotate_rate_profiles()
+        self._read_or_rotate_rate_profiles()
 
     def reset(self, strategy: "BaseStrategy") -> None:
         raise NotImplementedError
