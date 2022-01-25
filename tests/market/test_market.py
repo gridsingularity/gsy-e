@@ -338,26 +338,6 @@ def test_market_acct_multiple(market=OneSidedMarket(bc=NonBlockchainInterface(st
 @pytest.mark.parametrize("market, offer", [
     (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer"),
     (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "balancing_offer"),
-    (SettlementMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer"),
-])
-def test_market_avg_offer_price(market, offer):
-    getattr(market, offer)(1, 1, "A", "A")
-    getattr(market, offer)(3, 1, "A", "A")
-
-    assert market.avg_offer_price == 2
-
-
-@pytest.mark.parametrize("market",
-                         [OneSidedMarket(bc=MagicMock(), time_slot=now()),
-                          BalancingMarket(bc=MagicMock(), time_slot=now()),
-                          SettlementMarket(bc=MagicMock(), time_slot=now())])
-def test_market_avg_offer_price_empty(market):
-    assert market.avg_offer_price == 0
-
-
-@pytest.mark.parametrize("market, offer", [
-    (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer"),
-    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "balancing_offer"),
     (SettlementMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer")
 ])
 def test_market_sorted_offers(market, offer):
@@ -535,13 +515,6 @@ class MarketStateMachine(RuleBasedStateMachine):
     def trade(self, offer, buyer):
         assume(offer.id in self.market.offers)
         self.market.accept_offer(offer, buyer)
-
-    @precondition(lambda self: self.market.offers)
-    @rule()
-    def check_avg_offer_price(self):
-        price = sum(o.price for o in self.market.offers.values())
-        energy = sum(o.energy for o in self.market.offers.values())
-        assert self.market.avg_offer_price == round(price / energy, 4)
 
     @precondition(lambda self: self.market.trades)
     @rule()
