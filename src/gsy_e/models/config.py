@@ -26,7 +26,7 @@ from pendulum import DateTime, Duration, duration, today
 
 from gsy_e.constants import TIME_ZONE
 from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import (
-    ExternalConnectionCommunicator)
+    external_redis_communicator_factory)
 from gsy_e.gsy_e_core.util import change_global_config, format_interval
 
 
@@ -85,7 +85,7 @@ class SimulationConfig:
 
         self.capacity_kW = capacity_kW or ConstSettings.PVSettings.DEFAULT_CAPACITY_KW
         self.external_connection_enabled = external_connection_enabled
-        self.external_redis_communicator = ExternalConnectionCommunicator(
+        self.external_redis_communicator = external_redis_communicator_factory(
             external_connection_enabled)
         if aggregator_device_mapping is not None:
             self.external_redis_communicator.aggregator.set_aggregator_device_mapping(
