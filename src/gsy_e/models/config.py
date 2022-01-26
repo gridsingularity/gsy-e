@@ -96,6 +96,7 @@ class SimulationConfig:
         return json.dumps(self.as_dict())
 
     def as_dict(self):
+        """Return config parameters as dict."""
         fields = {"sim_duration", "slot_length", "tick_length", "ticks_per_slot",
                   "total_ticks", "cloud_coverage", "capacity_kW", "grid_fee_type",
                   "external_connection_enabled", "enable_degrees_of_freedom"}
@@ -107,6 +108,7 @@ class SimulationConfig:
 
     def update_config_parameters(self, *, cloud_coverage=None, pv_user_profile=None,
                                  market_maker_rate=None, capacity_kW=None):
+        """Update provided config parameters."""
         if cloud_coverage is not None:
             self.cloud_coverage = cloud_coverage
         if pv_user_profile is not None:
@@ -117,6 +119,7 @@ class SimulationConfig:
             self.capacity_kW = capacity_kW
 
     def read_pv_user_profile(self, pv_user_profile=None):
+        """Read global pv user profile."""
         self.pv_user_profile = None \
             if pv_user_profile is None \
             else read_arbitrary_profile(InputProfileTypes.POWER,

@@ -107,16 +107,18 @@ class ResettableCommunicator(RedisCommunicator):
             self.thread.join(timeout=REDIS_THREAD_JOIN_TIMEOUT)
             self.pubsub.close()
             self.thread = None
-        except Exception as e:
-            logging.debug(f"Error when stopping all threads: {e}")
+        # pylint: disable=broad-except
+        except Exception as ex:
+            logging.debug("Error when stopping all threads: %s", ex)
 
     def sub_to_multiple_channels(self, channel_callback_dict: Dict):
+        """Subscribe to multiple redis channels."""
         assert self.thread is None, \
             f"There has to be only one thread per ResettableCommunicator object, " \
             f" thread {self.thread} already exists."
         self.pubsub.subscribe(**channel_callback_dict)
         thread = self.pubsub.run_in_thread(sleep_time=0.1, daemon=True)
-        log.debug(f"Started ResettableCommunicator thread for multiple channels: {thread}")
+        log.debug("Started ResettableCommunicator thread for multiple channels: %s", thread)
         self.thread = thread
 
     def sub_to_response(self, channel: str, callback: Callable):
@@ -127,6 +129,7 @@ class ResettableCommunicator(RedisCommunicator):
         self.thread = thread
 
     def publish_json(self, channel: str, data: Dict):
+        """Publish json serializable dict to redis channel."""
         self.publish(channel, json.dumps(data))
 
 
@@ -134,6 +137,7 @@ class RQResettableCommunicator(ResettableCommunicator):
     """Communicator for sending messages using redis queue."""
 
     def publish_json(self, channel: str, data: Dict) -> None:
+        """Publish json serializable dict to redis queue."""
         queue = Queue(ConstSettings.GeneralSettings.SDK_COM_QUEUE_NAME, connection=self.redis_db)
         queue.enqueue(channel, json.dumps(data))
 
@@ -160,31 +164,35 @@ class ExternalConnectionCommunicator(ResettableCommunicator):
         self.pubsub.subscribe(**channel_callback_dict)
 
     def start_communication(self):
+        """Start pubsub thread."""
         if not self.is_enabled:
             return
         if not self.pubsub.subscribed:
             return
         thread = self.pubsub.run_in_thread(sleep_time=0.1, daemon=True)
-        log.debug(f"Started ExternalConnectionCommunicator thread for "
-                  f"multiple channels: {thread}")
+        log.debug("Started ExternalConnectionCommunicator thread for multiple channels: %s",
+                  thread)
         self.thread = thread
 
     def sub_to_aggregator(self):
+        """Subscribe to aggregator channels."""
         if not self.is_enabled:
             return
         channel_callback_dict = {
-            f'external/{gsy_e.constants.CONFIGURATION_ID}/aggregator/*/batch_commands':
+            f"external/{gsy_e.constants.CONFIGURATION_ID}/aggregator/*/batch_commands":
                 self.aggregator.receive_batch_commands_callback,
-            'aggregator': self.aggregator.aggregator_callback
+            "aggregator": self.aggregator.aggregator_callback
         }
         self.pubsub.psubscribe(**channel_callback_dict)
 
     def approve_aggregator_commands(self):
+        """Wrapper for calling approve_batch_commands."""
         if not self.is_enabled:
             return
         self.aggregator.approve_batch_commands()
 
     def publish_aggregator_commands_responses_events(self):
+        """Wrapper for publishing aggregator command responses and events."""
         if not self.is_enabled:
             return
         self.aggregator.publish_all_commands_responses(self)
