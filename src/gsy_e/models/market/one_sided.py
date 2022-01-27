@@ -133,7 +133,6 @@ class OneSidedMarket(MarketBase):
         self.offers[offer.id] = offer
         if add_to_history is True:
             self.offer_history.append(offer)
-            self._update_min_max_avg_offer_prices()
 
         log.debug("%s[OFFER][NEW][%s][%s] %s",
                   self._debug_log_market_type_identifier, self.name, self.time_slot_str, offer)
@@ -159,7 +158,6 @@ class OneSidedMarket(MarketBase):
             raise OfferNotFoundException()
         self.bc_interface.cancel_offer(offer)
 
-        self._update_min_max_avg_offer_prices()
         log.debug("%s[OFFER][DEL][%s][%s] %s",
                   self._debug_log_market_type_identifier, self.name, self.time_slot_str, offer)
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)

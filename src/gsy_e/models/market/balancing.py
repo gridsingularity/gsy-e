@@ -247,7 +247,6 @@ class BalancingMarket(OneSidedMarket):
             offer_or_id = offer_or_id.id
         offer = self.offers.pop(offer_or_id, None)
 
-        self._update_min_max_avg_offer_prices()
         if not offer:
             raise OfferNotFoundException()
         log.debug("[BALANCING_OFFER][DEL][%s] %s", self.time_slot_str, offer)

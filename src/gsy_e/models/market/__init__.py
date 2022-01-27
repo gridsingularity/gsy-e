@@ -96,9 +96,6 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
         self.min_trade_price = None
         self._avg_trade_price = None
         self.max_trade_price = None
-        self.min_offer_price = None
-        self._avg_offer_price = None
-        self.max_offer_price = None
         self.accumulated_trade_price = 0
         self.accumulated_trade_energy = 0
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
@@ -172,19 +169,10 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
         self.traded_energy = subtract_or_create_key(
             self.traded_energy, trade.buyer, order.energy)
         self._update_min_max_avg_trade_prices(order.energy_rate)
-        # Recalculate offer min/max price since offer was removed
-        self._update_min_max_avg_offer_prices()
 
     def _update_accumulated_trade_price_energy(self, trade: Trade):
         self.accumulated_trade_price += trade.offer_bid.price
         self.accumulated_trade_energy += trade.offer_bid.energy
-
-    def _update_min_max_avg_offer_prices(self):
-        self._avg_offer_price = None
-        offer_prices = [o.energy_rate for o in self.offers.values()]
-        if offer_prices:
-            self.min_offer_price = round(min(offer_prices), 4)
-            self.max_offer_price = round(max(offer_prices), 4)
 
     def _update_min_max_avg_trade_prices(self, price):
         self.max_trade_price = round(
@@ -192,15 +180,14 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
         self.min_trade_price = round(
             min(self.min_trade_price, price), 4) if self.min_trade_price else round(price, 4)
         self._avg_trade_price = None
-        self._avg_offer_price = None
 
     def __repr__(self):
         return (
-            "<MarketBase {self.time_slot_str} offers: {len(self.offers)}"
-            " (E: {sum(o.energy for o in self.offers.values())} kWh"
-            " V: {sum(o.price for o in self.offers.values())})"
-            " trades: {len(self.trades)} (E: {self.accumulated_trade_energy} kWh,"
-            " V: {self.accumulated_trade_price})>")
+            f"<MarketBase {self.time_slot_str} offers: {len(self.offers)}"
+            f" (E: {sum(o.energy for o in self.offers.values())} kWh"
+            f" V: {sum(o.price for o in self.offers.values())})"
+            f" trades: {len(self.trades)} (E: {self.accumulated_trade_energy} kWh,"
+            f" V: {self.accumulated_trade_price})>")
 
     @staticmethod
     def sorting(offers_bids: Dict, reverse_order=False) -> List[Union[Bid, Offer]]:
