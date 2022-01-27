@@ -57,21 +57,14 @@ class TwoSidedMarket(OneSidedMarket):
     def _debug_log_market_type_identifier(self):
         return "[TWO_SIDED]"
 
-    def __repr__(self):  # pragma: no cover
-        return ("<{}{} bids: {} (E: {} kWh V:{}) offers: {} (E: {} kWh V: {}) "
-                "trades: {} (E: {} kWh, V: {})>".format(
-                    self._class_name,
-                    " {}".format(self.time_slot_str),
-                    len(self.bids),
-                    sum(b.energy for b in self.bids.values()),
-                    sum(b.price for b in self.bids.values()),
-                    len(self.offers),
-                    sum(o.energy for o in self.offers.values()),
-                    sum(o.price for o in self.offers.values()),
-                    len(self.trades),
-                    self.accumulated_trade_energy,
-                    self.accumulated_trade_price
-                ))
+    def __repr__(self):
+        return (f"<{self._class_name} {self.time_slot_str} bids: {len(self.bids)}"
+                f" (E: {sum(b.energy for b in self.bids.values())} kWh"
+                f" V:{sum(b.price for b in self.bids.values())}) "
+                f"offers: {len(self.offers)} (E: {sum(o.energy for o in self.offers.values())} kWh"
+                f" V: {sum(o.price for o in self.offers.values())}) "
+                f"trades: {len(self.trades)} (E: {self.accumulated_trade_energy} kWh"
+                f", V: {self.accumulated_trade_price})>")
 
     def _update_new_bid_price_with_fee(self, price, original_price):
         return self.fee_class.update_incoming_bid_with_fee(price, original_price)
@@ -122,8 +115,8 @@ class TwoSidedMarket(OneSidedMarket):
         self.bids[bid.id] = bid
         if add_to_history is True:
             self.bid_history.append(bid)
-        log.debug(f"{self._debug_log_market_type_identifier}[BID][NEW]"
-                  f"[{self.time_slot_str}] {bid}")
+        log.debug("%s[BID][NEW][%s] %s", self._debug_log_market_type_identifier,
+                  self.time_slot_str, bid)
         return bid
 
     @lock_market_action
@@ -133,8 +126,8 @@ class TwoSidedMarket(OneSidedMarket):
         bid = self.bids.pop(bid_or_id, None)
         if not bid:
             raise BidNotFoundException(bid_or_id)
-        log.debug(f"{self._debug_log_market_type_identifier}[BID][DEL]"
-                  f"[{self.time_slot_str}] {bid}")
+        log.debug("%s[BID][DEL][%s] %s",
+                  self._debug_log_market_type_identifier, self.time_slot_str, bid)
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
     def split_bid(self, original_bid: Bid, energy: float, orig_bid_price: float):
@@ -161,8 +154,8 @@ class TwoSidedMarket(OneSidedMarket):
         residual_price = (1 - energy / original_bid.energy) * original_bid.price
         residual_energy = original_bid.energy - energy
 
-        original_residual_price = \
-            ((original_bid.energy - energy) / original_bid.energy) * orig_bid_price
+        original_residual_price = ((original_bid.energy - energy) /
+                                   original_bid.energy) * orig_bid_price
 
         residual_bid = self.bid(price=residual_price,
                                 energy=residual_energy,
@@ -177,11 +170,10 @@ class TwoSidedMarket(OneSidedMarket):
                                 requirements=original_bid.requirements,
                                 time_slot=original_bid.time_slot)
 
-        log.debug(f"{self._debug_log_market_type_identifier}[BID][SPLIT]"
-                  f"[{self.time_slot_str}, {self.name}] "
-                  f"({short_offer_bid_log_str(original_bid)} into "
-                  f"{short_offer_bid_log_str(accepted_bid)} and "
-                  f"{short_offer_bid_log_str(residual_bid)}")
+        log.debug("%s[BID][SPLIT][%s, %s] (%s into %s and %s",
+                  self._debug_log_market_type_identifier, self.time_slot_str, self.name,
+                  short_offer_bid_log_str(original_bid), short_offer_bid_log_str(accepted_bid),
+                  short_offer_bid_log_str(residual_bid))
 
         self._notify_listeners(MarketEvent.BID_SPLIT,
                                original_bid=original_bid,
@@ -191,8 +183,8 @@ class TwoSidedMarket(OneSidedMarket):
         return accepted_bid, residual_bid
 
     def determine_bid_price(self, trade_offer_info, energy):
-        revenue, grid_fee_rate, final_trade_rate = \
-            self.fee_class.calculate_trade_price_and_fees(trade_offer_info)
+        _, grid_fee_rate, final_trade_rate = self.fee_class.calculate_trade_price_and_fees(
+            trade_offer_info)
         return grid_fee_rate * energy, energy * final_trade_rate
 
     @lock_market_action
@@ -220,7 +212,7 @@ class TwoSidedMarket(OneSidedMarket):
 
         if energy <= 0:
             raise InvalidTrade("Energy cannot be negative or zero.")
-        elif energy > market_bid.energy:
+        if energy > market_bid.energy:
             raise InvalidTrade(f"Traded energy ({energy}) cannot be more than the "
                                f"bid energy ({market_bid.energy}).")
         elif energy < market_bid.energy:
@@ -231,9 +223,9 @@ class TwoSidedMarket(OneSidedMarket):
             # Delete the accepted bid from self.bids:
             try:
                 self.bids.pop(accepted_bid.id)
-            except KeyError:
+            except KeyError as exception:
                 raise BidNotFoundException(
-                    f"Bid {accepted_bid.id} not found in self.bids ({self.name}).")
+                    f"Bid {accepted_bid.id} not found in self.bids ({self.name}).") from exception
         else:
             # full bid trade, nothing further to do here
             pass
@@ -258,8 +250,8 @@ class TwoSidedMarket(OneSidedMarket):
 
         if already_tracked is False:
             self._update_stats_after_trade(trade, bid, already_tracked)
-            log.info(f"{self._debug_log_market_type_identifier}[TRADE][BID] [{self.name}] "
-                     f"[{trade.time_slot}] {trade}")
+            log.info("%s[TRADE][BID] [%s] [%s] {%s}",
+                     self._debug_log_market_type_identifier, self.name, trade.time_slot, trade)
 
         self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
         return trade
