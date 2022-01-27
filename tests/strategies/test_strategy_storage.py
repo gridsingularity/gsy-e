@@ -727,9 +727,9 @@ def test_storage_event_trade(storage_strategy_test11, market_test13):
     storage_strategy_test11.event_offer_traded(market_id=market_test13.id,
                                                trade=market_test13.trade)
     assert storage_strategy_test11.state.pledged_sell_kWh[market_test13.time_slot] == \
-        market_test13.trade.offer_bid.energy
+        market_test13.trade.traded_energy
     assert storage_strategy_test11.state.offered_sell_kWh[
-               market_test13.time_slot] == -market_test13.trade.offer_bid.energy
+               market_test13.time_slot] == -market_test13.trade.traded_energy
 
 
 def test_balancing_offers_are_not_created_if_device_not_in_registry(

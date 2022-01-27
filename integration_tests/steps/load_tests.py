@@ -47,7 +47,7 @@ def check_traded_energy_rate(context):
     for market in house.past_markets:
         for trade in market.trades:
             if trade.buyer == load.name:
-                assert trade.offer_bid.energy_rate < \
+                assert trade.trade_rate < \
                        load.strategy.bid_update.final_rate[market.time_slot]
 
 
@@ -102,7 +102,7 @@ def check_min_user_rate_profile_dict(context):
     for market in house.past_markets:
         assert len(market.trades) > 0
         for trade in market.trades:
-            trade_rate = trade.offer_bid.energy_rate
+            trade_rate = trade.trade_rate
             if trade.buyer == load1.name:
                 min_rate = load1.strategy.bid_update.initial_rate[market.time_slot]
                 assert trade_rate - min_rate < FLOATING_POINT_TOLERANCE

@@ -324,7 +324,7 @@ class PVStrategy(BidEnabledStrategy):
 
         if trade.seller == self.owner.name:
             self.state.decrement_available_energy(
-                trade.offer_bid.energy, trade.time_slot, self.owner.name)
+                trade.traded_energy, trade.time_slot, self.owner.name)
 
     def event_bid_traded(self, *, market_id, bid_trade):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)

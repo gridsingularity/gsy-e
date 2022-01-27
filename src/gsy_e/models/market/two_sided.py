@@ -307,7 +307,7 @@ class TwoSidedMarket(OneSidedMarket):
                 propagated_bid_rate=market_bid.energy_rate,
                 original_offer_rate=market_offer.original_price / market_offer.energy,
                 propagated_offer_rate=market_offer.energy_rate,
-                trade_rate=original_bid_rate)
+                trade_rate=recommended_pair.trade_rate)
 
             bid_trade, offer_trade = self.accept_bid_offer_pair(
                 market_bid, market_offer, recommended_pair.trade_rate,

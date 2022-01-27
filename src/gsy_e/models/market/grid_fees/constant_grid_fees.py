@@ -102,5 +102,5 @@ class ConstantGridFees(BaseClassGridFees):
         return trade_offer_info
 
     def calculate_trade_price_and_fees(self, trade_bid_info):
-        bid_rate = trade_bid_info.propagated_bid_rate
-        return bid_rate - self.grid_fee_rate, self.grid_fee_rate, bid_rate
+        trade_rate = trade_bid_info.trade_rate
+        return trade_rate - self.grid_fee_rate, self.grid_fee_rate, trade_rate

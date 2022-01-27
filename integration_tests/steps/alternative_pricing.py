@@ -23,7 +23,7 @@ from gsy_framework.utils import limit_float_precision
 def get_trade_rates_house1(context):
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     return [
-        (market, trade.offer_bid.energy_rate)
+        (market, trade.trade_rate)
         for market in house1.past_markets
         for trade in market.trades
     ]

@@ -163,6 +163,10 @@ class FakeTrade:
     def buyer(self):
         return "FakeBuyer"
 
+    @property
+    def trade_rate(self):
+        return self.offer_bid.energy_rate
+
 
 """TEST1"""
 
