@@ -223,7 +223,8 @@ class BalancingMarket(OneSidedMarket):
         trade_id, residual_offer = self.bc_interface.handle_blockchain_trade_event(
             offer, buyer, original_offer, residual_offer)
         trade = BalancingTrade(trade_id, self.now, offer, offer.seller, buyer,
-                               residual_offer, seller_origin=offer.seller_origin,
+                               traded_energy=energy, trade_price=trade_price,
+                               residual=residual_offer, seller_origin=offer.seller_origin,
                                buyer_origin=buyer_origin, fee_price=fees,
                                seller_origin_id=offer.seller_origin_id,
                                seller_id=offer.seller_id,

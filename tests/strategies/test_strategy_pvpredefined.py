@@ -154,6 +154,8 @@ class FakeTrade:
     def __init__(self, offer):
         self.offer_bid = offer
         self.seller = "FakeSeller"
+        self.traded_energy = offer.energy
+        self.trade_price = offer.price
 
     @property
     def is_offer_trade(self):

@@ -420,9 +420,11 @@ class TestTwoSidedMarket:
                 time_slot="").serializable_dict()
         ]
         offer_trade = Trade("trade", 1, Offer("offer_id", pendulum.now(), 1, 1, "S"), "S", "B",
-                            residual=Offer("residual_offer", pendulum.now(), 0.5, 0.5, "S"))
+                            residual=Offer("residual_offer", pendulum.now(), 0.5, 0.5, "S"),
+                            traded_energy=1, trade_price=1)
         bid_trade = Trade("bid_trade", 1, Bid("bid_id2", pendulum.now(), 1, 1, "S"), "S", "B",
-                          residual=Bid("residual_bid_2", pendulum.now(), 1, 1, "S"))
+                          residual=Bid("residual_bid_2", pendulum.now(), 1, 1, "S"),
+                          traded_energy=1, trade_price=1)
         matches = TwoSidedMarket._replace_offers_bids_with_residual_in_recommendations_list(
             matches, offer_trade, bid_trade
         )

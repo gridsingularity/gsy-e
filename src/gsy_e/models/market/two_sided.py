@@ -240,7 +240,8 @@ class TwoSidedMarket(OneSidedMarket):
         )
 
         trade = Trade(str(uuid.uuid4()), self.now, bid, seller,
-                      buyer, residual_bid, already_tracked=already_tracked,
+                      buyer, traded_energy=energy, trade_price=trade_price,
+                      residual=residual_bid, already_tracked=already_tracked,
                       offer_bid_trade_info=updated_bid_trade_info,
                       buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
                       fee_price=fee_price, seller_origin_id=seller_origin_id,
@@ -292,8 +293,7 @@ class TwoSidedMarket(OneSidedMarket):
             market_offer = self.offers.get(recommended_pair.offer["id"])
             market_bid = self.bids.get(recommended_pair.bid["id"])
             try:
-                self.validate_bid_offer_match(
-                    recommended_pair)
+                self.validate_bid_offer_match(recommended_pair)
             except InvalidBidOfferPairException as invalid_bop_exception:
                 # TODO: Refactor this. The behaviour of the market should not be dependant
                 #  on a matching algorithm setting
