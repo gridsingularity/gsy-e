@@ -17,6 +17,7 @@ jobs:
       env:
         TOXENV: ci
         BRANCH: master
+        GSYDEV_TOKEN: ${{ secrets.GSYDEV_TOKEN }}
       run: |
         export SOLC_BINARY=$HOME/solc/usr/bin/solc
         export LD_LIBRARY_PATH=$HOME/solc/usr/lib:$LD_LIBRARY_PATH
