@@ -88,6 +88,7 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
             duration(seconds=settings["slot_length_realtime"].seconds)
             if "slot_length_realtime" in settings else None)
 
+        gsy_e.constants.SEND_EVENTS_RESPONSES_TO_SDK_VIA_RQ = True
         config = SimulationConfig(**config_settings)
 
         spot_market_type = settings.get("spot_market_type")
@@ -122,7 +123,6 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
                   "seed": settings.get("random_seed", 0)}
 
         gsy_e.constants.CONNECT_TO_PROFILES_DB = True
-        gsy_e.constants.SEND_EVENTS_RESPONSES_TO_SDK_VIA_RQ = True
 
         run_simulation(setup_module_name=scenario_name,
                        simulation_config=config,
