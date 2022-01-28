@@ -52,13 +52,13 @@ def device_partially_fulfill_bid(context, device):
         # Assert one trade for each PV
         assert len(house1_trades) == 5
         assert all(trade['buyer'] == device for trade in house1_trades)
-        assert all(trade['seller'] == "MA House 1" for trade in house1_trades)
+        assert all(trade['seller'] == "House 1" for trade in house1_trades)
         assert len(grid_trades) == 5
-        assert all(trade['buyer'] == "MA House 1" for trade in grid_trades)
-        assert all(trade['seller'] == "MA House 2" for trade in grid_trades)
+        assert all(trade['buyer'] == "House 1" for trade in grid_trades)
+        assert all(trade['seller'] == "House 2" for trade in grid_trades)
 
         pv_names = ['H2 PV1', 'H2 PV2', 'H2 PV3', 'H2 PV4', 'H2 PV5']
-        assert all(trade['buyer'] == "MA House 2" for trade in house2_trades)
+        assert all(trade['buyer'] == "House 2" for trade in house2_trades)
         assert all(trade['seller'] in pv_names for trade in house2_trades)
 
 

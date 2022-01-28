@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
-from typing import Dict, Set, Optional  # noqa
+from typing import Dict, Optional  # noqa
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
@@ -219,11 +219,9 @@ class MAEngine:
             # was deleted - also delete in target market
             try:
                 self.owner.delete_offer(self.markets.target, offer_info.target_offer)
-                self._delete_forwarded_offer_entries(offer_info.source_offer)
             except MarketException:
                 self.owner.log.exception("Error deleting MarketAgent offer")
-        # TODO: Should potentially handle the flip side, by not deleting the source market offer
-        # but by deleting the offered_offers entries
+        self._delete_forwarded_offer_entries(offer_info.source_offer)
 
     def event_offer_split(self, *, market_id, original_offer, accepted_offer, residual_offer):
         """Perform actions that need to be done when OFFER_SPLIT event is triggered."""

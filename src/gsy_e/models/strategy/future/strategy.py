@@ -187,12 +187,15 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
                 available_energy_kWh = strategy.state.get_available_energy_kWh(time_slot)
                 self._post_producer_first_offer(strategy, time_slot, available_energy_kWh)
             elif strategy.asset_type == AssetType.PROSUMER:
-                available_energy_sell_kWh = strategy.get_available_energy_to_sell_kWh(time_slot)
-                available_energy_buy_kWh = strategy.get_available_energy_to_buy_kWh(time_slot)
+                available_energy_sell_kWh = strategy.state.get_available_energy_to_sell_kWh(
+                    time_slot)
+                available_energy_buy_kWh = strategy.state.get_available_energy_to_buy_kWh(
+                    time_slot)
                 self._post_producer_first_offer(strategy, time_slot, available_energy_sell_kWh)
                 self._post_consumer_first_bid(strategy, time_slot, available_energy_buy_kWh)
-                strategy.state.offered_sell_kWh[time_slot] += available_energy_sell_kWh
-                strategy.state.offered_buy_kWh[time_slot] += available_energy_buy_kWh
+                strategy.state.register_energy_from_posted_bid(available_energy_buy_kWh, time_slot)
+                strategy.state.register_energy_from_posted_offer(
+                    available_energy_sell_kWh, time_slot)
             else:
                 assert False, ("Strategy %s has to be producer or consumer to be able to "
                                "participate in the future market.", strategy.owner.name)
