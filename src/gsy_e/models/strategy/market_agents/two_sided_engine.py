@@ -50,8 +50,6 @@ class TwoSidedEngine(MAEngine):
     def _forward_bid(self, bid):
         if bid.buyer == self.markets.target.name:
             return None
-        if self.owner.name == self.markets.target.name:
-            return None
 
         if bid.price < 0.0:
             self.owner.log.debug("Bid is not forwarded because price < 0")

@@ -790,7 +790,8 @@ class BidEnabledStrategy(BaseStrategy):
 
             self.remove_bid_from_pending(market.id, bid.id)
             self.post_bid(market, bid.energy * updated_rate,
-                          bid.energy, attributes=bid.attributes, requirements=bid.requirements,
+                          bid.energy, replace_existing=False, attributes=bid.attributes,
+                          requirements=bid.requirements,
                           time_slot=bid.time_slot)
 
     # pylint: disable=too-many-arguments

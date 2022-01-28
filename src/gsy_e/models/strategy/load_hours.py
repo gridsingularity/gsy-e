@@ -417,7 +417,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         if not self.area.is_market_spot_or_future(market_id):
             return
-
         if bid_trade.offer_bid.buyer == self.owner.name:
             self.state.decrement_energy_requirement(
                 bid_trade.offer_bid.energy * 1000,

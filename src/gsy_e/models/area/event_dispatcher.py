@@ -115,8 +115,8 @@ class AreaDispatcher:
             self, agent_area: "Area", market_type: AvailableMarketTypes,
             event_type: AreaEvent, **kwargs) -> None:
 
-        if market_type == AvailableMarketTypes.FUTURE and self.future_agent:
-            self.future_agent.event_listener(event_type, **kwargs)
+        if market_type == AvailableMarketTypes.FUTURE and agent_area.dispatcher.future_agent:
+            agent_area.dispatcher.future_agent.event_listener(event_type, **kwargs)
         elif market_type != AvailableMarketTypes.FUTURE:
             agent_dict = self._get_agents_for_market_type(agent_area.dispatcher, market_type)
             for time_slot, agent in agent_dict.items():
