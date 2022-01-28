@@ -5,7 +5,7 @@ on:
       - master
       - staging
 jobs:
-  test-build:
+  gsy-e-ci:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -17,7 +17,7 @@ jobs:
       env:
         TOXENV: ci
         BRANCH: master
-        GSYDEV_TOKEN: ${{ secrets.GSYDEV_TOKEN }}
+        INTEGRATION_TESTS_REPO_URL: https://gsydev:${{ secrets.GSYDEV_TOKEN }}@github.com/gridsingularity/gsy-backend-integration-tests.git
       run: |
         export SOLC_BINARY=$HOME/solc/usr/bin/solc
         export LD_LIBRARY_PATH=$HOME/solc/usr/lib:$LD_LIBRARY_PATH
