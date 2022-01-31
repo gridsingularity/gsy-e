@@ -35,14 +35,15 @@ class ConstantGridFees(BaseClassGridFees):
             self, original_bid_rate, propagated_bid_rate,
             clearing_rate):
         """
-        Used only for 2-sided pay as clear market. The purpose of this function is to adapt the
+        Used for 2-sided pay as clear and myco matcher.
+        The purpose of this function is to adapt the
         clearing rate calculated via the clearing algorithm to match the expected price the
         original device has to pay once the trade chain settles. The clearing rate is scaled
         with regards to the demand side tax (to be precise, the ratio of the original bid rate to
         the propagated bid rate).
         :param original_bid_rate: Original bid rate
         :param propagated_bid_rate: Propagated bid rate
-        :param clearing_rate: Clearing rate calculated by the 2-sided pay as clear algorithm
+        :param clearing_rate: Clearing rate calculated by the matching algorithm
         :return: Original trade rate, that the original device has to pay once the trade
         chain settles.
         """
@@ -102,5 +103,5 @@ class ConstantGridFees(BaseClassGridFees):
         return trade_offer_info
 
     def calculate_trade_price_and_fees(self, trade_bid_info):
-        trade_rate = trade_bid_info.trade_rate
-        return trade_rate - self.grid_fee_rate, self.grid_fee_rate, trade_rate
+        bid_rate = trade_bid_info.propagated_bid_rate
+        return bid_rate - self.grid_fee_rate, self.grid_fee_rate, bid_rate
