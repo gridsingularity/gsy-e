@@ -463,18 +463,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
-      Data Requirements and File Upload Format
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../community-settings/" title="Community Settings" class="md-nav__link">
       Community Settings
     </a>
@@ -512,13 +500,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-7" type="checkbox" id="nav-2-1-7">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-6" type="checkbox" id="nav-2-1-6">
     
-    <label class="md-nav__link" for="nav-2-1-7">
+    <label class="md-nav__link" for="nav-2-1-6">
       Results and Analysis
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
-      <label class="md-nav__title" for="nav-2-1-7">
+      <label class="md-nav__title" for="nav-2-1-6">
         Results and Analysis
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -855,6 +843,18 @@
         
       </ul>
     </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
+      Data Requirements and File Upload Format
+    </a>
   </li>
 
         
@@ -1786,14 +1786,14 @@
 <h2 id="backend-configuration">Backend Configuration<a class="headerlink" href="#backend-configuration" title="Permanent link">&para;</a></h2>
 <p>There are two options to implement a PV in a backend:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/c2976cb4f0c8c2823ee755fa33c3efd611498ea0/src/gsy_e/models/strategy/pv.py">Solar Profile</a> (for template generation profile)</p>
-<pre class="codehilite"><code class="language-python">Market ('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30, final_selling_rate=5, fit_to_limit=True, update_interval=duration(minutes=5)))
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="n">Market</span> <span class="p">(</span><span class="s1">&#39;H2 PV&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">PVStrategy</span><span class="p">(</span><span class="n">panel_count</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">initial_selling_rate</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">final_selling_rate</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">fit_to_limit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">update_interval</span><span class="o">=</span><span class="n">duration</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">5</span><span class="p">)))</span>
+</code></pre></div>
 
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/c2976cb4f0c8c2823ee755fa33c3efd611498ea0/src/gsy_e/models/strategy/predefined_pv.py#L131-L178">User Profile</a> (for uploaded generation profile)</p>
-<pre class="codehilite"><code class="language-python">user_profile_path = os.path.join(d3a_path, &quot;assets/Solar_Curve_W_sunny.csv&quot;)
-Market ('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path,
-                                             panel_count=))
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="n">user_profile_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">d3a_path</span><span class="p">,</span> <span class="s2">&quot;assets/Solar_Curve_W_sunny.csv&quot;</span><span class="p">)</span>
+<span class="n">Market</span> <span class="p">(</span><span class="s1">&#39;H1 PV&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">PVUserProfileStrategy</span><span class="p">(</span><span class="n">power_profile</span><span class="o">=</span><span class="n">user_profile_path</span><span class="p">,</span>
+                                             <span class="n">panel_count</span><span class="o">=</span><span class="p">))</span>
+</code></pre></div>
                 
                   
                 

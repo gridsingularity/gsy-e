@@ -463,18 +463,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
-      Data Requirements and File Upload Format
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../community-settings/" title="Community Settings" class="md-nav__link">
       Community Settings
     </a>
@@ -512,13 +500,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-7" type="checkbox" id="nav-2-1-7">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-6" type="checkbox" id="nav-2-1-6">
     
-    <label class="md-nav__link" for="nav-2-1-7">
+    <label class="md-nav__link" for="nav-2-1-6">
       Results and Analysis
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
-      <label class="md-nav__title" for="nav-2-1-7">
+      <label class="md-nav__title" for="nav-2-1-6">
         Results and Analysis
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -855,6 +843,18 @@
         
       </ul>
     </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
+      Data Requirements and File Upload Format
+    </a>
   </li>
 
         
@@ -1906,8 +1906,8 @@
 <p>The current basic blockchain integration uses Substrate, which allows modular business logic to be built directly in the blockchain and facilitates a high transaction throughput. Substrate has components called pallets, where each pallet can represent different functionality, such as <strong>smart contracts, storage, auctions, and more</strong>. Currently, our integration includes a storage pallet that provides immutable storage of executed transactions, and additional functionalities will continue to be actively developed.</p>
 <p>Blockchain can optionally be enabled on simulations running locally with the backend code base. There are three configuration parameters. The  command-line flag is  <code>--enable-bc</code>, used to enable blockchain operations. The two other parameters are the mnemonic to restore your key and interact with the blockchain, and the <code>ENABLE_SUBSTRATE</code> parameter described in the steps below.</p>
 <h2 id="connecting-to-grid-singularity-node">Connecting to Grid Singularity node<a class="headerlink" href="#connecting-to-grid-singularity-node" title="Permanent link">&para;</a></h2>
-<pre class="codehilite"><code class="language-html">https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fcanvas-node.dev.gridsingularity.com
-</code></pre>
+<div class="codehilite"><pre><span></span><code>https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fcanvas-node.dev.gridsingularity.com
+</code></pre></div>
 
 <p>When you go to the endpoint, you will see the standard interface. That’s the easiest point of interaction with the node, where you can call extrinsics, upload contracts, deploy them, test their functions, send funds and more.</p>
 <h2 id="simulating-grid-singularity-local-energy-markets-on-substrate">Simulating Grid Singularity local energy markets on Substrate<a class="headerlink" href="#simulating-grid-singularity-local-energy-markets-on-substrate" title="Permanent link">&para;</a></h2>
@@ -1919,14 +1919,14 @@
 <p>It is possible to manually test the Developer → Extrinsics → tradestorage in the UI. You can choose the prefunded addresses as the buyer (Alice) and the seller (Bob). Set a small amount e.g. 1 and rate (e.g.12) (rate here is the price at which the trade is executed). Trade ID is a bytes vector (e.g. <code>0x1234</code>). If the extrinsic hash is successfully submitted, you will see a success message pop up in the top right corner of the UI. The Polkadot user interface does not allow you to directly go to that extrinsic hash, but you can go to Network and find the latest block. You may have to go to its parent or further to see the extrinsic hash.</p>
 <h3 id="running-grid-singularity-exchange-with-substrate">Running Grid Singularity Exchange with Substrate<a class="headerlink" href="#running-grid-singularity-exchange-with-substrate" title="Permanent link">&para;</a></h3>
 <p>Go to <code>src/d3a/blockchain/constants.py</code> and set <code>ENABLE_SUBSTRATE = True</code> and add your mnemonic. That will allow all the blockchain dependencies to be installed with:</p>
-<pre class="codehilite"><code>fab sync
-</code></pre>
+<div class="codehilite"><pre><span></span><code>fab sync
+</code></pre></div>
 
 <p>Each transaction in the simulation triggers a call to the pallet. Currently, the buyer and the seller are default addresses. In addition to the buyer and seller, the trade structure has a trade ID, energy quantity, and rate. Following Grid Singularity Exchange’s integration with the decentralized identity registry (Energy Web Switchboard), the addresses will be actual user accounts. In the terminal, you should see the extrinsic hash and the block hash.</p>
-<pre class="codehilite"><code>17:39:37.466 WARNING  ( 333) d3a.gsy_e_core.simulation       : Slot 1 of 96 - (1.0%) 0.00 second elapsed, ETA: 0.01 second
-17:39:41.974 INFO     ( 122) root                          : Extrinsic '0xe1357be7db683e0f3f85e101ea017da10fcaa63310e4dc7040e505cad9ac1a0a' sent and included in block '0x2199d0870583183e6f2c591b66e9a1a9cb2399b7b3ed21b21c3804c3cfcf730f'
+<div class="codehilite"><pre><span></span><code>17:39:37.466 WARNING  ( 333) d3a.gsy_e_core.simulation       : Slot 1 of 96 - (1.0%) 0.00 second elapsed, ETA: 0.01 second
+17:39:41.974 INFO     ( 122) root                          : Extrinsic &#39;0xe1357be7db683e0f3f85e101ea017da10fcaa63310e4dc7040e505cad9ac1a0a&#39; sent and included in block &#39;0x2199d0870583183e6f2c591b66e9a1a9cb2399b7b3ed21b21c3804c3cfcf730f&#39;
 17:39:41.975 INFO     ( 271) d3a.models.market.one_sided   : [TRADE] [Grid] [2021-01-26T00:00] {7f15aa} [origin: H1 Storage2 -&gt; Cell Tower] [IAA House 1 -&gt; Cell Tower] 0.025 kWh @ 0.7500000000000001 30.0 db09b600-22a9-4feb-ae4d-620cb6247702 [fee: 0.0 cts.]
-</code></pre>
+</code></pre></div>
 
 <p>The block hash will allow you to find your extrinsic hash, as in this <a href="https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fcanvas-node.dev.gridsingularity.com#/explorer/query/0xf33563d5a2e3e5cef0629fa8c83b39a216fb2e61700855a67c232f800fe6b44e">example</a>.</p>
 <p>View events → tradestorage.TradeMapStored (this event is triggered every time we call the pallet’s store trade map function).</p>

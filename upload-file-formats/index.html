@@ -463,18 +463,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
-      Data Requirements and File Upload Format
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../community-settings/" title="Community Settings" class="md-nav__link">
       Community Settings
     </a>
@@ -512,13 +500,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-7" type="checkbox" id="nav-2-1-7">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-6" type="checkbox" id="nav-2-1-6">
     
-    <label class="md-nav__link" for="nav-2-1-7">
+    <label class="md-nav__link" for="nav-2-1-6">
       Results and Analysis
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
-      <label class="md-nav__title" for="nav-2-1-7">
+      <label class="md-nav__title" for="nav-2-1-6">
         Results and Analysis
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -855,6 +843,18 @@
         
       </ul>
     </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
+      Data Requirements and File Upload Format
+    </a>
   </li>
 
         
@@ -1786,23 +1786,23 @@
 <p>The separation can be done by comma <code>,</code> or semicolon <code>;</code>. Two time formats are supported, see below. Power set-points are given in <strong>Watts</strong>. The software handles any conversions to energy (in kWh). All entered csv data values need to be positive</p>
 <h3 id="hhmm">hh:mm<a class="headerlink" href="#hhmm" title="Permanent link">&para;</a></h3>
 <p><strong>Example:</strong></p>
-<pre class="codehilite"><code>INTERVAL;POWER(W):
+<div class="codehilite"><pre><span></span><code>INTERVAL;POWER(W):
 00:00;10
 00:15;10
 00:30;10
 00:45;10
 01:00;10
-</code></pre>
+</code></pre></div>
 
 <h3 id="yyyy-mm-ddthhmm">YYYY-MM-DDThh:mm<a class="headerlink" href="#yyyy-mm-ddthhmm" title="Permanent link">&para;</a></h3>
 <p><strong>Example:</strong></p>
-<pre class="codehilite"><code>INTERVAL,POWER(W)
+<div class="codehilite"><pre><span></span><code>INTERVAL,POWER(W)
 2019-01-01T00:00,10.0
 2019-01-01T00:15,10.0
 2019-01-01T00:30,10.0
 2019-01-01T00:45,10.0
 2019-01-01T01:00,10.0
-</code></pre>
+</code></pre></div>
 
 <p>Note: If you upload csv files with date information, the <strong>start-date</strong> of the simulation should be identical in the csv files and <a href="../general-settings/">simulation settings</a>.</p>
                 

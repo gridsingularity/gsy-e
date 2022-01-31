@@ -463,18 +463,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
-      Data Requirements and File Upload Format
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../community-settings/" title="Community Settings" class="md-nav__link">
       Community Settings
     </a>
@@ -512,13 +500,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-7" type="checkbox" id="nav-2-1-7">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-6" type="checkbox" id="nav-2-1-6">
     
-    <label class="md-nav__link" for="nav-2-1-7">
+    <label class="md-nav__link" for="nav-2-1-6">
       Results and Analysis
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
-      <label class="md-nav__title" for="nav-2-1-7">
+      <label class="md-nav__title" for="nav-2-1-6">
         Results and Analysis
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -855,6 +843,18 @@
         
       </ul>
     </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
+      Data Requirements and File Upload Format
+    </a>
   </li>
 
         
@@ -1847,16 +1847,16 @@
                 
                 <p><em>Note: The following instructions serve as a guide to launch the Grid Operator API as well.</em></p>
 <p>The Exchange SDK is launched with a cli command. To launch the Exchange SDK, the user needs to open a new terminal and activate the gsy-e-sdk environment.</p>
-<pre class="codehilite"><code>workon gsy-e-sdk
-</code></pre>
+<div class="codehilite"><pre><span></span><code>workon gsy-e-sdk
+</code></pre></div>
 
 <p>And go to the GSy Exchange SDK repository</p>
-<pre class="codehilite"><code>cd path_to_repository/gsy-e-sdk
-</code></pre>
+<div class="codehilite"><pre><span></span><code>cd path_to_repository/gsy-e-sdk
+</code></pre></div>
 
 <p>The api launch cli command takes several arguments that can be listed with:</p>
-<pre class="codehilite"><code>gsy-e-sdk run --help
-</code></pre>
+<div class="codehilite"><pre><span></span><code>gsy-e-sdk run --help
+</code></pre></div>
 
 <p>The arguments are :</p>
 <ul>
@@ -1880,31 +1880,31 @@
 <p>The simulation configuration file is a JSON format file downloadable on the <a href="https://www.d3a.io/">User-Interface</a>.  It contains all the information about the simulation setup (username, simulation name and UUID, domain name, websocket domain name, global settings of the simulation and the registry, consisting of all the grid hierarchy including markets and assets and whether or not the user is connected to those). To download this file the user needs to go to the Registry page of the relevant collaboration/Canary Test Network and click on the top right edit icon and Download Exchange SDK Summary.</p>
 <p><img alt="alt_text" src="../img/api-overview-3.png" /></p>
 <p>To run the Asset API, you can run the following command by adapting the arguments to your case:</p>
-<pre class="codehilite"><code>gsy-e-sdk --log-level INFO run  --setup asset_api_template -u username -p password -i absolute_path/my_simulation_config.json
-</code></pre>
+<div class="codehilite"><pre><span></span><code>gsy-e-sdk --log-level INFO run  --setup asset_api_template -u username -p password -i absolute_path/my_simulation_config.json
+</code></pre></div>
 
 <h4 id="cli-command">CLI command:<a class="headerlink" href="#cli-command" title="Permanent link">&para;</a></h4>
 <p>Instead of passing the JSON file, the user can directly pass the relevant variables as arguments in the CLI commands. For that to work, the user needs to pass the domain name and websocket name (both are optional parameters and only relevant when connecting to specific domains) and the simulation_id. The simulation_id corresponds to the Universally Unique Identifier. This token can be found in the URL of a collaboration or a Canary Test Network in the User Interface.</p>
 <p><img alt="alt_text" src="../img/api-overview-4.png" /></p>
 <p>To run the Asset API, users can run the following command by adapting the arguments to their case:</p>
-<pre class="codehilite"><code class="language-commandline">gsy-e-sdk --log-level INFO run  --setup asset_api_template -u username -p password --simulation-id UUID
-</code></pre>
+<div class="codehilite"><pre><span></span><code>gsy-e-sdk --log-level INFO run  --setup asset_api_template -u username -p password --simulation-id UUID
+</code></pre></div>
 
 <h4 id="environnement-variables">Environnement variables:<a class="headerlink" href="#environnement-variables" title="Permanent link">&para;</a></h4>
 <p>The last method to launch the API is send the set the required variable in the environment. To do that users can simply define those parameters at the top of their script as follows:</p>
-<pre class="codehilite"><code>os.environ[&quot;API_CLIENT_USERNAME&quot;] = &quot;username&quot;
+<div class="codehilite"><pre><span></span><code>os.environ[&quot;API_CLIENT_USERNAME&quot;] = &quot;username&quot;
 os.environ[&quot;API_CLIENT_PASSWORD&quot;] = &quot;password&quot;
 os.environ[&quot;API_CLIENT_SIMULATION_ID&quot;] = &quot;simulation_uuid&quot;
-</code></pre>
+</code></pre></div>
 
 <p>To run the Asset API, you can run the following command by adapting the arguments to your case:</p>
-<pre class="codehilite"><code>gsy-e-sdk --log-level INFO run  --setup asset_api_template
-</code></pre>
+<div class="codehilite"><pre><span></span><code>gsy-e-sdk --log-level INFO run  --setup asset_api_template
+</code></pre></div>
 
 <h4 id="local-simulation">Local simulation:<a class="headerlink" href="#local-simulation" title="Permanent link">&para;</a></h4>
 <p>To interact with a locally running simulation (backend simulation), username, passwords, domain and websocket names and simulation_id are not necessary. There is only an additional flag required in the CLI command : <code>--run-on-redis</code>.</p>
-<pre class="codehilite"><code>d3a-api-client --log-level INFO run --setup asset_api_template --run-on-redis
-</code></pre>
+<div class="codehilite"><pre><span></span><code>d3a-api-client --log-level INFO run --setup asset_api_template --run-on-redis
+</code></pre></div>
 
 <p>Once the Asset SDK Script has been launched, you can click on “Run” in the Results page of your Collaboration in the User-Interface.</p>
                 

@@ -463,18 +463,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
-      Data Requirements and File Upload Format
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../community-settings/" title="Community Settings" class="md-nav__link">
       Community Settings
     </a>
@@ -512,13 +500,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-7" type="checkbox" id="nav-2-1-7">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-6" type="checkbox" id="nav-2-1-6">
     
-    <label class="md-nav__link" for="nav-2-1-7">
+    <label class="md-nav__link" for="nav-2-1-6">
       Results and Analysis
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
-      <label class="md-nav__title" for="nav-2-1-7">
+      <label class="md-nav__title" for="nav-2-1-6">
         Results and Analysis
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -855,6 +843,18 @@
         
       </ul>
     </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
+      Data Requirements and File Upload Format
+    </a>
   </li>
 
         
@@ -1781,15 +1781,15 @@
 <h2 id="backend-configuration">Backend Configuration<a class="headerlink" href="#backend-configuration" title="Permanent link">&para;</a></h2>
 <p>To implement the power plant in a backend simulation one option is available:  </p>
 <p><a href="https://github.com/gridsingularity/d3a/blob/54d76a47db04062aa2564826b5da8e637d6c9185/src/d3a/models/strategy/finite_power_plant.py#L25">Finite Power Plant</a></p>
-<pre class="codehilite"><code class="language-python">profile_kW = {
-    0: 0.1,
-    8: 0.15,
-    12: 0.2,
-    19: 0.15,
-    22: 0.1
-}  
-Market (&quot;Power Plant', strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="n">profile_kW</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="mi">0</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+    <span class="mi">8</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
+    <span class="mi">12</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+    <span class="mi">19</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
+    <span class="mi">22</span><span class="p">:</span> <span class="mf">0.1</span>
+<span class="p">}</span>  
+<span class="n">Market</span> <span class="p">(</span><span class="s2">&quot;Power Plant&#39;, strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))</span>
+</code></pre></div>
                 
                   
                 

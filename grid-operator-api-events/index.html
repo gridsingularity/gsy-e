@@ -463,18 +463,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
-      Data Requirements and File Upload Format
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../community-settings/" title="Community Settings" class="md-nav__link">
       Community Settings
     </a>
@@ -512,13 +500,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-7" type="checkbox" id="nav-2-1-7">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-6" type="checkbox" id="nav-2-1-6">
     
-    <label class="md-nav__link" for="nav-2-1-7">
+    <label class="md-nav__link" for="nav-2-1-6">
       Results and Analysis
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
-      <label class="md-nav__title" for="nav-2-1-7">
+      <label class="md-nav__title" for="nav-2-1-6">
         Results and Analysis
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -855,6 +843,18 @@
         
       </ul>
     </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
+      Data Requirements and File Upload Format
+    </a>
   </li>
 
         
@@ -1908,18 +1908,18 @@
 <h2 id="api-events">API Events<a class="headerlink" href="#api-events" title="Permanent link">&para;</a></h2>
 <p>In the Grid Operator there are 3 events that are triggered while a simulation is running.</p>
 <h3 id="each-new-market-slot">Each new market slot<a class="headerlink" href="#each-new-market-slot" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>def on_market_cycle(self, market_info):
-</code></pre>
+<div class="codehilite"><pre><span></span><code>def on_market_cycle(self, market_info):
+</code></pre></div>
 
 <p>As shown in the schematic above, this event triggered at the start of every market slot. When a new market slot is created the API receives the <code>market_info</code>, containing market information and the code within the script event is executed.</p>
 <h3 id="on-event-or-response">On event or response<a class="headerlink" href="#on-event-or-response" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>def on_event_or_response(self, message):
-</code></pre>
+<div class="codehilite"><pre><span></span><code>def on_event_or_response(self, message):
+</code></pre></div>
 
 <p>In this event, the API receives a message for every event (<code>on_market_cycle</code>) or response for each commands (e.g. submitting new grid fees)</p>
 <h3 id="on-finish">On finish<a class="headerlink" href="#on-finish" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>def on_finish(self, finish_info):
-</code></pre>
+<div class="codehilite"><pre><span></span><code>def on_finish(self, finish_info):
+</code></pre></div>
 
 <p>This event is triggered when the simulation/collaboration finishes. Within that function, information stored during the simulation could potentially be exported for further analysis.</p>
                 

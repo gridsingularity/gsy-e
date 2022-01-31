@@ -459,18 +459,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
-      Data Requirements and File Upload Format
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../community-settings/" title="Community Settings" class="md-nav__link">
       Community Settings
     </a>
@@ -508,13 +496,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-7" type="checkbox" id="nav-2-1-7">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-6" type="checkbox" id="nav-2-1-6">
     
-    <label class="md-nav__link" for="nav-2-1-7">
+    <label class="md-nav__link" for="nav-2-1-6">
       Results and Analysis
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
-      <label class="md-nav__title" for="nav-2-1-7">
+      <label class="md-nav__title" for="nav-2-1-6">
         Results and Analysis
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -851,6 +839,18 @@
         
       </ul>
     </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
+      Data Requirements and File Upload Format
+    </a>
   </li>
 
         
@@ -1744,8 +1744,8 @@
 <li>Install the SDK Client by following the steps described <a href="../configure-trading-strategies-walkthrough/">here</a>. Since the client is written in Python, the data stream pipeline needs to be written in Python as well.</li>
 <li>Add the following command in the <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_template.py">Grid Singularity Asset SDK Script</a> to set the energy consumption and generation for Load and PV assets for the next market slot:</li>
 </ol>
-<pre class="codehilite"><code>asset_client.set_energy_forecast(&lt;energy_forecast_Wh&gt;)
-</code></pre>
+<div class="codehilite"><pre><span></span><code>asset_client.set_energy_forecast(&lt;energy_forecast_Wh&gt;)
+</code></pre></div>
 
 <p>An example of how sending forecasts through the SDK Client could be added into the Asset API script can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/test_sending_energy_forecast.py">here</a>.</p>
                 

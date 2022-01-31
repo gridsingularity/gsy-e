@@ -463,18 +463,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
-      Data Requirements and File Upload Format
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../community-settings/" title="Community Settings" class="md-nav__link">
       Community Settings
     </a>
@@ -512,13 +500,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-7" type="checkbox" id="nav-2-1-7">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-6" type="checkbox" id="nav-2-1-6">
     
-    <label class="md-nav__link" for="nav-2-1-7">
+    <label class="md-nav__link" for="nav-2-1-6">
       Results and Analysis
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
-      <label class="md-nav__title" for="nav-2-1-7">
+      <label class="md-nav__title" for="nav-2-1-6">
         Results and Analysis
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -855,6 +843,18 @@
         
       </ul>
     </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
+      Data Requirements and File Upload Format
+    </a>
   </li>
 
         
@@ -1841,486 +1841,486 @@
 <p>The Aziiz model is using past market information to determine the next grid fee. The model looks at <strong>past imports and exports</strong> on a specific market, applies a moving average and then based on this number sets the next grid fee for that market. This model has the advantage of integrating market conditions into its strategy. For instance if past market slots experienced high imports, the model will increase fees in the relevant market to incentivise market participants to contain the energy within that area.</p>
 <h3 id="script-configuration">Script Configuration<a class="headerlink" href="#script-configuration" title="Permanent link">&para;</a></h3>
 <p>At the start of the SDK Script, the user needs to specify the markets she/he wishes to connect and manage as well as the <a href="../asset-api-events/">Oracle name</a>.</p>
-<pre class="codehilite"><code class="language-python">################################################
-# CONFIGURATIONS
-################################################
-automatic = True
+<div class="codehilite"><pre><span></span><code><span class="c1">################################################</span>
+<span class="c1"># CONFIGURATIONS</span>
+<span class="c1">################################################</span>
+<span class="n">automatic</span> <span class="o">=</span> <span class="kc">True</span>
 
-# List of market the Grid Operators connect to
-market_names = [&quot;Grid&quot;, &quot;Community&quot;]  # TODO list the market names as they are in the collaboration
+<span class="c1"># List of market the Grid Operators connect to</span>
+<span class="n">market_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Grid&quot;</span><span class="p">,</span> <span class="s2">&quot;Community&quot;</span><span class="p">]</span>  <span class="c1"># TODO list the market names as they are in the collaboration</span>
 
-# Name of your aggregator
-oracle_name = &quot;dso
-</code></pre>
+<span class="c1"># Name of your aggregator</span>
+<span class="n">oracle_name</span> <span class="o">=</span> <span class="s2">&quot;dso</span>
+</code></pre></div>
 
 <p>Right after that, the user can select the strategy to use (Time of Use or Aziiz model). To select the Time of Use strategy, you have to set TimeOfUse to True and Aziiz to False. On the other hand, to select the Aziiz model, the user has to set TimeOfUse to False and Aziiz to True.
 If the Aziiz model is selected, the user can tune parameters such as applying the moving average and specifying the number of past market slots to average.</p>
-<pre class="codehilite"><code class="language-python"># Grid tariff selection
-TimeOfUse = True  # TODO Activate the Time of Use model if set to True
-Aziiz = False  # TODO Activate the Aziiz model if set to True
-moving_average_peak = True  # Perform a moving average of the last #look_back ptu (for the Aziiz tariff only)
-look_back = 4  # Number of past markets slots to apply the moving average (for the Aziiz tariff only)
+<div class="codehilite"><pre><span></span><code><span class="c1"># Grid tariff selection</span>
+<span class="n">TimeOfUse</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># TODO Activate the Time of Use model if set to True</span>
+<span class="n">Aziiz</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># TODO Activate the Aziiz model if set to True</span>
+<span class="n">moving_average_peak</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># Perform a moving average of the last #look_back ptu (for the Aziiz tariff only)</span>
+<span class="n">look_back</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c1"># Number of past markets slots to apply the moving average (for the Aziiz tariff only)</span>
 
-slot_length = 15  # leave as is
+<span class="n">slot_length</span> <span class="o">=</span> <span class="mi">15</span>  <span class="c1"># leave as is</span>
 
 
-def fee_strategy():
-    if TimeOfUse:
-        market_prices = pd.read_excel(os.path.join(current_dir,&quot;resources/ToU.xlsx&quot;))  # TODO upload an Excel/CSV file with prices of every market at each time slot (based on given template)
+<span class="k">def</span> <span class="nf">fee_strategy</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">TimeOfUse</span><span class="p">:</span>
+        <span class="n">market_prices</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">current_dir</span><span class="p">,</span><span class="s2">&quot;resources/ToU.xlsx&quot;</span><span class="p">))</span>  <span class="c1"># TODO upload an Excel/CSV file with prices of every market at each time slot (based on given template)</span>
 
-        planned_fee = {}
-        for i in range(len(market_prices)):
-            for j in market_names:
-                planned_fee.update({(str(market_prices[&quot;Time&quot;][i])[0:5], j): market_prices[j][i]})
+        <span class="n">planned_fee</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">market_prices</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">market_names</span><span class="p">:</span>
+                <span class="n">planned_fee</span><span class="o">.</span><span class="n">update</span><span class="p">({(</span><span class="nb">str</span><span class="p">(</span><span class="n">market_prices</span><span class="p">[</span><span class="s2">&quot;Time&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">])[</span><span class="mi">0</span><span class="p">:</span><span class="mi">5</span><span class="p">],</span> <span class="n">j</span><span class="p">):</span> <span class="n">market_prices</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]})</span>
 
-    if Aziiz:
-        market_prices = pd.ExcelFile(os.path.join(current_dir, &quot;resources/Aziiz.xlsx&quot;))  # TODO upload an Excel/CSV file with thresholds and fees of every market (based on given template)
+    <span class="k">if</span> <span class="n">Aziiz</span><span class="p">:</span>
+        <span class="n">market_prices</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">ExcelFile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">current_dir</span><span class="p">,</span> <span class="s2">&quot;resources/Aziiz.xlsx&quot;</span><span class="p">))</span>  <span class="c1"># TODO upload an Excel/CSV file with thresholds and fees of every market (based on given template)</span>
 
-    return market_prices, planned_fee
-</code></pre>
+    <span class="k">return</span> <span class="n">market_prices</span><span class="p">,</span> <span class="n">planned_fee</span>
+</code></pre></div>
 
 <p>For both strategies, the script reads an Excel file to adjust the grid fees (<a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/resources/ToU.xlsx">ToU.xlsx</a> and <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/resources/Aziiz.xlsx">Aziiz.xlsx</a>). In ToU.xlsx the user can define the grid fees for each market she/he manages for every quarter hours of the day.</p>
 <p><img alt="alt_text" src="../img/grid-operator-api-3.png" /></p>
 <p>In Aziiz.xlsx grid fees can be set for every peak import/export thresholds for each market. The Aziiz strategy will compare the average of the last markets’ peak import/export to the threshold. If the average is lower than the threshold the relevant grid fee will be applied (for instance on the figure below if the average peak is equal to 22kWh, the next grid fee will be 3 cents/KWh. Each sheet’s name represents the market connected to.</p>
 <p><img alt="alt_text" src="../img/grid-operator-api-4.png" /></p>
 <p>On_market_slot event is used to gather market statistics and set the grid fees for the next market slot. In the first part, the Grid Operator API is requesting market statistics from the simulation.</p>
-<pre class="codehilite"><code class="language-python">################################################
-# STORE MARKET INFORMATION
-################################################
-for area_uuid, area_dict in self.latest_grid_tree_flat.items():
-    if area_dict[&quot;area_name&quot;] in market_names:
-        self.add_to_batch_commands.last_market_dso_stats(area_uuid)
+<div class="codehilite"><pre><span></span><code><span class="c1">################################################</span>
+<span class="c1"># STORE MARKET INFORMATION</span>
+<span class="c1">################################################</span>
+<span class="k">for</span> <span class="n">area_uuid</span><span class="p">,</span> <span class="n">area_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_grid_tree_flat</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">market_names</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_to_batch_commands</span><span class="o">.</span><span class="n">last_market_dso_stats</span><span class="p">(</span><span class="n">area_uuid</span><span class="p">)</span>
 
-self.dso_stats_response = self.execute_batch_commands()
-</code></pre>
+<span class="bp">self</span><span class="o">.</span><span class="n">dso_stats_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute_batch_commands</span><span class="p">()</span>
+</code></pre></div>
 
 <p>Later in the script, the API is storing some of the relevant market data to local variables, easier to manipulate.</p>
-<pre class="codehilite"><code class="language-python">for area_uuid, area_dict in self.latest_grid_tree_flat.items():
-            if area_dict[&quot;area_name&quot;] in market_names:
-                self.last_market_fee[area_dict[&quot;area_name&quot;]] = area_dict[&quot;last_market_fee&quot;]
-                self.current_market_fee[area_dict[&quot;area_name&quot;]] = area_dict[&quot;current_market_fee&quot;]
+<div class="codehilite"><pre><span></span><code><span class="k">for</span> <span class="n">area_uuid</span><span class="p">,</span> <span class="n">area_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_grid_tree_flat</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">market_names</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">last_market_fee</span><span class="p">[</span><span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;last_market_fee&quot;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">current_market_fee</span><span class="p">[</span><span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;current_market_fee&quot;</span><span class="p">]</span>
 
-        for uuid, market_event in self.dso_stats_response[&quot;responses&quot;].items():
-            # Store data from market info into variables - these variables are updated in a way that always just store the current/most updated values
-            self.min_trade_rate[market_event[0]['name']] = market_event[0][&quot;market_stats&quot;][&quot;min_trade_rate&quot;]
-            self.avg_trade_rate[market_event[0]['name']] = market_event[0][&quot;market_stats&quot;][&quot;avg_trade_rate&quot;]
-            self.max_trade_rate[market_event[0]['name']] = market_event[0][&quot;market_stats&quot;][&quot;max_trade_rate&quot;]
-            self.median_trade_rate[market_event[0]['name']] = market_event[0][&quot;market_stats&quot;][&quot;median_trade_rate&quot;]
-            self.total_traded_energy_kWh[market_event[0]['name']] = market_event[0][&quot;market_stats&quot;][&quot;total_traded_energy_kWh&quot;]
-            self.self_sufficiency[market_event[0]['name']] = market_event[0][&quot;market_stats&quot;][&quot;self_sufficiency&quot;]
-            self.self_consumption[market_event[0]['name']] = market_event[0][&quot;market_stats&quot;][&quot;self_consumption&quot;]
-            self.import_kWh[market_event[0]['name']] = market_event[0][&quot;market_stats&quot;]['area_throughput']['import']
-            self.export_kWh[market_event[0]['name']] = market_event[0][&quot;market_stats&quot;]['area_throughput']['export']
-            try:
-                self.balance[market_event[0]['name']] = self.import_kWh[market_event[0]['name']] - self.export_kWh[market_event[0]['name']]
-            except:
-                self.balance[market_event[0]['name']] = 0
+        <span class="k">for</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">market_event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dso_stats_response</span><span class="p">[</span><span class="s2">&quot;responses&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Store data from market info into variables - these variables are updated in a way that always just store the current/most updated values</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">min_trade_rate</span><span class="p">[</span><span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;market_stats&quot;</span><span class="p">][</span><span class="s2">&quot;min_trade_rate&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">avg_trade_rate</span><span class="p">[</span><span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;market_stats&quot;</span><span class="p">][</span><span class="s2">&quot;avg_trade_rate&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">max_trade_rate</span><span class="p">[</span><span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;market_stats&quot;</span><span class="p">][</span><span class="s2">&quot;max_trade_rate&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">median_trade_rate</span><span class="p">[</span><span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;market_stats&quot;</span><span class="p">][</span><span class="s2">&quot;median_trade_rate&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">total_traded_energy_kWh</span><span class="p">[</span><span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;market_stats&quot;</span><span class="p">][</span><span class="s2">&quot;total_traded_energy_kWh&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">self_sufficiency</span><span class="p">[</span><span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;market_stats&quot;</span><span class="p">][</span><span class="s2">&quot;self_sufficiency&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">self_consumption</span><span class="p">[</span><span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;market_stats&quot;</span><span class="p">][</span><span class="s2">&quot;self_consumption&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">import_kWh</span><span class="p">[</span><span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;market_stats&quot;</span><span class="p">][</span><span class="s1">&#39;area_throughput&#39;</span><span class="p">][</span><span class="s1">&#39;import&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">export_kWh</span><span class="p">[</span><span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;market_stats&quot;</span><span class="p">][</span><span class="s1">&#39;area_throughput&#39;</span><span class="p">][</span><span class="s1">&#39;export&#39;</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">balance</span><span class="p">[</span><span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">import_kWh</span><span class="p">[</span><span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">export_kWh</span><span class="p">[</span><span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">balance</span><span class="p">[</span><span class="n">market_event</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">0</span>
 
-        self.balance_hist = self.balance_hist.append(self.balance,ignore_index=True)  # DataFrame that gets updated and grows at each market slot and contains the balance (import - export) for the areas
+        <span class="bp">self</span><span class="o">.</span><span class="n">balance_hist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">balance_hist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">balance</span><span class="p">,</span><span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># DataFrame that gets updated and grows at each market slot and contains the balance (import - export) for the areas</span>
 
-        # Print information in the terminal
-        print('LAST MARKET STATISTICS')
+        <span class="c1"># Print information in the terminal</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;LAST MARKET STATISTICS&#39;</span><span class="p">)</span>
 
-        last_market_table1 = []
-        for i in range(len(market_names)):
-            keys_list = list(self.total_traded_energy_kWh.keys())
-            values_list = list(self.total_traded_energy_kWh.values())
-            min_values_list = list(self.min_trade_rate.values())
-            avg_values_list = list(self.avg_trade_rate.values())
-            med_values_list = list(self.median_trade_rate.values())
-            max_values_list = list(self.max_trade_rate.values())
+        <span class="n">last_market_table1</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">market_names</span><span class="p">)):</span>
+            <span class="n">keys_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_traded_energy_kWh</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="n">values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_traded_energy_kWh</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="n">min_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_trade_rate</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="n">avg_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">avg_trade_rate</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="n">med_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">median_trade_rate</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="n">max_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_trade_rate</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
 
-            # Print None values as 0
-            values_list = [0 if x is None else x for x in values_list]
-            min_values_list = [0 if x is None else x for x in min_values_list]
-            avg_values_list = [0 if x is None else x for x in avg_values_list]
-            med_values_list = [0 if x is None else x for x in med_values_list]
-            max_values_list = [0 if x is None else x for x in max_values_list]
+            <span class="c1"># Print None values as 0</span>
+            <span class="n">values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">values_list</span><span class="p">]</span>
+            <span class="n">min_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">min_values_list</span><span class="p">]</span>
+            <span class="n">avg_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">avg_values_list</span><span class="p">]</span>
+            <span class="n">med_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">med_values_list</span><span class="p">]</span>
+            <span class="n">max_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">max_values_list</span><span class="p">]</span>
 
-            last_market_table1.append(
-                [keys_list[i], values_list[i], min_values_list[i], avg_values_list[i], med_values_list[i],
-                 max_values_list[i]])
+            <span class="n">last_market_table1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">keys_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">values_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">min_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">avg_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">med_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                 <span class="n">max_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
 
-        last_market_headers1 = [&quot;Markets&quot;, &quot;Total energy traded [kWh]&quot;, &quot;Min trade rate [€cts/Kwh]&quot;,
-                                &quot;Avg trade rate [€cts/Kwh]&quot;, &quot;Med trade rate [€cts/Kwh]&quot;, &quot;Max trade rate [€cts/Kwh]&quot;]
-        print(tabulate(last_market_table1, last_market_headers1, tablefmt=&quot;fancy_grid&quot;))
+        <span class="n">last_market_headers1</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Markets&quot;</span><span class="p">,</span> <span class="s2">&quot;Total energy traded [kWh]&quot;</span><span class="p">,</span> <span class="s2">&quot;Min trade rate [€cts/Kwh]&quot;</span><span class="p">,</span>
+                                <span class="s2">&quot;Avg trade rate [€cts/Kwh]&quot;</span><span class="p">,</span> <span class="s2">&quot;Med trade rate [€cts/Kwh]&quot;</span><span class="p">,</span> <span class="s2">&quot;Max trade rate [€cts/Kwh]&quot;</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">tabulate</span><span class="p">(</span><span class="n">last_market_table1</span><span class="p">,</span> <span class="n">last_market_headers1</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;fancy_grid&quot;</span><span class="p">))</span>
 
-        last_market_table2 = []
-        for i in range(len(market_names)):
-            keys_list = list(self.total_traded_energy_kWh.keys())
-            ss_values_list = list(self.self_sufficiency.values())
-            sc_values_list = list(self.self_consumption.values())
-            energy_imp_values_list = list(self.import_kWh.values())
-            energy_exp_values_list = list(self.export_kWh.values())
-            last_fee_values_list = list(self.last_market_fee.values())
-            # Print None values as 0
-            ss_values_list = [0 if x is None else x for x in ss_values_list]
-            sc_values_list = [0 if x is None else x for x in sc_values_list]
-            energy_imp_values_list = [0 if x is None else x for x in energy_imp_values_list]
-            energy_exp_values_list = [0 if x is None else x for x in energy_exp_values_list]
-            last_fee_values_list = [0 if x is None else x for x in last_fee_values_list]
+        <span class="n">last_market_table2</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">market_names</span><span class="p">)):</span>
+            <span class="n">keys_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_traded_energy_kWh</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="n">ss_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">self_sufficiency</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="n">sc_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">self_consumption</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="n">energy_imp_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">import_kWh</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="n">energy_exp_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">export_kWh</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="n">last_fee_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_market_fee</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="c1"># Print None values as 0</span>
+            <span class="n">ss_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ss_values_list</span><span class="p">]</span>
+            <span class="n">sc_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sc_values_list</span><span class="p">]</span>
+            <span class="n">energy_imp_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">energy_imp_values_list</span><span class="p">]</span>
+            <span class="n">energy_exp_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">energy_exp_values_list</span><span class="p">]</span>
+            <span class="n">last_fee_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">last_fee_values_list</span><span class="p">]</span>
 
-            last_market_table2.append([keys_list[i], ss_values_list[i], sc_values_list[i], energy_imp_values_list[i],
-                                       energy_exp_values_list[i], last_fee_values_list[i]])
+            <span class="n">last_market_table2</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">keys_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ss_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">sc_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">energy_imp_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                       <span class="n">energy_exp_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">last_fee_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
 
-        last_market_headers2 = [&quot;Markets&quot;, &quot;Self sufficiency [%]&quot;, &quot;Self consumption [%]&quot;, &quot;Energy import [kWh]&quot;,
-                                &quot;Energy export [kWh]&quot;, &quot;Last fee [€cts/Kwh]&quot;]
-        print(tabulate(last_market_table2, last_market_headers2, tablefmt=&quot;fancy_grid&quot;))
+        <span class="n">last_market_headers2</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Markets&quot;</span><span class="p">,</span> <span class="s2">&quot;Self sufficiency [%]&quot;</span><span class="p">,</span> <span class="s2">&quot;Self consumption [%]&quot;</span><span class="p">,</span> <span class="s2">&quot;Energy import [kWh]&quot;</span><span class="p">,</span>
+                                <span class="s2">&quot;Energy export [kWh]&quot;</span><span class="p">,</span> <span class="s2">&quot;Last fee [€cts/Kwh]&quot;</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">tabulate</span><span class="p">(</span><span class="n">last_market_table2</span><span class="p">,</span> <span class="n">last_market_headers2</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;fancy_grid&quot;</span><span class="p">))</span>
 
-        ################################################
-        # SET NEW GRID FEE
-        ################################################
-        for area_uuid, area_dict in self.latest_grid_tree_flat.items():
+        <span class="c1">################################################</span>
+        <span class="c1"># SET NEW GRID FEE</span>
+        <span class="c1">################################################</span>
+        <span class="k">for</span> <span class="n">area_uuid</span><span class="p">,</span> <span class="n">area_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_grid_tree_flat</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
 
-            if area_dict[&quot;area_name&quot;] in market_names:
-                ###################################################################
-                # TIME OF USE STRATEGY
-                ###################################################################
-                if TimeOfUse:
-                    self.next_market_fee[area_dict[&quot;area_name&quot;]] = self.scheduled_fee(self.market_time, planned_fee,
-                                                                                      area_dict[&quot;area_name&quot;])
+            <span class="k">if</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">market_names</span><span class="p">:</span>
+                <span class="c1">###################################################################</span>
+                <span class="c1"># TIME OF USE STRATEGY</span>
+                <span class="c1">###################################################################</span>
+                <span class="k">if</span> <span class="n">TimeOfUse</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">next_market_fee</span><span class="p">[</span><span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheduled_fee</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">market_time</span><span class="p">,</span> <span class="n">planned_fee</span><span class="p">,</span>
+                                                                                      <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">])</span>
 
-                ###################################################################
-                # AZIIZ STRATEGY
-                ###################################################################
-                if Aziiz:
+                <span class="c1">###################################################################</span>
+                <span class="c1"># AZIIZ STRATEGY</span>
+                <span class="c1">###################################################################</span>
+                <span class="k">if</span> <span class="n">Aziiz</span><span class="p">:</span>
 
-                    if moving_average_peak:
-                        self.max_ext_energy_kWh = abs(self.balance_hist[area_dict[&quot;area_name&quot;]].iloc[
-                                                      -look_back:].mean())  # Calculate the absolute moving average of the net balance by looking back at 4 markets
-                    else:
-                        self.max_ext_energy_kWh = max(self.import_kWh[area_dict[&quot;area_name&quot;]], self.export_kWh[
-                            area_dict[
-                                &quot;area_name&quot;]])  # Calculate the max between the import and export of the defined market
+                    <span class="k">if</span> <span class="n">moving_average_peak</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">max_ext_energy_kWh</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">balance_hist</span><span class="p">[</span><span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span>
+                                                      <span class="o">-</span><span class="n">look_back</span><span class="p">:]</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>  <span class="c1"># Calculate the absolute moving average of the net balance by looking back at 4 markets</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">max_ext_energy_kWh</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">import_kWh</span><span class="p">[</span><span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]],</span> <span class="bp">self</span><span class="o">.</span><span class="n">export_kWh</span><span class="p">[</span>
+                            <span class="n">area_dict</span><span class="p">[</span>
+                                <span class="s2">&quot;area_name&quot;</span><span class="p">]])</span>  <span class="c1"># Calculate the max between the import and export of the defined market</span>
 
-                    individual_market_prices = pd.read_excel(market_prices, area_dict[&quot;area_name&quot;])  # Select the market in the file
+                    <span class="n">individual_market_prices</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">market_prices</span><span class="p">,</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">])</span>  <span class="c1"># Select the market in the file</span>
 
-                    for k in range(len(individual_market_prices)):
-                        if self.max_ext_energy_kWh &lt;= individual_market_prices[&quot;Threshold&quot;][k]:  # if the peak is lower than this value, the following grid fee will be applied. If the max is higher, it will go to the lower elif condition
-                            self.next_market_fee[area_dict[&quot;area_name&quot;]] = individual_market_prices[&quot;Grid fee&quot;][
-                                k]  # new grid fee
-                            break
-                        else:
-                            self.next_market_fee[area_dict[
-                                &quot;area_name&quot;]] = 2000  # TODO set the last value if all the previous ones are not fulfilled
+                    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">individual_market_prices</span><span class="p">)):</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_ext_energy_kWh</span> <span class="o">&lt;=</span> <span class="n">individual_market_prices</span><span class="p">[</span><span class="s2">&quot;Threshold&quot;</span><span class="p">][</span><span class="n">k</span><span class="p">]:</span>  <span class="c1"># if the peak is lower than this value, the following grid fee will be applied. If the max is higher, it will go to the lower elif condition</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">next_market_fee</span><span class="p">[</span><span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">individual_market_prices</span><span class="p">[</span><span class="s2">&quot;Grid fee&quot;</span><span class="p">][</span>
+                                <span class="n">k</span><span class="p">]</span>  <span class="c1"># new grid fee</span>
+                            <span class="k">break</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">next_market_fee</span><span class="p">[</span><span class="n">area_dict</span><span class="p">[</span>
+                                <span class="s2">&quot;area_name&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">2000</span>  <span class="c1"># TODO set the last value if all the previous ones are not fulfilled</span>
 
-                self.add_to_batch_commands.grid_fees(area_uuid=area_uuid,fee_cents_kwh=self.next_market_fee[area_dict[&quot;area_name&quot;]])
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_to_batch_commands</span><span class="o">.</span><span class="n">grid_fees</span><span class="p">(</span><span class="n">area_uuid</span><span class="o">=</span><span class="n">area_uuid</span><span class="p">,</span><span class="n">fee_cents_kwh</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">next_market_fee</span><span class="p">[</span><span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]])</span>
 
-        next_fee_response = self.execute_batch_commands()  # send batch command
+        <span class="n">next_fee_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute_batch_commands</span><span class="p">()</span>  <span class="c1"># send batch command</span>
 
-        print()
-        print('CURRENT AND NEXT MARKET FEES')
+        <span class="nb">print</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;CURRENT AND NEXT MARKET FEES&#39;</span><span class="p">)</span>
 
-        current_market_table = []
-        for i in range(len(market_names)):
-            keys_list = list(self.current_market_fee.keys())
-            current_fee_values_list = list(self.current_market_fee.values())
-            next_fee_values_list = list(self.next_market_fee.values())
+        <span class="n">current_market_table</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">market_names</span><span class="p">)):</span>
+            <span class="n">keys_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_market_fee</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="n">current_fee_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_market_fee</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="n">next_fee_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">next_market_fee</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
 
-            current_fee_values_list = [0 if x is None else x for x in current_fee_values_list]
-            next_fee_values_list = [0 if x is None else x for x in next_fee_values_list]
+            <span class="n">current_fee_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">current_fee_values_list</span><span class="p">]</span>
+            <span class="n">next_fee_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">next_fee_values_list</span><span class="p">]</span>
 
-            current_market_table.append([keys_list[i], current_fee_values_list[i], next_fee_values_list[i]])
+            <span class="n">current_market_table</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">keys_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">current_fee_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">next_fee_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
 
-        current_market_headers = [&quot;Markets&quot;, &quot;Current fee [€cts/kWh]&quot;, &quot;Next fee [€cts/kWh]&quot;]
-        print(tabulate(current_market_table, current_market_headers, tablefmt=&quot;fancy_grid&quot;))
+        <span class="n">current_market_headers</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Markets&quot;</span><span class="p">,</span> <span class="s2">&quot;Current fee [€cts/kWh]&quot;</span><span class="p">,</span> <span class="s2">&quot;Next fee [€cts/kWh]&quot;</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">tabulate</span><span class="p">(</span><span class="n">current_market_table</span><span class="p">,</span> <span class="n">current_market_headers</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;fancy_grid&quot;</span><span class="p">))</span>
 
-    ################################################
-    # TRIGGERS EACH COMMAND RESPONSE AND EVENT
-    ################################################
-    def on_event_or_response(self, message):
-        # print(&quot;message&quot;,message)
-        pass
+    <span class="c1">################################################</span>
+    <span class="c1"># TRIGGERS EACH COMMAND RESPONSE AND EVENT</span>
+    <span class="c1">################################################</span>
+    <span class="k">def</span> <span class="nf">on_event_or_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="c1"># print(&quot;message&quot;,message)</span>
+        <span class="k">pass</span>
 
-    ################################################
-    # SIMULATION TERMINATION CONDITION
-    ################################################
-    def on_finish(self, finish_info):
-        # TODO export relevant information stored during the simulation (if needed)
-        self.is_finished = True
-
-
-################################################
-# REGISTER FOR MARKETS
-################################################
-def get_assets_name(indict: dict) -&gt; dict:
-    &quot;&quot;&quot;
-    This function is used to parse the grid tree and returned all registered assets
-    wrapper for _get_assets_name
-    &quot;&quot;&quot;
-    if indict == {}:
-        return {}
-    outdict = {&quot;Area&quot;: [], &quot;Load&quot;: [], &quot;PV&quot;: [], &quot;Storage&quot;: []}
-    _get_assets_name(indict, outdict)
-    return outdict
+    <span class="c1">################################################</span>
+    <span class="c1"># SIMULATION TERMINATION CONDITION</span>
+    <span class="c1">################################################</span>
+    <span class="k">def</span> <span class="nf">on_finish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">finish_info</span><span class="p">):</span>
+        <span class="c1"># TODO export relevant information stored during the simulation (if needed)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span> <span class="o">=</span> <span class="kc">True</span>
 
 
-def _get_assets_name(indict: dict, outdict: dict):
-    &quot;&quot;&quot;
-    Parse the collaboration / Canary Network registry
-    Returns a list of the Market, Load, PV and Storage nodes the user is registered to
-    &quot;&quot;&quot;
-    for key, value in indict.items():
-        if key == &quot;name&quot;:
-            name = value
-        if key == &quot;type&quot;:
-            area_type = value
-        if key == &quot;registered&quot; and value:
-            outdict[area_type].append(name)
-        if 'children' in key:
-            for children in indict[key]:
-                _get_assets_name(children, outdict)
+<span class="c1">################################################</span>
+<span class="c1"># REGISTER FOR MARKETS</span>
+<span class="c1">################################################</span>
+<span class="k">def</span> <span class="nf">get_assets_name</span><span class="p">(</span><span class="n">indict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function is used to parse the grid tree and returned all registered assets</span>
+<span class="sd">    wrapper for _get_assets_name</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">indict</span> <span class="o">==</span> <span class="p">{}:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+    <span class="n">outdict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Area&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;Load&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;PV&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;Storage&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+    <span class="n">_get_assets_name</span><span class="p">(</span><span class="n">indict</span><span class="p">,</span> <span class="n">outdict</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">outdict</span>
 
 
-# Code to create the market aggregator and connect to the relevant simulation. Keep it as is
-if os.environ[&quot;API_CLIENT_RUN_ON_REDIS&quot;] == &quot;true&quot;:
-    MarketClient = RedisMarketClient
-    market_args = {&quot;autoregister&quot;: True}
-    aggr = Oracle(aggregator_name=oracle_name)
+<span class="k">def</span> <span class="nf">_get_assets_name</span><span class="p">(</span><span class="n">indict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">outdict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse the collaboration / Canary Network registry</span>
+<span class="sd">    Returns a list of the Market, Load, PV and Storage nodes the user is registered to</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">indict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span>
+            <span class="n">area_type</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;registered&quot;</span> <span class="ow">and</span> <span class="n">value</span><span class="p">:</span>
+            <span class="n">outdict</span><span class="p">[</span><span class="n">area_type</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;children&#39;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">children</span> <span class="ow">in</span> <span class="n">indict</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                <span class="n">_get_assets_name</span><span class="p">(</span><span class="n">children</span><span class="p">,</span> <span class="n">outdict</span><span class="p">)</span>
 
-else:
-    MarketClient = RestMarketClient
-    simulation_id = os.environ[&quot;API_CLIENT_SIMULATION_ID&quot;]
-    domain_name = os.environ[&quot;API_CLIENT_DOMAIN_NAME&quot;]
-    websockets_domain_name = os.environ[&quot;API_CLIENT_WEBSOCKET_DOMAIN_NAME&quot;]
-    market_args = {&quot;simulation_id&quot;: simulation_id,
-                   &quot;domain_name&quot;: domain_name, &quot;websockets_domain_name&quot;: websockets_domain_name}
 
-    aggr = Oracle(aggregator_name=oracle_name, **market_args)
-    if automatic:
-        registry = aggr.get_configuration_registry()
-        market_names = get_assets_name(registry)[&quot;Area&quot;]
+<span class="c1"># Code to create the market aggregator and connect to the relevant simulation. Keep it as is</span>
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;API_CLIENT_RUN_ON_REDIS&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;true&quot;</span><span class="p">:</span>
+    <span class="n">MarketClient</span> <span class="o">=</span> <span class="n">RedisMarketClient</span>
+    <span class="n">market_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;autoregister&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+    <span class="n">aggr</span> <span class="o">=</span> <span class="n">Oracle</span><span class="p">(</span><span class="n">aggregator_name</span><span class="o">=</span><span class="n">oracle_name</span><span class="p">)</span>
 
-market_prices, planned_fee = fee_strategy()
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">MarketClient</span> <span class="o">=</span> <span class="n">RestMarketClient</span>
+    <span class="n">simulation_id</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;API_CLIENT_SIMULATION_ID&quot;</span><span class="p">]</span>
+    <span class="n">domain_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;API_CLIENT_DOMAIN_NAME&quot;</span><span class="p">]</span>
+    <span class="n">websockets_domain_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;API_CLIENT_WEBSOCKET_DOMAIN_NAME&quot;</span><span class="p">]</span>
+    <span class="n">market_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;simulation_id&quot;</span><span class="p">:</span> <span class="n">simulation_id</span><span class="p">,</span>
+                   <span class="s2">&quot;domain_name&quot;</span><span class="p">:</span> <span class="n">domain_name</span><span class="p">,</span> <span class="s2">&quot;websockets_domain_name&quot;</span><span class="p">:</span> <span class="n">websockets_domain_name</span><span class="p">}</span>
 
-print()
-print('Connecting to markets ...')
+    <span class="n">aggr</span> <span class="o">=</span> <span class="n">Oracle</span><span class="p">(</span><span class="n">aggregator_name</span><span class="o">=</span><span class="n">oracle_name</span><span class="p">,</span> <span class="o">**</span><span class="n">market_args</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">automatic</span><span class="p">:</span>
+        <span class="n">registry</span> <span class="o">=</span> <span class="n">aggr</span><span class="o">.</span><span class="n">get_configuration_registry</span><span class="p">()</span>
+        <span class="n">market_names</span> <span class="o">=</span> <span class="n">get_assets_name</span><span class="p">(</span><span class="n">registry</span><span class="p">)[</span><span class="s2">&quot;Area&quot;</span><span class="p">]</span>
 
-for i in market_names:
-    if os.environ[&quot;API_CLIENT_RUN_ON_REDIS&quot;] == &quot;true&quot;:
-        market_registered = RedisMarketClient(area_id=i)
-    else:
-        market_uuid = get_area_uuid_from_area_name_and_collaboration_id(market_args[&quot;simulation_id&quot;], i, market_args[&quot;domain_name&quot;])
-        market_args[&quot;area_id&quot;] = market_uuid
-        market_registered = RestMarketClient(**market_args)
-    selected = market_registered.select_aggregator(aggr.aggregator_uuid)
-    print(&quot;----&gt; Connected to &quot;, i)
-    sleep(0.3)
+<span class="n">market_prices</span><span class="p">,</span> <span class="n">planned_fee</span> <span class="o">=</span> <span class="n">fee_strategy</span><span class="p">()</span>
 
-print(aggr.device_uuid_list)
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Connecting to markets ...&#39;</span><span class="p">)</span>
 
-# loop to allow persistence
-while not aggr.is_finished:
-    sleep(0.5)
-</code></pre>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">market_names</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;API_CLIENT_RUN_ON_REDIS&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;true&quot;</span><span class="p">:</span>
+        <span class="n">market_registered</span> <span class="o">=</span> <span class="n">RedisMarketClient</span><span class="p">(</span><span class="n">area_id</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">market_uuid</span> <span class="o">=</span> <span class="n">get_area_uuid_from_area_name_and_collaboration_id</span><span class="p">(</span><span class="n">market_args</span><span class="p">[</span><span class="s2">&quot;simulation_id&quot;</span><span class="p">],</span> <span class="n">i</span><span class="p">,</span> <span class="n">market_args</span><span class="p">[</span><span class="s2">&quot;domain_name&quot;</span><span class="p">])</span>
+        <span class="n">market_args</span><span class="p">[</span><span class="s2">&quot;area_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">market_uuid</span>
+        <span class="n">market_registered</span> <span class="o">=</span> <span class="n">RestMarketClient</span><span class="p">(</span><span class="o">**</span><span class="n">market_args</span><span class="p">)</span>
+    <span class="n">selected</span> <span class="o">=</span> <span class="n">market_registered</span><span class="o">.</span><span class="n">select_aggregator</span><span class="p">(</span><span class="n">aggr</span><span class="o">.</span><span class="n">aggregator_uuid</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;----&gt; Connected to &quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+    <span class="n">sleep</span><span class="p">(</span><span class="mf">0.3</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">aggr</span><span class="o">.</span><span class="n">device_uuid_list</span><span class="p">)</span>
+
+<span class="c1"># loop to allow persistence</span>
+<span class="k">while</span> <span class="ow">not</span> <span class="n">aggr</span><span class="o">.</span><span class="n">is_finished</span><span class="p">:</span>
+    <span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+</code></pre></div>
 
 <p>In the following lines, to improve the API monitoring, the script is printing relevant data in the terminal:</p>
 <p><img alt="alt_text" src="../img/grid-operator-api-5.png" /></p>
-<pre class="codehilite"><code class="language-python"># Print information in the terminal
-print('LAST MARKET STATISTICS')
+<div class="codehilite"><pre><span></span><code><span class="c1"># Print information in the terminal</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;LAST MARKET STATISTICS&#39;</span><span class="p">)</span>
 
-last_market_table1 = []
-for i in range(len(market_names)):
-    keys_list = list(self.total_traded_energy_kWh.keys())
-    values_list = list(self.total_traded_energy_kWh.values())
-    min_values_list = list(self.min_trade_rate.values())
-    avg_values_list = list(self.avg_trade_rate.values())
-    med_values_list = list(self.median_trade_rate.values())
-    max_values_list = list(self.max_trade_rate.values())
+<span class="n">last_market_table1</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">market_names</span><span class="p">)):</span>
+    <span class="n">keys_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_traded_energy_kWh</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_traded_energy_kWh</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">min_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_trade_rate</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">avg_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">avg_trade_rate</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">med_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">median_trade_rate</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">max_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_trade_rate</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
 
-    # Print None values as 0
-    values_list = [0 if x is None else x for x in values_list]
-    min_values_list = [0 if x is None else x for x in min_values_list]
-    avg_values_list = [0 if x is None else x for x in avg_values_list]
-    med_values_list = [0 if x is None else x for x in med_values_list]
-    max_values_list = [0 if x is None else x for x in max_values_list]
+    <span class="c1"># Print None values as 0</span>
+    <span class="n">values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">values_list</span><span class="p">]</span>
+    <span class="n">min_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">min_values_list</span><span class="p">]</span>
+    <span class="n">avg_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">avg_values_list</span><span class="p">]</span>
+    <span class="n">med_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">med_values_list</span><span class="p">]</span>
+    <span class="n">max_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">max_values_list</span><span class="p">]</span>
 
-    last_market_table1.append(
-        [keys_list[i], values_list[i], min_values_list[i], avg_values_list[i], med_values_list[i],
-         max_values_list[i]])
+    <span class="n">last_market_table1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">keys_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">values_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">min_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">avg_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">med_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+         <span class="n">max_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
 
-last_market_headers1 = [&quot;Markets&quot;, &quot;Total energy traded [kWh]&quot;, &quot;Min trade rate [€cts/Kwh]&quot;,
-                        &quot;Avg trade rate [€cts/Kwh]&quot;, &quot;Med trade rate [€cts/Kwh]&quot;, &quot;Max trade rate [€cts/Kwh]&quot;]
-print(tabulate(last_market_table1, last_market_headers1, tablefmt=&quot;fancy_grid&quot;))
+<span class="n">last_market_headers1</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Markets&quot;</span><span class="p">,</span> <span class="s2">&quot;Total energy traded [kWh]&quot;</span><span class="p">,</span> <span class="s2">&quot;Min trade rate [€cts/Kwh]&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Avg trade rate [€cts/Kwh]&quot;</span><span class="p">,</span> <span class="s2">&quot;Med trade rate [€cts/Kwh]&quot;</span><span class="p">,</span> <span class="s2">&quot;Max trade rate [€cts/Kwh]&quot;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tabulate</span><span class="p">(</span><span class="n">last_market_table1</span><span class="p">,</span> <span class="n">last_market_headers1</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;fancy_grid&quot;</span><span class="p">))</span>
 
-last_market_table2 = []
-for i in range(len(market_names)):
-    keys_list = list(self.total_traded_energy_kWh.keys())
-    ss_values_list = list(self.self_sufficiency.values())
-    sc_values_list = list(self.self_consumption.values())
-    energy_imp_values_list = list(self.import_kWh.values())
-    energy_exp_values_list = list(self.export_kWh.values())
-    last_fee_values_list = list(self.last_market_fee.values())
-    # Print None values as 0
-    ss_values_list = [0 if x is None else x for x in ss_values_list]
-    sc_values_list = [0 if x is None else x for x in sc_values_list]
-    energy_imp_values_list = [0 if x is None else x for x in energy_imp_values_list]
-    energy_exp_values_list = [0 if x is None else x for x in energy_exp_values_list]
-    last_fee_values_list = [0 if x is None else x for x in last_fee_values_list]
+<span class="n">last_market_table2</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">market_names</span><span class="p">)):</span>
+    <span class="n">keys_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_traded_energy_kWh</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">ss_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">self_sufficiency</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">sc_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">self_consumption</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">energy_imp_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">import_kWh</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">energy_exp_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">export_kWh</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">last_fee_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_market_fee</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="c1"># Print None values as 0</span>
+    <span class="n">ss_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ss_values_list</span><span class="p">]</span>
+    <span class="n">sc_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sc_values_list</span><span class="p">]</span>
+    <span class="n">energy_imp_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">energy_imp_values_list</span><span class="p">]</span>
+    <span class="n">energy_exp_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">energy_exp_values_list</span><span class="p">]</span>
+    <span class="n">last_fee_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">last_fee_values_list</span><span class="p">]</span>
 
-    last_market_table2.append([keys_list[i], ss_values_list[i], sc_values_list[i], energy_imp_values_list[i],
-                               energy_exp_values_list[i], last_fee_values_list[i]])
+    <span class="n">last_market_table2</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">keys_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ss_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">sc_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">energy_imp_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                               <span class="n">energy_exp_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">last_fee_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
 
-last_market_headers2 = [&quot;Markets&quot;, &quot;Self sufficiency [%]&quot;, &quot;Self consumption [%]&quot;, &quot;Energy import [kWh]&quot;,
-                        &quot;Energy export [kWh]&quot;, &quot;Last fee [€cts/Kwh]&quot;]
-print(tabulate(last_market_table2, last_market_headers2, tablefmt=&quot;fancy_grid&quot;))
-</code></pre>
+<span class="n">last_market_headers2</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Markets&quot;</span><span class="p">,</span> <span class="s2">&quot;Self sufficiency [%]&quot;</span><span class="p">,</span> <span class="s2">&quot;Self consumption [%]&quot;</span><span class="p">,</span> <span class="s2">&quot;Energy import [kWh]&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Energy export [kWh]&quot;</span><span class="p">,</span> <span class="s2">&quot;Last fee [€cts/Kwh]&quot;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tabulate</span><span class="p">(</span><span class="n">last_market_table2</span><span class="p">,</span> <span class="n">last_market_headers2</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;fancy_grid&quot;</span><span class="p">))</span>
+</code></pre></div>
 
 <p>In the next section, the script applies the grid fee depending on the fee strategy chosen here. If the Time of Use was set, the markets’ grid fee is set based on the ToU excel file. If the Aziiz model was chosen the next fee is defined based on the Aziiz excel file. Additionally, if the peak import/export is higher than all threshold defined in the excel sheets this line sets the next fee as 2000cts/kWh. All the fees are added to the batch command and then executed.</p>
-<pre class="codehilite"><code class="language-python">################################################
-# SET NEW GRID FEE
-################################################
-for area_uuid, area_dict in self.latest_grid_tree_flat.items():
+<div class="codehilite"><pre><span></span><code><span class="c1">################################################</span>
+<span class="c1"># SET NEW GRID FEE</span>
+<span class="c1">################################################</span>
+<span class="k">for</span> <span class="n">area_uuid</span><span class="p">,</span> <span class="n">area_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_grid_tree_flat</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
 
-    if area_dict[&quot;area_name&quot;] in market_names:
-        ###################################################################
-        # TIME OF USE STRATEGY
-        ###################################################################
-        if TimeOfUse:
-            self.next_market_fee[area_dict[&quot;area_name&quot;]] = self.scheduled_fee(self.market_time, planned_fee,
-                                                                              area_dict[&quot;area_name&quot;])
+    <span class="k">if</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">market_names</span><span class="p">:</span>
+        <span class="c1">###################################################################</span>
+        <span class="c1"># TIME OF USE STRATEGY</span>
+        <span class="c1">###################################################################</span>
+        <span class="k">if</span> <span class="n">TimeOfUse</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">next_market_fee</span><span class="p">[</span><span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheduled_fee</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">market_time</span><span class="p">,</span> <span class="n">planned_fee</span><span class="p">,</span>
+                                                                              <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">])</span>
 
-        ###################################################################
-        # AZIIZ STRATEGY
-        ###################################################################
-        if Aziiz:
+        <span class="c1">###################################################################</span>
+        <span class="c1"># AZIIZ STRATEGY</span>
+        <span class="c1">###################################################################</span>
+        <span class="k">if</span> <span class="n">Aziiz</span><span class="p">:</span>
 
-            if moving_average_peak:
-                self.max_ext_energy_kWh = abs(self.balance_hist[area_dict[&quot;area_name&quot;]].iloc[
-                                              -look_back:].mean())  # Calculate the absolute moving average of the net balance by looking back at 4 markets
-            else:
-                self.max_ext_energy_kWh = max(self.import_kWh[area_dict[&quot;area_name&quot;]], self.export_kWh[
-                    area_dict[
-                        &quot;area_name&quot;]])  # Calculate the max between the import and export of the defined market
+            <span class="k">if</span> <span class="n">moving_average_peak</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">max_ext_energy_kWh</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">balance_hist</span><span class="p">[</span><span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span>
+                                              <span class="o">-</span><span class="n">look_back</span><span class="p">:]</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>  <span class="c1"># Calculate the absolute moving average of the net balance by looking back at 4 markets</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">max_ext_energy_kWh</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">import_kWh</span><span class="p">[</span><span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]],</span> <span class="bp">self</span><span class="o">.</span><span class="n">export_kWh</span><span class="p">[</span>
+                    <span class="n">area_dict</span><span class="p">[</span>
+                        <span class="s2">&quot;area_name&quot;</span><span class="p">]])</span>  <span class="c1"># Calculate the max between the import and export of the defined market</span>
 
-            individual_market_prices = pd.read_excel(market_prices, area_dict[&quot;area_name&quot;])  # Select the market in the file
+            <span class="n">individual_market_prices</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">market_prices</span><span class="p">,</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">])</span>  <span class="c1"># Select the market in the file</span>
 
-            for k in range(len(individual_market_prices)):
-                if self.max_ext_energy_kWh &lt;= individual_market_prices[&quot;Threshold&quot;][k]:  # if the peak is lower than this value, the following grid fee will be applied. If the max is higher, it will go to the lower elif condition
-                    self.next_market_fee[area_dict[&quot;area_name&quot;]] = individual_market_prices[&quot;Grid fee&quot;][
-                        k]  # new grid fee
-                    break
-                else:
-                    self.next_market_fee[area_dict[
-                        &quot;area_name&quot;]] = 2000  # TODO set the last value if all the previous ones are not fulfilled
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">individual_market_prices</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_ext_energy_kWh</span> <span class="o">&lt;=</span> <span class="n">individual_market_prices</span><span class="p">[</span><span class="s2">&quot;Threshold&quot;</span><span class="p">][</span><span class="n">k</span><span class="p">]:</span>  <span class="c1"># if the peak is lower than this value, the following grid fee will be applied. If the max is higher, it will go to the lower elif condition</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">next_market_fee</span><span class="p">[</span><span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">individual_market_prices</span><span class="p">[</span><span class="s2">&quot;Grid fee&quot;</span><span class="p">][</span>
+                        <span class="n">k</span><span class="p">]</span>  <span class="c1"># new grid fee</span>
+                    <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">next_market_fee</span><span class="p">[</span><span class="n">area_dict</span><span class="p">[</span>
+                        <span class="s2">&quot;area_name&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">2000</span>  <span class="c1"># TODO set the last value if all the previous ones are not fulfilled</span>
 
-        self.add_to_batch_commands.grid_fees(area_uuid=area_uuid,fee_cents_kwh=self.next_market_fee[area_dict[&quot;area_name&quot;]])
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_to_batch_commands</span><span class="o">.</span><span class="n">grid_fees</span><span class="p">(</span><span class="n">area_uuid</span><span class="o">=</span><span class="n">area_uuid</span><span class="p">,</span><span class="n">fee_cents_kwh</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">next_market_fee</span><span class="p">[</span><span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]])</span>
 
-next_fee_response = self.execute_batch_commands()  # send batch command
-</code></pre>
+<span class="n">next_fee_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute_batch_commands</span><span class="p">()</span>  <span class="c1"># send batch command</span>
+</code></pre></div>
 
 <p>In the following lines, the script is printing the current fee and next fee for each market.</p>
 <p><img alt="alt_text" src="../img/grid-operator-api-6.png" /></p>
-<pre class="codehilite"><code class="language-python">print()
-        print('CURRENT AND NEXT MARKET FEES')
+<div class="codehilite"><pre><span></span><code><span class="nb">print</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;CURRENT AND NEXT MARKET FEES&#39;</span><span class="p">)</span>
 
-        current_market_table = []
-        for i in range(len(market_names)):
-            keys_list = list(self.current_market_fee.keys())
-            current_fee_values_list = list(self.current_market_fee.values())
-            next_fee_values_list = list(self.next_market_fee.values())
+        <span class="n">current_market_table</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">market_names</span><span class="p">)):</span>
+            <span class="n">keys_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_market_fee</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="n">current_fee_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_market_fee</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="n">next_fee_values_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">next_market_fee</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
 
-            current_fee_values_list = [0 if x is None else x for x in current_fee_values_list]
-            next_fee_values_list = [0 if x is None else x for x in next_fee_values_list]
+            <span class="n">current_fee_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">current_fee_values_list</span><span class="p">]</span>
+            <span class="n">next_fee_values_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">next_fee_values_list</span><span class="p">]</span>
 
-            current_market_table.append([keys_list[i], current_fee_values_list[i], next_fee_values_list[i]])
+            <span class="n">current_market_table</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">keys_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">current_fee_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">next_fee_values_list</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
 
-        current_market_headers = [&quot;Markets&quot;, &quot;Current fee [€cts/kWh]&quot;, &quot;Next fee [€cts/kWh]&quot;]
-        print(tabulate(current_market_table, current_market_headers, tablefmt=&quot;fancy_grid&quot;))
-</code></pre>
+        <span class="n">current_market_headers</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Markets&quot;</span><span class="p">,</span> <span class="s2">&quot;Current fee [€cts/kWh]&quot;</span><span class="p">,</span> <span class="s2">&quot;Next fee [€cts/kWh]&quot;</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">tabulate</span><span class="p">(</span><span class="n">current_market_table</span><span class="p">,</span> <span class="n">current_market_headers</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;fancy_grid&quot;</span><span class="p">))</span>
+</code></pre></div>
 
 <p>Later, the on_event_or_response is overwritten. By default we do not perform any operation in this event but the user could add some if needed. For instance the user could record all the grid fee change responses received in that event.</p>
-<pre class="codehilite"><code class="language-python">################################################
-# TRIGGERS EACH COMMAND RESPONSE AND EVENT
-################################################
-def on_event_or_response(self, message):
-    # print(&quot;message&quot;,message)
-    pass
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="c1">################################################</span>
+<span class="c1"># TRIGGERS EACH COMMAND RESPONSE AND EVENT</span>
+<span class="c1">################################################</span>
+<span class="k">def</span> <span class="nf">on_event_or_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+    <span class="c1"># print(&quot;message&quot;,message)</span>
+    <span class="k">pass</span>
+</code></pre></div>
 
 <p>Lastly, the SDK Script overwrites the on_finish event so that whenever the function is triggered the script stops. If the user wishes to save some information recorded within the Exchange SDK this would be the opportunity to export them to external files.</p>
-<pre class="codehilite"><code class="language-python">################################################
-# SIMULATION TERMINATION CONDITION
-################################################
-def on_finish(self, finish_info):
-    # TODO export relevant information stored during the simulation (if needed)
-    self.is_finished = True
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="c1">################################################</span>
+<span class="c1"># SIMULATION TERMINATION CONDITION</span>
+<span class="c1">################################################</span>
+<span class="k">def</span> <span class="nf">on_finish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">finish_info</span><span class="p">):</span>
+    <span class="c1"># TODO export relevant information stored during the simulation (if needed)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span> <span class="o">=</span> <span class="kc">True</span>
+</code></pre></div>
 
 <p>The rest of the script is used to connect to a running simulation/collaboration/Canary Test Network. These lines should work as is and no changes are required.</p>
-<pre class="codehilite"><code class="language-python">################################################
-# REGISTER FOR MARKETS
-################################################
-def get_assets_name(indict: dict) -&gt; dict:
-    &quot;&quot;&quot;
-    This function is used to parse the grid tree and returned all registered assets
-    wrapper for _get_assets_name
-    &quot;&quot;&quot;
-    if indict == {}:
-        return {}
-    outdict = {&quot;Area&quot;: [], &quot;Load&quot;: [], &quot;PV&quot;: [], &quot;Storage&quot;: []}
-    _get_assets_name(indict, outdict)
-    return outdict
+<div class="codehilite"><pre><span></span><code><span class="c1">################################################</span>
+<span class="c1"># REGISTER FOR MARKETS</span>
+<span class="c1">################################################</span>
+<span class="k">def</span> <span class="nf">get_assets_name</span><span class="p">(</span><span class="n">indict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function is used to parse the grid tree and returned all registered assets</span>
+<span class="sd">    wrapper for _get_assets_name</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">indict</span> <span class="o">==</span> <span class="p">{}:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+    <span class="n">outdict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Area&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;Load&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;PV&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;Storage&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+    <span class="n">_get_assets_name</span><span class="p">(</span><span class="n">indict</span><span class="p">,</span> <span class="n">outdict</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">outdict</span>
 
 
-def _get_assets_name(indict: dict, outdict: dict):
-    &quot;&quot;&quot;
-    Parse the collaboration / Canary Network registry
-    Returns a list of the Market, Load, PV and Storage nodes the user is registered to
-    &quot;&quot;&quot;
-    for key, value in indict.items():
-        if key == &quot;name&quot;:
-            name = value
-        if key == &quot;type&quot;:
-            area_type = value
-        if key == &quot;registered&quot; and value:
-            outdict[area_type].append(name)
-        if 'children' in key:
-            for children in indict[key]:
-                _get_assets_name(children, outdict)
+<span class="k">def</span> <span class="nf">_get_assets_name</span><span class="p">(</span><span class="n">indict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">outdict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse the collaboration / Canary Network registry</span>
+<span class="sd">    Returns a list of the Market, Load, PV and Storage nodes the user is registered to</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">indict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span>
+            <span class="n">area_type</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;registered&quot;</span> <span class="ow">and</span> <span class="n">value</span><span class="p">:</span>
+            <span class="n">outdict</span><span class="p">[</span><span class="n">area_type</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;children&#39;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">children</span> <span class="ow">in</span> <span class="n">indict</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                <span class="n">_get_assets_name</span><span class="p">(</span><span class="n">children</span><span class="p">,</span> <span class="n">outdict</span><span class="p">)</span>
 
 
-# Code to create the market aggregator and connect to the relevant simulation. Keep it as is
-if os.environ[&quot;API_CLIENT_RUN_ON_REDIS&quot;] == &quot;true&quot;:
-    MarketClient = RedisMarketClient
-    market_args = {&quot;autoregister&quot;: True}
-    aggr = Oracle(aggregator_name=oracle_name)
+<span class="c1"># Code to create the market aggregator and connect to the relevant simulation. Keep it as is</span>
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;API_CLIENT_RUN_ON_REDIS&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;true&quot;</span><span class="p">:</span>
+    <span class="n">MarketClient</span> <span class="o">=</span> <span class="n">RedisMarketClient</span>
+    <span class="n">market_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;autoregister&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+    <span class="n">aggr</span> <span class="o">=</span> <span class="n">Oracle</span><span class="p">(</span><span class="n">aggregator_name</span><span class="o">=</span><span class="n">oracle_name</span><span class="p">)</span>
 
-else:
-    MarketClient = RestMarketClient
-    simulation_id = os.environ[&quot;API_CLIENT_SIMULATION_ID&quot;]
-    domain_name = os.environ[&quot;API_CLIENT_DOMAIN_NAME&quot;]
-    websockets_domain_name = os.environ[&quot;API_CLIENT_WEBSOCKET_DOMAIN_NAME&quot;]
-    market_args = {&quot;simulation_id&quot;: simulation_id,
-                   &quot;domain_name&quot;: domain_name, &quot;websockets_domain_name&quot;: websockets_domain_name}
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">MarketClient</span> <span class="o">=</span> <span class="n">RestMarketClient</span>
+    <span class="n">simulation_id</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;API_CLIENT_SIMULATION_ID&quot;</span><span class="p">]</span>
+    <span class="n">domain_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;API_CLIENT_DOMAIN_NAME&quot;</span><span class="p">]</span>
+    <span class="n">websockets_domain_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;API_CLIENT_WEBSOCKET_DOMAIN_NAME&quot;</span><span class="p">]</span>
+    <span class="n">market_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;simulation_id&quot;</span><span class="p">:</span> <span class="n">simulation_id</span><span class="p">,</span>
+                   <span class="s2">&quot;domain_name&quot;</span><span class="p">:</span> <span class="n">domain_name</span><span class="p">,</span> <span class="s2">&quot;websockets_domain_name&quot;</span><span class="p">:</span> <span class="n">websockets_domain_name</span><span class="p">}</span>
 
-    aggr = Oracle(aggregator_name=oracle_name, **market_args)
-    if automatic:
-        registry = aggr.get_configuration_registry()
-        market_names = get_assets_name(registry)[&quot;Area&quot;]
+    <span class="n">aggr</span> <span class="o">=</span> <span class="n">Oracle</span><span class="p">(</span><span class="n">aggregator_name</span><span class="o">=</span><span class="n">oracle_name</span><span class="p">,</span> <span class="o">**</span><span class="n">market_args</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">automatic</span><span class="p">:</span>
+        <span class="n">registry</span> <span class="o">=</span> <span class="n">aggr</span><span class="o">.</span><span class="n">get_configuration_registry</span><span class="p">()</span>
+        <span class="n">market_names</span> <span class="o">=</span> <span class="n">get_assets_name</span><span class="p">(</span><span class="n">registry</span><span class="p">)[</span><span class="s2">&quot;Area&quot;</span><span class="p">]</span>
 
-market_prices, planned_fee = fee_strategy()
+<span class="n">market_prices</span><span class="p">,</span> <span class="n">planned_fee</span> <span class="o">=</span> <span class="n">fee_strategy</span><span class="p">()</span>
 
-print()
-print('Connecting to markets ...')
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Connecting to markets ...&#39;</span><span class="p">)</span>
 
-for i in market_names:
-    if os.environ[&quot;API_CLIENT_RUN_ON_REDIS&quot;] == &quot;true&quot;:
-        market_registered = RedisMarketClient(area_id=i)
-    else:
-        market_uuid = get_area_uuid_from_area_name_and_collaboration_id(market_args[&quot;simulation_id&quot;], i, market_args[&quot;domain_name&quot;])
-        market_args[&quot;area_id&quot;] = market_uuid
-        market_registered = RestMarketClient(**market_args)
-    selected = market_registered.select_aggregator(aggr.aggregator_uuid)
-    print(&quot;----&gt; Connected to &quot;, i)
-    sleep(0.3)
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">market_names</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;API_CLIENT_RUN_ON_REDIS&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;true&quot;</span><span class="p">:</span>
+        <span class="n">market_registered</span> <span class="o">=</span> <span class="n">RedisMarketClient</span><span class="p">(</span><span class="n">area_id</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">market_uuid</span> <span class="o">=</span> <span class="n">get_area_uuid_from_area_name_and_collaboration_id</span><span class="p">(</span><span class="n">market_args</span><span class="p">[</span><span class="s2">&quot;simulation_id&quot;</span><span class="p">],</span> <span class="n">i</span><span class="p">,</span> <span class="n">market_args</span><span class="p">[</span><span class="s2">&quot;domain_name&quot;</span><span class="p">])</span>
+        <span class="n">market_args</span><span class="p">[</span><span class="s2">&quot;area_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">market_uuid</span>
+        <span class="n">market_registered</span> <span class="o">=</span> <span class="n">RestMarketClient</span><span class="p">(</span><span class="o">**</span><span class="n">market_args</span><span class="p">)</span>
+    <span class="n">selected</span> <span class="o">=</span> <span class="n">market_registered</span><span class="o">.</span><span class="n">select_aggregator</span><span class="p">(</span><span class="n">aggr</span><span class="o">.</span><span class="n">aggregator_uuid</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;----&gt; Connected to &quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+    <span class="n">sleep</span><span class="p">(</span><span class="mf">0.3</span><span class="p">)</span>
 
-print(aggr.device_uuid_list)
+<span class="nb">print</span><span class="p">(</span><span class="n">aggr</span><span class="o">.</span><span class="n">device_uuid_list</span><span class="p">)</span>
 
-# loop to allow persistence
-while not aggr.is_finished:
-    sleep(0.5)
-</code></pre>
+<span class="c1"># loop to allow persistence</span>
+<span class="k">while</span> <span class="ow">not</span> <span class="n">aggr</span><span class="o">.</span><span class="n">is_finished</span><span class="p">:</span>
+    <span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+</code></pre></div>
 
 <p>For a video tutorial on the Grid Operator API, please follow this <a href="https://www.youtube.com/embed/LoYoyIy-C7M">link</a>.</p>
 <iframe width="560" height="315" src="https://www.youtube.com/embed/LoYoyIy-C7M" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

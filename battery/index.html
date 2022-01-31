@@ -510,18 +510,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
-      Data Requirements and File Upload Format
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../community-settings/" title="Community Settings" class="md-nav__link">
       Community Settings
     </a>
@@ -559,13 +547,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-7" type="checkbox" id="nav-2-1-7">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-6" type="checkbox" id="nav-2-1-6">
     
-    <label class="md-nav__link" for="nav-2-1-7">
+    <label class="md-nav__link" for="nav-2-1-6">
       Results and Analysis
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
-      <label class="md-nav__title" for="nav-2-1-7">
+      <label class="md-nav__title" for="nav-2-1-6">
         Results and Analysis
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -902,6 +890,18 @@
         
       </ul>
     </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
+      Data Requirements and File Upload Format
+    </a>
   </li>
 
         
@@ -1838,8 +1838,8 @@
 <li>Update interval - Users can choose the frequency at which the rate is updated.</li>
 <li>Capacity based method - If activated, energy will be sold at lower prices during high state of charge - SOC (when the battery has more energy stored) and at higher prices during low SOC (when the battery can afford to sell its stored energy for less). If chosen, the offer price for the storage is calculated according to:</li>
 </ol>
-<pre class="codehilite"><code>offer_rate = initial_selling_rate - ((initial_selling_rate - final_selling_rate)\*soc/100)
-</code></pre>
+<div class="codehilite"><pre><span></span><code>offer_rate = initial_selling_rate - ((initial_selling_rate - final_selling_rate)\*soc/100)
+</code></pre></div>
 
 <p>As an example, considering an initial_selling_rate of 30 cents/kWh and a final_selling_rate of 20 cents/kWh, a storage with an SOC of 1% would sell its energy at 29.9 cents/kWh, and a battery at 100% SOC would sell its energy at 20 cents/kWh.
 The storage can trade energy based on a capacity dependent sell price (see this page for more information).</p>

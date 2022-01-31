@@ -463,18 +463,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
-      Data Requirements and File Upload Format
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../community-settings/" title="Community Settings" class="md-nav__link">
       Community Settings
     </a>
@@ -512,13 +500,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-7" type="checkbox" id="nav-2-1-7">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-6" type="checkbox" id="nav-2-1-6">
     
-    <label class="md-nav__link" for="nav-2-1-7">
+    <label class="md-nav__link" for="nav-2-1-6">
       Results and Analysis
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
-      <label class="md-nav__title" for="nav-2-1-7">
+      <label class="md-nav__title" for="nav-2-1-6">
         Results and Analysis
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -855,6 +843,18 @@
         
       </ul>
     </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-nav__link">
+      Data Requirements and File Upload Format
+    </a>
   </li>
 
         
@@ -1781,13 +1781,13 @@
 <p><img alt="alt_text" src="../img/model-market-1.png" style="height:450px;width:275px" /></p>
 <h2 id="backend-configuration">Backend configuration<a class="headerlink" href="#backend-configuration" title="Permanent link">&para;</a></h2>
 <p>These parameters can be set in the backend in the Area / Market class :</p>
-<pre class="codehilite"><code class="language-python">Area('Market',
-                         [
-... &quot;some assets here&quot;
-                         ],
-grid_fee_constant=2,
-throughput=ThroughputParameters(import_capacity_kVA=2.0, export_capacity_kVA=2.0, baseline_peak_energy_import_kWh=0.4, baseline_peak_energy_export_kWh=0.4))
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="n">Area</span><span class="p">(</span><span class="s1">&#39;Market&#39;</span><span class="p">,</span>
+                         <span class="p">[</span>
+<span class="o">...</span> <span class="s2">&quot;some assets here&quot;</span>
+                         <span class="p">],</span>
+<span class="n">grid_fee_constant</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="n">throughput</span><span class="o">=</span><span class="n">ThroughputParameters</span><span class="p">(</span><span class="n">import_capacity_kVA</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">export_capacity_kVA</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">baseline_peak_energy_import_kWh</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">baseline_peak_energy_export_kWh</span><span class="o">=</span><span class="mf">0.4</span><span class="p">))</span>
+</code></pre></div>
                 
                   
                 
