@@ -20,18 +20,18 @@ import os
 import time
 import traceback
 from logging import getLogger
+from typing import Dict, TYPE_CHECKING, Optional
+
+from gsy_framework.constants_limits import HeartBeat, ConstSettings
+from gsy_framework.exceptions import GSyException
+from gsy_framework.results_validator import results_validator  # NOQA
+from gsy_framework.utils import RepeatingTimer
 from redis import StrictRedis
 from redis.exceptions import ConnectionError
 from rq import get_current_job
 from rq.exceptions import NoSuchJobError
-from typing import Dict, TYPE_CHECKING, Optional
 
 import gsy_e.constants
-from gsy_framework.results_validator import results_validator  # NOQA
-from gsy_framework.constants_limits import HeartBeat, EXCHANGE_ERROR_CHANNEL
-from gsy_framework.utils import RepeatingTimer
-from gsy_framework.exceptions import GSyException
-
 
 log = getLogger(__name__)
 
@@ -202,4 +202,5 @@ class RedisSimulationCommunication:
 
 def publish_job_error_output(job_id, traceback):
     StrictRedis.from_url(REDIS_URL).\
-        publish(EXCHANGE_ERROR_CHANNEL, json.dumps({"job_id": job_id, "errors": traceback}))
+        publish(ConstSettings.GeneralSettings.EXCHANGE_ERROR_CHANNEL,
+                json.dumps({"job_id": job_id, "errors": traceback}))
