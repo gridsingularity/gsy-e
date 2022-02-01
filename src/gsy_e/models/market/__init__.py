@@ -171,8 +171,8 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
         self._update_min_max_avg_trade_prices(order.energy_rate)
 
     def _update_accumulated_trade_price_energy(self, trade: Trade):
-        self.accumulated_trade_price += trade.offer_bid.price
-        self.accumulated_trade_energy += trade.offer_bid.energy
+        self.accumulated_trade_price += trade.trade_price
+        self.accumulated_trade_energy += trade.traded_energy
 
     def _update_min_max_avg_trade_prices(self, price):
         self.max_trade_price = round(
@@ -239,22 +239,22 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
     def bought_energy(self, buyer: str) -> float:
         """Return the aggregated bought energy value by the passed-in buyer."""
 
-        return sum(trade.offer_bid.energy for trade in self.trades if trade.buyer == buyer)
+        return sum(trade.traded_energy for trade in self.trades if trade.buyer == buyer)
 
     def sold_energy(self, seller: str) -> float:
         """Return the aggregated sold energy value by the passed-in seller."""
 
-        return sum(trade.offer_bid.energy for trade in self.trades if trade.seller == seller)
+        return sum(trade.traded_energy for trade in self.trades if trade.seller == seller)
 
     def total_spent(self, buyer: str) -> float:
         """Return the aggregated money spent by the passed-in buyer."""
 
-        return sum(trade.offer_bid.price for trade in self.trades if trade.buyer == buyer)
+        return sum(trade.trade_price for trade in self.trades if trade.buyer == buyer)
 
     def total_earned(self, seller: str) -> float:
         """Return the aggregated money earned by the passed-in seller."""
 
-        return sum(trade.offer_bid.price for trade in self.trades if trade.seller == seller)
+        return sum(trade.trade_price for trade in self.trades if trade.seller == seller)
 
     @property
     def info(self) -> Dict:

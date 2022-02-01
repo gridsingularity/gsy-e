@@ -510,8 +510,8 @@ class ExternalMixin:
                                    "asset_id": self.device.uuid,
                                    "trade_id": trade.id,
                                    "time": trade.creation_time.isoformat(),
-                                   "trade_price": trade.offer_bid.price,
-                                   "traded_energy": trade.offer_bid.energy,
+                                   "trade_price": trade.trade_price,
+                                   "traded_energy": trade.traded_energy,
                                    "total_fee": trade.fee_price,
                                    "local_market_fee":
                                        self.area.current_market.fee_class.grid_fee_rate
@@ -541,8 +541,8 @@ class ExternalMixin:
                                    "event": "trade",
                                    "trade_id": trade.id,
                                    "time": trade.creation_time.isoformat(),
-                                   "trade_price": trade.offer_bid.price,
-                                   "traded_energy": trade.offer_bid.energy,
+                                   "trade_price": trade.trade_price,
+                                   "traded_energy": trade.traded_energy,
                                    "fee_price": trade.fee_price,
                                    "area_uuid": self.device.uuid,
                                    "seller": trade.seller

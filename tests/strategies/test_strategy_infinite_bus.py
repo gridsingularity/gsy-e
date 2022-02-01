@@ -127,7 +127,8 @@ class FakeMarket:
         offer = offer_or_id
         trade = Trade("trade_id", time, offer, offer.seller, buyer,
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
-                      buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
+                      buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
+                      traded_energy=1, trade_price=1)
         self.traded_offers.append(trade)
         return trade
 
@@ -243,8 +244,8 @@ def test_event_trade(area_test2, bus_test2):
                                              creation_time="time",
                                              offer_bid=traded_offer,
                                              seller="FakeArea",
-                                             buyer="buyer"
-                                             )
+                                             buyer="buyer",
+                                             traded_energy=1, trade_price=1)
                                  )
     assert len(area_test2.test_market.created_offers) == 1
     assert area_test2.test_market.created_offers[-1].energy == sys.maxsize
@@ -285,7 +286,8 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, bus_test2):
                                              creation_time="time",
                                              offer_bid=original_offer,
                                              seller="FakeArea",
-                                             buyer="buyer")
+                                             buyer="buyer",
+                                             traded_energy=1, trade_price=1)
                                  )
 
     assert residual_offer in bus_test2.offers.posted
@@ -336,7 +338,7 @@ def testing_event_tick_buy_energy(bus_test4, area_test1):
     bus_test4.event_activate()
     bus_test4.event_tick()
     assert len(area_test1.test_market.traded_offers) == 1
-    assert area_test1.test_market.traded_offers[-1].offer_bid.energy == 1
+    assert area_test1.test_market.traded_offers[-1].traded_energy == 1
 
 
 def testing_event_market_cycle_posting_bids(bus_test4, area_test1):

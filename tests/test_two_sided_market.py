@@ -278,8 +278,8 @@ class TestTwoSidedMarket:
         assert trade
         assert trade.id == market.trades[0].id
         assert trade.id
-        assert trade.offer_bid.price == bid.price
-        assert trade.offer_bid.energy == bid.energy
+        assert trade.trade_price == bid.price
+        assert trade.traded_energy == bid.energy
         assert trade.seller == "B"
         assert trade.buyer == "A"
         assert not trade.residual
@@ -304,8 +304,8 @@ class TestTwoSidedMarket:
         assert trade.id == market.trades[0].id
         assert trade.id
         assert trade.offer_bid is not bid
-        assert trade.offer_bid.energy == 5
-        assert trade.offer_bid.price == 5
+        assert trade.traded_energy == 5
+        assert trade.trade_price == 5
         assert trade.seller == "B"
         assert trade.buyer == "A"
         assert trade.residual
@@ -361,7 +361,7 @@ class TestTwoSidedMarket:
         trade_offer_info = TradeBidOfferInfo(2, 2, 1, 1, 2)
         trade = market.accept_bid(bid, energy=1, seller="seller",
                                   trade_offer_info=trade_offer_info)
-        assert trade.offer_bid.id == bid.id and trade.offer_bid.energy == 1
+        assert trade.offer_bid.id == bid.id and trade.traded_energy == 1
 
     @staticmethod
     @pytest.mark.parametrize("offer, bid, mcp_rate, mcp_energy", [
@@ -420,9 +420,11 @@ class TestTwoSidedMarket:
                 time_slot="").serializable_dict()
         ]
         offer_trade = Trade("trade", 1, Offer("offer_id", pendulum.now(), 1, 1, "S"), "S", "B",
-                            residual=Offer("residual_offer", pendulum.now(), 0.5, 0.5, "S"))
+                            residual=Offer("residual_offer", pendulum.now(), 0.5, 0.5, "S"),
+                            traded_energy=1, trade_price=1)
         bid_trade = Trade("bid_trade", 1, Bid("bid_id2", pendulum.now(), 1, 1, "S"), "S", "B",
-                          residual=Bid("residual_bid_2", pendulum.now(), 1, 1, "S"))
+                          residual=Bid("residual_bid_2", pendulum.now(), 1, 1, "S"),
+                          traded_energy=1, trade_price=1)
         matches = TwoSidedMarket._replace_offers_bids_with_residual_in_recommendations_list(
             matches, offer_trade, bid_trade
         )
