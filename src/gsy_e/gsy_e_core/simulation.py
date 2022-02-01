@@ -99,7 +99,7 @@ class Simulation:
 
         self.setup_module_name = setup_module_name
         self.is_stopped = False
-        self._incremental_slots = incremental
+        self._is_incremental = incremental
         self.live_events = LiveEvents(self.simulation_config)
         self.kafka_connection = kafka_connection_factory()
         self.redis_connection = RedisSimulationCommunication(self, redis_job_id, self.live_events)
@@ -393,7 +393,7 @@ class Simulation:
                 log.info("Received stop command.")
                 sleep(5)
                 break
-            if self._incremental_slots:
+            if self._is_incremental:
                 self.paused = True
 
         self.sim_status = "finished"
