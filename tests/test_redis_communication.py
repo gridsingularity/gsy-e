@@ -256,7 +256,7 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
         now = datetime(2021, 11, 3, 10, 45)
         offer = Offer("1", now, 2, 3, "A")
         trade = Trade("2", now.add(minutes=1), Offer("accepted", now, 7, 8, "Z"), "B", "C",
-                      None, None, TradeBidOfferInfo(None, None, None, None, None))
+                      3, 2, None, None, TradeBidOfferInfo(None, None, None, None, None))
         new_offer = Offer("3", now, 4, 5, "D")
         existing_offer = Offer("4", now, 5, 6, "E")
         kwargs = {"offer": offer,

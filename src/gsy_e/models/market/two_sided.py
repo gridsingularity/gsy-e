@@ -23,6 +23,7 @@ from typing import Dict, List, Union, Tuple, Optional
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo, BidOfferMatch
+from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.matching_algorithms.requirements_validators import RequirementsSatisfiedChecker
 from pendulum import DateTime
 
@@ -240,7 +241,8 @@ class TwoSidedMarket(OneSidedMarket):
         )
 
         trade = Trade(str(uuid.uuid4()), self.now, bid, seller,
-                      buyer, residual_bid, already_tracked=already_tracked,
+                      buyer, traded_energy=energy, trade_price=trade_price,
+                      residual=residual_bid, already_tracked=already_tracked,
                       offer_bid_trade_info=updated_bid_trade_info,
                       buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
                       fee_price=fee_price, seller_origin_id=seller_origin_id,
@@ -292,8 +294,7 @@ class TwoSidedMarket(OneSidedMarket):
             market_offer = self.offers.get(recommended_pair.offer["id"])
             market_bid = self.bids.get(recommended_pair.bid["id"])
             try:
-                self.validate_bid_offer_match(
-                    recommended_pair)
+                self.validate_bid_offer_match(recommended_pair)
             except InvalidBidOfferPairException as invalid_bop_exception:
                 # TODO: Refactor this. The behaviour of the market should not be dependant
                 #  on a matching algorithm setting
@@ -302,15 +303,20 @@ class TwoSidedMarket(OneSidedMarket):
                     raise invalid_bop_exception
                 continue
             original_bid_rate = market_bid.original_price / market_bid.energy
+            if ConstSettings.MASettings.BID_OFFER_MATCH_TYPE == BidOfferMatchAlgoEnum.PAY_AS_BID:
+                trade_rate = original_bid_rate
+            else:
+                trade_rate = self.fee_class.calculate_original_trade_rate_from_clearing_rate(
+                    original_bid_rate, market_bid.energy_rate, recommended_pair.trade_rate)
             trade_bid_info = TradeBidOfferInfo(
                 original_bid_rate=original_bid_rate,
                 propagated_bid_rate=market_bid.energy_rate,
                 original_offer_rate=market_offer.original_price / market_offer.energy,
                 propagated_offer_rate=market_offer.energy_rate,
-                trade_rate=original_bid_rate)
+                trade_rate=trade_rate)
 
             bid_trade, offer_trade = self.accept_bid_offer_pair(
-                market_bid, market_offer, recommended_pair.trade_rate,
+                market_bid, market_offer, trade_rate,
                 trade_bid_info, min(recommended_pair.selected_energy,
                                     market_offer.energy, market_bid.energy))
             were_trades_performed = True

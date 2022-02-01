@@ -635,7 +635,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
     def _assert_if_trade_offer_price_is_too_low(self, market_id: str, trade: Trade) -> None:
         if trade.is_offer_trade and trade.offer_bid.seller == self.owner.name:
             offer = [o for o in self.offers.sold[market_id] if o.id == trade.offer_bid.id][0]
-            assert (trade.offer_bid.energy_rate >=
+            assert (trade.trade_rate >=
                     offer.energy_rate - FLOATING_POINT_TOLERANCE)
 
     # pylint: disable=too-many-arguments
@@ -984,4 +984,4 @@ class BidEnabledStrategy(BaseStrategy):
         """
         if trade.is_bid_trade and trade.offer_bid.buyer == self.owner.name:
             bid = [bid for bid in self.get_posted_bids(market) if bid.id == trade.offer_bid.id][0]
-            assert trade.offer_bid.energy_rate <= bid.energy_rate + FLOATING_POINT_TOLERANCE
+            assert trade.trade_rate <= bid.energy_rate + FLOATING_POINT_TOLERANCE

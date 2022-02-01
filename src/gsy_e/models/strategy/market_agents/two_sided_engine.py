@@ -128,7 +128,7 @@ class TwoSidedEngine(MAEngine):
         if bid_trade.offer_bid.id == bid_info.target_bid.id:
             # Bid was traded in target market, buy in source
             market_bid = self.markets.source.bids[bid_info.source_bid.id]
-            assert bid_trade.offer_bid.energy <= market_bid.energy, \
+            assert bid_trade.traded_energy <= market_bid.energy, \
                 "Traded bid on target market has more energy than the market bid."
 
             source_rate = bid_info.source_bid.energy_rate
@@ -136,7 +136,7 @@ class TwoSidedEngine(MAEngine):
             assert abs(source_rate) + FLOATING_POINT_TOLERANCE >= abs(target_rate), \
                 f"bid: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
-            trade_rate = (bid_trade.offer_bid.price/bid_trade.offer_bid.energy)
+            trade_rate = (bid_trade.trade_price/bid_trade.traded_energy)
 
             if bid_trade.offer_bid_trade_info is not None:
                 # Adapt trade_offer_info received by the trade to include source market grid fees,
@@ -154,7 +154,7 @@ class TwoSidedEngine(MAEngine):
                 )
             self.markets.source.accept_bid(
                 bid=market_bid,
-                energy=bid_trade.offer_bid.energy,
+                energy=bid_trade.traded_energy,
                 seller=self.owner.name,
                 already_tracked=False,
                 trade_rate=trade_rate,
