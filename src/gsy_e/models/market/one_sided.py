@@ -310,7 +310,8 @@ class OneSidedMarket(MarketBase):
         offer_bid_trade_info = self.fee_class.propagate_original_bid_info_on_offer_trade(
             trade_original_info=trade_bid_info)
 
-        trade = Trade(trade_id, self.now, offer, offer.seller, buyer, residual_offer,
+        trade = Trade(trade_id, self.now, offer, offer.seller, buyer,
+                      traded_energy=energy, trade_price=trade_price, residual=residual_offer,
                       offer_bid_trade_info=offer_bid_trade_info,
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
                       fee_price=fee_price, buyer_origin_id=buyer_origin_id,

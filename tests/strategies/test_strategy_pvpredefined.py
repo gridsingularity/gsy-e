@@ -154,6 +154,8 @@ class FakeTrade:
     def __init__(self, offer):
         self.offer_bid = offer
         self.seller = "FakeSeller"
+        self.traded_energy = offer.energy
+        self.trade_price = offer.price
 
     @property
     def is_offer_trade(self):
@@ -162,6 +164,10 @@ class FakeTrade:
     @property
     def buyer(self):
         return "FakeBuyer"
+
+    @property
+    def trade_rate(self):
+        return self.offer_bid.energy_rate
 
 
 """TEST1"""

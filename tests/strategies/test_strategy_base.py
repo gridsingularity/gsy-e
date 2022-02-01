@@ -113,6 +113,7 @@ class FakeMarket:
             energy = offer.energy
         offer.energy = energy
         return Trade("trade", 0, offer, offer.seller, "FakeOwner",
+                     traded_energy=offer.energy, trade_price=offer.price,
                      seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
                      buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
 
@@ -194,7 +195,8 @@ def test_offers_partial_offer(offer1, offers3):
     accepted_offer = Offer("id", pendulum.now(), 1, 0.6, offer1.seller, "market")
     residual_offer = Offer("new_id", pendulum.now(), 1, 1.2, offer1.seller, "market")
     offers3.on_offer_split(offer1, accepted_offer, residual_offer, "market")
-    trade = Trade("trade_id", pendulum.now(tz=TIME_ZONE), accepted_offer, offer1.seller, "buyer")
+    trade = Trade("trade_id", pendulum.now(tz=TIME_ZONE), accepted_offer, offer1.seller, "buyer",
+                  traded_energy=0.6, trade_price=1)
     offers3.on_trade("market", trade)
     assert len(offers3.sold_in_market("market")) == 1
     assert accepted_offer in offers3.sold_in_market("market")

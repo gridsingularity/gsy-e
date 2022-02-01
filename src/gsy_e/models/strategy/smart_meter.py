@@ -269,7 +269,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         else:
             self._assert_if_trade_offer_price_is_too_low(market_id, trade)
             self.state.decrement_available_energy(
-                trade.offer_bid.energy, market.time_slot, self.owner.name)
+                trade.traded_energy, market.time_slot, self.owner.name)
 
     def event_bid_traded(self, *, market_id, bid_trade):
         """Register the bid traded by the device. Extends the superclass method.
@@ -283,7 +283,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
 
         market = self.area.get_spot_or_future_market_by_id(market_id)
         self.state.decrement_energy_requirement(
-            bid_trade.offer_bid.energy * 1000, market.time_slot, self.owner.name)
+            bid_trade.traded_energy * 1000, market.time_slot, self.owner.name)
 
     def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments.

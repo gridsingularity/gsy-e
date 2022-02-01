@@ -131,8 +131,8 @@ class FakeMarket:
         self.count = count
         self.id = str(count)
         self.trade = Trade('id', 'time', Offer('id', now(), 11.8, 0.5, 'FakeArea'),
-                           'FakeArea', 'buyer', time_slot=self.time_slot
-                           )
+                           'FakeArea', 'buyer', time_slot=self.time_slot,
+                           traded_energy=0.5, trade_price=11.8)
         self.created_offers = []
         self.offers = {'id': Offer('id', now(), 11.8, 0.5, 'FakeArea'),
                        'id2': Offer('id2', now(), 20, 0.5, 'A'),
@@ -727,9 +727,9 @@ def test_storage_event_trade(storage_strategy_test11, market_test13):
     storage_strategy_test11.event_offer_traded(market_id=market_test13.id,
                                                trade=market_test13.trade)
     assert storage_strategy_test11.state.pledged_sell_kWh[market_test13.time_slot] == \
-        market_test13.trade.offer_bid.energy
+        market_test13.trade.traded_energy
     assert storage_strategy_test11.state.offered_sell_kWh[
-               market_test13.time_slot] == -market_test13.trade.offer_bid.energy
+               market_test13.time_slot] == -market_test13.trade.traded_energy
 
 
 def test_balancing_offers_are_not_created_if_device_not_in_registry(
@@ -847,7 +847,8 @@ def test_energy_origin(storage_strategy_test15, market_test15):
     offer = Offer('id', now(), 20, 1.0, 'OtherChildArea')
     storage_strategy_test15._try_to_buy_offer(offer, current_market, 21)
     storage_strategy_test15.area.current_market.trade = Trade(
-        'id', now(), offer, 'OtherChildArea', 'Storage')
+        'id', now(), offer, 'OtherChildArea', 'Storage',
+        traded_energy=1, trade_price=20)
     storage_strategy_test15.event_offer_traded(market_id=market_test15.id,
                                                trade=current_market.trade)
     assert len(storage_strategy_test15.state._used_storage_share) == 2
@@ -859,7 +860,8 @@ def test_energy_origin(storage_strategy_test15, market_test15):
     storage_strategy_test15._try_to_buy_offer(offer, current_market, 21)
     storage_strategy_test15.area.current_market.trade = Trade(
         'id', now(), offer, 'Storage', 'A',
-        time_slot=current_market.time_slot)
+        time_slot=current_market.time_slot,
+        traded_energy=2, trade_price=20)
     storage_strategy_test15.event_offer_traded(
         market_id=market_test15.id,
         trade=current_market.trade)
@@ -870,7 +872,8 @@ def test_energy_origin(storage_strategy_test15, market_test15):
     # Validate that external energy origin is correctly registered
     offer = Offer('id', now(), 20, 1.0, 'FakeArea')
     storage_strategy_test15._try_to_buy_offer(offer, current_market, 21)
-    current_market.trade = Trade('id', now(), offer, 'FakeArea', 'Storage')
+    current_market.trade = Trade('id', now(), offer, 'FakeArea', 'Storage',
+                                 traded_energy=1, trade_price=20)
     storage_strategy_test15.event_offer_traded(
         market_id=market_test15.id,
         trade=current_market.trade)
@@ -906,7 +909,8 @@ def test_assert_if_trade_rate_is_lower_than_offer_rate(storage_test11):
     market_id = "market_id"
     storage_test11.offers.sold[market_id] = [Offer("offer_id", now(), 30, 1, "FakeArea")]
     to_cheap_offer = Offer("offer_id", now(), 29, 1, "FakeArea")
-    trade = Trade("trade_id", "time", to_cheap_offer, storage_test11, "buyer")
+    trade = Trade("trade_id", "time", to_cheap_offer, storage_test11, "buyer",
+                  traded_energy=1, trade_price=29)
 
     with pytest.raises(AssertionError):
         storage_test11.event_offer_traded(market_id=market_id, trade=trade)
@@ -917,7 +921,8 @@ def test_assert_if_trade_rate_is_higher_than_bid_rate(storage_test11):
     storage_test11.area.spot_market.id = market_id
     storage_test11._bids[market_id] = [Bid("bid_id", now(), 30, 1, buyer="FakeArea")]
     expensive_bid = Bid("bid_id", now(), 31, 1, buyer="FakeArea")
-    trade = Trade("trade_id", "time", expensive_bid, "FakeArea", "buyer")
+    trade = Trade("trade_id", "time", expensive_bid, "FakeArea", "buyer",
+                  traded_energy=1, trade_price=31)
 
     with pytest.raises(AssertionError):
         storage_test11.event_offer_traded(market_id=market_id, trade=trade)

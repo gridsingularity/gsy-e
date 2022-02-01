@@ -109,13 +109,15 @@ class FakeMarket:
                 seller_origin="res")
             traded = Offer(offer.id, offer.creation_time, offer.price, energy,
                            offer.seller, seller_origin="res")
-            return Trade("trade_id", time, traded, traded.seller, buyer, residual,
+            return Trade("trade_id", time, traded, traded.seller, buyer, residual=residual,
                          seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
-                         buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
+                         buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
+                         traded_energy=1, trade_price=1)
 
         return Trade("trade_id", time, offer, offer.seller, buyer,
                      seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
-                     buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
+                     buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
+                     traded_energy=1, trade_price=1)
 
     # pylint: disable=unused-argument
     # pylint: disable=too-many-locals
@@ -137,15 +139,15 @@ class FakeMarket:
                            buyer_origin="res")
             traded = Bid(bid.id, bid.creation_time, (trade_rate * energy), energy, bid.buyer,
                          buyer_origin="res")
-            return Trade("trade_id", time, traded, seller, bid.buyer, residual,
+            return Trade("trade_id", time, traded, seller, bid.buyer, residual=residual,
                          buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
-                         seller_id=seller_id)
+                         seller_id=seller_id, traded_energy=1, trade_price=1)
 
         traded = Bid(bid.id, bid.creation_time, (trade_rate * energy), energy, bid.buyer,
                      buyer_origin=bid.id)
         return Trade("trade_id", time, traded, seller, bid.buyer,
                      buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
-                     seller_id=seller_id)
+                     seller_id=seller_id, traded_energy=1, trade_price=1)
 
     def delete_offer(self, *args):
         pass
@@ -401,7 +403,7 @@ class TestMABid:
                             pendulum.now(tz=TIME_ZONE),
                             market_agent_bid.higher_market.bids["id3"],
                             "someone_else",
-                            "owner"),
+                            "owner", traded_energy=1, trade_price=1),
             market_id=market_agent_bid.higher_market.id)
         assert len(market_agent_bid.lower_market.delete_bid.calls) == 1
 
@@ -415,7 +417,8 @@ class TestMABid:
                             pendulum.now(tz=TIME_ZONE),
                             market_agent_bid.higher_market.bids["id3"],
                             seller="owner",
-                            buyer="someone_else"))
+                            buyer="someone_else",
+                            traded_energy=1, trade_price=1))
         assert len(market_agent_bid.lower_market.delete_bid.calls) == 0
 
     @staticmethod
@@ -464,7 +467,8 @@ class TestMABid:
                             accepted_bid,
                             seller="someone_else",
                             buyer="owner",
-                            residual=residual_bid))
+                            residual=residual_bid,
+                            traded_energy=1, trade_price=1))
 
         if partial:
             # "id" gets traded in the target market, "id2" gets split in the source market, too
@@ -484,7 +488,7 @@ class TestMABid:
                             pendulum.now(tz=TIME_ZONE),
                             market_agent_double_sided.higher_market.forwarded_bid,
                             "owner",
-                            "someone_else"),
+                            "someone_else", traded_energy=1, trade_price=1),
             market_id=market_agent_double_sided.higher_market.id)
         assert len(market_agent_double_sided.lower_market.calls_energy_bids) == 1
 
@@ -499,7 +503,7 @@ class TestMABid:
                             pendulum.now(tz=TIME_ZONE),
                             market_agent_double_sided.higher_market.forwarded_bid,
                             "owner",
-                            "someone_else"),
+                            "someone_else", traded_energy=1, trade_price=1),
             market_id=market_agent_double_sided.higher_market.id)
         assert len(market_agent_double_sided.lower_market.calls_energy_bids) == 1
         expected_price = 10 * (1 - market_agent_double_sided.lower_market.fee_class.grid_fee_rate)
@@ -529,7 +533,7 @@ class TestMABid:
                             accepted_bid,
                             "owner",
                             "someone_else",
-                            "residual_offer"),
+                            residual="residual_offer", traded_energy=1, trade_price=1),
             market_id=market_agent_double_sided.higher_market.id)
         assert market_agent_double_sided.lower_market.calls_energy_bids[0] == 1
 
@@ -606,7 +610,7 @@ class TestMAOffer:
                 pendulum.now(tz=TIME_ZONE),
                 market_agent.higher_market.offers["id3"],
                 "higher",
-                "someone_else"),
+                "someone_else", traded_energy=1, trade_price=1),
             market_id=market_agent.higher_market.id)
         assert len(market_agent.lower_market.delete_offer.calls) == 1
 
@@ -619,7 +623,7 @@ class TestMAOffer:
                 market_agent_2.higher_market.forwarded_offer,
                 "owner",
                 "someone_else",
-                fee_price=0.0),
+                fee_price=0.0, traded_energy=1, trade_price=1),
             market_id=market_agent_2.higher_market.id)
         assert len(market_agent_2.lower_market.calls_energy) == 1
 
@@ -636,8 +640,9 @@ class TestMAOffer:
                 accepted_offer,
                 "owner",
                 "someone_else",
-                "residual_offer",
-                fee_price=0.0),
+                traded_energy=1, trade_price=1,
+                residual="residual_offer",
+                fee_price=0.0, ),
             market_id=market_agent_2.higher_market.id)
         assert market_agent_2.lower_market.calls_energy[0] == 1
 
@@ -677,8 +682,9 @@ class TestMAOffer:
                 accepted,
                 "owner",
                 "someone_else",
-                residual,
-                fee_price=0.0),
+                traded_energy=1, trade_price=1,
+                residual=residual,
+                fee_price=0.0,),
             market_id=market_agent_2.lower_market.id)
 
         # after the trade event:
