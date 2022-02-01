@@ -209,7 +209,8 @@ def test_event_trade(area_test2, commercial_test2):
                                                     creation_time="time",
                                                     offer_bid=traded_offer,
                                                     seller="FakeArea",
-                                                    buyer="buyer")
+                                                    buyer="buyer",
+                                                    traded_energy=1, trade_price=1)
                                         )
     assert len(area_test2.test_market.created_offers) == 1
     assert area_test2.test_market.created_offers[-1].energy == sys.maxsize
@@ -250,7 +251,8 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, commercial_te
                                                     creation_time="time",
                                                     offer_bid=original_offer,
                                                     seller="FakeArea",
-                                                    buyer="buyer")
+                                                    buyer="buyer",
+                                                    traded_energy=1, trade_price=1)
                                         )
 
     assert residual_offer in commercial_test2.offers.posted

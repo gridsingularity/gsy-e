@@ -375,7 +375,7 @@ class StorageStrategy(BidEnabledStrategy):
         self._assert_if_trade_offer_price_is_too_low(market_id, trade)
 
         if trade.seller == self.owner.name:
-            self.state.register_energy_from_offer_trade(trade.offer_bid.energy, trade.time_slot)
+            self.state.register_energy_from_offer_trade(trade.traded_energy, trade.time_slot)
 
     def _track_bought_energy_origin(self, seller):
         if seller == self.area.name:
@@ -392,7 +392,7 @@ class StorageStrategy(BidEnabledStrategy):
 
         if bid_trade.buyer == self.owner.name:
             self.state.register_energy_from_bid_trade(
-                bid_trade.offer_bid.energy, bid_trade.time_slot,
+                bid_trade.traded_energy, bid_trade.time_slot,
                 self._track_bought_energy_origin(bid_trade.seller))
 
     def _cycle_state(self):

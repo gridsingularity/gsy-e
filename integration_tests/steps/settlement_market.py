@@ -18,7 +18,7 @@ def check_settlement_market_trades(context):
     house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     assert any(len(market.trades) > 0 for market in house.past_settlement_markets.values())
     assert all(
-        25.0 <= t.offer_bid.energy_rate <= 30.0
+        25.0 <= t.trade_rate <= 30.0
         for market in house.past_settlement_markets.values()
         for t in market.trades
     )
