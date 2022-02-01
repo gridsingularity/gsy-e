@@ -75,7 +75,7 @@ class Simulation:
                  paused: bool = False, pause_after: duration = None, repl: bool = False,
                  no_export: bool = False, export_path: str = None,
                  export_subdir: str = None, redis_job_id=None, enable_bc=False,
-                 slot_length_realtime=None):
+                 slot_length_realtime=None, incremental: bool = False):
         self.initial_params = dict(
             slot_length_realtime=slot_length_realtime,
             seed=seed,
@@ -99,7 +99,7 @@ class Simulation:
 
         self.setup_module_name = setup_module_name
         self.is_stopped = False
-
+        self._incremental_slots = incremental
         self.live_events = LiveEvents(self.simulation_config)
         self.kafka_connection = kafka_connection_factory()
         self.redis_connection = RedisSimulationCommunication(self, redis_job_id, self.live_events)
@@ -393,6 +393,8 @@ class Simulation:
                 log.info("Received stop command.")
                 sleep(5)
                 break
+            if self._incremental_slots:
+                self.paused = True
 
         self.sim_status = "finished"
         self.deactivate_areas(self.area)
