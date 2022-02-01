@@ -19,7 +19,6 @@ nav:
           - 'Consumption (Load Profiles)': 'consumption.md'
           - 'Battery (Storage)': 'battery.md'
           - 'Power Plant': 'power-plant.md'
-        - 'Data Requirements and File Upload Format': 'data-requirements.md'
         - 'Community Settings': 'community-settings.md'
         - 'Grid Market Settings': 'grid-market-settings.md'
         - 'Events (Adding Assets, Communities, etc.)': 'events.md'
@@ -47,6 +46,7 @@ nav:
         - 'Backend Results':
             - 'Overview': 'backend-results-overview.md'
             - 'Energy bills': 'backend-results-energy-bills.md'
+    - 'Data Requirements and File Upload Format': 'data-requirements.md'
 - 'Market Mechanisms':
     - 'Market Types':
       - 'Overview': 'market-types.md'
