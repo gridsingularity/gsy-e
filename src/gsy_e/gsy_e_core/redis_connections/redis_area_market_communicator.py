@@ -94,7 +94,10 @@ class BlockingCommunicator(RedisCommunicator):
 
 
 class ResettableCommunicator(RedisCommunicator):
-    """Communicator for sending messages using redis pubsub including."""
+    """
+    Communicator for sending messages adn receiving their responses using redis pubsub
+    that runs in a thread which can be restarted.
+    """
 
     def __init__(self):
         super().__init__()
