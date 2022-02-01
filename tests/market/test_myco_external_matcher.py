@@ -27,9 +27,7 @@ class TestMycoExternalMatcher:
         cls.market = TwoSidedMarket(time_slot=now())
         cls.matcher.area_markets_mapping = {
             f"{cls.market_id}-{cls.market.time_slot_str}": cls.market}
-        cls.redis_connection = (
-            gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator.
-            ResettableCommunicator)
+
         assert cls.matcher.simulation_id == gsy_e.constants.CONFIGURATION_ID
         cls.channel_prefix = f"external-myco/{gsy_e.constants.CONFIGURATION_ID}/"
         cls.events_channel = f"{cls.channel_prefix}events/"
