@@ -24,13 +24,12 @@ import click
 from click.types import Choice
 from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
-from pendulum import DateTime, today
-
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.exceptions import GSyException
 from gsy_framework.settings_validators import validate_global_settings
+from pendulum import DateTime, today
 
-from gsy_e.constants import DATE_FORMAT, DATE_TIME_FORMAT, TIME_FORMAT, TIME_ZONE
+import gsy_e.constants
 from gsy_e.gsy_e_core.simulation import run_simulation
 from gsy_e.gsy_e_core.util import (
     DateType, IntervalType, available_simulation_scenarios, convert_str_to_pause_after_interval,
@@ -85,7 +84,8 @@ _setup_modules = available_simulation_scenarios
               help="Start simulation in paused state")
 @click.option("--pause-at", type=str, default=None,
               help="Automatically pause at a certain time. "
-              f"Accepted Input formats: ({DATE_FORMAT}, {TIME_FORMAT}) [default: disabled]")
+              f"Accepted Input formats: ({gsy_e.constants.DATE_FORMAT}, "
+                   f"{gsy_e.constants.TIME_FORMAT}) [default: disabled]")
 @click.option("--repl/--no-repl", default=False, show_default=True,
               help="Start REPL after simulation run.")
 @click.option("--no-export", is_flag=True, default=False, help="Skip export of simulation data")
@@ -96,9 +96,10 @@ _setup_modules = available_simulation_scenarios
               help="Compare alternative pricing schemes")
 @click.option("--enable-external-connection", is_flag=True, default=False,
               help="External Agents interaction to simulation during runtime")
-@click.option("--start-date", type=DateType(DATE_FORMAT),
-              default=today(tz=TIME_ZONE).format(DATE_FORMAT), show_default=True,
-              help=f"Start date of the Simulation ({DATE_FORMAT})")
+@click.option("--start-date", type=DateType(gsy_e.constants.DATE_FORMAT),
+              default=today(tz=gsy_e.constants.TIME_ZONE).format(gsy_e.constants.DATE_FORMAT),
+              show_default=True,
+              help=f"Start date of the Simulation ({gsy_e.constants.DATE_FORMAT})")
 @click.option("--enable-dof/--disable-dof",
               is_flag=True, default=True,
               help=(
@@ -135,7 +136,8 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
         if compare_alt_pricing is True:
             ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
             # we need the seconds in the export dir name
-            kwargs["export_subdir"] = DateTime.now(tz=TIME_ZONE).format(f"{DATE_TIME_FORMAT}:ss")
+            kwargs["export_subdir"] = DateTime.now(tz=gsy_e.constants.TIME_ZONE).format(
+                f"{gsy_e.constants.DATE_TIME_FORMAT}:ss")
             processes = []
             for pricing_scheme in range(0, 4):
                 kwargs["pricing_scheme"] = pricing_scheme
