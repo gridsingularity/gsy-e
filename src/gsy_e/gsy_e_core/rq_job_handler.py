@@ -24,10 +24,10 @@ def decompress_and_decode_queued_strings(queued_string: bytes) -> Dict:
     return pickle.loads(decompress(queued_string))
 
 
-# pylint: disable=too-many-arguments, too-many-locals
 def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
                                   events: Optional[str], aggregator_device_mapping: str,
                                   saved_state: bytes, job_id: str):
+    # pylint: disable=too-many-arguments, too-many-locals
     """Launch simulation from rq job."""
     logging.getLogger().setLevel(logging.ERROR)
     scenario = decompress_and_decode_queued_strings(scenario)
