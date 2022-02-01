@@ -2,7 +2,9 @@ import ast
 import json
 import logging
 import pickle
+import traceback
 from datetime import datetime, date
+from typing import Dict, Optional
 from zlib import decompress
 
 from gsy_framework.constants_limits import GlobalConfig, ConstSettings
@@ -17,12 +19,16 @@ from gsy_e.models.config import SimulationConfig
 log = logging.getLogger()
 
 
-def decompress_and_decode_queued_strings(queued_string):
+def decompress_and_decode_queued_strings(queued_string: bytes) -> Dict:
+    """Decompress and decode data sent via redis queue."""
     return pickle.loads(decompress(queued_string))
 
 
-def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_mapping,
-                                  saved_state, job_id):
+def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
+                                  events: Optional[str], aggregator_device_mapping: str,
+                                  saved_state: bytes, job_id: str):
+    # pylint: disable=too-many-arguments, too-many-locals
+    """Launch simulation from rq job."""
     logging.getLogger().setLevel(logging.ERROR)
     scenario = decompress_and_decode_queued_strings(scenario)
     gsy_e.constants.CONFIGURATION_ID = scenario.pop("configuration_uuid")
@@ -31,7 +37,7 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
         GlobalConfig.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
         gsy_e.constants.RUN_IN_REALTIME = GlobalConfig.IS_CANARY_NETWORK
     saved_state = decompress_and_decode_queued_strings(saved_state)
-    log.error(f"Starting simulation with job_id: {job_id}")
+    log.error("Starting simulation with job_id: %s", job_id)
 
     try:
         if settings is None:
@@ -39,7 +45,7 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
         else:
             settings = {k: v for k, v in settings.items() if v is not None and v != "None"}
 
-        advanced_settings = settings.get('advanced_settings', None)
+        advanced_settings = settings.get("advanced_settings", None)
         if advanced_settings is not None:
             update_advanced_settings(ast.literal_eval(advanced_settings))
         aggregator_device_mapping = json.loads(aggregator_device_mapping)
@@ -73,14 +79,16 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
         }
 
         if GlobalConfig.IS_CANARY_NETWORK:
-            config_settings['start_date'] = \
-                instance((datetime.combine(date.today(), datetime.min.time())))
+            config_settings["start_date"] = (
+                instance((datetime.combine(date.today(), datetime.min.time()))))
 
         validate_global_settings(config_settings)
 
-        slot_length_realtime = duration(seconds=settings['slot_length_realtime'].seconds) \
-            if 'slot_length_realtime' in settings else None
+        slot_length_realtime = (
+            duration(seconds=settings["slot_length_realtime"].seconds)
+            if "slot_length_realtime" in settings else None)
 
+        gsy_e.constants.SEND_EVENTS_RESPONSES_TO_SDK_VIA_RQ = True
         config = SimulationConfig(**config_settings)
 
         spot_market_type = settings.get("spot_market_type")
@@ -107,12 +115,12 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
         elif scenario in available_simulation_scenarios:
             scenario_name = scenario
         else:
-            scenario_name = 'json_arg'
+            scenario_name = "json_arg"
             config.area = scenario
 
         kwargs = {"no_export": True,
                   "pricing_scheme": 0,
-                  "seed": settings.get('random_seed', 0)}
+                  "seed": settings.get("random_seed", 0)}
 
         gsy_e.constants.CONNECT_TO_PROFILES_DB = True
 
@@ -123,8 +131,9 @@ def launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_
                        saved_sim_state=saved_state,
                        slot_length_realtime=slot_length_realtime,
                        kwargs=kwargs)
+    # pylint: disable=broad-except
     except Exception:
-        import traceback
+        # pylint: disable=import-outside-toplevel
         from gsy_e.gsy_e_core.redis_connections.redis_communication import publish_job_error_output
         publish_job_error_output(job_id, traceback.format_exc())
-        logging.getLogger().error(f"Error on jobId {job_id}: {traceback.format_exc()}")
+        logging.getLogger().exception("Error on jobId, %s", job_id)

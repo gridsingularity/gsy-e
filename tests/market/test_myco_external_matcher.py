@@ -8,13 +8,14 @@ from pendulum import now
 import gsy_e.constants
 import gsy_e.models.market.market_redis_connection
 from gsy_e.gsy_e_core.exceptions import MycoValidationException, InvalidBidOfferPairException
+import gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator
 from gsy_e.models.market import Offer, Bid
 from gsy_e.models.market.two_sided import TwoSidedMarket
 from gsy_e.models.myco_matcher import MycoExternalMatcher
 from gsy_e.models.myco_matcher.myco_external_matcher import MycoExternalMatcherValidator
 
-gsy_e.models.myco_matcher.myco_external_matcher.BlockingCommunicator = MagicMock
-gsy_e.models.myco_matcher.myco_external_matcher.ResettableCommunicator = MagicMock
+gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator.ResettableCommunicator = (
+    MagicMock)
 
 
 class TestMycoExternalMatcher:
@@ -26,8 +27,7 @@ class TestMycoExternalMatcher:
         cls.market = TwoSidedMarket(time_slot=now())
         cls.matcher.area_markets_mapping = {
             f"{cls.market_id}-{cls.market.time_slot_str}": cls.market}
-        cls.redis_connection = (
-            gsy_e.models.myco_matcher.myco_external_matcher.ResettableCommunicator)
+
         assert cls.matcher.simulation_id == gsy_e.constants.CONFIGURATION_ID
         cls.channel_prefix = f"external-myco/{gsy_e.constants.CONFIGURATION_ID}/"
         cls.events_channel = f"{cls.channel_prefix}events/"

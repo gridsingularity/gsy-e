@@ -487,7 +487,8 @@ def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
 def get_simulation_queue_name():
     """Get simulation queue name."""
     listen_to_cn = os.environ.get("LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE", "no") == "yes"
-    return "canary_network" if listen_to_cn else "exchange"
+    return (ConstSettings.GeneralSettings.CN_JOB_QUEUE_NAME
+            if listen_to_cn else ConstSettings.GeneralSettings.SIM_JOB_QUEUE_NAME)
 
 
 class ExternalTickCounter:

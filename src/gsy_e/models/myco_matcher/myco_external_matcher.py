@@ -28,7 +28,7 @@ import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import (
     InvalidBidOfferPairException, MycoValidationException)
 from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import (
-    ResettableCommunicator)
+    myco_redis_communicator_factory)
 from gsy_e.gsy_e_core.util import ExternalTickCounter
 from gsy_e.models.market.two_sided import TwoSidedMarket
 from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
@@ -69,7 +69,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
         self._setup_redis_connection()
 
     def _setup_redis_connection(self):
-        self.myco_ext_conn = ResettableCommunicator()
+        self.myco_ext_conn = myco_redis_communicator_factory()
         self.myco_ext_conn.sub_to_multiple_channels(
             {"external-myco/simulation-id/": self.publish_simulation_id,
              f"{self._channel_prefix}/offers-bids/": self._publish_orders_message_buffer.append,

@@ -139,7 +139,8 @@ class TestSettlementMarketStrategy:
         self.settlement_strategy.event_market_cycle(strategy_fixture)
         self.settlement_strategy.event_offer_traded(
             strategy_fixture, self.market_mock.id,
-            Trade("456", self.time_slot, self.test_offer, self.area_mock.name, self.area_mock.name)
+            Trade("456", self.time_slot, self.test_offer, self.area_mock.name, self.area_mock.name,
+                  traded_energy=1, trade_price=1)
         )
         assert strategy_fixture.state.get_unsettled_deviation_kWh(self.time_slot) == 9
 
@@ -151,7 +152,8 @@ class TestSettlementMarketStrategy:
         self.settlement_strategy.event_market_cycle(strategy_fixture)
         self.settlement_strategy.event_bid_traded(
             strategy_fixture, self.market_mock.id,
-            Trade("456", self.time_slot, self.test_bid, self.area_mock.name, self.area_mock.name)
+            Trade("456", self.time_slot, self.test_bid, self.area_mock.name, self.area_mock.name,
+                  traded_energy=1, trade_price=1)
         )
         assert strategy_fixture.state.get_unsettled_deviation_kWh(self.time_slot) == 14
 

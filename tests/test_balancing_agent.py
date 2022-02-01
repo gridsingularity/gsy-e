@@ -74,9 +74,11 @@ class FakeBalancingMarket:
             residual = BalancingOffer("res", pendulum.now(), offer.price, residual_energy,
                                       offer.seller)
             traded = BalancingOffer(offer.id, pendulum.now(), offer.price, energy, offer.seller)
-            return BalancingTrade("trade_id", time, traded, traded.seller, buyer, residual)
+            return BalancingTrade("trade_id", time, traded, traded.seller, buyer, residual,
+                                  traded_energy=1, trade_price=1)
 
-        return BalancingTrade("trade_id", time, offer, offer.seller, buyer)
+        return BalancingTrade("trade_id", time, offer, offer.seller, buyer,
+                              traded_energy=1, trade_price=1)
 
 
 @pytest.fixture(name="balancing_agent")
@@ -94,7 +96,7 @@ def test_baa_event_trade(balancing_agent):
                   balancing_agent.lower_market.time_slot,
                   Offer("A", pendulum.now(), 2, 2, "B"),
                   "someone_else",
-                  "MA owner")
+                  "MA owner", traded_energy=1, trade_price=1)
     fake_spot_market = FakeMarket([])
     fake_spot_market.set_time_slot(balancing_agent.lower_market.time_slot)
     balancing_agent.event_offer_traded(trade=trade, market_id=fake_spot_market.id)
@@ -119,7 +121,7 @@ def test_baa_unmatched_event_trade(balancing_agent_2):
                   pendulum.now(tz=TIME_ZONE),
                   Offer("A", pendulum.now(), 2, 2, "B"),
                   "someone_else",
-                  "owner")
+                  "owner", traded_energy=1, trade_price=1)
     fake_spot_market = FakeMarket([])
     fake_spot_market.set_time_slot(balancing_agent_2.lower_market.time_slot)
     balancing_agent_2.owner.fake_spot_market = fake_spot_market
