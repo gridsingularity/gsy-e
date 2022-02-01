@@ -133,8 +133,6 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
                 external_connection_enabled=enable_external_connection,
                 enable_degrees_of_freedom=enable_dof)
 
-        gsy_e.constants.SEND_EVENTS_RESPONSES_TO_SDK_VIA_RQ = False
-
         if compare_alt_pricing is True:
             ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
             # we need the seconds in the export dir name
