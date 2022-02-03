@@ -118,17 +118,17 @@ def follow_device_registry_energy_rate(context, device_name):
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
 
-    assert all((trade.offer_bid.energy_rate) - negative_energy_rate
+    assert all((trade.trade_rate) - negative_energy_rate
                < FLOATING_POINT_TOLERANCE
                for ii, device in enumerate([house1, house2, context.simulation.area])
                for market in device.past_balancing_markets
-               for trade in market.trades if trade.offer_bid.energy < 0)
+               for trade in market.trades if trade.traded_energy < 0)
 
-    assert all(trade.offer_bid.energy_rate - positive_energy_rate
+    assert all(trade.trade_rate - positive_energy_rate
                < FLOATING_POINT_TOLERANCE
                for ii, device in enumerate([house1, house2, context.simulation.area])
                for market in device.past_balancing_markets
-               for trade in market.trades if trade.offer_bid.energy > 0)
+               for trade in market.trades if trade.traded_energy > 0)
 
 
 def match_balancing_trades_to_spot_trades(context, functor):
@@ -140,8 +140,8 @@ def match_balancing_trades_to_spot_trades(context, functor):
             if len(market.trades) == 0:
                 continue
             past_market = area_object._markets.past_markets[market.time_slot]
-            spot_energy = past_market.trades[0].offer_bid.energy
-            assert functor(isclose(abs(trade.offer_bid.energy),
+            spot_energy = past_market.trades[0].traded_energy
+            assert functor(isclose(abs(trade.traded_energy),
                                    abs(spot_energy) *
                                    ConstSettings.BalancingSettings.SPOT_TRADE_RATIO)
                            for trade in market.trades)
@@ -168,16 +168,16 @@ def follow_device_registry_energy_rate_or(context, device1, device2):
     house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
 
     assert all(
-        int(round(trade.offer_bid.energy_rate, 2)) in negative_energy_rate
+        int(round(trade.trade_rate, 2)) in negative_energy_rate
         for device in [house1, house2, context.simulation.area]
         for market in device.past_balancing_markets
-        for trade in market.trades if trade.offer_bid.energy < 0)
+        for trade in market.trades if trade.traded_energy < 0)
 
     assert all(
-        int(round(trade.offer_bid.energy_rate, 2)) in positive_energy_rate
+        int(round(trade.trade_rate, 2)) in positive_energy_rate
         for device in [house1, house2, context.simulation.area]
         for market in device.past_balancing_markets
-        for trade in market.trades if trade.offer_bid.energy > 0)
+        for trade in market.trades if trade.traded_energy > 0)
 
 
 @then('there are balancing trades on all markets for every market slot')
