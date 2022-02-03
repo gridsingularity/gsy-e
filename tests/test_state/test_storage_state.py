@@ -1,6 +1,7 @@
 # pylint: disable=protected-access
 from unittest.mock import patch
 
+import pytest
 from pendulum import now, duration
 
 from gsy_e.models.state import StorageState, ESSEnergyOrigin
@@ -152,3 +153,62 @@ class TestStorageState:
         future_time_slots = [current_time_slot.add(minutes=15),
                              current_time_slot.add(minutes=30)]
         return past_time_slot, current_time_slot, future_time_slots
+
+    @staticmethod
+    def test_check_state_charge_less_than_min_soc_error():
+        storage_state = StorageState(capacity=100,
+                                     min_allowed_soc=50,
+                                     initial_soc=30)
+        current_time_slot = now()
+        storage_state.add_default_values_to_state_profiles([current_time_slot])
+        storage_state.activate(
+            slot_length=duration(minutes=15), current_time_slot=current_time_slot)
+        with pytest.raises(AssertionError) as error:
+            storage_state.check_state(current_time_slot)
+        assert "less than min soc" in str(error.value)
+
+    @staticmethod
+    def test_check_state_storage_surpasses_capacity_error():
+        storage_state = StorageState(capacity=100,
+                                     min_allowed_soc=50,
+                                     initial_soc=110)
+        current_time_slot = now()
+        storage_state.add_default_values_to_state_profiles([current_time_slot])
+        storage_state.activate(
+            slot_length=duration(minutes=15), current_time_slot=current_time_slot)
+        with pytest.raises(AssertionError) as error:
+            storage_state.check_state(current_time_slot)
+        assert "surpassed the capacity" in str(error.value)
+
+    @staticmethod
+    def test_check_state_offered_and_pledged_energy_in_range():
+        storage_state = StorageState(capacity=100,
+                                     min_allowed_soc=20,
+                                     initial_soc=50)
+
+        current_time_slot = now()
+        storage_state.add_default_values_to_state_profiles([current_time_slot])
+        storage_state.activate(
+            slot_length=duration(minutes=15), current_time_slot=current_time_slot)
+        max_value = storage_state.capacity * (1 - storage_state.min_allowed_soc_ratio)
+
+        def set_attribute_value_and_test(attribute):
+            attribute[current_time_slot] = -1
+            # check that error is raised for value < 0
+            with pytest.raises(AssertionError):
+                storage_state.check_state(current_time_slot)
+            attribute[current_time_slot] = max_value + 1
+            # check that error is raised for value > max_value
+            with pytest.raises(AssertionError):
+                storage_state.check_state(current_time_slot)
+            attribute[current_time_slot] = max_value/2
+            # check that for value in range no error is raised
+            try:
+                storage_state.check_state(current_time_slot)
+            except AssertionError as error:
+                raise AssertionError from error
+
+        set_attribute_value_and_test(storage_state.offered_sell_kWh)
+        set_attribute_value_and_test(storage_state.pledged_sell_kWh)
+        set_attribute_value_and_test(storage_state.pledged_buy_kWh)
+        set_attribute_value_and_test(storage_state.offered_buy_kWh)
