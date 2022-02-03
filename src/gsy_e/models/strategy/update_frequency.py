@@ -140,7 +140,7 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
             final_rate = find_object_of_same_weekday_and_time(
                 self.final_rate_profile_buffer, time_slot)
 
-            if not initial_rate or not final_rate:
+            if initial_rate is None or final_rate is None:
                 logging.warning(
                     "Failed to read initial or final rate profile for simulation %s and area %s. "
                     "Reloading profiles from the database.",
