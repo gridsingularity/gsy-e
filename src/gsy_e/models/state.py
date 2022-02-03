@@ -553,13 +553,17 @@ class StorageState(StateInterface):
 
     def _max_offer_energy_kWh(self, time_slot: DateTime) -> float:
         """Return the max tracked offered energy."""
-        return (self._battery_energy_per_slot - self.pledged_sell_kWh[time_slot]
-                - self.offered_sell_kWh[time_slot])
+        energy_kWh = (self._battery_energy_per_slot -
+                      self.pledged_sell_kWh[time_slot] - self.offered_sell_kWh[time_slot])
+        assert energy_kWh >= -FLOATING_POINT_TOLERANCE
+        return energy_kWh
 
     def _max_buy_energy_kWh(self, time_slot: DateTime) -> float:
         """Return the min tracked bid energy."""
-        return (self._battery_energy_per_slot - self.pledged_buy_kWh[time_slot]
-                - self.offered_buy_kWh[time_slot])
+        energy_kWh = (self._battery_energy_per_slot -
+                      self.pledged_buy_kWh[time_slot] - self.offered_buy_kWh[time_slot])
+        assert energy_kWh >= -FLOATING_POINT_TOLERANCE
+        return energy_kWh
 
     def activate(self, slot_length: int, current_time_slot: DateTime) -> None:
         """Set the battery energy in kWh per current time_slot."""

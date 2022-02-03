@@ -1,5 +1,6 @@
 # pylint: disable=protected-access
 from unittest.mock import patch
+import pytest
 
 from pendulum import now, duration
 
@@ -142,3 +143,18 @@ class TestStorageState:
             market_slot_list[3]: 5.0,
         }
         assert expected_energy_to_buy == storage_state.energy_to_buy_dict
+
+    @pytest.mark.parametrize("is_selling", [True, False])
+    def test_clamp_energy_asserts_battery_traded_more_than_energy_per_slot(self, is_selling):
+        storage_state, market_slot_list = self._setup_storage_state_for_clamp_energy()
+        storage_state._battery_energy_per_slot = 0.0
+        for time_slot in market_slot_list:
+            storage_state.offered_buy_kWh[time_slot] = 5.0
+            storage_state.pledged_buy_kWh[time_slot] = 15.0
+            storage_state.offered_sell_kWh[time_slot] = 5.0
+            storage_state.pledged_sell_kWh[time_slot] = 15.0
+        with pytest.raises(AssertionError):
+            if is_selling:
+                storage_state._clamp_energy_to_sell_kWh(market_slot_list)
+            else:
+                storage_state._clamp_energy_to_buy_kWh(market_slot_list)
