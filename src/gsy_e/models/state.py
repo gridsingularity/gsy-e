@@ -604,7 +604,7 @@ class StorageState(StateInterface):
                 break
             storage_dict[time_slot] = limit_float_precision(
                 min(
-                    available_energy_for_all_slots / len(market_slot_time_list),
+                    available_energy_for_all_slots,
                     self._max_offer_energy_kWh(time_slot),
                     self._battery_energy_per_slot)
             )
@@ -626,8 +626,7 @@ class StorageState(StateInterface):
                 accumulated_bought += self.pledged_buy_kWh[time_slot]
                 accumulated_sought += offered_buy_energy
         available_energy_for_all_slots = limit_float_precision(
-            (self.capacity - self.used_storage
-             - accumulated_bought - accumulated_sought) / len(market_slot_time_list))
+            self.capacity - self.used_storage - accumulated_bought - accumulated_sought)
 
         for time_slot in market_slot_time_list:
             if available_energy_for_all_slots < -FLOATING_POINT_TOLERANCE:
