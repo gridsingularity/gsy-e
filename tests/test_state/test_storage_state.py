@@ -1,6 +1,5 @@
 # pylint: disable=protected-access
 from unittest.mock import patch
-
 import pytest
 from pendulum import now, duration
 
@@ -201,7 +200,7 @@ class TestStorageState:
             # check that error is raised for value > max_value
             with pytest.raises(AssertionError):
                 storage_state.check_state(current_time_slot)
-            attribute[current_time_slot] = max_value/2
+            attribute[current_time_slot] = max_value / 2
             # check that for value in range no error is raised
             try:
                 storage_state.check_state(current_time_slot)
@@ -212,3 +211,128 @@ class TestStorageState:
         set_attribute_value_and_test(storage_state.pledged_sell_kWh)
         set_attribute_value_and_test(storage_state.pledged_buy_kWh)
         set_attribute_value_and_test(storage_state.offered_buy_kWh)
+
+    # Spyros' approach
+
+    @staticmethod
+    def _setup_storage_state_for_clamp_energy():
+        storage_state = StorageState()
+        current_time_slot = now()
+        market_slot_list = [current_time_slot,
+                            current_time_slot + duration(minutes=15),
+                            current_time_slot + duration(minutes=30),
+                            current_time_slot + duration(minutes=45)]
+        storage_state._current_market_slot = current_time_slot
+        storage_state._used_storage = 250.0
+        storage_state.capacity = 500.0
+        for time_slot in market_slot_list:
+            storage_state.offered_sell_kWh[time_slot] = 0.0
+            storage_state.pledged_sell_kWh[time_slot] = 0.0
+            storage_state.offered_buy_kWh[time_slot] = 0.0
+            storage_state.pledged_buy_kWh[time_slot] = 0.0
+        return storage_state, market_slot_list
+
+    def test_clamp_energy_to_sell_kWh_only_on_first_slot(self):
+        storage_state, market_slot_list = self._setup_storage_state_for_clamp_energy()
+
+        # Enable battery to sell all its available capacity in one market slot
+        storage_state._battery_energy_per_slot = storage_state.capacity
+        storage_state._clamp_energy_to_sell_kWh(market_slot_list)
+        expected_available_energy = (
+                storage_state.used_storage -
+                storage_state.min_allowed_soc_ratio * storage_state.capacity)
+        expected_energy_to_sell = {
+            market_slot_list[0]: expected_available_energy,
+            market_slot_list[1]: 0.0,
+            market_slot_list[2]: 0.0,
+            market_slot_list[3]: 0.0,
+        }
+        assert expected_energy_to_sell == storage_state.energy_to_sell_dict
+
+    def test_clamp_energy_to_sell_kWh_respects_battery_energy_per_slot(self):
+        storage_state, market_slot_list = self._setup_storage_state_for_clamp_energy()
+
+        storage_state._battery_energy_per_slot = 25.0
+        storage_state._clamp_energy_to_sell_kWh(market_slot_list)
+        expected_energy_to_sell = {
+            market_slot_list[0]: 25.0,
+            market_slot_list[1]: 25.0,
+            market_slot_list[2]: 25.0,
+            market_slot_list[3]: 25.0,
+        }
+        assert expected_energy_to_sell == storage_state.energy_to_sell_dict
+
+    def test_clamp_energy_to_sell_kWh_respects_energy_offers_trades(self):
+        storage_state, market_slot_list = self._setup_storage_state_for_clamp_energy()
+
+        storage_state._battery_energy_per_slot = 25.0
+        for time_slot in market_slot_list:
+            storage_state.offered_sell_kWh[time_slot] = 5.0
+            storage_state.pledged_sell_kWh[time_slot] = 15.0
+        storage_state._clamp_energy_to_sell_kWh(market_slot_list)
+        expected_energy_to_sell = {
+            market_slot_list[0]: 5.0,
+            market_slot_list[1]: 5.0,
+            market_slot_list[2]: 5.0,
+            market_slot_list[3]: 5.0,
+        }
+        assert expected_energy_to_sell == storage_state.energy_to_sell_dict
+
+    def test_clamp_energy_to_buy_kWh_only_on_first_slot(self):
+        storage_state, market_slot_list = self._setup_storage_state_for_clamp_energy()
+
+        # Enable battery to sell all its available capacity in one market slot
+        storage_state._battery_energy_per_slot = storage_state.capacity
+        storage_state._clamp_energy_to_buy_kWh(market_slot_list)
+        expected_available_energy = storage_state.capacity - storage_state.used_storage
+        expected_energy_to_buy = {
+            market_slot_list[0]: expected_available_energy,
+            market_slot_list[1]: 0.0,
+            market_slot_list[2]: 0.0,
+            market_slot_list[3]: 0.0,
+        }
+        assert expected_energy_to_buy == storage_state.energy_to_buy_dict
+
+    def test_clamp_energy_to_buy_kWh_respects_battery_energy_per_slot(self):
+        storage_state, market_slot_list = self._setup_storage_state_for_clamp_energy()
+
+        storage_state._battery_energy_per_slot = 25.0
+        storage_state._clamp_energy_to_buy_kWh(market_slot_list)
+        expected_energy_to_buy = {
+            market_slot_list[0]: 25.0,
+            market_slot_list[1]: 25.0,
+            market_slot_list[2]: 25.0,
+            market_slot_list[3]: 25.0,
+        }
+        assert expected_energy_to_buy == storage_state.energy_to_buy_dict
+
+    def test_clamp_energy_to_buy_kWh_respects_energy_offers_trades(self):
+        storage_state, market_slot_list = self._setup_storage_state_for_clamp_energy()
+
+        storage_state._battery_energy_per_slot = 25.0
+        for time_slot in market_slot_list:
+            storage_state.offered_buy_kWh[time_slot] = 5.0
+            storage_state.pledged_buy_kWh[time_slot] = 15.0
+        storage_state._clamp_energy_to_buy_kWh(market_slot_list)
+        expected_energy_to_buy = {
+            market_slot_list[0]: 5.0,
+            market_slot_list[1]: 5.0,
+            market_slot_list[2]: 5.0,
+            market_slot_list[3]: 5.0,
+        }
+        assert expected_energy_to_buy == storage_state.energy_to_buy_dict
+
+    @pytest.mark.parametrize("is_selling", [True, False])
+    def test_clamp_energy_asserts_battery_traded_more_than_energy_per_slot(self, is_selling):
+        storage_state, market_slot_list = self._setup_storage_state_for_clamp_energy()
+        storage_state._battery_energy_per_slot = 0.0
+        for time_slot in market_slot_list:
+            storage_state.offered_buy_kWh[time_slot] = 5.0
+            storage_state.pledged_buy_kWh[time_slot] = 15.0
+            storage_state.offered_sell_kWh[time_slot] = 5.0
+            storage_state.pledged_sell_kWh[time_slot] = 15.0
+        with pytest.raises(AssertionError):
+            if is_selling:
+                storage_state._clamp_energy_to_sell_kWh(market_slot_list)
+            else:
+                storage_state._clamp_energy_to_buy_kWh(market_slot_list)
