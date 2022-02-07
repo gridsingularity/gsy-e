@@ -553,13 +553,17 @@ class StorageState(StateInterface):
 
     def _max_offer_energy_kWh(self, time_slot: DateTime) -> float:
         """Return the max tracked offered energy."""
-        return (self._battery_energy_per_slot - self.pledged_sell_kWh[time_slot]
-                - self.offered_sell_kWh[time_slot])
+        energy_kWh = (self._battery_energy_per_slot -
+                      self.pledged_sell_kWh[time_slot] - self.offered_sell_kWh[time_slot])
+        assert energy_kWh >= -FLOATING_POINT_TOLERANCE
+        return energy_kWh
 
     def _max_buy_energy_kWh(self, time_slot: DateTime) -> float:
         """Return the min tracked bid energy."""
-        return (self._battery_energy_per_slot - self.pledged_buy_kWh[time_slot]
-                - self.offered_buy_kWh[time_slot])
+        energy_kWh = (self._battery_energy_per_slot -
+                      self.pledged_buy_kWh[time_slot] - self.offered_buy_kWh[time_slot])
+        assert energy_kWh >= -FLOATING_POINT_TOLERANCE
+        return energy_kWh
 
     def activate(self, slot_length: int, current_time_slot: DateTime) -> None:
         """Set the battery energy in kWh per current time_slot."""
@@ -604,7 +608,7 @@ class StorageState(StateInterface):
                 break
             storage_dict[time_slot] = limit_float_precision(
                 min(
-                    available_energy_for_all_slots / len(market_slot_time_list),
+                    available_energy_for_all_slots,
                     self._max_offer_energy_kWh(time_slot),
                     self._battery_energy_per_slot)
             )
@@ -626,8 +630,7 @@ class StorageState(StateInterface):
                 accumulated_bought += self.pledged_buy_kWh[time_slot]
                 accumulated_sought += offered_buy_energy
         available_energy_for_all_slots = limit_float_precision(
-            (self.capacity - self.used_storage
-             - accumulated_bought - accumulated_sought) / len(market_slot_time_list))
+            self.capacity - self.used_storage - accumulated_bought - accumulated_sought)
 
         for time_slot in market_slot_time_list:
             if available_energy_for_all_slots < -FLOATING_POINT_TOLERANCE:

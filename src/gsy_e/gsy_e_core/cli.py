@@ -86,6 +86,8 @@ _setup_modules = available_simulation_scenarios
               help="Automatically pause at a certain time. "
               f"Accepted Input formats: ({gsy_e.constants.DATE_FORMAT}, "
                    f"{gsy_e.constants.TIME_FORMAT}) [default: disabled]")
+@click.option("--incremental", is_flag=True, default=False, show_default=True,
+              help="Pause the simulation at the end of each time slot.")
 @click.option("--repl/--no-repl", default=False, show_default=True,
               help="Start REPL after simulation run.")
 @click.option("--no-export", is_flag=True, default=False, help="Skip export of simulation data")
@@ -107,7 +109,7 @@ _setup_modules = available_simulation_scenarios
                 "(orders can't contain attributes/requirements)."))
 def run(setup_module_name, settings_file, duration, slot_length, tick_length,
         cloud_coverage, compare_alt_pricing, enable_external_connection, start_date,
-        pause_at, slot_length_realtime, enable_dof: bool, **kwargs):
+        pause_at, incremental, slot_length_realtime, enable_dof: bool, **kwargs):
     """Configure settings and run a simulation."""
     # Force the multiprocessing start method to be 'fork' on macOS.
     if platform.system() == "Darwin":
@@ -132,6 +134,9 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
                 duration, slot_length, tick_length, cloud_coverage, start_date=start_date,
                 external_connection_enabled=enable_external_connection,
                 enable_degrees_of_freedom=enable_dof)
+
+        if incremental:
+            kwargs["incremental"] = incremental
 
         if compare_alt_pricing is True:
             ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
