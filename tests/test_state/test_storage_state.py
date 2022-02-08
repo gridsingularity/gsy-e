@@ -1,4 +1,4 @@
-# pylint: disable=protected-access
+# pylint: disable=protected-access, too-many-public-methods
 from unittest.mock import patch
 import pytest
 from pendulum import now, duration
@@ -143,7 +143,7 @@ class TestStorageState:
         current_time_slot = now()
         storage_state.add_default_values_to_state_profiles([current_time_slot])
         max_value = storage_state.capacity * (1 - storage_state.min_allowed_soc_ratio)
-        storage_state.max_abs_battery_power_kW = max_value*15
+        storage_state.max_abs_battery_power_kW = max_value * 15
         storage_state.activate(
             slot_length=duration(minutes=15), current_time_slot=current_time_slot)
 
@@ -367,3 +367,149 @@ class TestStorageState:
                                                                  ESSEnergyOrigin.LOCAL: 0.,
                                                                  ESSEnergyOrigin.EXTERNAL: 0.}
             )
+
+    def test_delete_past_state_values_market_slot_not_in_past(self):
+        storage_state = StorageState()
+        past_time_slot, current_time_slot, future_time_slots = self._initialize_time_slots()
+        active_market_slot_time_list = [past_time_slot, current_time_slot, *future_time_slots]
+        storage_state.add_default_values_to_state_profiles(active_market_slot_time_list)
+        with patch("gsy_e.gsy_e_core.util.ConstSettings.SettlementMarketSettings."
+                   "ENABLE_SETTLEMENT_MARKETS", True):
+            storage_state.delete_past_state_values(current_time_slot)
+            assert storage_state.pledged_sell_kWh.get(past_time_slot) is not None
+
+    def test_delete_past_state_values_market_slot_in_past(self):
+        storage_state = StorageState()
+        past_time_slot, current_time_slot, future_time_slots = self._initialize_time_slots()
+        active_market_slot_time_list = [past_time_slot, current_time_slot, *future_time_slots]
+        storage_state.add_default_values_to_state_profiles(active_market_slot_time_list)
+        with patch("gsy_e.gsy_e_core.util.ConstSettings.SettlementMarketSettings."
+                   "ENABLE_SETTLEMENT_MARKETS", False):
+            storage_state.delete_past_state_values(current_time_slot)
+            assert storage_state.pledged_sell_kWh.get(past_time_slot) is None
+
+    def test_register_energy_from_posted_bid_negative_energy_raise_error(self):
+        storage_state, current_time_slot = self._setup_registration_test()
+        self._assert_negative_energy_raise_error(
+            storage_state.register_energy_from_posted_bid, energy=-1, time_slot=current_time_slot)
+
+    def test_register_energy_from_posted_bid_energy_add_energy_to_offered_buy_dict(self):
+        storage_state, current_time_slot = self._setup_registration_test()
+        bid_energy = 1
+        storage_state.register_energy_from_posted_bid(
+            energy=bid_energy, time_slot=current_time_slot)
+        storage_state.register_energy_from_posted_bid(
+            energy=bid_energy, time_slot=current_time_slot)
+        assert storage_state.offered_buy_kWh[current_time_slot] == 2 * bid_energy
+
+    def test_register_energy_from_posted_offer_negative_energy_raise_error(self):
+        storage_state, current_time_slot = self._setup_registration_test()
+        self._assert_negative_energy_raise_error(
+            storage_state.register_energy_from_posted_offer,
+            energy=-1, time_slot=current_time_slot)
+
+    def test_register_energy_from_posted_offer_energy_add_energy_to_offer_sell_dict(self):
+        storage_state, current_time_slot = self._setup_registration_test()
+        offered_energy = 1
+        storage_state.register_energy_from_posted_offer(
+            energy=offered_energy, time_slot=current_time_slot)
+        storage_state.register_energy_from_posted_offer(
+            energy=offered_energy, time_slot=current_time_slot)
+        assert storage_state.offered_sell_kWh[current_time_slot] == 2 * offered_energy
+
+    def test_reset_offered_sell_energy_negative_energy_raise_error(self):
+        storage_state, current_time_slot = self._setup_registration_test()
+        self._assert_negative_energy_raise_error(
+            storage_state.reset_offered_sell_energy, energy=-1, time_slot=current_time_slot)
+
+    def test_reset_offered_sell_energy_energy_in_offered_sell_dict(self):
+        storage_state, current_time_slot = self._setup_registration_test()
+        offered_sell_energy = 1
+        storage_state.reset_offered_sell_energy(
+            energy=offered_sell_energy, time_slot=current_time_slot)
+        assert storage_state.offered_sell_kWh[current_time_slot] == offered_sell_energy
+
+    def test_reset_offered_buy_energy_negative_energy_raise_error(self):
+        storage_state, current_time_slot = self._setup_registration_test()
+        self._assert_negative_energy_raise_error(
+            storage_state.reset_offered_buy_energy, energy=-1, time_slot=current_time_slot)
+
+    def test_reset_offered_buy_energy_energy_in_offered_buy_dict(self):
+        storage_state, current_time_slot = self._setup_registration_test()
+        offered_buy_energy = 1
+        storage_state.reset_offered_buy_energy(
+            energy=offered_buy_energy, time_slot=current_time_slot)
+        assert storage_state.offered_buy_kWh[current_time_slot] == offered_buy_energy
+
+    def test_remove_energy_from_deleted_offer_negative_energy_raise_error(self):
+        storage_state, current_time_slot = self._setup_registration_test()
+        self._assert_negative_energy_raise_error(
+            storage_state.remove_energy_from_deleted_offer, energy=-1, time_slot=current_time_slot)
+
+    def test_remove_energy_from_deleted_offer_energy_in_offered_buy_dict(self):
+        storage_state, current_time_slot = self._setup_registration_test()
+        offered_energy = 1
+        storage_state.offered_sell_kWh[current_time_slot] = offered_energy
+        storage_state.remove_energy_from_deleted_offer(
+            energy=offered_energy, time_slot=current_time_slot)
+        assert storage_state.offered_buy_kWh[current_time_slot] == 0
+
+    def test_register_energy_from_one_sided_market_accept_offer_negative_energy_raise_error(self):
+        storage_state, current_time_slot = self._setup_registration_test()
+        self._assert_negative_energy_raise_error(
+            storage_state.register_energy_from_one_sided_market_accept_offer,
+            energy=-1, time_slot=current_time_slot)
+
+    def test_register_energy_from_one_sided_market_accept_offer_energy_register_in_dict(self):
+        storage_state, current_time_slot = self._setup_registration_test()
+        energy = 1
+        storage_state.register_energy_from_one_sided_market_accept_offer(
+            energy=energy, time_slot=current_time_slot)
+        storage_state.register_energy_from_one_sided_market_accept_offer(
+            energy=energy, time_slot=current_time_slot)
+        assert storage_state.pledged_buy_kWh[current_time_slot] == 2 * energy
+
+    def test_register_energy_from_bid_trade_negative_energy_raise_error(self):
+        storage_state, current_time_slot = self._setup_registration_test()
+        self._assert_negative_energy_raise_error(
+            storage_state.register_energy_from_bid_trade, energy=-1, time_slot=current_time_slot)
+
+    def test_register_energy_from_bid_trade_energy_register_in_dict(self):
+        storage_state, current_time_slot = self._setup_registration_test()
+        energy = 1
+        storage_state.offered_buy_kWh[current_time_slot] = 2 * energy
+        storage_state.register_energy_from_bid_trade(
+            energy=energy, time_slot=current_time_slot)
+        storage_state.register_energy_from_bid_trade(
+            energy=energy, time_slot=current_time_slot)
+        assert storage_state.pledged_buy_kWh[current_time_slot] == 2 * energy
+        assert storage_state.offered_buy_kWh[current_time_slot] == 0
+
+    def test_register_energy_from_offer_trade_negative_energy_raise_error(self):
+        storage_state, current_time_slot = self._setup_registration_test()
+        self._assert_negative_energy_raise_error(
+            storage_state.register_energy_from_offer_trade, energy=-1, time_slot=current_time_slot)
+
+    def test_register_energy_from_offer_trade_energy_register_in_dict(self):
+        storage_state, current_time_slot = self._setup_registration_test()
+        energy = 1
+        storage_state.offered_sell_kWh[current_time_slot] = 2 * energy
+        storage_state.register_energy_from_offer_trade(
+            energy=energy, time_slot=current_time_slot)
+        storage_state.register_energy_from_offer_trade(
+            energy=energy, time_slot=current_time_slot)
+        assert storage_state.pledged_sell_kWh[current_time_slot] == 2 * energy
+        assert storage_state.offered_sell_kWh[current_time_slot] == 0
+
+    def _setup_registration_test(self):
+        storage_state = StorageState()
+        current_time_slot, _, _ = self._initialize_time_slots()
+        storage_state.add_default_values_to_state_profiles([current_time_slot])
+        storage_state.activate(
+            slot_length=duration(minutes=15), current_time_slot=current_time_slot)
+        return storage_state, current_time_slot
+
+    @staticmethod
+    def _assert_negative_energy_raise_error(method, energy, time_slot):
+        with pytest.raises(AssertionError):
+            method(energy, time_slot)
