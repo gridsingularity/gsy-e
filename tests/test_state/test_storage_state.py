@@ -592,9 +592,3 @@ class TestStorageState:
         current_time_slot, _, _ = self._initialize_time_slots()
         storage_state.add_default_values_to_state_profiles([current_time_slot])
         assert set(storage_state.to_dict(current_time_slot).keys()).issubset(SAMPLE_STATS.keys())
-
-    def test_has_battery_reached_max_charge_power(self):
-        """TODO test _has_battery_reached_max_charge_power method"""
-
-    def test_has_battery_reached_max_discharge_power(self):
-        """TODO test _has_battery_reached_max_discharge_power method"""
