@@ -22,6 +22,15 @@ SAMPLE_STATE = {
     "battery_energy_per_slot": 0.0,
 }
 
+SAMPLE_STATS = {
+    "energy_to_sell": 0.0,
+    "energy_active_in_bids": 0.0,
+    "energy_to_buy": 0.0,
+    "energy_active_in_offers": 0.0,
+    "free_storage": 0.0,
+    "used_storage": 0.0,
+}
+
 
 class TestStorageState:
     """Test the StorageState class."""
@@ -566,3 +575,26 @@ class TestStorageState:
                 storage_state._used_storage_share[0].value, 0, abs_tol=FLOATING_POINT_TOLERANCE)
         else:
             assert len(storage_state._used_storage_share) == initial_registry_number - 1
+
+    def test_get_soc_level_default_values_and_custom_values(self):
+        storage_state = StorageState(initial_soc=100,
+                                     capacity=100)
+        current_time_slot, _, _ = self._initialize_time_slots()
+        storage_state.add_default_values_to_state_profiles([current_time_slot])
+        storage_state.activate(
+            slot_length=duration(minutes=15), current_time_slot=current_time_slot)
+        assert storage_state.get_soc_level(current_time_slot) == 1
+        storage_state.charge_history[current_time_slot] = 50
+        assert storage_state.get_soc_level(current_time_slot) == 0.5
+
+    def test_to_dict_keys_in_return_dict(self):
+        storage_state = StorageState()
+        current_time_slot, _, _ = self._initialize_time_slots()
+        storage_state.add_default_values_to_state_profiles([current_time_slot])
+        assert set(storage_state.to_dict(current_time_slot).keys()).issubset(SAMPLE_STATS.keys())
+
+    def test_has_battery_reached_max_charge_power(self):
+        """TODO test _has_battery_reached_max_charge_power method"""
+
+    def test_has_battery_reached_max_discharge_power(self):
+        """TODO test _has_battery_reached_max_discharge_power method"""
