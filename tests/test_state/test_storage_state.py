@@ -1,9 +1,11 @@
 # pylint: disable=protected-access, too-many-public-methods
+from math import isclose
 from unittest.mock import patch
 import pytest
 from pendulum import now, duration
 
-from gsy_e.models.state import StorageState, ESSEnergyOrigin
+from gsy_e.constants import FLOATING_POINT_TOLERANCE
+from gsy_e.models.state import StorageState, ESSEnergyOrigin, EnergyOrigin
 
 SAMPLE_STATE = {
     "pledged_sell_kWh": {},
@@ -513,3 +515,54 @@ class TestStorageState:
     def _assert_negative_energy_raise_error(method, energy, time_slot):
         with pytest.raises(AssertionError):
             method(energy, time_slot)
+
+    @staticmethod
+    def _setup_storage_state_for_energy_origin_tracking():
+        storage_state = StorageState()
+        used_storage_share = [EnergyOrigin(ESSEnergyOrigin.LOCAL, 0.4),
+                              EnergyOrigin(ESSEnergyOrigin.EXTERNAL, 0.5),
+                              EnergyOrigin(ESSEnergyOrigin.UNKNOWN, 0.1)]
+        storage_state._used_storage_share = used_storage_share
+        return storage_state
+
+    def test_track_energy_bought_type_append_new_energy_origin(self):
+        storage_state = self._setup_storage_state_for_energy_origin_tracking()
+        initial_registry_number = len(storage_state._used_storage_share)
+        storage_state._track_energy_bought_type(energy=1.0, energy_origin=ESSEnergyOrigin.LOCAL)
+        assert len(storage_state._used_storage_share) == initial_registry_number + 1
+        assert isinstance(storage_state._used_storage_share[-1], EnergyOrigin)
+
+    def test_track_energy_sell_type_sell_all_energy(self):
+        storage_state = self._setup_storage_state_for_energy_origin_tracking()
+        available_energy_for_sell = 0
+        for energy in storage_state._used_storage_share:
+            available_energy_for_sell += energy.value
+        storage_state._track_energy_sell_type(energy=available_energy_for_sell)
+        if len(storage_state._used_storage_share) != 0:
+            assert isclose(
+                storage_state._used_storage_share[0].value, 0, abs_tol=FLOATING_POINT_TOLERANCE)
+        else:
+            assert len(storage_state._used_storage_share) == 0
+
+    def test_track_energy_sell_type_sell_more_energy_than_available(self):
+        storage_state = self._setup_storage_state_for_energy_origin_tracking()
+        available_energy_for_sell = 0
+        used_storage_share = storage_state._used_storage_share
+        for energy in used_storage_share:
+            available_energy_for_sell += energy.value
+        storage_state._track_energy_sell_type(energy=available_energy_for_sell + 0.1)
+        assert len(storage_state._used_storage_share) == 0
+
+    def test_track_energy_sell_type_sell_only_first_entry_completely(self):
+        storage_state = self._setup_storage_state_for_energy_origin_tracking()
+        energy_for_sale = 0.4
+        initial_registry_number = len(storage_state._used_storage_share)
+        first_origin = storage_state._used_storage_share[0].origin
+        storage_state._track_energy_sell_type(energy=energy_for_sale)
+        if len(storage_state._used_storage_share) != initial_registry_number - 1:
+            assert len(storage_state._used_storage_share) == initial_registry_number
+            assert storage_state._used_storage_share[0].origin == first_origin
+            assert isclose(
+                storage_state._used_storage_share[0].value, 0, abs_tol=FLOATING_POINT_TOLERANCE)
+        else:
+            assert len(storage_state._used_storage_share) == initial_registry_number - 1
