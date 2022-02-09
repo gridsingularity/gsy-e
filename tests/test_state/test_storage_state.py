@@ -405,7 +405,7 @@ class TestStorageState:
     def test_register_energy_from_posted_bid_negative_energy_raise_error(self):
         storage_state, current_time_slot = self._setup_registration_test()
         self._assert_negative_energy_raise_error(
-            storage_state.register_energy_from_posted_bid, energy=-1, time_slot=current_time_slot)
+            storage_state.register_energy_from_posted_bid, time_slot=current_time_slot)
 
     def test_register_energy_from_posted_bid_energy_add_energy_to_offered_buy_dict(self):
         storage_state, current_time_slot = self._setup_registration_test()
@@ -420,7 +420,7 @@ class TestStorageState:
         storage_state, current_time_slot = self._setup_registration_test()
         self._assert_negative_energy_raise_error(
             storage_state.register_energy_from_posted_offer,
-            energy=-1, time_slot=current_time_slot)
+            time_slot=current_time_slot)
 
     def test_register_energy_from_posted_offer_energy_add_energy_to_offer_sell_dict(self):
         storage_state, current_time_slot = self._setup_registration_test()
@@ -434,7 +434,7 @@ class TestStorageState:
     def test_reset_offered_sell_energy_negative_energy_raise_error(self):
         storage_state, current_time_slot = self._setup_registration_test()
         self._assert_negative_energy_raise_error(
-            storage_state.reset_offered_sell_energy, energy=-1, time_slot=current_time_slot)
+            storage_state.reset_offered_sell_energy, time_slot=current_time_slot)
 
     def test_reset_offered_sell_energy_energy_in_offered_sell_dict(self):
         storage_state, current_time_slot = self._setup_registration_test()
@@ -446,7 +446,7 @@ class TestStorageState:
     def test_reset_offered_buy_energy_negative_energy_raise_error(self):
         storage_state, current_time_slot = self._setup_registration_test()
         self._assert_negative_energy_raise_error(
-            storage_state.reset_offered_buy_energy, energy=-1, time_slot=current_time_slot)
+            storage_state.reset_offered_buy_energy, time_slot=current_time_slot)
 
     def test_reset_offered_buy_energy_energy_in_offered_buy_dict(self):
         storage_state, current_time_slot = self._setup_registration_test()
@@ -458,7 +458,7 @@ class TestStorageState:
     def test_remove_energy_from_deleted_offer_negative_energy_raise_error(self):
         storage_state, current_time_slot = self._setup_registration_test()
         self._assert_negative_energy_raise_error(
-            storage_state.remove_energy_from_deleted_offer, energy=-1, time_slot=current_time_slot)
+            storage_state.remove_energy_from_deleted_offer, time_slot=current_time_slot)
 
     def test_remove_energy_from_deleted_offer_energy_in_offered_buy_dict(self):
         storage_state, current_time_slot = self._setup_registration_test()
@@ -472,7 +472,7 @@ class TestStorageState:
         storage_state, current_time_slot = self._setup_registration_test()
         self._assert_negative_energy_raise_error(
             storage_state.register_energy_from_one_sided_market_accept_offer,
-            energy=-1, time_slot=current_time_slot)
+            time_slot=current_time_slot)
 
     def test_register_energy_from_one_sided_market_accept_offer_energy_register_in_dict(self):
         storage_state, current_time_slot = self._setup_registration_test()
@@ -486,7 +486,7 @@ class TestStorageState:
     def test_register_energy_from_bid_trade_negative_energy_raise_error(self):
         storage_state, current_time_slot = self._setup_registration_test()
         self._assert_negative_energy_raise_error(
-            storage_state.register_energy_from_bid_trade, energy=-1, time_slot=current_time_slot)
+            storage_state.register_energy_from_bid_trade, time_slot=current_time_slot)
 
     def test_register_energy_from_bid_trade_energy_register_in_dict(self):
         storage_state, current_time_slot = self._setup_registration_test()
@@ -502,7 +502,7 @@ class TestStorageState:
     def test_register_energy_from_offer_trade_negative_energy_raise_error(self):
         storage_state, current_time_slot = self._setup_registration_test()
         self._assert_negative_energy_raise_error(
-            storage_state.register_energy_from_offer_trade, energy=-1, time_slot=current_time_slot)
+            storage_state.register_energy_from_offer_trade, time_slot=current_time_slot)
 
     def test_register_energy_from_offer_trade_energy_register_in_dict(self):
         storage_state, current_time_slot = self._setup_registration_test()
@@ -524,7 +524,8 @@ class TestStorageState:
         return storage_state, current_time_slot
 
     @staticmethod
-    def _assert_negative_energy_raise_error(method, energy, time_slot):
+    def _assert_negative_energy_raise_error(method, time_slot):
+        energy = -1
         with pytest.raises(AssertionError):
             method(energy, time_slot)
 
@@ -537,12 +538,15 @@ class TestStorageState:
         storage_state._used_storage_share = used_storage_share
         return storage_state
 
-    def test_track_energy_bought_type_append_new_energy_origin(self):
+    def test_track_energy_bought_type_append_new_energy_origin_respecting_origin(self):
         storage_state = self._setup_storage_state_for_energy_origin_tracking()
         initial_registry_number = len(storage_state._used_storage_share)
-        storage_state._track_energy_bought_type(energy=1.0, energy_origin=ESSEnergyOrigin.LOCAL)
+        energy = 1.0
+        storage_state._track_energy_bought_type(energy=energy, energy_origin=ESSEnergyOrigin.LOCAL)
         assert len(storage_state._used_storage_share) == initial_registry_number + 1
         assert isinstance(storage_state._used_storage_share[-1], EnergyOrigin)
+        assert storage_state._used_storage_share[-1].origin == ESSEnergyOrigin.LOCAL
+        assert storage_state._used_storage_share[-1].value == energy
 
     def test_track_energy_sell_type_sell_all_energy(self):
         storage_state = self._setup_storage_state_for_energy_origin_tracking()
