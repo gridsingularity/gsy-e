@@ -110,8 +110,8 @@ class TestStorageState:
         storage_state.pledged_sell_kWh[past_time_slot] = 10
         storage_state.market_cycle(past_time_slot, current_time_slot, future_time_slots)
         assert storage_state.charge_history[current_time_slot] != storage_state.initial_soc
-        assert storage_state.charge_history_kWh[current_time_slot] != \
-               storage_state.initial_capacity_kWh
+        assert (storage_state.charge_history_kWh[current_time_slot] !=
+               storage_state.initial_capacity_kWh)
         assert storage_state.offered_history[current_time_slot] != "-"
 
     @staticmethod
