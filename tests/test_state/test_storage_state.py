@@ -1,6 +1,6 @@
 # pylint: disable=protected-access, too-many-public-methods
 from math import isclose
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock, PropertyMock
 import pytest
 from pendulum import now, duration
 
@@ -595,4 +595,25 @@ class TestStorageState:
         storage_state = StorageState()
         current_time_slot, _, _ = self._initialize_time_slots()
         storage_state.add_default_values_to_state_profiles([current_time_slot])
-        assert set(storage_state.to_dict(current_time_slot).keys()).issubset(SAMPLE_STATS.keys())
+        storage_state.energy_to_sell_dict[current_time_slot] = "test_energy_to_sell"
+        storage_state.offered_sell_kWh[current_time_slot] = "test_energy_active_in_bids"
+        storage_state.energy_to_buy_dict[current_time_slot] = "test_energy_to_buy"
+        storage_state.offered_buy_kWh[current_time_slot] = "test_energy_active_in_offers"
+        free_storage_mock = MagicMock(return_value="test_free_storage")
+        used_storage_mock = PropertyMock()
+        storage_state.free_storage = free_storage_mock
+        storage_state._used_storage = used_storage_mock
+
+        assert set(SAMPLE_STATS.keys()).issubset(storage_state.to_dict(current_time_slot).keys())
+        assert (storage_state.to_dict(current_time_slot)["energy_to_sell"] ==
+                "test_energy_to_sell")
+        assert (storage_state.to_dict(current_time_slot)["energy_active_in_bids"] ==
+                "test_energy_active_in_bids")
+        assert (storage_state.to_dict(current_time_slot)["energy_to_buy"] ==
+                "test_energy_to_buy")
+        assert (storage_state.to_dict(current_time_slot)["energy_active_in_offers"] ==
+                "test_energy_active_in_offers")
+        assert (storage_state.to_dict(current_time_slot)["free_storage"] ==
+                "test_free_storage")
+        assert (storage_state.to_dict(current_time_slot)["used_storage"] ==
+                used_storage_mock)
