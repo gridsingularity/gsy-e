@@ -90,10 +90,13 @@ class TestStorageState:
         storage_state.register_energy_from_one_sided_market_accept_offer(
             energy, past_time_slot, ESSEnergyOrigin.UNKNOWN)
         storage_state.market_cycle(past_time_slot, current_time_slot, future_time_slots)
-        expected_time_series = {ESSEnergyOrigin.LOCAL: storage_state.initial_capacity_kWh + energy,
-                                ESSEnergyOrigin.EXTERNAL: 0.0,
-                                ESSEnergyOrigin.UNKNOWN: 2 * energy}
-        assert storage_state.time_series_ess_share[past_time_slot] == expected_time_series
+        expected_ess_share_last_market = {
+            ESSEnergyOrigin.LOCAL: storage_state.initial_capacity_kWh + energy,
+            ESSEnergyOrigin.EXTERNAL: 0.0,
+            ESSEnergyOrigin.UNKNOWN: 2 * energy
+        }
+        assert (storage_state.time_series_ess_share[past_time_slot] ==
+                expected_ess_share_last_market)
 
     def test_market_cycle_calculate_and_update_soc_and_set_offer_history(self):
         storage_state = StorageState(initial_soc=100,
