@@ -569,15 +569,16 @@ class TestStorageState:
         storage_state = self._setup_storage_state_for_energy_origin_tracking()
         energy_for_sale = 0.4
         initial_registry_number = len(storage_state._used_storage_share)
-        first_origin = storage_state._used_storage_share[0].origin
+        original_used_storage_share = storage_state._used_storage_share.copy()
         storage_state._track_energy_sell_type(energy=energy_for_sale)
-        if len(storage_state._used_storage_share) != initial_registry_number - 1:
-            assert len(storage_state._used_storage_share) == initial_registry_number
-            assert storage_state._used_storage_share[0].origin == first_origin
-            assert isclose(
-                storage_state._used_storage_share[0].value, 0, abs_tol=FLOATING_POINT_TOLERANCE)
-        else:
-            assert len(storage_state._used_storage_share) == initial_registry_number - 1
+        assert (len(storage_state._used_storage_share) ==
+                initial_registry_number - 1)
+        assert (storage_state._used_storage_share[0].origin ==
+                original_used_storage_share[1].origin)
+        assert isclose(
+            storage_state._used_storage_share[0].value,
+            original_used_storage_share[1].value,
+            abs_tol=FLOATING_POINT_TOLERANCE)
 
     def test_get_soc_level_default_values_and_custom_values(self):
         storage_state = StorageState(initial_soc=100,
