@@ -297,7 +297,8 @@ class TestMAGridFee:
     @pytest.mark.parametrize("market_agent_fee", [0.1, 0, 0.5, 0.75, 0.05, 0.02, 0.03])
     def test_ma_forwards_bids_according_to_percentage(market_agent_fee):
         ConstSettings.MASettings.MARKET_TYPE = 2
-        lower_market = FakeMarket([], [Bid("id", pendulum.now(), 1, 1, "this", 1)],
+        lower_market = FakeMarket([], [Bid("id", pendulum.now(), 1, 1, "this", 1,
+                                           requirements=[{"price": 2}])],
                                   transfer_fees=GridFee(grid_fee_percentage=market_agent_fee,
                                                         grid_fee_const=0),
                                   name="FakeMarket")
@@ -314,6 +315,10 @@ class TestMAGridFee:
         assert market_agent.higher_market.bid_call_count == 1
         assert (market_agent.higher_market.forwarded_bid.price ==
                 list(market_agent.lower_market.bids.values())[-1].price * (1 - market_agent_fee))
+
+        assert (market_agent.higher_market.forwarded_bid.requirements[0]["price"] ==
+                list(market_agent.lower_market.bids.values())[-1].requirements[0]["price"] * (
+                        1 - market_agent_fee))
 
     @staticmethod
     @pytest.mark.parametrize("market_agent_fee_const", [0.5, 1, 5, 10])
