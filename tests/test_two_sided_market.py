@@ -1,6 +1,6 @@
 # pylint: disable=missing-function-docstring, protected-access, too-many-public-methods, fixme
 from math import isclose
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pendulum
