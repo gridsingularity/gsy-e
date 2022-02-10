@@ -77,11 +77,10 @@ class TestTwoSidedMarket:
         assert market.get_offers() == market.offers
 
     @staticmethod
-    @patch("gsy_e.models.market.two_sided.TwoSidedMarket._update_new_bid_price_with_fee",
-           MagicMock(return_value=5))
     def test_bid(market):
         """Test the bid() method of TwoSidedMarket."""
         # if energy < 0
+        market.fee_class.update_incoming_bid_with_fee = MagicMock(return_value=5)
         assert len(market.bids) == 0
         with pytest.raises(InvalidBid):
             market.bid(5, -2, "buyer", "buyer_origin")
@@ -98,7 +97,7 @@ class TestTwoSidedMarket:
         assert bid.energy == 2
         assert bid.price == 5
         assert bid in market.bid_history
-        assert market._update_new_bid_price_with_fee.called
+        assert market.fee_class.update_incoming_bid_with_fee.called
 
     @staticmethod
     def test_delete_bid(market):
