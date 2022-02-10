@@ -26,26 +26,26 @@ class ConstantGridFees(BaseClassGridFees):
     trade that is cleared.
     """
 
-    def update_incoming_bid_with_fee(self, source_price, original_price):
-        return source_price or original_price
+    def update_incoming_bid_with_fee(self, source_rate, original_rate):
+        return source_rate or original_rate
 
-    def update_incoming_offer_with_fee(self, source_price, original_price):
-        if source_price is None:
-            return original_price + self.grid_fee_rate
-        return source_price + self.grid_fee_rate
+    def update_incoming_offer_with_fee(self, source_rate, original_rate):
+        if source_rate is None:
+            return original_rate + self.grid_fee_rate
+        return source_rate + self.grid_fee_rate
 
     @staticmethod
     def calculate_original_trade_rate_from_clearing_rate(
             original_bid_rate, propagated_bid_rate, clearing_rate):
         return clearing_rate + (original_bid_rate - propagated_bid_rate)
 
-    def update_forwarded_bid_with_fee(self, source_price, original_price):
-        if source_price is None:
-            return original_price - self.grid_fee_rate
-        return source_price - self.grid_fee_rate
+    def update_forwarded_bid_with_fee(self, source_rate, original_rate):
+        if source_rate is None:
+            return original_rate - self.grid_fee_rate
+        return source_rate - self.grid_fee_rate
 
-    def update_forwarded_offer_with_fee(self, source_price, original_price):
-        return source_price
+    def update_forwarded_offer_with_fee(self, source_rate, original_rate):
+        return source_rate
 
     def update_forwarded_bid_trade_original_info(self, trade_original_info, market_bid):
         if not trade_original_info:

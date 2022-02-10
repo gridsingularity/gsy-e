@@ -100,7 +100,8 @@ class TwoSidedMarket(OneSidedMarket):
             original_price = price
 
         if adapt_price_with_fees:
-            price = self.fee_class.update_incoming_bid_with_fee(price, original_price)
+            price = self.fee_class.update_incoming_bid_with_fee(
+                price/energy, original_price/energy) * energy
 
         if price < 0.0:
             raise MarketException("Negative price after taxes, bid cannot be posted.")

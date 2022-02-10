@@ -26,13 +26,13 @@ class GridFees(BaseClassGridFees):
     that is added to each trade that is cleared.
     """
 
-    def update_incoming_bid_with_fee(self, source_price, original_price):
-        return source_price or original_price
+    def update_incoming_bid_with_fee(self, source_rate, original_rate):
+        return source_rate or original_rate
 
-    def update_incoming_offer_with_fee(self, source_price, original_price):
-        if source_price is None:
-            return original_price * (1 + self.grid_fee_rate)
-        return source_price + original_price * self.grid_fee_rate
+    def update_incoming_offer_with_fee(self, source_rate, original_rate):
+        if source_rate is None:
+            return original_rate * (1 + self.grid_fee_rate)
+        return source_rate + original_rate * self.grid_fee_rate
 
     def _calculate_fee_revenue_from_clearing_trade(
             self, bid_propagated_rate, bid_original_rate,
@@ -53,13 +53,13 @@ class GridFees(BaseClassGridFees):
             original_bid_rate, propagated_bid_rate, clearing_rate):
         return clearing_rate * (original_bid_rate / propagated_bid_rate)
 
-    def update_forwarded_bid_with_fee(self, source_price, original_price):
-        if source_price is None:
-            return original_price * (1 - self.grid_fee_rate)
-        return source_price - original_price * self.grid_fee_rate
+    def update_forwarded_bid_with_fee(self, source_rate, original_rate):
+        if source_rate is None:
+            return original_rate * (1 - self.grid_fee_rate)
+        return source_rate - original_rate * self.grid_fee_rate
 
-    def update_forwarded_offer_with_fee(self, source_price, _):
-        return source_price
+    def update_forwarded_offer_with_fee(self, source_rate, _):
+        return source_rate
 
     def update_forwarded_bid_trade_original_info(self, trade_original_info, market_bid):
         if not trade_original_info:

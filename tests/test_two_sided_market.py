@@ -80,7 +80,7 @@ class TestTwoSidedMarket:
     def test_bid(market):
         """Test the bid() method of TwoSidedMarket."""
         # if energy < 0
-        market.fee_class.update_incoming_bid_with_fee = MagicMock(return_value=5)
+        market.fee_class.update_incoming_bid_with_fee = MagicMock(return_value=5/2)
         assert len(market.bids) == 0
         with pytest.raises(InvalidBid):
             market.bid(5, -2, "buyer", "buyer_origin")

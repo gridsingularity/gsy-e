@@ -32,20 +32,20 @@ class BaseClassGridFees(ABC):
         self.grid_fee_rate = grid_fee_rate
 
     @abstractmethod
-    def update_incoming_bid_with_fee(self, source_price: float, original_price: float) -> float:
-        """Add fees for bid's price when posting it into a market."""
+    def update_incoming_bid_with_fee(self, source_rate: float, original_rate: float) -> float:
+        """Add fees for bid's rate when posting it into a market."""
 
     @abstractmethod
-    def update_incoming_offer_with_fee(self, source_price: float, original_price: float) -> float:
-        """Add fees for offer's price when posting it into a market."""
+    def update_incoming_offer_with_fee(self, source_rate: float, original_rate: float) -> float:
+        """Add fees for offer's rate when posting it into a market."""
 
     @abstractmethod
-    def update_forwarded_bid_with_fee(self, source_price: float, original_price: float) -> float:
-        """Add fees for bid's price when it's forwarded by another market."""
+    def update_forwarded_bid_with_fee(self, source_rate: float, original_rate: float) -> float:
+        """Add fees for bid's rate when it's forwarded by another market."""
 
     @abstractmethod
-    def update_forwarded_offer_with_fee(self, source_price: float, original_price: float) -> float:
-        """Add fees for offer's price when it's forwarded by another market."""
+    def update_forwarded_offer_with_fee(self, source_rate: float, original_rate: float) -> float:
+        """Add fees for offer's rate when it's forwarded by another market."""
 
     @abstractmethod
     def update_forwarded_bid_trade_original_info(
