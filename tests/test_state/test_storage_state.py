@@ -600,9 +600,9 @@ class TestStorageState:
         current_time_slot, _, _ = self._initialize_time_slots()
         storage_state.add_default_values_to_state_profiles([current_time_slot])
         storage_state.energy_to_sell_dict[current_time_slot] = "test_energy_to_sell"
-        storage_state.offered_sell_kWh[current_time_slot] = "test_energy_active_in_bids"
+        storage_state.offered_sell_kWh[current_time_slot] = "test_energy_active_in_offers"
         storage_state.energy_to_buy_dict[current_time_slot] = "test_energy_to_buy"
-        storage_state.offered_buy_kWh[current_time_slot] = "test_energy_active_in_offers"
+        storage_state.offered_buy_kWh[current_time_slot] = "test_energy_active_in_bids"
         free_storage_mock = MagicMock(return_value="test_free_storage")
         used_storage_mock = PropertyMock()
         storage_state.free_storage = free_storage_mock

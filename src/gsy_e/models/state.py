@@ -456,7 +456,7 @@ class ESSEnergyOrigin(Enum):
 EnergyOrigin = namedtuple("EnergyOrigin", ("origin", "value"))
 
 
-# pylint: disable= too-many-instance-attributes, too-many-arguments
+# pylint: disable= too-many-instance-attributes, too-many-arguments, too-many-public-methods
 class StorageState(StateInterface):
     """State for the storage asset."""
 
@@ -852,9 +852,9 @@ class StorageState(StateInterface):
         """Get a dict with the current stats of the storage according to timeslot."""
         return {
             "energy_to_sell": self.energy_to_sell_dict[time_slot],
-            "energy_active_in_bids": self.offered_sell_kWh[time_slot],
+            "energy_active_in_bids": self.offered_buy_kWh[time_slot],
             "energy_to_buy": self.energy_to_buy_dict[time_slot],
-            "energy_active_in_offers": self.offered_buy_kWh[time_slot],
+            "energy_active_in_offers": self.offered_sell_kWh[time_slot],
             "free_storage": self.free_storage(time_slot),
             "used_storage": self.used_storage,
         }
