@@ -47,6 +47,22 @@ class TwoSidedEngine(MAEngine):
         return "<TwoSidedPayAsBidEngine [{s.owner.name}] {s.name} " \
                "{s.markets.source.time_slot:%H:%M}>".format(s=self)
 
+    def _update_requirements_prices(self, bid):
+        requirements = []
+        for requirement in bid.requirements or []:
+            updated_requirement = {**requirement}
+            if "price" in updated_requirement:
+                if "original_price" not in updated_requirement:
+                    updated_requirement["original_price"] = updated_requirement["price"]
+
+                energy = updated_requirement.get("energy") or bid.energy
+                updated_price = (self.markets.source.fee_class.update_forwarded_bid_with_fee(
+                    updated_requirement["price"] / energy,
+                    updated_requirement["original_price"] / energy)) * energy
+                updated_requirement["price"] = updated_price
+            requirements.append(updated_requirement)
+        return requirements
+
     def _forward_bid(self, bid):
         if bid.buyer == self.markets.target.name:
             return None
@@ -64,7 +80,9 @@ class TwoSidedEngine(MAEngine):
                 buyer_origin=bid.buyer_origin,
                 buyer_origin_id=bid.buyer_origin_id,
                 buyer_id=self.owner.uuid,
-                time_slot=bid.time_slot
+                time_slot=bid.time_slot,
+                requirements=self._update_requirements_prices(bid),
+                attributes=bid.attributes
             )
         except MarketException:
             self.owner.log.debug("Bid is not forwarded because grid fees of the target market "

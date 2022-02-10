@@ -187,7 +187,8 @@ class FakeMarket:
 
     def bid(self, price: float, energy: float, buyer: str,
             bid_id: str = None, original_price=None, buyer_origin=None,
-            adapt_price_with_fees=True, buyer_origin_id=None, buyer_id=None, time_slot=None):
+            adapt_price_with_fees=True, buyer_origin_id=None, buyer_id=None,
+            time_slot=None, requirements=None, attributes=None):
         self.bid_call_count += 1
 
         if original_price is None:
@@ -202,7 +203,7 @@ class FakeMarket:
         bid = Bid(bid_id, pendulum.now(), price, energy, buyer,
                   original_price=original_price,
                   buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id,
-                  buyer_id=buyer_id)
+                  buyer_id=buyer_id, requirements=requirements, attributes=attributes)
         self._bids.append(bid)
         self.forwarded_bid = bid
 
