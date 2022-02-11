@@ -56,9 +56,9 @@ class TwoSidedEngine(MAEngine):
                     updated_requirement["original_price"] = updated_requirement["price"]
 
                 energy = updated_requirement.get("energy") or bid.energy
-                updated_price = (self.markets.source.fee_class.update_forwarded_bid_with_fee(
+                updated_price = self.markets.source.fee_class.update_forwarded_bid_with_fee(
                     updated_requirement["price"] / energy,
-                    updated_requirement["original_price"] / energy)) * energy
+                    updated_requirement["original_price"] / energy) * energy
                 updated_requirement["price"] = updated_price
             requirements.append(updated_requirement)
         return requirements
