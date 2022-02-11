@@ -299,6 +299,25 @@ class TwoSidedMarket(OneSidedMarket):
                                     seller_id=offer.seller_id)
         return bid_trade, trade
 
+    def _get_trade_bid_info(self, bid, offer, recommendation):
+        bid_price = recommendation.bid_energy_rate * recommendation.bid_energy
+        original_bid_price = (recommendation.matching_requirements or {}).get(
+                     "bid_requirement", {}).get("original_price") or bid.original_price
+
+        original_bid_rate = original_bid_price / recommendation.bid_energy
+        if ConstSettings.MASettings.BID_OFFER_MATCH_TYPE == BidOfferMatchAlgoEnum.PAY_AS_BID:
+            trade_rate = original_bid_rate
+        else:
+            trade_rate = self.fee_class.calculate_original_trade_rate_from_clearing_rate(
+                original_bid_rate, bid_price / recommendation.bid_energy,
+                recommendation.trade_rate)
+        return TradeBidOfferInfo(
+            original_bid_rate=original_bid_rate,
+            propagated_bid_rate=bid_price / recommendation.bid_energy,
+            original_offer_rate=offer.original_price / offer.energy,
+            propagated_offer_rate=offer.energy_rate,
+            trade_rate=trade_rate)
+
     def match_recommendations(
             self, recommendations: List[BidOfferMatch.serializable_dict]) -> bool:
         """Match a list of bid/offer pairs, create trades and residual offers/bids.
@@ -317,21 +336,11 @@ class TwoSidedMarket(OneSidedMarket):
                     # re-raise exception to be handled by the external matcher
                     raise invalid_bop_exception
                 continue
-            original_bid_rate = market_bid.original_price / market_bid.energy
-            if ConstSettings.MASettings.BID_OFFER_MATCH_TYPE == BidOfferMatchAlgoEnum.PAY_AS_BID:
-                trade_rate = original_bid_rate
-            else:
-                trade_rate = self.fee_class.calculate_original_trade_rate_from_clearing_rate(
-                    original_bid_rate, market_bid.energy_rate, recommended_pair.trade_rate)
-            trade_bid_info = TradeBidOfferInfo(
-                original_bid_rate=original_bid_rate,
-                propagated_bid_rate=market_bid.energy_rate,
-                original_offer_rate=market_offer.original_price / market_offer.energy,
-                propagated_offer_rate=market_offer.energy_rate,
-                trade_rate=trade_rate)
+
+            trade_bid_info = self._get_trade_bid_info(market_bid, market_offer, recommended_pair)
 
             bid_trade, offer_trade = self.accept_bid_offer_pair(
-                market_bid, market_offer, trade_rate,
+                market_bid, market_offer, trade_bid_info.trade_rate,
                 trade_bid_info, min(recommended_pair.selected_energy,
                                     market_offer.energy, market_bid.energy))
             were_trades_performed = True
