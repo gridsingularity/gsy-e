@@ -168,8 +168,13 @@ class TwoSidedEngine(MAEngine):
 
         elif bid_trade.offer_bid.id == bid_info.source_bid.id:
             # Bid was traded in the source market by someone else
+
             self._delete_forwarded_bids(bid_info)
             self.bid_age.pop(bid_info.source_bid.id, None)
+
+            # Forward the residual bid since the original offer was also forwarded
+            if bid_trade.residual:
+                self._forward_bid(bid_trade.residual)
         else:
             raise Exception(f"Invalid bid state for MA {self.owner.name}: "
                             f"traded bid {bid_trade} was not in offered bids tuple {bid_info}")

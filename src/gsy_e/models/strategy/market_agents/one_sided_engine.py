@@ -197,6 +197,10 @@ class MAEngine:
 
             self._delete_forwarded_offer_entries(offer_info.source_offer)
             self.offer_age.pop(offer_info.source_offer.id, None)
+
+            # Forward the residual offer since the original offer was also forwarded
+            if trade.residual:
+                self._forward_offer(trade.residual)
         else:
             raise RuntimeError("Unknown state. Can't happen")
 
