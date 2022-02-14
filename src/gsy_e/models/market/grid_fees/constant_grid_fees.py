@@ -15,47 +15,37 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_e.models.market.grid_fees import BaseClassGridFees
 from gsy_framework.data_classes import TradeBidOfferInfo
+
+from gsy_e.models.market.grid_fees import BaseClassGridFees
 
 
 class ConstantGridFees(BaseClassGridFees):
+    """
+    The constant grid fee is a market based fee, defined in €/kWh and added to each
+    trade that is cleared.
+    """
 
-    def update_incoming_bid_with_fee(self, source_bid, original_bid):
-        if source_bid is None:
-            return original_bid
-        return source_bid
+    def update_incoming_bid_with_fee(self, source_rate, original_rate):
+        return source_rate or original_rate
 
-    def update_incoming_offer_with_fee(self, source_offer_price, original_price):
-        if source_offer_price is None:
-            return original_price + self.grid_fee_rate
-        return source_offer_price + self.grid_fee_rate
+    def update_incoming_offer_with_fee(self, source_rate, original_rate):
+        if source_rate is None:
+            return original_rate + self.grid_fee_rate
+        return source_rate + self.grid_fee_rate
 
+    @staticmethod
     def calculate_original_trade_rate_from_clearing_rate(
-            self, original_bid_rate, propagated_bid_rate,
-            clearing_rate):
-        """
-        Used for 2-sided pay as clear and myco matcher.
-        The purpose of this function is to adapt the
-        clearing rate calculated via the clearing algorithm to match the expected price the
-        original device has to pay once the trade chain settles. The clearing rate is scaled
-        with regards to the demand side tax (to be precise, the ratio of the original bid rate to
-        the propagated bid rate).
-        :param original_bid_rate: Original bid rate
-        :param propagated_bid_rate: Propagated bid rate
-        :param clearing_rate: Clearing rate calculated by the matching algorithm
-        :return: Original trade rate, that the original device has to pay once the trade
-        chain settles.
-        """
+            original_bid_rate, propagated_bid_rate, clearing_rate):
         return clearing_rate + (original_bid_rate - propagated_bid_rate)
 
-    def update_forwarded_bid_with_fee(self, source_bid, original_bid):
-        if source_bid is None:
-            return original_bid - self.grid_fee_rate
-        return source_bid - self.grid_fee_rate
+    def update_forwarded_bid_with_fee(self, source_rate, original_rate):
+        if source_rate is None:
+            return original_rate - self.grid_fee_rate
+        return source_rate - self.grid_fee_rate
 
-    def update_forwarded_offer_with_fee(self, source_offer, original_offer):
-        return source_offer
+    def update_forwarded_offer_with_fee(self, source_rate, original_rate):
+        return source_rate
 
     def update_forwarded_bid_trade_original_info(self, trade_original_info, market_bid):
         if not trade_original_info:
