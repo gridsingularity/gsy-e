@@ -100,6 +100,14 @@ class TestTwoSidedMarket:
         assert market.fee_class.update_incoming_bid_with_fee.called
 
     @staticmethod
+    def test_bid_with_requirements(market):
+        market.fee_class.update_incoming_bid_with_fee = MagicMock(return_value=5/2)
+        bid = market.bid(5, 2, "buyer", "buyer_origin", bid_id="my_bid",
+                         requirements=[{"price": 1}])
+
+        assert bid.requirements[0]["price"] == 5
+
+    @staticmethod
     def test_delete_bid(market):
         """Test the delete_bid method of TwoSidedMarket."""
         bid1 = Bid("bid1", pendulum.now(), 9, 10, "B", 9,
