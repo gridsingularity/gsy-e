@@ -180,7 +180,8 @@ class FakeMarket:
         return offer
 
     def bid(self, price, energy, buyer, market=None, original_price=None,
-            buyer_origin=None, buyer_origin_id=None, buyer_id=None):
+            buyer_origin=None, buyer_origin_id=None, buyer_id=None,
+            requirements=None, attributes=None):
         pass
 
 

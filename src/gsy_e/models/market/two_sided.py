@@ -79,6 +79,22 @@ class TwoSidedMarket(OneSidedMarket):
         """
         return deepcopy(self.bids)
 
+    def _update_requirements_prices(self, bid):
+        requirements = []
+        for requirement in bid.requirements or []:
+            updated_requirement = {**requirement}
+            if "price" in updated_requirement:
+                if "original_price" not in updated_requirement:
+                    updated_requirement["original_price"] = updated_requirement["price"]
+
+                energy = updated_requirement.get("energy") or bid.energy
+                updated_price = (self.fee_class.update_incoming_bid_with_fee(
+                    updated_requirement["price"] / energy,
+                    updated_requirement["original_price"] / energy)) * energy
+                updated_requirement["price"] = updated_price
+            requirements.append(updated_requirement)
+        return requirements
+
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, buyer_origin: str,
             bid_id: Optional[str] = None,
@@ -110,7 +126,8 @@ class TwoSidedMarket(OneSidedMarket):
                   self.now, price, energy, buyer, original_price, buyer_origin,
                   buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
                   attributes=attributes, requirements=requirements, time_slot=time_slot)
-
+        if adapt_price_with_fees:
+            bid.requirements = self._update_requirements_prices(bid)
         self.bids[bid.id] = bid
         if add_to_history is True:
             self.bid_history.append(bid)
