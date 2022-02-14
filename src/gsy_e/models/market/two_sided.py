@@ -282,6 +282,17 @@ class TwoSidedMarket(OneSidedMarket):
                                     seller_id=offer.seller_id)
         return bid_trade, trade
 
+    def _get_offer_from_seller_origin_id(self, seller_origin_id):
+        """Get the first offer that has the same seller_origin_id."""
+        return next(iter(
+            [offer for offer in self.offers.values()
+             if offer.seller_origin_id == seller_origin_id]), None)
+
+    def _get_bid_from_buyer_origin_id(self, buyer_origin_id):
+        return next(iter(
+            [bid for bid in self.bids.values()
+             if bid.buyer_origin_id == buyer_origin_id]), None)
+
     def match_recommendations(
             self, recommendations: List[BidOfferMatch.serializable_dict]) -> bool:
         """Match a list of bid/offer pairs, create trades and residual offers/bids.
@@ -291,6 +302,24 @@ class TwoSidedMarket(OneSidedMarket):
             recommended_pair = BidOfferMatch.from_dict(recommendations.pop(0))
             market_offer = self.offers.get(recommended_pair.offer["id"])
             market_bid = self.bids.get(recommended_pair.bid["id"])
+
+            # TODO: This is a temporary solution based on the fact that trading strategies do not
+            # post multiple bids or offers on the same market at the moment. Will be shortly
+            # replaced by a global offer / bid identifier instead of tracking the original order
+            # by seller / buyer.
+            if not market_offer:
+                market_offer = self._get_offer_from_seller_origin_id(
+                    recommended_pair.offer["seller_origin_id"])
+                if market_offer is None:
+                    raise InvalidBidOfferPairException("Offer does not exist in the market")
+                recommended_pair.offer = market_offer.serializable_dict()
+            if not market_bid:
+                market_bid = self._get_bid_from_buyer_origin_id(
+                    recommended_pair.bid["buyer_origin_id"])
+                if market_bid is None:
+                    raise InvalidBidOfferPairException("Bid does not exist in the market")
+                recommended_pair.bid = market_bid.serializable_dict()
+
             try:
                 self.validate_bid_offer_match(recommended_pair)
             except InvalidBidOfferPairException as invalid_bop_exception:
@@ -397,9 +426,11 @@ class TwoSidedMarket(OneSidedMarket):
         """
 
         def replace_recommendations_with_residuals(recommendation: Dict):
-            if recommendation["offer"]["id"] == offer_trade.offer_bid.id:
+            if (recommendation["offer"]["id"] == offer_trade.offer_bid.id and
+                    offer_trade.residual is not None):
                 recommendation["offer"] = offer_trade.residual.serializable_dict()
-            if recommendation["bid"]["id"] == bid_trade.offer_bid.id:
+            if (recommendation["bid"]["id"] == bid_trade.offer_bid.id and
+                    bid_trade.residual is not None):
                 recommendation["bid"] = bid_trade.residual.serializable_dict()
             return recommendation
 
