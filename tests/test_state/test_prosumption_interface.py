@@ -109,23 +109,17 @@ class TestProsumptionInterface:
             prosumption_interface.decrement_unsettled_deviation(
                 purchased_energy_kWh=5*energy, time_slot=time_slot)
 
-    @staticmethod
-    def test_get_energy_measurement_kWh():
-        time_slot = now()
-        prosumption_interface = ProsumptionInterfaceHelper()
+    def test_get_energy_measurement_kWh(self):
+        prosumption_interface, time_slot = self._setup_base_configuration()
         prosumption_interface._energy_measurement_kWh[time_slot] = 123.0
         assert prosumption_interface.get_energy_measurement_kWh(time_slot) == 123
 
-    @staticmethod
-    def test_get_forecast_measurement_deviation():
-        time_slot = now()
-        prosumption_interface = ProsumptionInterfaceHelper()
+    def test_get_forecast_measurement_deviation(self):
+        prosumption_interface, time_slot = self._setup_base_configuration()
         prosumption_interface._forecast_measurement_deviation_kWh[time_slot] = 100.0
         assert prosumption_interface.get_forecast_measurement_deviation_kWh(time_slot) == 100
 
-    @staticmethod
-    def test_get_unsettled_deviation():
-        time_slot = now()
-        prosumption_interface = ProsumptionInterfaceHelper()
+    def test_get_unsettled_deviation(self):
+        prosumption_interface, time_slot = self._setup_base_configuration()
         prosumption_interface._unsettled_deviation_kWh[time_slot] = 300.0
         assert prosumption_interface.get_unsettled_deviation_kWh(time_slot) == 300
