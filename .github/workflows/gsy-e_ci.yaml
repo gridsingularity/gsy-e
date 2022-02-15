@@ -16,7 +16,8 @@ jobs:
     - name: Install dependencies
       env:
         TOXENV: ci
-        BRANCH: master
+        GSY_FRAMEWORK_BRANCH: master
+        INTEGRATION_TESTS_REPO: https://gsydev:${{ secrets.GSYDEV_TOKEN }}@github.com/gridsingularity/gsy-backend-integration-tests.git
       run: |
         export SOLC_BINARY=$HOME/solc/usr/bin/solc
         export LD_LIBRARY_PATH=$HOME/solc/usr/lib:$LD_LIBRARY_PATH
