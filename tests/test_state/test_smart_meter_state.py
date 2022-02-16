@@ -5,15 +5,19 @@ import pytest
 from pendulum import now
 
 from gsy_e.models.state import SmartMeterState, UnexpectedStateException
+from tests.test_state.test_consumption_state_ import TestConsumptionState
+from tests.test_state.test_production_state_ import TestProductionState
 
 
-class TestSmartMeterState:
+class TestSmartMeterState(TestConsumptionState, TestProductionState):
     """Test PVState class."""
 
     @staticmethod
-    def _setup_default_state():
-        smart_meter_state = SmartMeterState()
-        past_time_slot = now()
+    def _setup_base_configuration():
+        return SmartMeterState(), now()
+
+    def _setup_default_state(self):
+        smart_meter_state, past_time_slot = self._setup_base_configuration()
         current_time_slot = past_time_slot.add(minutes=15)
         smart_meter_state._available_energy_kWh[past_time_slot] = 1
         smart_meter_state._available_energy_kWh[current_time_slot] = 1
