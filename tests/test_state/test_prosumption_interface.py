@@ -41,6 +41,17 @@ class TestProsumptionInterface:
         assert isinstance(prosumption_interface.get_unsettled_deviation_kWh(
             time_slot=current_time_slot), float)
 
+    def test_set_energy_measurement_kWh_unsettled_energy_calculation(self):
+        prosumption_interface, current_time_slot = self._setup_base_configuration()
+        energy = 1
+        prosumption_interface.set_energy_measurement_kWh(
+            energy_kWh=energy, time_slot=current_time_slot
+        )
+        assert prosumption_interface.get_forecast_measurement_deviation_kWh(
+            time_slot=current_time_slot) == 0
+        assert prosumption_interface.get_unsettled_deviation_kWh(
+            time_slot=current_time_slot) == 0
+
     def _setup_configuration_for_settlement_posting(
             self, energy_deviation=None, unsettled_deviation=None):
         prosumption_interface, current_time_slot = self._setup_base_configuration()
