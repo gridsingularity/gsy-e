@@ -5,26 +5,29 @@ import pytest
 from pendulum import now
 
 from gsy_e.models.state import ProductionState, StateInterface
+from tests.test_state.test_prosumption_interface import TestProsumptionInterface
 
 
-class TestProductionState:
+class TestProductionState(TestProsumptionInterface):
     """Test ProductionState class."""
 
     @staticmethod
-    def test_get_state_raise_error_if_conflicting_keys():
+    def _setup_base_configuration():
+        return ProductionState(), now()
+
+    def test_get_state_raise_error_if_conflicting_keys(self):
         with patch.object(StateInterface, "get_state",
                           return_value={"available_energy_kWh": {-1.0}}):
-            production_state = ProductionState()
+            production_state, _ = self._setup_base_configuration()
             with pytest.raises(AssertionError) as error:
                 production_state.get_state()
             assert ("Conflicting state values found for {'available_energy_kWh'}."
                     in str(error.value))
 
-    @staticmethod
-    def test_get_state_keys_in_state_dict():
+    def test_get_state_keys_in_state_dict(self):
         expected_keys = ["available_energy_kWh",
                          "energy_production_forecast_kWh"]
-        production_state = ProductionState()
+        production_state, _ = self._setup_base_configuration()
         state_dict = production_state.get_state()
         assert set(expected_keys).issubset(state_dict.keys())
 
@@ -40,10 +43,8 @@ class TestProductionState:
         production_state.restore_state(state_dict=past_state)
         assert past_state == production_state.get_state()
 
-    @staticmethod
-    def _setup_default_test_production_state():
-        time_slot = now()
-        production_state = ProductionState()
+    def _setup_default_test_production_state(self):
+        production_state, time_slot = self._setup_base_configuration()
         production_state.set_available_energy(
             energy_kWh=1.0,
             time_slot=time_slot

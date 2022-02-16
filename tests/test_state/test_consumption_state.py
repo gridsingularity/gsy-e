@@ -5,26 +5,29 @@ from pendulum import now
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.state import ConsumptionState, StateInterface
+from tests.test_state.test_prosumption_interface import TestProsumptionInterface
 
 
-class TestConsumptionState:
+class TestConsumptionState(TestProsumptionInterface):
     """Test ConsumptionState class."""
 
     @staticmethod
-    def test_get_state_raise_error_if_conflicting_keys():
+    def _setup_base_configuration():
+        return ConsumptionState(), now()
+
+    def test_get_state_raise_error_if_conflicting_keys(self):
         with patch.object(StateInterface, "get_state",
                           return_value={"desired_energy_Wh": {-1.0}}):
-            consumption_state = ConsumptionState()
+            consumption_state, _ = self._setup_base_configuration()
             with pytest.raises(AssertionError) as error:
                 consumption_state.get_state()
             assert ("Conflicting state values found for {'desired_energy_Wh'}."
                     in str(error.value))
 
-    @staticmethod
-    def test_get_state_keys_in_state_dict():
+    def test_get_state_keys_in_state_dict(self):
         expected_keys = ["desired_energy_Wh",
                          "total_energy_demanded_Wh"]
-        consumption_state = ConsumptionState()
+        consumption_state, _ = self._setup_base_configuration()
         state_dict = consumption_state.get_state()
         assert set(expected_keys).issubset(state_dict.keys())
 
@@ -42,10 +45,8 @@ class TestConsumptionState:
         consumption_state.restore_state(state_dict=past_state)
         assert past_state == consumption_state.get_state()
 
-    @staticmethod
-    def _setup_default_test_consumption_state():
-        time_slot = now()
-        consumption_state = ConsumptionState()
+    def _setup_default_test_consumption_state(self):
+        consumption_state, time_slot = self._setup_base_configuration()
         consumption_state.set_desired_energy(
             energy=1.0,
             time_slot=time_slot
