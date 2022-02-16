@@ -73,20 +73,21 @@ class TestProsumptionInterface:
             time_slot) == expected_response
 
     @pytest.mark.parametrize(
-        "energy_deviation, unsettled_deviation, expected_response",
-        [(1, None, None), (None, 1, None), (1, 1, True)])
-    def test_get_signed_unsettled_deviation_kWh_return_expected(
-            self, energy_deviation, unsettled_deviation, expected_response):
+        "energy_deviation, unsettled_deviation", [(1, None), (None, 1)])
+    def test_get_signed_unsettled_deviation_kWh_return_None(
+            self, energy_deviation, unsettled_deviation):
+        prosumption_interface, time_slot = self._setup_configuration_for_settlement_posting(
+                energy_deviation=energy_deviation, unsettled_deviation=unsettled_deviation)
+        assert prosumption_interface.get_signed_unsettled_deviation_kWh(
+                    time_slot) is None
+
+    def test_get_signed_unsettled_deviation_kWh_return_copysign(self):
         copysign_mock = MagicMock()
         with patch("gsy_e.models.state.copysign", return_value=copysign_mock):
             prosumption_interface, time_slot = self._setup_configuration_for_settlement_posting(
-                energy_deviation=energy_deviation, unsettled_deviation=unsettled_deviation)
-            if expected_response:
-                assert prosumption_interface.get_signed_unsettled_deviation_kWh(
+                energy_deviation=1, unsettled_deviation=1)
+            assert prosumption_interface.get_signed_unsettled_deviation_kWh(
                     time_slot) == copysign_mock
-            else:
-                assert prosumption_interface.get_signed_unsettled_deviation_kWh(
-                    time_slot) is expected_response
 
     def test_decrement_unsettled_deviation_decrements_energy(self):
         energy = 1
