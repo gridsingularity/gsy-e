@@ -85,7 +85,7 @@ class TwoSidedMarket(OneSidedMarket):
             updated_requirement = {**requirement}
             if "price" in updated_requirement:
                 energy = updated_requirement.get("energy") or bid.energy
-                original_bid_price = updated_requirement["price"] - bid.accumulated_grid_fees
+                original_bid_price = updated_requirement["price"] + bid.accumulated_grid_fees
                 updated_price = (self.fee_class.update_incoming_bid_with_fee(
                     updated_requirement["price"] / energy,
                     original_bid_price / energy)) * energy
