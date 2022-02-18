@@ -334,10 +334,10 @@ class Simulation:
                         f"{self.progress_info.elapsed_time} elapsed, "
                         f"ETA: {self.progress_info.eta}")
 
+            self.area.cycle_markets()
+
             global_objects.profiles_handler.update_time_and_buffer_profiles(
                 self._get_current_market_time_slot(slot_no))
-
-            self.area.cycle_markets()
 
             if self.simulation_config.external_connection_enabled:
                 global_objects.external_global_stats.update(market_cycle=True)
