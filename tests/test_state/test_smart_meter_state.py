@@ -5,8 +5,8 @@ import pytest
 from pendulum import now
 
 from gsy_e.models.state import SmartMeterState, UnexpectedStateException
-from tests.test_state.test_consumption_state_ import TestConsumptionState
-from tests.test_state.test_production_state_ import TestProductionState
+from tests.test_state.test_consumption_state import TestConsumptionState
+from tests.test_state.test_production_state import TestProductionState
 
 
 class TestSmartMeterState(TestConsumptionState, TestProductionState):

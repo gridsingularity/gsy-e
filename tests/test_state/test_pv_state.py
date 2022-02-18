@@ -5,7 +5,7 @@ import pytest
 from pendulum import now
 
 from gsy_e.models.state import PVState
-from tests.test_state.test_production_state_ import TestProductionState
+from tests.test_state.test_production_state import TestProductionState
 
 
 class TestPVState(TestProductionState):
