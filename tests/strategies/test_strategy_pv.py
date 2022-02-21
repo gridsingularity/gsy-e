@@ -356,7 +356,7 @@ def testing_produced_energy_forecast_real_data(pv_test66):
     # prepare whole day of energy_production_forecast_kWh:
     for time_slot in generate_market_slot_list():
         pv_test66.area.create_spot_market(time_slot)
-        pv_test66.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
+        pv_test66.set_produced_energy_forecast_kWh_in_state(reconfigure=False)
     morning_time = pendulum.today(tz=TIME_ZONE).at(hour=8, minute=20, second=0)
     afternoon_time = pendulum.today(tz=TIME_ZONE).at(hour=16, minute=40, second=0)
 

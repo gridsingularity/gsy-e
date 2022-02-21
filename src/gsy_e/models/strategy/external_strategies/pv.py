@@ -46,7 +46,9 @@ class PVExternalMixin(ExternalMixin):
     offers: "Offers"
     can_offer_be_posted: Callable
     post_offer: Callable
-    set_produced_energy_forecast_kWh_future_markets: Callable
+    set_produced_energy_forecast_kWh_in_state: Callable
+    set_produced_energy_forecast_kWh_spot_market: Callable
+    set_produced_energy_forecast_kWh_future_market: Callable
     _delete_past_state: Callable
 
     @property
@@ -218,7 +220,7 @@ class PVExternalMixin(ExternalMixin):
         self._reject_all_pending_requests()
         self._update_connection_status()
         if not self.should_use_default_strategy:
-            self.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
+            self.set_produced_energy_forecast_kWh_in_state(reconfigure=False)
             self._set_energy_measurement_of_last_market()
             if not self.is_aggregator_controlled:
                 market_event_channel = f"{self.channel_prefix}/events/market"
@@ -429,11 +431,15 @@ class PVForecastExternalStrategy(ForecastExternalMixin, PVPredefinedExternalStra
             if slot_time < self.area.spot_market.time_slot:
                 self.state.set_energy_measurement_kWh(energy_kWh, slot_time)
 
-    def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=False) -> None:
+    def set_produced_energy_forecast_kWh_spot_market(self, reconfigure=False) -> None:
         """
         Setting produced energy for the next slot is already done by update_energy_forecast
         """
 
+    def set_produced_energy_forecast_kWh_future_market(self, reconfigure=False) -> None:
+        """
+        Setting produced energy for the future slots is already done by update_energy_forecast
+        """
     def _set_energy_measurement_of_last_market(self):
         """
          Setting energy measurement for the previous slot is already done by
