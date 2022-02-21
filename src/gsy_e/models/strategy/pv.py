@@ -122,7 +122,7 @@ class PVStrategy(BidEnabledStrategy):
         if key_in_dict_and_not_none(kwargs, "capacity_kW"):
             self.capacity_kW = kwargs["capacity_kW"]
 
-        self.set_produced_energy_forecast_kWh_in_state(reconfigure=True)
+        self.set_produced_energy_forecast_in_state(reconfigure=True)
 
     def _area_reconfigure_prices(self, **kwargs):
         if key_in_dict_and_not_none(kwargs, "initial_selling_rate"):
@@ -209,7 +209,7 @@ class PVStrategy(BidEnabledStrategy):
     def event_activate_energy(self):
         if self.capacity_kW is None:
             self.capacity_kW = self.simulation_config.capacity_kW
-        self.set_produced_energy_forecast_kWh_in_state(reconfigure=True)
+        self.set_produced_energy_forecast_in_state(reconfigure=True)
 
     def event_tick(self):
         """Update the prices of existing offers on market tick.
@@ -222,32 +222,20 @@ class PVStrategy(BidEnabledStrategy):
         self._settlement_market_strategy.event_tick(self)
         self._future_market_strategy.event_tick(self)
 
-    def set_produced_energy_forecast_kWh_in_state(self, reconfigure=True):
-        self.set_produced_energy_forecast_kWh_spot_market(reconfigure)
-        self.set_produced_energy_forecast_kWh_future_market(reconfigure)
-
-    def set_produced_energy_forecast_kWh_spot_market(self, reconfigure=True):
+    def set_produced_energy_forecast_in_state(self, reconfigure=True):
         # This forecast is based on the real PV system data provided by enphase
         # They can be found in the tools folder
         # A fit of a gaussian function to those data results in a formula Energy(time)
-        market = self.area.spot_market
-        slot_time = market.time_slot
-        difference_to_midnight_in_minutes = slot_time.diff(
-            self.area.now.start_of("day")).in_minutes() % (60 * 24)
-        available_energy_kWh = self.gaussian_energy_forecast_kWh(
-            difference_to_midnight_in_minutes) * self.panel_count
-        self.state.set_available_energy(available_energy_kWh, slot_time, True)
-
-    def set_produced_energy_forecast_kWh_future_market(self, reconfigure=True):
-        if not GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
-            return
-        for slot_time in self.area.future_market_time_slots:
-            difference_to_midnight_in_minutes = slot_time.diff(
+        time_slots = [self.area.spot_market.time_slot]
+        if GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
+            time_slots.extend(self.area.future_market_time_slots)
+        for time_slot in time_slots:
+            difference_to_midnight_in_minutes = time_slot.diff(
                 pendulum.datetime(
-                    slot_time.year, slot_time.month, slot_time.day)).in_minutes() % (60 * 24)
+                    time_slot.year, time_slot.month, time_slot.day)).in_minutes() % (60 * 24)
             available_energy_kWh = self.gaussian_energy_forecast_kWh(
                 difference_to_midnight_in_minutes) * self.panel_count
-            self.state.set_available_energy(available_energy_kWh, slot_time, reconfigure)
+            self.state.set_available_energy(available_energy_kWh, time_slot, True)
 
     def gaussian_energy_forecast_kWh(self, time_in_minutes=0):
         # The sun rises at approx 6:30 and sets at 18hr
@@ -274,7 +262,7 @@ class PVStrategy(BidEnabledStrategy):
         super().event_market_cycle()
         # Provide energy values for the past market slot, to be used in the settlement market
         self._set_energy_measurement_of_last_market()
-        self.set_produced_energy_forecast_kWh_in_state(reconfigure=False)
+        self.set_produced_energy_forecast_in_state(reconfigure=False)
         self._set_alternative_pricing_scheme()
         self.event_market_cycle_price()
         self._delete_past_state()
