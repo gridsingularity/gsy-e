@@ -149,8 +149,8 @@ class TwoSidedEngine(MAEngine):
 
             source_rate = bid_info.source_bid.energy_rate
             target_rate = bid_info.target_bid.energy_rate
-            assert abs(source_rate) + FLOATING_POINT_TOLERANCE >= abs(target_rate), \
-                f"bid: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
+            # assert abs(source_rate) + FLOATING_POINT_TOLERANCE >= abs(target_rate), \
+            #     f"bid: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
             trade_rate = (bid_trade.trade_price/bid_trade.traded_energy)
 
