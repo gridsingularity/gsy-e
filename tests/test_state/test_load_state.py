@@ -31,8 +31,8 @@ class TestLoadState(TestConsumptionState):
     def test_set_energy_measurement_kWh_unsettled_energy_calculation(
             self, desired_energy, traded_energy, measured_energy_consumption, expected_deviation):
         """Test different case scenarios for unsettled energy:
-            1st overproduction,
-            2nd underproduction,
+            1st over-consumption,
+            2nd under-consumption,
             3rd no unsettled energy.
         """
         load_state, current_time_slot = self._setup_base_configuration()
