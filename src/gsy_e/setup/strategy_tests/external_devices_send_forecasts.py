@@ -1,8 +1,6 @@
 # pylint: disable=missing-docstring
-import os
-import platform
-
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import SpotMarketTypeEnum
 
 from gsy_e.models.area import Market, Asset
 from gsy_e.models.strategy.external_strategies.load import LoadForecastExternalStrategy
@@ -10,14 +8,10 @@ from gsy_e.models.strategy.external_strategies.pv import PVForecastExternalStrat
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 
-current_dir = os.path.dirname(__file__)
-print(current_dir)
-print(platform.python_implementation())
-
 
 def get_setup(config):
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 1
-    ConstSettings.MASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = 22
 
     market = Market(
