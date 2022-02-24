@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from collections import namedtuple
 from typing import Dict, TYPE_CHECKING
 
-from gsy_framework.data_classes import Bid
+from gsy_framework.data_classes import Bid, TradeBidOfferInfo
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import BidNotFoundException, MarketException
@@ -154,20 +154,19 @@ class TwoSidedEngine(MAEngine):
 
             trade_rate = (bid_trade.trade_price/bid_trade.traded_energy)
 
+            original_offer_rate, propagated_offer_rate, = None, None
             if bid_trade.offer_bid_trade_info is not None:
                 # Adapt trade_offer_info received by the trade to include source market grid fees,
                 # which was skipped when accepting the bid during the trade operation.
-                updated_trade_offer_info = \
-                    self.markets.source.fee_class.propagate_original_offer_info_on_bid_trade(
-                        bid_trade.offer_bid_trade_info
-                    )
-            else:
-                updated_trade_offer_info = bid_trade.offer_bid_trade_info
-
-            trade_offer_info = \
-                self.markets.source.fee_class.update_forwarded_bid_trade_original_info(
-                    updated_trade_offer_info, market_bid
-                )
+                original_offer_rate, propagated_offer_rate, _ = (
+                    self.markets.source.fee_class.adapt_offer_fees_on_bid_trade(
+                        bid_trade.offer_bid_trade_info))
+            original_bid_rate, propagated_bid_rate, bid_trade_rate = (
+                self.markets.source.fee_class.adapt_bid_fees_on_bid_trade(
+                    bid_trade.offer_bid_trade_info, market_bid))
+            trade_offer_info = TradeBidOfferInfo(original_bid_rate, propagated_bid_rate,
+                                                 original_offer_rate, propagated_offer_rate,
+                                                 bid_trade_rate)
             self.markets.source.accept_bid(
                 bid=market_bid,
                 energy=bid_trade.traded_energy,

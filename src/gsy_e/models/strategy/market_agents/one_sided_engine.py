@@ -157,14 +157,16 @@ class MAEngine:
             try:
                 if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                     # One sided market should subtract the fees
-                    trade_offer_rate = trade.trade_rate - \
-                                       trade.fee_price / trade.traded_energy
+                    trade_offer_rate = trade.trade_rate - trade.fee_price / trade.traded_energy
                 else:
                     # trade_offer_rate not used in two sided markets, trade_bid_info used instead
                     trade_offer_rate = None
-                updated_trade_bid_info = \
-                    self.markets.source.fee_class.update_forwarded_offer_trade_original_info(
-                        trade.offer_bid_trade_info, offer_info.source_offer)
+                    trade.offer_bid_trade_info.original_offer_rate = (
+                        self.markets.source.fee_class.adapt_offer_fees_on_offer_trade(
+                            trade.offer_bid_trade_info, offer_info.source_offer)[0])
+                    trade.offer_bid_trade_info.propagated_offer_rate = (
+                        self.markets.source.fee_class.adapt_offer_fees_on_offer_trade(
+                            trade.offer_bid_trade_info, offer_info.source_offer)[1])
 
                 trade_source = self.owner.accept_offer(
                     market=self.markets.source,
@@ -172,7 +174,7 @@ class MAEngine:
                     energy=trade.traded_energy,
                     buyer=self.owner.name,
                     trade_rate=trade_offer_rate,
-                    trade_bid_info=updated_trade_bid_info,
+                    trade_bid_info=trade.offer_bid_trade_info,
                     buyer_origin=trade.buyer_origin,
                     buyer_origin_id=trade.buyer_origin_id,
                     buyer_id=self.owner.uuid

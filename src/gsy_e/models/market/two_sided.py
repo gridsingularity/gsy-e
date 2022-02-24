@@ -249,14 +249,14 @@ class TwoSidedMarket(OneSidedMarket):
 
         # Do not adapt grid fees when creating the bid_trade_info structure, to mimic
         # the behavior of the forwarded bids which use the source market fee.
-        updated_bid_trade_info = self.fee_class.propagate_original_offer_info_on_bid_trade(
-            trade_offer_info, ignore_fees=True
-        )
+        trade_offer_info.original_offer_rate, trade_offer_info.propagated_offer_rate, _ = (
+            self.fee_class.adapt_offer_fees_on_bid_trade(
+                trade_offer_info, ignore_fees=True))
 
         trade = Trade(str(uuid.uuid4()), self.now, bid, seller,
                       buyer, traded_energy=energy, trade_price=trade_price,
                       residual=residual_bid, already_tracked=already_tracked,
-                      offer_bid_trade_info=updated_bid_trade_info,
+                      offer_bid_trade_info=trade_offer_info,
                       buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
                       fee_price=fee_price, seller_origin_id=seller_origin_id,
                       buyer_origin_id=bid.buyer_origin_id, seller_id=seller_id,

@@ -307,12 +307,18 @@ class OneSidedMarket(MarketBase):
 
         # Delete the accepted offer from self.offers:
         self.offers.pop(offer.id, None)
-        offer_bid_trade_info = self.fee_class.propagate_original_bid_info_on_offer_trade(
-            trade_original_info=trade_bid_info)
+        original_bid_rate, propagated_bid_rate, clearing_rate = (
+            self.fee_class.adapt_bid_fees_on_offer_trade(
+                trade_original_info=trade_bid_info)
+        )
+        orders_trade_info = TradeBidOfferInfo(
+            original_bid_rate, propagated_bid_rate,
+            trade_bid_info.original_offer_rate if trade_bid_info else None,
+            trade_bid_info.propagated_offer_rate if trade_bid_info else None, clearing_rate)
 
         trade = Trade(trade_id, self.now, offer, offer.seller, buyer,
                       traded_energy=energy, trade_price=trade_price, residual=residual_offer,
-                      offer_bid_trade_info=offer_bid_trade_info,
+                      offer_bid_trade_info=orders_trade_info,
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
                       fee_price=fee_price, buyer_origin_id=buyer_origin_id,
                       seller_origin_id=offer.seller_origin_id,

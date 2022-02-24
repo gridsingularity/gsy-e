@@ -61,54 +61,33 @@ class GridFees(BaseClassGridFees):
     def update_forwarded_offer_with_fee(self, source_rate, _):
         return source_rate
 
-    def update_forwarded_bid_trade_original_info(self, trade_original_info, market_bid):
+    def adapt_bid_fees_on_bid_trade(self, trade_original_info, market_bid):
         if not trade_original_info:
-            return None
-        trade_offer_info = TradeBidOfferInfo(
-            original_bid_rate=market_bid.original_price / market_bid.energy,
-            propagated_bid_rate=market_bid.energy_rate,
-            original_offer_rate=trade_original_info.original_offer_rate,
-            propagated_offer_rate=trade_original_info.propagated_offer_rate,
-            trade_rate=trade_original_info.trade_rate)
-        return trade_offer_info
+            return None, None, None
+        original_bid_rate = market_bid.original_price / market_bid.energy
+        return original_bid_rate, market_bid.energy_rate, trade_original_info.trade_rate
 
-    def update_forwarded_offer_trade_original_info(self, trade_original_info, market_offer):
+    def adapt_offer_fees_on_offer_trade(self, trade_original_info, market_offer):
         if not trade_original_info:
-            return None
-        trade_bid_info = TradeBidOfferInfo(
-            original_bid_rate=trade_original_info.original_bid_rate,
-            propagated_bid_rate=trade_original_info.propagated_bid_rate,
-            original_offer_rate=market_offer.original_price / market_offer.energy,
-            propagated_offer_rate=market_offer.energy_rate,
-            trade_rate=trade_original_info.trade_rate)
-        return trade_bid_info
+            return None, None, None
+        original_offer_rate = market_offer.original_price / market_offer.energy
+        return original_offer_rate, market_offer.energy_rate, trade_original_info.trade_rate
 
-    def propagate_original_bid_info_on_offer_trade(self, trade_original_info):
+    def adapt_bid_fees_on_offer_trade(self, trade_original_info):
         if trade_original_info is None:
-            return None
+            return None, None, None
         bid_rate = (
                 trade_original_info.propagated_bid_rate
                 - trade_original_info.original_bid_rate * self.grid_fee_rate)
-        trade_bid_info = TradeBidOfferInfo(
-            original_bid_rate=trade_original_info.original_bid_rate,
-            propagated_bid_rate=bid_rate,
-            original_offer_rate=None,
-            propagated_offer_rate=None,
-            trade_rate=trade_original_info.trade_rate)
-        return trade_bid_info
+        original_bid_rate = trade_original_info.original_bid_rate
+        return original_bid_rate, bid_rate, trade_original_info.trade_rate
 
-    def propagate_original_offer_info_on_bid_trade(self, trade_original_info, ignore_fees=False):
+    def adapt_offer_fees_on_bid_trade(self, trade_original_info, ignore_fees=False):
         grid_fee_rate = self.grid_fee_rate if not ignore_fees else 0.0
         offer_rate = (
                 trade_original_info.propagated_offer_rate
                 + trade_original_info.original_offer_rate * grid_fee_rate)
-        trade_offer_info = TradeBidOfferInfo(
-            original_bid_rate=None,
-            propagated_bid_rate=None,
-            original_offer_rate=trade_original_info.original_offer_rate,
-            propagated_offer_rate=offer_rate,
-            trade_rate=trade_original_info.trade_rate)
-        return trade_offer_info
+        return trade_original_info.original_offer_rate, offer_rate, trade_original_info.trade_rate
 
     def calculate_trade_price_and_fees(self, trade_bid_info):
         revenue, grid_fee_rate, trade_price = self._calculate_fee_revenue_from_clearing_trade(

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import Tuple, Optional
 
 from gsy_framework.data_classes import TradeBidOfferInfo, Bid, Offer
 
@@ -48,37 +48,10 @@ class BaseClassGridFees(ABC):
         """Add fees for offer's rate when it's forwarded by another market."""
 
     @abstractmethod
-    def update_forwarded_bid_trade_original_info(
-            self, trade_original_info: TradeBidOfferInfo, market_bid: Bid) -> TradeBidOfferInfo:
-        """
-        When a forwarded bid gets matched in a target market, it will also get matched in
-        the source market with adjustments to the TradeBidOfferInfo of this trade.
-        This method deals with duplicating and updating the TradeBidOfferInfo values.
-        Args:
-            trade_original_info: TradeBidOfferInfo instance created in the target market
-            market_bid: the source bid instance that was cleared in a target market.
-
-        Returns: TradeBidOfferInfo
-        """
-
-    @abstractmethod
-    def update_forwarded_offer_trade_original_info(
-            self, trade_original_info: TradeBidOfferInfo, market_offer: Offer
-    ) -> TradeBidOfferInfo:
-        """
-        When a forwarded offer gets matched in a target market, it will also get matched in
-        the source market with adjustments to the TradeBidOfferInfo of this trade.
-        This method deals with duplicating and updating the TradeBidOfferInfo values.
-        Args:
-            trade_original_info: TradeBidOfferInfo instance created in the target market
-            market_offer: the source offer instance that was cleared in a target market.
-
-        Returns: TradeBidOfferInfo
-        """
-
-    @abstractmethod
-    def propagate_original_bid_info_on_offer_trade(self, trade_original_info):
-        """Add fees to the cleared bid trade.
+    def adapt_bid_fees_on_bid_trade(
+            self, trade_original_info: TradeBidOfferInfo, market_bid: Bid
+    ) -> Tuple[Optional[float], Optional[float], Optional[float]]:
+        """Add fees to the bid of the cleared bid trade.
 
         The reason we recalculate fees on trade even when we initially have these fees
         on the orders when they got forwarded is that the clearing rate is not always
@@ -86,8 +59,29 @@ class BaseClassGridFees(ABC):
         """
 
     @abstractmethod
-    def propagate_original_offer_info_on_bid_trade(self, trade_original_info, ignore_fees=False):
-        """Add fees to the cleared offer trade.
+    def adapt_offer_fees_on_offer_trade(
+            self, trade_original_info: TradeBidOfferInfo, market_offer: Offer
+    ) -> Tuple[Optional[float], Optional[float], Optional[float]]:
+        """Add fees to the offer of the cleared offer trade.
+
+        The reason we recalculate fees on trade even when we initially have these fees
+        on the orders when they got forwarded is that the clearing rate is not always
+        the offer or bid rate, It might change depending on the algorithm.
+        """
+
+    @abstractmethod
+    def adapt_bid_fees_on_offer_trade(
+            self, trade_original_info) -> Tuple[Optional[float], Optional[float], Optional[float]]:
+        """Add fees to the bid of the cleared offer trade.
+
+        The reason we recalculate fees on trade even when we initially have these fees
+        on the orders when they got forwarded is that the clearing rate is not always
+        the offer or bid rate, It might change depending on the algorithm.
+        """
+
+    @abstractmethod
+    def adapt_offer_fees_on_bid_trade(self, trade_original_info, ignore_fees=False):
+        """Add fees to the offer of the cleared bid trade.
 
         The reason we recalculate fees on trade even when we initially have these fees
         on the orders when they got forwarded is that the clearing rate is not always
