@@ -344,7 +344,8 @@ class TwoSidedMarket(OneSidedMarket):
                     # re-raise exception to be handled by the external matcher
                     raise invalid_bop_exception
                 continue
-            original_bid_rate = recommended_pair.bid_energy_rate - market_bid.accumulated_grid_fees
+            original_bid_rate = recommended_pair.bid_energy_rate - (
+                market_bid.accumulated_grid_fees / recommended_pair.bid_energy)
             if ConstSettings.MASettings.BID_OFFER_MATCH_TYPE == BidOfferMatchAlgoEnum.PAY_AS_BID:
                 trade_rate = original_bid_rate
             else:
