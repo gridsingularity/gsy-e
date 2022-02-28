@@ -338,8 +338,6 @@ class TwoSidedMarket(OneSidedMarket):
             try:
                 self.validate_orders_pair(recommended_pair)
             except InvalidBidOfferPairException as invalid_bop_exception:
-                # TODO: Refactor this. The behaviour of the market should not be dependant
-                #  on a matching algorithm setting
                 if is_external_matching_enabled():
                     # re-raise exception to be handled by the external matcher
                     raise invalid_bop_exception
@@ -442,16 +440,30 @@ class TwoSidedMarket(OneSidedMarket):
         replaced with corresponding residual offer/bid
         """
 
-        def replace_recommendations_with_residuals(recommendation: Dict):
+        def _replace_matching_requirements(recommendation):
+            if "energy" in getattr(recommendation, "matching_requirements", {}
+                                   ).get("bid_requirement", {}):
+                for index, requirement in enumerate(recommendation["bid"]["requirements"]):
+                    if requirement == recommendation["matching_requirements"]["bid_requirement"]:
+                        bid_requirement = deepcopy(requirement)
+                        bid_requirement["energy"] -= bid_trade.traded_energy
+                        recommendation["bid"]["requirements"][index] = bid_requirement
+                        recommendation["matching_requirements"][
+                            "bid_requirement"] = bid_requirement
+                        return recommendation
+            return recommendation
+
+        def _replace_recommendations_with_residuals(recommendation: Dict):
             if (recommendation["offer"]["id"] == offer_trade.offer_bid.id and
                     offer_trade.residual is not None):
                 recommendation["offer"] = offer_trade.residual.serializable_dict()
             if (recommendation["bid"]["id"] == bid_trade.offer_bid.id and
                     bid_trade.residual is not None):
                 recommendation["bid"] = bid_trade.residual.serializable_dict()
+                recommendation = _replace_matching_requirements(recommendation)
             return recommendation
 
         if offer_trade.residual or bid_trade.residual:
-            recommendations = [replace_recommendations_with_residuals(recommendation)
+            recommendations = [_replace_recommendations_with_residuals(recommendation)
                                for recommendation in recommendations]
         return recommendations
