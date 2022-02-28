@@ -441,8 +441,8 @@ class TwoSidedMarket(OneSidedMarket):
         """
 
         def _replace_matching_requirements(recommendation):
-            if "energy" in getattr(recommendation, "matching_requirements", {}
-                                   ).get("bid_requirement", {}):
+            if (recommendation["matching_requirements"] and "energy" in recommendation[
+                    "matching_requirements"].get("bid_requirement", {})):
                 for index, requirement in enumerate(recommendation["bid"]["requirements"]):
                     if requirement == recommendation["matching_requirements"]["bid_requirement"]:
                         bid_requirement = deepcopy(requirement)
