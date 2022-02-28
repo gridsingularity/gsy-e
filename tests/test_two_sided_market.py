@@ -163,7 +163,7 @@ class TestTwoSidedMarket:
                                        selected_energy=1, market_id="market",
                                        time_slot="2022-01-17T12:00")
         with pytest.raises(InvalidBidOfferPairException) as exception:
-            market.validate_bid_offer_match(recommendation)
+            market.validate_orders_pair(recommendation)
             assert "Not all bids and offers exist in the market." in str(exception.value)
 
     @staticmethod
@@ -186,7 +186,7 @@ class TestTwoSidedMarket:
                                        selected_energy=selected_energy, market_id="market",
                                        time_slot="2022-01-17T12:00")
         with pytest.raises(InvalidBidOfferPairException):
-            market.validate_bid_offer_match(recommendation)
+            market.validate_orders_pair(recommendation)
 
     @staticmethod
     def test_double_sided_performs_pay_as_bid_matching(
@@ -432,7 +432,7 @@ class TestTwoSidedMarket:
         bid_trade = Trade("bid_trade", 1, Bid("bid_id2", pendulum.now(), 1, 1, "S"), "S", "B",
                           residual=Bid("residual_bid_2", pendulum.now(), 1, 1, "S"),
                           traded_energy=1, trade_price=1)
-        matches = TwoSidedMarket._replace_offers_bids_with_residual_in_recommendations_list(
+        matches = TwoSidedMarket._replace_orders_with_residual_in_recommendations_list(
             matches, offer_trade, bid_trade
         )
         assert len(matches) == 2

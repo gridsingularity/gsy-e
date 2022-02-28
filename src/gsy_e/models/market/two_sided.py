@@ -30,7 +30,7 @@ from pendulum import DateTime
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import (
     BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade, MarketException)
-from gsy_e.gsy_e_core.util import short_offer_bid_log_str, is_external_matching_enabled
+from gsy_e.gsy_e_core.util import short_order_log, is_external_matching_enabled
 from gsy_e.events.event_structures import MarketEvent
 from gsy_e.models.market import lock_market_action
 from gsy_e.models.market.one_sided import OneSidedMarket
@@ -186,8 +186,8 @@ class TwoSidedMarket(OneSidedMarket):
 
         log.debug("%s[BID][SPLIT][%s, %s] (%s into %s and %s",
                   self._debug_log_market_type_identifier, self.time_slot_str, self.name,
-                  short_offer_bid_log_str(original_bid), short_offer_bid_log_str(accepted_bid),
-                  short_offer_bid_log_str(residual_bid))
+                  short_order_log(original_bid), short_order_log(accepted_bid),
+                  short_order_log(residual_bid))
 
         self._notify_listeners(MarketEvent.BID_SPLIT,
                                original_bid=original_bid,
@@ -271,9 +271,9 @@ class TwoSidedMarket(OneSidedMarket):
         self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
         return trade
 
-    def accept_bid_offer_pair(self, bid: Bid, offer: Offer, clearing_rate: float,
-                              trade_bid_info: TradeBidOfferInfo,
-                              selected_energy: float) -> Tuple[Trade, Trade]:
+    def accept_orders_pair(self, bid: Bid, offer: Offer, clearing_rate: float,
+                           trade_bid_info: TradeBidOfferInfo,
+                           selected_energy: float) -> Tuple[Trade, Trade]:
         already_tracked = bid.buyer == offer.seller
         trade = self.accept_offer(offer_or_id=offer,
                                   buyer=bid.buyer,
@@ -336,7 +336,7 @@ class TwoSidedMarket(OneSidedMarket):
                 recommended_pair.bid = market_bid.serializable_dict()
 
             try:
-                self.validate_bid_offer_match(recommended_pair)
+                self.validate_orders_pair(recommended_pair)
             except InvalidBidOfferPairException as invalid_bop_exception:
                 # TODO: Refactor this. The behaviour of the market should not be dependant
                 #  on a matching algorithm setting
@@ -359,13 +359,13 @@ class TwoSidedMarket(OneSidedMarket):
                 propagated_offer_rate=market_offer.energy_rate,
                 trade_rate=trade_rate)
 
-            bid_trade, offer_trade = self.accept_bid_offer_pair(
+            bid_trade, offer_trade = self.accept_orders_pair(
                 market_bid, market_offer, trade_rate,
                 trade_bid_info, min(recommended_pair.selected_energy,
                                     market_offer.energy, market_bid.energy))
             were_trades_performed = True
             recommendations = (
-                self._replace_offers_bids_with_residual_in_recommendations_list(
+                self._replace_orders_with_residual_in_recommendations_list(
                     recommendations, offer_trade, bid_trade)
             )
         return were_trades_performed
@@ -394,7 +394,7 @@ class TwoSidedMarket(OneSidedMarket):
             raise InvalidBidOfferPairException(
                 "The requirements failed the validation.")
 
-    def validate_bid_offer_match(
+    def validate_orders_pair(
             self, recommendation: BidOfferMatch) -> None:
         """Basic validation function for a bid against an offer.
 
@@ -429,7 +429,7 @@ class TwoSidedMarket(OneSidedMarket):
         self._validate_requirements_satisfied(recommendation)
 
     @classmethod
-    def _replace_offers_bids_with_residual_in_recommendations_list(
+    def _replace_orders_with_residual_in_recommendations_list(
             cls, recommendations: List[Dict], offer_trade: Trade, bid_trade: Trade
     ) -> List[BidOfferMatch.serializable_dict]:
         """

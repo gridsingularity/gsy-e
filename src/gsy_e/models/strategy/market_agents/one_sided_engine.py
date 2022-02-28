@@ -24,7 +24,7 @@ from gsy_framework.enums import SpotMarketTypeEnum
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import MarketException, OfferNotFoundException
-from gsy_e.gsy_e_core.util import short_offer_bid_log_str
+from gsy_e.gsy_e_core.util import short_order_log
 
 OfferInfo = namedtuple("OfferInfo", ("source_offer", "target_offer"))
 Markets = namedtuple("Markets", ("source", "target"))
@@ -275,9 +275,9 @@ class MAEngine:
         if original_offer.id in self.offer_age:
             self.offer_age[residual_offer.id] = self.offer_age.pop(original_offer.id)
 
-        self.owner.log.debug(f"Offer {short_offer_bid_log_str(local_offer)} was split into "
-                             f"{short_offer_bid_log_str(local_split_offer)} and "
-                             f"{short_offer_bid_log_str(local_residual_offer)}")
+        self.owner.log.debug(f"Offer {short_order_log(local_offer)} was split into "
+                             f"{short_order_log(local_split_offer)} and "
+                             f"{short_order_log(local_residual_offer)}")
 
     def _add_to_forward_offers(self, source_offer, target_offer):
         offer_info = OfferInfo(Offer.copy(source_offer), Offer.copy(target_offer))

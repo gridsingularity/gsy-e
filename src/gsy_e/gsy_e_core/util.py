@@ -25,10 +25,11 @@ import termios
 import tty
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from click.types import ParamType
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, RangeLimit
+from gsy_framework.data_classes import Offer, Bid
 from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import (
@@ -407,9 +408,9 @@ def convert_percent_to_ratio(unit_percent):
     return unit_percent / 100
 
 
-def short_offer_bid_log_str(offer_or_bid):
-    """Offer bid log string."""
-    return f"({{{offer_or_bid.id!s:.6s}}}: {offer_or_bid.energy} kWh)"
+def short_order_log(order: Union[Offer, Bid]) -> str:
+    """Briefly present an order object."""
+    return f"({order.id!s:.6s}: {order.energy} kWh)"
 
 
 # pylint: disable=unspecified-encoding

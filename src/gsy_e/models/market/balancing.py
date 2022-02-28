@@ -30,7 +30,7 @@ from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import (
     InvalidOffer, MarketReadOnlyException,
     OfferNotFoundException, InvalidBalancingTradeException, DeviceNotInRegistryError)
-from gsy_e.gsy_e_core.util import short_offer_bid_log_str
+from gsy_e.gsy_e_core.util import short_order_log
 from gsy_e.models.market.one_sided import OneSidedMarket
 
 log = getLogger(__name__)
@@ -139,8 +139,8 @@ class BalancingMarket(OneSidedMarket):
 
         log.debug(
             "[BALANCING_OFFER][SPLIT][%s, %s] (%s into %s and %s",
-            self.time_slot_str, self.name, short_offer_bid_log_str(original_offer),
-            short_offer_bid_log_str(accepted_offer), short_offer_bid_log_str(residual_offer))
+            self.time_slot_str, self.name, short_order_log(original_offer),
+            short_order_log(accepted_offer), short_order_log(residual_offer))
 
         self.bc_interface.change_offer(accepted_offer, original_offer, residual_offer)
 

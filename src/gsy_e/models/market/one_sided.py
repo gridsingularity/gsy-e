@@ -27,7 +27,7 @@ from pendulum import DateTime
 
 from gsy_e.gsy_e_core.exceptions import (
     InvalidOffer, MarketReadOnlyException, OfferNotFoundException, InvalidTrade, MarketException)
-from gsy_e.gsy_e_core.util import short_offer_bid_log_str
+from gsy_e.gsy_e_core.util import short_order_log
 from gsy_e.events.event_structures import MarketEvent
 from gsy_e.models.market import MarketBase, lock_market_action, GridFee
 
@@ -215,8 +215,8 @@ class OneSidedMarket(MarketBase):
 
         log.debug("%s[OFFER][SPLIT][%s, %s] (%s into %s and %s",
                   self._debug_log_market_type_identifier, self.time_slot_str, self.name,
-                  short_offer_bid_log_str(original_offer), short_offer_bid_log_str(accepted_offer),
-                  short_offer_bid_log_str(residual_offer))
+                  short_order_log(original_offer), short_order_log(accepted_offer),
+                  short_order_log(residual_offer))
 
         self.bc_interface.change_offer(accepted_offer, original_offer, residual_offer)
 

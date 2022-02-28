@@ -22,7 +22,7 @@ from gsy_framework.data_classes import Bid, TradeBidOfferInfo
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import BidNotFoundException, MarketException
-from gsy_e.gsy_e_core.util import short_offer_bid_log_str
+from gsy_e.gsy_e_core.util import short_order_log
 from gsy_e.models.strategy.market_agents.one_sided_engine import MAEngine
 
 if TYPE_CHECKING:
@@ -260,9 +260,9 @@ class TwoSidedEngine(MAEngine):
         else:
             return
 
-        self.owner.log.debug(f"Bid {short_offer_bid_log_str(local_bid)} was split into "
-                             f"{short_offer_bid_log_str(local_split_bid)} and "
-                             f"{short_offer_bid_log_str(local_residual_bid)}")
+        self.owner.log.debug(f"Bid {short_order_log(local_bid)} was split into "
+                             f"{short_order_log(local_split_bid)} and "
+                             f"{short_order_log(local_residual_bid)}")
 
     def _add_to_forward_bids(self, source_bid, target_bid):
         bid_info = BidInfo(source_bid, target_bid)
