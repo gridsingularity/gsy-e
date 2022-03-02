@@ -1,11 +1,13 @@
-FROM python:3.8
+FROM python:3.9
 
-ADD . /app
-
+RUN mkdir /app
 WORKDIR /app
 
-RUN pip install --upgrade pip
-RUN pip install -r requirements/pandapower.txt
+ADD ./requirements /app/requirements
+RUN pip install --upgrade pip && pip install -r requirements/pandapower.txt && pip install -r requirements/blockchain.in
+
+ADD ./src /app/src
+
 RUN pip install -e .
 
 ENTRYPOINT ["gsy-e"]

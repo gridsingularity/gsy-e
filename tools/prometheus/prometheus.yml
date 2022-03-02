@@ -1,0 +1,13 @@
+
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'substrate-nodes'
+    static_configs:
+      - targets: ['substrate1:9615']
+        labels:
+          network: dev
+      - targets: ['substrate2:9615']
+        labels:
+          network: dev
