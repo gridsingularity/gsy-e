@@ -19,8 +19,8 @@ services:
     environment:
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
-      #- KAFKA_CLIENT_PASSWORDS=bitnami
-      #- KAFKA_CLIENT_USERS=user
+      - KAFKA_CLIENT_PASSWORDS=bitnami
+      - KAFKA_CLIENT_USERS=user
     depends_on:
       - zookeeper
 
@@ -73,10 +73,15 @@ services:
   gsy-market:
     image: gsy-e
     build: .
+    command:
+      - run
+      - --setup
+      - api_setup.default_community
     environment:
-      - KAFKA_URL=http://kafka
+      - KAFKA_URL=kafka:9092
       - KAFKA_USERNAME=user
       - KAFKA_PASSWORD=bitnami
+      - KAFKA_COMMUNICATION_SECURITY_PROTOCOL=PLAINTEXT
       - REDIS_URL=redis://redis
     depends_on:
       - kafka
