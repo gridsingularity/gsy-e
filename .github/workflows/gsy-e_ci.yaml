@@ -24,10 +24,6 @@ jobs:
         echo "::set-output name=INTEGRATION_TESTS_BRANCH::$(echo -e $prBody | sed -n 's/.*#INTEGRATION_TESTS_BRANCH=\([^ ]*\).*/\1/p')"
       id: parse_branch
 
-    - name: Print Branch
-      env:
-        INTEGRATION_TESTS_BRANCH: ${{ steps.parse_branch.outputs.INTEGRATION_TESTS_BRANCH }}
-      run: echo "$INTEGRATION_TESTS_BRANCH"
 
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -39,6 +35,7 @@ jobs:
         TOXENV: ci
         GSY_FRAMEWORK_BRANCH: master
         INTEGRATION_TESTS_REPO: https://gsydev:${{ secrets.GSYDEV_TOKEN }}@github.com/gridsingularity/gsy-backend-integration-tests.git
+        INTEGRATION_TESTS_BRANCH: ${{ steps.parse_branch.outputs.INTEGRATION_TESTS_BRANCH }}
       run: |
         export SOLC_BINARY=$HOME/solc/usr/bin/solc
         export LD_LIBRARY_PATH=$HOME/solc/usr/lib:$LD_LIBRARY_PATH
