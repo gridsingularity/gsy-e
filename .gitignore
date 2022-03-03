@@ -100,7 +100,7 @@ requirements/local.*
 
 .pytest_cache
 
-gsy-e-simulation
+gsy_e-simulation
 
 # Ink contract builds
 src/gsy_e/blockchain/contracts/ink/target

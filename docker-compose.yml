@@ -76,7 +76,10 @@ services:
     command:
       - run
       - --setup
-      - api_setup.default_community
+#      - api_setup.default_community
+      - grid_fees.constant_grid_fees
+    volumes:
+      - ./gsy_e-simulation/:/root/gsy_e-simulation # ~/gsy_e-simulation
     environment:
       - KAFKA_URL=kafka:9092
       - KAFKA_USERNAME=user
