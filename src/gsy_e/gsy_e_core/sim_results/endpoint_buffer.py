@@ -301,7 +301,9 @@ class SimulationEndpointBuffer:
             self._populate_core_stats_and_sim_state(child)
 
     def update_stats(self, area: "Area", simulation_status: str,
-                     progress_info: "SimulationProgressInfo", sim_state: Dict) -> None:
+                     progress_info: "SimulationProgressInfo", sim_state: Dict,
+                     calculate_results: bool) -> None:
+        # pylint: disable=too-many-arguments
         """Wrapper for handling of all results."""
         self.area_result_dict = self._create_area_tree_dict(area)
         self.status = simulation_status
@@ -325,19 +327,19 @@ class SimulationEndpointBuffer:
             "percentage_completed": int(progress_info.percentage_completed)
         }
 
-        self.results_handler.update(
-            self.area_result_dict, self.flattened_area_core_stats_dict,
-            self.current_market_time_slot_str
-        )
+        if calculate_results:
+            self.results_handler.update(
+                self.area_result_dict, self.flattened_area_core_stats_dict,
+                self.current_market_time_slot_str)
 
-        self.bids_offers_trades.clear()
-
-        if (ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or
-                ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR):
-            self.offer_bid_trade_hr.update(area)
+            if (ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or
+                    ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR):
+                self.offer_bid_trade_hr.update(area)
 
         self.result_area_uuids = set()
         self.update_results_area_uuids(area)
+
+        self.bids_offers_trades.clear()
         self.update_offer_bid_trade()
 
     def update_offer_bid_trade(self) -> None:

@@ -244,27 +244,33 @@ class Simulation:
             endpoint_buffer.results_handler.all_ui_results["kpi"].get(area.uuid, {}))
 
     def _update_and_send_results(self):
-        self.endpoint_buffer.update_stats(
-            self.area, self.status, self.progress_info, self.current_state)
-
-        self.update_area_stats(self.area, self.endpoint_buffer)
-
-        if self.export_results_on_finish:
-            if (self.area.current_market is not None
-                    and gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE):
-                # for integration tests:
-                self.export.raw_data_to_json(
-                    self.area.current_market.time_slot_str,
-                    self.endpoint_buffer.flattened_area_core_stats_dict
-                )
-
-            self.file_stats_endpoint(self.area)
-
-        elif self.should_send_results_to_broker:
+        if self.should_send_results_to_broker:
+            self.endpoint_buffer.update_stats(
+                self.area, self.status, self.progress_info, self.current_state,
+                calculate_results=False)
             results = self.endpoint_buffer.prepare_results_for_publish()
             if results is None:
                 return
             self.kafka_connection.publish(results, self._simulation_id)
+
+        elif (gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE or
+                self.export_results_on_finish):
+
+            self.endpoint_buffer.update_stats(
+                self.area, self.status, self.progress_info, self.current_state,
+                calculate_results=True)
+            self.update_area_stats(self.area, self.endpoint_buffer)
+
+            if self.export_results_on_finish:
+                if (self.area.current_market is not None
+                        and gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE):
+                    # for integration tests:
+                    self.export.raw_data_to_json(
+                        self.area.current_market.time_slot_str,
+                        self.endpoint_buffer.flattened_area_core_stats_dict
+                    )
+
+                self.file_stats_endpoint(self.area)
 
     def _update_progress_info(self, slot_no, slot_count):
         run_duration = (
