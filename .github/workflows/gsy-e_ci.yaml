@@ -21,7 +21,7 @@ jobs:
       env:
         prBody: ${{ steps.PR.outputs.pr_body }}
       run: |
-        echo "::set-output name=INTEGRATION_TESTS_BRANCH::$(echo -e $prBody | sed -n 's/.*INTEGRATION_TESTS_BRANCH=\([^ ]*\).*/\1/p')"
+        echo "::set-output name=INTEGRATION_TESTS_BRANCH::$(echo -e $prBody | sed -n 's/.***INTEGRATION_TESTS_BRANCH**=\([^ ]*\).*/\1/p')"
       id: parse_branch
 
 
