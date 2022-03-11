@@ -22,7 +22,6 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
 from gsy_framework.enums import SpotMarketTypeEnum
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import MarketException, OfferNotFoundException
 from gsy_e.gsy_e_core.util import short_offer_bid_log_str
 
@@ -149,11 +148,6 @@ class MAEngine:
 
         if trade.offer_bid.id == offer_info.target_offer.id:
             # Offer was accepted in target market - buy in source
-            source_rate = offer_info.source_offer.energy_rate
-            target_rate = offer_info.target_offer.energy_rate
-            assert abs(source_rate) <= abs(target_rate) + FLOATING_POINT_TOLERANCE, \
-                f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
-
             try:
                 if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                     # One sided market should subtract the fees

@@ -20,7 +20,6 @@ from typing import Dict, TYPE_CHECKING
 
 from gsy_framework.data_classes import Bid, TradeBidOfferInfo
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import BidNotFoundException, MarketException
 from gsy_e.gsy_e_core.util import short_offer_bid_log_str
 from gsy_e.models.strategy.market_agents.one_sided_engine import MAEngine
@@ -146,11 +145,6 @@ class TwoSidedEngine(MAEngine):
             market_bid = self.markets.source.bids[bid_info.source_bid.id]
             assert bid_trade.traded_energy <= market_bid.energy, \
                 "Traded bid on target market has more energy than the market bid."
-
-            source_rate = bid_info.source_bid.energy_rate
-            target_rate = bid_info.target_bid.energy_rate
-            # assert abs(source_rate) + FLOATING_POINT_TOLERANCE >= abs(target_rate), \
-            #     f"bid: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
             trade_rate = (bid_trade.trade_price/bid_trade.traded_energy)
 
