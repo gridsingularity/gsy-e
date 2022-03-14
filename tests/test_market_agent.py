@@ -165,7 +165,7 @@ class FakeMarket:
     def offer(self, price: float, energy: float, seller: str, offer_id=None,
               original_price=None, dispatch_event=True, seller_origin=None,
               adapt_price_with_fees=True, seller_origin_id=None,
-              seller_id=None, time_slot=None) -> Offer:
+              seller_id=None, attributes=None, requirements=None, time_slot=None) -> Offer:
         self.offer_call_count += 1
 
         if original_price is None:
