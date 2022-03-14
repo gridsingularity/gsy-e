@@ -22,7 +22,6 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
 from gsy_framework.enums import SpotMarketTypeEnum
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import MarketException, OfferNotFoundException
 from gsy_e.gsy_e_core.util import short_offer_bid_log_str
 
@@ -51,6 +50,20 @@ class MAEngine:
             s=self
         )
 
+    def _update_offer_requirements_prices(self, offer):
+        requirements = []
+        for requirement in offer.requirements or []:
+            updated_requirement = {**requirement}
+            if "price" in updated_requirement:
+                energy = updated_requirement.get("energy") or offer.energy
+                original_offer_price = updated_requirement["price"] + offer.accumulated_grid_fees
+                updated_price = self.markets.target.fee_class.update_forwarded_offer_with_fee(
+                    updated_requirement["price"] / energy,
+                    original_offer_price / energy) * energy
+                updated_requirement["price"] = updated_price
+            requirements.append(updated_requirement)
+        return requirements
+
     def _offer_in_market(self, offer):
         updated_price = self.markets.target.fee_class.update_forwarded_offer_with_fee(
             offer.energy_rate, offer.original_price / offer.energy) * offer.energy
@@ -64,7 +77,9 @@ class MAEngine:
             "seller_origin": offer.seller_origin,
             "seller_origin_id": offer.seller_origin_id,
             "seller_id": self.owner.uuid,
-            "time_slot": offer.time_slot
+            "time_slot": offer.time_slot,
+            "attributes": offer.attributes,
+            "requirements": self._update_offer_requirements_prices(offer)
         }
 
         return self.owner.post_offer(market=self.markets.target, replace_existing=False, **kwargs)
@@ -149,11 +164,6 @@ class MAEngine:
 
         if trade.offer_bid.id == offer_info.target_offer.id:
             # Offer was accepted in target market - buy in source
-            source_rate = offer_info.source_offer.energy_rate
-            target_rate = offer_info.target_offer.energy_rate
-            assert abs(source_rate) <= abs(target_rate) + FLOATING_POINT_TOLERANCE, \
-                f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
-
             try:
                 if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                     # One sided market should subtract the fees
