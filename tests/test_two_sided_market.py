@@ -409,27 +409,25 @@ class TestTwoSidedMarket:
         assert clearing.energy == mcp_energy
 
     @staticmethod
-    def test_matching_list_gets_updated_with_residual_offers():
+    def test_matching_list_gets_updated_with_residual_orders():
+        offer1 = Offer("offer_id", pendulum.now(), 1, 1, "S")
+        offer2 = Offer("offer_id2", pendulum.now(), 2, 2, "S")
+        bid1 = Bid("bid_id", pendulum.now(), 1, 1, "B")
+        bid2 = Bid("bid_id2", pendulum.now(), 2, 2, "B")
         matches = [
             BidOfferMatch(
-                offer=Offer("offer_id", pendulum.now(), 1, 1, "S").serializable_dict(),
-                selected_energy=1,
-                bid=Bid("bid_id", pendulum.now(), 1, 1, "B").serializable_dict(),
-                trade_rate=1,
-                market_id="",
+                offer=offer1.serializable_dict(), selected_energy=1,
+                bid=bid1.serializable_dict(), trade_rate=1, market_id="",
                 time_slot="").serializable_dict(),
             BidOfferMatch(
-                offer=Offer("offer_id2", pendulum.now(), 2, 2, "S").serializable_dict(),
-                selected_energy=2,
-                bid=Bid("bid_id2", pendulum.now(), 2, 2, "B").serializable_dict(),
-                trade_rate=1,
-                market_id="",
+                offer=offer2.serializable_dict(), selected_energy=2,
+                bid=bid2.serializable_dict(), trade_rate=1, market_id="",
                 time_slot="").serializable_dict()
         ]
-        offer_trade = Trade("trade", 1, Offer("offer_id", pendulum.now(), 1, 1, "S"), "S", "B",
+        offer_trade = Trade("trade", pendulum.now(), offer1, "S", "B",
                             residual=Offer("residual_offer", pendulum.now(), 0.5, 0.5, "S"),
                             traded_energy=1, trade_price=1)
-        bid_trade = Trade("bid_trade", 1, Bid("bid_id2", pendulum.now(), 1, 1, "S"), "S", "B",
+        bid_trade = Trade("bid_trade", pendulum.now(), bid2, "S", "B",
                           residual=Bid("residual_bid_2", pendulum.now(), 1, 1, "S"),
                           traded_energy=1, trade_price=1)
         matches = TwoSidedMarket._replace_offers_bids_with_residual_in_recommendations_list(
@@ -438,6 +436,40 @@ class TestTwoSidedMarket:
         assert len(matches) == 2
         assert matches[0]["offer"]["id"] == "residual_offer"
         assert matches[1]["bid"]["id"] == "residual_bid_2"
+
+    @staticmethod
+    def test_matching_list_gets_updated_with_residual_orders_with_requirements():
+        offer1 = Offer("offer_id", pendulum.now(), 1, 1, "S")
+        bid_requirement = {"trading_partners": [offer1.seller_id], "energy": 1.5}
+        bid1 = Bid("bid_id", pendulum.now(), 1, 2, "B",
+                   requirements=[bid_requirement])
+        recommendations = [
+            BidOfferMatch(
+                offer=offer1.serializable_dict(), selected_energy=1,
+                bid=bid1.serializable_dict(), trade_rate=1, market_id="",
+                matching_requirements={
+                    "bid_requirement": bid_requirement},
+                time_slot="").serializable_dict()
+        ]
+        offer_trade = Trade("trade", pendulum.now(), offer1, "S", "B",
+                            residual=Offer("residual_offer", pendulum.now(), 0.5, 1, "S"),
+                            traded_energy=1, trade_price=0.5)
+        bid_trade = Trade("bid_trade", pendulum.now(), bid1, "S", "B",
+                          residual=Bid("residual_bid", pendulum.now(), 0.5, 1, "S",
+                                       requirements=[bid_requirement]),
+                          traded_energy=1, trade_price=0.5)
+        recommendations = (
+            TwoSidedMarket._replace_offers_bids_with_residual_in_recommendations_list(
+                recommendations, offer_trade, bid_trade))
+        assert len(recommendations) == 1
+        assert recommendations[0]["offer"]["id"] == "residual_offer"
+        assert recommendations[0]["bid"]["id"] == "residual_bid"
+        # The bid traded 1 kWh so the maximum energy should become 2 - 1 = 1
+        # Furthermore, the bid was traded with the trading_partner
+        # it only bought 1 out of 1.5, so the residual bid's requirement should reflect this = 0.5
+        assert recommendations[0]["bid"]["energy"] == 1
+        assert recommendations[0]["bid"]["requirements"][0]["energy"] == 0.5
+        assert recommendations[0]["matching_requirements"]["bid_requirement"]["energy"] == 0.5
 
 
 class TestTwoSidedMarketMatchRecommendations:
