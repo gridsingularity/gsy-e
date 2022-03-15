@@ -348,7 +348,7 @@ class TwoSidedMarket(OneSidedMarket):
                     market_bid.accumulated_grid_fees / recommended_pair.bid_energy)
             if ConstSettings.MASettings.BID_OFFER_MATCH_TYPE == (
                     BidOfferMatchAlgoEnum.PAY_AS_BID.value):
-                trade_rate = recommended_pair.bid_energy_rate + (
+                trade_rate = recommended_pair.bid_energy_rate - (
                         market_bid.accumulated_grid_fees / recommended_pair.bid_energy)
             else:
                 trade_rate = self.fee_class.calculate_original_trade_rate_from_clearing_rate(
