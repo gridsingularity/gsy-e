@@ -140,7 +140,11 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
         """Return all orders in the market per time slot."""
         bids = [bid.serializable_dict() for bid in self.bids.values()]
         offers = [offer.serializable_dict() for offer in self.offers.values()]
-        return {self.time_slot_str: {"bids": bids, "offers": offers}}
+        return {
+            self.time_slot_str: {
+                "bids": bids,
+                "offers": offers,
+                "market_type_name": self.type_name}}
 
     def add_listener(self, listener: Callable):
         """Append a callable function to the notification_listeners list."""

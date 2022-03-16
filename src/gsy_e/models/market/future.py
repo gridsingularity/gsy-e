@@ -134,14 +134,19 @@ class FutureMarkets(TwoSidedMarket):
         for time_slot, bids_list in self.slot_bid_mapping.items():
             time_slot = time_slot.format(DATE_TIME_FORMAT)
             if time_slot not in orders_dict:
-                orders_dict[time_slot] = {"bids": [], "offers": []}
+                orders_dict[time_slot] = {
+                    "bids": [], "offers": [], "market_type_name": self.type_name}
             orders_dict[time_slot]["bids"].extend([bid.serializable_dict() for bid in bids_list])
+            orders_dict[time_slot]["market_type_name"] = self.type_name
+
         for time_slot, offers_list in self.slot_offer_mapping.items():
             time_slot = time_slot.format(DATE_TIME_FORMAT)
             if time_slot not in orders_dict:
-                orders_dict[time_slot] = {"bids": [], "offers": []}
+                orders_dict[time_slot] = {
+                    "bids": [], "offers": [], "market_type_name": self.type_name}
             orders_dict[time_slot]["offers"].extend(
                 [offer.serializable_dict() for offer in offers_list])
+            orders_dict[time_slot]["market_type_name"] = self.type_name
         return orders_dict
 
     @staticmethod
