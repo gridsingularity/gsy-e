@@ -31,7 +31,7 @@
 
 
 ##Graduate theses referencing Grid Singularity (formerly D3A)
-*   Sridharan, Srinidhi.  _Development of deterministic trading strategy for Peer-to-Peer (P2P) trading based on user-preferences_, 2022
+*   Sridharan, Srinidhi.  _Development of deterministic trading strategy for Peer-to-Peer (P2P) trading based on user-preferences_, 11 January 2022, Master thesis, Technical University Chemnitz, Germany.
 *   Kement, Sanem.  _Designing a local electricity market using blockchain technology_, 2020 [https://www.researchgate.net/publication/344567774_Designing_a_local_electricity_market_using_blockchain_technology ](https://www.researchgate.net/publication/344567774_Designing_a_local_electricity_market_using_blockchain_technology)
 *   Wadhwa, Mukund. _Analysis of local electricity markets in Germany using simulation_, 2020 [https://www.researchgate.net/publication/344567698_Analysis_of_local_electricity_markets_in_Germany_using_simulation](https://www.researchgate.net/publication/344567698_Analysis_of_local_electricity_markets_in_Germany_using_simulation)
 *   Kalny, Laurin.  _Blockchain & Energy: How the technology behind Bitcoin can reinvent the way of doing business for utility providers_, 2018. [https://www.researchgate.net/publication/332471608_Blockchain_Energy_How_the_technology_behind_Bitcoin_can_reinvent_the_way_of_doing_business_for_utility_providers](https://www.researchgate.net/publication/332471608_Blockchain_Energy_How_the_technology_behind_Bitcoin_can_reinvent_the_way_of_doing_business_for_utility_providers)
