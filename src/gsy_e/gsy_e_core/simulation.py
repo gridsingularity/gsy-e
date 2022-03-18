@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from dataclasses import dataclass
 import datetime
 import gc
 import os
@@ -56,10 +57,11 @@ RANDOM_SEED_MAX_VALUE = 1000000
 
 
 class SimulationResetException(Exception):
-    pass
+    """Signal a simulation reset."""
 
 
 class SimulationProgressInfo:
+    """Information about the simulation progress."""
     def __init__(self):
         self.eta = duration(seconds=0)
         self.elapsed_time = duration(seconds=0)
@@ -69,29 +71,41 @@ class SimulationProgressInfo:
         self.current_slot_number = 0
 
 
+@dataclass
+class SimulationStateParameters:
+    paused: bool = False
+    pause_after: duration = None
+    slot_length_realtime: duration = None
+    incremental: bool = False
+    timed_out: bool = False
+    stopped: bool = False
+    paused_time: int = 0  # Time spent in paused state, in seconds
+    sim_status = "initializing"
+    start_time: datetime = None
+    tick_time_counter: datetime = None
+
+
 class Simulation:
+    """Main class that runs the simulation."""
     def __init__(self, setup_module_name: str, simulation_config: SimulationConfig,
                  simulation_events: str = None, seed=None,
                  paused: bool = False, pause_after: duration = None, repl: bool = False,
                  no_export: bool = False, export_path: str = None,
                  export_subdir: str = None, redis_job_id=None, enable_bc=False,
                  slot_length_realtime=None, incremental: bool = False):
-        self.paused = False
-        self.pause_after = None
-        self.initial_params = dict(
-            slot_length_realtime=slot_length_realtime,
-            seed=seed,
+        self._seed = self._set_random_seed(seed)
+        self._enable_bc = enable_bc
+        self._state_params = SimulationStateParameters(
             paused=paused,
-            pause_after=pause_after
+            pause_after=pause_after,
+            slot_length_realtime=slot_length_realtime,
+            incremental=incremental
         )
         self.progress_info = SimulationProgressInfo()
         self.simulation_config = simulation_config
         self.use_repl = repl
         self.export_results_on_finish = not no_export
         self.export_path = export_path
-
-        self.sim_status = "initializing"
-        self.is_timed_out = False
 
         if export_subdir is None:
             self.export_subdir = \
@@ -100,31 +114,36 @@ class Simulation:
             self.export_subdir = export_subdir
 
         self.setup_module_name = setup_module_name
-        self.is_stopped = False
-        self._is_incremental = incremental
         self.live_events = LiveEvents(self.simulation_config)
         self.kafka_connection = kafka_connection_factory()
         self.redis_connection = RedisSimulationCommunication(self, redis_job_id, self.live_events)
         self._simulation_id = redis_job_id
         self._started_from_cli = redis_job_id is None
 
-        self.run_start = None
-        self.paused_time = None
-
         self._load_setup_module()
-        self._init(**self.initial_params, redis_job_id=redis_job_id, enable_bc=enable_bc)
+        self._init(redis_job_id)
 
         deserialize_events_to_areas(simulation_events, self.area)
 
         validate_const_settings_for_simulation()
+
+    def _set_random_seed(self, seed):
+        if seed is not None:
+            random.seed(int(seed))
+        else:
+            random_seed = random.randint(0, RANDOM_SEED_MAX_VALUE)
+            random.seed(random_seed)
+            seed = random_seed
+            log.info("Random seed: %s", random_seed)
+        return seed
 
     def _set_traversal_length(self):
         no_of_levels = self._get_setup_levels(self.area) + 1
         num_ticks_to_propagate = no_of_levels * 2
         time_to_propagate_minutes = num_ticks_to_propagate * \
             self.simulation_config.tick_length.seconds / 60.
-        log.info(f'Setup has {no_of_levels} levels, offers/bids need at '
-                 f'least {time_to_propagate_minutes} minutes to propagate.')
+        log.info("Setup has %s levels, offers/bids need at least %s minutes to propagate.",
+                 no_of_levels, time_to_propagate_minutes)
 
     def _get_setup_levels(self, area, level_count=0):
         level_count += 1
@@ -135,7 +154,7 @@ class Simulation:
     def _load_setup_module(self):
         try:
             if ConstSettings.GeneralSettings.SETUP_FILE_PATH is None:
-                self.setup_module = import_module(f".{self.setup_module_name}", 'gsy_e.setup')
+                self.setup_module = import_module(f".{self.setup_module_name}", "gsy_e.setup")
             else:
                 sys.path.append(ConstSettings.GeneralSettings.SETUP_FILE_PATH)
                 self.setup_module = import_module(f"{self.setup_module_name}")
@@ -144,19 +163,7 @@ class Simulation:
             raise SimulationException(
                 f"Invalid setup module '{self.setup_module_name}'") from ex
 
-    def _init(self, slot_length_realtime, seed, paused, pause_after, redis_job_id, enable_bc):
-        self.paused = paused
-        self.pause_after = pause_after
-        self.slot_length_realtime = slot_length_realtime
-
-        if seed is not None:
-            random.seed(int(seed))
-        else:
-            random_seed = random.randint(0, RANDOM_SEED_MAX_VALUE)
-            random.seed(random_seed)
-            self.initial_params["seed"] = random_seed
-            log.info("Random seed: {}".format(random_seed))
-
+    def _init(self, redis_job_id):
         # has to be called before get_setup():
         global_objects.profiles_handler.activate()
 
@@ -165,7 +172,7 @@ class Simulation:
         global_objects.external_global_stats(self.area, self.simulation_config.ticks_per_slot)
 
         self.endpoint_buffer = SimulationEndpointBuffer(
-            redis_job_id, self.initial_params,
+            redis_job_id, self._seed,
             self.area, self.export_results_on_finish)
 
         if self.export_results_on_finish:
@@ -182,55 +189,52 @@ class Simulation:
 
         self._set_traversal_length()
 
-        self.area.activate(enable_bc, simulation_id=redis_job_id)
+        self.area.activate(self._enable_bc, simulation_id=redis_job_id)
 
     @property
-    def finished(self):
+    def _finished(self):
         return self.area.current_tick >= self.area.config.total_ticks
 
     @property
-    def time_since_start(self):
+    def _time_since_start(self):
         return self.area.current_tick * self.simulation_config.tick_length
 
     def reset(self):
         """
         Reset simulation to initial values and restart the run.
         """
-        log.info("=" * 15 + " Simulation reset requested " + "=" * 15)
-        self._init(**self.initial_params)
+        log.info("=============== Simulation reset requested ===============")
+        self._init(self._simulation_id)
         self.run()
         raise SimulationResetException
 
     def stop(self):
-        self.is_stopped = True
+        self._state_params.stopped = True
 
-    def deactivate_areas(self, area):
+    def _deactivate_areas(self, area):
         """
         For putting the last market into area.past_markets
         """
         area.deactivate()
         for child in area.children:
-            self.deactivate_areas(child)
+            self._deactivate_areas(child)
 
     def run(self, initial_slot=0):
-        self.sim_status = "running"
-        self.is_stopped = False
-        while True:
-            if initial_slot == 0:
-                self.run_start = now(tz=TIME_ZONE)
-                self.paused_time = 0
+        self._state_params.sim_status = "running"
+        self._state_params.stopped = False
+        self._state_params.tick_time_counter = time()
 
-            tick_resume = 0
-            try:
-                self._run_cli_execute_cycle(initial_slot, tick_resume) \
-                    if self._started_from_cli \
-                    else self._execute_simulation(initial_slot, tick_resume)
-            except KeyboardInterrupt:
-                break
-            except SimulationResetException:
-                break
-            else:
-                break
+        if initial_slot == 0:
+            self._state_params.start_time = now(tz=TIME_ZONE)
+            self._state_params.paused_time = 0
+
+        tick_resume = 0
+        try:
+            self._run_cli_execute_cycle(initial_slot, tick_resume) \
+                if self._started_from_cli \
+                else self._execute_simulation(initial_slot, tick_resume)
+        except (KeyboardInterrupt, SimulationResetException):
+            pass
 
     def _run_cli_execute_cycle(self, slot_resume, tick_resume):
         with NonBlockingConsole() as console:
@@ -269,8 +273,8 @@ class Simulation:
 
     def _update_progress_info(self, slot_no, slot_count):
         run_duration = (
-                now(tz=TIME_ZONE) - self.run_start -
-                duration(seconds=self.paused_time)
+                now(tz=TIME_ZONE) - self._state_params.start_time -
+                duration(seconds=self._state_params.paused_time)
         )
 
         if gsy_e.constants.RUN_IN_REALTIME:
@@ -318,13 +322,13 @@ class Simulation:
 
             sleep(seconds_until_next_tick)
 
-        if self.slot_length_realtime:
-            self.tick_length_realtime_s = self.slot_length_realtime.seconds / \
-                                          self.simulation_config.ticks_per_slot
+        if self._state_params.slot_length_realtime:
+            self.tick_length_realtime_s = (
+                    self._state_params.slot_length_realtime.seconds /
+                    self.simulation_config.ticks_per_slot)
         return slot_count, slot_resume, tick_resume
 
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
-        self.current_expected_tick_time = self.run_start
         config = self.simulation_config
 
         slot_count, slot_resume, tick_resume = self._calculate_total_initial_ticks_slots(
@@ -362,8 +366,6 @@ class Simulation:
             mbs_used = process.memory_info().rss / 1000000.0
             log.debug("Used %s MBs.", mbs_used)
 
-            self.tick_time_counter = time()
-
             for tick_no in range(tick_resume, config.ticks_per_slot):
                 self._handle_paused(console)
 
@@ -391,9 +393,8 @@ class Simulation:
                     publish_aggregator_commands_responses_events()
 
                 self.handle_slowdown_and_realtime(tick_no)
-                self.tick_time_counter = time()
 
-                if self.is_stopped:
+                if self._state_params.stopped:
                     log.info(f"Received stop command for "
                              f"configuration id {gsy_e.constants.CONFIGURATION_ID} and "
                              f"job id {self._simulation_id}.")
@@ -404,19 +405,19 @@ class Simulation:
             if self.export_results_on_finish:
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
 
-            if self._is_incremental:
-                self.paused = True
+            if self._state_params.incremental:
+                self._state_params.paused = True
         self._simulation_finish_actions(slot_count)
 
     def _simulation_finish_actions(self, slot_count):
-        self.sim_status = "finished"
-        self.deactivate_areas(self.area)
+        self._state_params.sim_status = "finished"
+        self._deactivate_areas(self.area)
         self.simulation_config.external_redis_communicator.\
             publish_aggregator_commands_responses_events()
         bid_offer_matcher.event_finish()
-        if not self.is_stopped:
+        if not self._state_params.stopped:
             self._update_progress_info(slot_count - 1, slot_count)
-            paused_duration = duration(seconds=self.paused_time)
+            paused_duration = duration(seconds=self._state_params.paused_time)
             log.info(
                 "Run finished in %s%s / %.2fx real time",
                 self.progress_info.elapsed_time,
@@ -438,21 +439,22 @@ class Simulation:
 
     def handle_slowdown_and_realtime(self, tick_no):
         if gsy_e.constants.RUN_IN_REALTIME:
-            tick_runtime_s = time() - self.tick_time_counter
+            tick_runtime_s = time() - self._state_params.tick_time_counter
             sleep(abs(self.simulation_config.tick_length.seconds - tick_runtime_s))
-        elif self.slot_length_realtime:
-            self.current_expected_tick_time = \
-                self.current_expected_tick_time.add(seconds=self.tick_length_realtime_s)
-            sleep_time_s = self.current_expected_tick_time.timestamp() - now().timestamp()
+        elif self._state_params.slot_length_realtime:
+            current_expected_tick_time = (
+                self._state_params.tick_time_counter.add(seconds=self.tick_length_realtime_s))
+            sleep_time_s = current_expected_tick_time.timestamp() - now().timestamp()
             if sleep_time_s > 0:
                 sleep(sleep_time_s)
                 log.debug(f"Tick {tick_no + 1}/{self.simulation_config.ticks_per_slot}: "
                           f"Sleep time of {sleep_time_s}s was applied")
+        self._state_params.tick_time_counter = time()
 
     def toggle_pause(self):
-        if self.finished:
+        if self._finished:
             return False
-        self.paused = not self.paused
+        self._state_params.paused = not self._state_params.paused
         return True
 
     def _handle_input(self, console, sleep: float = 0):
@@ -464,7 +466,7 @@ class Simulation:
         while True:
             cmd = console.get_char(timeout)
             if cmd:
-                if cmd not in {'i', 'p', 'q', 'r', 'R', 's', '+', '-'}:
+                if cmd not in {"i", "p", "q", "r", "R", "s", "+", "-"}:
                     log.critical("Invalid command. Valid commands:\n"
                                  "  [i] info\n"
                                  "  [p] pause\n"
@@ -474,20 +476,20 @@ class Simulation:
                                  "  [R] start REPL\n")
                     continue
 
-                if self.finished and cmd in {'p', '+', '-'}:
+                if self._finished and cmd in {"p", "+", "-"}:
                     log.info("Simulation has finished. The commands [p, +, -] are unavailable.")
                     continue
 
-                if cmd == 'r':
+                if cmd == "r":
                     self.reset()
-                elif cmd == 'i':
+                elif cmd == "i":
                     self._info()
-                elif cmd == 'p':
-                    self.paused = not self.paused
+                elif cmd == "p":
+                    self._state_params.paused = not self._state_params.paused
                     break
-                elif cmd == 'q':
+                elif cmd == "q":
                     raise KeyboardInterrupt()
-                elif cmd == 's':
+                elif cmd == "s":
                     self.stop()
 
             if sleep == 0 or time() - start >= sleep:
@@ -496,32 +498,33 @@ class Simulation:
     def _handle_paused(self, console):
         if console is not None:
             self._handle_input(console)
-            if self.pause_after and self.time_since_start >= self.pause_after:
-                self.paused = True
-                self.pause_after = None
+            if (self._state_params.pause_after and
+                    self._time_since_start >= self._state_params.pause_after):
+                self._state_params.paused = True
+                self._state_params.pause_after = None
 
         paused_flag = False
-        if self.paused:
+        if self._state_params.paused:
             if console:
                 log.critical("Simulation paused. Press 'p' to resume or resume from API.")
             else:
                 self._update_and_send_results()
             start = time()
-        while self.paused:
+        while self._state_params.paused:
             paused_flag = True
             if console:
                 self._handle_input(console, 0.1)
-            if time() - self.tick_time_counter > SIMULATION_PAUSE_TIMEOUT:
-                self.is_timed_out = True
-                self.is_stopped = True
-                self.paused = False
-            if self.is_stopped:
-                self.paused = False
+            if time() - self._state_params.tick_time_counter > SIMULATION_PAUSE_TIMEOUT:
+                self._state_params.timed_out = True
+                self._state_params.stopped = True
+                self._state_params.paused = False
+            if self._state_params.stopped:
+                self._state_params.paused = False
             sleep(0.5)
 
         if console and paused_flag:
             log.critical("Simulation resumed")
-            self.paused_time += time() - start
+            self._state_params.paused_time += time() - start
 
     def _info(self):
         info = self.simulation_config.as_dict()
@@ -545,29 +548,29 @@ class Simulation:
 
     @property
     def status(self):
-        if self.is_timed_out:
+        if self._state_params.timed_out:
             return "timed-out"
-        elif self.is_stopped:
+        elif self._state_params.stopped:
             return "stopped"
-        elif self.paused:
+        elif self._state_params.paused:
             return "paused"
         else:
-            return self.sim_status
+            return self._state_params.sim_status
 
     @property
     def current_state(self):
         return {
-            "paused": self.paused,
-            "seed": self.initial_params["seed"],
-            "sim_status": self.sim_status,
-            "stopped": self.is_stopped,
+            "paused": self._state_params.paused,
+            "seed": self._seed,
+            "sim_status": self._state_params.sim_status,
+            "stopped": self._state_params.stopped,
             "simulation_id": self._simulation_id,
-            "run_start": format_datetime(self.run_start)
-            if self.run_start is not None else "",
-            "paused_time": self.paused_time,
+            "run_start": format_datetime(self._state_params.start_time)
+            if self._state_params.start_time is not None else "",
+            "paused_time": self._state_params.paused_time,
             "slot_number": self.progress_info.current_slot_number,
-            "slot_length_realtime_s": str(self.slot_length_realtime.seconds)
-            if self.slot_length_realtime else 0
+            "slot_length_realtime_s": str(self._state_params.slot_length_realtime.seconds)
+            if self._state_params.slot_length_realtime else 0
         }
 
     def _restore_area_state(self, area, saved_area_state):
@@ -583,16 +586,17 @@ class Simulation:
         self._restore_area_state(self.area, saved_area_state)
 
     def restore_global_state(self, saved_state):
-        self.paused = saved_state["paused"]
-        self.initial_params["seed"] = saved_state["seed"]
-        self.sim_status = saved_state["sim_status"]
-        self.is_stopped = saved_state["stopped"]
+        self._state_params.paused = saved_state["paused"]
+        self._seed = saved_state["seed"]
+        self._state_params.sim_status = saved_state["sim_status"]
+        self._state_params.stopped = saved_state["stopped"]
         self._simulation_id = saved_state["simulation_id"]
         if saved_state["run_start"] != "":
-            self.run_start = str_to_pendulum_datetime(saved_state["run_start"])
-        self.paused_time = saved_state["paused_time"]
+            self._state_params.start_time = str_to_pendulum_datetime(saved_state["run_start"])
+        self._state_params.paused_time = saved_state["paused_time"]
         self.progress_info.current_slot_number = saved_state["slot_number"]
-        self.slot_length_realtime = duration(seconds=saved_state["slot_length_realtime_s"])
+        self._state_params.slot_length_realtime = duration(
+            seconds=saved_state["slot_length_realtime_s"])
 
 
 def run_simulation(setup_module_name="", simulation_config=None, simulation_events=None,
