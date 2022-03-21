@@ -116,6 +116,44 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
         """A string representation of the market slot."""
         return self.time_slot.format(DATE_TIME_FORMAT) if self.time_slot else None
 
+    @property
+    def info(self) -> Dict:
+        """Return information about the market instance."""
+        return {
+            "name": self.name,
+            "id": self.id,
+            "start_time": self.time_slot_str,
+            "duration_min": GlobalConfig.slot_length.minutes}
+
+    @property
+    def type_name(self) -> str:
+        """Return the market type representation."""
+        return "Market"
+
+    @property
+    def avg_trade_price(self) -> float:
+        """Update and return the average trade price in the current market."""
+
+        if self._avg_trade_price is None:
+            price = self.accumulated_trade_price
+            energy = self.accumulated_trade_energy
+            self._avg_trade_price = round(price / energy, 4) if energy else 0
+        return self._avg_trade_price
+
+    @property
+    def sorted_offers(self):
+        """Sort the offers using the self.sorting method."""
+
+        return self.sorting(self.offers)
+
+    @property
+    def most_affordable_offers(self):
+        """Return the offers with the least energy_rate value."""
+        cheapest_offer = self.sorted_offers[0]
+        rate = cheapest_offer.energy_rate
+        return [o for o in self.sorted_offers if
+                abs(o.energy_rate - rate) < FLOATING_POINT_TOLERANCE]
+
     def _create_fee_handler(self, grid_fee_type: int, grid_fees: GridFee) -> None:
         if not grid_fees:
             grid_fees = GridFee(grid_fee_percentage=0.0, grid_fee_const=0.0)
@@ -205,30 +243,6 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
                       key=lambda obj: obj.energy_rate,
                       reverse=reverse_order)
 
-    @property
-    def avg_trade_price(self) -> float:
-        """Update and return the average trade price in the current market."""
-
-        if self._avg_trade_price is None:
-            price = self.accumulated_trade_price
-            energy = self.accumulated_trade_energy
-            self._avg_trade_price = round(price / energy, 4) if energy else 0
-        return self._avg_trade_price
-
-    @property
-    def sorted_offers(self):
-        """Sort the offers using the self.sorting method."""
-
-        return self.sorting(self.offers)
-
-    @property
-    def most_affordable_offers(self):
-        """Return the offers with the least energy_rate value."""
-        cheapest_offer = self.sorted_offers[0]
-        rate = cheapest_offer.energy_rate
-        return [o for o in self.sorted_offers if
-                abs(o.energy_rate - rate) < FLOATING_POINT_TOLERANCE]
-
     def update_clock(self, now: DateTime) -> None:
         """
         Update self.now member with the provided now DateTime
@@ -259,20 +273,3 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
         """Return the aggregated money earned by the passed-in seller."""
 
         return sum(trade.trade_price for trade in self.trades if trade.seller == seller)
-
-    @property
-    def info(self) -> Dict:
-        """Return information about the market instance."""
-
-        return {
-            "name": self.name,
-            "id": self.id,
-            "start_time": self.time_slot_str,
-            "duration_min": GlobalConfig.slot_length.minutes
-        }
-
-    @property
-    def type_name(self) -> str:
-        """Return the market type representation."""
-
-        return "Market"
