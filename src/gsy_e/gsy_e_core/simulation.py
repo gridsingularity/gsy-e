@@ -395,9 +395,9 @@ class Simulation:
                 self.handle_slowdown_and_realtime(tick_no)
 
                 if self._state_params.stopped:
-                    log.info(f"Received stop command for "
-                             f"configuration id {gsy_e.constants.CONFIGURATION_ID} and "
-                             f"job id {self._simulation_id}.")
+                    log.error(f"Received stop command for "
+                              f"configuration id {gsy_e.constants.CONFIGURATION_ID} and "
+                              f"job id {self._simulation_id}.")
                     sleep(5)
                     self._simulation_finish_actions(slot_count)
                     return

@@ -37,7 +37,8 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
         GlobalConfig.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
         gsy_e.constants.RUN_IN_REALTIME = GlobalConfig.IS_CANARY_NETWORK
     saved_state = decompress_and_decode_queued_strings(saved_state)
-    log.error("Starting simulation with job_id: %s", job_id)
+    log.error("Starting simulation with job_id: %s and configuration id: %s",
+              job_id, gsy_e.constants.CONFIGURATION_ID)
 
     try:
         if settings is None:
@@ -131,9 +132,14 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
                        saved_sim_state=saved_state,
                        slot_length_realtime=slot_length_realtime,
                        kwargs=kwargs)
+
+        log.error("Finishing simulation with job_id: %s and configuration id: %s",
+                  job_id, gsy_e.constants.CONFIGURATION_ID)
+
     # pylint: disable=broad-except
     except Exception:
         # pylint: disable=import-outside-toplevel
         from gsy_e.gsy_e_core.redis_connections.redis_communication import publish_job_error_output
         publish_job_error_output(job_id, traceback.format_exc())
-        logging.getLogger().exception("Error on jobId, %s", job_id)
+        logging.getLogger().exception("Error on jobId, %s, configuration id: %s",
+                                      job_id, gsy_e.constants.CONFIGURATION_ID)
