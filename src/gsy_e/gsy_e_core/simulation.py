@@ -24,16 +24,15 @@ import sys
 from importlib import import_module
 from logging import getLogger
 from time import sleep, time, mktime
-
+from numpy import random
+from pendulum import now, duration, DateTime
 import psutil
+
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.kafka_communication.kafka_producer import kafka_connection_factory
 from gsy_framework.utils import format_datetime, str_to_pendulum_datetime
-from numpy import random
-from pendulum import now, duration, DateTime
-
 import gsy_e.constants
-from gsy_e import setup as d3a_setup  # noqa
+
 from gsy_e.constants import TIME_ZONE, DATE_TIME_FORMAT, SIMULATION_PAUSE_TIMEOUT
 from gsy_e.gsy_e_core.exceptions import SimulationException
 from gsy_e.gsy_e_core.export import ExportAndPlot
@@ -57,11 +56,12 @@ RANDOM_SEED_MAX_VALUE = 1000000
 
 
 class SimulationResetException(Exception):
-    """Signal a simulation reset."""
+    """Exception for errors when resetting the simulation."""
 
 
 class SimulationProgressInfo:
     """Information about the simulation progress."""
+
     def __init__(self):
         self.eta = duration(seconds=0)
         self.elapsed_time = duration(seconds=0)
@@ -73,6 +73,8 @@ class SimulationProgressInfo:
 
 @dataclass
 class SimulationStateParameters:
+    """State of the Simulation class."""
+    # pylint: disable=too-many-instance-attributes
     paused: bool = False
     pause_after: duration = None
     slot_length_realtime: duration = None
@@ -86,7 +88,10 @@ class SimulationStateParameters:
 
 
 class Simulation:
-    """Main class that runs the simulation."""
+    """Main class that starts and controls simulation."""
+    # pylint: disable=too-many-instance-attributes, too-many-arguments,
+    # pylint: disable=attribute-defined-outside-init
+
     def __init__(self, setup_module_name: str, simulation_config: SimulationConfig,
                  simulation_events: str = None, seed=None,
                  paused: bool = False, pause_after: duration = None, repl: bool = False,
@@ -108,8 +113,7 @@ class Simulation:
         self.export_path = export_path
 
         if export_subdir is None:
-            self.export_subdir = \
-                now(tz=TIME_ZONE).format(f"{DATE_TIME_FORMAT}:ss")
+            self.export_subdir = now(tz=TIME_ZONE).format(f"{DATE_TIME_FORMAT}:ss")
         else:
             self.export_subdir = export_subdir
 
@@ -127,7 +131,8 @@ class Simulation:
 
         validate_const_settings_for_simulation()
 
-    def _set_random_seed(self, seed):
+    @staticmethod
+    def _set_random_seed(seed):
         if seed is not None:
             random.seed(int(seed))
         else:
@@ -140,8 +145,8 @@ class Simulation:
     def _set_traversal_length(self):
         no_of_levels = self._get_setup_levels(self.area) + 1
         num_ticks_to_propagate = no_of_levels * 2
-        time_to_propagate_minutes = num_ticks_to_propagate * \
-            self.simulation_config.tick_length.seconds / 60.
+        time_to_propagate_minutes = (num_ticks_to_propagate *
+                                     self.simulation_config.tick_length.seconds / 60.)
         log.info("Setup has %s levels, offers/bids need at least %s minutes to propagate.",
                  no_of_levels, time_to_propagate_minutes)
 
@@ -193,33 +198,35 @@ class Simulation:
 
     @property
     def _finished(self):
+        """Return if simulation has finished."""
         return self.area.current_tick >= self.area.config.total_ticks
 
     @property
     def _time_since_start(self):
+        """Return pendulum duration since start of simulation."""
         return self.area.current_tick * self.simulation_config.tick_length
 
     def reset(self):
         """
         Reset simulation to initial values and restart the run.
         """
-        log.info("=============== Simulation reset requested ===============")
+        log.info("%s Simulation reset requested %s", "=" * 15, "=" * 15)
         self._init(self._simulation_id)
         self.run()
         raise SimulationResetException
 
     def stop(self):
+        """Stop simulation."""
         self._state_params.stopped = True
 
     def _deactivate_areas(self, area):
-        """
-        For putting the last market into area.past_markets
-        """
+        """Move the last market into area.past_markets."""
         area.deactivate()
         for child in area.children:
             self._deactivate_areas(child)
 
     def run(self, initial_slot=0):
+        """Run the simulation."""
         self._state_params.sim_status = "running"
         self._state_params.stopped = False
         self._state_params.tick_time_counter = time()
@@ -230,9 +237,10 @@ class Simulation:
 
         tick_resume = 0
         try:
-            self._run_cli_execute_cycle(initial_slot, tick_resume) \
-                if self._started_from_cli \
-                else self._execute_simulation(initial_slot, tick_resume)
+            if self._started_from_cli:
+                self._run_cli_execute_cycle(initial_slot, tick_resume)
+            else:
+                self._execute_simulation(initial_slot, tick_resume)
         except (KeyboardInterrupt, SimulationResetException):
             pass
 
@@ -240,36 +248,42 @@ class Simulation:
         with NonBlockingConsole() as console:
             self._execute_simulation(slot_resume, tick_resume, console)
 
-    def update_area_stats(self, area, endpoint_buffer):
+    def _update_area_stats(self, area, endpoint_buffer):
         for child in area.children:
-            self.update_area_stats(child, endpoint_buffer)
+            self._update_area_stats(child, endpoint_buffer)
         bills = endpoint_buffer.results_handler.all_ui_results["bills"].get(area.uuid, {})
         area.stats.update_aggregated_stats({"bills": bills})
         area.stats.kpi.update(
             endpoint_buffer.results_handler.all_ui_results["kpi"].get(area.uuid, {}))
 
     def _update_and_send_results(self):
-        self.endpoint_buffer.update_stats(
-            self.area, self.status, self.progress_info, self.current_state)
-
-        self.update_area_stats(self.area, self.endpoint_buffer)
-
-        if self.export_results_on_finish:
-            if (self.area.current_market is not None
-                    and gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE):
-                # for integration tests:
-                self.export.raw_data_to_json(
-                    self.area.current_market.time_slot_str,
-                    self.endpoint_buffer.flattened_area_core_stats_dict
-                )
-
-            self.file_stats_endpoint(self.area)
-
-        elif self.should_send_results_to_broker:
+        if self.should_send_results_to_broker:
+            self.endpoint_buffer.update_stats(
+                self.area, self.status, self.progress_info, self.current_state,
+                calculate_results=False)
             results = self.endpoint_buffer.prepare_results_for_publish()
             if results is None:
                 return
             self.kafka_connection.publish(results, self._simulation_id)
+
+        elif (gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE or
+                self.export_results_on_finish):
+
+            self.endpoint_buffer.update_stats(
+                self.area, self.status, self.progress_info, self.current_state,
+                calculate_results=True)
+            self._update_area_stats(self.area, self.endpoint_buffer)
+
+            if self.export_results_on_finish:
+                if (self.area.current_market is not None
+                        and gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE):
+                    # for integration tests:
+                    self.export.raw_data_to_json(
+                        self.area.current_market.time_slot_str,
+                        self.endpoint_buffer.flattened_area_core_stats_dict
+                    )
+
+                self.file_stats_endpoint(self.area)
 
     def _update_progress_info(self, slot_no, slot_count):
         run_duration = (
@@ -291,10 +305,10 @@ class Simulation:
             slot_no + 1, self.simulation_config)
         self.progress_info.current_slot_number = slot_no
 
-    def set_area_current_tick(self, area, current_tick):
+    def _set_area_current_tick(self, area, current_tick):
         area.current_tick = current_tick
         for child in area.children:
-            self.set_area_current_tick(child, current_tick)
+            self._set_area_current_tick(child, current_tick)
 
     def _get_current_market_time_slot(self, slot_number: int) -> DateTime:
         return (self.area.config.start_date + (slot_number * self.area.config.slot_length)
@@ -318,7 +332,7 @@ class Simulation:
             seconds_until_next_tick = config.tick_length.seconds - seconds_elapsed_in_tick
 
             ticks_since_midnight = int(seconds_since_midnight // config.tick_length.seconds) + 1
-            self.set_area_current_tick(self.area, ticks_since_midnight)
+            self._set_area_current_tick(self.area, ticks_since_midnight)
 
             sleep(seconds_until_next_tick)
 
@@ -340,10 +354,9 @@ class Simulation:
         for slot_no in range(slot_resume, slot_count):
             self._update_progress_info(slot_no, slot_count)
 
-            log.warning(f"Slot {slot_no + 1} of {slot_count} - "
-                        f"({self.progress_info.percentage_completed:.1f}%) "
-                        f"{self.progress_info.elapsed_time} elapsed, "
-                        f"ETA: {self.progress_info.eta}")
+            log.warning("Slot %s of %s - (%.1f %%) %s elapsed, ETA: %s", slot_no, slot_count,
+                        self.progress_info.percentage_completed, self.progress_info.elapsed_time,
+                        self.progress_info.eta)
 
             self.area.cycle_markets()
 
@@ -378,9 +391,9 @@ class Simulation:
                     approve_aggregator_commands()
 
                 current_tick_in_slot = tick_no % config.ticks_per_slot
-                if self.simulation_config.external_connection_enabled and \
+                if (self.simulation_config.external_connection_enabled and
                         global_objects.external_global_stats.is_it_time_for_external_tick(
-                            current_tick_in_slot):
+                            current_tick_in_slot)):
                     global_objects.external_global_stats.update()
 
                 self.area.tick_and_dispatch()
@@ -392,18 +405,17 @@ class Simulation:
                 self.simulation_config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()
 
-                self.handle_slowdown_and_realtime(tick_no)
+                self._handle_slowdown_and_realtime(tick_no)
 
                 if self._state_params.stopped:
-                    log.error(f"Received stop command for "
-                              f"configuration id {gsy_e.constants.CONFIGURATION_ID} and "
-                              f"job id {self._simulation_id}.")
+                    log.error("Received stop command for configuration id %s and job id %s.",
+                              gsy_e.constants.CONFIGURATION_ID, self._simulation_id)
                     sleep(5)
                     self._simulation_finish_actions(slot_count)
                     return
 
             if self.export_results_on_finish:
-                self.export.data_to_csv(self.area, True if slot_no == 0 else False)
+                self.export.data_to_csv(self.area, slot_no == 0)
 
             if self._state_params.incremental:
                 self._state_params.paused = True
@@ -437,7 +449,7 @@ class Simulation:
         """Flag that decides whether to send results to the gsy-web"""
         return not self._started_from_cli and self.kafka_connection.is_enabled()
 
-    def handle_slowdown_and_realtime(self, tick_no):
+    def _handle_slowdown_and_realtime(self, tick_no):
         if gsy_e.constants.RUN_IN_REALTIME:
             tick_runtime_s = time() - self._state_params.tick_time_counter
             sleep(abs(self.simulation_config.tick_length.seconds - tick_runtime_s))
@@ -447,21 +459,23 @@ class Simulation:
             sleep_time_s = current_expected_tick_time.timestamp() - now().timestamp()
             if sleep_time_s > 0:
                 sleep(sleep_time_s)
-                log.debug(f"Tick {tick_no + 1}/{self.simulation_config.ticks_per_slot}: "
-                          f"Sleep time of {sleep_time_s}s was applied")
+                log.debug("Tick %s/%s: Sleep time of %s s was applied",
+                          tick_no + 1, self.simulation_config.ticks_per_slot, sleep_time_s)
+
         self._state_params.tick_time_counter = time()
 
     def toggle_pause(self):
+        """Pause or resume simulation."""
         if self._finished:
             return False
         self._state_params.paused = not self._state_params.paused
         return True
 
-    def _handle_input(self, console, sleep: float = 0):
+    def _handle_input(self, console, sleep_period: float = 0):
         timeout = 0
         start = 0
-        if sleep > 0:
-            timeout = sleep / 100
+        if sleep_period > 0:
+            timeout = sleep_period / 100
             start = time()
         while True:
             cmd = console.get_char(timeout)
@@ -492,7 +506,7 @@ class Simulation:
                 elif cmd == "s":
                     self.stop()
 
-            if sleep == 0 or time() - start >= sleep:
+            if sleep_period == 0 or time() - start >= sleep_period:
                 break
 
     def _handle_paused(self, console):
@@ -548,17 +562,18 @@ class Simulation:
 
     @property
     def status(self):
+        """Return status of simulation."""
         if self._state_params.timed_out:
             return "timed-out"
-        elif self._state_params.stopped:
+        if self._state_params.stopped:
             return "stopped"
-        elif self._state_params.paused:
+        if self._state_params.paused:
             return "paused"
-        else:
-            return self._state_params.sim_status
+        return self._state_params.sim_status
 
     @property
     def current_state(self):
+        """Return dict that contains current progress and state of simulation."""
         return {
             "paused": self._state_params.paused,
             "seed": self._seed,
@@ -575,17 +590,19 @@ class Simulation:
 
     def _restore_area_state(self, area, saved_area_state):
         if area.uuid not in saved_area_state:
-            log.warning(f"Area {area.uuid} is not part of the saved state. State not restored. "
-                        f"Simulation id: {self._simulation_id}")
+            log.warning("Area %s is not part of the saved state. State not restored. "
+                        "Simulation id: %s", area.uuid, self._simulation_id)
         else:
             area.restore_state(saved_area_state[area.uuid])
         for child in area.children:
             self._restore_area_state(child, saved_area_state)
 
-    def restore_area_state(self, saved_area_state):
+    def restore_area_state_all_areas(self, saved_area_state):
+        """Restore state of all areas."""
         self._restore_area_state(self.area, saved_area_state)
 
     def restore_global_state(self, saved_state):
+        """Restore global state of simulation."""
         self._state_params.paused = saved_state["paused"]
         self._seed = saved_state["seed"]
         self._state_params.sim_status = saved_state["sim_status"]
@@ -602,10 +619,12 @@ class Simulation:
 def run_simulation(setup_module_name="", simulation_config=None, simulation_events=None,
                    redis_job_id=None, saved_sim_state=None,
                    slot_length_realtime=None, kwargs=None):
+    """Initiate simulation class and start simulation."""
+    # pylint: disable=too-many-arguments
     try:
         if "pricing_scheme" in kwargs:
-            ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME = \
-                kwargs.pop("pricing_scheme")
+            ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME = (
+                kwargs.pop("pricing_scheme"))
 
         if saved_sim_state is None:
             simulation = Simulation(
@@ -629,11 +648,11 @@ def run_simulation(setup_module_name="", simulation_config=None, simulation_even
         log.error(ex)
         return
 
-    if saved_sim_state is not None and \
-            saved_sim_state["areas"] != {} and \
-            saved_sim_state["general"]["sim_status"] in ["running", "paused"]:
+    if (saved_sim_state is not None and
+            saved_sim_state["areas"] != {} and
+            saved_sim_state["general"]["sim_status"] in ["running", "paused"]):
         simulation.restore_global_state(saved_sim_state["general"])
-        simulation.restore_area_state(saved_sim_state["areas"])
+        simulation.restore_area_state_all_areas(saved_sim_state["areas"])
         simulation.run(initial_slot=saved_sim_state["general"]["slot_number"])
     else:
         simulation.run()
