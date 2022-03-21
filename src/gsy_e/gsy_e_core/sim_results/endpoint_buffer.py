@@ -339,12 +339,12 @@ class SimulationEndpointBuffer:
         self.result_area_uuids = set()
         self.update_results_area_uuids(area)
 
-        self.bids_offers_trades.clear()
-        self.update_offer_bid_trade()
+        self._update_offer_bid_trade()
 
-    def update_offer_bid_trade(self) -> None:
+    def _update_offer_bid_trade(self) -> None:
         """Populate self.bids_offers_trades with results from flattened_area_core_stats_dict
         (for local export of statistics)."""
+        self.bids_offers_trades.clear()
         if self.current_market_time_slot_str == "":
             return
         for area_uuid, area_result in self.flattened_area_core_stats_dict.items():
