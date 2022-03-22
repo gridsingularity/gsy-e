@@ -37,8 +37,6 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
         GlobalConfig.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
         gsy_e.constants.RUN_IN_REALTIME = GlobalConfig.IS_CANARY_NETWORK
     saved_state = decompress_and_decode_queued_strings(saved_state)
-    log.error("Starting simulation with job_id: %s and configuration id: %s",
-              job_id, gsy_e.constants.CONFIGURATION_ID)
 
     try:
         if settings is None:

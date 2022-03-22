@@ -600,34 +600,29 @@ def run_simulation(setup_module_name="", simulation_config=None, simulation_even
                    slot_length_realtime=None, kwargs=None):
     try:
         if "pricing_scheme" in kwargs:
-            ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME = \
-                kwargs.pop("pricing_scheme")
+            ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME = (
+                kwargs.pop("pricing_scheme"))
 
-        if saved_sim_state is None:
-            simulation = Simulation(
-                setup_module_name=setup_module_name,
-                simulation_config=simulation_config,
-                simulation_events=simulation_events,
-                slot_length_realtime=slot_length_realtime,
-                redis_job_id=redis_job_id,
-                **kwargs
-            )
-        else:
-            simulation = Simulation(
-                setup_module_name=setup_module_name,
-                simulation_config=simulation_config,
-                simulation_events=simulation_events,
-                slot_length_realtime=slot_length_realtime,
-                redis_job_id=saved_sim_state["general"]["simulation_id"],
-                **kwargs
-            )
+        job_id = saved_sim_state["general"]["simulation_id"] if saved_sim_state else redis_job_id
+
+        log.error("Starting simulation with job_id: %s and configuration id: %s",
+                  job_id, gsy_e.constants.CONFIGURATION_ID)
+
+        simulation = Simulation(
+            setup_module_name=setup_module_name,
+            simulation_config=simulation_config,
+            simulation_events=simulation_events,
+            slot_length_realtime=slot_length_realtime,
+            redis_job_id=job_id,
+            **kwargs
+        )
     except SimulationException as ex:
         log.error(ex)
         return
 
-    if saved_sim_state is not None and \
-            saved_sim_state["areas"] != {} and \
-            saved_sim_state["general"]["sim_status"] in ["running", "paused"]:
+    if (saved_sim_state is not None and
+            saved_sim_state["areas"] != {} and
+            saved_sim_state["general"]["sim_status"] in ["running", "paused"]):
         simulation.restore_global_state(saved_sim_state["general"])
         simulation.restore_area_state(saved_sim_state["areas"])
         simulation.run(initial_slot=saved_sim_state["general"]["slot_number"])
