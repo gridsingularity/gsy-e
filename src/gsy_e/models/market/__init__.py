@@ -123,7 +123,9 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
             "name": self.name,
             "id": self.id,
             "start_time": self.time_slot_str,
-            "duration_min": GlobalConfig.slot_length.minutes}
+            "duration_min": GlobalConfig.slot_length.minutes,
+            "time_slots": [self.time_slot_str],  # Use a list for compatibility with future markets
+            "type_name": self.type_name}
 
     @property
     def type_name(self) -> str:
@@ -178,11 +180,7 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
         """Return all orders in the market per time slot."""
         bids = [bid.serializable_dict() for bid in self.bids.values()]
         offers = [offer.serializable_dict() for offer in self.offers.values()]
-        return {
-            self.time_slot_str: {
-                "bids": bids,
-                "offers": offers,
-                "market_type_name": self.type_name}}
+        return {self.time_slot_str: {"bids": bids, "offers": offers}}
 
     def add_listener(self, listener: Callable):
         """Append a callable function to the notification_listeners list."""

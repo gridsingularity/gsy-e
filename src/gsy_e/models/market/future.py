@@ -128,6 +128,21 @@ class FutureMarkets(TwoSidedMarket):
         """Return list of all time slots of future markets."""
         return list(self.slot_bid_mapping.keys())
 
+    @property
+    def market_time_slots_str(self) -> List[str]:
+        """Return all the time slots of future markets represented as strings."""
+        return [time_slot.format(DATE_TIME_FORMAT) for time_slot in self.market_time_slots]
+
+    @property
+    def info(self) -> Dict:
+        """Return information about the market instance."""
+        return {
+            "name": self.name,
+            "id": self.id,
+            "duration_min": GlobalConfig.slot_length.minutes,
+            "time_slots": self.market_time_slots_str,
+            "type_name": self.type_name}
+
     def orders_per_slot(self) -> Dict[str, Dict]:
         """Return all orders in the market per time slot."""
         orders_dict = {}
