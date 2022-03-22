@@ -270,8 +270,8 @@ def test_market_trade_partial(market, offer, accept_offer):
     assert trade == market.trades[0]
     assert trade.id
     assert trade.offer_bid is not e_offer
-    assert trade.offer_bid.energy == 5
-    assert trade.offer_bid.price == 5
+    assert trade.traded_energy == 5
+    assert trade.trade_price == 5
     assert trade.offer_bid.seller == "A"
     assert trade.seller == "A"
     assert trade.buyer == "B"
@@ -333,26 +333,6 @@ def test_market_acct_multiple(market=OneSidedMarket(bc=NonBlockchainInterface(st
     assert market.sold_energy("A") == offer1.energy + offer2.energy == 30
     assert market.bought_energy("B") == offer1.energy == 20
     assert market.bought_energy("C") == offer2.energy == 10
-
-
-@pytest.mark.parametrize("market, offer", [
-    (OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer"),
-    (BalancingMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "balancing_offer"),
-    (SettlementMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer"),
-])
-def test_market_avg_offer_price(market, offer):
-    getattr(market, offer)(1, 1, "A", "A")
-    getattr(market, offer)(3, 1, "A", "A")
-
-    assert market.avg_offer_price == 2
-
-
-@pytest.mark.parametrize("market",
-                         [OneSidedMarket(bc=MagicMock(), time_slot=now()),
-                          BalancingMarket(bc=MagicMock(), time_slot=now()),
-                          SettlementMarket(bc=MagicMock(), time_slot=now())])
-def test_market_avg_offer_price_empty(market):
-    assert market.avg_offer_price == 0
 
 
 @pytest.mark.parametrize("market, offer", [
@@ -509,7 +489,7 @@ def test_market_accept_offer_yields_partial_trade(market, offer, accept_offer):
     e_offer = getattr(market, offer)(2.0, 4, "seller", "seller")
     trade = getattr(market, accept_offer)(e_offer, "buyer", energy=1)
     assert (trade.offer_bid.id == e_offer.id
-            and trade.offer_bid.energy == 1
+            and trade.traded_energy == 1
             and trade.residual.energy == 3)
 
 
@@ -536,18 +516,11 @@ class MarketStateMachine(RuleBasedStateMachine):
         assume(offer.id in self.market.offers)
         self.market.accept_offer(offer, buyer)
 
-    @precondition(lambda self: self.market.offers)
-    @rule()
-    def check_avg_offer_price(self):
-        price = sum(o.price for o in self.market.offers.values())
-        energy = sum(o.energy for o in self.market.offers.values())
-        assert self.market.avg_offer_price == round(price / energy, 4)
-
     @precondition(lambda self: self.market.trades)
     @rule()
     def check_avg_trade_price(self):
-        price = sum(t.offer_bid.price for t in self.market.trades)
-        energy = sum(t.offer_bid.energy for t in self.market.trades)
+        price = sum(t.trade_price for t in self.market.trades)
+        energy = sum(t.traded_energy for t in self.market.trades)
         assert self.market.avg_trade_price == round(price / energy, 4)
 
     @precondition(lambda self: self.market.traded_energy)
@@ -555,8 +528,8 @@ class MarketStateMachine(RuleBasedStateMachine):
     def check_acct(self):
         actor_sums = {}
         for t in self.market.trades:
-            actor_sums = add_or_create_key(actor_sums, t.seller, t.offer_bid.energy)
-            actor_sums = subtract_or_create_key(actor_sums, t.buyer, t.offer_bid.energy)
+            actor_sums = add_or_create_key(actor_sums, t.seller, t.traded_energy)
+            actor_sums = subtract_or_create_key(actor_sums, t.buyer, t.traded_energy)
         for actor, sum_ in actor_sums.items():
             assert self.market.traded_energy[actor] == sum_
         assert sum(self.market.traded_energy.values()) == 0

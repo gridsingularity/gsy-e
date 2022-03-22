@@ -33,6 +33,17 @@ if TYPE_CHECKING:
 class SettlementTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
     """Version of TemplateStrategyBidUpdater class for settlement markets"""
 
+    def __init__(self, initial_rate, final_rate, update_interval):
+        super().__init__(
+            initial_rate=initial_rate,
+            final_rate=final_rate,
+            fit_to_limit=True,
+            energy_rate_change_per_update=None,
+            update_interval=update_interval,
+            rate_limit_object=min)
+        self.set_parameters(initial_rate=initial_rate, final_rate=final_rate,
+                            update_interval=update_interval)
+
     @staticmethod
     def get_all_markets(area: "Area") -> Iterable[MarketBase]:
         return area.settlement_markets.values()
@@ -44,6 +55,17 @@ class SettlementTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
 
 class SettlementTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
     """Version of TemplateStrategyOfferUpdater class for settlement markets"""
+
+    def __init__(self, initial_rate, final_rate, update_interval):
+        super().__init__(
+            initial_rate=initial_rate,
+            final_rate=final_rate,
+            fit_to_limit=True,
+            energy_rate_change_per_update=None,
+            update_interval=update_interval,
+            rate_limit_object=max)
+        self.set_parameters(initial_rate=initial_rate, final_rate=final_rate,
+                            update_interval=update_interval)
 
     @staticmethod
     def get_all_markets(area: "Area") -> Iterable[MarketBase]:
@@ -95,18 +117,12 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         self.bid_updater = SettlementTemplateStrategyBidUpdater(
                 initial_rate=initial_buying_rate,
                 final_rate=final_buying_rate,
-                fit_to_limit=True,
-                energy_rate_change_per_update=None,
-                update_interval=duration(minutes=self._update_interval),
-                rate_limit_object=min)
+                update_interval=duration(minutes=self._update_interval))
 
         self.offer_updater = SettlementTemplateStrategyOfferUpdater(
                 initial_rate=initial_selling_rate,
                 final_rate=final_selling_rate,
-                fit_to_limit=True,
-                energy_rate_change_per_update=None,
-                update_interval=duration(minutes=self._update_interval),
-                rate_limit_object=max)
+                update_interval=duration(minutes=self._update_interval))
 
     def event_market_cycle(self, strategy: "BidEnabledStrategy") -> None:
         """
@@ -192,7 +208,7 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
             return
         if bid_trade.offer_bid.buyer == strategy.owner.name:
             strategy.state.decrement_unsettled_deviation(
-                bid_trade.offer_bid.energy, market.time_slot)
+                bid_trade.traded_energy, market.time_slot)
 
     def event_offer_traded(self, strategy: "BidEnabledStrategy",
                            market_id: str, trade: Trade) -> None:
@@ -213,7 +229,7 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
             return
         if trade.offer_bid.seller == strategy.owner.name:
             strategy.state.decrement_unsettled_deviation(
-                trade.offer_bid.energy, market.time_slot)
+                trade.traded_energy, market.time_slot)
 
     def get_unsettled_deviation_dict(self, strategy: "BidEnabledStrategy") -> Dict:
         return {

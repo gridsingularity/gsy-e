@@ -75,7 +75,9 @@ class Simulation:
                  paused: bool = False, pause_after: duration = None, repl: bool = False,
                  no_export: bool = False, export_path: str = None,
                  export_subdir: str = None, redis_job_id=None, enable_bc=False,
-                 slot_length_realtime=None):
+                 slot_length_realtime=None, incremental: bool = False):
+        self.paused = False
+        self.pause_after = None
         self.initial_params = dict(
             slot_length_realtime=slot_length_realtime,
             seed=seed,
@@ -99,7 +101,7 @@ class Simulation:
 
         self.setup_module_name = setup_module_name
         self.is_stopped = False
-
+        self._is_incremental = incremental
         self.live_events = LiveEvents(self.simulation_config)
         self.kafka_connection = kafka_connection_factory()
         self.redis_connection = RedisSimulationCommunication(self, redis_job_id, self.live_events)
@@ -133,15 +135,14 @@ class Simulation:
     def _load_setup_module(self):
         try:
             if ConstSettings.GeneralSettings.SETUP_FILE_PATH is None:
-                self.setup_module = import_module(".{}".format(self.setup_module_name),
-                                                  'gsy_e.setup')
+                self.setup_module = import_module(f".{self.setup_module_name}", 'gsy_e.setup')
             else:
                 sys.path.append(ConstSettings.GeneralSettings.SETUP_FILE_PATH)
-                self.setup_module = import_module("{}".format(self.setup_module_name))
+                self.setup_module = import_module(f"{self.setup_module_name}")
             log.debug("Using setup module '%s'", self.setup_module_name)
         except (ModuleNotFoundError, ImportError) as ex:
             raise SimulationException(
-                "Invalid setup module '{}'".format(self.setup_module_name)) from ex
+                f"Invalid setup module '{self.setup_module_name}'") from ex
 
     def _init(self, slot_length_realtime, seed, paused, pause_after, redis_job_id, enable_bc):
         self.paused = paused
@@ -295,13 +296,8 @@ class Simulation:
         return (self.area.config.start_date + (slot_number * self.area.config.slot_length)
                 if GlobalConfig.IS_CANARY_NETWORK else self.area.now)
 
-    def _execute_simulation(self, slot_resume, tick_resume, console=None):
-        self.current_expected_tick_time = self.run_start
-        config = self.simulation_config
+    def _calculate_total_initial_ticks_slots(self, config, slot_resume, tick_resume):
         slot_count = int(config.sim_duration / config.slot_length)
-
-        config.external_redis_communicator.sub_to_aggregator()
-        config.external_redis_communicator.start_communication()
 
         if gsy_e.constants.RUN_IN_REALTIME:
             slot_count = sys.maxsize
@@ -325,6 +321,17 @@ class Simulation:
         if self.slot_length_realtime:
             self.tick_length_realtime_s = self.slot_length_realtime.seconds / \
                                           self.simulation_config.ticks_per_slot
+        return slot_count, slot_resume, tick_resume
+
+    def _execute_simulation(self, slot_resume, tick_resume, console=None):
+        self.current_expected_tick_time = self.run_start
+        config = self.simulation_config
+
+        slot_count, slot_resume, tick_resume = self._calculate_total_initial_ticks_slots(
+            config, slot_resume, tick_resume)
+
+        config.external_redis_communicator.sub_to_aggregator()
+        config.external_redis_communicator.start_communication()
 
         for slot_no in range(slot_resume, slot_count):
             self._update_progress_info(slot_no, slot_count)
@@ -334,10 +341,10 @@ class Simulation:
                         f"{self.progress_info.elapsed_time} elapsed, "
                         f"ETA: {self.progress_info.eta}")
 
+            self.area.cycle_markets()
+
             global_objects.profiles_handler.update_time_and_buffer_profiles(
                 self._get_current_market_time_slot(slot_no))
-
-            self.area.cycle_markets()
 
             if self.simulation_config.external_connection_enabled:
                 global_objects.external_global_stats.update(market_cycle=True)
@@ -353,7 +360,7 @@ class Simulation:
             gc.collect()
             process = psutil.Process(os.getpid())
             mbs_used = process.memory_info().rss / 1000000.0
-            log.debug(f"Used {mbs_used} MBs.")
+            log.debug("Used %s MBs.", mbs_used)
 
             self.tick_time_counter = time()
 
@@ -362,8 +369,8 @@ class Simulation:
 
                 # reset tick_resume after possible resume
                 tick_resume = 0
-                log.trace(f"Tick {tick_no + 1} of {config.ticks_per_slot} in slot "
-                          f"{slot_no + 1} ({(tick_no + 1) / config.ticks_per_slot * 100:.1f}%)")
+                log.trace("Tick %s of %s in slot %s (%.1f%)", tick_no + 1, config.ticks_per_slot,
+                          slot_no + 1, (tick_no + 1) / config.ticks_per_slot * 100)
 
                 self.simulation_config.external_redis_communicator.\
                     approve_aggregator_commands()
@@ -386,14 +393,22 @@ class Simulation:
                 self.handle_slowdown_and_realtime(tick_no)
                 self.tick_time_counter = time()
 
+                if self.is_stopped:
+                    log.error(f"Received stop command for "
+                              f"configuration id {gsy_e.constants.CONFIGURATION_ID} and "
+                              f"job id {self._simulation_id}.")
+                    sleep(5)
+                    self._simulation_finish_actions(slot_count)
+                    return
+
             if self.export_results_on_finish:
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
 
-            if self.is_stopped:
-                log.info("Received stop command.")
-                sleep(5)
-                break
+            if self._is_incremental:
+                self.paused = True
+        self._simulation_finish_actions(slot_count)
 
+    def _simulation_finish_actions(self, slot_count):
         self.sim_status = "finished"
         self.deactivate_areas(self.area)
         self.simulation_config.external_redis_communicator.\
@@ -405,8 +420,9 @@ class Simulation:
             log.info(
                 "Run finished in %s%s / %.2fx real time",
                 self.progress_info.elapsed_time,
-                " ({} paused)".format(paused_duration) if paused_duration else "",
-                config.sim_duration / (self.progress_info.elapsed_time - paused_duration)
+                f" ({paused_duration} paused)" if paused_duration else "",
+                self.simulation_config.sim_duration / (
+                        self.progress_info.elapsed_time - paused_duration)
             )
         self._update_and_send_results()
         if self.export_results_on_finish:

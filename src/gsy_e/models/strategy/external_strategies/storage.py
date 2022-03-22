@@ -1,3 +1,4 @@
+# pylint: disable=broad-except,fixme
 """
 Copyright 2018 Grid Singularity
 This file is part of Grid Singularity Exchange.
@@ -33,6 +34,10 @@ if TYPE_CHECKING:
 
 
 class StorageExternalMixin(ExternalMixin):
+    """
+    Mixin for enabling an external api for the storage strategies.
+    Should always be inherited together with a superclass of StorageStrategy.
+    """
 
     state: "StorageState"
     offers: "Offers"
@@ -43,11 +48,6 @@ class StorageExternalMixin(ExternalMixin):
     post_bid: Callable
     _delete_past_state: Callable
     _cycle_state: Callable
-
-    """
-    Mixin for enabling an external api for the storage strategies.
-    Should always be inherited together with a superclass of StorageStrategy.
-    """
 
     def filtered_market_bids(self, market: MarketBase) -> List[Dict]:
         """
@@ -136,9 +136,8 @@ class StorageExternalMixin(ExternalMixin):
             to_delete_offer_id = arguments.get("offer")
             deleted_offers = self.offers.remove_offer_from_cache_and_market(
                 market, to_delete_offer_id)
-            self.state.offered_sell_kWh[market.time_slot] = (
-                self.offers.open_offer_energy(market.id))
-            self.state.clamp_energy_to_sell_kWh([market.time_slot])
+            self.state.reset_offered_sell_energy(
+                self.offers.open_offer_energy(market.id), market.time_slot)
             response = {"command": "offer_delete", "status": "ready",
                         "deleted_offers": deleted_offers,
                         "transaction_id": arguments.get("transaction_id")}
@@ -210,13 +209,13 @@ class StorageExternalMixin(ExternalMixin):
             offer = self.post_offer(
                 market, replace_existing=replace_existing, **offer_arguments)
 
-            self.state.offered_sell_kWh[market.time_slot] = (
-                self.offers.open_offer_energy(market.id))
-            self.state.clamp_energy_to_sell_kWh([market.time_slot])
+            self.state.reset_offered_sell_energy(
+                self.offers.open_offer_energy(market.id), market.time_slot)
 
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer", "status": "ready",
+                 "market_type": market.type_name,
                  "offer": offer.to_json_string(replace_existing=replace_existing),
                  "transaction_id": arguments.get("transaction_id")})
         except Exception:
@@ -225,6 +224,7 @@ class StorageExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer", "status": "error",
+                 "market_type": market.type_name,
                  "error_message": f"Error when handling offer create "
                                   f"on area {self.device.name} with arguments {arguments}.",
                  "transaction_id": arguments.get("transaction_id")})
@@ -282,8 +282,8 @@ class StorageExternalMixin(ExternalMixin):
             market = self._get_market_from_command_argument(arguments)
             to_delete_bid_id = arguments.get("bid")
             deleted_bids = self.remove_bid_from_pending(market.id, bid_id=to_delete_bid_id)
-            self.state.offered_buy_kWh[market.time_slot] = self.posted_bid_energy(market.id)
-            self.state.clamp_energy_to_buy_kWh([market.time_slot])
+            self.state.reset_offered_buy_energy(self.posted_bid_energy(market.id),
+                                                market.time_slot)
             self.redis.publish_json(
                 response_channel,
                 {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
@@ -364,18 +364,20 @@ class StorageExternalMixin(ExternalMixin):
                 attributes=arguments.get("attributes"),
                 requirements=arguments.get("requirements")
             )
-            self.state.offered_buy_kWh[market.time_slot] = self.posted_bid_energy(market.id)
-            self.state.clamp_energy_to_buy_kWh([market.time_slot])
+            self.state.reset_offered_buy_energy(self.posted_bid_energy(market.id),
+                                                market.time_slot)
             response = {
                 "command": "bid",
                 "status": "ready",
                 "bid": bid.to_json_string(replace_existing=replace_existing),
+                "market_type": market.type_name,
                 "transaction_id": arguments.get("transaction_id"),
                 "message": response_message}
         except Exception:
             logging.exception("Error when handling bid create on area %s: Bid Arguments: %s",
                               self.device.name, arguments)
             response = {"command": "bid", "status": "error",
+                        "market_type": market.type_name,
                         "error_message": "Error when handling bid create "
                                          f"on area {self.device.name} with arguments {arguments}.",
                         "transaction_id": arguments.get("transaction_id")}
@@ -387,12 +389,7 @@ class StorageExternalMixin(ExternalMixin):
         """Return the asset info."""
         return {
             **super()._device_info_dict,
-            "energy_to_sell": self.state.energy_to_sell_dict[self.spot_market.time_slot],
-            "energy_active_in_bids": self.state.offered_sell_kWh[self.spot_market.time_slot],
-            "energy_to_buy": self.state.energy_to_buy_dict[self.spot_market.time_slot],
-            "energy_active_in_offers": self.state.offered_buy_kWh[self.spot_market.time_slot],
-            "free_storage": self.state.free_storage(self.spot_market.time_slot),
-            "used_storage": self.state.used_storage,
+            **self.state.to_dict(self.spot_market.time_slot),
             "energy_traded": self.energy_traded(self.spot_market.id),
             "total_cost": self.energy_traded_costs(self.spot_market.id),
         }
@@ -406,11 +403,6 @@ class StorageExternalMixin(ExternalMixin):
                 self.spot_market_time_slot, *self.area.future_market_time_slots])
             self._cycle_state()
 
-            # TODO: Need to be removed as soon as the methods get_available_energy_to_sell_kWh and
-            # get_available_energy_to_buy_kWh are used by the external strategy. This should be
-            # part of D3ASIM-3671
-            self.state.clamp_energy_to_sell_kWh([self.spot_market.time_slot])
-            self.state.clamp_energy_to_buy_kWh([self.spot_market.time_slot])
             if not self.is_aggregator_controlled:
                 market_event_channel = f"{self.channel_prefix}/events/market"
                 market_info = self.spot_market.info
@@ -437,9 +429,7 @@ class StorageExternalMixin(ExternalMixin):
         if not self.connected and not self.is_aggregator_controlled:
             super().event_tick()
         else:
-            self.state.tick(self.area, self.spot_market.time_slot)
-            self.state.clamp_energy_to_sell_kWh([self.spot_market.time_slot])
-            self.state.clamp_energy_to_buy_kWh([self.spot_market.time_slot])
+            self.state.check_state(self.spot_market.time_slot)
 
             while self.pending_requests:
                 # We want to process requests as First-In-First-Out, so we use popleft
@@ -476,9 +466,10 @@ class StorageExternalMixin(ExternalMixin):
             to_delete_offer_id = arguments.get("offer")
             deleted_offers = self.offers.remove_offer_from_cache_and_market(
                 market, to_delete_offer_id)
-            self.state.offered_sell_kWh[market.time_slot] = (
-                self.offers.open_offer_energy(market.id))
-            self.state.clamp_energy_to_sell_kWh([market.time_slot])
+
+            self.state.reset_offered_sell_energy(
+                self.offers.open_offer_energy(market.id), market.time_slot)
+
             response = {
                 "command": "offer_delete", "status": "ready",
                 "deleted_offers": deleted_offers,
@@ -545,13 +536,13 @@ class StorageExternalMixin(ExternalMixin):
                 offer = self.post_offer(
                     market, replace_existing=replace_existing, **offer_arguments)
 
-                self.state.offered_sell_kWh[market.time_slot] = (
-                    self.offers.open_offer_energy(market.id))
-                self.state.clamp_energy_to_sell_kWh([market.time_slot])
+                self.state.reset_offered_sell_energy(
+                    self.offers.open_offer_energy(market.id), market.time_slot)
 
                 response = {
                     "command": "offer",
                     "area_uuid": self.device.uuid,
+                    "market_type": market.type_name,
                     "status": "ready",
                     "offer": offer.to_json_string(replace_existing=replace_existing),
                     "transaction_id": arguments.get("transaction_id"),
@@ -559,6 +550,7 @@ class StorageExternalMixin(ExternalMixin):
             except Exception:
                 response = {
                     "command": "offer", "status": "error",
+                    "market_type": market.type_name,
                     "area_uuid": self.device.uuid,
                     "error_message": "Error when handling offer create "
                                      f"on area {self.device.name} with arguments {arguments}.",
@@ -598,17 +590,19 @@ class StorageExternalMixin(ExternalMixin):
                 requirements=arguments.get("requirements")
             )
 
-            self.state.offered_buy_kWh[market.time_slot] = self.posted_bid_energy(market.id)
-            self.state.clamp_energy_to_buy_kWh([market.time_slot])
+            self.state.reset_offered_buy_energy(
+                self.posted_bid_energy(market.id), market.time_slot)
             response = {
                 "command": "bid", "status": "ready",
                 "bid": bid.to_json_string(replace_existing=replace_existing),
+                "market_type": market.type_name,
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id"),
                 "message": response_message}
         except Exception:
             response = {
                 "command": "bid", "status": "error",
+                "market_type": market.type_name,
                 "area_uuid": self.device.uuid,
                 "error_message": "Error when handling bid create "
                                  f"on area {self.device.name} with arguments {arguments}.",
@@ -627,8 +621,8 @@ class StorageExternalMixin(ExternalMixin):
         try:
             to_delete_bid_id = arguments.get("bid")
             deleted_bids = self.remove_bid_from_pending(market.id, bid_id=to_delete_bid_id)
-            self.state.offered_buy_kWh[market.time_slot] = self.posted_bid_energy(market.id)
-            self.state.clamp_energy_to_buy_kWh([market.time_slot])
+            self.state.reset_offered_buy_energy(
+                self.posted_bid_energy(market.id), market.time_slot)
             response = {
                 "command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
                 "area_uuid": self.device.uuid,

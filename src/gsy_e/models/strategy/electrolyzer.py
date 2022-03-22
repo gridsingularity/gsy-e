@@ -54,16 +54,21 @@ class ElectrolyzerStrategy(StorageStrategy):
         for key, value in load_profile_raw_kg.items():
             self.load_profile_kWh[key] = value * self.conversion_factor_kWh_kg
 
+    def _sell_energy_to_spot_market(self):
+        pass
+
     def event_market_cycle(self):
         super().event_market_cycle()
         current_market = self.area.spot_market
 
-        if (self.state.used_storage - self.load_profile_kWh[current_market.time_slot]) >= 0:
+        energy_to_sell = self.state.get_available_energy_to_sell_kWh(current_market.time_slot)
+        if (energy_to_sell - self.load_profile_kWh[current_market.time_slot]) >= 0:
             self.state._used_storage -= self.load_profile_kWh[current_market.time_slot]
+            self.state.check_state(current_market.time_slot)
         else:
             requested_h2_kg = self.load_profile_kWh[current_market.time_slot] / \
                               self.conversion_factor_kWh_kg
             raise Exception(f"[{current_market.time_slot}]The Electrolyzer storage is not charged "
-                            f"properly. The costumer requested {requested_h2_kg} kg but only "
+                            f"properly. The customer requested {requested_h2_kg} kg but only "
                             f"{self.state.used_storage/self.conversion_factor_kWh_kg} kg "
                             f"are available")

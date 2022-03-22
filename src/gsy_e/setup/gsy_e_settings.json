@@ -4,7 +4,7 @@
     "slot_length": "15m",
     "tick_length": "15s",
     "cloud_coverage": 0,
-    "start_date": "2021-11-19"
+    "start_date": "2022-01-12"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -105,21 +105,7 @@
         0,
         10000
       ],
-      "MIN_ALLOWED_SOC": 10,
-      "LOSS_FUNCTION": 1,
-      "LOSS_FUNCTION_LIMIT": [
-        1,
-        2
-      ],
-      "LOSS_PER_HOUR": 0,
-      "LOSS_PER_HOUR_ABSOLUTE_LIMIT": [
-        0,
-        10000
-      ],
-      "LOSS_PER_HOUR_RELATIVE_LIMIT": [
-        0,
-        1
-      ]
+      "MIN_ALLOWED_SOC": 10
     },
     "LoadSettings": {
       "AVG_POWER_LIMIT": [
@@ -173,7 +159,7 @@
       "DEFAULT_POWER_PROFILE": 0,
       "CLOUD_COVERAGE_LIMIT": [
         0,
-        4
+        5
       ],
       "DEFAULT_CAPACITY_KW": 5,
       "MAX_PANEL_OUTPUT_W": 160,

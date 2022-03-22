@@ -115,8 +115,8 @@ class AreaDispatcher:
             self, agent_area: "Area", market_type: AvailableMarketTypes,
             event_type: AreaEvent, **kwargs) -> None:
 
-        if market_type == AvailableMarketTypes.FUTURE and self.future_agent:
-            self.future_agent.event_listener(event_type, **kwargs)
+        if market_type == AvailableMarketTypes.FUTURE and agent_area.dispatcher.future_agent:
+            agent_area.dispatcher.future_agent.event_listener(event_type, **kwargs)
         elif market_type != AvailableMarketTypes.FUTURE:
             agent_dict = self._get_agents_for_market_type(agent_area.dispatcher, market_type)
             for time_slot, agent in agent_dict.items():
@@ -223,7 +223,8 @@ class AreaDispatcher:
     @staticmethod
     def _create_agent_object(owner: "Area", higher_market: MarketBase,
                              lower_market: MarketBase, market_type: AvailableMarketTypes
-                             ) -> Union[OneSidedAgent, SettlementAgent, BalancingAgent]:
+                             ) -> Union[OneSidedAgent, SettlementAgent,
+                                        BalancingAgent, FutureAgent]:
         agent_constructor_arguments = {
             "owner": owner,
             "higher_market": higher_market,
@@ -325,6 +326,8 @@ class AreaDispatcher:
         self._delete_past_agents(self._spot_agents)
         self._delete_past_agents(self._balancing_agents)
         self._delete_past_agents(self._settlement_agents)
+        if self._future_agent:
+            self._future_agent.delete_engines()
 
     def _delete_past_agents(
             self, market_agent_member: Dict[DateTime, Union[

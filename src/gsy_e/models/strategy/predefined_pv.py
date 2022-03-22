@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pathlib
 
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import convert_kW_to_kWh
 from gsy_framework.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
@@ -92,22 +92,23 @@ class PVPredefinedStrategy(PVStrategy):
     def read_config_event(self):
         # this is to trigger to read from self.simulation_config.cloud_coverage:
         self.cloud_coverage = None
-        self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
+        self.set_produced_energy_forecast_in_state(reconfigure=True)
 
-    def set_produced_energy_forecast_kWh_future_markets(self, reconfigure=True):
-        self._power_profile_index = self.cloud_coverage \
-            if self.cloud_coverage is not None else self.simulation_config.cloud_coverage
+    def set_produced_energy_forecast_in_state(self, reconfigure=True):
+        self._power_profile_index = self.cloud_coverage or self.simulation_config.cloud_coverage
         if reconfigure:
             self._read_predefined_profile_for_pv()
-        market = self.area.spot_market
-        slot_time = market.time_slot
         if not self.energy_profile:
             raise GSyException(
                 f"PV {self.owner.name} tries to set its available energy forecast without a "
-                f"power profile.")
-        available_energy_kWh = find_object_of_same_weekday_and_time(
-            self.energy_profile, slot_time) * self.panel_count
-        self.state.set_available_energy(available_energy_kWh, slot_time, reconfigure)
+                "power profile.")
+        time_slots = [self.area.spot_market.time_slot]
+        if GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
+            time_slots.extend(self.area.future_market_time_slots)
+        for time_slot in time_slots:
+            available_energy_kWh = find_object_of_same_weekday_and_time(
+                self.energy_profile, time_slot) * self.panel_count
+            self.state.set_available_energy(available_energy_kWh, time_slot, reconfigure)
 
     def _read_predefined_profile_for_pv(self):
         """
@@ -213,7 +214,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         if key_in_dict_and_not_none(kwargs, 'power_profile'):
             self._power_profile_input = kwargs['power_profile']
         self._read_or_rotate_profiles(reconfigure=True)
-        self.set_produced_energy_forecast_kWh_future_markets(reconfigure=True)
+        self.set_produced_energy_forecast_in_state(reconfigure=True)
 
     def event_market_cycle(self):
         self._read_predefined_profile_for_pv()

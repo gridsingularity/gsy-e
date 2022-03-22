@@ -1,18 +1,18 @@
+# pylint: disable=protected-access
 import json
 import unittest
-from concurrent.futures import Future
-from time import sleep
+from concurrent.futures import Future, wait
 from unittest.mock import MagicMock
 
-from gsy_framework.constants_limits import ConstSettings
 from deepdiff import DeepDiff
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Offer, Trade, Bid
 from pendulum import now, datetime
 
 import gsy_e.models.market.market_redis_connection
 from gsy_e.events import MarketEvent
-from gsy_e.models.market.market_redis_connection import MarketRedisEventPublisher, \
-    MarketRedisEventSubscriber, TwoSidedMarketRedisEventSubscriber
-from gsy_framework.data_classes import Offer, Trade, Bid
+from gsy_e.models.market.market_redis_connection import (
+    MarketRedisEventPublisher, MarketRedisEventSubscriber, TwoSidedMarketRedisEventSubscriber)
 from gsy_e.models.market.one_sided import OneSidedMarket
 
 gsy_e.models.market.market_redis_connection.BlockingCommunicator = MagicMock
@@ -41,7 +41,8 @@ class TestMarketRedisEventPublisher(unittest.TestCase):
 
     def test_publish_event_subscribes_to_response_and_publishes(self):
         offer = Offer("1", now(), 2, 3, "A")
-        trade = Trade("2", now(), Offer("accepted", now(), 7, 8, "Z"), "B", "C")
+        trade = Trade("2", now(), Offer("accepted", now(), 7, 8, "Z"), "B", "C",
+                      traded_energy=1, trade_price=1)
         new_offer = Offer("3", now(), 4, 5, "D")
         existing_offer = Offer("4", now(), 5, 6, "E")
         kwargs = {"offer": offer,
@@ -138,10 +139,11 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
             })
         }
         trade = Trade(id="trade_id", creation_time=now(), offer_bid=offer,
-                      seller="trade_seller", buyer="trade_buyer")
+                      seller="trade_seller", buyer="trade_buyer",
+                      traded_energy=1, trade_price=1)
         self.market.accept_offer = MagicMock(return_value=trade)
         self.subscriber._accept_offer(payload)
-        sleep(0.1)
+        wait(self.subscriber.futures)
         self.subscriber.market.accept_offer.assert_called_once_with(
             offer_or_id=offer, buyer="mykonos", energy=12
         )
@@ -163,7 +165,7 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
         offer = Offer("o_id", now(), 32, 12, "o_seller")
         self.market.offer = MagicMock(return_value=offer)
         self.subscriber._offer(payload)
-        sleep(0.01)
+        wait(self.subscriber.futures)
         self.subscriber.market.offer.assert_called_once_with(
             seller="mykonos", energy=12, price=32
         )
@@ -183,6 +185,7 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
 
         self.market.delete_offer = MagicMock(return_value=offer)
         self.subscriber._delete_offer(payload)
+        wait(self.subscriber.futures)
         self.subscriber.market.delete_offer.assert_called_once_with(
             offer_or_id=offer
         )
@@ -225,10 +228,11 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
             })
         }
         trade = Trade(id="trade_id", creation_time=now(), offer_bid=bid,
-                      seller="trade_seller", buyer="trade_buyer")
+                      seller="trade_seller", buyer="trade_buyer",
+                      traded_energy=1, trade_price=1)
         self.market.accept_bid = MagicMock(return_value=trade)
         self.subscriber._accept_bid(payload)
-        sleep(.3)
+        wait(self.subscriber.futures)
         self.subscriber.market.accept_bid.assert_called_once()
         self.subscriber.redis_db.publish.assert_called_once_with(
             "id/ACCEPT_BID/RESPONSE", json.dumps({
@@ -248,7 +252,7 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
         bid = Bid("b_id", now(), 32, 12, "b_buyer", "b_seller")
         self.market.bid = MagicMock(return_value=bid)
         self.subscriber._bid(payload)
-        sleep(.3)
+        wait(self.subscriber.futures)
         self.subscriber.market.bid.assert_called_once_with(
             buyer="mykonos", energy=12, price=32
         )
@@ -268,7 +272,7 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
 
         self.market.delete_bid = MagicMock(return_value=bid)
         self.subscriber._delete_bid(payload)
-        sleep(.3)
+        wait(self.subscriber.futures)
         self.subscriber.market.delete_bid.assert_called_once()
         self.subscriber.redis_db.publish.assert_called_once_with(
             "id/DELETE_BID/RESPONSE",

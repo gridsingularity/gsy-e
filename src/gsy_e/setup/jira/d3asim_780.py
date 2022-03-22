@@ -34,7 +34,7 @@ def get_setup(config):
                 [
                     Area("H1 Electrolyser",
                          strategy=ElectrolyzerStrategy(discharge_profile=discharge_path,
-                                                       production_rate_kg_h=4.0)
+                                                       production_rate_kg_h=10.0)
                          ),
                 ]
             ),

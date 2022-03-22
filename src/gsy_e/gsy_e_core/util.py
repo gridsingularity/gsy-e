@@ -168,26 +168,6 @@ class NonBlockingConsole:
         return False
 
 
-def make_ma_name(owner):
-    """Make market agent name."""
-    return f"MA {owner.name}"
-
-
-def make_ba_name(owner):
-    """Make balancing agent name."""
-    return f"BA {owner.name}"
-
-
-def make_sa_name(owner):
-    """Make settlement agent name."""
-    return f"SA {owner.name}"
-
-
-def make_fa_name(owner):
-    """Make future market agent name."""
-    return f"FA {owner.name}"
-
-
 def format_interval(interval, show_day=True):
     """Format interval."""
     if interval.days and show_day:
@@ -507,7 +487,8 @@ def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
 def get_simulation_queue_name():
     """Get simulation queue name."""
     listen_to_cn = os.environ.get("LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE", "no") == "yes"
-    return "canary_network" if listen_to_cn else "exchange"
+    return (ConstSettings.GeneralSettings.CN_JOB_QUEUE_NAME
+            if listen_to_cn else ConstSettings.GeneralSettings.SIM_JOB_QUEUE_NAME)
 
 
 class ExternalTickCounter:

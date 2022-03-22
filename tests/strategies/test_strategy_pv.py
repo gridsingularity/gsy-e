@@ -152,6 +152,8 @@ class FakeTrade:
     def __init__(self, offer):
         self.offer_bid = offer
         self.seller = "FakeSeller"
+        self.traded_energy = offer.energy
+        self.trade_price = offer.price
 
     @property
     def is_offer_trade(self):
@@ -160,6 +162,10 @@ class FakeTrade:
     @property
     def buyer(self):
         return "FakeBuyer"
+
+    @property
+    def trade_rate(self):
+        return self.offer_bid.energy_rate
 
 
 """TEST1"""
@@ -293,6 +299,7 @@ def testing_event_trade(area_test3, pv_test4):
     pv_test4.state._available_energy_kWh[area_test3.test_market.time_slot] = 1
     pv_test4.event_offer_traded(market_id=area_test3.test_market.id,
                                 trade=Trade(id="id", creation_time=pendulum.now(),
+                                            traded_energy=1, trade_price=20,
                                             offer_bid=Offer(id="id", creation_time=TIME,
                                                             price=20,
                                                             energy=1, seller="FakeArea"),
@@ -349,7 +356,7 @@ def testing_produced_energy_forecast_real_data(pv_test66):
     # prepare whole day of energy_production_forecast_kWh:
     for time_slot in generate_market_slot_list():
         pv_test66.area.create_spot_market(time_slot)
-        pv_test66.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
+        pv_test66.set_produced_energy_forecast_in_state(reconfigure=False)
     morning_time = pendulum.today(tz=TIME_ZONE).at(hour=8, minute=20, second=0)
     afternoon_time = pendulum.today(tz=TIME_ZONE).at(hour=16, minute=40, second=0)
 
@@ -568,7 +575,8 @@ def test_assert_if_trade_rate_is_lower_than_offer_rate(pv_test11):
     market_id = "market_id"
     pv_test11.offers.sold[market_id] = [Offer("offer_id", pendulum.now(), 30, 1, "FakeArea")]
     to_cheap_offer = Offer("offer_id", pendulum.now(), 29, 1, "FakeArea")
-    trade = Trade("trade_id", "time", to_cheap_offer, pv_test11, "buyer")
+    trade = Trade("trade_id", "time", to_cheap_offer, pv_test11, "buyer",
+                  traded_energy=1, trade_price=1)
 
     with pytest.raises(AssertionError):
         pv_test11.event_offer_traded(market_id=market_id, trade=trade)

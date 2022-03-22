@@ -44,7 +44,7 @@ def main():
             name=f'simulation.{getpid()}.{now().timestamp()}', log_job_description=False
         )
         try:
-            worker.work(max_jobs=1, burst=True)
+            worker.work(max_jobs=1, burst=True, logging_level="ERROR")
         except Exception as ex:
             logger.error(ex)
             worker.kill_horse()

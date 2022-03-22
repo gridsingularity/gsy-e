@@ -34,7 +34,7 @@ These two pie charts display Self-Sufficiency and Self-Consumption level of the 
 
 ![alt_text](img/results-5.png)
 
-This plot shows the total cumulative trade volumes traded among market participants (agents representing assets or markets) in the selected market in the course of the simulation. 
+This plot shows the total cumulative trade volumes traded among market participants (agents representing assets or markets) in the selected market in the course of the simulation.
 
 Each market participant is displayed as a uniquely colored bar that represents the energy sold (shown as negative) or bought (shown as positive). In the example below, the energy sold by House 1 is colored purple, and the House 1 bar is positive, meaning that it bought some of the energy it produced for its own use (self-consumption). The rest of the energy it sold is shown as a thin purple layer appearing in the bars of the other market participants that acted as buyers. This color coding allows the user to visually track the energy trade flows in the selected market.
 
@@ -103,7 +103,7 @@ The user has the possibility to compare the results of two separate simulations.
 
 After running a simulation in the backend, the user can export simulation results. This functionality is enabled by default. If you want to disable the export of simulation results, use the `--no-export` flag for the simulation run. Another useful parameter is: `--export-path`, used to change the output path of the simulation results. The default path is `$HOME/d3a-simulation/`.
 
-The simulation results include analytical information about the bids, offers and trades that took place in the course of the simulation. Information about energy characteristics of each asset and [market](model-markets.md) are also included (eg. battery state of charge, energy traded/requested/deficit). A detailed description of these files is available on the data download page.
+The simulation results include analytical information about the bids, offers and trades that took place in the course of the simulation. Information about energy characteristics of each asset and market are also included (eg. battery state of charge, energy traded/requested/deficit). A detailed description of these files is available on the data download page.
 
 In addition to text files, some graphs that display aggregated market information during the course of the simulation are also exposed. These can be found under the `plot` directory and are very similar to the ones available in the UI :
 
