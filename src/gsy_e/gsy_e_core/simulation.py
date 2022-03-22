@@ -70,251 +70,129 @@ class SimulationProgressInfo:
         self.current_slot_str = ""
         self.current_slot_number = 0
 
-
-@dataclass
-class SimulationStateParameters:
-    """State of the Simulation class."""
-    # pylint: disable=too-many-instance-attributes
-    paused: bool = False
-    pause_after: duration = None
-    slot_length_realtime: duration = None
-    incremental: bool = False
-    timed_out: bool = False
-    stopped: bool = False
-    paused_time: int = 0  # Time spent in paused state, in seconds
-    sim_status = "initializing"
-    start_time: datetime = None
-    tick_time_counter: datetime = None
-
-
-class Simulation:
-    """Main class that starts and controls simulation."""
-    # pylint: disable=too-many-instance-attributes, too-many-arguments,
-    # pylint: disable=attribute-defined-outside-init
-
-    def __init__(self, setup_module_name: str, simulation_config: SimulationConfig,
-                 simulation_events: str = None, seed=None,
-                 paused: bool = False, pause_after: duration = None, repl: bool = False,
-                 no_export: bool = False, export_path: str = None,
-                 export_subdir: str = None, redis_job_id=None, enable_bc=False,
-                 slot_length_realtime=None, incremental: bool = False):
-        self._seed = self._set_random_seed(seed)
-        self._enable_bc = enable_bc
-        self._state_params = SimulationStateParameters(
-            paused=paused,
-            pause_after=pause_after,
-            slot_length_realtime=slot_length_realtime,
-            incremental=incremental
-        )
-        self.progress_info = SimulationProgressInfo()
-        self.simulation_config = simulation_config
-        self.use_repl = repl
-        self.export_results_on_finish = not no_export
-        self.export_path = export_path
-
-        if export_subdir is None:
-            self.export_subdir = now(tz=TIME_ZONE).format(f"{DATE_TIME_FORMAT}:ss")
-        else:
-            self.export_subdir = export_subdir
-
-        self.setup_module_name = setup_module_name
-        self.live_events = LiveEvents(self.simulation_config)
-        self.kafka_connection = kafka_connection_factory()
-        self.redis_connection = RedisSimulationCommunication(self, redis_job_id, self.live_events)
-        self._simulation_id = redis_job_id
-        self._started_from_cli = redis_job_id is None
-
-        self._load_setup_module()
-        self._init(redis_job_id)
-
-        deserialize_events_to_areas(simulation_events, self.area)
-
-        validate_const_settings_for_simulation()
-
-    @staticmethod
-    def _set_random_seed(seed):
-        if seed is not None:
-            random.seed(int(seed))
-        else:
-            random_seed = random.randint(0, RANDOM_SEED_MAX_VALUE)
-            random.seed(random_seed)
-            seed = random_seed
-            log.info("Random seed: %s", random_seed)
-        return seed
-
-    def _set_traversal_length(self):
-        no_of_levels = self._get_setup_levels(self.area) + 1
-        num_ticks_to_propagate = no_of_levels * 2
-        time_to_propagate_minutes = (num_ticks_to_propagate *
-                                     self.simulation_config.tick_length.seconds / 60.)
-        log.info("Setup has %s levels, offers/bids need at least %s minutes to propagate.",
-                 no_of_levels, time_to_propagate_minutes)
-
-    def _get_setup_levels(self, area, level_count=0):
-        level_count += 1
-        count_list = [self._get_setup_levels(child, level_count)
-                      for child in area.children if child.children]
-        return max(count_list) if len(count_list) > 0 else level_count
-
-    def _load_setup_module(self):
-        try:
-            if ConstSettings.GeneralSettings.SETUP_FILE_PATH is None:
-                self.setup_module = import_module(f".{self.setup_module_name}", "gsy_e.setup")
-            else:
-                sys.path.append(ConstSettings.GeneralSettings.SETUP_FILE_PATH)
-                self.setup_module = import_module(f"{self.setup_module_name}")
-            log.debug("Using setup module '%s'", self.setup_module_name)
-        except (ModuleNotFoundError, ImportError) as ex:
-            raise SimulationException(
-                f"Invalid setup module '{self.setup_module_name}'") from ex
-
-    def _init(self, redis_job_id):
-        # has to be called before get_setup():
-        global_objects.profiles_handler.activate()
-
-        self.area = self.setup_module.get_setup(self.simulation_config)
-        bid_offer_matcher.activate()
-        global_objects.external_global_stats(self.area, self.simulation_config.ticks_per_slot)
-
-        self.endpoint_buffer = SimulationEndpointBuffer(
-            redis_job_id, self._seed,
-            self.area, self.export_results_on_finish)
-
-        if self.export_results_on_finish:
-            self.file_stats_endpoint = FileExportEndpoints()
-            self.export = ExportAndPlot(self.area, self.export_path, self.export_subdir,
-                                        self.file_stats_endpoint, self.endpoint_buffer)
-        self._update_and_send_results()
-
-        if GlobalConfig.POWER_FLOW:
-            self.power_flow = PandaPowerFlow(self.area)
-            self.power_flow.run_power_flow()
-
-        log.debug("Starting simulation with config %s", self.simulation_config)
-
-        self._set_traversal_length()
-
-        self.area.activate(self._enable_bc, simulation_id=redis_job_id)
-
-    @property
-    def _finished(self):
-        """Return if simulation has finished."""
-        return self.area.current_tick >= self.area.config.total_ticks
-
-    @property
-    def _time_since_start(self):
-        """Return pendulum duration since start of simulation."""
-        return self.area.current_tick * self.simulation_config.tick_length
-
-    def reset(self):
-        """
-        Reset simulation to initial values and restart the run.
-        """
-        log.info("%s Simulation reset requested %s", "=" * 15, "=" * 15)
-        self._init(self._simulation_id)
-        self.run()
-        raise SimulationResetException
-
-    def stop(self):
-        """Stop simulation."""
-        self._state_params.stopped = True
-
-    def _deactivate_areas(self, area):
-        """Move the last market into area.past_markets."""
-        area.deactivate()
-        for child in area.children:
-            self._deactivate_areas(child)
-
-    def run(self, initial_slot=0):
-        """Run the simulation."""
-        self._state_params.sim_status = "running"
-        self._state_params.stopped = False
-        self._state_params.tick_time_counter = time()
-
-        if initial_slot == 0:
-            self._state_params.start_time = now(tz=TIME_ZONE)
-            self._state_params.paused_time = 0
-
-        tick_resume = 0
-        try:
-            if self._started_from_cli:
-                self._run_cli_execute_cycle(initial_slot, tick_resume)
-            else:
-                self._execute_simulation(initial_slot, tick_resume)
-        except (KeyboardInterrupt, SimulationResetException):
-            pass
-
-    def _run_cli_execute_cycle(self, slot_resume, tick_resume):
-        with NonBlockingConsole() as console:
-            self._execute_simulation(slot_resume, tick_resume, console)
-
-    def _update_area_stats(self, area, endpoint_buffer):
-        for child in area.children:
-            self._update_area_stats(child, endpoint_buffer)
-        bills = endpoint_buffer.results_handler.all_ui_results["bills"].get(area.uuid, {})
-        area.stats.update_aggregated_stats({"bills": bills})
-        area.stats.kpi.update(
-            endpoint_buffer.results_handler.all_ui_results["kpi"].get(area.uuid, {}))
-
-    def _update_and_send_results(self):
-        if self.should_send_results_to_broker:
-            self.endpoint_buffer.update_stats(
-                self.area, self.status, self.progress_info, self.current_state,
-                calculate_results=False)
-            results = self.endpoint_buffer.prepare_results_for_publish()
-            if results is None:
-                return
-            self.kafka_connection.publish(results, self._simulation_id)
-
-        elif (gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE or
-                self.export_results_on_finish):
-
-            self.endpoint_buffer.update_stats(
-                self.area, self.status, self.progress_info, self.current_state,
-                calculate_results=True)
-            self._update_area_stats(self.area, self.endpoint_buffer)
-
-            if self.export_results_on_finish:
-                if (self.area.current_market is not None
-                        and gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE):
-                    # for integration tests:
-                    self.export.raw_data_to_json(
-                        self.area.current_market.time_slot_str,
-                        self.endpoint_buffer.flattened_area_core_stats_dict
-                    )
-
-                self.file_stats_endpoint(self.area)
-
-    def _update_progress_info(self, slot_no, slot_count):
+    def update(self, slot_no, slot_count, time_params, config):
+        """Update progress info according to the simulation progress."""
         run_duration = (
-                now(tz=TIME_ZONE) - self._state_params.start_time -
-                duration(seconds=self._state_params.paused_time)
+                now(tz=TIME_ZONE) - time_params.start_time -
+                duration(seconds=time_params.paused_time)
         )
 
         if gsy_e.constants.RUN_IN_REALTIME:
-            self.progress_info.eta = None
-            self.progress_info.percentage_completed = 0.0
+            self.eta = None
+            self.percentage_completed = 0.0
         else:
-            self.progress_info.eta = (run_duration / (slot_no + 1) * slot_count) - run_duration
-            self.progress_info.percentage_completed = (slot_no + 1) / slot_count * 100
+            self.eta = (run_duration / (slot_no + 1) * slot_count) - run_duration
+            self.percentage_completed = (slot_no + 1) / slot_count * 100
 
-        self.progress_info.elapsed_time = run_duration
-        self.progress_info.current_slot_str = get_market_slot_time_str(
-            slot_no, self.simulation_config)
-        self.progress_info.next_slot_str = get_market_slot_time_str(
-            slot_no + 1, self.simulation_config)
-        self.progress_info.current_slot_number = slot_no
+        self.elapsed_time = run_duration
+        self.current_slot_str = get_market_slot_time_str(slot_no, config)
+        self.next_slot_str = get_market_slot_time_str(
+            slot_no + 1, config)
+        self.current_slot_number = slot_no
+
+        log.warning("Slot %s of %s - (%.1f %%) %s elapsed, ETA: %s", slot_no, slot_count,
+                    self.percentage_completed, self.elapsed_time,
+                    self.eta)
+
+    def log_simulation_finished(self, paused_duration, config):
+        """Log that the simulation has finished."""
+        log.info(
+            "Run finished in %s%s / %.2fx real time",
+            self.elapsed_time,
+            f" ({paused_duration} paused)" if paused_duration else "",
+            config.sim_duration / (self.elapsed_time - paused_duration)
+        )
+
+
+@dataclass
+class SimulationStatusManager:
+    """State of the Simulation class."""
+    paused: bool = False
+    pause_after: duration = None
+    timed_out: bool = False
+    stopped: bool = False
+    sim_status = "initializing"
+    incremental: bool = False
+
+    @property
+    def status(self):
+        """Return status of simulation."""
+        if self.timed_out:
+            return "timed-out"
+        if self.stopped:
+            return "stopped"
+        if self.paused:
+            return "paused"
+        return self.sim_status
+
+    def stop(self):
+        """Stop simulation."""
+        self.stopped = True
+
+    @property
+    def finished(self):
+        """Return if simulation has finished."""
+        return self.sim_status == "finished"
+
+    def toggle_pause(self):
+        """Pause or resume simulation."""
+        if self.finished:
+            return False
+        self.paused = not self.paused
+        return True
+
+    def handle_pause_after(self, time_since_start):
+        """Deals with pause-after parameter, which pauses the simulation after some time."""
+        if self.pause_after and time_since_start >= self.pause_after:
+            self.paused = True
+            self.pause_after = None
+
+    def handle_pause_timeout(self, tick_time_counter):
+        """
+        Deals with the case that the pause time exceeds the simulation timeout, in which case the
+        simulation should be stopped.
+        """
+        if time() - tick_time_counter > SIMULATION_PAUSE_TIMEOUT:
+            self.timed_out = True
+            self.stopped = True
+            self.paused = False
+        if self.stopped:
+            self.paused = False
+
+    def handle_incremental_mode(self):
+        """
+        Handle incremental paused mode, where simulation is paused after each market slot.
+        """
+        if self.incremental:
+            self.paused = True
+
+
+@dataclass
+class SimulationTimeManager:
+    """Handles simulation time management."""
+    start_time: datetime = now(tz=TIME_ZONE)
+    tick_time_counter: datetime = time()
+    slot_length_realtime: duration = None
+    tick_length_realtime_s: int = None
+    paused_time: int = 0  # Time spent in paused state, in seconds
+
+    def reset(self, not_restored_from_state=True):
+        """
+        Restore time-related parameters of the simulation to their default values.
+        Mainly useful when resetting the simulation.
+        """
+        self.tick_time_counter = time()
+        if not_restored_from_state:
+            self.start_time = now(tz=TIME_ZONE)
+            self.paused_time = 0
 
     def _set_area_current_tick(self, area, current_tick):
         area.current_tick = current_tick
         for child in area.children:
             self._set_area_current_tick(child, current_tick)
 
-    def _get_current_market_time_slot(self, slot_number: int) -> DateTime:
-        return (self.area.config.start_date + (slot_number * self.area.config.slot_length)
-                if GlobalConfig.IS_CANARY_NETWORK else self.area.now)
-
-    def _calculate_total_initial_ticks_slots(self, config, slot_resume, tick_resume):
+    def calculate_total_initial_ticks_slots(self, config, slot_resume, tick_resume, area):
+        """Calculate the initial slot and tick of the simulation, and the total slot count."""
         slot_count = int(config.sim_duration / config.slot_length)
 
         if gsy_e.constants.RUN_IN_REALTIME:
@@ -332,31 +210,325 @@ class Simulation:
             seconds_until_next_tick = config.tick_length.seconds - seconds_elapsed_in_tick
 
             ticks_since_midnight = int(seconds_since_midnight // config.tick_length.seconds) + 1
-            self._set_area_current_tick(self.area, ticks_since_midnight)
+            self._set_area_current_tick(area, ticks_since_midnight)
 
             sleep(seconds_until_next_tick)
 
-        if self._state_params.slot_length_realtime:
+        if self.slot_length_realtime:
             self.tick_length_realtime_s = (
-                    self._state_params.slot_length_realtime.seconds /
-                    self.simulation_config.ticks_per_slot)
+                    self.slot_length_realtime.seconds /
+                    config.ticks_per_slot)
         return slot_count, slot_resume, tick_resume
+
+    def handle_slowdown_and_realtime(self, tick_no, config):
+        """
+        Handle simulation slowdown and simulation realtime mode, and sleep the simulation
+        accordingly.
+        """
+        if gsy_e.constants.RUN_IN_REALTIME:
+            tick_runtime_s = time() - self.tick_time_counter
+            sleep(abs(config.tick_length.seconds - tick_runtime_s))
+        elif self.slot_length_realtime:
+            current_expected_tick_time = (
+                self.tick_time_counter.add(
+                    seconds=self.tick_length_realtime_s))
+            sleep_time_s = current_expected_tick_time.timestamp() - now().timestamp()
+            if sleep_time_s > 0:
+                sleep(sleep_time_s)
+                log.debug("Tick %s/%s: Sleep time of %s s was applied",
+                          tick_no + 1, config.ticks_per_slot, sleep_time_s)
+
+        self.tick_time_counter = time()
+
+
+@dataclass
+class SimulationSetup:
+    """Static simulation configuration."""
+    seed: int = 0
+    enable_bc: bool = False
+    use_repl: bool = False
+    setup_module_name: str = ""
+    started_from_cli: str = True
+
+    def __post_init__(self):
+        self.seed = self._set_random_seed(self.seed)
+
+    def load_setup_module(self, simulation_config):
+        """Load setup module and create areas that are described on the setup."""
+        loaded_python_module = self._load_setup_module(self.setup_module_name)
+        area = loaded_python_module.get_setup(simulation_config)
+        self._log_traversal_length(area, simulation_config)
+        return area
+
+    @staticmethod
+    def _set_random_seed(seed):
+        if seed is not None:
+            random.seed(int(seed))
+        else:
+            random_seed = random.randint(0, RANDOM_SEED_MAX_VALUE)
+            random.seed(random_seed)
+            seed = random_seed
+            log.info("Random seed: %s", random_seed)
+        return seed
+
+    def _log_traversal_length(self, area, simulation_config):
+        no_of_levels = self._get_setup_levels(area) + 1
+        num_ticks_to_propagate = no_of_levels * 2
+        time_to_propagate_minutes = (num_ticks_to_propagate *
+                                     simulation_config.tick_length.seconds / 60.)
+        log.info("Setup has %s levels, offers/bids need at least %s minutes to propagate.",
+                 no_of_levels, time_to_propagate_minutes)
+
+    def _get_setup_levels(self, area, level_count=0):
+        level_count += 1
+        count_list = [self._get_setup_levels(child, level_count)
+                      for child in area.children if child.children]
+        return max(count_list) if len(count_list) > 0 else level_count
+
+    @staticmethod
+    def _load_setup_module(setup_module_name):
+        try:
+            if ConstSettings.GeneralSettings.SETUP_FILE_PATH is None:
+                return import_module(f".{setup_module_name}", "gsy_e.setup")
+            sys.path.append(ConstSettings.GeneralSettings.SETUP_FILE_PATH)
+            return import_module(f"{setup_module_name}")
+        except (ModuleNotFoundError, ImportError) as ex:
+            raise SimulationException(
+                f"Invalid setup module '{setup_module_name}'") from ex
+        finally:
+            log.debug("Using setup module '%s'", setup_module_name)
+
+
+class SimulationResultsManager:
+    """Maintain and populate the simulation results and the publishing to the message broker."""
+    def __init__(self, export_results_on_finish, export_path, export_subdir, started_from_cli):
+        self.export_results_on_finish = export_results_on_finish
+        self.export_path = export_path
+        self.started_from_cli = started_from_cli
+        self.kafka_connection = kafka_connection_factory()
+
+        if export_subdir is None:
+            self.export_subdir = now(tz=TIME_ZONE).format(f"{DATE_TIME_FORMAT}:ss")
+        else:
+            self.export_subdir = export_subdir
+        self._endpoint_buffer = None
+        self._export = None
+
+    def init_results(self, redis_job_id, area, config_params):
+        """Construct objects that contain the simulation results for the broker and CSV output."""
+        self._endpoint_buffer = SimulationEndpointBuffer(
+            redis_job_id, config_params.seed,
+            area, self.export_results_on_finish)
+
+        if self.export_results_on_finish:
+            self._export = ExportAndPlot(area, self.export_path,
+                                         self.export_subdir,
+                                         FileExportEndpoints(), self._endpoint_buffer)
+
+    @property
+    def _should_send_results_to_broker(self):
+        """Flag that decides whether to send results to the gsy-web"""
+        return not self.started_from_cli and self.kafka_connection.is_enabled()
+
+    def update_and_send_results(self, current_state, progress_info, area, simulation_status):
+        """
+        Update the simulation results. Should be called on init, finish and every market cycle.
+        """
+        assert self._endpoint_buffer is not None
+        if self._should_send_results_to_broker:
+            self._endpoint_buffer.update_stats(
+                area, simulation_status, progress_info, current_state,
+                calculate_results=False)
+            results = self._endpoint_buffer.prepare_results_for_publish()
+            if results is None:
+                return
+            self.kafka_connection.publish(results, current_state["simulation_id"])
+
+        elif (gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE or
+                self.export_results_on_finish):
+
+            self._endpoint_buffer.update_stats(
+                area, current_state["sim_status"], progress_info, current_state,
+                calculate_results=True)
+            self._update_area_stats(area, self._endpoint_buffer)
+
+            if self.export_results_on_finish:
+                assert self._export is not None
+                if (area.current_market is not None
+                        and gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE):
+                    # for integration tests:
+                    self._export.raw_data_to_json(
+                        area.current_market.time_slot_str,
+                        self._endpoint_buffer.flattened_area_core_stats_dict
+                    )
+
+                self._export.file_stats_endpoint(area)
+
+    @classmethod
+    def _update_area_stats(cls, area, endpoint_buffer):
+        for child in area.children:
+            cls._update_area_stats(child, endpoint_buffer)
+        bills = endpoint_buffer.results_handler.all_ui_results["bills"].get(area.uuid, {})
+        area.stats.update_aggregated_stats({"bills": bills})
+        area.stats.kpi.update(
+            endpoint_buffer.results_handler.all_ui_results["kpi"].get(area.uuid, {}))
+
+    def update_csv_on_market_cycle(self, slot_no, area):
+        """Update the csv results on market cycle."""
+        if self.export_results_on_finish:
+            self._export.data_to_csv(area, slot_no == 0)
+
+    def save_csv_results(self, power_flow, area):
+        """Update the CSV results on finish, and write the CSV files."""
+        if self.export_results_on_finish:
+            log.info("Exporting simulation data.")
+            self._export.data_to_csv(area, False)
+            self._export.area_tree_summary_to_json(self._endpoint_buffer.area_result_dict)
+            self._export.export(power_flow=power_flow if GlobalConfig.POWER_FLOW else None)
+
+
+class SimulationExternalEvents:
+    """
+    Handle signals that affect the simulation state, that arrive from Redis. Consists of live
+    events and signals that change the simulation status.
+    """
+    def __init__(self, simulation_id, config, state_params, progress_info, area):
+        self.live_events = LiveEvents(config)
+        self.redis_connection = RedisSimulationCommunication(
+            state_params, simulation_id, self.live_events, progress_info, area)
+
+    def update(self, area):
+        """
+        Update the simulation according to any live events received. Triggered every market slot.
+        """
+        self.live_events.handle_all_events(area)
+
+
+class Simulation:
+    """Main class that starts and controls simulation."""
+    # pylint: disable=too-many-arguments
+    def __init__(self, setup_module_name: str, simulation_config: SimulationConfig,
+                 simulation_events: str = None, seed=None,
+                 paused: bool = False, pause_after: duration = None, repl: bool = False,
+                 no_export: bool = False, export_path: str = None,
+                 export_subdir: str = None, redis_job_id=None, enable_bc=False,
+                 slot_length_realtime=None, incremental: bool = False):
+        self._status = SimulationStatusManager(
+            paused=paused,
+            pause_after=pause_after,
+            incremental=incremental
+        )
+        self._time = SimulationTimeManager(
+            slot_length_realtime=slot_length_realtime,
+        )
+
+        self._setup = SimulationSetup(
+            seed=seed,
+            enable_bc=enable_bc,
+            use_repl=repl,
+            setup_module_name=setup_module_name,
+            started_from_cli=redis_job_id is None
+        )
+
+        self._results = SimulationResultsManager(
+            export_results_on_finish=not no_export,
+            export_path=export_path,
+            export_subdir=export_subdir,
+            started_from_cli=redis_job_id is None
+        )
+
+        self.progress_info = SimulationProgressInfo()
+        self.simulation_config = simulation_config
+        self._simulation_id = redis_job_id
+
+        self._init(redis_job_id)
+
+        self._external_events = SimulationExternalEvents(
+            redis_job_id, self.simulation_config, self._status, self.progress_info, self.area)
+
+        deserialize_events_to_areas(simulation_events, self.area)
+
+        validate_const_settings_for_simulation()
+
+    def _init(self, redis_job_id):
+        # has to be called before get_setup():
+        global_objects.profiles_handler.activate()
+
+        self.area = self._setup.load_setup_module(self.simulation_config)
+        bid_offer_matcher.activate()
+        global_objects.external_global_stats(self.area, self.simulation_config.ticks_per_slot)
+
+        self._results.init_results(redis_job_id, self.area, self._setup)
+        self._results.update_and_send_results(
+            self.current_state, self.progress_info, self.area, self._status.status)
+
+        if GlobalConfig.POWER_FLOW:
+            self.power_flow = PandaPowerFlow(self.area)
+            self.power_flow.run_power_flow()
+
+        log.debug("Starting simulation with config %s", self.simulation_config)
+
+        self.area.activate(self._setup.enable_bc, simulation_id=redis_job_id)
+
+    @property
+    def _time_since_start(self):
+        """Return pendulum duration since start of simulation."""
+        return self.area.current_tick * self.simulation_config.tick_length
+
+    def reset(self):
+        """
+        Reset simulation to initial values and restart the run.
+        """
+        log.info("%s Simulation reset requested %s", "=" * 15, "=" * 15)
+        self._init(self._simulation_id)
+        self.run()
+        raise SimulationResetException
+
+    def _deactivate_areas(self, area):
+        """Move the last market into area.past_markets."""
+        area.deactivate()
+        for child in area.children:
+            self._deactivate_areas(child)
+
+    def run(self, initial_slot=0):
+        """Run the simulation."""
+        self._status.sim_status = "running"
+        self._status.stopped = False
+
+        self._time.reset(
+            not_restored_from_state=(initial_slot == 0)
+        )
+
+        tick_resume = 0
+        try:
+            if self._setup.started_from_cli:
+                self._run_cli_execute_cycle(initial_slot, tick_resume)
+            else:
+                self._execute_simulation(initial_slot, tick_resume)
+        except (KeyboardInterrupt, SimulationResetException):
+            pass
+
+    def _run_cli_execute_cycle(self, slot_resume, tick_resume):
+        with NonBlockingConsole() as console:
+            self._execute_simulation(slot_resume, tick_resume, console)
+
+    def _get_current_market_time_slot(self, slot_number: int) -> DateTime:
+        return (self.area.config.start_date + (slot_number * self.area.config.slot_length)
+                if GlobalConfig.IS_CANARY_NETWORK else self.area.now)
 
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
         config = self.simulation_config
 
-        slot_count, slot_resume, tick_resume = self._calculate_total_initial_ticks_slots(
-            config, slot_resume, tick_resume)
+        slot_count, slot_resume, tick_resume = (
+            self._time.calculate_total_initial_ticks_slots(
+                config, slot_resume, tick_resume, self.area))
 
         config.external_redis_communicator.sub_to_aggregator()
         config.external_redis_communicator.start_communication()
 
         for slot_no in range(slot_resume, slot_count):
-            self._update_progress_info(slot_no, slot_count)
-
-            log.warning("Slot %s of %s - (%.1f %%) %s elapsed, ETA: %s", slot_no, slot_count,
-                        self.progress_info.percentage_completed, self.progress_info.elapsed_time,
-                        self.progress_info.eta)
+            self.progress_info.update(
+                slot_no, slot_count, self._time, self.simulation_config)
 
             self.area.cycle_markets()
 
@@ -371,8 +543,9 @@ class Simulation:
                 slot_completion="0%",
                 market_slot=self.progress_info.current_slot_str)
 
-            self._update_and_send_results()
-            self.live_events.handle_all_events(self.area)
+            self._results.update_and_send_results(
+                self.current_state, self.progress_info, self.area, self._status.status)
+            self._external_events.update(self.area)
 
             gc.collect()
             process = psutil.Process(os.getpid())
@@ -405,71 +578,34 @@ class Simulation:
                 self.simulation_config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()
 
-                self._handle_slowdown_and_realtime(tick_no)
+                self._time.handle_slowdown_and_realtime(tick_no, self.simulation_config)
 
-                if self._state_params.stopped:
+                if self._status.stopped:
                     log.error("Received stop command for configuration id %s and job id %s.",
                               gsy_e.constants.CONFIGURATION_ID, self._simulation_id)
                     sleep(5)
                     self._simulation_finish_actions(slot_count)
                     return
 
-            if self.export_results_on_finish:
-                self.export.data_to_csv(self.area, slot_no == 0)
-
-            if self._state_params.incremental:
-                self._state_params.paused = True
+            self._results.update_csv_on_market_cycle(slot_no, self.area)
+            self._status.handle_incremental_mode()
         self._simulation_finish_actions(slot_count)
 
     def _simulation_finish_actions(self, slot_count):
-        self._state_params.sim_status = "finished"
+        self._status.sim_status = "finished"
         self._deactivate_areas(self.area)
         self.simulation_config.external_redis_communicator.\
             publish_aggregator_commands_responses_events()
         bid_offer_matcher.event_finish()
-        if not self._state_params.stopped:
-            self._update_progress_info(slot_count - 1, slot_count)
-            paused_duration = duration(seconds=self._state_params.paused_time)
-            log.info(
-                "Run finished in %s%s / %.2fx real time",
-                self.progress_info.elapsed_time,
-                f" ({paused_duration} paused)" if paused_duration else "",
-                self.simulation_config.sim_duration / (
-                        self.progress_info.elapsed_time - paused_duration)
-            )
-        self._update_and_send_results()
-        if self.export_results_on_finish:
-            log.info("Exporting simulation data.")
-            self.export.data_to_csv(self.area, False)
-            self.export.area_tree_summary_to_json(self.endpoint_buffer.area_result_dict)
-            self.export.export(power_flow=self.power_flow if GlobalConfig.POWER_FLOW else None)
-
-    @property
-    def should_send_results_to_broker(self):
-        """Flag that decides whether to send results to the gsy-web"""
-        return not self._started_from_cli and self.kafka_connection.is_enabled()
-
-    def _handle_slowdown_and_realtime(self, tick_no):
-        if gsy_e.constants.RUN_IN_REALTIME:
-            tick_runtime_s = time() - self._state_params.tick_time_counter
-            sleep(abs(self.simulation_config.tick_length.seconds - tick_runtime_s))
-        elif self._state_params.slot_length_realtime:
-            current_expected_tick_time = (
-                self._state_params.tick_time_counter.add(seconds=self.tick_length_realtime_s))
-            sleep_time_s = current_expected_tick_time.timestamp() - now().timestamp()
-            if sleep_time_s > 0:
-                sleep(sleep_time_s)
-                log.debug("Tick %s/%s: Sleep time of %s s was applied",
-                          tick_no + 1, self.simulation_config.ticks_per_slot, sleep_time_s)
-
-        self._state_params.tick_time_counter = time()
-
-    def toggle_pause(self):
-        """Pause or resume simulation."""
-        if self._finished:
-            return False
-        self._state_params.paused = not self._state_params.paused
-        return True
+        if not self._status.stopped:
+            self.progress_info.update(
+                slot_count - 1, slot_count, self._time, self.simulation_config)
+            paused_duration = duration(seconds=self._time.paused_time)
+            self.progress_info.log_simulation_finished(paused_duration, self.simulation_config)
+        self._results.update_and_send_results(
+            self.current_state, self.progress_info, self.area, self._status.status)
+        self._results.save_csv_results(
+            self.power_flow if GlobalConfig.POWER_FLOW else None, self.area)
 
     def _handle_input(self, console, sleep_period: float = 0):
         timeout = 0
@@ -490,7 +626,7 @@ class Simulation:
                                  "  [R] start REPL\n")
                     continue
 
-                if self._finished and cmd in {"p", "+", "-"}:
+                if self._status.finished and cmd in {"p", "+", "-"}:
                     log.info("Simulation has finished. The commands [p, +, -] are unavailable.")
                     continue
 
@@ -499,12 +635,12 @@ class Simulation:
                 elif cmd == "i":
                     self._info()
                 elif cmd == "p":
-                    self._state_params.paused = not self._state_params.paused
+                    self._status.paused = not self._status.paused
                     break
                 elif cmd == "q":
                     raise KeyboardInterrupt()
                 elif cmd == "s":
-                    self.stop()
+                    self._status.stop()
 
             if sleep_period == 0 or time() - start >= sleep_period:
                 break
@@ -512,33 +648,25 @@ class Simulation:
     def _handle_paused(self, console):
         if console is not None:
             self._handle_input(console)
-            if (self._state_params.pause_after and
-                    self._time_since_start >= self._state_params.pause_after):
-                self._state_params.paused = True
-                self._state_params.pause_after = None
-
+            self._status.handle_pause_after(self._time_since_start)
         paused_flag = False
-        if self._state_params.paused:
+        if self._status.paused:
             if console:
                 log.critical("Simulation paused. Press 'p' to resume or resume from API.")
             else:
-                self._update_and_send_results()
+                self._results.update_and_send_results(
+                    self.current_state, self.progress_info, self.area, self._status.status)
             start = time()
-        while self._state_params.paused:
+        while self._status.paused:
             paused_flag = True
             if console:
                 self._handle_input(console, 0.1)
-            if time() - self._state_params.tick_time_counter > SIMULATION_PAUSE_TIMEOUT:
-                self._state_params.timed_out = True
-                self._state_params.stopped = True
-                self._state_params.paused = False
-            if self._state_params.stopped:
-                self._state_params.paused = False
+                self._status.handle_pause_timeout(self._time.tick_time_counter)
             sleep(0.5)
 
         if console and paused_flag:
             log.critical("Simulation resumed")
-            self._state_params.paused_time += time() - start
+            self._time.paused_time += time() - start
 
     def _info(self):
         info = self.simulation_config.as_dict()
@@ -561,31 +689,20 @@ class Simulation:
         )
 
     @property
-    def status(self):
-        """Return status of simulation."""
-        if self._state_params.timed_out:
-            return "timed-out"
-        if self._state_params.stopped:
-            return "stopped"
-        if self._state_params.paused:
-            return "paused"
-        return self._state_params.sim_status
-
-    @property
     def current_state(self):
         """Return dict that contains current progress and state of simulation."""
         return {
-            "paused": self._state_params.paused,
-            "seed": self._seed,
-            "sim_status": self._state_params.sim_status,
-            "stopped": self._state_params.stopped,
+            "paused": self._status.paused,
+            "seed": self._setup.seed,
+            "sim_status": self._status.sim_status,
+            "stopped": self._status.stopped,
             "simulation_id": self._simulation_id,
-            "run_start": format_datetime(self._state_params.start_time)
-            if self._state_params.start_time is not None else "",
-            "paused_time": self._state_params.paused_time,
+            "run_start": format_datetime(self._time.start_time)
+            if self._time.start_time is not None else "",
+            "paused_time": self._time.paused_time,
             "slot_number": self.progress_info.current_slot_number,
-            "slot_length_realtime_s": str(self._state_params.slot_length_realtime.seconds)
-            if self._state_params.slot_length_realtime else 0
+            "slot_length_realtime_s": str(self._time.slot_length_realtime.seconds)
+            if self._time.slot_length_realtime else 0
         }
 
     def _restore_area_state(self, area, saved_area_state):
@@ -603,16 +720,16 @@ class Simulation:
 
     def restore_global_state(self, saved_state):
         """Restore global state of simulation."""
-        self._state_params.paused = saved_state["paused"]
-        self._seed = saved_state["seed"]
-        self._state_params.sim_status = saved_state["sim_status"]
-        self._state_params.stopped = saved_state["stopped"]
+        self._status.paused = saved_state["paused"]
+        self._setup.seed = saved_state["seed"]
+        self._status.sim_status = saved_state["sim_status"]
+        self._status.stopped = saved_state["stopped"]
         self._simulation_id = saved_state["simulation_id"]
         if saved_state["run_start"] != "":
-            self._state_params.start_time = str_to_pendulum_datetime(saved_state["run_start"])
-        self._state_params.paused_time = saved_state["paused_time"]
+            self._time.start_time = str_to_pendulum_datetime(saved_state["run_start"])
+        self._time.paused_time = saved_state["paused_time"]
         self.progress_info.current_slot_number = saved_state["slot_number"]
-        self._state_params.slot_length_realtime = duration(
+        self._time.slot_length_realtime = duration(
             seconds=saved_state["slot_length_realtime_s"])
 
 

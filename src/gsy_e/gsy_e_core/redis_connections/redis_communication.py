@@ -44,11 +44,13 @@ if TYPE_CHECKING:
 
 
 class RedisSimulationCommunication:
-    def __init__(self, simulation, simulation_id, live_events):
+    def __init__(self, simulation_status, simulation_id, live_events, progress_info, area):
         self._live_events = live_events
         self._simulation_id = simulation_id if simulation_id is not None else ""
         self._configuration_id = gsy_e.constants.CONFIGURATION_ID
-        self._simulation = simulation
+        self._simulation_status = simulation_status
+        self._area = area
+        self._progress_info = progress_info
         self._sub_callback_dict = {
             f"{self._configuration_id}/area-map/": self._area_map_callback,
             f"{self._simulation_id}/stop": self._stop_callback,
@@ -102,7 +104,7 @@ class RedisSimulationCommunication:
     def _area_map_callback(self, payload: Dict) -> None:
         """Trigger the calculation of area uuid and name mapping and publish it
         back to a redis response channel"""
-        area_mapping = self._area_uuid_name_map_wrapper(self._simulation.area)
+        area_mapping = self._area_uuid_name_map_wrapper(self._area)
         response_channel = f"external-myco/{self._simulation_id}/area-map/response/"
         response_dict = {"area_mapping": area_mapping, "event": "area_map_response"}
         self.publish_json(response_channel, response_dict)
@@ -120,28 +122,28 @@ class RedisSimulationCommunication:
 
     def _stop_callback(self, payload):
         response = json.loads(payload["data"])
-        self._simulation.stop()
+        self._simulation_status.stop()
         self._generate_redis_response(
-            response, self._simulation_id, self._simulation.is_stopped, "stop"
+            response, self._simulation_id, self._simulation_status.stopped, "stop"
         )
         log.info(f"Simulation with job_id: {self._simulation_id} is stopped.")
 
     def _pause_callback(self, payload):
         response = json.loads(payload["data"])
 
-        if not self._simulation.paused:
-            self._simulation.toggle_pause()
+        if not self._simulation_status.paused:
+            self._simulation_status.toggle_pause()
         self._generate_redis_response(
-            response, self._simulation_id, self._simulation.paused, "pause"
+            response, self._simulation_id, self._simulation_status.paused, "pause"
         )
         log.info(f"Simulation with job_id: {self._simulation_id} is paused.")
 
     def _resume_callback(self, payload):
         response = json.loads(payload["data"])
-        if self._simulation.paused:
-            self._simulation.toggle_pause()
+        if self._simulation_status.paused:
+            self._simulation_status.toggle_pause()
         self._generate_redis_response(
-            response, self._simulation_id, not self._simulation.paused, "resume"
+            response, self._simulation_id, not self._simulation_status.paused, "resume"
         )
         log.info(f"Simulation with job_id: {self._simulation_id} is resumed.")
 
@@ -157,7 +159,7 @@ class RedisSimulationCommunication:
 
         self._generate_redis_response(
             data, self._simulation_id, is_successful, 'live-event',
-            {"activation_time": self._simulation.progress_info.current_slot_str}
+            {"activation_time": self._progress_info.current_slot_str}
         )
 
     def _bulk_live_event_callback(self, message):
@@ -173,7 +175,7 @@ class RedisSimulationCommunication:
 
         self._generate_redis_response(
             data, self._simulation_id, is_successful, 'bulk-live-event',
-            {"activation_time": self._simulation.progress_info.current_slot_str}
+            {"activation_time": self._progress_info.current_slot_str}
         )
 
     def _handle_redis_job_metadata(self):
@@ -184,7 +186,7 @@ class RedisSimulationCommunication:
                 log.error(f"Redis job {self._simulation_id} received a stop "
                           "message via the job.terminated metadata by gsy-web. "
                           "Stopping the simulation.")
-                self._simulation.stop()
+                self._simulation_status.stop()
 
         except NoSuchJobError:
             raise GSyException(f"Redis job {self._simulation_id} "
