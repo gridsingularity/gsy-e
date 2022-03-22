@@ -138,7 +138,7 @@ class Simulation:
     def _load_setup_module(self):
         try:
             if ConstSettings.GeneralSettings.SETUP_FILE_PATH is None:
-                self.setup_module = import_module(f"{self.setup_module_name}", "gsy_e.setup")
+                self.setup_module = import_module(f".{self.setup_module_name}", "gsy_e.setup")
             else:
                 sys.path.append(ConstSettings.GeneralSettings.SETUP_FILE_PATH)
                 self.setup_module = import_module(f"{self.setup_module_name}")
