@@ -154,6 +154,8 @@ class FakeTrade:
     def __init__(self, offer):
         self.offer_bid = offer
         self.seller = "FakeSeller"
+        self.traded_energy = offer.energy
+        self.trade_price = offer.price
 
     @property
     def is_offer_trade(self):
@@ -162,6 +164,10 @@ class FakeTrade:
     @property
     def buyer(self):
         return "FakeBuyer"
+
+    @property
+    def trade_rate(self):
+        return self.offer_bid.energy_rate
 
 
 """TEST1"""
@@ -281,7 +287,7 @@ def testing_produced_energy_forecast_real_data(pv_test66):
     # prepare whole day of energy_production_forecast_kWh:
     for time_slot in generate_market_slot_list():
         pv_test66.area.create_spot_market(time_slot)
-        pv_test66.set_produced_energy_forecast_kWh_future_markets(reconfigure=False)
+        pv_test66.set_produced_energy_forecast_in_state(reconfigure=False)
 
     morning_time = pendulum.today(tz=TIME_ZONE).at(hour=5, minute=10, second=0)
     afternoon_time = pendulum.today(tz=TIME_ZONE).at(hour=19, minute=10, second=0)

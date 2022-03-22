@@ -66,8 +66,8 @@ class UpperLevelDataExporter(BaseDataExporter):
                 market.min_trade_price,
                 market.max_trade_price,
                 len(market.trades),
-                sum(trade.offer_bid.energy for trade in market.trades),
-                sum(trade.offer_bid.price for trade in market.trades)]
+                sum(trade.traded_energy for trade in market.trades),
+                sum(trade.trade_price for trade in market.trades)]
 
 
 class FutureMarketsDataExporter(BaseDataExporter):
@@ -92,8 +92,8 @@ class FutureMarketsDataExporter(BaseDataExporter):
         trades = self.future_markets.slot_trade_mapping[slot]
         return [slot,
                 len(trades),
-                sum(trade.offer_bid.energy for trade in trades),
-                sum(trade.offer_bid.price for trade in trades)]
+                sum(trade.traded_energy for trade in trades),
+                sum(trade.trade_price for trade in trades)]
 
 
 class BalancingDataExporter(BaseDataExporter):

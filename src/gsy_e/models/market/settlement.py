@@ -9,3 +9,8 @@ class SettlementMarket(TwoSidedMarket):
     @property
     def _debug_log_market_type_identifier(self):
         return "[SETTLEMENT]"
+
+    @property
+    def type_name(self):
+        """Return the market type representation."""
+        return "Settlement Market"

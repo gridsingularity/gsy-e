@@ -20,16 +20,16 @@ The PV configuration interface is shown in the figure below:
 
 ##Backend Configuration
 
-There are two options to implement a PV in a backend: 
+There are two options to implement a PV in a backend:
 
-[Solar Profile](https://github.com/gridsingularity/d3a/blob/c2976cb4f0c8c2823ee755fa33c3efd611498ea0/src/d3a/models/strategy/pv.py) (for template generation profile)
+[Solar Profile](https://github.com/gridsingularity/gsy-e/blob/c2976cb4f0c8c2823ee755fa33c3efd611498ea0/src/gsy_e/models/strategy/pv.py) (for template generation profile)
 
 
 ```python
 Market ('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30, final_selling_rate=5, fit_to_limit=True, update_interval=duration(minutes=5)))
 ```
 
-[User Profile](https://github.com/gridsingularity/d3a/blob/c2976cb4f0c8c2823ee755fa33c3efd611498ea0/src/d3a/models/strategy/predefined_pv.py#L131-L178) (for uploaded generation profile)
+[User Profile](https://github.com/gridsingularity/gsy-e/blob/c2976cb4f0c8c2823ee755fa33c3efd611498ea0/src/gsy_e/models/strategy/predefined_pv.py#L131-L178) (for uploaded generation profile)
 
 
 ```python

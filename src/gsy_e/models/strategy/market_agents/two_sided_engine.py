@@ -47,10 +47,22 @@ class TwoSidedEngine(MAEngine):
         return "<TwoSidedPayAsBidEngine [{s.owner.name}] {s.name} " \
                "{s.markets.source.time_slot:%H:%M}>".format(s=self)
 
+    def _update_requirements_prices(self, bid):
+        requirements = []
+        for requirement in bid.requirements or []:
+            updated_requirement = {**requirement}
+            if "price" in updated_requirement:
+                energy = updated_requirement.get("energy") or bid.energy
+                original_bid_price = updated_requirement["price"] + bid.accumulated_grid_fees
+                updated_price = self.markets.source.fee_class.update_forwarded_bid_with_fee(
+                    updated_requirement["price"] / energy,
+                    original_bid_price / energy) * energy
+                updated_requirement["price"] = updated_price
+            requirements.append(updated_requirement)
+        return requirements
+
     def _forward_bid(self, bid):
         if bid.buyer == self.markets.target.name:
-            return None
-        if self.owner.name == self.markets.target.name:
             return None
 
         if bid.price < 0.0:
@@ -66,7 +78,9 @@ class TwoSidedEngine(MAEngine):
                 buyer_origin=bid.buyer_origin,
                 buyer_origin_id=bid.buyer_origin_id,
                 buyer_id=self.owner.uuid,
-                time_slot=bid.time_slot
+                time_slot=bid.time_slot,
+                requirements=self._update_requirements_prices(bid),
+                attributes=bid.attributes
             )
         except MarketException:
             self.owner.log.debug("Bid is not forwarded because grid fees of the target market "
@@ -130,7 +144,7 @@ class TwoSidedEngine(MAEngine):
         if bid_trade.offer_bid.id == bid_info.target_bid.id:
             # Bid was traded in target market, buy in source
             market_bid = self.markets.source.bids[bid_info.source_bid.id]
-            assert bid_trade.offer_bid.energy <= market_bid.energy, \
+            assert bid_trade.traded_energy <= market_bid.energy, \
                 "Traded bid on target market has more energy than the market bid."
 
             source_rate = bid_info.source_bid.energy_rate
@@ -138,7 +152,7 @@ class TwoSidedEngine(MAEngine):
             assert abs(source_rate) + FLOATING_POINT_TOLERANCE >= abs(target_rate), \
                 f"bid: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
-            trade_rate = (bid_trade.offer_bid.price/bid_trade.offer_bid.energy)
+            trade_rate = (bid_trade.trade_price/bid_trade.traded_energy)
 
             if bid_trade.offer_bid_trade_info is not None:
                 # Adapt trade_offer_info received by the trade to include source market grid fees,
@@ -156,7 +170,7 @@ class TwoSidedEngine(MAEngine):
                 )
             self.markets.source.accept_bid(
                 bid=market_bid,
-                energy=bid_trade.offer_bid.energy,
+                energy=bid_trade.traded_energy,
                 seller=self.owner.name,
                 already_tracked=False,
                 trade_rate=trade_rate,
@@ -170,8 +184,13 @@ class TwoSidedEngine(MAEngine):
 
         elif bid_trade.offer_bid.id == bid_info.source_bid.id:
             # Bid was traded in the source market by someone else
+
             self._delete_forwarded_bids(bid_info)
             self.bid_age.pop(bid_info.source_bid.id, None)
+
+            # Forward the residual bid since the original offer was also forwarded
+            if bid_trade.residual:
+                self._forward_bid(bid_trade.residual)
         else:
             raise Exception(f"Invalid bid state for MA {self.owner.name}: "
                             f"traded bid {bid_trade} was not in offered bids tuple {bid_info}")

@@ -20,28 +20,24 @@ import os
 import time
 import traceback
 from logging import getLogger
+from typing import Dict, TYPE_CHECKING, Optional
+
+from gsy_framework.constants_limits import HeartBeat, ConstSettings
+from gsy_framework.exceptions import GSyException
+from gsy_framework.results_validator import results_validator  # NOQA
+from gsy_framework.utils import RepeatingTimer
 from redis import StrictRedis
 from redis.exceptions import ConnectionError
 from rq import get_current_job
 from rq.exceptions import NoSuchJobError
-from typing import Dict, TYPE_CHECKING, Optional
 
 import gsy_e.constants
-from gsy_framework.results_validator import results_validator  # NOQA
-from gsy_framework.constants_limits import HeartBeat
-from gsy_framework.utils import RepeatingTimer
-from gsy_framework.exceptions import GSyException
-
 
 log = getLogger(__name__)
 
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 
-ERROR_CHANNEL = "gsy_e-errors"
-RESULTS_CHANNEL = "gsy_e-results"
-ZIP_RESULTS_CHANNEL = "gsy_e-zip-results"
-ZIP_RESULTS_KEY = "gsy_e-zip-results-key/"
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
@@ -62,7 +58,6 @@ class RedisSimulationCommunication:
             f"{self._simulation_id}/bulk-live-event":
                 self._bulk_live_event_callback,
         }
-        self.result_channel = RESULTS_CHANNEL
 
         try:
             self.redis_db = StrictRedis.from_url(REDIS_URL, retry_on_timeout=True)
@@ -207,4 +202,5 @@ class RedisSimulationCommunication:
 
 def publish_job_error_output(job_id, traceback):
     StrictRedis.from_url(REDIS_URL).\
-        publish(ERROR_CHANNEL, json.dumps({"job_id": job_id, "errors": traceback}))
+        publish(ConstSettings.GeneralSettings.EXCHANGE_ERROR_CHANNEL,
+                json.dumps({"job_id": job_id, "errors": traceback}))

@@ -1,4 +1,4 @@
-To enable users to run a collaboration, Grid Singularity has developed a **Software Development Kit  - SDK**([gsy-e-sdk[(https://github.com/gridsingularity/gsy-e-sdk)]), that allows users to perform the following functions;
+To enable users to run a collaboration, Grid Singularity has developed a **Software Development Kit - SDK** ([gsy-e-sdk](https://github.com/gridsingularity/gsy-e-sdk)), that allows users to perform the following functions;
 
 * **Asset Trading**: The [Asset API](asset-api-template-script.md) allows aggregators who manage individual and community  energy assets to connect to the Grid Singularity Exchange and actively place bids and offers on their behalf. Aggregators can create custom strategies with the goal of optimizing trading for managed assets (Learn more about default trading strategies here);
 

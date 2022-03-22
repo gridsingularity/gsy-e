@@ -12,7 +12,7 @@ The following parameters can be configured:
 *   **Hours per day**: The number of hours the load operates per day.
 *   **Hours of day**: The time range in which the load operates.
 *   **Initial buying rate**: Initial energy buying rate at the beginning of each market slot in cents/kWh.
-*   **Final buying rate**: Final energy buying rate at the end of each market slot in cents/kWh. It can either be a user-defined value or equal to the Market Maker + Grid Fee. 
+*   **Final buying rate**: Final energy buying rate at the end of each market slot in cents/kWh. It can either be a user-defined value or equal to the Market Maker + Grid Fee.
 *   **Rate increase**: Explicit rate increase increment per update interval in cents/kWh
 *   **Fit to limits**: Derive bidding behavior from a linear fitted curve of a buying rate between `initial_buying_rate` and `final_buying_rate` within the bidding interval. If activated, `energy rate_increase = (final_buying_rate - initial_buying_rate) / max(int((slot_length / update_interval) -1), 1)`
 *   **Update interval**: The frequency at which the rate is updated.
@@ -23,15 +23,15 @@ The Load configuration interface is shown below:
 
 ##Backend Configuration
 
-To implement the load in a backend simulation, two options are available : 
+To implement the load in a backend simulation, two options are available :
 
-[User configure Profile](https://github.com/gridsingularity/d3a/blob/master/src/d3a/models/strategy/load_hours.py)
+[User configure Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/load_hours.py)
 
 ```python
 Market('Load', strategy=LoadHoursStrategy(avg_power_W=200, hrs_per_day=6,hrs_of_day=list(range(12, 18)), initial_buying_rate=0, final_buying_rate=35))
 ```
 
-[User upload Profile](https://github.com/gridsingularity/d3a/blob/master/src/d3a/models/strategy/predefined_load.py)
+[User upload Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_load.py)
 
 ```python
 user_profile_path = os.path.join(d3a_path,"assets/load.csv")
@@ -40,7 +40,7 @@ Market('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path
 
 ##Addendum: hrs_of_day and hrs_per_day
 
-hrs_of_day defines the allowed time-window in which the load has to consume for a time defined by hrs_per_day. 
+hrs_of_day defines the allowed time-window in which the load has to consume for a time defined by hrs_per_day.
 
 For example, a user can input 5 hrs_per_day and give a wider range for hrs_of_day like (2,18). The Load will try to consume as fast as possible during this time if there is any offered energy to purchase within the limits of `initial_buying_rate` and `final_buying_rate` set parameters.
 

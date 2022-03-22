@@ -454,7 +454,7 @@ class Area:
         bid_offer_matcher.update_area_uuid_markets_mapping(
             area_uuid_markets_mapping={
                 self.uuid: {"markets": [self.spot_market],
-                            "settlement_markets": self.settlement_markets.values(),
+                            "settlement_markets": list(self.settlement_markets.values()),
                             "future_markets": self.future_markets,
                             "current_time": self.now}})
 
@@ -586,6 +586,7 @@ class Area:
         return self._markets.indexed_future_markets.get(_id, None)
 
     def get_spot_or_future_market_by_id(self, market_id: str) -> Optional["MarketBase"]:
+        """Retrieve a spot or future market from its ID."""
         if self.is_market_spot(market_id):
             return self.spot_market
         if self.is_market_future(market_id):
@@ -593,6 +594,7 @@ class Area:
         return None
 
     def is_market_spot_or_future(self, market_id):
+        """Return True if the market is a spot or future market."""
         return self.is_market_spot(market_id) or self.is_market_future(market_id)
 
     @property

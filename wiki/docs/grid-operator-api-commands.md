@@ -1,4 +1,4 @@
-The Grid Operator API can function once at the start of each [market slot](markets.md#market-slots). When the current market slot ends, a new one is automatically created and the client is notified via the on_market_cycle event. It is possible to capture this event and perform operations when it occurs by overriding the functionality of the [on_market_cycle](grid-operator-api.md#each-new-market-slot) method.
+The Grid Operator API can function once at the start of each [market slot](markets.md#market-slots). When the current market slot ends, a new one is automatically created and the client is notified via the on_market_cycle event. It is possible to capture this event and perform operations when it occurs by overriding the functionality of the [on_market_cycle](grid-operator-api-events.md#each-new-market-slot) method.
 
 The Grid Operator API can send batch commands, grouping different commands, for different markets. The commands can be grouped and then all executed at the same time. Three different commands are available for the Grid Operator API:
 

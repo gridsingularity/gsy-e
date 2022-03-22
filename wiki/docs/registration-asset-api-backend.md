@@ -52,7 +52,7 @@ This requires you to have the backend codebase installed on your machine to run 
 workon gsy-env
 ```
 
-An template setup is already available in github and ready to be run [here](https://github.com/gridsingularity/d3a/blob/master/src/d3a/setup/api_setup/default_community.py) (data available for the July 2021).
+An template setup is already available in github and ready to be run [here](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/api_setup/default_community.py) (data available for the July 2021).
 
 To run this simulation and wait for the API template script to execute:
 
@@ -64,7 +64,7 @@ After few seconds, the simulation should begin, waiting for the API template as 
 
 ![alt_text](img/api-overview-2.png)
 
-[Here](setup-configuration.md) you can find more information on launching a simulation on the backend .
+[Here](setup-configuration.md) you can find more information on launching a simulation on the backend.
 
 ##Initialise and start the API :
 

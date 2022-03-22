@@ -14,8 +14,7 @@ def get_setup(config):
 
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 1
     ConstSettings.MASettings.MARKET_TYPE = 1
-    ConstSettings.MASettings.MIN_OFFER_AGE = 0
-    ConstSettings.MASettings.MIN_BID_AGE = 0
+    ConstSettings.MASettings.MIN_OFFER_AGE = 1
 
     area = Area(
         "Grid",

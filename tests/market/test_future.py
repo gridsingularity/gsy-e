@@ -127,7 +127,7 @@ class TestFutureMarkets:
             offer = Offer(f"oid{time_slot}", time_slot, 1, 1, "seller", time_slot=time_slot)
             future_market.offers[offer.id] = offer
             trade = Trade(f"tid{time_slot}", time_slot, offer, "seller", "buyer",
-                          time_slot=time_slot)
+                          time_slot=time_slot, traded_energy=1, trade_price=1)
             future_market.trades.append(trade)
 
         count_orders_in_buffers(future_market, 4)

@@ -8,7 +8,7 @@ Grid Singularity’s exchange engine has a built-in template trading agent. The 
 * energy_rate_decrease_per_update
 * fit_to_limit
 
-The following plot shows the changing energy rate in a [spot market][] slot (slot_length = 15min) for four different trading settings.
+The following plot shows the changing energy rate in a [spot market slot](spot-market-types.md)  (slot_length = 15min) for four different trading settings.
 
 ![alt_text](img/default-trading-2.png)
 

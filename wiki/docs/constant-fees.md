@@ -4,7 +4,7 @@ The constant grid fee is a market based fee, defined in **€/kWh** and added to
 
 ***Figure 3.15***. *Constant grid fee calculation in the Grid Singularity Exchange.*
 
-The rate of a bid or offer changes as that bid or offer is propagated into different [markets](model-markets.md). The offer rate increases to account for the added fees for the relevant market, ensuring that the seller receives a revenue equal or greater than the original offer. The bid rate decreases for the same reason.
+The rate of a bid or offer changes as that bid or offer is propagated into different markets. The offer rate increases to account for the added fees for the relevant market, ensuring that the seller receives a revenue equal or greater than the original offer. The bid rate decreases for the same reason.
 
 ##Example Calculation in One-Sided Pay-as-Offer Market
 

@@ -1,4 +1,4 @@
-The Grid Singularity [Asset API](asset-api-template-script.md) is designed for aggregators (energy service providers) who wish to provide their customers (individuals and communities) with benefits of peer-to-peer and community trading facilitated by the Grid Singularity  Exchange. They can create agents that follow custom trading strategies to buy and sell energy in the energy market on behalf of managed energy assets. The agent can request and receive information through the Asset API, feed that information into an algorithm, and post bids or offers on the exchange.
+The Grid Singularity Asset API is designed for aggregators (energy service providers) who wish to provide their customers (individuals and communities) with benefits of peer-to-peer and community trading facilitated by the Grid Singularity  Exchange. They can create agents that follow custom trading strategies to buy and sell energy in the energy market on behalf of managed energy assets. The agent can request and receive information through the Asset API, feed that information into an algorithm, and post bids or offers on the exchange.
 
 To actively place bids and offers on behalf of energy assets, please follow these steps:
 
@@ -25,6 +25,6 @@ pip install git+https://github.com/gridsingularity/gsy-e-sdk.git
 
 ![alt_text](img/configure-trading-strategies-2.png)
 
-- Edit the [Asset SDK Script template](asset-api-script-template.md) developed by Grid Singularity to customize the trading strategies.
+- Edit the [Asset SDK Script template](asset-api-template-script.md) developed by Grid Singularity to customize the trading strategies.
 - [Launch the Asset SDK Script](registration-grid-operator-api-user-interface.md) to connect with the Grid Singularity Collaboration / Canary Test Network. A video tutorial is also available [here](https://www.youtube.com/watch?v=oCcQ6pYFd5w&feature=youtu.be).
 - Run the Collaboration or notify Grid Singularity that you are ready.

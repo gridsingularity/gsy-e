@@ -51,7 +51,7 @@ class LoadExternalMixin(ExternalMixin):
     posted_bid_energy: Callable
     _delete_past_state: Callable
     _calculate_active_markets: Callable
-    _update_energy_requirement_future_markets: Callable
+    _update_energy_requirement_in_state: Callable
 
     @property
     def channel_dict(self) -> Dict:
@@ -209,6 +209,7 @@ class LoadExternalMixin(ExternalMixin):
             response = {
                     "command": "bid", "status": "ready",
                     "bid": bid.to_json_string(replace_existing=replace_existing),
+                    "market_type": market.type_name,
                     "transaction_id": arguments.get("transaction_id"),
                     "message": response_message}
         except (AssertionError, GSyException):
@@ -217,6 +218,7 @@ class LoadExternalMixin(ExternalMixin):
             logging.exception(error_message)
             response = {"command": "bid", "status": "error",
                         "error_message": error_message,
+                        "market_type": market.type_name,
                         "transaction_id": arguments.get("transaction_id")}
         self.redis.publish_json(bid_response_channel, response)
 
@@ -239,7 +241,7 @@ class LoadExternalMixin(ExternalMixin):
         if not self.should_use_default_strategy:
             self.add_entry_in_hrs_per_day()
             self._calculate_active_markets()
-            self._update_energy_requirement_future_markets()
+            self._update_energy_requirement_in_state()
             self._set_energy_measurement_of_last_market()
             if not self.is_aggregator_controlled:
                 market_event_channel = f"{self.channel_prefix}/events/market"
@@ -311,6 +313,7 @@ class LoadExternalMixin(ExternalMixin):
         except (OrderCanNotBePosted, CommandTypeNotSupported) as ex:
             response = {
                 "command": "offer", "status": "error",
+                "market_type": market.type_name,
                 "area_uuid": self.device.uuid,
                 "error_message": "Error when handling offer create "
                                  f"on area {self.device.name} with arguments {arguments}:"
@@ -340,6 +343,7 @@ class LoadExternalMixin(ExternalMixin):
         except OrderCanNotBePosted as ex:
             response = {
                 "command": "offer", "status": "error",
+                "market_type": market.type_name,
                 "area_uuid": self.device.uuid,
                 "error_message": "Error when handling bid create "
                                  f"on area {self.device.name} with arguments {arguments}:"
@@ -445,7 +449,7 @@ class LoadForecastExternalStrategy(ForecastExternalMixin, LoadProfileExternalStr
             if slot_time < self.area.spot_market.time_slot:
                 self.state.set_energy_measurement_kWh(energy_kWh, slot_time)
 
-    def _update_energy_requirement_future_markets(self):
+    def _update_energy_requirement_in_state(self):
         """
         Setting demanded energy for the next slot is already done by update_energy_forecast
         """
