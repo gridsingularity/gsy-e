@@ -26,7 +26,7 @@ jobs:
 
     - name: validate parsed branch
       env:
-        PARSED_BRANCH: ${{ steps.parse_branch.outputs.PARSED_INTEGRATION_TESTS_BRANCH }}
+        PARSED_INTEGRATION_TESTS_BRANCH: ${{ steps.parse_branch.outputs.PARSED_INTEGRATION_TESTS_BRANCH }}
       run: |
         echo "::set-output name=INTEGRATION_TESTS_BRANCH::${PARSED_INTEGRATION_TESTS_BRANCH:-'master'}"
       id: validated_branch
