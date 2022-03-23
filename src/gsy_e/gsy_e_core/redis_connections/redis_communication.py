@@ -31,7 +31,7 @@ from rq import get_current_job
 from rq.exceptions import NoSuchJobError
 
 import gsy_e.constants
-from gsy_e.gsy_e_core.live_events import LiveEventException
+from gsy_e.gsy_e_core.exceptions import LiveEventException
 
 log = getLogger(__name__)
 

@@ -392,6 +392,7 @@ class SimulationExternalEvents:
     events and signals that change the simulation status.
     """
     def __init__(self, simulation_id, config, state_params, progress_info, area):
+        # pylint: disable=too-many-arguments
         self.live_events = LiveEvents(config)
         self.redis_connection = RedisSimulationCommunication(
             state_params, simulation_id, self.live_events, progress_info, area)
@@ -405,7 +406,7 @@ class SimulationExternalEvents:
 
 class Simulation:
     """Main class that starts and controls simulation."""
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,too-many-instance-attributes
     def __init__(self, setup_module_name: str, simulation_config: SimulationConfig,
                  simulation_events: str = None, seed=None,
                  paused: bool = False, pause_after: duration = None, repl: bool = False,

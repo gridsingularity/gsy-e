@@ -2,14 +2,10 @@ from threading import Lock
 import logging
 import traceback
 from gsy_e.gsy_e_core.area_serializer import area_from_dict
-from gsy_e.gsy_e_core.exceptions import GSyException
+from gsy_e.gsy_e_core.exceptions import LiveEventException
 from gsy_e.models.area.event_dispatcher import DispatcherFactory
 from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
-
-
-class LiveEventException(GSyException):
-    """Exception type for live event errors."""
 
 
 class CreateAreaEvent:
@@ -65,6 +61,7 @@ class UpdateAreaEvent:
                     area.strategy = MarketMakerStrategy(**self.area_params)
                     reactivate = True
                 elif area_type == "InfiniteBus":
+                    # pylint: disable=fixme
                     # TODO: After hack to move this parameter casting at the web side
                     self.area_params["energy_sell_rate"] = self.area_params.pop(
                         "energy_rate", None)
