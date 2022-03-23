@@ -383,7 +383,7 @@ class SimulationResultsManager:
             log.info("Exporting simulation data.")
             self._export.data_to_csv(area, False)
             self._export.area_tree_summary_to_json(self._endpoint_buffer.area_result_dict)
-            self._export.export(power_flow=False)
+            self._export.export(power_flow=None)
 
 
 class SimulationExternalEvents:
