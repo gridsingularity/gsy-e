@@ -16,31 +16,32 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from dataclasses import dataclass
 import datetime
 import gc
 import os
 import sys
+from dataclasses import dataclass
 from importlib import import_module
 from logging import getLogger
 from time import sleep, time, mktime
-from numpy import random
-from pendulum import now, duration, DateTime
-import psutil
+from types import ModuleType
+from typing import Tuple, Optional, TYPE_CHECKING
 
+import psutil
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.kafka_communication.kafka_producer import kafka_connection_factory
 from gsy_framework.utils import format_datetime, str_to_pendulum_datetime
-import gsy_e.constants
+from numpy import random
+from pendulum import now, duration, DateTime, Duration
 
+import gsy_e.constants
 from gsy_e.constants import TIME_ZONE, DATE_TIME_FORMAT, SIMULATION_PAUSE_TIMEOUT
 from gsy_e.gsy_e_core.exceptions import SimulationException
 from gsy_e.gsy_e_core.export import ExportAndPlot
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.live_events import LiveEvents
 from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
-from gsy_e.gsy_e_core.redis.simulation_communication \
-    import RedisSimulationCommunication
+from gsy_e.gsy_e_core.redis.simulation_communication import RedisSimulationCommunication
 from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from gsy_e.gsy_e_core.sim_results.file_export_endpoints import FileExportEndpoints
 from gsy_e.gsy_e_core.util import (
@@ -48,6 +49,9 @@ from gsy_e.gsy_e_core.util import (
     get_market_slot_time_str)
 from gsy_e.models.area.event_deserializer import deserialize_events_to_areas
 from gsy_e.models.config import SimulationConfig
+
+if TYPE_CHECKING:
+    from gsy_e.models.area import Area
 
 log = getLogger(__name__)
 
@@ -70,7 +74,8 @@ class SimulationProgressInfo:
         self.current_slot_str = ""
         self.current_slot_number = 0
 
-    def update(self, slot_no, slot_count, time_params, config):
+    def update(self, slot_no: int, slot_count: int, time_params: "SimulationTimeManager",
+               config: SimulationConfig) -> None:
         """Update progress info according to the simulation progress."""
         run_duration = (
                 now(tz=TIME_ZONE) - time_params.start_time -
@@ -94,7 +99,7 @@ class SimulationProgressInfo:
                     self.percentage_completed, self.elapsed_time,
                     self.eta)
 
-    def log_simulation_finished(self, paused_duration, config):
+    def log_simulation_finished(self, paused_duration: Duration, config: SimulationConfig) -> None:
         """Log that the simulation has finished."""
         log.info(
             "Run finished in %s%s / %.2fx real time",
@@ -115,7 +120,7 @@ class SimulationStatusManager:
     incremental: bool = False
 
     @property
-    def status(self):
+    def status(self) -> str:
         """Return status of simulation."""
         if self.timed_out:
             return "timed-out"
@@ -125,29 +130,29 @@ class SimulationStatusManager:
             return "paused"
         return self.sim_status
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop simulation."""
         self.stopped = True
 
     @property
-    def finished(self):
+    def finished(self) -> bool:
         """Return if simulation has finished."""
         return self.sim_status == "finished"
 
-    def toggle_pause(self):
+    def toggle_pause(self) -> bool:
         """Pause or resume simulation."""
         if self.finished:
             return False
         self.paused = not self.paused
         return True
 
-    def handle_pause_after(self, time_since_start):
+    def handle_pause_after(self, time_since_start: Duration) -> None:
         """Deals with pause-after parameter, which pauses the simulation after some time."""
         if self.pause_after and time_since_start >= self.pause_after:
             self.paused = True
             self.pause_after = None
 
-    def handle_pause_timeout(self, tick_time_counter):
+    def handle_pause_timeout(self, tick_time_counter: float) -> None:
         """
         Deals with the case that the pause time exceeds the simulation timeout, in which case the
         simulation should be stopped.
@@ -159,7 +164,7 @@ class SimulationStatusManager:
         if self.stopped:
             self.paused = False
 
-    def handle_incremental_mode(self):
+    def handle_incremental_mode(self) -> None:
         """
         Handle incremental paused mode, where simulation is paused after each market slot.
         """
@@ -176,7 +181,7 @@ class SimulationTimeManager:
     tick_length_realtime_s: int = None
     paused_time: int = 0  # Time spent in paused state, in seconds
 
-    def reset(self, not_restored_from_state=True):
+    def reset(self, not_restored_from_state: bool = True) -> None:
         """
         Restore time-related parameters of the simulation to their default values.
         Mainly useful when resetting the simulation.
@@ -186,12 +191,14 @@ class SimulationTimeManager:
             self.start_time = now(tz=TIME_ZONE)
             self.paused_time = 0
 
-    def _set_area_current_tick(self, area, current_tick):
+    def _set_area_current_tick(self, area: "Area", current_tick: int) -> None:
         area.current_tick = current_tick
         for child in area.children:
             self._set_area_current_tick(child, current_tick)
 
-    def calculate_total_initial_ticks_slots(self, config, slot_resume, tick_resume, area):
+    def calculate_total_initial_ticks_slots(
+            self, config: SimulationConfig, slot_resume: int, tick_resume: int, area: "Area"
+    ) -> Tuple[int, int, int]:
         """Calculate the initial slot and tick of the simulation, and the total slot count."""
         slot_count = int(config.sim_duration / config.slot_length)
 
@@ -220,7 +227,7 @@ class SimulationTimeManager:
                     config.ticks_per_slot)
         return slot_count, slot_resume, tick_resume
 
-    def handle_slowdown_and_realtime(self, tick_no, config):
+    def handle_slowdown_and_realtime(self, tick_no: int, config: SimulationConfig) -> None:
         """
         Handle simulation slowdown and simulation realtime mode, and sleep the simulation
         accordingly.
@@ -250,17 +257,17 @@ class SimulationSetup:
     setup_module_name: str = ""
     started_from_cli: str = True
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self._set_random_seed(self.seed)
 
-    def load_setup_module(self, simulation_config):
+    def load_setup_module(self, simulation_config: SimulationConfig) -> "Area":
         """Load setup module and create areas that are described on the setup."""
         loaded_python_module = self._import_setup_module(self.setup_module_name)
         area = loaded_python_module.get_setup(simulation_config)
         self._log_traversal_length(area, simulation_config)
         return area
 
-    def _set_random_seed(self, seed):
+    def _set_random_seed(self, seed: Optional[int]) -> None:
         if seed is not None:
             random.seed(int(seed))
         else:
@@ -270,7 +277,7 @@ class SimulationSetup:
             log.info("Random seed: %s", random_seed)
         self.seed = seed
 
-    def _log_traversal_length(self, area, simulation_config):
+    def _log_traversal_length(self, area: "Area", simulation_config: SimulationConfig) -> None:
         no_of_levels = self._get_setup_levels(area) + 1
         num_ticks_to_propagate = no_of_levels * 2
         time_to_propagate_minutes = (num_ticks_to_propagate *
@@ -278,14 +285,14 @@ class SimulationSetup:
         log.info("Setup has %s levels, offers/bids need at least %s minutes to propagate.",
                  no_of_levels, time_to_propagate_minutes)
 
-    def _get_setup_levels(self, area, level_count=0):
+    def _get_setup_levels(self, area: "Area", level_count: int = 0) -> int:
         level_count += 1
         count_list = [self._get_setup_levels(child, level_count)
                       for child in area.children if child.children]
         return max(count_list) if len(count_list) > 0 else level_count
 
     @staticmethod
-    def _import_setup_module(setup_module_name):
+    def _import_setup_module(setup_module_name: str) -> ModuleType:
         try:
             if ConstSettings.GeneralSettings.SETUP_FILE_PATH is None:
                 return import_module(f".{setup_module_name}", "gsy_e.setup")
@@ -300,7 +307,8 @@ class SimulationSetup:
 
 class SimulationResultsManager:
     """Maintain and populate the simulation results and the publishing to the message broker."""
-    def __init__(self, export_results_on_finish, export_path, export_subdir, started_from_cli):
+    def __init__(self, export_results_on_finish: bool, export_path: str,
+                 export_subdir: Optional[str], started_from_cli: bool) -> None:
         self.export_results_on_finish = export_results_on_finish
         self.export_path = export_path
         self.started_from_cli = started_from_cli
@@ -313,7 +321,8 @@ class SimulationResultsManager:
         self._endpoint_buffer = None
         self._export = None
 
-    def init_results(self, redis_job_id, area, config_params):
+    def init_results(self, redis_job_id: str, area: "Area",
+                     config_params: SimulationSetup) -> None:
         """Construct objects that contain the simulation results for the broker and CSV output."""
         self._endpoint_buffer = SimulationEndpointBuffer(
             redis_job_id, config_params.seed,
@@ -325,11 +334,12 @@ class SimulationResultsManager:
                                          FileExportEndpoints(), self._endpoint_buffer)
 
     @property
-    def _should_send_results_to_broker(self):
+    def _should_send_results_to_broker(self) -> None:
         """Flag that decides whether to send results to the gsy-web"""
         return not self.started_from_cli and self.kafka_connection.is_enabled()
 
-    def update_and_send_results(self, current_state, progress_info, area, simulation_status):
+    def update_and_send_results(self, current_state: dict, progress_info: SimulationProgressInfo,
+                                area: "Area", simulation_status: str) -> None:
         """
         Update the simulation results. Should be called on init, finish and every market cycle.
         """
@@ -364,7 +374,7 @@ class SimulationResultsManager:
                 self._export.file_stats_endpoint(area)
 
     @classmethod
-    def _update_area_stats(cls, area, endpoint_buffer):
+    def _update_area_stats(cls, area: "Area", endpoint_buffer: SimulationEndpointBuffer) -> None:
         for child in area.children:
             cls._update_area_stats(child, endpoint_buffer)
         bills = endpoint_buffer.results_handler.all_ui_results["bills"].get(area.uuid, {})
@@ -372,12 +382,12 @@ class SimulationResultsManager:
         area.stats.kpi.update(
             endpoint_buffer.results_handler.all_ui_results["kpi"].get(area.uuid, {}))
 
-    def update_csv_on_market_cycle(self, slot_no, area):
+    def update_csv_on_market_cycle(self, slot_no: int, area: "Area") -> None:
         """Update the csv results on market cycle."""
         if self.export_results_on_finish:
             self._export.data_to_csv(area, slot_no == 0)
 
-    def save_csv_results(self, area):
+    def save_csv_results(self, area: "Area") -> None:
         """Update the CSV results on finish, and write the CSV files."""
         if self.export_results_on_finish:
             log.info("Exporting simulation data.")
@@ -391,13 +401,15 @@ class SimulationExternalEvents:
     Handle signals that affect the simulation state, that arrive from Redis. Consists of live
     events and signals that change the simulation status.
     """
-    def __init__(self, simulation_id, config, state_params, progress_info, area):
+    def __init__(self, simulation_id: str, config: SimulationConfig,
+                 state_params: SimulationStatusManager, progress_info: SimulationProgressInfo,
+                 area: "Area") -> None:
         # pylint: disable=too-many-arguments
         self.live_events = LiveEvents(config)
         self.redis_connection = RedisSimulationCommunication(
             state_params, simulation_id, self.live_events, progress_info, area)
 
-    def update(self, area):
+    def update(self, area: "Area") -> None:
         """
         Update the simulation according to any live events received. Triggered every market slot.
         """
@@ -409,10 +421,10 @@ class Simulation:
     # pylint: disable=too-many-arguments,too-many-instance-attributes
     def __init__(self, setup_module_name: str, simulation_config: SimulationConfig,
                  simulation_events: str = None, seed=None,
-                 paused: bool = False, pause_after: duration = None, repl: bool = False,
+                 paused: bool = False, pause_after: Duration = None, repl: bool = False,
                  no_export: bool = False, export_path: str = None,
                  export_subdir: str = None, redis_job_id=None, enable_bc=False,
-                 slot_length_realtime=None, incremental: bool = False):
+                 slot_length_realtime: Duration = None, incremental: bool = False):
         self._status = SimulationStatusManager(
             paused=paused,
             pause_after=pause_after,
@@ -450,7 +462,7 @@ class Simulation:
 
         validate_const_settings_for_simulation()
 
-    def _init(self, redis_job_id):
+    def _init(self, redis_job_id: str) -> None:
         # has to be called before get_setup():
         global_objects.profiles_handler.activate()
 
@@ -467,11 +479,11 @@ class Simulation:
         self.area.activate(self._setup.enable_bc, simulation_id=redis_job_id)
 
     @property
-    def _time_since_start(self):
+    def _time_since_start(self) -> Duration:
         """Return pendulum duration since start of simulation."""
         return self.area.current_tick * self.simulation_config.tick_length
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset simulation to initial values and restart the run.
         """
@@ -480,13 +492,13 @@ class Simulation:
         self.run()
         raise SimulationResetException
 
-    def _deactivate_areas(self, area):
+    def _deactivate_areas(self, area: "Area") -> None:
         """Move the last market into area.past_markets."""
         area.deactivate()
         for child in area.children:
             self._deactivate_areas(child)
 
-    def run(self, initial_slot=0):
+    def run(self, initial_slot: int = 0) -> None:
         """Run the simulation."""
         self._status.sim_status = "running"
         self._status.stopped = False
@@ -504,7 +516,7 @@ class Simulation:
         except (KeyboardInterrupt, SimulationResetException):
             pass
 
-    def _run_cli_execute_cycle(self, slot_resume, tick_resume):
+    def _run_cli_execute_cycle(self, slot_resume: int, tick_resume: int) -> None:
         with NonBlockingConsole() as console:
             self._execute_simulation(slot_resume, tick_resume, console)
 
@@ -512,7 +524,8 @@ class Simulation:
         return (self.area.config.start_date + (slot_number * self.area.config.slot_length)
                 if GlobalConfig.IS_CANARY_NETWORK else self.area.now)
 
-    def _execute_simulation(self, slot_resume, tick_resume, console=None):
+    def _execute_simulation(self, slot_resume: int, tick_resume: int,
+                            console: NonBlockingConsole = None) -> None:
         config = self.simulation_config
 
         slot_count, slot_resume, tick_resume = (
@@ -587,7 +600,7 @@ class Simulation:
             self._status.handle_incremental_mode()
         self._simulation_finish_actions(slot_count)
 
-    def _simulation_finish_actions(self, slot_count):
+    def _simulation_finish_actions(self, slot_count: int) -> None:
         self._status.sim_status = "finished"
         self._deactivate_areas(self.area)
         self.simulation_config.external_redis_communicator.\
@@ -602,7 +615,7 @@ class Simulation:
             self.current_state, self.progress_info, self.area, self._status.status)
         self._results.save_csv_results(self.area)
 
-    def _handle_input(self, console, sleep_period: float = 0):
+    def _handle_input(self, console: NonBlockingConsole, sleep_period: float = 0) -> None:
         timeout = 0
         start = 0
         if sleep_period > 0:
@@ -640,7 +653,7 @@ class Simulation:
             if sleep_period == 0 or time() - start >= sleep_period:
                 break
 
-    def _handle_paused(self, console):
+    def _handle_paused(self, console: NonBlockingConsole) -> None:
         if console is not None:
             self._handle_input(console)
             self._status.handle_pause_after(self._time_since_start)
@@ -663,7 +676,7 @@ class Simulation:
             log.critical("Simulation resumed")
             self._time.paused_time += time() - start
 
-    def _info(self):
+    def _info(self) -> None:
         info = self.simulation_config.as_dict()
         slot, tick = divmod(self.area.current_tick, self.simulation_config.ticks_per_slot)
         percent = self.area.current_tick / self.simulation_config.total_ticks * 100
@@ -684,7 +697,7 @@ class Simulation:
         )
 
     @property
-    def current_state(self):
+    def current_state(self) -> dict:
         """Return dict that contains current progress and state of simulation."""
         return {
             "paused": self._status.paused,
@@ -700,7 +713,7 @@ class Simulation:
             if self._time.slot_length_realtime else 0
         }
 
-    def _restore_area_state(self, area, saved_area_state):
+    def _restore_area_state(self, area: "Area", saved_area_state: dict) -> None:
         if area.uuid not in saved_area_state:
             log.warning("Area %s is not part of the saved state. State not restored. "
                         "Simulation id: %s", area.uuid, self._simulation_id)
@@ -709,11 +722,11 @@ class Simulation:
         for child in area.children:
             self._restore_area_state(child, saved_area_state)
 
-    def restore_area_state_all_areas(self, saved_area_state):
+    def restore_area_state_all_areas(self, saved_area_state: dict) -> None:
         """Restore state of all areas."""
         self._restore_area_state(self.area, saved_area_state)
 
-    def restore_global_state(self, saved_state):
+    def restore_global_state(self, saved_state: dict) -> None:
         """Restore global state of simulation."""
         self._status.paused = saved_state["paused"]
         self._setup.seed = saved_state["seed"]
@@ -728,9 +741,10 @@ class Simulation:
             seconds=saved_state["slot_length_realtime_s"])
 
 
-def run_simulation(setup_module_name="", simulation_config=None, simulation_events=None,
-                   redis_job_id=None, saved_sim_state=None,
-                   slot_length_realtime=None, kwargs=None):
+def run_simulation(setup_module_name: str = "", simulation_config: SimulationConfig = None,
+                   simulation_events: str = None,
+                   redis_job_id: str = None, saved_sim_state: dict = None,
+                   slot_length_realtime: Duration = None, kwargs: dict = None) -> None:
     """Initiate simulation class and start simulation."""
     # pylint: disable=too-many-arguments
     try:
