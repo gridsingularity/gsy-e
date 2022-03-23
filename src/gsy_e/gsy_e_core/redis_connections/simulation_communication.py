@@ -55,8 +55,6 @@ class RedisSimulationCommunication:
         self._simulation_status = simulation_status
         self._area = area
         self._progress_info = progress_info
-        # Lambda is needed here in order to avoid storing the area as a member variable.
-        # Instead a closure is used that will capture the area variable in the function scope.
         self._sub_callback_dict = {
             f"{gsy_e.constants.CONFIGURATION_ID}/area-map/": self._calculate_area_map_callback,
             f"{self._simulation_id}/stop": self._stop_callback,

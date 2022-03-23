@@ -39,7 +39,8 @@ from gsy_e.gsy_e_core.export import ExportAndPlot
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.live_events import LiveEvents
 from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
-from gsy_e.gsy_e_core.redis_connections.redis_communication import RedisSimulationCommunication
+from gsy_e.gsy_e_core.redis_connections.simulation_communication \
+    import RedisSimulationCommunication
 from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from gsy_e.gsy_e_core.sim_results.file_export_endpoints import FileExportEndpoints
 from gsy_e.gsy_e_core.util import (
@@ -169,8 +170,8 @@ class SimulationStatusManager:
 @dataclass
 class SimulationTimeManager:
     """Handles simulation time management."""
-    start_time: datetime = now(tz=TIME_ZONE)
-    tick_time_counter: datetime = time()
+    start_time: DateTime = now(tz=TIME_ZONE)
+    tick_time_counter: float = time()
     slot_length_realtime: duration = None
     tick_length_realtime_s: int = None
     paused_time: int = 0  # Time spent in paused state, in seconds
@@ -250,7 +251,7 @@ class SimulationSetup:
     started_from_cli: str = True
 
     def __post_init__(self):
-        self.seed = self._set_random_seed(self.seed)
+        self._set_random_seed(self.seed)
 
     def load_setup_module(self, simulation_config):
         """Load setup module and create areas that are described on the setup."""
@@ -259,8 +260,7 @@ class SimulationSetup:
         self._log_traversal_length(area, simulation_config)
         return area
 
-    @staticmethod
-    def _set_random_seed(seed):
+    def _set_random_seed(self, seed):
         if seed is not None:
             random.seed(int(seed))
         else:
@@ -268,7 +268,7 @@ class SimulationSetup:
             random.seed(random_seed)
             seed = random_seed
             log.info("Random seed: %s", random_seed)
-        return seed
+        self.seed = seed
 
     def _log_traversal_length(self, area, simulation_config):
         no_of_levels = self._get_setup_levels(area) + 1

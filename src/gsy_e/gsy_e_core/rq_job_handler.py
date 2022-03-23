@@ -139,7 +139,8 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
     # pylint: disable=broad-except
     except Exception:
         # pylint: disable=import-outside-toplevel
-        from gsy_e.gsy_e_core.redis_connections.redis_communication import publish_job_error_output
+        from gsy_e.gsy_e_core.redis_connections.simulation_communication \
+            import publish_job_error_output
         publish_job_error_output(job_id, traceback.format_exc())
         logging.getLogger().exception("Error on jobId, %s, configuration id: %s",
                                       job_id, gsy_e.constants.CONFIGURATION_ID)
