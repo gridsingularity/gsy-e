@@ -47,7 +47,6 @@ from gsy_e.gsy_e_core.util import (
     get_market_slot_time_str)
 from gsy_e.models.area.event_deserializer import deserialize_events_to_areas
 from gsy_e.models.config import SimulationConfig
-from gsy_e.models.power_flow.pandapower import PandaPowerFlow
 
 log = getLogger(__name__)
 
@@ -255,7 +254,7 @@ class SimulationSetup:
 
     def load_setup_module(self, simulation_config):
         """Load setup module and create areas that are described on the setup."""
-        loaded_python_module = self._load_setup_module(self.setup_module_name)
+        loaded_python_module = self._import_setup_module(self.setup_module_name)
         area = loaded_python_module.get_setup(simulation_config)
         self._log_traversal_length(area, simulation_config)
         return area
@@ -286,7 +285,7 @@ class SimulationSetup:
         return max(count_list) if len(count_list) > 0 else level_count
 
     @staticmethod
-    def _load_setup_module(setup_module_name):
+    def _import_setup_module(setup_module_name):
         try:
             if ConstSettings.GeneralSettings.SETUP_FILE_PATH is None:
                 return import_module(f".{setup_module_name}", "gsy_e.setup")
@@ -378,13 +377,13 @@ class SimulationResultsManager:
         if self.export_results_on_finish:
             self._export.data_to_csv(area, slot_no == 0)
 
-    def save_csv_results(self, power_flow, area):
+    def save_csv_results(self, area):
         """Update the CSV results on finish, and write the CSV files."""
         if self.export_results_on_finish:
             log.info("Exporting simulation data.")
             self._export.data_to_csv(area, False)
             self._export.area_tree_summary_to_json(self._endpoint_buffer.area_result_dict)
-            self._export.export(power_flow=power_flow if GlobalConfig.POWER_FLOW else None)
+            self._export.export(power_flow=False)
 
 
 class SimulationExternalEvents:
@@ -461,10 +460,6 @@ class Simulation:
         self._results.init_results(redis_job_id, self.area, self._setup)
         self._results.update_and_send_results(
             self.current_state, self.progress_info, self.area, self._status.status)
-
-        if GlobalConfig.POWER_FLOW:
-            self.power_flow = PandaPowerFlow(self.area)
-            self.power_flow.run_power_flow()
 
         log.debug("Starting simulation with config %s", self.simulation_config)
 
@@ -604,8 +599,7 @@ class Simulation:
             self.progress_info.log_simulation_finished(paused_duration, self.simulation_config)
         self._results.update_and_send_results(
             self.current_state, self.progress_info, self.area, self._status.status)
-        self._results.save_csv_results(
-            self.power_flow if GlobalConfig.POWER_FLOW else None, self.area)
+        self._results.save_csv_results(self.area)
 
     def _handle_input(self, console, sleep_period: float = 0):
         timeout = 0
@@ -635,7 +629,7 @@ class Simulation:
                 elif cmd == "i":
                     self._info()
                 elif cmd == "p":
-                    self._status.paused = not self._status.paused
+                    self._status.toggle_pause()
                     break
                 elif cmd == "q":
                     raise KeyboardInterrupt()
