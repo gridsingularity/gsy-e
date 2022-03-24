@@ -236,10 +236,8 @@ class SimulationTimeManager:
             tick_runtime_s = time() - self.tick_time_counter
             sleep(abs(config.tick_length.seconds - tick_runtime_s))
         elif self.slot_length_realtime:
-            current_expected_tick_time = (
-                self.tick_time_counter.add(
-                    seconds=self.tick_length_realtime_s))
-            sleep_time_s = current_expected_tick_time.timestamp() - now().timestamp()
+            current_expected_tick_time = self.tick_time_counter + self.tick_length_realtime_s
+            sleep_time_s = current_expected_tick_time - now().timestamp()
             if sleep_time_s > 0:
                 sleep(sleep_time_s)
                 log.debug("Tick %s/%s: Sleep time of %s s was applied",
