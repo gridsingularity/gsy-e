@@ -61,8 +61,6 @@ class UpdateAreaEvent:
                     area.strategy = MarketMakerStrategy(**self.area_params)
                     reactivate = True
                 elif area_type == "InfiniteBus":
-                    self.area_params["energy_sell_rate"] = self.area_params.pop(
-                        "energy_rate", None)
                     area.strategy = InfiniteBusStrategy(**self.area_params)
                     reactivate = True
                 if reactivate:
