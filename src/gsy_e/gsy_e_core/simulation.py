@@ -259,11 +259,11 @@ class SimulationSetup:
     def __post_init__(self) -> None:
         self._set_random_seed(self.seed)
 
-    def load_setup_module(self, simulation_config: SimulationConfig) -> "Area":
+    def load_setup_module(self) -> "Area":
         """Load setup module and create areas that are described on the setup."""
         loaded_python_module = self._import_setup_module(self.setup_module_name)
-        area = loaded_python_module.get_setup(simulation_config)
-        self._log_traversal_length(area, simulation_config)
+        area = loaded_python_module.get_setup(self.config)
+        self._log_traversal_length(area)
         return area
 
     def _set_random_seed(self, seed: Optional[int]) -> None:
@@ -276,11 +276,11 @@ class SimulationSetup:
             log.info("Random seed: %s", random_seed)
         self.seed = seed
 
-    def _log_traversal_length(self, area: "Area", simulation_config: SimulationConfig) -> None:
+    def _log_traversal_length(self, area: "Area") -> None:
         no_of_levels = self._get_setup_levels(area) + 1
         num_ticks_to_propagate = no_of_levels * 2
         time_to_propagate_minutes = (num_ticks_to_propagate *
-                                     simulation_config.tick_length.seconds / 60.)
+                                     self.config.tick_length.seconds / 60.)
         log.info("Setup has %s levels, offers/bids need at least %s minutes to propagate.",
                  no_of_levels, time_to_propagate_minutes)
 
@@ -465,7 +465,7 @@ class Simulation:
         # has to be called before get_setup():
         global_objects.profiles_handler.activate()
 
-        self.area = self._setup.load_setup_module(self._setup.config)
+        self.area = self._setup.load_setup_module()
         bid_offer_matcher.activate()
         global_objects.external_global_stats(self.area, self._setup.config.ticks_per_slot)
 
