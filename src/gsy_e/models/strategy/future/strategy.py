@@ -142,6 +142,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
     def __init__(self, asset_type: AssetType,
                  initial_buying_rate: float, final_buying_rate: float,
                  initial_selling_rate: float, final_selling_rate: float):
+        # pylint: disable=too-many-arguments
         """
         Args:
             initial_buying_rate: Initial rate of the future bids
@@ -214,7 +215,9 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             market=strategy.area.future_markets,
             energy=available_buy_energy_kWh,
             price=available_buy_energy_kWh * self._bid_updater.initial_rate[time_slot],
-            time_slot=time_slot)
+            time_slot=time_slot,
+            replace_existing=False
+        )
 
     def _post_producer_first_offer(
             self, strategy: "BaseStrategy", time_slot: DateTime,
