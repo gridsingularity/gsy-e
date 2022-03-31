@@ -964,11 +964,20 @@ class BidEnabledStrategy(BaseStrategy):
         if bid_trade.buyer == self.owner.name:
             self.add_bid_to_bought(bid_trade.offer_bid, market_id)
 
+    def _get_future_market_bids(self, bids: Dict) -> Dict:
+        updated_bids_dict = {}
+        for market_id, bid_list in bids.items():
+            if market_id == self.area.future_markets.id:
+                updated_bids_dict.update({market_id: bid_list})
+        return updated_bids_dict
+
     def event_market_cycle(self) -> None:
         if not constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
-            self._bids = {}
-            self._traded_bids = {}
-            super().event_market_cycle()
+            # delete all bids except for the future market ones
+            self._bids = self._get_future_market_bids(self._bids)
+            self._traded_bids = self._get_future_market_bids(self._traded_bids)
+
+        super().event_market_cycle()
 
     def assert_if_trade_bid_price_is_too_high(self, market: "MarketBase", trade: "Trade") -> None:
         """
