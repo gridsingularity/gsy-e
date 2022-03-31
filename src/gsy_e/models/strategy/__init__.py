@@ -265,18 +265,22 @@ class Offers:
         self.sold = {}  # type: Dict[str, List[Offer]]
         self.split = {}  # type: Dict[str, Offer]
 
-    def _delete_past_offers(self, existing_offers: Dict[Offer, str]) -> Dict[Offer, str]:
+    def _delete_past_offers(
+            self, existing_offers: Dict[Offer, str], current_time_slot: DateTime
+    ) -> Dict[Offer, str]:
         offers = {}
         for offer, market_id in existing_offers.items():
             market = self.strategy.get_market_from_id(market_id)
             if market is not None:
+                if offer.time_slot and offer.time_slot <= current_time_slot:
+                    continue
                 offers[offer] = market_id
         return offers
 
-    def delete_past_markets_offers(self) -> None:
+    def delete_past_markets_offers(self, current_time_slot: DateTime) -> None:
         """Remove offers from past markets to decrease memory utilization"""
-        self.posted = self._delete_past_offers(self.posted)
-        self.bought = self._delete_past_offers(self.bought)
+        self.posted = self._delete_past_offers(self.posted, current_time_slot)
+        self.bought = self._delete_past_offers(self.bought, current_time_slot)
         self.split = {}
 
     @property
@@ -629,7 +633,8 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
     def event_market_cycle(self) -> None:
         """Default market cycle event. Deallocates memory by removing offers from past markets."""
         if not constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
-            self.offers.delete_past_markets_offers()
+            if self.area:
+                self.offers.delete_past_markets_offers(self.area.spot_market.time_slot)
         self.event_responses = []
 
     def _assert_if_trade_offer_price_is_too_low(self, market_id: str, trade: Trade) -> None:
@@ -964,18 +969,25 @@ class BidEnabledStrategy(BaseStrategy):
         if bid_trade.buyer == self.owner.name:
             self.add_bid_to_bought(bid_trade.offer_bid, market_id)
 
-    def _get_future_market_bids(self, bids: Dict) -> Dict:
+    def _get_future_bids_from_list(self, bids: List) -> List:
+        update_bids_list = []
+        for bid in bids:
+            if bid.time_slot > self.area.spot_market.time_slot:
+                update_bids_list.append(bid)
+        return update_bids_list
+
+    def _delete_past_bids(self, existing_bids: Dict) -> Dict:
         updated_bids_dict = {}
-        for market_id, bid_list in bids.items():
+        for market_id, bids in existing_bids.items():
             if market_id == self.area.future_markets.id:
-                updated_bids_dict.update({market_id: bid_list})
+                updated_bids_dict.update(
+                    {market_id: self._get_future_bids_from_list(bids)})
         return updated_bids_dict
 
     def event_market_cycle(self) -> None:
         if not constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
-            # delete all bids except for the future market ones
-            self._bids = self._get_future_market_bids(self._bids)
-            self._traded_bids = self._get_future_market_bids(self._traded_bids)
+            self._bids = self._delete_past_bids(self._bids)
+            self._traded_bids = self._delete_past_bids(self._traded_bids)
 
         super().event_market_cycle()
 
