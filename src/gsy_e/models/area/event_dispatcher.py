@@ -25,7 +25,7 @@ from pendulum import DateTime
 
 from gsy_e.events.event_structures import MarketEvent, AreaEvent
 from gsy_e.gsy_e_core.exceptions import WrongMarketTypeException
-from gsy_e.gsy_e_core.redis.area_market_communicator import RedisCommunicator
+from gsy_e.gsy_e_core.redis_connections.area_market import RedisCommunicator
 from gsy_e.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
 from gsy_e.models.area.redis_dispatcher.area_to_market_publisher import AreaToMarketEventPublisher
 from gsy_e.models.area.redis_dispatcher.market_event_dispatcher import (

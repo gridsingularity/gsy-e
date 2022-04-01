@@ -22,7 +22,7 @@ from pendulum import duration, today
 
 from gsy_e.constants import TIME_ZONE
 from gsy_e.gsy_e_core.global_stats import ExternalConnectionGlobalStatistics
-from gsy_e.gsy_e_core.redis.area_market_communicator import ExternalConnectionCommunicator
+from gsy_e.gsy_e_core.redis_connections.area_market import ExternalConnectionCommunicator
 from gsy_e.models.area import Area
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStrategy

@@ -27,7 +27,7 @@ from gsy_framework.data_classes import BidOfferMatch
 import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import (
     InvalidBidOfferPairException, MycoValidationException)
-from gsy_e.gsy_e_core.redis.area_market_communicator import myco_redis_communicator_factory
+from gsy_e.gsy_e_core.redis_connections.area_market import myco_redis_communicator_factory
 from gsy_e.gsy_e_core.util import ExternalTickCounter
 from gsy_e.models.market.two_sided import TwoSidedMarket
 from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
