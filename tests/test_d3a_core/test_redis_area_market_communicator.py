@@ -3,7 +3,7 @@ from unittest.mock import patch, Mock
 import pytest
 from redis import StrictRedis
 
-from gsy_e.gsy_e_core.redis_connections.aggregator_connection import AggregatorHandler
+from gsy_e.gsy_e_core.redis_connections.aggregator import AggregatorHandler
 from gsy_e.gsy_e_core.redis_connections.area_market_communicator import ExternalConnectionCommunicator
 
 
