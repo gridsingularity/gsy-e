@@ -30,7 +30,7 @@ from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_e.models.area.event_dispatcher import RedisAreaDispatcher, AreaDispatcher
-from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import RedisCommunicator
+from gsy_e.gsy_e_core.redis.area_market_communicator import RedisCommunicator
 from gsy_e.events.event_structures import AreaEvent, MarketEvent
 from gsy_framework.data_classes import (
     Offer, Trade, TradeBidOfferInfo)
