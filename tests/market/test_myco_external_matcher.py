@@ -8,13 +8,13 @@ from pendulum import now
 import gsy_e.constants
 import gsy_e.models.market.market_redis_connection
 from gsy_e.gsy_e_core.exceptions import MycoValidationException, InvalidBidOfferPairException
-import gsy_e.gsy_e_core.redis_connections.area_market_communicator
+import gsy_e.gsy_e_core.redis_connections.area_market
 from gsy_e.models.market import Offer, Bid
 from gsy_e.models.market.two_sided import TwoSidedMarket
 from gsy_e.models.myco_matcher import MycoExternalMatcher
 from gsy_e.models.myco_matcher.myco_external_matcher import MycoExternalMatcherValidator
 
-gsy_e.gsy_e_core.redis_connections.area_market_communicator.ResettableCommunicator = MagicMock
+gsy_e.gsy_e_core.redis_connections.area_market.ResettableCommunicator = MagicMock
 
 
 class TestMycoExternalMatcher:
