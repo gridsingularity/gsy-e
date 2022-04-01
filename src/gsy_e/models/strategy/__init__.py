@@ -37,7 +37,7 @@ from gsy_e.events import EventMixin
 from gsy_e.events.event_structures import AreaEvent, MarketEvent
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import D3ARedisException, SimulationException, MarketException
-from gsy_e.gsy_e_core.redis.area_market_communicator import BlockingCommunicator
+from gsy_e.gsy_e_core.redis_connections.area_market_communicator import BlockingCommunicator
 from gsy_e.gsy_e_core.util import append_or_create_key
 from gsy_e.models.base import AreaBehaviorBase
 from gsy_e.models.config import SimulationConfig

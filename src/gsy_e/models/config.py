@@ -25,7 +25,7 @@ from gsy_framework.read_user_profile import (
 from pendulum import DateTime, Duration, duration, today
 
 from gsy_e.constants import TIME_ZONE
-from gsy_e.gsy_e_core.redis.area_market_communicator import external_redis_communicator_factory
+from gsy_e.gsy_e_core.redis_connections.area_market_communicator import external_redis_communicator_factory
 from gsy_e.gsy_e_core.util import change_global_config, format_interval
 
 

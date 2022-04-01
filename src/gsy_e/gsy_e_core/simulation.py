@@ -41,7 +41,7 @@ from gsy_e.gsy_e_core.export import ExportAndPlot
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.live_events import LiveEvents
 from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
-from gsy_e.gsy_e_core.redis.simulation_communication import RedisSimulationCommunication
+from gsy_e.gsy_e_core.redis_connections.simulation_communication import RedisSimulationCommunication
 from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from gsy_e.gsy_e_core.sim_results.file_export_endpoints import FileExportEndpoints
 from gsy_e.gsy_e_core.util import (

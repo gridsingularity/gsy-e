@@ -3,7 +3,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from gsy_e.constants import MAX_WORKER_THREADS
 from gsy_e.models.market.market_structures import parse_event_and_parameters_from_json_string
-from gsy_e.gsy_e_core.redis.area_market_communicator import ResettableCommunicator
+from gsy_e.gsy_e_core.redis_connections.area_market_communicator import ResettableCommunicator
 
 
 class MarketNotifyEventSubscriber:

@@ -30,8 +30,8 @@ log = getLogger(__name__)
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
     from gsy_e.models.market import Market
-    from gsy_e.gsy_e_core.redis.aggregator_connection import AggregatorHandler
-    from gsy_e.gsy_e_core.redis.area_market_communicator import ExternalConnectionCommunicator
+    from gsy_e.gsy_e_core.redis_connections.aggregator_connection import AggregatorHandler
+    from gsy_e.gsy_e_core.redis_connections.area_market_communicator import ExternalConnectionCommunicator
 
 
 class RedisMarketExternalConnection:
