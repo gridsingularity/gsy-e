@@ -136,5 +136,5 @@ _`docker`: https://docker.io
 
 
 Detailed Documentation
-===============
+======================
 Please refer to: https://gridsingularity.github.io/gsy-e/documentation/
