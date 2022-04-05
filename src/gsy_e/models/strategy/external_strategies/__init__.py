@@ -369,8 +369,14 @@ class ExternalMixin:
                 "area_uuid": self.device.uuid,
                 "market_type": market.type_name,
                 "message": response_message}
-        except (OrderCanNotBePosted, GSyException):
-            logging.exception("Error when handling offer on area %s", self.device.name)
+        except (OrderCanNotBePosted, GSyException) as ex:
+            if isinstance(ex, OrderCanNotBePosted):
+                # This can happen in the normal flow, when the user sends an incorrect offer
+                logging.info("Error when handling offer on area %s. %s", self.device.name, ex)
+            else:
+                # This is more unexpected and we might want to be notified
+                logging.exception("Error when handling offer on area %s. %s", self.device.name, ex)
+
             response = {
                 "command": "offer", "status": "error",
                 "market_type": market.type_name,
@@ -423,8 +429,14 @@ class ExternalMixin:
                 "transaction_id": arguments.get("transaction_id"),
                 "market_type": market.type_name,
                 "message": response_message}
-        except (OrderCanNotBePosted, GSyException):
-            logging.exception("Error when handling bid on area %s", self.device.name)
+        except (OrderCanNotBePosted, GSyException) as ex:
+            if isinstance(ex, OrderCanNotBePosted):
+                # This can happen in the normal flow, when the user sends an incorrect bid
+                logging.info("Error when handling bid on area %s. %s", self.device.name, ex)
+            else:
+                # This is more unexpected and we might want to be notified
+                logging.exception("Error when handling bid on area %s. %s", self.device.name, ex)
+
             response = {
                 "command": "bid", "status": "error",
                 "area_uuid": self.device.uuid,
