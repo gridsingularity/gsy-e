@@ -707,6 +707,9 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             except MarketException:
                 continue
 
+    def event_activate_price(self):
+        """Configure strategy price parameters during the activate event."""
+
 
 class BidEnabledStrategy(BaseStrategy):
     """
