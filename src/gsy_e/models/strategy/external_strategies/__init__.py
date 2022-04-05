@@ -31,7 +31,7 @@ from redis import RedisError
 import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import MarketException, GSyException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
-from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import (
+from gsy_e.gsy_e_core.redis_connections.area_market import (
     ResettableCommunicator, ExternalConnectionCommunicator)
 from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.external_strategies.dof_filter import DegreesOfFreedomFilter

@@ -3,7 +3,7 @@ import json
 from gsy_e.gsy_e_core.exceptions import D3ARedisException
 from gsy_framework.constants_limits import ConstSettings
 from gsy_e.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
-from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
+from gsy_e.gsy_e_core.redis_connections.area_market import BlockingCommunicator
 from gsy_framework.enums import SpotMarketTypeEnum
 
 

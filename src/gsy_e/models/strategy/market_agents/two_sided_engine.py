@@ -41,6 +41,7 @@ class TwoSidedEngine(MAEngine):
         self.bid_trade_residual: Dict[str, Bid] = {}
         self.min_bid_age = min_bid_age
         self.bid_age: Dict[str, int] = {}
+        self._current_tick = 0
 
     def __repr__(self):
         return "<TwoSidedPayAsBidEngine [{s.owner.name}] {s.name} " \
@@ -119,11 +120,13 @@ class TwoSidedEngine(MAEngine):
     def tick(self, *, area):
         super().tick(area=area)
 
+        self._current_tick = area.current_tick
+
         for bid in self.markets.source.get_bids().values():
             if bid.id not in self.bid_age:
-                self.bid_age[bid.id] = area.current_tick
+                self.bid_age[bid.id] = self._current_tick
 
-            if self._should_forward_bid(bid, area.current_tick):
+            if self._should_forward_bid(bid, self._current_tick):
                 self._forward_bid(bid)
 
     def _delete_forwarded_bids(self, bid_info):
@@ -230,7 +233,8 @@ class TwoSidedEngine(MAEngine):
             self._add_to_forward_bids(local_residual_bid, residual_bid)
             self._add_to_forward_bids(local_split_bid, accepted_bid)
 
-            self.bid_age[local_residual_bid.id] = self.bid_age.pop(local_bid.id)
+            self.bid_age[local_residual_bid.id] = self.bid_age.pop(
+                local_bid.id, self._current_tick)
 
         elif market == self.markets.source and accepted_bid.id in self.forwarded_bids:
             # bid in the source market was split, also split the corresponding forwarded bid
@@ -250,7 +254,7 @@ class TwoSidedEngine(MAEngine):
             self._add_to_forward_bids(residual_bid, local_residual_bid)
             self._add_to_forward_bids(accepted_bid, local_split_bid)
 
-            self.bid_age[residual_bid.id] = self.bid_age.pop(original_bid.id)
+            self.bid_age[residual_bid.id] = self.bid_age.pop(original_bid.id, self._current_tick)
 
         else:
             return
