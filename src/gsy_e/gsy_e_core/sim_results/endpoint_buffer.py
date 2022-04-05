@@ -52,14 +52,14 @@ _NO_VALUE = {
 class SimulationEndpointBuffer:
     """Handles collecting and buffering of all results for all areas."""
 
-    def __init__(self, job_id, initial_params, area, should_export_plots):
+    def __init__(self, job_id, random_seed, area, should_export_plots):
         self.job_id = job_id
         self.result_area_uuids = set()
         self.current_market_time_slot_str = ""
         self.current_market_ui_time_slot_str = ""
         self.current_market_time_slot_unix = None
         self.current_market_time_slot = None
-        self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ""
+        self.random_seed = random_seed if random_seed is not None else ""
         self.status = {}
         self.area_result_dict = self._create_area_tree_dict(area)
         self.flattened_area_core_stats_dict = {}

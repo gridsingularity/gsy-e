@@ -7,7 +7,7 @@ from gsy_framework.data_classes import BaseBidOffer, Trade
 from gsy_framework.utils import key_in_dict_and_not_none
 
 from gsy_e.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT, MAX_WORKER_THREADS
-from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import (
+from gsy_e.gsy_e_core.redis_connections.area_market import (
     ResettableCommunicator, BlockingCommunicator)
 from gsy_e.events import MarketEvent
 
