@@ -24,7 +24,7 @@ from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyAreaException, GSyDeviceException
 from gsy_framework.utils import key_in_dict_and_not_none
-from pendulum import DateTime, duration, today
+from pendulum import DateTime
 from slugify import slugify
 
 import gsy_e.constants
@@ -48,20 +48,7 @@ from gsy_e.models.strategy.external_strategies import ExternalMixin
 log = getLogger(__name__)
 
 if TYPE_CHECKING:
-    from d3a.models.market import MarketBase
-
-
-# pylint: disable=fixme
-# TODO: As this is only used in the unittests, please remove it here and replace the usages
-#       of this class with gsy-framework.constants_limits.GlobalConfig class:
-DEFAULT_CONFIG = SimulationConfig(
-    sim_duration=duration(hours=24),
-    slot_length=duration(minutes=15),
-    tick_length=duration(seconds=1),
-    cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
-    start_date=today(tz=gsy_e.constants.TIME_ZONE),
-    capacity_kW=ConstSettings.PVSettings.DEFAULT_CAPACITY_KW
-)
+    from gsy_e.models.market import MarketBase
 
 
 def check_area_name_exists_in_parent_area(parent_area, name):

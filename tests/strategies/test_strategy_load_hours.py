@@ -32,7 +32,8 @@ from pendulum import DateTime, duration, today, now
 from gsy_e.constants import TIME_ZONE, TIME_FORMAT
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.util import d3a_path
-from gsy_e.models.area import DEFAULT_CONFIG, Area
+from gsy_e.models.area import Area
+from gsy_e.models.config import create_simulation_config_from_global_config
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 
@@ -47,7 +48,7 @@ def teardown_function():
 
 class FakeArea:
     def __init__(self):
-        self.config = DEFAULT_CONFIG
+        self.config = create_simulation_config_from_global_config()
         self.appliance = None
         self.name = 'FakeArea'
         self.uuid = str(uuid4())

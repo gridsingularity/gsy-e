@@ -25,11 +25,10 @@ from uuid import uuid4
 import pendulum
 import pytest
 
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import Bid, MarketClearingState, Offer, Trade
 
 from gsy_e.constants import TIME_FORMAT, TIME_ZONE
-from gsy_e.models.area import DEFAULT_CONFIG
 from gsy_e.models.market import GridFee
 from gsy_e.models.market.grid_fees.base_model import GridFees
 from gsy_e.models.strategy.market_agents.one_sided_agent import OneSidedAgent
@@ -53,7 +52,7 @@ class FakeArea:
 
     @property
     def config(self):
-        return DEFAULT_CONFIG
+        return GlobalConfig
 
     def get_future_market_from_id(self, _id):
         return self.future_market

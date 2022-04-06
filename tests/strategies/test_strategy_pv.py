@@ -24,15 +24,14 @@ from uuid import uuid4
 import pendulum
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.data_classes import Offer, Trade
 from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.utils import generate_market_slot_list
 from parameterized import parameterized
 
-from gsy_e.constants import TIME_FORMAT
-from gsy_e.constants import TIME_ZONE
+from gsy_e.constants import TIME_FORMAT, TIME_ZONE
 from gsy_e.gsy_e_core.util import d3a_path
-from gsy_e.models.area import DEFAULT_CONFIG
-from gsy_framework.data_classes import Offer, Trade
+from gsy_e.models.config import create_simulation_config_from_global_config
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 
@@ -50,7 +49,7 @@ def auto_fixture():
 
 class FakeArea:
     def __init__(self):
-        self.config = DEFAULT_CONFIG
+        self.config = create_simulation_config_from_global_config()
         self.current_tick = 2
         self.name = 'FakeArea'
         self.uuid = str(uuid4())
@@ -226,7 +225,7 @@ def testing_event_tick(pv_test2, market_test2, area_test2):
     assert pv_test2.state._energy_production_forecast_kWh[
                pendulum.today(tz=TIME_ZONE).at(hour=0, minute=0, second=2)
            ] == 0
-    area_test2.current_tick_in_slot = DEFAULT_CONFIG.ticks_per_slot - 2
+    area_test2.current_tick_in_slot = area_test2.config.ticks_per_slot - 2
     pv_test2.event_tick()
     offer_id2 = list(pv_test2.offers.posted.keys())[0]
     offer2 = market_test2.offers[offer_id2]
