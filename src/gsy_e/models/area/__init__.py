@@ -99,7 +99,6 @@ class Area:
                  uuid: str = None,
                  strategy: BaseStrategy = None,
                  config: SimulationConfig = None,
-                 budget_keeper=None,
                  balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
                  event_list=None,
                  grid_fee_percentage: float = None,
@@ -129,9 +128,6 @@ class Area:
         self._config = config
         event_list = event_list if event_list is not None else []
         self.events = Events(event_list, self)
-        self.budget_keeper = budget_keeper
-        if budget_keeper:
-            self.budget_keeper.area = self
         self._bc = None
         self._markets = None
         self.dispatcher = DispatcherFactory(self)()
@@ -292,8 +288,6 @@ class Area:
             self._markets.activate_future_markets(self)
             self._markets.activate_market_rotators()
 
-        if self.budget_keeper:
-            self.budget_keeper.activate()
         if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
             self._set_grid_fees(0, 0)
 
@@ -346,9 +340,6 @@ class Area:
             self.stats.calculate_energy_deviances()
             # Since children trade in markets we only need to populate them if there are any
             return
-
-        if self.budget_keeper and _market_cycle:
-            self.budget_keeper.process_market_cycle()
 
         self.log.debug("Cycling markets")
         self._markets.rotate_markets(now_value)

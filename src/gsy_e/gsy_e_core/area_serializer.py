@@ -52,8 +52,6 @@ class AreaEncoder(json.JSONEncoder):
             result['uuid'] = area.uuid
         if area.strategy:
             result['strategy'] = area.strategy
-        if area.budget_keeper:
-            result['budget_keeper'] = area.budget_keeper
         if area.display_type:
             result['display_type'] = area.display_type
         return result
@@ -134,7 +132,7 @@ def area_from_dict(description, config):
         grid_fee_percentage = description.get('grid_fee_percentage', None)
         grid_fee_constant = description.get('grid_fee_constant', None)
         area = Area(name, children, uuid, optional('strategy'), config,
-                    optional('budget_keeper'), grid_fee_percentage=grid_fee_percentage,
+                    grid_fee_percentage=grid_fee_percentage,
                     grid_fee_constant=grid_fee_constant,
                     external_connection_available=external_connection_available and
                     config.external_connection_enabled,
