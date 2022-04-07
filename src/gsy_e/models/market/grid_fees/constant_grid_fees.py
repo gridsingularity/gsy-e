@@ -52,7 +52,7 @@ class ConstantGridFees(BaseClassGridFees):
             return None
         trade_offer_info = TradeBidOfferInfo(
             original_bid_rate=market_bid.original_price / market_bid.energy,
-            propagated_bid_rate=market_bid.energy_rate,
+            propagated_bid_rate=trade_original_info.propagated_bid_rate or market_bid.energy_rate,
             original_offer_rate=trade_original_info.original_offer_rate,
             propagated_offer_rate=trade_original_info.propagated_offer_rate,
             trade_rate=trade_original_info.trade_rate)
