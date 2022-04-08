@@ -28,6 +28,11 @@ from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 
 
 class MarketMakerStrategy(CommercialStrategy):
+    """
+    Market Maker trading strategy. According to the grid_connected parameter, it either operates
+    as a usual strategy by posting offers, or it only sets up the market maker rate configuration
+    in order to be used as the reference market maker price by other strategies.
+    """
     parameters = ("energy_rate_profile", "energy_rate", "grid_connected",
                   "energy_rate_profile_uuid")
 
@@ -50,9 +55,6 @@ class MarketMakerStrategy(CommercialStrategy):
         self._grid_connected = grid_connected
 
         self._read_or_rotate_profiles()
-
-    def event_activate_price(self):
-        pass
 
     def _read_or_rotate_profiles(self, reconfigure=False):
         if self.energy_rate_input is None and \
