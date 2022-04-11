@@ -30,7 +30,7 @@ from slugify import slugify
 import gsy_e.constants
 from gsy_e.gsy_e_core.blockchain_interface import blockchain_interface_factory
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
-from gsy_e.gsy_e_core.exceptions import AreaException
+from gsy_e.gsy_e_core.exceptions import AreaException, GSyException
 from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.util import TaggedLogWrapper, is_external_matching_enabled
 from gsy_e.models.area.event_dispatcher import DispatcherFactory
@@ -86,9 +86,148 @@ class AreaChildrenList(list):
         super().insert(index, item)
 
 
+class AreaBase:
+    """
+    Base class for the Area model. Contains common behavior for both coefficient trading and
+    market trading.
+    """
+    def __init__(self, name: str = None,
+                 children: List["Area"] = None,
+                 uuid: str = None,
+                 strategy: BaseStrategy = None,
+                 config: SimulationConfig = None,
+                 grid_fee_percentage: float = None,
+                 grid_fee_constant: float = None):
+        validate_area(grid_fee_constant=grid_fee_constant,
+                      grid_fee_percentage=grid_fee_percentage)
+        self.active = False
+        self.log = TaggedLogWrapper(log, name)
+        self.__name = name
+        self.uuid = uuid if uuid is not None else str(uuid4())
+        self.slug = slugify(name, to_lower=True)
+        self.parent = None
+        self.children = AreaChildrenList(self, children) if children is not None \
+            else AreaChildrenList(self)
+        for child in self.children:
+            child.parent = self
+
+        if (len(self.children) > 0) and (strategy is not None):
+            raise AreaException("A leaf area can not have children.")
+        self.strategy = strategy
+        self._config = config
+        self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
+
+    def _set_grid_fees(self, grid_fee_const, grid_fee_percentage):
+        grid_fee_type = self.config.grid_fee_type \
+            if self.config is not None \
+            else ConstSettings.MASettings.GRID_FEE_TYPE
+        if grid_fee_type == 1:
+            grid_fee_percentage = None
+        elif grid_fee_type == 2:
+            grid_fee_const = None
+        self.grid_fee_constant = grid_fee_const
+        self.grid_fee_percentage = grid_fee_percentage
+
+    @property
+    def config(self) -> Union[SimulationConfig, GlobalConfig]:
+        """Return the configuration used by the area."""
+        if self._config:
+            return self._config
+        if self.parent:
+            return self.parent.config
+        return GlobalConfig
+
+    @property
+    def name(self):
+        """Return the name of the area."""
+        return self.__name
+
+    @name.setter
+    def name(self, new_name):
+        if check_area_name_exists_in_parent_area(self.parent, new_name):
+            raise AreaException("Area name should be unique inside the same Parent Area")
+
+        self.__name = new_name
+
+    def get_path_to_root_fees(self) -> float:
+        """Return the cumulative fees value from the current area to its root."""
+        if self.parent is not None:
+            grid_fee_constant = self.grid_fee_constant if self.grid_fee_constant else 0
+            return grid_fee_constant + self.parent.get_path_to_root_fees()
+        return self.grid_fee_constant if self.grid_fee_constant else 0
+
+    def get_grid_fee(self):
+        """Return the current grid fee for the area."""
+        grid_fee_type = (
+            self.config.grid_fee_type if self.config is not None
+            else ConstSettings.MASettings.GRID_FEE_TYPE)
+
+        return self.grid_fee_constant if grid_fee_type == 1 else self.grid_fee_percentage
+
+    def update_config(self, **kwargs):
+        """Update the configuration of the area using the provided arguments."""
+        if not self.config:
+            return
+        self.config.update_config_parameters(**kwargs)
+        if self.strategy:
+            self.strategy.read_config_event()
+        for child in self.children:
+            child.update_config(**kwargs)
+
+    def get_state(self):
+        """Get the current state of the area."""
+        state = {}
+        if self.strategy is not None:
+            state = self.strategy.get_state()
+
+        return state
+
+    def restore_state(self, saved_state):
+        """Restore a previously-saved state."""
+        if self.strategy is not None:
+            self.strategy.restore_state(saved_state)
+
+    def area_reconfigure_event(self, **kwargs):
+        """Reconfigure the device properties at runtime using the provided arguments."""
+        if self.strategy is not None:
+            self.strategy.area_reconfigure_event(**kwargs)
+            return True
+
+        grid_fee_constant = (
+            kwargs["grid_fee_constant"]
+            if key_in_dict_and_not_none(kwargs, "grid_fee_constant")
+            else self.grid_fee_constant)
+        grid_fee_percentage = (
+            kwargs["grid_fee_percentage"]
+            if key_in_dict_and_not_none(kwargs, "grid_fee_percentage")
+            else self.grid_fee_percentage)
+
+        try:
+            validate_area(grid_fee_constant=grid_fee_constant,
+                          grid_fee_percentage=grid_fee_percentage)
+
+        except (GSyAreaException, GSyDeviceException) as ex:
+            log.error(ex)
+            return None
+
+        self.update_descendants_strategy_prices()
+        return None
+
+    def update_descendants_strategy_prices(self):
+        """Recursively update the strategy prices of all descendants of the area."""
+        try:
+            if self.strategy is not None:
+                self.strategy.event_activate_price()
+            for child in self.children:
+                child.update_descendants_strategy_prices()
+        except GSyException:
+            log.exception("area.update_descendants_strategy_prices failed.")
+            return
+
+
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-public-methods
-class Area:
+class Area(AreaBase):
     """Generic class to define both market areas and devices.
 
     Important: this class should not be used in setup files. Please use Market or Asset instead.
@@ -106,32 +245,15 @@ class Area:
                  external_connection_available: bool = False,
                  throughput: ThroughputParameters = ThroughputParameters()
                  ):
-        validate_area(grid_fee_constant=grid_fee_constant,
-                      grid_fee_percentage=grid_fee_percentage)
-        self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
-        self.active = False
-        self.log = TaggedLogWrapper(log, name)
+        super().__init__(name, children, uuid, strategy, config, grid_fee_percentage,
+                         grid_fee_constant)
         self.current_tick = 0
-        self.__name = name
         self.throughput = throughput
-        self.uuid = uuid if uuid is not None else str(uuid4())
-        self.slug = slugify(name, to_lower=True)
-        self.parent = None
-        self.children = AreaChildrenList(self, children) if children is not None\
-            else AreaChildrenList(self)
-        for child in self.children:
-            child.parent = self
-
-        if (len(self.children) > 0) and (strategy is not None):
-            raise AreaException("A leaf area can not have children.")
-        self.strategy = strategy
-        self._config = config
         event_list = event_list if event_list is not None else []
         self.events = Events(event_list, self)
         self._bc = None
         self._markets = None
         self.dispatcher = DispatcherFactory(self)()
-        self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets, self)
@@ -139,24 +261,11 @@ class Area:
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available and self.strategy is None else None
         self.external_connection_available = external_connection_available
-
-    @property
-    def name(self):
-        """Return the name of the area."""
-        return self.__name
-
-    @name.setter
-    def name(self, new_name):
-        if check_area_name_exists_in_parent_area(self.parent, new_name):
-            raise AreaException("Area name should be unique inside the same Parent Area")
-
-        self.__name = new_name
+        self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
 
     def get_state(self):
         """Get the current state of the area."""
-        state = {}
-        if self.strategy is not None:
-            state = self.strategy.get_state()
+        state = super().get_state()
 
         state.update(**{
             "current_tick": self.current_tick,
@@ -168,8 +277,7 @@ class Area:
         """Restore a previously-saved state."""
         self.current_tick = saved_state["current_tick"]
         self.stats.restore_state(saved_state["area_stats"])
-        if self.strategy is not None:
-            self.strategy.restore_state(saved_state)
+        super().restore_state(saved_state)
 
     def area_reconfigure_event(self, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
@@ -227,43 +335,6 @@ class Area:
         self.update_descendants_strategy_prices()
 
         return None
-
-    def update_descendants_strategy_prices(self):
-        """Recursively update the strategy prices of all descendants of the area."""
-        try:
-            if self.strategy is not None:
-                self.strategy.event_activate_price()
-            for child in self.children:
-                child.update_descendants_strategy_prices()
-        except Exception:
-            log.exception("area.update_descendants_strategy_prices failed.")
-            return
-
-    def _set_grid_fees(self, grid_fee_const, grid_fee_percentage):
-        grid_fee_type = self.config.grid_fee_type \
-            if self.config is not None \
-            else ConstSettings.MASettings.GRID_FEE_TYPE
-        if grid_fee_type == 1:
-            grid_fee_percentage = None
-        elif grid_fee_type == 2:
-            grid_fee_const = None
-        self.grid_fee_constant = grid_fee_const
-        self.grid_fee_percentage = grid_fee_percentage
-
-    def get_path_to_root_fees(self) -> float:
-        """Return the cumulative fees value from the current area to its root."""
-        if self.parent is not None:
-            grid_fee_constant = self.grid_fee_constant if self.grid_fee_constant else 0
-            return grid_fee_constant + self.parent.get_path_to_root_fees()
-        return self.grid_fee_constant if self.grid_fee_constant else 0
-
-    def get_grid_fee(self):
-        """Return the current grid fee for the area."""
-        grid_fee_type = (
-            self.config.grid_fee_type if self.config is not None
-            else ConstSettings.MASettings.GRID_FEE_TYPE)
-
-        return self.grid_fee_constant if grid_fee_type == 1 else self.grid_fee_percentage
 
     def set_events(self, event_list):
         """Set events for the area."""
@@ -359,7 +430,6 @@ class Area:
 
         # TODO: Refactor and port the future, spot, settlement and balancing market creation to
         # AreaMarkets class, in order to create all necessary markets with one call.
-
         changed = self._markets.create_new_spot_market(now_value, AvailableMarketTypes.SPOT, self)
 
         # create new settlement market
@@ -482,15 +552,6 @@ class Area:
     def current_tick_in_slot(self):
         """Return the number of the current tick in the current market slot."""
         return self.current_tick % self.config.ticks_per_slot
-
-    @property
-    def config(self) -> Union[SimulationConfig, GlobalConfig]:
-        """Return the configuration used by the area."""
-        if self._config:
-            return self._config
-        if self.parent:
-            return self.parent.config
-        return GlobalConfig
 
     @property
     def bc(self):
@@ -624,16 +685,6 @@ class Area:
         Returns: Dicts with market objects for the selected market type
         """
         return self._markets.get_market_instances_from_class_type(market_type)
-
-    def update_config(self, **kwargs):
-        """Update the configuration of the area using the provided arguments."""
-        if not self.config:
-            return
-        self.config.update_config_parameters(**kwargs)
-        if self.strategy:
-            self.strategy.read_config_event()
-        for child in self.children:
-            child.update_config(**kwargs)
 
     def is_market_spot(self, market_id: str) -> bool:
         """Return True if market_id belongs to a SPOT market."""
