@@ -16,10 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-from typing import Dict, TYPE_CHECKING, List
+from typing import Dict, TYPE_CHECKING, List, Type
 
 from gsy_framework.constants_limits import (ConstSettings, DATE_TIME_UI_FORMAT, DATE_TIME_FORMAT,
                                             GlobalConfig)
+from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.results_validator import results_validator
 from gsy_framework.sim_results.all_results import ResultsHandler
 from gsy_framework.utils import get_json_dict_memory_allocation_size
@@ -217,6 +218,7 @@ class SimulationEndpointBuffer:
         if self.current_market_time_slot_str == "":
             return
         core_stats_dict = {"bids": [], "offers": [], "trades": [], "market_fee": 0.0}
+
         if area.current_market:
             core_stats_dict.update(self._read_market_stats_to_dict(area.current_market))
 
@@ -273,8 +275,8 @@ class SimulationEndpointBuffer:
             core_stats_dict["total_energy_demanded_wh"] = (
                 area.strategy.state.total_energy_demanded_Wh)
             core_stats_dict["energy_requirement_kWh"] = (
-                area.strategy.state.get_energy_requirement_Wh(
-                    self.current_market_time_slot) / 1000.0)
+                    area.strategy.state.get_energy_requirement_Wh(
+                        self.current_market_time_slot) / 1000.0)
 
             if area.parent.current_market is not None:
                 for trade in area.strategy.trades[area.parent.current_market]:
@@ -300,13 +302,7 @@ class SimulationEndpointBuffer:
         for child in area.children:
             self._populate_core_stats_and_sim_state(child)
 
-    def update_stats(self, area: "Area", simulation_status: str,
-                     progress_info: "SimulationProgressInfo", sim_state: Dict,
-                     calculate_results: bool) -> None:
-        # pylint: disable=too-many-arguments
-        """Wrapper for handling of all results."""
-        self.area_result_dict = self._create_area_tree_dict(area)
-        self.status = simulation_status
+    def _calculate_and_update_last_market_time_slot(self, area):
         is_initial_current_market_on_cn = (
                 GlobalConfig.IS_CANARY_NETWORK and
                 (area.spot_market is None or
@@ -319,6 +315,15 @@ class SimulationEndpointBuffer:
                 area.current_market.time_slot.format(DATE_TIME_UI_FORMAT))
             self.current_market_time_slot_unix = area.current_market.time_slot.timestamp()
             self.current_market_time_slot = area.current_market.time_slot
+
+    def update_stats(self, area: "Area", simulation_status: str,
+                     progress_info: "SimulationProgressInfo", sim_state: Dict,
+                     calculate_results: bool) -> None:
+        # pylint: disable=too-many-arguments
+        """Wrapper for handling of all results."""
+        self.area_result_dict = self._create_area_tree_dict(area)
+        self.status = simulation_status
+        self._calculate_and_update_last_market_time_slot(area)
         self.simulation_state["general"] = sim_state
         self._populate_core_stats_and_sim_state(area)
         self.simulation_progress = {
@@ -350,3 +355,66 @@ class SimulationEndpointBuffer:
         for area_uuid, area_result in self.flattened_area_core_stats_dict.items():
             self.bids_offers_trades[area_uuid] = {
                 k: area_result[k] for k in ("offers", "bids", "trades")}
+
+
+class CoefficientEndpointBuffer(SimulationEndpointBuffer):
+    """Calculate the endpoint results for the Coefficient based market."""
+
+    def _calculate_and_update_last_market_time_slot(self, area):
+        pass
+
+    def _populate_core_stats_and_sim_state(self, area: "Area"):
+        if area.uuid not in self.flattened_area_core_stats_dict:
+            self.flattened_area_core_stats_dict[area.uuid] = {}
+        if self.current_market_time_slot_str == "":
+            return
+
+        core_stats_dict = {"trades": []}
+        for trade in area.trades:
+            core_stats_dict["trades"].append(trade.serializable_dict())
+
+        if isinstance(area.strategy, SmartMeterStrategy):
+            core_stats_dict["smart_meter_profile_kWh"] = (
+                area.strategy.state.get_energy_at_market_slot(self.current_market_time_slot))
+
+        elif isinstance(area.strategy, PVStrategy):
+            core_stats_dict["pv_production_kWh"] = (
+                area.strategy.state.get_energy_production_forecast_kWh(
+                    self.current_market_time_slot, 0.0))
+            core_stats_dict["available_energy_kWh"] = (
+                area.strategy.state.get_available_energy_kWh(self.current_market_time_slot))
+
+        elif isinstance(area.strategy, StorageStrategy):
+            core_stats_dict["soc_history_%"] = (
+                area.strategy.state.charge_history.get(self.current_market_time_slot, 0))
+
+        elif isinstance(area.strategy, LoadHoursStrategy):
+            core_stats_dict["load_profile_kWh"] = (
+                area.strategy.state.get_desired_energy_Wh(self.current_market_time_slot) / 1000.0)
+            core_stats_dict["total_energy_demanded_wh"] = (
+                area.strategy.state.total_energy_demanded_Wh)
+            core_stats_dict["energy_requirement_kWh"] = (
+                    area.strategy.state.get_energy_requirement_Wh(
+                        self.current_market_time_slot) / 1000.0)
+
+        elif isinstance(area.strategy, CommercialStrategy):
+            if isinstance(area.strategy, FinitePowerPlant):
+                core_stats_dict["production_kWh"] = area.strategy.energy_per_slot_kWh
+            else:
+                if area.parent.current_market is not None:
+                    core_stats_dict["energy_rate"] = (
+                        area.strategy.energy_rate.get(area.current_time_slot, None))
+
+        self.flattened_area_core_stats_dict[area.uuid] = core_stats_dict
+
+        self.simulation_state["areas"][area.uuid] = area.get_state()
+
+        for child in area.children:
+            self._populate_core_stats_and_sim_state(child)
+
+
+def endpoint_buffer_class_factory() -> Type[SimulationEndpointBuffer]:
+    """Class factory for endpoint buffer classes."""
+    return (CoefficientEndpointBuffer
+            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS
+            else SimulationEndpointBuffer)
