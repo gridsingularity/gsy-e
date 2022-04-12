@@ -29,6 +29,7 @@ from typing import Tuple, Optional, TYPE_CHECKING
 
 import psutil
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.kafka_communication.kafka_producer import kafka_connection_factory
 from gsy_framework.utils import format_datetime, str_to_pendulum_datetime
 from numpy import random
@@ -42,7 +43,7 @@ from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.live_events import LiveEvents
 from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.redis_connections.simulation import RedisSimulationCommunication
-from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
+from gsy_e.gsy_e_core.sim_results.endpoint_buffer import endpoint_buffer_class_factory
 from gsy_e.gsy_e_core.sim_results.file_export_endpoints import FileExportEndpoints
 from gsy_e.gsy_e_core.util import (
     NonBlockingConsole, validate_const_settings_for_simulation,
@@ -52,6 +53,7 @@ from gsy_e.models.config import SimulationConfig
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
+    from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 
 log = getLogger(__name__)
 
@@ -323,7 +325,7 @@ class SimulationResultsManager:
     def init_results(self, redis_job_id: str, area: "Area",
                      config_params: SimulationSetup) -> None:
         """Construct objects that contain the simulation results for the broker and CSV output."""
-        self._endpoint_buffer = SimulationEndpointBuffer(
+        self._endpoint_buffer = endpoint_buffer_class_factory()(
             redis_job_id, config_params.seed,
             area, self.export_results_on_finish)
 
@@ -343,6 +345,13 @@ class SimulationResultsManager:
         Update the simulation results. Should be called on init, finish and every market cycle.
         """
         assert self._endpoint_buffer is not None
+
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS:
+            self._endpoint_buffer.update_stats(
+                area, simulation_status, progress_info, current_state,
+                calculate_results=False)
+            return
+
         if self._should_send_results_to_broker:
             self._endpoint_buffer.update_stats(
                 area, simulation_status, progress_info, current_state,
@@ -373,7 +382,7 @@ class SimulationResultsManager:
                 self._export.file_stats_endpoint(area)
 
     @classmethod
-    def _update_area_stats(cls, area: "Area", endpoint_buffer: SimulationEndpointBuffer) -> None:
+    def _update_area_stats(cls, area: "Area", endpoint_buffer: "SimulationEndpointBuffer") -> None:
         for child in area.children:
             cls._update_area_stats(child, endpoint_buffer)
         bills = endpoint_buffer.results_handler.all_ui_results["bills"].get(area.uuid, {})
@@ -523,9 +532,55 @@ class Simulation:
         return (self.area.config.start_date + (slot_number * self.area.config.slot_length)
                 if GlobalConfig.IS_CANARY_NETWORK else self.area.now)
 
+    def _execute_coefficient_simulation(
+            self, slot_resume: int, tick_resume: int, console: NonBlockingConsole = None) -> None:
+
+        slot_count, slot_resume, tick_resume = (
+            self._time.calculate_total_initial_ticks_slots(
+                self._setup.config, slot_resume, tick_resume, self.area))
+
+        for slot_no in range(slot_resume, slot_count):
+            self._handle_paused(console)
+
+            self.progress_info.update(slot_no, slot_count, self._time, self._setup.config)
+
+            self.area.cycle_markets()
+
+            global_objects.profiles_handler.update_time_and_buffer_profiles(
+                self._get_current_market_time_slot(slot_no))
+
+            self._results.update_and_send_results(
+                self.current_state, self.progress_info, self.area, self._status.status)
+            self._external_events.update(self.area)
+
+            gc.collect()
+            process = psutil.Process(os.getpid())
+            mbs_used = process.memory_info().rss / 1000000.0
+            log.debug("Used %s MBs.", mbs_used)
+
+            self._time.handle_slowdown_and_realtime(0, self._setup.config)
+
+            if self._status.stopped:
+                log.error("Received stop command for configuration id %s and job id %s.",
+                          gsy_e.constants.CONFIGURATION_ID, self._simulation_id)
+                sleep(5)
+                self._simulation_finish_actions(slot_count)
+                return
+
+            self._results.update_csv_on_market_cycle(slot_no, self.area)
+            self._status.handle_incremental_mode()
+
+        self._simulation_finish_actions(slot_count)
+
     def _execute_simulation(self, slot_resume: int, tick_resume: int,
                             console: NonBlockingConsole = None) -> None:
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS:
+            self._execute_coefficient_simulation(slot_resume, tick_resume, console)
+        else:
+            self._execute_market_simulation(slot_resume, tick_resume, console)
 
+    def _execute_market_simulation(
+            self, slot_resume: int, tick_resume: int, console: NonBlockingConsole = None) -> None:
         slot_count, slot_resume, tick_resume = (
             self._time.calculate_total_initial_ticks_slots(
                 self._setup.config, slot_resume, tick_resume, self.area))
