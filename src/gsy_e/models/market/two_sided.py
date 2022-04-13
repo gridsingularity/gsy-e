@@ -344,7 +344,8 @@ class TwoSidedMarket(OneSidedMarket):
                     # re-raise exception to be handled by the external matcher
                     raise invalid_bop_exception
                 continue
-            original_bid_rate = market_bid.original_price / market_bid.energy
+            original_bid_rate = recommended_pair.bid_energy_rate + (
+                    market_bid.accumulated_grid_fees / recommended_pair.bid_energy)
             if ConstSettings.MASettings.BID_OFFER_MATCH_TYPE == BidOfferMatchAlgoEnum.PAY_AS_BID:
                 trade_rate = original_bid_rate
             else:
@@ -352,7 +353,7 @@ class TwoSidedMarket(OneSidedMarket):
                     original_bid_rate, market_bid.energy_rate, recommended_pair.trade_rate)
             trade_bid_info = TradeBidOfferInfo(
                 original_bid_rate=original_bid_rate,
-                propagated_bid_rate=market_bid.energy_rate,
+                propagated_bid_rate=recommended_pair.bid_energy_rate,
                 original_offer_rate=market_offer.original_price / market_offer.energy,
                 propagated_offer_rate=market_offer.energy_rate,
                 trade_rate=trade_rate)
@@ -440,6 +441,19 @@ class TwoSidedMarket(OneSidedMarket):
         replaced with corresponding residual offer/bid
         """
 
+        def _adapt_matching_requirements_in_residuals(recommendation):
+            if "energy" in (recommendation.get("matching_requirements") or {}).get(
+                    "bid_requirement", {}):
+                for index, requirement in enumerate(recommendation["bid"]["requirements"]):
+                    if requirement == recommendation["matching_requirements"]["bid_requirement"]:
+                        bid_requirement = deepcopy(requirement)
+                        bid_requirement["energy"] -= bid_trade.traded_energy
+                        recommendation["bid"]["requirements"][index] = bid_requirement
+                        recommendation["matching_requirements"][
+                            "bid_requirement"] = bid_requirement
+                        return recommendation
+            return recommendation
+
         def replace_recommendations_with_residuals(recommendation: Dict):
             if (recommendation["offer"]["id"] == offer_trade.offer_bid.id and
                     offer_trade.residual is not None):
@@ -447,6 +461,8 @@ class TwoSidedMarket(OneSidedMarket):
             if (recommendation["bid"]["id"] == bid_trade.offer_bid.id and
                     bid_trade.residual is not None):
                 recommendation["bid"] = bid_trade.residual.serializable_dict()
+                recommendation = _adapt_matching_requirements_in_residuals(recommendation)
+
             return recommendation
 
         if offer_trade.residual or bid_trade.residual:
