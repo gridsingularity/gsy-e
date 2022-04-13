@@ -87,13 +87,12 @@ class AreaChildrenList(list):
         super().insert(index, item)
 
 
-# pylint: disable=too-many-instance-attributes
-
 class AreaBase:
     """
     Base class for the Area model. Contains common behavior for both coefficient trading and
     market trading.
     """
+    # pylint: disable=too-many-arguments,too-many-instance-attributes
     def __init__(self, name: str = None,
                  children: List["Area"] = None,
                  uuid: str = None,
@@ -125,10 +124,12 @@ class AreaBase:
 
     @property
     def now(self) -> DateTime:
+        """Get the current time of the simulation."""
         return self._current_time_slot
 
     @property
     def trades(self) -> List["Trade"]:
+        """Get a list of trades that this area performed during the last market."""
         return self.strategy.trades
 
     def _set_grid_fees(self, grid_fee_const, grid_fee_percentage):
@@ -238,20 +239,19 @@ class AreaBase:
             log.exception("area.update_descendants_strategy_prices failed.")
             return
 
-    def cycle_markets(self, current_time_slot: str):
-        """Perform operations that should be executed on market cycle."""
+    def cycle_coefficients_trading(self, current_time_slot: DateTime) -> None:
+        """Perform operations that should be executed on coefficients trading cycle."""
         self._current_time_slot = current_time_slot
 
 
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-public-methods
 class Area(AreaBase):
+    # pylint: disable=too-many-public-methods
     """Generic class to define both market areas and devices.
 
     Important: this class should not be used in setup files. Please use Market or Asset instead.
     """
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,too-many-instance-attributes
     def __init__(self, name: str = None, children: List["Area"] = None,
                  uuid: str = None,
                  strategy: BaseStrategy = None,

@@ -33,7 +33,7 @@ from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import (
     area_name_from_area_or_ma_name, iterate_over_all_modules, str_to_pendulum_datetime,
-    format_datetime, find_object_of_same_weekday_and_time)
+    find_object_of_same_weekday_and_time)
 from pendulum import duration, from_format, instance, DateTime
 from rex import rex
 
@@ -242,15 +242,6 @@ def update_advanced_settings(advanced_settings):
     for settings_class_name in advanced_settings.keys():
         setting_class = getattr(ConstSettings, settings_class_name)
         update_nested_settings(setting_class, settings_class_name, advanced_settings)
-
-
-def get_market_slot_time_str(slot_number, config):
-    """Get market slot time string."""
-    return format_datetime(
-        config.start_date.add(
-            minutes=config.slot_length.minutes * slot_number
-        )
-    )
 
 
 def constsettings_to_dict():

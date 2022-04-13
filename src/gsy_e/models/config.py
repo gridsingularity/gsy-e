@@ -134,7 +134,7 @@ class SimulationConfig:
 def create_simulation_config_from_global_config():
     """
     Create a SimulationConfig object from the GlobalConfig class members.
-    These 2 object are not currently in sync because qthe following parameters are missing from the
+    These 2 object are not currently in sync because the following parameters are missing from the
     GlobalConfig:
     - pv_user_profile
     - capacity_kW

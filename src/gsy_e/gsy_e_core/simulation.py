@@ -45,9 +45,7 @@ from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.redis_connections.simulation import RedisSimulationCommunication
 from gsy_e.gsy_e_core.sim_results.endpoint_buffer import endpoint_buffer_class_factory
 from gsy_e.gsy_e_core.sim_results.file_export_endpoints import FileExportEndpoints
-from gsy_e.gsy_e_core.util import (
-    NonBlockingConsole, validate_const_settings_for_simulation,
-    get_market_slot_time_str)
+from gsy_e.gsy_e_core.util import NonBlockingConsole, validate_const_settings_for_simulation
 from gsy_e.models.area.event_deserializer import deserialize_events_to_areas
 from gsy_e.models.config import SimulationConfig
 
@@ -74,7 +72,19 @@ class SimulationProgressInfo:
         self.percentage_completed = 0
         self.next_slot_str = ""
         self.current_slot_str = ""
+        self.current_slot_time = None
         self.current_slot_number = 0
+
+    @classmethod
+    def _get_market_slot_time_str(cls, slot_number: int, config: "SimulationConfig") -> str:
+        """Get market slot time string."""
+        return format_datetime(cls._get_market_slot_time(slot_number, config))
+
+    @staticmethod
+    def _get_market_slot_time(slot_number: int, config: "SimulationConfig") -> DateTime:
+        return config.start_date.add(
+            minutes=config.slot_length.minutes * slot_number
+        )
 
     def update(self, slot_no: int, slot_count: int, time_params: "SimulationTimeManager",
                config: SimulationConfig) -> None:
@@ -92,8 +102,9 @@ class SimulationProgressInfo:
             self.percentage_completed = (slot_no + 1) / slot_count * 100
 
         self.elapsed_time = run_duration
-        self.current_slot_str = get_market_slot_time_str(slot_no, config)
-        self.next_slot_str = get_market_slot_time_str(
+        self.current_slot_str = self._get_market_slot_time_str(slot_no, config)
+        self.current_slot_time = self._get_market_slot_time(slot_no, config)
+        self.next_slot_str = self._get_market_slot_time_str(
             slot_no + 1, config)
         self.current_slot_number = slot_no
 
@@ -544,7 +555,7 @@ class Simulation:
 
             self.progress_info.update(slot_no, slot_count, self._time, self._setup.config)
 
-            self.area.cycle_markets(self.current_slot_str)
+            self.area.cycle_coefficients_trading(self.progress_info.current_slot_time)
 
             global_objects.profiles_handler.update_time_and_buffer_profiles(
                 self._get_current_market_time_slot(slot_no))
