@@ -49,6 +49,7 @@ log = getLogger(__name__)
 
 if TYPE_CHECKING:
     from gsy_e.models.market import MarketBase
+    from gsy_framework.data_classes import Trade
 
 
 def check_area_name_exists_in_parent_area(parent_area, name):
@@ -86,6 +87,8 @@ class AreaChildrenList(list):
         super().insert(index, item)
 
 
+# pylint: disable=too-many-instance-attributes
+
 class AreaBase:
     """
     Base class for the Area model. Contains common behavior for both coefficient trading and
@@ -106,8 +109,10 @@ class AreaBase:
         self.uuid = uuid if uuid is not None else str(uuid4())
         self.slug = slugify(name, to_lower=True)
         self.parent = None
-        self.children = AreaChildrenList(self, children) if children is not None \
-            else AreaChildrenList(self)
+        self.children = (
+            AreaChildrenList(self, children)
+            if children is not None
+            else AreaChildrenList(self))
         for child in self.children:
             child.parent = self
 
@@ -116,6 +121,15 @@ class AreaBase:
         self.strategy = strategy
         self._config = config
         self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
+        self._current_time_slot = None
+
+    @property
+    def now(self) -> DateTime:
+        return self._current_time_slot
+
+    @property
+    def trades(self) -> List["Trade"]:
+        return self.strategy.trades
 
     def _set_grid_fees(self, grid_fee_const, grid_fee_percentage):
         grid_fee_type = self.config.grid_fee_type \
@@ -223,6 +237,10 @@ class AreaBase:
         except GSyException:
             log.exception("area.update_descendants_strategy_prices failed.")
             return
+
+    def cycle_markets(self, current_time_slot: str):
+        """Perform operations that should be executed on market cycle."""
+        self._current_time_slot = current_time_slot
 
 
 # pylint: disable=too-many-instance-attributes

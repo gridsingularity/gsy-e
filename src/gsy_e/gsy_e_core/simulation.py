@@ -544,7 +544,7 @@ class Simulation:
 
             self.progress_info.update(slot_no, slot_count, self._time, self._setup.config)
 
-            self.area.cycle_markets()
+            self.area.cycle_markets(self.current_slot_str)
 
             global_objects.profiles_handler.update_time_and_buffer_profiles(
                 self._get_current_market_time_slot(slot_no))

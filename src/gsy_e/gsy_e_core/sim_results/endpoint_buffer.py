@@ -403,7 +403,7 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
             else:
                 if area.parent.current_market is not None:
                     core_stats_dict["energy_rate"] = (
-                        area.strategy.energy_rate.get(area.current_time_slot, None))
+                        area.strategy.energy_rate.get(area.now, None))
 
         self.flattened_area_core_stats_dict[area.uuid] = core_stats_dict
 
