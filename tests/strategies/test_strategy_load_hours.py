@@ -42,7 +42,11 @@ TIME = today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 MIN_BUY_ENERGY = 50  # wh
 
 
-def teardown_function():
+@pytest.fixture(scope="function", autouse=True)
+def auto_fixture():
+    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+    yield
+    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
     ConstSettings.MASettings.MARKET_TYPE = 1
 
 

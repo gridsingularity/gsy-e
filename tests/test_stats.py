@@ -60,6 +60,9 @@ class FakeArea:
     def get_state(self):
         return {}
 
+    def get_results_dict(self):
+        return {}
+
 
 class FakeMarket:
     def __init__(self, trades, name="Area", fees=0.0):

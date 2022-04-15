@@ -63,6 +63,10 @@ class StateInterface(ABC):
     def delete_past_state_values(self, current_time_slot: DateTime):
         """Delete the state of the device before the given time slot."""
 
+    @abstractmethod
+    def get_results_dict(self, current_time_slot: DateTime) -> dict:
+        """Return a dict with the state values that can be used in results."""
+
     def __str__(self):
         return self.__class__.__name__
 
@@ -381,6 +385,12 @@ class PVState(ProductionState):
                              self.get_available_energy_kWh(time_slot))
         return traded_energy_kWh - measured_energy_kWh
 
+    def get_results_dict(self, current_time_slot: DateTime) -> dict:
+        return {
+            "pv_production_kWh": self.get_energy_production_forecast_kWh(current_time_slot),
+            "available_energy_kWh": self.get_available_energy_kWh(current_time_slot)
+        }
+
 
 class LoadState(ConsumptionState):
     """State for the load asset."""
@@ -407,6 +417,13 @@ class LoadState(ConsumptionState):
         traded_energy_kWh = (self.get_desired_energy_Wh(time_slot) -
                              self.get_energy_requirement_Wh(time_slot)) / 1000.0
         return measured_energy_kWh - traded_energy_kWh
+
+    def get_results_dict(self, current_time_slot: DateTime) -> dict:
+        return {
+            "load_profile_kWh": self.get_desired_energy_Wh(current_time_slot) / 1000.0,
+            "total_energy_demanded_wh": self.total_energy_demanded_Wh,
+            "energy_requirement_kWh": self.get_energy_requirement_Wh(current_time_slot) / 1000.0
+        }
 
 
 class SmartMeterState(ConsumptionState, ProductionState):
@@ -444,6 +461,11 @@ class SmartMeterState(ConsumptionState, ProductionState):
                 f"{self} reported both produced and consumed energy at slot {time_slot}.")
 
         return produced_energy_kWh if produced_energy_kWh else consumed_energy_kWh
+
+    def get_results_dict(self, current_time_slot: DateTime) -> dict:
+        return {
+            "smart_meter_profile_kWh": self.get_energy_at_market_slot(current_time_slot)
+        }
 
 
 class ESSEnergyOrigin(Enum):
@@ -857,6 +879,11 @@ class StorageState(StateInterface):
             "energy_active_in_offers": self.offered_sell_kWh[time_slot],
             "free_storage": self.free_storage(time_slot),
             "used_storage": self.used_storage,
+        }
+
+    def get_results_dict(self, current_time_slot: DateTime) -> dict:
+        return {
+            "soc_history_%": self.charge_history.get(current_time_slot, 0)
         }
 
 

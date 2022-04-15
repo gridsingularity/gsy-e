@@ -243,6 +243,12 @@ class AreaBase:
         """Perform operations that should be executed on coefficients trading cycle."""
         self._current_time_slot = current_time_slot
 
+    def get_results_dict(self):
+        """Calculate the results dict for the coefficients trading."""
+        if self.strategy is not None:
+            return self.strategy.state.get_results_dict(self._current_time_slot)
+        return {}
+
 
 class Area(AreaBase):
     # pylint: disable=too-many-public-methods
@@ -719,6 +725,33 @@ class Area(AreaBase):
     def is_market_future(self, market_id: str) -> bool:
         """Return True if market_id belongs to a FUTURE market."""
         return market_id == self.future_markets.id
+
+    def get_results_dict(self) -> dict:
+        """
+        Compose the results dict for the respective area. For non-strategy areas the area stats
+        are used, while in the strategy areas the respective state class method is used.
+        """
+        if self.strategy is not None:
+            current_time_slot = None
+            if self.current_market:
+                current_time_slot = self.current_market.time_slot
+            elif self.parent.current_market:
+                current_time_slot = self.parent.current_market.time_slot
+            return self.strategy.state.get_results_dict(current_time_slot)
+        return {
+            "area_throughput": {
+                "baseline_peak_energy_import_kWh": self.throughput.baseline_peak_energy_import_kWh,
+                "baseline_peak_energy_export_kWh": self.throughput.baseline_peak_energy_export_kWh,
+                "import_capacity_kWh": self.throughput.import_capacity_kWh,
+                "export_capacity_kWh": self.throughput.export_capacity_kWh,
+                "imported_energy_kWh": self.stats.imported_traded_energy_kwh.get(
+                    self.current_market.time_slot, 0.) if self.current_market is not None else 0.,
+                "exported_energy_kWh": self.stats.exported_traded_energy_kwh.get(
+                    self.current_market.time_slot, 0.) if self.current_market is not None else 0.,
+            },
+            "grid_fee_constant": (
+                self.current_market.const_fee_rate if self.current_market is not None else 0.)
+        }
 
 
 class Market(Area):

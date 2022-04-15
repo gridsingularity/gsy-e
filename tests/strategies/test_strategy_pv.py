@@ -41,6 +41,7 @@ TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 @pytest.fixture(scope="function", autouse=True)
 def auto_fixture():
+    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
     yield
     GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
     GlobalConfig.sim_duration = pendulum.duration(days=GlobalConfig.DURATION_D)

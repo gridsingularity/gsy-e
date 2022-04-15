@@ -31,10 +31,6 @@ from gsy_e.gsy_e_core.util import (
     get_market_maker_rate_from_config, get_feed_in_tariff_rate_from_config)
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy
-from gsy_e.models.strategy.pv import PVStrategy
-from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
-from gsy_e.models.strategy.storage import StorageStrategy
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area, AreaBase
@@ -230,59 +226,7 @@ class SimulationEndpointBuffer:
                     self._read_future_markets_stats_to_dict(area)
                 )
 
-        if area.strategy is None:
-            core_stats_dict["area_throughput"] = {
-                "baseline_peak_energy_import_kWh": area.throughput.baseline_peak_energy_import_kWh,
-                "baseline_peak_energy_export_kWh": area.throughput.baseline_peak_energy_export_kWh,
-                "import_capacity_kWh": area.throughput.import_capacity_kWh,
-                "export_capacity_kWh": area.throughput.export_capacity_kWh,
-                "imported_energy_kWh": area.stats.imported_traded_energy_kwh.get(
-                    area.current_market.time_slot, 0.) if area.current_market is not None else 0.,
-                "exported_energy_kWh": area.stats.exported_traded_energy_kwh.get(
-                    area.current_market.time_slot, 0.) if area.current_market is not None else 0.,
-            }
-            core_stats_dict["grid_fee_constant"] = (area.current_market.const_fee_rate
-                                                    if area.current_market is not None
-                                                    else 0.)
-
-        if isinstance(area.strategy, SmartMeterStrategy):
-            core_stats_dict["smart_meter_profile_kWh"] = (
-                area.strategy.state.get_energy_at_market_slot(self.current_market_time_slot))
-            if area.parent.current_market is not None:
-                for trade in area.strategy.trades[area.parent.current_market]:
-                    core_stats_dict["trades"].append(trade.serializable_dict())
-
-        elif isinstance(area.strategy, PVStrategy):
-            core_stats_dict["pv_production_kWh"] = (
-                area.strategy.state.get_energy_production_forecast_kWh(
-                    self.current_market_time_slot, 0.0))
-            core_stats_dict["available_energy_kWh"] = (
-                area.strategy.state.get_available_energy_kWh(self.current_market_time_slot))
-            if area.parent.current_market is not None:
-                for trade in area.strategy.trades[area.parent.current_market]:
-                    core_stats_dict["trades"].append(trade.serializable_dict())
-
-        elif isinstance(area.strategy, StorageStrategy):
-            core_stats_dict["soc_history_%"] = (
-                area.strategy.state.charge_history.get(self.current_market_time_slot, 0))
-            if area.parent.current_market is not None:
-                for trade in area.strategy.trades[area.parent.current_market]:
-                    core_stats_dict["trades"].append(trade.serializable_dict())
-
-        elif isinstance(area.strategy, LoadHoursStrategy):
-            core_stats_dict["load_profile_kWh"] = (
-                area.strategy.state.get_desired_energy_Wh(self.current_market_time_slot) / 1000.0)
-            core_stats_dict["total_energy_demanded_wh"] = (
-                area.strategy.state.total_energy_demanded_Wh)
-            core_stats_dict["energy_requirement_kWh"] = (
-                    area.strategy.state.get_energy_requirement_Wh(
-                        self.current_market_time_slot) / 1000.0)
-
-            if area.parent.current_market is not None:
-                for trade in area.strategy.trades[area.parent.current_market]:
-                    core_stats_dict["trades"].append(trade.serializable_dict())
-
-        elif isinstance(area.strategy, CommercialStrategy):
+        if isinstance(area.strategy, CommercialStrategy):
             if isinstance(area.strategy, FinitePowerPlant):
                 core_stats_dict["production_kWh"] = area.strategy.energy_per_slot_kWh
                 if area.parent.current_market is not None:
@@ -294,6 +238,11 @@ class SimulationEndpointBuffer:
                         area.strategy.energy_rate.get(area.parent.current_market.time_slot, None))
                     for trade in area.strategy.trades[area.parent.current_market]:
                         core_stats_dict["trades"].append(trade.serializable_dict())
+        else:
+            core_stats_dict.update(area.get_results_dict())
+            if area.parent and area.parent.current_market and area.strategy:
+                for trade in area.strategy.trades[area.parent.current_market]:
+                    core_stats_dict["trades"].append(trade.serializable_dict())
 
         self.flattened_area_core_stats_dict[area.uuid] = core_stats_dict
 
@@ -373,37 +322,15 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
         for trade in area.trades:
             core_stats_dict["trades"].append(trade.serializable_dict())
 
-        if isinstance(area.strategy, SmartMeterStrategy):
-            core_stats_dict["smart_meter_profile_kWh"] = (
-                area.strategy.state.get_energy_at_market_slot(self.current_market_time_slot))
-
-        elif isinstance(area.strategy, PVStrategy):
-            core_stats_dict["pv_production_kWh"] = (
-                area.strategy.state.get_energy_production_forecast_kWh(
-                    self.current_market_time_slot, 0.0))
-            core_stats_dict["available_energy_kWh"] = (
-                area.strategy.state.get_available_energy_kWh(self.current_market_time_slot))
-
-        elif isinstance(area.strategy, StorageStrategy):
-            core_stats_dict["soc_history_%"] = (
-                area.strategy.state.charge_history.get(self.current_market_time_slot, 0))
-
-        elif isinstance(area.strategy, LoadHoursStrategy):
-            core_stats_dict["load_profile_kWh"] = (
-                area.strategy.state.get_desired_energy_Wh(self.current_market_time_slot) / 1000.0)
-            core_stats_dict["total_energy_demanded_wh"] = (
-                area.strategy.state.total_energy_demanded_Wh)
-            core_stats_dict["energy_requirement_kWh"] = (
-                    area.strategy.state.get_energy_requirement_Wh(
-                        self.current_market_time_slot) / 1000.0)
-
-        elif isinstance(area.strategy, CommercialStrategy):
+        if isinstance(area.strategy, CommercialStrategy):
             if isinstance(area.strategy, FinitePowerPlant):
                 core_stats_dict["production_kWh"] = area.strategy.energy_per_slot_kWh
             else:
                 if area.parent.current_market is not None:
                     core_stats_dict["energy_rate"] = (
                         area.strategy.energy_rate.get(area.now, None))
+        else:
+            core_stats_dict.update(area.get_results_dict())
 
         self.flattened_area_core_stats_dict[area.uuid] = core_stats_dict
 
