@@ -37,7 +37,7 @@ from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 
 if TYPE_CHECKING:
-    from gsy_e.models.area import Area
+    from gsy_e.models.area import Area, AreaBase
     from gsy_e.models.market import MarketBase
     from gsy_e.gsy_e_core.simulation import SimulationProgressInfo
 
@@ -93,7 +93,7 @@ class SimulationEndpointBuffer:
         return result_report
 
     @staticmethod
-    def _structure_results_from_area_object(target_area: "Area") -> Dict:
+    def _structure_results_from_area_object(target_area: "AreaBase") -> Dict:
         """Add basic information about the area in the area_tree_dict."""
         area_dict = {}
         area_dict["name"] = target_area.name
@@ -105,7 +105,7 @@ class SimulationEndpointBuffer:
         area_dict["children"] = []
         return area_dict
 
-    def _create_area_tree_dict(self, area: "Area") -> Dict:
+    def _create_area_tree_dict(self, area: "AreaBase") -> Dict:
         """Create a tree that mirrors the setup architecture and contains basic information."""
         area_result_dict = self._structure_results_from_area_object(area)
         for child in area.children:
@@ -114,7 +114,7 @@ class SimulationEndpointBuffer:
             )
         return area_result_dict
 
-    def update_results_area_uuids(self, area: "Area") -> None:
+    def update_results_area_uuids(self, area: "AreaBase") -> None:
         """Populate a set of area uuids that contribute to the stats."""
         if area.strategy is not None or (area.strategy is None and area.children):
             self.result_area_uuids.update({area.uuid})
@@ -302,7 +302,7 @@ class SimulationEndpointBuffer:
         for child in area.children:
             self._populate_core_stats_and_sim_state(child)
 
-    def _calculate_and_update_last_market_time_slot(self, area):
+    def _calculate_and_update_last_market_time_slot(self, area: "Area"):
         is_initial_current_market_on_cn = (
                 GlobalConfig.IS_CANARY_NETWORK and
                 (area.spot_market is None or
@@ -316,7 +316,7 @@ class SimulationEndpointBuffer:
             self.current_market_time_slot_unix = area.current_market.time_slot.timestamp()
             self.current_market_time_slot = area.current_market.time_slot
 
-    def update_stats(self, area: "Area", simulation_status: str,
+    def update_stats(self, area: "AreaBase", simulation_status: str,
                      progress_info: "SimulationProgressInfo", sim_state: Dict,
                      calculate_results: bool) -> None:
         # pylint: disable=too-many-arguments
@@ -363,7 +363,7 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
     def _calculate_and_update_last_market_time_slot(self, area):
         pass
 
-    def _populate_core_stats_and_sim_state(self, area: "Area"):
+    def _populate_core_stats_and_sim_state(self, area: "AreaBase"):
         if area.uuid not in self.flattened_area_core_stats_dict:
             self.flattened_area_core_stats_dict[area.uuid] = {}
         if self.current_market_time_slot_str == "":

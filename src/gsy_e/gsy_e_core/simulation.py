@@ -361,6 +361,11 @@ class SimulationResultsManager:
             self._endpoint_buffer.update_stats(
                 area, simulation_status, progress_info, current_state,
                 calculate_results=False)
+
+            results = self._endpoint_buffer.prepare_results_for_publish()
+            if results is None:
+                return
+            self.kafka_connection.publish(results, current_state["simulation_id"])
             return
 
         if self._should_send_results_to_broker:
@@ -543,54 +548,7 @@ class Simulation:
         return (self.area.config.start_date + (slot_number * self.area.config.slot_length)
                 if GlobalConfig.IS_CANARY_NETWORK else self.area.now)
 
-    def _execute_coefficient_simulation(
-            self, slot_resume: int, tick_resume: int, console: NonBlockingConsole = None) -> None:
-
-        slot_count, slot_resume, tick_resume = (
-            self._time.calculate_total_initial_ticks_slots(
-                self._setup.config, slot_resume, tick_resume, self.area))
-
-        for slot_no in range(slot_resume, slot_count):
-            self._handle_paused(console)
-
-            self.progress_info.update(slot_no, slot_count, self._time, self._setup.config)
-
-            self.area.cycle_coefficients_trading(self.progress_info.current_slot_time)
-
-            global_objects.profiles_handler.update_time_and_buffer_profiles(
-                self._get_current_market_time_slot(slot_no))
-
-            self._results.update_and_send_results(
-                self.current_state, self.progress_info, self.area, self._status.status)
-            self._external_events.update(self.area)
-
-            gc.collect()
-            process = psutil.Process(os.getpid())
-            mbs_used = process.memory_info().rss / 1000000.0
-            log.debug("Used %s MBs.", mbs_used)
-
-            self._time.handle_slowdown_and_realtime(0, self._setup.config)
-
-            if self._status.stopped:
-                log.error("Received stop command for configuration id %s and job id %s.",
-                          gsy_e.constants.CONFIGURATION_ID, self._simulation_id)
-                sleep(5)
-                self._simulation_finish_actions(slot_count)
-                return
-
-            self._results.update_csv_on_market_cycle(slot_no, self.area)
-            self._status.handle_incremental_mode()
-
-        self._simulation_finish_actions(slot_count)
-
-    def _execute_simulation(self, slot_resume: int, tick_resume: int,
-                            console: NonBlockingConsole = None) -> None:
-        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS:
-            self._execute_coefficient_simulation(slot_resume, tick_resume, console)
-        else:
-            self._execute_market_simulation(slot_resume, tick_resume, console)
-
-    def _execute_market_simulation(
+    def _execute_simulation(
             self, slot_resume: int, tick_resume: int, console: NonBlockingConsole = None) -> None:
         slot_count, slot_resume, tick_resume = (
             self._time.calculate_total_initial_ticks_slots(
@@ -806,6 +764,60 @@ class Simulation:
             seconds=saved_state["slot_length_realtime_s"])
 
 
+class CoefficientSimulation(Simulation):
+    """Start and control a simulation with coefficient trading."""
+    def _execute_simulation(
+            self, slot_resume: int, tick_resume: int, console: NonBlockingConsole = None) -> None:
+
+        slot_count, slot_resume, tick_resume = (
+            self._time.calculate_total_initial_ticks_slots(
+                self._setup.config, slot_resume, tick_resume, self.area))
+
+        for slot_no in range(slot_resume, slot_count):
+            self._handle_paused(console)
+
+            self.progress_info.update(slot_no, slot_count, self._time, self._setup.config)
+
+            self.area.cycle_coefficients_trading(self.progress_info.current_slot_time)
+
+            global_objects.profiles_handler.update_time_and_buffer_profiles(
+                self._get_current_market_time_slot(slot_no))
+
+            self._results.update_and_send_results(
+                self.current_state, self.progress_info, self.area, self._status.status)
+            self._external_events.update(self.area)
+
+            gc.collect()
+            process = psutil.Process(os.getpid())
+            mbs_used = process.memory_info().rss / 1000000.0
+            log.debug("Used %s MBs.", mbs_used)
+
+            self._time.handle_slowdown_and_realtime(0, self._setup.config)
+
+            if self._status.stopped:
+                log.error("Received stop command for configuration id %s and job id %s.",
+                          gsy_e.constants.CONFIGURATION_ID, self._simulation_id)
+                sleep(5)
+                self._simulation_finish_actions(slot_count)
+                return
+
+            self._results.update_csv_on_market_cycle(slot_no, self.area)
+            self._status.handle_incremental_mode()
+
+        self._simulation_finish_actions(slot_count)
+
+
+def simulation_class_factory():
+    """
+    Factory method that selects the correct simulation class for market or coefficient trading.
+    """
+    return (
+        CoefficientSimulation
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS
+        else Simulation
+    )
+
+
 def run_simulation(setup_module_name: str = "", simulation_config: SimulationConfig = None,
                    simulation_events: str = None,
                    redis_job_id: str = None, saved_sim_state: dict = None,
@@ -818,7 +830,7 @@ def run_simulation(setup_module_name: str = "", simulation_config: SimulationCon
                 kwargs.pop("pricing_scheme"))
 
         if saved_sim_state is None:
-            simulation = Simulation(
+            simulation = simulation_class_factory()(
                 setup_module_name=setup_module_name,
                 simulation_config=simulation_config,
                 simulation_events=simulation_events,
@@ -827,7 +839,7 @@ def run_simulation(setup_module_name: str = "", simulation_config: SimulationCon
                 **kwargs
             )
         else:
-            simulation = Simulation(
+            simulation = simulation_class_factory()(
                 setup_module_name=setup_module_name,
                 simulation_config=simulation_config,
                 simulation_events=simulation_events,
