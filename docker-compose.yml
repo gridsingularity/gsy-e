@@ -6,6 +6,8 @@ services:
     container_name: ${CONTAINER_NAME:-gsy-e-tests}
     entrypoint: ["gsy-e"]
     command: ${COMMAND:-}
+    environment:
+      - REDIS_URL=${REDIS_URL:-redis://redis.container:6379/}
     volumes:
       - ${GSY_E_TARGET_REPO:-integration_tests}:/gsy-e
 
@@ -27,5 +29,4 @@ volumes:
 
 networks:
   default:
-    external:
-      name: integtestnet
+    name: integtestnet
