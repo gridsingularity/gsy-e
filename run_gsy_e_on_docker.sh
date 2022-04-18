@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-_docker_export_path=/app/gsy_e-simulation
+_docker_export_path=/gsy-e/gsy_e-simulation
 _git_repo_hash=$(git rev-parse HEAD)
 _image_name="gsy-e:$_git_repo_hash"
 
