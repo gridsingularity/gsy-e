@@ -14,18 +14,16 @@ services:
     restart: always
     container_name: gsy-e-tests-redis
     ports:
-      - "6379:6379"
-    hostname: "redis.container"
-    environment:
-      - REDIS_HOST=redis.container
-      - REDIS_PORT=6379
+      - "${PORT:-3679}:${PORT:-6379}"
+    hostname: ${HOST:-redis.container}
     volumes:
-      - redis_volume
+      - redis_volume:/data
 
 volumes:
   integration_tests:
     driver: local
   redis_volume:
+    driver: local
 
 networks:
   default:
