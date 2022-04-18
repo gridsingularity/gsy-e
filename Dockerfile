@@ -1,8 +1,8 @@
 FROM python:3.8
 
-ADD . /app
-
-WORKDIR /app
+RUN mkdir gsy-e
+WORKDIR /gsy-e
+ADD . /gsy-e
 
 RUN pip install --upgrade pip
 RUN pip install -r requirements/pandapower.txt
