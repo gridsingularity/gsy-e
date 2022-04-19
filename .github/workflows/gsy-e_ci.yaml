@@ -36,14 +36,14 @@ jobs:
         prBody: ${{ steps.PR.outputs.pr_body }}
       run: |
         echo "::set-output name=PARSED_GSY_FRAMEWORK_BRANCH::$(echo -e $prBody | sed -n 's/.*\*\*GSY_FRAMEWORK_BRANCH\*\*=\([^ ]*\).*/\1/p')"
-      id: parse_branch
+      id: parse_branch_framework
 
     - name: validate parsed framework branch
       env:
         PARSED_GSY_FRAMEWORK_BRANCH: ${{ steps.parse_branch.outputs.PARSED_GSY_FRAMEWORK_BRANCH }}
       run: |
         echo "::set-output name=GSY_FRAMEWORK_BRANCH::${PARSED_GSY_FRAMEWORK_BRANCH:-'master'}"
-      id: validated_branch
+      id: validated_branch_framework
 
     - name: Set up Python
       uses: actions/setup-python@v2
