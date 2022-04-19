@@ -24,13 +24,26 @@ jobs:
         echo "::set-output name=PARSED_INTEGRATION_TESTS_BRANCH::$(echo -e $prBody | sed -n 's/.*\*\*INTEGRATION_TESTS_BRANCH\*\*=\([^ ]*\).*/\1/p')"
       id: parse_branch
 
-    - name: validate parsed branch
+    - name: validate parsed integration tests branch
       env:
         PARSED_INTEGRATION_TESTS_BRANCH: ${{ steps.parse_branch.outputs.PARSED_INTEGRATION_TESTS_BRANCH }}
       run: |
         echo "::set-output name=INTEGRATION_TESTS_BRANCH::${PARSED_INTEGRATION_TESTS_BRANCH:-'master'}"
       id: validated_branch
 
+    - name: parse framework branch
+      env:
+        prBody: ${{ steps.PR.outputs.pr_body }}
+      run: |
+        echo "::set-output name=PARSED_GSY_FRAMEWORK_BRANCH::$(echo -e $prBody | sed -n 's/.*\*\*GSY_FRAMEWORK_BRANCH\*\*=\([^ ]*\).*/\1/p')"
+      id: parse_branch
+
+    - name: validate parsed framework branch
+      env:
+        PARSED_GSY_FRAMEWORK_BRANCH: ${{ steps.parse_branch.outputs.PARSED_GSY_FRAMEWORK_BRANCH }}
+      run: |
+        echo "::set-output name=GSY_FRAMEWORK_BRANCH::${PARSED_GSY_FRAMEWORK_BRANCH:-'master'}"
+      id: validated_branch
 
     - name: Set up Python
       uses: actions/setup-python@v2
