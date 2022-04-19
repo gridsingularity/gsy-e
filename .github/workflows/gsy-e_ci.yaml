@@ -53,7 +53,7 @@ jobs:
     - name: Install dependencies
       env:
         TOXENV: ci
-        GSY_FRAMEWORK_BRANCH: master
+        GSY_FRAMEWORK_BRANCH: ${{ steps.validated_branch_framework.outputs.GSY_FRAMEWORK_BRANCH }}
         INTEGRATION_TESTS_REPO: https://gsydev:${{ secrets.GSYDEV_TOKEN }}@github.com/gridsingularity/gsy-backend-integration-tests.git
         INTEGRATION_TESTS_BRANCH: ${{ steps.validated_branch.outputs.INTEGRATION_TESTS_BRANCH }}
       run: |
