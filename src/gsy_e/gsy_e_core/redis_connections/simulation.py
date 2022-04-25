@@ -193,7 +193,7 @@ class RedisSimulationCommunication:
 
         except NoSuchJobError as ex:
             raise GSyException(f"Redis job {self._simulation_id} cannot be found in the Redis "
-                               "job queue. get_current_job failed. Job will de killed.") from ex
+                               "job queue. get_current_job failed. Job will be killed.") from ex
 
     def _publish_json(self, channel, data):
         self.redis_db.publish(channel, json.dumps(data))

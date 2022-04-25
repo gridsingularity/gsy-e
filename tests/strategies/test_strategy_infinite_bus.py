@@ -29,7 +29,6 @@ from gsy_e import constants
 from gsy_e.constants import TIME_ZONE
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.util import d3a_path
-from gsy_e.models.area import DEFAULT_CONFIG
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
@@ -80,7 +79,7 @@ class FakeArea:
 
     @property
     def config(self):
-        return DEFAULT_CONFIG
+        return GlobalConfig
 
     @property
     def last_past_market(self):

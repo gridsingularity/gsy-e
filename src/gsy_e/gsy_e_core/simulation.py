@@ -29,6 +29,7 @@ from typing import Tuple, Optional, TYPE_CHECKING
 
 import psutil
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.kafka_communication.kafka_producer import kafka_connection_factory
 from gsy_framework.utils import format_datetime, str_to_pendulum_datetime
 from numpy import random
@@ -42,16 +43,15 @@ from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.live_events import LiveEvents
 from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.redis_connections.simulation import RedisSimulationCommunication
-from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
+from gsy_e.gsy_e_core.sim_results.endpoint_buffer import endpoint_buffer_class_factory
 from gsy_e.gsy_e_core.sim_results.file_export_endpoints import FileExportEndpoints
-from gsy_e.gsy_e_core.util import (
-    NonBlockingConsole, validate_const_settings_for_simulation,
-    get_market_slot_time_str)
+from gsy_e.gsy_e_core.util import NonBlockingConsole, validate_const_settings_for_simulation
 from gsy_e.models.area.event_deserializer import deserialize_events_to_areas
 from gsy_e.models.config import SimulationConfig
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
+    from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 
 log = getLogger(__name__)
 
@@ -72,7 +72,19 @@ class SimulationProgressInfo:
         self.percentage_completed = 0
         self.next_slot_str = ""
         self.current_slot_str = ""
+        self.current_slot_time = None
         self.current_slot_number = 0
+
+    @classmethod
+    def _get_market_slot_time_str(cls, slot_number: int, config: "SimulationConfig") -> str:
+        """Get market slot time string."""
+        return format_datetime(cls._get_market_slot_time(slot_number, config))
+
+    @staticmethod
+    def _get_market_slot_time(slot_number: int, config: "SimulationConfig") -> DateTime:
+        return config.start_date.add(
+            minutes=config.slot_length.minutes * slot_number
+        )
 
     def update(self, slot_no: int, slot_count: int, time_params: "SimulationTimeManager",
                config: SimulationConfig) -> None:
@@ -90,8 +102,9 @@ class SimulationProgressInfo:
             self.percentage_completed = (slot_no + 1) / slot_count * 100
 
         self.elapsed_time = run_duration
-        self.current_slot_str = get_market_slot_time_str(slot_no, config)
-        self.next_slot_str = get_market_slot_time_str(
+        self.current_slot_str = self._get_market_slot_time_str(slot_no, config)
+        self.current_slot_time = self._get_market_slot_time(slot_no, config)
+        self.next_slot_str = self._get_market_slot_time_str(
             slot_no + 1, config)
         self.current_slot_number = slot_no
 
@@ -323,7 +336,7 @@ class SimulationResultsManager:
     def init_results(self, redis_job_id: str, area: "Area",
                      config_params: SimulationSetup) -> None:
         """Construct objects that contain the simulation results for the broker and CSV output."""
-        self._endpoint_buffer = SimulationEndpointBuffer(
+        self._endpoint_buffer = endpoint_buffer_class_factory()(
             redis_job_id, config_params.seed,
             area, self.export_results_on_finish)
 
@@ -343,6 +356,18 @@ class SimulationResultsManager:
         Update the simulation results. Should be called on init, finish and every market cycle.
         """
         assert self._endpoint_buffer is not None
+
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS:
+            self._endpoint_buffer.update_stats(
+                area, simulation_status, progress_info, current_state,
+                calculate_results=False)
+
+            results = self._endpoint_buffer.prepare_results_for_publish()
+            if results is None:
+                return
+            self.kafka_connection.publish(results, current_state["simulation_id"])
+            return
+
         if self._should_send_results_to_broker:
             self._endpoint_buffer.update_stats(
                 area, simulation_status, progress_info, current_state,
@@ -373,7 +398,7 @@ class SimulationResultsManager:
                 self._export.file_stats_endpoint(area)
 
     @classmethod
-    def _update_area_stats(cls, area: "Area", endpoint_buffer: SimulationEndpointBuffer) -> None:
+    def _update_area_stats(cls, area: "Area", endpoint_buffer: "SimulationEndpointBuffer") -> None:
         for child in area.children:
             cls._update_area_stats(child, endpoint_buffer)
         bills = endpoint_buffer.results_handler.all_ui_results["bills"].get(area.uuid, {})
@@ -523,9 +548,8 @@ class Simulation:
         return (self.area.config.start_date + (slot_number * self.area.config.slot_length)
                 if GlobalConfig.IS_CANARY_NETWORK else self.area.now)
 
-    def _execute_simulation(self, slot_resume: int, tick_resume: int,
-                            console: NonBlockingConsole = None) -> None:
-
+    def _execute_simulation(
+            self, slot_resume: int, tick_resume: int, console: NonBlockingConsole = None) -> None:
         slot_count, slot_resume, tick_resume = (
             self._time.calculate_total_initial_ticks_slots(
                 self._setup.config, slot_resume, tick_resume, self.area))
@@ -740,6 +764,60 @@ class Simulation:
             seconds=saved_state["slot_length_realtime_s"])
 
 
+class CoefficientSimulation(Simulation):
+    """Start and control a simulation with coefficient trading."""
+    def _execute_simulation(
+            self, slot_resume: int, tick_resume: int, console: NonBlockingConsole = None) -> None:
+
+        slot_count, slot_resume, tick_resume = (
+            self._time.calculate_total_initial_ticks_slots(
+                self._setup.config, slot_resume, tick_resume, self.area))
+
+        for slot_no in range(slot_resume, slot_count):
+            self._handle_paused(console)
+
+            self.progress_info.update(slot_no, slot_count, self._time, self._setup.config)
+
+            self.area.cycle_coefficients_trading(self.progress_info.current_slot_time)
+
+            global_objects.profiles_handler.update_time_and_buffer_profiles(
+                self._get_current_market_time_slot(slot_no))
+
+            self._results.update_and_send_results(
+                self.current_state, self.progress_info, self.area, self._status.status)
+            self._external_events.update(self.area)
+
+            gc.collect()
+            process = psutil.Process(os.getpid())
+            mbs_used = process.memory_info().rss / 1000000.0
+            log.debug("Used %s MBs.", mbs_used)
+
+            self._time.handle_slowdown_and_realtime(0, self._setup.config)
+
+            if self._status.stopped:
+                log.error("Received stop command for configuration id %s and job id %s.",
+                          gsy_e.constants.CONFIGURATION_ID, self._simulation_id)
+                sleep(5)
+                self._simulation_finish_actions(slot_count)
+                return
+
+            self._results.update_csv_on_market_cycle(slot_no, self.area)
+            self._status.handle_incremental_mode()
+
+        self._simulation_finish_actions(slot_count)
+
+
+def simulation_class_factory():
+    """
+    Factory method that selects the correct simulation class for market or coefficient trading.
+    """
+    return (
+        CoefficientSimulation
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS
+        else Simulation
+    )
+
+
 def run_simulation(setup_module_name: str = "", simulation_config: SimulationConfig = None,
                    simulation_events: str = None,
                    redis_job_id: str = None, saved_sim_state: dict = None,
@@ -752,7 +830,7 @@ def run_simulation(setup_module_name: str = "", simulation_config: SimulationCon
                 kwargs.pop("pricing_scheme"))
 
         if saved_sim_state is None:
-            simulation = Simulation(
+            simulation = simulation_class_factory()(
                 setup_module_name=setup_module_name,
                 simulation_config=simulation_config,
                 simulation_events=simulation_events,
@@ -761,7 +839,7 @@ def run_simulation(setup_module_name: str = "", simulation_config: SimulationCon
                 **kwargs
             )
         else:
-            simulation = Simulation(
+            simulation = simulation_class_factory()(
                 setup_module_name=setup_module_name,
                 simulation_config=simulation_config,
                 simulation_events=simulation_events,

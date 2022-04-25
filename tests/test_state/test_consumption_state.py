@@ -1,11 +1,17 @@
 from math import isclose
 from unittest.mock import patch
 import pytest
-from pendulum import now
+from pendulum import now, DateTime
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.state import ConsumptionState, StateInterface
 from tests.test_state.test_prosumption_interface import TestProsumptionInterface
+
+
+class ConsumptionInterfaceHelper(ConsumptionState):
+    """Add the get_results_dict abstract method to the ConsumptionState."""
+    def get_results_dict(self, current_time_slot: DateTime) -> dict:
+        raise NotImplementedError
 
 
 class TestConsumptionState(TestProsumptionInterface):
@@ -13,7 +19,7 @@ class TestConsumptionState(TestProsumptionInterface):
 
     @staticmethod
     def _setup_base_configuration():
-        return ConsumptionState(), now()
+        return ConsumptionInterfaceHelper(), now()
 
     def test_get_state_raise_error_if_conflicting_keys(self):
         with patch.object(StateInterface, "get_state",
