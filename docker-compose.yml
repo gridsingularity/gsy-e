@@ -78,6 +78,7 @@ services:
       - --setup
 #      - api_setup.default_community
       - grid_fees.constant_grid_fees
+      - --enable-bc
     volumes:
       - ./gsy_e-simulation/:/root/gsy_e-simulation # ~/gsy_e-simulation
     environment:
@@ -86,6 +87,7 @@ services:
       - KAFKA_PASSWORD=bitnami
       - KAFKA_COMMUNICATION_SECURITY_PROTOCOL=PLAINTEXT
       - REDIS_URL=redis://redis
+      - DEFAULT_SUBSTRATE_URL=ws://substrate1:9944
     depends_on:
       - kafka
       - redis
