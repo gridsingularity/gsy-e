@@ -40,7 +40,7 @@ jobs:
 
     - name: validate parsed framework branch
       env:
-        PARSED_GSY_FRAMEWORK_BRANCH: ${{ steps.parse_branch.outputs.PARSED_GSY_FRAMEWORK_BRANCH }}
+        PARSED_GSY_FRAMEWORK_BRANCH: ${{ steps.parse_branch_framework.outputs.PARSED_GSY_FRAMEWORK_BRANCH }}
       run: |
         echo "::set-output name=GSY_FRAMEWORK_BRANCH::${PARSED_GSY_FRAMEWORK_BRANCH:-'master'}"
       id: validated_branch_framework
