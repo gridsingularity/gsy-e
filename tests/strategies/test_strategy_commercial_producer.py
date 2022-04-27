@@ -15,20 +15,23 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import pytest
 import sys
-import pendulum
 from uuid import uuid4
 
-from gsy_framework.data_classes import Offer, Trade, BalancingOffer
-from gsy_e.models.strategy.commercial_producer import CommercialStrategy
-from gsy_e.models.area import DEFAULT_CONFIG
-from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+import pendulum
+import pytest
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import Offer, Trade, BalancingOffer
+
 from gsy_e.constants import TIME_ZONE, TIME_FORMAT
+from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.util import change_global_config
+from gsy_e.models.config import create_simulation_config_from_global_config
+from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
+
+DEFAULT_CONFIG = create_simulation_config_from_global_config()
 
 
 def setup_function():

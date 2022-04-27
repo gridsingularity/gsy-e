@@ -28,8 +28,8 @@ from rq import Queue
 
 import gsy_e.constants
 from gsy_e.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
-from gsy_e.gsy_e_core.redis_connections.aggregator_connection import AggregatorHandler
-from gsy_e.gsy_e_core.redis_connections.redis_communication import REDIS_URL
+from gsy_e.gsy_e_core.redis_connections.aggregator import AggregatorHandler
+from gsy_e.gsy_e_core.redis_connections.simulation import REDIS_URL
 
 log = logging.getLogger(__name__)
 REDIS_THREAD_JOIN_TIMEOUT = 2

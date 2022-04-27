@@ -126,7 +126,7 @@ class ExportAndPlot:
 
     def export(self, power_flow=None) -> None:
         """Main caller for local export of plots and csv-files."""
-        if power_flow is not None:
+        if power_flow:
             power_flow.export_power_flow_results(self.plot_dir)
 
         if not os.path.exists(self.plot_dir):

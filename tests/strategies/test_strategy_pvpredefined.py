@@ -32,8 +32,10 @@ from pendulum import DateTime, duration, today, datetime
 
 from gsy_e.constants import TIME_ZONE, TIME_FORMAT
 from gsy_e.gsy_e_core.util import (d3a_path, change_global_config)
-from gsy_e.models.area import DEFAULT_CONFIG
+from gsy_e.models.config import create_simulation_config_from_global_config
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
+
+DEFAULT_CONFIG = create_simulation_config_from_global_config()
 
 
 def setup_function():
