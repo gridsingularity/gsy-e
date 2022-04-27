@@ -25,7 +25,7 @@ from typing import Dict, TYPE_CHECKING, Optional
 from gsy_framework.constants_limits import HeartBeat, ConstSettings
 from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import RepeatingTimer
-from redis import StrictRedis
+from redis import Redis
 from redis.exceptions import ConnectionError as RedisConnectionError
 from rq import get_current_job
 from rq.exceptions import NoSuchJobError
@@ -66,7 +66,7 @@ class RedisSimulationCommunication:
         }
 
         try:
-            self.redis_db = StrictRedis.from_url(REDIS_URL, retry_on_timeout=True)
+            self.redis_db = Redis.from_url(REDIS_URL, retry_on_timeout=True)
             pubsub = self.redis_db.pubsub()
             self._subscribe_to_channels(pubsub)
         except RedisConnectionError:
@@ -206,7 +206,7 @@ class RedisSimulationCommunication:
 
 def publish_job_error_output(job_id, traceback_str):
     """Publish error messages to the Redis simulation error message channel."""
-    StrictRedis.from_url(REDIS_URL).publish(
+    Redis.from_url(REDIS_URL).publish(
         ConstSettings.GeneralSettings.EXCHANGE_ERROR_CHANNEL,
         json.dumps({"job_id": job_id, "errors": traceback_str})
     )
