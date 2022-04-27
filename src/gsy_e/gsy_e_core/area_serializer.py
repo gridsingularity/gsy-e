@@ -128,7 +128,7 @@ def area_from_dict(description, config):
         if key_in_dict_and_not_none(description, 'children'):
             children = [area_from_dict(child, config) for child in description['children']]
         else:
-            children = None
+            children = []
         grid_fee_percentage = description.get('grid_fee_percentage', None)
         grid_fee_constant = description.get('grid_fee_constant', None)
         area = Area(name, children, uuid, optional('strategy'), config,
