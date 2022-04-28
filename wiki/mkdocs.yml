@@ -92,7 +92,7 @@ nav:
             - 'Launch the Grid Operator API':
                 - 'Registration - Simulations run on the User-Interface': 'registration-grid-operator-api-user-interface.md'
                 - 'Registration - Simulations run on the Backend': 'registration-grid-operator-api-backend.md'
-            - 'Matching API': 'matching-api.md'
+        - 'Matching API': 'matching-api.md'
 - 'Grid Singularity Canary Test Network':
     - 'Connect to a Grid Singularity Canary Test Network': 'connect-ctn.md'
     - 'Send live energy asset data streams to the Grid Singularity exchange':
