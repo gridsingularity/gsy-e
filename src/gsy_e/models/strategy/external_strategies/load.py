@@ -47,11 +47,9 @@ class LoadExternalMixin(ExternalMixin):
     can_bid_be_posted: Callable
     remove_bid_from_pending: Callable
     post_bid: Callable
-    add_entry_in_hrs_per_day: Callable
     posted_bid_energy: Callable
     _delete_past_state: Callable
-    _calculate_active_markets: Callable
-    _update_energy_requirement_in_state: Callable
+    _cycle_energy_parameters: Callable
 
     @property
     def channel_dict(self) -> Dict:
@@ -239,10 +237,7 @@ class LoadExternalMixin(ExternalMixin):
         self._reject_all_pending_requests()
         self._update_connection_status()
         if not self.should_use_default_strategy:
-            self.add_entry_in_hrs_per_day()
-            self._calculate_active_markets()
-            self._update_energy_requirement_in_state()
-            self._set_energy_measurement_of_last_market()
+            self._cycle_energy_parameters()
             if not self.is_aggregator_controlled:
                 market_event_channel = f"{self.channel_prefix}/events/market"
                 market_info = self.spot_market.info

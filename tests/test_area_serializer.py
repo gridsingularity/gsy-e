@@ -139,7 +139,7 @@ def test_leaf_external_connection_deserialization():
     assert pv1.display_type == "PV"
     assert isinstance(load1, LoadHours)
     assert isinstance(load1.strategy, LoadHoursExternalStrategy)
-    assert load1.strategy.avg_power_W == 200
+    assert load1.strategy._energy_params.avg_power_W == 200
     assert load1.display_type == "Load"
     assert isinstance(storage1, Storage)
     assert isinstance(storage1.strategy, StorageExternalStrategy)

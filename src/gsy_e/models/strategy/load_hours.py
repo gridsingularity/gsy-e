@@ -50,6 +50,100 @@ log = getLogger(__name__)
 BalancingRatio = namedtuple("BalancingRatio", ("demand", "supply"))
 
 
+class LoadHoursEnergyParameters:
+    """Energy related parameters of the Load Hours Strategy."""
+    def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None, area=None):
+        LoadValidator.validate_energy(
+            avg_power_W=avg_power_W, hrs_per_day=hrs_per_day, hrs_of_day=hrs_of_day)
+
+        self._area = area
+        self.state = LoadState()
+
+        self.avg_power_W = avg_power_W
+
+        # Energy consumed per market slot
+        self.energy_per_slot_Wh = None
+
+        # Maps each simulation day to the number of active hours in that day
+        self.hrs_per_day: Dict[int, int] = {}
+
+        # List of active hours of day (values range from 0 to 23)
+        self.hrs_of_day: Optional[List[int]] = None
+        self._initial_hrs_per_day: Optional[int] = None
+        self.assign_hours_of_per_day(hrs_of_day, hrs_per_day)
+
+    def assign_hours_of_per_day(self, hrs_of_day: List[int], hrs_per_day: int):
+        """Validate and assign the values of hrs_of_day and _initial_hrs_per_day."""
+        if hrs_of_day is None:
+            hrs_of_day = list(range(24))
+
+        # be a parameter on the constructor or if we want to deal in percentages
+        if hrs_per_day is None:
+            hrs_per_day = len(hrs_of_day)
+
+        self.hrs_of_day = hrs_of_day
+        self._initial_hrs_per_day = hrs_per_day
+
+        if not all(0 <= h <= 23 for h in hrs_of_day):
+            raise ValueError("Hrs_of_day list should contain integers between 0 and 23.")
+
+        if len(hrs_of_day) < hrs_per_day:
+            raise ValueError("Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
+
+    def add_entry_in_hrs_per_day(self, current_day: int, overwrite: bool = False) -> None:
+        """Add the current day (in simulation) with the mapped hrs_per_day."""
+        if current_day not in self.hrs_per_day or overwrite:
+            self.hrs_per_day[current_day] = self._initial_hrs_per_day
+
+    def reconfigure_event(self, current_day: int, *args, **kwargs) -> None:
+        if (kwargs.get("hrs_per_day") is not None or
+                kwargs.get("hrs_of_day") is not None):
+            self.assign_hours_of_per_day(kwargs["hrs_of_day"], kwargs["hrs_per_day"])
+            self.add_entry_in_hrs_per_day(
+                current_day, overwrite=True
+            )
+        if kwargs.get("avg_power_W") is not None:
+            self.avg_power_W = kwargs["avg_power_W"]
+
+    def set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
+        """Set the (simulated) actual energy consumed by the device in a market slot."""
+        energy_forecast_kWh = self.state.get_desired_energy_Wh(time_slot) / 1000
+        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
+
+        self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
+
+    def _allowed_operating_hours(self, time):
+        return time.hour in self.hrs_of_day
+
+    def _operating_hours(self, energy_kWh):
+        return (((energy_kWh * 1000) / self.energy_per_slot_Wh)
+                * (self._area.config.slot_length / duration(hours=1)))
+
+    def event_activate_energy(self, area):
+        """Update energy requirement upon the activation event."""
+        self.hrs_per_day = {0: self._initial_hrs_per_day}
+        self._area = area
+
+    def hours_per_day_are_respected(self, current_day):
+        return (current_day in self.hrs_per_day and
+                self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE)
+
+    def decrease_hours_per_day(self, current_day, energy_Wh):
+        if current_day in self.hrs_per_day:
+            self.hrs_per_day[current_day] -= self._operating_hours(energy_Wh / 1000.0)
+
+    def update_energy_requirement(self, time_slot, current_day, overwrite=False):
+        self.energy_per_slot_Wh = convert_W_to_Wh(
+            self.avg_power_W, self._area.config.slot_length)
+        if self._allowed_operating_hours(time_slot):
+            desired_energy_Wh = self.energy_per_slot_Wh
+            if not self.hours_per_day_are_respected(current_day):
+                desired_energy_Wh = 0.0
+        else:
+            desired_energy_Wh = 0.0
+        self.state.set_desired_energy(desired_energy_Wh, time_slot, overwrite)
+
+
 # pylint: disable=too-many-instance-attributes
 class LoadHoursStrategy(BidEnabledStrategy):
     """Strategy for the load assets that can consume energy in predefined hrs of day."""
@@ -84,23 +178,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
         as per utility's trading rate
         """
         super().__init__()
-        LoadValidator.validate_energy(
-            avg_power_W=avg_power_W, hrs_per_day=hrs_per_day, hrs_of_day=hrs_of_day)
-        self._state = LoadState()
-        self.avg_power_W = avg_power_W
+        self._energy_params = LoadHoursEnergyParameters(
+            avg_power_W, hrs_per_day, hrs_of_day)
 
-        # consolidated_cycle is KWh energy consumed for the entire year
-        self.daily_energy_required = None
-        # Energy consumed during the day ideally should not exceed daily_energy_required
-        self.energy_per_slot_Wh = None
-
-        # Maps each simulation day to the number of active hours in that day
-        self.hrs_per_day: Dict[int, int] = {}
-
-        # List of active hours of day (values range from 0 to 23)
-        self.hrs_of_day: Optional[List[int]] = None
-        self._initial_hrs_per_day: Optional[int] = None
-        self.assign_hours_of_per_day(hrs_of_day, hrs_per_day)
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
         self.use_market_maker_rate = use_market_maker_rate
         self._init_price_update(fit_to_limit, energy_rate_increase_per_update, update_interval,
@@ -119,7 +199,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     @property
     def state(self) -> LoadState:
-        return self._state
+        return self._energy_params.state
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
                            initial_buying_rate, final_buying_rate):
@@ -166,8 +246,20 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._calculate_active_markets()
         self.event_activate_price()
         self.bid_update.update_and_populate_price_settings(self.area)
-        self.event_activate_energy()
+        self._energy_params.event_activate_energy(self.area)
+        self._simulation_start_timestamp = self.area.now
+        self._update_energy_requirement_in_state()
         self._future_market_strategy.update_and_populate_price_settings(self)
+
+    def _cycle_energy_parameters(self):
+        self._energy_params.add_entry_in_hrs_per_day(
+            self._get_day_of_timestamp(self.area.spot_market.time_slot)
+        )
+        self._calculate_active_markets()
+        self._update_energy_requirement_in_state()
+        # Provide energy values for the past market slot, to be used in the settlement market
+        self._set_energy_measurement_of_last_market()
+        self.update_state()
 
     def event_market_cycle(self):
         if self.use_market_maker_rate:
@@ -176,28 +268,17 @@ class LoadHoursStrategy(BidEnabledStrategy):
                     self.area.spot_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
 
         super().event_market_cycle()
-        self.add_entry_in_hrs_per_day()
+        self._cycle_energy_parameters()
         self.bid_update.update_and_populate_price_settings(self.area)
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             self.bid_update.reset(self)
-        self._calculate_active_markets()
-        self._update_energy_requirement_in_state()
-        # Provide energy values for the past market slot, to be used in the settlement market
-        self._set_energy_measurement_of_last_market()
         self._set_alternative_pricing_scheme()
-        self.update_state()
+        self._post_first_bid()
         self._settlement_market_strategy.event_market_cycle(self)
         self._future_market_strategy.event_market_cycle(self)
 
-    def add_entry_in_hrs_per_day(self, overwrite=False):
-        """Add the current day (in simulation) with the mapped hrs_per_day."""
-        current_day = self._get_day_of_timestamp(self.area.spot_market.time_slot)
-        if current_day not in self.hrs_per_day or overwrite:
-            self.hrs_per_day[current_day] = self._initial_hrs_per_day
-
     def update_state(self):
         """Update the state of the strategy."""
-        self._post_first_bid()
         if self.area.current_market:
             self._cycled_market = {self.area.current_market.time_slot}
 
@@ -206,14 +287,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def _set_energy_measurement_of_last_market(self):
         """Set the (simulated) actual energy of the device in the previous market slot."""
         if self.area.current_market:
-            self._set_energy_measurement_kWh(self.area.current_market.time_slot)
-
-    def _set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
-        """Set the (simulated) actual energy consumed by the device in a market slot."""
-        energy_forecast_kWh = self.state.get_desired_energy_Wh(time_slot) / 1000
-        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
-
-        self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
+            self._energy_params.set_energy_measurement_kWh(self.area.current_market.time_slot)
 
     def _delete_past_state(self):
         if (constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True or
@@ -272,13 +346,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
-        if (kwargs.get("hrs_per_day") is not None or
-                kwargs.get("hrs_of_day") is not None):
-            self.assign_hours_of_per_day(kwargs["hrs_of_day"], kwargs["hrs_per_day"])
-            self.add_entry_in_hrs_per_day(overwrite=True)
-        if kwargs.get("avg_power_W") is not None:
-            self.avg_power_W = kwargs["avg_power_W"]
-            self._update_energy_requirement_in_state()
+        self._energy_params.reconfigure_event(
+            self._get_day_of_timestamp(self.area.spot_market.time_slot), *args, **kwargs)
+        self._update_energy_requirement_in_state()
         self._area_reconfigure_prices(**kwargs)
         self.bid_update.update_and_populate_price_settings(self.area)
 
@@ -322,7 +392,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 acceptable_offer = offer
             time_slot = market.time_slot
             current_day = self._get_day_of_timestamp(time_slot)
-            if (acceptable_offer and self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE and
+            if (acceptable_offer and self._energy_params.hours_per_day_are_respected(current_day) and
                     self._offer_rate_can_be_accepted(acceptable_offer, market)):
                 energy_Wh = self.state.calculate_energy_to_accept(
                     acceptable_offer.energy * 1000.0, time_slot)
@@ -331,7 +401,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                   buyer_origin_id=self.owner.uuid,
                                   buyer_id=self.owner.uuid)
                 self.state.decrement_energy_requirement(energy_Wh, time_slot, self.owner.name)
-                self.hrs_per_day[current_day] -= self._operating_hours(energy_Wh / 1000.0)
+                self._energy_params.decrease_hours_per_day(current_day, energy_Wh)
 
         except MarketException:
             self.log.exception("An Error occurred while buying an offer")
@@ -388,8 +458,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             return
         for market in self.active_markets:
-            if (
-                    self.state.can_buy_more_energy(market.time_slot)
+            if (self.state.can_buy_more_energy(market.time_slot)
                     and not self.are_bids_posted(market.id)):
                 bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
                 if self._is_eligible_for_balancing_market:
@@ -422,8 +491,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 bid_trade.traded_energy * 1000,
                 bid_trade.time_slot, self.owner.name)
             market_day = self._get_day_of_timestamp(bid_trade.time_slot)
-            if self.hrs_per_day != {} and market_day in self.hrs_per_day:
-                self.hrs_per_day[market_day] -= self._operating_hours(bid_trade.traded_energy)
+            self._energy_params.decrease_hours_per_day(market_day, bid_trade.traded_energy)
 
     def event_offer_traded(self, *, market_id, trade):
         """Register the offer traded by the device and its effects. Extends the superclass method.
@@ -469,12 +537,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                                                          ramp_down_energy,
                                                                          self.owner.name)
 
-    def event_activate_energy(self):
-        """Update energy requirement upon the activation event."""
-        self.hrs_per_day = {0: self._initial_hrs_per_day}
-        self._simulation_start_timestamp = self.area.now
-        self._update_energy_requirement_in_state()
-
     @property
     def active_markets(self):
         """Return market slots in which the load device is active.
@@ -491,37 +553,18 @@ class LoadHoursStrategy(BidEnabledStrategy):
         ] if self.area else []
 
     def _is_market_active(self, market):
-        return (self._allowed_operating_hours(market.time_slot) and market.in_sim_duration and
+        return (self._energy_params._allowed_operating_hours(market.time_slot) and market.in_sim_duration and
                 (not self.area.current_market or
                  market.time_slot >= self.area.current_market.time_slot))
-
-    def assign_hours_of_per_day(self, hrs_of_day: List[int], hrs_per_day: int):
-        """Validate and assign the values of hrs_of_day and _initial_hrs_per_day."""
-        if hrs_of_day is None:
-            hrs_of_day = list(range(24))
-
-        # be a parameter on the constructor or if we want to deal in percentages
-        if hrs_per_day is None:
-            hrs_per_day = len(hrs_of_day)
-
-        self.hrs_of_day = hrs_of_day
-        self._initial_hrs_per_day = hrs_per_day
-
-        if not all(0 <= h <= 23 for h in hrs_of_day):
-            raise ValueError("Hrs_of_day list should contain integers between 0 and 23.")
-
-        if len(hrs_of_day) < hrs_per_day:
-            raise ValueError("Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
 
     def _update_energy_requirement_future_markets(self):
         if not GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
             return
         for time_slot in self.area.future_market_time_slots:
-            if self._allowed_operating_hours(time_slot):
+            if self._energy_params._allowed_operating_hours(time_slot):
                 current_day = self._get_day_of_timestamp(time_slot)
-                desired_energy_Wh = self.energy_per_slot_Wh
-                if (current_day not in self.hrs_per_day or
-                        self.hrs_per_day[current_day] <= FLOATING_POINT_TOLERANCE):
+                desired_energy_Wh = self._energy_params.energy_per_slot_Wh
+                if not self._energy_params.hours_per_day_are_respected(current_day):
                     desired_energy_Wh = 0.0
             else:
                 desired_energy_Wh = 0.0
@@ -532,31 +575,18 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._update_energy_requirement_future_markets()
 
     def _update_energy_requirement_spot_market(self):
-        self.energy_per_slot_Wh = convert_W_to_Wh(
-            self.avg_power_W, self.simulation_config.slot_length)
-        desired_energy_Wh = (self.energy_per_slot_Wh
-                             if self._allowed_operating_hours(self.area.spot_market.time_slot)
-                             else 0.0)
-        self.state.set_desired_energy(desired_energy_Wh,
-                                      self.area.spot_market.time_slot)
+        current_day = self._get_day_of_timestamp(self.area.spot_market.time_slot)
+        self._energy_params.update_energy_requirement(self.area.spot_market.time_slot, current_day)
 
         for market in self.active_markets:
             current_day = self._get_day_of_timestamp(market.time_slot)
-            if (current_day not in self.hrs_per_day or
-                    self.hrs_per_day[current_day] <= FLOATING_POINT_TOLERANCE):
+            if not self._energy_params.hours_per_day_are_respected(current_day):
                 # Overwrite desired energy to 0 in case the previous step has populated the
                 # desired energy by the hrs_per_day have been exhausted.
                 self.state.set_desired_energy(0.0, market.time_slot, True)
         if self.area.current_market:
             self.state.update_total_demanded_energy(self.area.current_market.time_slot)
         self._update_energy_requirement_future_markets()
-
-    def _allowed_operating_hours(self, time):
-        return time.hour in self.hrs_of_day
-
-    def _operating_hours(self, energy_kWh):
-        return (((energy_kWh * 1000) / self.energy_per_slot_Wh)
-                * (self.simulation_config.slot_length / duration(hours=1)))
 
     def _get_day_of_timestamp(self, time_slot: DateTime):
         """Return the number of days passed from the simulation start date to the time slot."""
