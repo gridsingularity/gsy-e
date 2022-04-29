@@ -217,7 +217,7 @@
       "BID_OFFER_MATCH_TYPE": 1,
       "BID_OFFER_MATCH_TYPE_LIMIT": [
         1,
-        3
+        4
       ],
       "PAY_AS_CLEAR_AGGREGATION_ALGORITHM": 1,
       "MIN_OFFER_AGE": 2,
