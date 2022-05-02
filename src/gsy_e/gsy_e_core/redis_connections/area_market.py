@@ -23,7 +23,7 @@ from typing import Dict
 from collections.abc import Callable
 
 from gsy_framework.constants_limits import ConstSettings
-from redis import StrictRedis
+from redis import Redis
 from rq import Queue
 
 import gsy_e.constants
@@ -40,7 +40,7 @@ class RedisCommunicator:
     """Base class for redis communication using pubsub."""
 
     def __init__(self):
-        self.redis_db = StrictRedis.from_url(REDIS_URL, retry_on_timeout=True)
+        self.redis_db = Redis.from_url(REDIS_URL, retry_on_timeout=True)
         self.pubsub = self.redis_db.pubsub()
         self.pubsub_response = self.redis_db.pubsub()
         self.event = Event()

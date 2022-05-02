@@ -28,7 +28,7 @@ jobs:
       env:
         PARSED_INTEGRATION_TESTS_BRANCH: ${{ steps.parse_branch.outputs.PARSED_INTEGRATION_TESTS_BRANCH }}
       run: |
-        echo "::set-output name=INTEGRATION_TESTS_BRANCH::${PARSED_INTEGRATION_TESTS_BRANCH:-'master'}"
+        echo "::set-output name=INTEGRATION_TESTS_BRANCH::${PARSED_INTEGRATION_TESTS_BRANCH:-master}"
       id: validated_branch
 
     - name: parse framework branch
@@ -42,7 +42,7 @@ jobs:
       env:
         PARSED_GSY_FRAMEWORK_BRANCH: ${{ steps.parse_branch_framework.outputs.PARSED_GSY_FRAMEWORK_BRANCH }}
       run: |
-        echo "::set-output name=GSY_FRAMEWORK_BRANCH::${PARSED_GSY_FRAMEWORK_BRANCH:-'master'}"
+        echo "::set-output name=GSY_FRAMEWORK_BRANCH::${PARSED_GSY_FRAMEWORK_BRANCH:-master}"
       id: validated_branch_framework
 
     - name: Set up Python
