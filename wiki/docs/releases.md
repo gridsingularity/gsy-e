@@ -1,3 +1,32 @@
+##Version 1.5
+The following features were implemented:
+
+* An updated **energy bills table** shows the amount of energy communities or homes are buying and selling in the market
+* Simulation **results can be filtered by week** to view the results for individual weeks
+* Users can **request a Grid Singularity Canary Test Network**, a real-time test network version of a local energy market that uses real asset data when available. Requesting a Canary Network will give information about the process and requirements to set up a local energy community in your region, within regulation. A first step to setting up a Canary Network is connecting asset data sources to the simulation.
+* Individual users can apply to participate in Canary Networks through a **registry**, where the exchange operator grants or denies access. Users can be invited to register through an invitation tool, and can see a list of Canary Networks to which they have been invited.
+* **Aggregators can apply through the registry** to manage (i.e. run trading algorithms on behalf of) assets through the Asset API
+* Assets can be configured to read live or uploaded data that has been sent through a **live data API**. The details of setting up live asset data through the API can be found here.
+* Template scripts are available for aggregators or advanced users to trade energy through the Asset trading API. The scripts, documentation and additional information can be found here.
+* Grid operators can also run scripts that set and change grid fees for the exchange.
+* Both template scripts include **readable text outputs** from the trading or grid fee strategy
+* **Canary network results** are viewable real-time, with data and trading results populated in 15 minute intervals. Results for previous weeks are available by selecting the week at the top of results.
+* Users can **view and duplicate public simulations** on the map, allowing experimentation and rapid prototyping.
+  [Grid Singularity v1.5 Tutorial](https://www.youtube.com/watch?v=8tAl8Td2XsU&list=PLdIkfx9NcrQeD8kLBvASosLce9qJ4gQIH&index=19)
+
+##Version 1.4
+The following features were implemented:
+
+* A **map legend** has been added to clarify how colors on the map represent the exporting or importing of energy
+* Users can add a **profile picture** to personalize their account by clicking on their name
+* **Custom assets** can be added to a home with configurable production / consumption quantity or storage capacity through the advanced menu.
+* **Custom PVs** can be added which use the [energydatamap.com](https://energydatamap.com/) API, allowing a production forecast to be used for the simulation’s geographical location. Advanced custom PV settings allow users to set the orientation of the PV (e.g. flat, tilted, facade) and azimuth and tilt.
+* A **list view navigation** shows all assets in a home and community. Clicking on an asset allows further configuration.
+* **Key results have been simplified** for easier reference, including community self-sufficiency and self-consumption with information about what the metrics mean.
+* A **Savings KPI** has been introduced for each home in the community, showing if and how much a home has been saving compared to buying from the local utility. The total bill including amount owed or earned is shown, along with a graph of the daily savings.
+* **Asset result highlights** the total amount spent or earnt by each asset, including an average price per kWh of energy. Batteries also show their current state of charge and average buying and selling price.
+  [Grid Singularity v1.4 Tutorial](https://www.youtube.com/watch?v=NMlHwe6da0k&list=PLdIkfx9NcrQeD8kLBvASosLce9qJ4gQIH&index=3)
+
 ##Version 1.0.0
 The following features were implemented :
 
@@ -12,7 +41,6 @@ The following features were implemented :
 
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/5_nbtxR-SYM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
 ##Version 0.12.0
 The following features were implemented :
 
@@ -30,7 +58,6 @@ The following features were implemented :
 
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/b2LGxgnEAcM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
 ##Version 0.10.0
 The following features were implemented :
 
@@ -38,7 +65,6 @@ The following features were implemented :
 * Island or Grid-connect a [Market Maker](model-market-maker.md) as an event: Users can now change the role and mode of the Market Maker as an event, allowing users to simulate **blackouts** by changing the Market Maker to an islanding role, or simulating other impacts resulting from a change in the Market Maker parameters, such as showing the effect of connecting an islanded Market Maker to the grid.
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/kHacTJvTRwM" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
 ##Version 0.9.0
 The following features were implemented :
 
@@ -54,14 +80,12 @@ The following features were implemented :
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/x32D7zl1mig" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-
 ##Version 0.8.0
 The following features were implemented :
 
 * Simulation Location Map. Users can geo-tag all energy resources and markets in their simulation to make a map view of the simulation and results. A summary of all simulations can be viewed in a global map, to see where Grid Singularity is running simulations all over the world!
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/2ylGNMjbhDY" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
 
 ##Version 0.7.0
 The following features were implemented :
@@ -74,7 +98,6 @@ The following features were implemented :
 
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/RrYMdITH1CA" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
 ##Version 0.6.0
 The following features were implemented :
 
@@ -86,7 +109,6 @@ The following features were implemented :
 
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/X5Fhb1mEBu4" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
 
 ##Version 0.5.0
 The following features were implemented :
@@ -101,7 +123,6 @@ The following features were implemented :
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/RJmKY-sPxKo" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-
 ##Version 0.4.0
 The following features were implemented :
 
@@ -112,7 +133,6 @@ The following features were implemented :
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/8un6qw_CGjI" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-
 ##Version 0.3.0
 The following features were implemented :
 
@@ -122,7 +142,6 @@ The following features were implemented :
 
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/0hOJ_GAH-rs" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
 ##Version 0.2.0
 The following features were implemented :
 

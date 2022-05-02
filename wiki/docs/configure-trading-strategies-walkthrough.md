@@ -1,4 +1,4 @@
-The Grid Singularity Asset API is designed for aggregators (energy service providers) who wish to provide their customers (individuals and communities) with benefits of peer-to-peer and community trading facilitated by the Grid Singularity  Exchange. They can create agents that follow custom trading strategies to buy and sell energy in the energy market on behalf of managed energy assets. The agent can request and receive information through the Asset API, feed that information into an algorithm, and post bids or offers on the exchange.
+The Grid Singularity Asset API is designed for aggregators (energy service providers) who wish to provide their customers (individuals and communities) with benefits of peer-to-peer and community trading facilitated by the Grid Singularity Exchange. They can create agents that follow custom trading strategies to buy and sell energy in the energy market on behalf of managed energy assets. The agent can request and receive information through the Asset API, feed that information into an algorithm, and post bids or offers on the exchange.
 
 To actively place bids and offers on behalf of energy assets, please follow these steps:
 
@@ -17,7 +17,7 @@ pip install git+https://github.com/gridsingularity/gsy-e-sdk.git
 ```
 
 
-- Go to the *Registry* section of the Collaboration of your interest and apply for each asset you wish to connect to manage their trading strategies. Then click on *Submit Actions*. If you have not already created a Collaboration / Canary Test Network, please follow instructions respectively [here](collaboration.md) or [here](connect-ctn.md) first.
+- Go to the *Registry* section of the Collaboration of your interest and apply for each *asset* you wish to connect to manage their trading strategies by clicking on the asset or home. Then click on the green *Apply* button. If you have not already created a Collaboration / Canary Test Network or users are not yet registered for their assets, please follow instructions respectively [here](collaboration.md) or [here](connect-ctn.md) first.
 
 ![alt_text](img/configure-trading-strategies-1.png)
 
