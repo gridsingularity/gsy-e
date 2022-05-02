@@ -25,6 +25,12 @@ from gsy_e.models.strategy.storage import StorageStrategy
 
 
 def get_setup(config):
+    """
+    This setup is used in an integration test that checks if the savings_kpi endpoint calculates
+    the expected values. It was added after it was decided to also export savings for the community
+    layer. The setup contains all kinds of assets (producers, consumers, prosumers) in both the
+    home and community layer in order to check the handling of all.
+    """
 
     ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.MASettings.MIN_OFFER_AGE = 0
