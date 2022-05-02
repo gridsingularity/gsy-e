@@ -56,12 +56,14 @@ class TestMycoExternalMatcher:
             channel, {"simulation_id": self.matcher.simulation_id})
 
     def test_event_tick(self):
-        data = {"event": "tick"}
+        data = {"event": "tick", "markets_info": {self.market.id: self.market.info}}
         self.matcher._tick_counter.is_it_time_for_external_tick = MagicMock(return_value=True)
         self.matcher.event_tick(current_tick_in_slot=6)
+
         self.matcher._tick_counter.is_it_time_for_external_tick.assert_called_once_with(6)
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             self.events_channel, data)
+
         self.matcher._tick_counter.is_it_time_for_external_tick = MagicMock(return_value=False)
         self.matcher.event_tick(current_tick_in_slot=7)
         self.matcher._tick_counter.is_it_time_for_external_tick.assert_called_once_with(7)
