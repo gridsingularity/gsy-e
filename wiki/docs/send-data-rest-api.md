@@ -15,6 +15,8 @@ The body of the request needs to contain the following information (JSON string)
 
 The returned JWT needs to be sent via the Authorization HTTP header when sending the forecast data. For that the user needs to add the following key value pair to the header of **every** POST command: _Authorization: JWT <your_token>_.
 
+*Note: d3aweb will soon be changed to reflect Grid Singularity’s new user interface.*
+
 ##Send energy forecast
 
 The POST to send the energy value is (please fill in <Canary Network UUID> and <Asset UUID>):
