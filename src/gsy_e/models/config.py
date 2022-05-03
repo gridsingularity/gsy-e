@@ -18,15 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import ast
 import json
 
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.exceptions import GSyException
 from gsy_framework.read_user_profile import (
     InputProfileTypes, read_and_convert_identity_profile_to_float, read_arbitrary_profile)
 from pendulum import DateTime, Duration, duration, today
 
 from gsy_e.constants import TIME_ZONE
-from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import (
-    external_redis_communicator_factory)
+from gsy_e.gsy_e_core.redis_connections.area_market import external_redis_communicator_factory
 from gsy_e.gsy_e_core.util import change_global_config, format_interval
 
 
@@ -130,3 +129,25 @@ class SimulationConfig:
         Reads market_maker_rate from arbitrary input types
         """
         self.market_maker_rate = read_and_convert_identity_profile_to_float(market_maker_rate)
+
+
+def create_simulation_config_from_global_config():
+    """
+    Create a SimulationConfig object from the GlobalConfig class members.
+    These 2 object are not currently in sync because the following parameters are missing from the
+    GlobalConfig:
+    - pv_user_profile
+    - capacity_kW
+    - external_connection_enabled
+    - aggregator_device_mapping
+    """
+    return SimulationConfig(
+        slot_length=GlobalConfig.slot_length,
+        sim_duration=GlobalConfig.sim_duration,
+        tick_length=GlobalConfig.tick_length,
+        cloud_coverage=GlobalConfig.cloud_coverage,
+        market_maker_rate=GlobalConfig.market_maker_rate,
+        start_date=GlobalConfig.start_date,
+        grid_fee_type=GlobalConfig.grid_fee_type,
+        enable_degrees_of_freedom=GlobalConfig.enable_degrees_of_freedom
+    )

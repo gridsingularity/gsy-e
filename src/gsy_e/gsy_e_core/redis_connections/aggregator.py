@@ -6,14 +6,14 @@ from threading import Lock
 import gsy_e.constants
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_framework.utils import create_subdict_or_update
-from redis import StrictRedis
+from redis import Redis
 
 
 class AggregatorHandler:
     """
     Handles event sending, command responses to all connected aggregators
     """
-    def __init__(self, redis_db: StrictRedis):
+    def __init__(self, redis_db: Redis):
         self.redis_db = redis_db
         self.pubsub = self.redis_db.pubsub()
         self.pending_batch_commands = {}

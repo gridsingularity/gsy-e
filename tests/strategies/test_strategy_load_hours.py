@@ -32,7 +32,8 @@ from pendulum import DateTime, duration, today, now
 from gsy_e.constants import TIME_ZONE, TIME_FORMAT
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.util import d3a_path
-from gsy_e.models.area import DEFAULT_CONFIG, Area
+from gsy_e.models.area import Area
+from gsy_e.models.config import create_simulation_config_from_global_config
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 
@@ -41,13 +42,17 @@ TIME = today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 MIN_BUY_ENERGY = 50  # wh
 
 
-def teardown_function():
+@pytest.fixture(scope="function", autouse=True)
+def auto_fixture():
+    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+    yield
+    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
     ConstSettings.MASettings.MARKET_TYPE = 1
 
 
 class FakeArea:
     def __init__(self):
-        self.config = DEFAULT_CONFIG
+        self.config = create_simulation_config_from_global_config()
         self.appliance = None
         self.name = 'FakeArea'
         self.uuid = str(uuid4())

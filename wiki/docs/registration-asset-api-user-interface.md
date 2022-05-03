@@ -1,18 +1,18 @@
 *Note: The following instructions serve as a guide to launch the Grid Operator API as well.*
 
-The Exchange SDK is launched with a cli command. To launch the Exchange SDK, the user needs to open a new terminal and activate the gsy-e-sdk environment.
+The Asset API is launched with a cli command. To launch the Asset API, the user needs to open a new terminal and activate the gsy-e-sdk environment (Grid Singularity Exchange SDK).
 
 ```
 workon gsy-e-sdk
 ```
 
-And go to the GSy Exchange SDK repository
+And go to the [GSy Exchange SDK repository](https://github.com/gridsingularity/gsy-e-sdk)
 
 ```
 cd path_to_repository/gsy-e-sdk
 ```
 
-The api launch cli command takes several arguments that can be listed with:
+The API launch CLI command takes several arguments that can be listed with:
 
 ```
 gsy-e-sdk run --help
@@ -30,10 +30,10 @@ The arguments are :
 *   `simulation-config-path` --> Path to the JSON file that contains the user's collaboration/CN information. This file can be downloaded from the "Registry" page, currently still at d3a.io.
 *   `run-on-redis` --> This flag targets the local testing of the SDK, where no user authentication is required. A locally running redis server and Grid Singularity (d3a.io) simulation are needed here.
 
-The API agent can interface with a local simulation ([backend](setup-configuration.md)) or a [collaboration](collaboration.md)/[Canary Network](connect-ctn.md) ([User-Interface](https://www.d3a.io/)). There are 3 methods to parse the required information when launching the API to connect to the UI:
+The API agent can interface with a local simulation ([backend](setup-configuration.md)) or a [collaboration](collaboration.md)/[Canary Network](connect-ctn.md) ([User-Interface](https://www.d3a.io/)). There are 3 methods to parse the required information when launching the API to connect to the UI, as thoroughly explained in the text below:
 
 1. Simulation configuration file
-2. Cli command
+2. CLI command
 3. Environment variables
 
 ####Simulation configuration file:
