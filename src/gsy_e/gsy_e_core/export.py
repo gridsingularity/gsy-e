@@ -66,6 +66,26 @@ alternative_pricing_subdirs = {
     3: "net_metering_pricing"
 }
 
+json_data_area_fields_mapping = {
+    "area_throughput": "area_throughput",
+    "assets_info": "assets_info",
+    "bills": "bills",
+    "const_settings": "const_settings",
+    "cumulative_bills": "cumulative_bills",
+    "cumulative_grid_trades": "cumulative_grid_trades",
+    "cumulative_net_energy_flow": "cumulative_net_energy_flow",
+    "device_statistics": "asset_statistics",
+    "job_id": "job_id",
+    "kpi": "kpi",
+    "market_summary": "market_summary",
+    "price_energy_day": "price_energy_day",
+    "progress_info": "progress_info",
+    "random_seed": "random_seed",
+    "simulation_state": "simulation_state",
+    "status": "status",
+    "trade_profile": "trade_profile"
+}
+
 EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "sold_trade_energy_kWh", "bought_trade_energy_kWh",
                            "trade_price_eur", "pv_production_kWh", "soc_history_%",
                            "load_profile_kWh"]
@@ -113,8 +133,9 @@ class ExportAndPlot:
         settings_file = os.path.join(json_dir, "const_settings.json")
         with open(settings_file, "w", encoding="utf-8") as outfile:
             json.dump(constsettings_to_dict(), outfile, indent=2)
-        for key, value in self.endpoint_buffer.generate_json_report().items():
-            json_file = os.path.join(json_dir, key + ".json")
+        for in_key, value in self.endpoint_buffer.generate_json_report().items():
+            out_key = json_data_area_fields_mapping[in_key]
+            json_file = os.path.join(json_dir, out_key + ".json")
             with open(json_file, "w", encoding="utf-8") as outfile:
                 json.dump(value, outfile, indent=2)
 
