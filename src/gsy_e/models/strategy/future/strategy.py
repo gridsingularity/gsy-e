@@ -53,7 +53,7 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
         for time_slot in strategy.area.future_markets.market_time_slots:
             if self.time_for_price_update(strategy, time_slot):
                 if strategy.are_bids_posted(market.id, time_slot):
-                    strategy.update_bid_rates(market, self.get_updated_rate(time_slot))
+                    strategy.update_bid_rates(market, self.get_updated_rate(time_slot), time_slot)
 
 
 class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
@@ -80,7 +80,8 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
         for time_slot in strategy.area.future_markets.market_time_slots:
             if self.time_for_price_update(strategy, time_slot):
                 if strategy.are_offers_posted(market.id):
-                    strategy.update_offer_rates(market, self.get_updated_rate(time_slot))
+                    strategy.update_offer_rates(
+                        market, self.get_updated_rate(time_slot), time_slot)
 
 
 class FutureMarketStrategyInterface:

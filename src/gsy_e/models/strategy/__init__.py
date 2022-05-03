@@ -681,24 +681,20 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         """Time slot of the current spot market"""
         return self.spot_market.time_slot
 
-    def update_offer_rates(self, market: "OneSidedMarket", updated_rate: float) -> None:
+    def update_offer_rates(self, market: "OneSidedMarket", updated_rate: float,
+                           time_slot: Optional[DateTime] = None) -> None:
         """Update the total price of all offers in the specified market based on their new rate."""
         if market.id not in self.offers.open.values():
             return
 
-        for offer, iterated_market_id in self.offers.open.items():
+        for offer in self.get_posted_offers(market, time_slot):
             updated_price = limit_float_precision(offer.energy * updated_rate)
             if abs(offer.price - updated_price) <= FLOATING_POINT_TOLERANCE:
                 continue
-            iterated_market = self.get_market_from_id(iterated_market_id)
-            # Skip offers that don't belong to the specified market slot
-            if market is None or iterated_market is None or iterated_market.id != market.id:
-                continue
             try:
                 # Delete the old offer and create a new equivalent one with an updated price
-                time_slot = offer.time_slot or iterated_market.time_slot
-                iterated_market.delete_offer(offer.id)
-                new_offer = iterated_market.offer(
+                market.delete_offer(offer.id)
+                new_offer = market.offer(
                     updated_price,
                     offer.energy,
                     self.owner.name,
@@ -706,9 +702,9 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
                     seller_origin=offer.seller_origin,
                     seller_origin_id=offer.seller_origin_id,
                     seller_id=self.owner.uuid,
-                    time_slot=time_slot
+                    time_slot=offer.time_slot or market.time_slot or time_slot
                 )
-                self.offers.replace(offer, new_offer, iterated_market.id)
+                self.offers.replace(offer, new_offer, market.id)
             except MarketException:
                 continue
 
@@ -783,15 +779,13 @@ class BidEnabledStrategy(BaseStrategy):
         self.add_bid_to_posted(market.id, bid)
         return bid
 
-    def update_bid_rates(self, market: "TwoSidedMarket", updated_rate: float) -> None:
+    def update_bid_rates(self, market: "TwoSidedMarket", updated_rate: float,
+                         time_slot: Optional[DateTime] = None) -> None:
         """Replace the rate of all bids in the market slot with the given updated rate."""
-        existing_bids = list(self.get_posted_bids(market))
-        for bid in existing_bids:
+        for bid in self.get_posted_bids(market, time_slot):
             if abs(bid.energy_rate - updated_rate) <= FLOATING_POINT_TOLERANCE:
                 continue
             assert bid.buyer == self.owner.name
-
-            market.delete_bid(bid.id)
 
             self.remove_bid_from_pending(market.id, bid.id)
             self.post_bid(market, bid.energy * updated_rate,

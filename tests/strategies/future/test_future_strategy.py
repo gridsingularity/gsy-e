@@ -162,12 +162,12 @@ class TestFutureMarketStrategy:
         offer_energy_rate = (50 - 20) / number_of_updates
         if isinstance(future_strategy_fixture, LoadHoursStrategy):
             future_strategy_fixture.update_bid_rates.assert_called_once_with(
-                self.future_markets, 10 + bid_energy_rate)
+                self.future_markets, 10 + bid_energy_rate, self.time_slot)
         if isinstance(future_strategy_fixture, PVStrategy):
             future_strategy_fixture.update_offer_rates.assert_called_once_with(
-                self.future_markets, 50 - offer_energy_rate)
+                self.future_markets, 50 - offer_energy_rate, self.time_slot)
         if isinstance(future_strategy_fixture, StorageStrategy):
             future_strategy_fixture.update_bid_rates.assert_called_once_with(
-                self.future_markets, 10 + bid_energy_rate)
+                self.future_markets, 10 + bid_energy_rate, self.time_slot)
             future_strategy_fixture.update_offer_rates.assert_called_once_with(
-                self.future_markets, 50 - offer_energy_rate)
+                self.future_markets, 50 - offer_energy_rate, self.time_slot)
