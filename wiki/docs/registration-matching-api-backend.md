@@ -1,43 +1,55 @@
-For local test runs of Grid Singularity Exchange (backend simulation) [Redis](https://redis.io/) is used as a communication protocol.
+For local test runs of Grid Singularity Exchange (backend simulation), [redis](https://redis.io/) is used as a communication protocol.
 
 ###Install Redis server
 
 To install the Redis server, open a new terminal window and type:
- ```
+```
 brew install redis
- ```
+```
 To install redis in Ubuntu follow the instructions in this [link](https://redis.io/topics/quickstart).
 To start the redis instance, open a new terminal and run the following command:
- ```
+
+```
 redis-server /usr/local/etc/redis.conf
- ```
+```
+
 The path for the Redis server would be the location where the Redis is installed in your system.
 
 ###Install the myco-api-client
 
-1. Make a new virtual environment for the Matching API client
+1. Make a new virtual environment for the Matching API client:
+
+```
 mkvirtualenv gsy-myco-sdk
+```
 
-2. Clone the GitHub directory of the Myco client
+2. Clone the GitHub directory of the Myco client:
+
+```
 pip clone git+https://github.com/gridsingularity/gsy-myco-sdk.git
+```
 
-3. Install the requirements
-     pip install - e.
+3. Install the requirements:
+
+```
+pip install - e.
+```
 
 ###Enabling external connection for clearing the market
 To register an asset through API and to use an external matching algorithm it is required to specify the following line in the exchange setup file:
-
- ```python
+```python
 ConstSettings.MASettings.MARKET_TYPE = 2
 ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = (BidOfferMatchAlgoEnum.EXTERNAL.value)
- ```
+```
+
 An example simulation setup can be found here. For more information on how to build this setup and add more markets and assets please visit this page.
 
 ###Launch Simulation
 Once the entire grid architecture is modeled, including energy assets, the user can launch the simulation by running a command-line including desired setup features:
- ```
+```
 gsy-e -l INFO run -t 10s -s 15m --setup myco_setup.external_myco --enable-external-connection --paused --slot-length-realtime 12
- ```
+```
+
 After a few seconds, the simulation should begin, waiting for the API template as mentioned in the figure below:
 
 ![alt_text](img/myco_backend_simulation.png)
@@ -57,14 +69,15 @@ The api launch CLI command takes several arguments that can be listed with:
 gsy-myco-sdk run --help
 ```
 The arguments are:
-- *base-setup-path* --> Set the base path where the user's client script resides, otherwise, gsy_myco_sdk/setups are taken as default for the user's client scripts. Users can provide either an absolute or a relative file path.
-- *setup* --> Name of user's Matching API module/script.
-- *username* --> Username of the agent authorized to communicate with respective collaboration/CN.
-- *password* --> Password of the respective agent
-- *domain-name* --> GSy-e domain name
-- *web-socket* --> GSy-e WebSocket URI
-- *simulation-id* --> UUID of the collaboration or Canary Network (CN)
-- *run-on-redis* --> This flag targets the local testing of the Myco SDK, where no user authentication is required. A locally running redis server and gsy-e simulation are needed here.
+
+   - *base-setup-path* --> Set the base path where the user's client script resides, otherwise, gsy_myco_sdk/setups are taken as default for the user's client scripts. Users can provide either an absolute or a relative file path.
+   - *setup* --> Name of user's Matching API module/script.
+   - *username* --> Username of the agent authorized to communicate with respective collaboration/CN.
+   - *password* --> Password of the respective agent
+   - *domain-name* --> GSy-e domain name
+   - *web-socket* --> GSy-e WebSocket URI
+   - *simulation-id* --> UUID of the collaboration or Canary Network (CN)
+   - *run-on-redis* --> This flag targets the local testing of the Myco SDK, where no user authentication is required. A locally running redis server and gsy-e simulation are needed here.
 
 
 ###Interact with local simulations
