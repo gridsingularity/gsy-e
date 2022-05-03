@@ -41,6 +41,55 @@ from gsy_e.models.strategy.update_frequency import TemplateStrategyOfferUpdater
 log = getLogger(__name__)
 
 
+class PVEnergyParameters:
+    def __init__(self, panel_count: int = 1, capacity_kW: float = None):
+        PVValidator.validate_energy(panel_count=panel_count, capacity_kW=capacity_kW)
+
+        self.panel_count = panel_count
+        self.capacity_kW = capacity_kW
+        self._state = PVState()
+
+    def activate(self, simulation_config):
+        if self.capacity_kW is None:
+            self.capacity_kW = simulation_config.capacity_kW
+
+    def set_produced_energy_forecast(self, time_slot, slot_length):
+        difference_to_midnight_in_minutes = time_slot.diff(
+            pendulum.datetime(
+                time_slot.year, time_slot.month, time_slot.day)).in_minutes() % (60 * 24)
+        available_energy_kWh = self.gaussian_energy_forecast_kWh(
+            slot_length, difference_to_midnight_in_minutes) * self.panel_count
+        self._state.set_available_energy(available_energy_kWh, time_slot, True)
+
+    def gaussian_energy_forecast_kWh(self, slot_length, time_in_minutes=0):
+        # The sun rises at approx 6:30 and sets at 18hr
+        # time_in_minutes is the difference in time to midnight
+
+        # Clamp to day range
+        time_in_minutes %= 60 * 24
+
+        if (8 * 60) > time_in_minutes or time_in_minutes > (16.5 * 60):
+            gauss_forecast = 0
+
+        else:
+            gauss_forecast = self.capacity_kW * math.exp(
+                # time/5 is needed because we only have one data set per 5 minutes
+
+                (- (((round(time_in_minutes / 5, 0)) - 147.2)
+                    / 38.60) ** 2
+                 )
+            )
+
+        return round(convert_kW_to_kWh(gauss_forecast, slot_length), 4)
+
+    def set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
+        """Set the (simulated) actual energy produced by the device in a market slot."""
+        energy_forecast_kWh = self._state.get_energy_production_forecast_kWh(time_slot)
+        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
+
+        self._state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
+
+
 class PVStrategy(BidEnabledStrategy):
 
     parameters = ("panel_count", "initial_selling_rate", "final_selling_rate",
@@ -68,12 +117,7 @@ class PVStrategy(BidEnabledStrategy):
              capacity_kW: power rating of the predefined profiles
         """
         super().__init__()
-        PVValidator.validate_energy(panel_count=panel_count, capacity_kW=capacity_kW)
-
-        self.panel_count = panel_count
-        self.capacity_kW = capacity_kW
-        self._state = PVState()
-
+        self._energy_params = PVEnergyParameters(panel_count, capacity_kW)
         self._init_price_update(update_interval, initial_selling_rate, final_selling_rate,
                                 use_market_maker_rate, fit_to_limit,
                                 energy_rate_decrease_per_update)
@@ -87,7 +131,7 @@ class PVStrategy(BidEnabledStrategy):
 
     @property
     def state(self) -> PVState:
-        return self._state
+        return self._energy_params._state
 
     def _init_price_update(self, update_interval, initial_selling_rate, final_selling_rate,
                            use_market_maker_rate, fit_to_limit, energy_rate_decrease_per_update):
@@ -207,8 +251,7 @@ class PVStrategy(BidEnabledStrategy):
                              self.offer_update.fit_to_limit)
 
     def event_activate_energy(self):
-        if self.capacity_kW is None:
-            self.capacity_kW = self.simulation_config.capacity_kW
+        self._energy_params.activate(self.simulation_config)
         self.set_produced_energy_forecast_in_state(reconfigure=True)
 
     def event_tick(self):
@@ -230,33 +273,8 @@ class PVStrategy(BidEnabledStrategy):
         if GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
             time_slots.extend(self.area.future_market_time_slots)
         for time_slot in time_slots:
-            difference_to_midnight_in_minutes = time_slot.diff(
-                pendulum.datetime(
-                    time_slot.year, time_slot.month, time_slot.day)).in_minutes() % (60 * 24)
-            available_energy_kWh = self.gaussian_energy_forecast_kWh(
-                difference_to_midnight_in_minutes) * self.panel_count
-            self.state.set_available_energy(available_energy_kWh, time_slot, True)
-
-    def gaussian_energy_forecast_kWh(self, time_in_minutes=0):
-        # The sun rises at approx 6:30 and sets at 18hr
-        # time_in_minutes is the difference in time to midnight
-
-        # Clamp to day range
-        time_in_minutes %= 60 * 24
-
-        if (8 * 60) > time_in_minutes or time_in_minutes > (16.5 * 60):
-            gauss_forecast = 0
-
-        else:
-            gauss_forecast = self.capacity_kW * math.exp(
-                # time/5 is needed because we only have one data set per 5 minutes
-
-                (- (((round(time_in_minutes / 5, 0)) - 147.2)
-                    / 38.60) ** 2
-                 )
-            )
-
-        return round(convert_kW_to_kWh(gauss_forecast, self.simulation_config.slot_length), 4)
+            self._energy_params.set_produced_energy_forecast(
+                time_slot, self.simulation_config.slot_length)
 
     def event_market_cycle(self):
         super().event_market_cycle()
@@ -272,14 +290,7 @@ class PVStrategy(BidEnabledStrategy):
     def _set_energy_measurement_of_last_market(self):
         """Set the (simulated) actual energy of the device in the previous market slot."""
         if self.area.current_market:
-            self._set_energy_measurement_kWh(self.area.current_market.time_slot)
-
-    def _set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
-        """Set the (simulated) actual energy produced by the device in a market slot."""
-        energy_forecast_kWh = self.state.get_energy_production_forecast_kWh(time_slot)
-        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
-
-        self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
+            self._energy_params.set_energy_measurement_kWh(self.area.current_market.time_slot)
 
     def _delete_past_state(self):
         if (constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True or

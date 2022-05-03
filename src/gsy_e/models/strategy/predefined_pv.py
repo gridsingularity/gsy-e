@@ -107,7 +107,7 @@ class PVPredefinedStrategy(PVStrategy):
             time_slots.extend(self.area.future_market_time_slots)
         for time_slot in time_slots:
             available_energy_kWh = find_object_of_same_weekday_and_time(
-                self.energy_profile, time_slot) * self.panel_count
+                self.energy_profile, time_slot) * self._energy_params.panel_count
             self.state.set_available_energy(available_energy_kWh, time_slot, reconfigure)
 
     def _read_predefined_profile_for_pv(self):
@@ -137,7 +137,7 @@ class PVPredefinedStrategy(PVStrategy):
 
         self.energy_profile = {
             time_slot: convert_kW_to_kWh(
-                weight * self.capacity_kW, self.simulation_config.slot_length)
+                weight * self._energy_params.capacity_kW, self.simulation_config.slot_length)
             for time_slot, weight in power_weight_profile.items()}
 
     def area_reconfigure_event(self, **kwargs):

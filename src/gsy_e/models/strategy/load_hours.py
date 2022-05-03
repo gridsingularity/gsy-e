@@ -178,8 +178,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         as per utility's trading rate
         """
         super().__init__()
-        self._energy_params = LoadHoursEnergyParameters(
-            avg_power_W, hrs_per_day, hrs_of_day)
+        self._energy_params = self._create_energy_parameters(avg_power_W, hrs_per_day, hrs_of_day)
 
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
         self.use_market_maker_rate = use_market_maker_rate
@@ -189,6 +188,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._calculate_active_markets()
         self._cycled_market = set()
         self._simulation_start_timestamp = None
+
+    @classmethod
+    def _create_energy_parameters(cls, *args):
+        return LoadHoursEnergyParameters(*args)
 
     @classmethod
     def _create_settlement_market_strategy(cls):
@@ -392,8 +395,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 acceptable_offer = offer
             time_slot = market.time_slot
             current_day = self._get_day_of_timestamp(time_slot)
-            if (acceptable_offer and self._energy_params.hours_per_day_are_respected(current_day) and
-                    self._offer_rate_can_be_accepted(acceptable_offer, market)):
+            if (acceptable_offer and self._energy_params.hours_per_day_are_respected(current_day)
+                    and self._offer_rate_can_be_accepted(acceptable_offer, market)):
                 energy_Wh = self.state.calculate_energy_to_accept(
                     acceptable_offer.energy * 1000.0, time_slot)
                 self.accept_offer(market, acceptable_offer, energy=energy_Wh / 1000.0,
@@ -553,7 +556,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         ] if self.area else []
 
     def _is_market_active(self, market):
-        return (self._energy_params._allowed_operating_hours(market.time_slot) and market.in_sim_duration and
+        return (self._energy_params._allowed_operating_hours(market.time_slot) and
+                market.in_sim_duration and
                 (not self.area.current_market or
                  market.time_slot >= self.area.current_market.time_slot))
 

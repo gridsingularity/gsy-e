@@ -25,7 +25,54 @@ from pendulum import duration
 from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import should_read_profile_from_db
+from gsy_e.models.state import LoadState
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+
+
+class DefinedLoadEnergyParameters:
+    def __init__(self, daily_load_profile=None, daily_load_profile_uuid: str = None):
+        self.profile_uuid = daily_load_profile_uuid
+        self._load_profile_W = None
+        self._load_profile_kWh = {}
+        self.state = LoadState()
+
+        if should_read_profile_from_db(daily_load_profile_uuid):
+            self._load_profile_input = None
+        else:
+            self._load_profile_input = daily_load_profile
+
+    def event_activate_energy(self):
+        """
+        Runs on activate event.
+        :return: None
+        """
+        self._read_or_rotate_profiles()
+
+    def reconfigure(self, **kwargs):
+        if key_in_dict_and_not_none(kwargs, "daily_load_profile"):
+            self._load_profile_input = kwargs["daily_load_profile"]
+            self._read_or_rotate_profiles(reconfigure=True)
+
+    def _read_or_rotate_profiles(self, reconfigure=False):
+        input_profile = self._load_profile_input \
+            if reconfigure or not self._load_profile_W else self._load_profile_W
+
+        if global_objects.profiles_handler.should_create_profile(
+                self._load_profile_kWh) or reconfigure:
+            self._load_profile_kWh = (
+                global_objects.profiles_handler.rotate_profile(
+                    profile_type=InputProfileTypes.POWER,
+                    profile=input_profile,
+                    profile_uuid=self.profile_uuid))
+
+    def update_energy_requirement(self, time_slot, area_name):
+        if not self._load_profile_kWh:
+            raise GSyException(
+                f"Load {area_name} tries to set its energy forecasted requirement "
+                f"without a profile.")
+        load_energy_kwh = find_object_of_same_weekday_and_time(self._load_profile_kWh, time_slot)
+        self.state.set_desired_energy(load_energy_kwh * 1000, time_slot, overwrite=False)
+        self.state.update_total_demanded_energy(time_slot)
 
 
 class DefinedLoadStrategy(LoadHoursStrategy):
@@ -76,38 +123,11 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                          initial_buying_rate=initial_buying_rate,
                          balancing_energy_ratio=balancing_energy_ratio,
                          use_market_maker_rate=use_market_maker_rate)
-
-        self.profile_uuid = daily_load_profile_uuid
-        self._load_profile_W = None
-        self._load_profile_kWh = {}
-
-        if should_read_profile_from_db(daily_load_profile_uuid):
-            self._load_profile_input = None
-        else:
-            self._load_profile_input = daily_load_profile
-
-    def _read_or_rotate_profiles(self, reconfigure=False):
-        input_profile = self._load_profile_input \
-            if reconfigure or not self._load_profile_W else self._load_profile_W
-
-        if global_objects.profiles_handler.should_create_profile(
-                self._load_profile_kWh) or reconfigure:
-            self._load_profile_kWh = (
-                global_objects.profiles_handler.rotate_profile(
-                    profile_type=InputProfileTypes.POWER,
-                    profile=input_profile,
-                    profile_uuid=self.profile_uuid))
-
-    def event_activate_energy(self):
-        """
-        Runs on activate event.
-        :return: None
-        """
-        self._read_or_rotate_profiles()
-        super().event_activate_energy()
+        self._profile_params = DefinedLoadEnergyParameters(daily_load_profile,
+                                                           daily_load_profile_uuid)
 
     def event_market_cycle(self):
-        self._read_or_rotate_profiles()
+        self._profile_params._read_or_rotate_profiles()
         super().event_market_cycle()
 
     def _update_energy_requirement_spot_market(self):
@@ -115,44 +135,19 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         Update required energy values for each market slot.
         :return: None
         """
-        self._read_or_rotate_profiles()
+        self._profile_params._read_or_rotate_profiles()
 
         slot_time = self.area.spot_market.time_slot
-        if not self._load_profile_kWh:
-            raise GSyException(
-                f"Load {self.owner.name} tries to set its energy forecasted requirement "
-                f"without a profile.")
-        load_energy_kWh = \
-            find_object_of_same_weekday_and_time(self._load_profile_kWh, slot_time)
-        self.state.set_desired_energy(load_energy_kWh * 1000, slot_time, overwrite=False)
-        self.state.update_total_demanded_energy(slot_time)
+        self._profile_params.update_energy_requirement(slot_time, self.owner.name)
+
         self._update_energy_requirement_future_markets()
 
     def _update_energy_requirement_future_markets(self):
         """Update energy requirements in the future markets."""
         for time_slot in self.area.future_market_time_slots:
-            load_energy_kWh = (
-                find_object_of_same_weekday_and_time(
-                    self._load_profile_kWh, time_slot))
-            self.state.set_desired_energy(
-                load_energy_kWh * 1000, time_slot, overwrite=False)
-            self.state.update_total_demanded_energy(time_slot)
-
-    def _operating_hours(self, energy_kWh):
-        """
-        Disabled feature for this subclass
-        """
-        return 0
-
-    def _allowed_operating_hours(self, time):
-        """
-        Disabled feature for this subclass
-        """
-        return True
+            self._profile_params.update_energy_requirement(time_slot, self.owner.name)
 
     def area_reconfigure_event(self, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
         self._area_reconfigure_prices(**kwargs)
-        if key_in_dict_and_not_none(kwargs, "daily_load_profile"):
-            self._load_profile_input = kwargs["daily_load_profile"]
-            self._read_or_rotate_profiles(reconfigure=True)
+        self._profile_params.reconfigure(**kwargs)
