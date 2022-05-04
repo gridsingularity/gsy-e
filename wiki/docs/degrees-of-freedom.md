@@ -1,9 +1,26 @@
-Bids and offers for energy include a set of attributes (e.g. encrypted unique asset ID, asset location, type of energy produced e.g. solar energy or membership in energy club) and diverse requirements that reflect trading preferences, such as energy quantity, price range, energy source, geographic distance, or preferred trading partner.
+Through the Grid Singularity Exchange, and as permitted by local legislation, users can enjoy enhanced **degrees of freedom**, or **choices to trade or share energy based on a set of preferences**, such as energy quantity, price, source or preferred trading partner. The degrees of freedom are a key functionality of the [Symbiotic Energy Market](https://gridsingularity.medium.com/discussion-paper-grid-singularitys-implementation-of-symbiotic-energy-markets-bd3954af43c8), a future decentralised market design we aim to enable to the extent that legislation in relevant markets allows people to have more energy choices. A user might be interested to set trading preferences in order to prioritise consumption of green energy (i.e. solar, wind) over grey energy (i.e. coal) or in order to buy or sell energy directly to a friend or family member, for example.
 
-Intelligent agents managed by aggregators make algorithmic trading decisions on behalf of participants, translating energy asset information and prosumer trading preferences into a requirements function. Bids and offers are submitted through Grid Singularity’s existing [Asset API](asset-api-template-script.md), modified to include attributes and requirements for each submitted order. Each market then stores the list of attributed bids and offers in the exchange’s open order book to be matched.
+The [bids and offers](market-agent.md) for an energy asset include a set of attributes and requirements that reflect its owner’s trading preferences. **Attributes** are parameters currently supported only for offers, that describe the energy type of the offer posted, which is commonly associated with the energy source (e.g. PV, Wind, Hydro, Biomass, etc…). On the other hand, **requirements** are parameters associated with both bids and offers, and represent the trading preferences of the users. The currently supported requirements are the following:
 
-Below, an example of a bid and offer with attributes and requirements. The bid submits three sets of conditions. As the second condition is fulfilled by the offer, the two orders are successfully matched, in this case for 0.8 kWh of photovoltaic (PV) energy (at a price between 21 and 25 cents as determined by the matching algorithm). A verification function performs this check. The function accepts a bid / offer pair as input, returns a <True> (green check) if there is a valid match, and returns a <False> (red x) if requirements are not met. If the function returns <True>, a trade is created. In a near-term centralised implementation, this verification function is integrated into the exchange code. In a blockchain implementation, it is to be deployed as a module of the parachain’s protocol.
+- Offers:
+     - Preferred trading partners: community participants the users wish to sell energy to;
+- Bids:
+     - Preferred trading partners: community participants the users wish to buy energy from;
+     - Energy type: the energy source that the user prefers to consume (e.g. PV, Wind, Hydro, Biomass, etc.)
+     - Energy: the maximum amount of energy that the user is willing to consume;
+     - Price: the maximum price for energy that the user is willing to pay.
+
+Naturally, attributes and requirements can be aggregated/grouped in different combinations to express customised trading preferences. Below is an example of a bid and offer with attributes and requirements (figure 3.22). The bid submits three sets of conditions that must be interpreted as OR statements, i.e. each condition must be assessed individually and each requirement of the condition must be fulfilled. In this example, the Consumer desires to buy up to 1.0 kWh from their Mom for a maximum of 28 cents OR up to 1.0 kWh of solar energy for a maximum of 25 cents OR up to 0.5 kWh of energy from any source for a maximum of 20 cents. The Producer has 0.8 kWh of solar energy to sell for no less than 21 cents.
+
+In this case, the second condition is fulfilled by the offer, thus the two orders are successfully matched:
+- The energy source (solar) is the same in the bid and the offer;
+- The energy to be traded results in 0.8 kWh;
+- The trading price can range between 21 and 25 cents and will be determined by the matching algorithm in place.
 
 ![alt_text](img/degrees-of-freedom.png)
 
 ***Figure 3.22***. *Example of a bid and offer with attributes and requirements.*
+
+Matching algorithms parse the orderbook and submit proposed bid and offer matches to the Grid Singularity Exchange through the [Matching API](matching-api-walkthrough.md). A verification function, integrated into the exchange code, confirms that the attributes of the proposed bid and offer match satisfies each other’s respective requirements. The verification function accepts a bid / offer pair as input and, if the requirements are met, a trade is created. Otherwise, the trade is rejected.
+
+Multi-attributed bids and offers are submitted through Grid Singularity’s existing [Asset API](configure-trading-strategies-walkthrough.md). For more information on how to add attributes and requirements to bids and offers by using the Asset API, please follow [this link](matching-api-template-script.md).

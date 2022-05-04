@@ -1,7 +1,7 @@
 from unittest.mock import patch, Mock
 
 import pytest
-from redis import StrictRedis
+from redis import Redis
 
 from gsy_e.gsy_e_core.redis_connections.aggregator import AggregatorHandler
 from gsy_e.gsy_e_core.redis_connections.area_market import ExternalConnectionCommunicator
@@ -9,8 +9,8 @@ from gsy_e.gsy_e_core.redis_connections.area_market import ExternalConnectionCom
 
 @pytest.fixture(scope="function", autouse=True)
 def strict_redis():
-    with patch("gsy_e.gsy_e_core.redis_connections.area_market.StrictRedis",
-               spec=StrictRedis):
+    with patch("gsy_e.gsy_e_core.redis_connections.area_market.Redis",
+               spec=Redis):
 
         yield
 
