@@ -66,7 +66,7 @@ alternative_pricing_subdirs = {
     3: "net_metering_pricing"
 }
 
-json_data_area_fields_mapping = {
+results_field_to_json_filename_mapping = {
     "area_throughput": "area_throughput",
     "assets_info": "assets_info",
     "bills": "bills",
@@ -134,7 +134,7 @@ class ExportAndPlot:
         with open(settings_file, "w", encoding="utf-8") as outfile:
             json.dump(constsettings_to_dict(), outfile, indent=2)
         for in_key, value in self.endpoint_buffer.generate_json_report().items():
-            out_key = json_data_area_fields_mapping[in_key]
+            out_key = results_field_to_json_filename_mapping[in_key]
             json_file = os.path.join(json_dir, out_key + ".json")
             with open(json_file, "w", encoding="utf-8") as outfile:
                 json.dump(value, outfile, indent=2)
