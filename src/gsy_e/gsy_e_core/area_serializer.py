@@ -22,15 +22,6 @@ from gsy_framework.utils import convert_pendulum_to_str_in_dict, key_in_dict_and
 from gsy_e.models.area import Area # NOQA
 from gsy_e.models.strategy import BaseStrategy
 from gsy_e.models.area.throughput_parameters import ThroughputParameters
-# pylint: disable=unused-import
-from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy  # NOQA
-from gsy_e.models.strategy.commercial_producer import CommercialStrategy  # NOQA
-from gsy_e.models.strategy.pv import PVStrategy  # NOQA
-from gsy_e.models.strategy.storage import StorageStrategy  # NOQA
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy # NOQA
-from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy # NOQA
-from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy  # NOQA
-from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
 
 from gsy_e.models.leaves import Leaf # NOQA
 from gsy_e.models.leaves import *  # NOQA  pylint: disable=wildcard-import, unused-wildcard-import
