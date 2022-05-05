@@ -80,13 +80,13 @@ def test_strategy_roundtrip_with_params():
     area = Area('area', [], None, PVStrategy(panel_count=42))
     area_str = area_to_string(area)
     recovered = area_from_string(area_str, create_config())
-    assert recovered.strategy.panel_count == 42
+    assert recovered.strategy._energy_params.panel_count == 42
 
 
 def test_non_attr_param():
     area1 = Area('area1', [], None, PVStrategy())
     recovered1 = area_from_string(area_to_string(area1), create_config())
-    assert recovered1.strategy.capacity_kW is None
+    assert recovered1.strategy._energy_params.capacity_kW is None
     assert recovered1.strategy.offer_update.final_rate_profile_buffer[area1.config.start_date] == \
         ConstSettings.PVSettings.SELLING_RATE_RANGE.final
 
@@ -107,10 +107,10 @@ def test_leaf_deserialization():
     )
     pv1, pv2, smart_meter = recovered.children
     assert isinstance(pv1, PV)
-    assert pv1.strategy.panel_count == 4
+    assert pv1.strategy._energy_params.panel_count == 4
     assert pv1.display_type == "PV"
     assert isinstance(pv2, PV)
-    assert pv2.strategy.panel_count == 1
+    assert pv2.strategy._energy_params.panel_count == 1
     assert pv2.display_type == "PV"
     assert isinstance(smart_meter, SmartMeter)
 
@@ -135,7 +135,7 @@ def test_leaf_external_connection_deserialization():
     pv1, load1, storage1 = recovered.children
     assert isinstance(pv1, PV)
     assert isinstance(pv1.strategy, PVExternalStrategy)
-    assert pv1.strategy.panel_count == 4
+    assert pv1.strategy._energy_params.panel_count == 4
     assert pv1.display_type == "PV"
     assert isinstance(load1, LoadHours)
     assert isinstance(load1.strategy, LoadHoursExternalStrategy)
