@@ -49,6 +49,12 @@ class PVEnergyParameters:
         self.capacity_kW = capacity_kW
         self._state = PVState()
 
+    def serialize(self):
+        return {
+            "panel_count": self.panel_count,
+            "capacity_kW": self.capacity_kW
+        }
+
     def activate(self, simulation_config):
         if self.capacity_kW is None:
             self.capacity_kW = simulation_config.capacity_kW
@@ -92,9 +98,12 @@ class PVEnergyParameters:
 
 class PVStrategy(BidEnabledStrategy):
 
-    parameters = ("panel_count", "initial_selling_rate", "final_selling_rate",
-                  "fit_to_limit", "update_interval", "energy_rate_decrease_per_update",
-                  "capacity_kW", "use_market_maker_rate")
+    def serialize(self):
+        return {
+            **self._energy_params.serialize(),
+            **self.offer_update.serialize(),
+            "use_market_maker_rate": self.use_market_maker_rate
+        }
 
     def __init__(self, panel_count: int = 1,
                  initial_selling_rate:
@@ -116,9 +125,9 @@ class PVStrategy(BidEnabledStrategy):
              energy_rate_decrease_per_update: Slope of PV Offer change per update
              capacity_kW: power rating of the predefined profiles
         """
-        super().__init__()
         if not hasattr(self, "_energy_params"):
             self._energy_params = PVEnergyParameters(panel_count, capacity_kW)
+        super().__init__()
         self._init_price_update(update_interval, initial_selling_rate, final_selling_rate,
                                 use_market_maker_rate, fit_to_limit,
                                 energy_rate_decrease_per_update)

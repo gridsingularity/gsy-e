@@ -51,11 +51,18 @@ BalancingSettings = ConstSettings.BalancingSettings
 class StorageStrategy(BidEnabledStrategy):
     """Template strategy for storage assets."""
 
-    parameters = ("initial_soc", "min_allowed_soc", "battery_capacity_kWh",
-                  "max_abs_battery_power_kW", "cap_price_strategy", "initial_selling_rate",
-                  "final_selling_rate", "initial_buying_rate", "final_buying_rate", "fit_to_limit",
-                  "energy_rate_increase_per_update", "energy_rate_decrease_per_update",
-                  "update_interval", "initial_energy_origin", "balancing_energy_ratio")
+    def serialize(self):
+        return {
+            "initial_soc": self.state.initial_soc,
+            "min_allowed_soc": self.state.min_allowed_soc_ratio * 100.0,
+            "battery_capacity_kWh": self.state.capacity,
+            "max_abs_battery_power_kW": self.state.max_abs_battery_power_kW,
+            "cap_price_strategy": self.cap_price_strategy,
+            "initial_energy_origin": self.state._initial_energy_origin,
+            "balancing_energy_ratio": self.balancing_energy_ratio,
+            **self.bid_update.serialize(),
+            **self.offer_update.serialize(),
+        }
 
     def __init__(  # pylint: disable=too-many-arguments, too-many-locals
         self, initial_soc: float = StorageSettings.MIN_ALLOWED_SOC,

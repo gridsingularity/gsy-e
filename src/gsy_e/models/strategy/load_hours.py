@@ -70,9 +70,15 @@ class LoadHoursEnergyParameters:
         # List of active hours of day (values range from 0 to 23)
         self.hrs_of_day: Optional[List[int]] = None
         self._initial_hrs_per_day: Optional[int] = None
-        self.assign_hours_of_per_day(hrs_of_day, hrs_per_day)
+        self._assign_hours_of_per_day(hrs_of_day, hrs_per_day)
 
-    def assign_hours_of_per_day(self, hrs_of_day: List[int], hrs_per_day: int):
+    def serialize(self):
+        return {
+            "avg_power_W": self.avg_power_W, "hrs_per_day": self.hrs_per_day,
+            "hrs_of_day": self.hrs_of_day
+        }
+
+    def _assign_hours_of_per_day(self, hrs_of_day: List[int], hrs_per_day: int):
         """Validate and assign the values of hrs_of_day and _initial_hrs_per_day."""
         if hrs_of_day is None:
             hrs_of_day = list(range(24))
@@ -98,7 +104,7 @@ class LoadHoursEnergyParameters:
     def reconfigure_event(self, current_day: int, *args, **kwargs) -> None:
         if (kwargs.get("hrs_per_day") is not None or
                 kwargs.get("hrs_of_day") is not None):
-            self.assign_hours_of_per_day(kwargs["hrs_of_day"], kwargs["hrs_per_day"])
+            self._assign_hours_of_per_day(kwargs["hrs_of_day"], kwargs["hrs_per_day"])
             self.add_entry_in_hrs_per_day(
                 current_day, overwrite=True
             )
@@ -147,9 +153,14 @@ class LoadHoursEnergyParameters:
 # pylint: disable=too-many-instance-attributes
 class LoadHoursStrategy(BidEnabledStrategy):
     """Strategy for the load assets that can consume energy in predefined hrs of day."""
-    parameters = ("avg_power_W", "hrs_per_day", "hrs_of_day", "fit_to_limit",
-                  "energy_rate_increase_per_update", "update_interval", "initial_buying_rate",
-                  "final_buying_rate", "balancing_energy_ratio", "use_market_maker_rate")
+
+    def serialize(self):
+        return {
+            **self._energy_params.serialize(),
+            **self.bid_update.serialize(),
+            "balancing_energy_ratio": self.balancing_energy_ratio,
+            "use_market_maker_rate": self.use_market_maker_rate
+        }
 
     # pylint: disable=too-many-arguments
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,

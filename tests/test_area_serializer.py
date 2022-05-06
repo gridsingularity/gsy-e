@@ -146,6 +146,24 @@ def test_leaf_external_connection_deserialization():
     assert storage1.display_type == "Storage"
 
 
+def test_leaf_deserialization_does_not_deserialize_invalid_args():
+    recovered = area_from_string(
+        '''{
+             "name": "house",
+             "children":[
+                 {"name": "pv1", "type": "PV", "panel_count": 4,
+                  "display_type": "PV", "load_profile": "test.csv"}
+             ]
+           }
+        ''',
+        create_config()
+    )
+
+    assert isinstance(recovered.children[0], PV)
+    assert not hasattr(recovered.children[0].strategy, "load_profile")
+    assert recovered.children[0].strategy._energy_params.panel_count == 4
+
+
 @pytest.fixture
 def fixture_with_leaves():
     area = Area("house", [

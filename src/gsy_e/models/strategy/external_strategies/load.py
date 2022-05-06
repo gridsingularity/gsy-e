@@ -400,10 +400,6 @@ class LoadForecastExternalStrategy(ForecastExternalMixin, LoadProfileExternalStr
     """
         Strategy responsible for reading forecast and measurement consumption data via hardware API
     """
-    parameters = ("energy_forecast_Wh", "fit_to_limit", "energy_rate_increase_per_update",
-                  "update_interval", "initial_buying_rate", "final_buying_rate",
-                  "balancing_energy_ratio", "use_market_maker_rate")
-
     # pylint: disable=too-many-arguments
     def __init__(self, fit_to_limit=True, energy_rate_increase_per_update=None,
                  update_interval=None,

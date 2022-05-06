@@ -39,6 +39,12 @@ class PVPredefinedEnergyParameters(PVEnergyParameters):
         self._power_profile_index = cloud_coverage
         self.energy_profile = {}
 
+    def serialize(self):
+        return {
+            **super().serialize(),
+            "cloud_coverage": self.cloud_coverage
+        }
+
     def read_predefined_profile_for_pv(self, simulation_config):
         """
         Reads profile data from the predefined power profiles. Reads config and constructor
@@ -92,9 +98,6 @@ class PVPredefinedStrategy(PVStrategy):
     """
         Strategy responsible for using one of the predefined PV profiles.
     """
-    parameters = ("panel_count", "initial_selling_rate", "final_selling_rate", "cloud_coverage",
-                  "fit_to_limit", "update_interval", "energy_rate_decrease_per_update",
-                  "use_market_maker_rate", "power_profile_uuid", "capacity_kW")
 
     def __init__(
             self, panel_count: int = 1,
@@ -180,6 +183,13 @@ class PVUserProfileEnergyParameters(PVEnergyParameters):
             self._power_profile_input = power_profile
         self.energy_profile = {}
 
+    def serialize(self):
+        return {
+            **super().serialize(),
+            "power_profile": self.power_profile,
+            "power_profile_uuid": self.power_profile_uuid
+        }
+
     def _read_or_rotate_profiles(self, reconfigure=False):
         input_profile = (self._power_profile_input
                          if reconfigure or not self.power_profile else self.power_profile)
@@ -221,9 +231,6 @@ class PVUserProfileStrategy(PVStrategy):
     """
         Strategy responsible for reading a profile in the form of a dict of values.
     """
-    parameters = ("power_profile", "panel_count", "initial_selling_rate", "final_selling_rate",
-                  "fit_to_limit", "update_interval", "energy_rate_decrease_per_update",
-                  "use_market_maker_rate", "power_profile_uuid")
 
     def __init__(
             self, power_profile=None, panel_count: int = 1,
@@ -244,6 +251,8 @@ class PVUserProfileStrategy(PVStrategy):
             panel_count: number of solar panels for this PV plant
             final_selling_rate: lower threshold for the PV sale price
         """
+        self._energy_params = PVUserProfileEnergyParameters(
+            panel_count, power_profile, power_profile_uuid)
         super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
                          final_selling_rate=final_selling_rate,
@@ -251,8 +260,6 @@ class PVUserProfileStrategy(PVStrategy):
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
                          use_market_maker_rate=use_market_maker_rate)
-        self._energy_params = PVUserProfileEnergyParameters(
-            panel_count, power_profile, power_profile_uuid)
 
     def set_produced_energy_forecast_in_state(self, reconfigure=True):
         time_slots = [self.area.spot_market.time_slot]

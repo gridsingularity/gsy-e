@@ -44,16 +44,16 @@ log = getLogger(__name__)
 class SmartMeterStrategy(BidEnabledStrategy):
     """Class defining a strategy for Smart Meter devices."""
 
-    # The `parameters` set is used to decide which fields will be added to the serialized
-    # representation of the Leaf object that uses this strategy (see AreaEncoder).
-    parameters = (
-        "smart_meter_profile", "smart_meter_profile_uuid",
-        # Energy production parameters
-        "initial_selling_rate", "final_selling_rate", "energy_rate_decrease_per_update",
-        # Energy consumption parameters
-        "initial_buying_rate", "final_buying_rate", "energy_rate_increase_per_update",
-        # Common parameters
-        "fit_to_limit", "update_interval", "use_market_maker_rate")
+    def serialize(self):
+        return {
+            "smart_meter_profile": self.smart_meter_profile,
+            "smart_meter_profile_uuid": self.profile_uuid,
+            # Energy production parameters
+            **self.offer_update.serialize(),
+            # Energy consumption parameters
+            **self.bid_update.serialize(),
+            "use_market_maker_rate": self.use_market_maker_rate
+        }
 
     def __init__(
             self,

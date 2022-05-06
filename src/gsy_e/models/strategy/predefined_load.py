@@ -41,19 +41,25 @@ class DefinedLoadEnergyParameters:
         else:
             self._load_profile_input = daily_load_profile
 
+    def serialize(self):
+        return {
+            "daily_load_profile": self._load_profile_input,
+            "daily_load_profile_uuid": self.profile_uuid
+        }
+
     def event_activate_energy(self):
         """
         Runs on activate event.
         :return: None
         """
-        self._read_or_rotate_profiles()
+        self.read_or_rotate_profiles()
 
     def reconfigure(self, **kwargs):
         if key_in_dict_and_not_none(kwargs, "daily_load_profile"):
             self._load_profile_input = kwargs["daily_load_profile"]
-            self._read_or_rotate_profiles(reconfigure=True)
+            self.read_or_rotate_profiles(reconfigure=True)
 
-    def _read_or_rotate_profiles(self, reconfigure=False):
+    def read_or_rotate_profiles(self, reconfigure=False):
         input_profile = self._load_profile_input \
             if reconfigure or not self._load_profile_W else self._load_profile_W
 
@@ -80,9 +86,6 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         Strategy for creating a load profile. It accepts as an input a load csv file or a
         dictionary that contains the load values for each time point
     """
-    parameters = ("daily_load_profile", "fit_to_limit", "energy_rate_increase_per_update",
-                  "update_interval", "initial_buying_rate", "final_buying_rate",
-                  "balancing_energy_ratio", "use_market_maker_rate", "daily_load_profile_uuid")
 
     def __init__(self, daily_load_profile=None,
                  fit_to_limit=True, energy_rate_increase_per_update=None,
@@ -127,7 +130,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                                                            daily_load_profile_uuid)
 
     def event_market_cycle(self):
-        self._profile_params._read_or_rotate_profiles()
+        self._profile_params.read_or_rotate_profiles()
         super().event_market_cycle()
 
     def _update_energy_requirement_spot_market(self):
@@ -135,7 +138,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         Update required energy values for each market slot.
         :return: None
         """
-        self._profile_params._read_or_rotate_profiles()
+        self._profile_params.read_or_rotate_profiles()
 
         slot_time = self.area.spot_market.time_slot
         self._profile_params.update_energy_requirement(slot_time, self.owner.name)

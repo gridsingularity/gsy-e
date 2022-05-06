@@ -58,8 +58,7 @@ class AreaEncoder(json.JSONEncoder):
 
     def _encode_subobject(self, obj):
         result = {"type": obj.__class__.__name__}
-        kwargs = {key: getattr(obj, key) for key in getattr(obj, 'parameters', [])
-                  if hasattr(obj, key)}
+        kwargs = obj.serialize()
         if kwargs:
             kwargs = _convert_member_dt_to_string(kwargs)
             result['kwargs'] = kwargs
