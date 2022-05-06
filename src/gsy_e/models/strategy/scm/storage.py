@@ -1,12 +1,18 @@
 from enum import Enum
+from typing import Dict, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.validators import StorageValidator
+from pendulum import DateTime
 
 from gsy_e.models.state import ESSEnergyOrigin, StorageState
 from gsy_e.models.strategy.scm import SCMStrategy
 
 StorageSettings = ConstSettings.StorageSettings
+
+
+if TYPE_CHECKING:
+    from gsy_e.models.area import AreaBase
 
 
 class SCMStorageStrategy(SCMStrategy):
@@ -27,7 +33,17 @@ class SCMStorageStrategy(SCMStrategy):
             capacity=battery_capacity_kWh, max_abs_battery_power_kW=max_abs_battery_power_kW,
             min_allowed_soc=min_allowed_soc)
 
-    def activate(self, area):
+    def serialize(self) -> Dict:
+        """Serialize the strategy parameters."""
+        return {
+            "initial_soc": self._state.initial_soc,
+            "min_allowed_soc": self._state.min_allowed_soc_ratio * 100.0,
+            "battery_capacity_kWh": self._state.capacity,
+            "max_abs_battery_power_kW": self._state.max_abs_battery_power_kW,
+            "initial_energy_origin": self._state.initial_energy_origin,
+        }
+
+    def activate(self, area: "AreaBase") -> None:
         """Activate the strategy."""
         self._state.add_default_values_to_state_profiles([area.current_market_time_slot])
         self._state.activate(
@@ -35,17 +51,17 @@ class SCMStorageStrategy(SCMStrategy):
             area.current_market_time_slot
             if area.current_market_time_slot else area.config.start_date)
 
-    def market_cycle(self, area):
+    def market_cycle(self, area: "AreaBase") -> None:
         """Update the storage state for the next time slot."""
         self._state.add_default_values_to_state_profiles([area.current_market_time_slot])
         self._state.market_cycle(area.past_market_time_slot, area.current_market_time_slot, [])
         self._state.delete_past_state_values(area.past_market_time_slot)
         self._state.check_state(area.current_market_time_slot)
 
-    def get_available_energy_to_sell_kWh(self, time_slot):
+    def get_available_energy_to_sell_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for production for the specified time slot."""
         return self._state.get_available_energy_to_sell_kWh(time_slot)
 
-    def get_available_energy_to_buy_kWh(self, time_slot):
+    def get_available_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for consumption for the specified time slot."""
         return self._state.get_available_energy_to_buy_kWh(time_slot)

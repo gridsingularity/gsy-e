@@ -58,7 +58,7 @@ class StorageStrategy(BidEnabledStrategy):
             "battery_capacity_kWh": self.state.capacity,
             "max_abs_battery_power_kW": self.state.max_abs_battery_power_kW,
             "cap_price_strategy": self.cap_price_strategy,
-            "initial_energy_origin": self.state._initial_energy_origin,
+            "initial_energy_origin": self.state.initial_energy_origin,
             "balancing_energy_ratio": self.balancing_energy_ratio,
             **self.bid_update.serialize(),
             **self.offer_update.serialize(),
@@ -212,7 +212,7 @@ class StorageStrategy(BidEnabledStrategy):
             update_interval=update_interval
         )
 
-    def area_reconfigure_event(self, **kwargs):
+    def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
         self._area_reconfigure_prices(**kwargs)
         self._update_profiles_with_default_values()
