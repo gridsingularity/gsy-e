@@ -1,0 +1,3 @@
+[submodule "src/gsy_framework"]
+	path = src/gsy_framework
+	url = ../gsy-framework.git
