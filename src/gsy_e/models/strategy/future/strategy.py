@@ -202,9 +202,6 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
                 assert False, ("Strategy %s has to be producer or consumer to be able to "
                                "participate in the future market.", strategy.owner.name)
 
-        self._bid_updater.increment_update_counter_all_markets(strategy)
-        self._offer_updater.increment_update_counter_all_markets(strategy)
-
     def _post_consumer_first_bid(
             self, strategy: "BaseStrategy", time_slot: DateTime,
             available_buy_energy_kWh: float) -> None:
