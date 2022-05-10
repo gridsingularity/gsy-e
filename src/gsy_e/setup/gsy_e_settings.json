@@ -4,7 +4,7 @@
     "slot_length": "15m",
     "tick_length": "15s",
     "cloud_coverage": 0,
-    "start_date": "2022-01-12"
+    "start_date": "2022-05-10"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -32,7 +32,11 @@
       "MIN_SLOT_LENGTH_M": 2,
       "MAX_SLOT_LENGTH_M": 60,
       "MIN_TICK_LENGTH_S": 1,
-      "REDIS_PUBLISH_FULL_RESULTS": false
+      "REDIS_PUBLISH_FULL_RESULTS": false,
+      "SDK_COM_QUEUE_NAME": "sdk-events-responses",
+      "CN_JOB_QUEUE_NAME": "canary_network",
+      "SIM_JOB_QUEUE_NAME": "exchange",
+      "EXCHANGE_ERROR_CHANNEL": "gsy-e-errors"
     },
     "SettlementMarketSettings": {
       "MAX_AGE_SETTLEMENT_MARKET_HOURS": 1,

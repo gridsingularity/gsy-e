@@ -20,6 +20,7 @@ import json
 
 from gsy_framework.utils import convert_pendulum_to_str_in_dict, key_in_dict_and_not_none
 from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum
+from pendulum import Duration
 
 from gsy_e.models.area import AreaBase, Area # NOQA
 from gsy_e.models.strategy import BaseStrategy
@@ -41,12 +42,16 @@ from gsy_e.models.leaves import *  # NOQA  # pylint: disable=wildcard-import
 class AreaEncoder(json.JSONEncoder):
     """Convert the Area class hierarchy to json dict."""
     def default(self, o):
-        if isinstance(o, AreaBase):
+        # Leaf classes are Areas too, therefore the Area/AreaBase classes need to be handled
+        # separately.
+        if type(o) in [Area, AreaBase]:
             return self._encode_area(o)
         if isinstance(o, Leaf):
             return self._encode_leaf(o)
         if isinstance(o, BaseStrategy):
             return self._encode_subobject(o)
+        if isinstance(o, Duration):
+            return None
         return super().default(o)
 
     @staticmethod
