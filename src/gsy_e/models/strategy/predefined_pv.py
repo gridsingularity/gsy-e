@@ -99,7 +99,7 @@ class PVPredefinedStrategy(PVStrategy):
     """
         Strategy responsible for using one of the predefined PV profiles.
     """
-
+    # pylint: disable=too-many-arguments
     def __init__(
             self, panel_count: int = 1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
@@ -147,8 +147,7 @@ class PVPredefinedStrategy(PVStrategy):
 
     def read_config_event(self):
         # this is to trigger to read from self.simulation_config.cloud_coverage:
-        self._energy_params.cloud_coverage = None
-        self._energy_params._power_profile_index = None
+        self._energy_params.reconfigure(cloud_coverage=None)
         self.set_produced_energy_forecast_in_state(reconfigure=True)
 
     def set_produced_energy_forecast_in_state(self, reconfigure=True):
@@ -233,7 +232,7 @@ class PVUserProfileStrategy(PVStrategy):
     """
         Strategy responsible for reading a profile in the form of a dict of values.
     """
-
+    # pylint: disable=too-many-arguments
     def __init__(
             self, power_profile=None, panel_count: int = 1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,

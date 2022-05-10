@@ -30,6 +30,7 @@ from gsy_e.models.strategy.load_hours import LoadHoursStrategy, LoadHoursEnergyP
 
 
 class DefinedLoadEnergyParameters(LoadHoursEnergyParameters):
+    """Energy parameters for the defined load strategy class."""
     def __init__(self, daily_load_profile=None, daily_load_profile_uuid: str = None):
         super().__init__(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)))
         self.profile_uuid = daily_load_profile_uuid
@@ -56,14 +57,16 @@ class DefinedLoadEnergyParameters(LoadHoursEnergyParameters):
         self.read_or_rotate_profiles()
         super().event_activate_energy(area)
 
-    def reconfigure_event(self, current_day: int, *args, **kwargs) -> None:
+    def reset(self, current_day: int, **kwargs) -> None:
         if key_in_dict_and_not_none(kwargs, "daily_load_profile"):
             self._load_profile_input = kwargs["daily_load_profile"]
             self.read_or_rotate_profiles(reconfigure=True)
 
     def read_or_rotate_profiles(self, reconfigure=False):
-        input_profile = self._load_profile_input \
-            if reconfigure or not self._load_profile_W else self._load_profile_W
+        """Read power profiles or rotate them, from the DB or from JSON dicts."""
+        input_profile = (self._load_profile_input
+                         if reconfigure or not self._load_profile_W
+                         else self._load_profile_W)
 
         if global_objects.profiles_handler.should_create_profile(
                 self._load_profile_kWh) or reconfigure:
@@ -88,7 +91,7 @@ class DefinedLoadEnergyParameters(LoadHoursEnergyParameters):
         """
         return 0
 
-    def _allowed_operating_hours(self, time):
+    def allowed_operating_hours(self, time):
         """
         Disabled feature for this subclass
         """
@@ -100,7 +103,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         Strategy for creating a load profile. It accepts as an input a load csv file or a
         dictionary that contains the load values for each time point
     """
-
+    # pylint: disable=too-many-arguments
     def __init__(self, daily_load_profile=None,
                  fit_to_limit=True, energy_rate_increase_per_update=None,
                  update_interval=None,
@@ -165,8 +168,8 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         for time_slot in self.area.future_market_time_slots:
             self._energy_params.update_energy_requirement(time_slot, self.owner.name)
 
-    def area_reconfigure_event(self, **kwargs):
+    def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
         self._area_reconfigure_prices(**kwargs)
-        self._energy_params.reconfigure_event(
+        self._energy_params.reset(
             self._get_day_of_timestamp(self.area.spot_market.time_slot), **kwargs)

@@ -73,6 +73,7 @@ class LoadHoursEnergyParameters:
         self._assign_hours_of_per_day(hrs_of_day, hrs_per_day)
 
     def serialize(self):
+        """Return dict with the current energy parameter values."""
         return {
             "avg_power_W": self.avg_power_W, "hrs_per_day": self.hrs_per_day,
             "hrs_of_day": self.hrs_of_day
@@ -101,7 +102,8 @@ class LoadHoursEnergyParameters:
         if current_day not in self.hrs_per_day or overwrite:
             self.hrs_per_day[current_day] = self._initial_hrs_per_day
 
-    def reconfigure_event(self, current_day: int, *args, **kwargs) -> None:
+    def reset(self, current_day: int, **kwargs) -> None:
+        """Reset strategy parameters."""
         if (kwargs.get("hrs_per_day") is not None or
                 kwargs.get("hrs_of_day") is not None):
             self._assign_hours_of_per_day(kwargs["hrs_of_day"], kwargs["hrs_per_day"])
@@ -118,7 +120,8 @@ class LoadHoursEnergyParameters:
 
         self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
 
-    def _allowed_operating_hours(self, time):
+    def allowed_operating_hours(self, time):
+        """Check if timeslot inside allowed operating hours."""
         return time.hour in self.hrs_of_day
 
     def _operating_hours(self, energy_kWh):
@@ -131,17 +134,20 @@ class LoadHoursEnergyParameters:
         self._area = area
 
     def hours_per_day_are_respected(self, current_day):
+        """Validate that the hours per day parameter is respected."""
         return (current_day in self.hrs_per_day and
                 self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE)
 
     def decrease_hours_per_day(self, current_day, energy_Wh):
+        """Decrease the energy from the quota of hours per day."""
         if self.hrs_per_day != {} and current_day in self.hrs_per_day:
             self.hrs_per_day[current_day] -= self._operating_hours(energy_Wh / 1000.0)
 
     def update_energy_requirement(self, time_slot, current_day, overwrite=False):
+        """Update the energy requirement and desired energy from the state class."""
         self.energy_per_slot_Wh = convert_W_to_Wh(
             self.avg_power_W, self._area.config.slot_length)
-        if self._allowed_operating_hours(time_slot):
+        if self.allowed_operating_hours(time_slot):
             desired_energy_Wh = self.energy_per_slot_Wh
             if not self.hours_per_day_are_respected(current_day):
                 desired_energy_Wh = 0.0
@@ -357,7 +363,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
-        self._energy_params.reconfigure_event(
+        self._energy_params.reset(
             self._get_day_of_timestamp(self.area.spot_market.time_slot), *args, **kwargs)
         self._update_energy_requirement_in_state()
         self._area_reconfigure_prices(**kwargs)
@@ -568,7 +574,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         ] if self.area else []
 
     def _is_market_active(self, market):
-        return (self._energy_params._allowed_operating_hours(market.time_slot) and
+        return (self._energy_params.allowed_operating_hours(market.time_slot) and
                 market.in_sim_duration and
                 (not self.area.current_market or
                  market.time_slot >= self.area.current_market.time_slot))
@@ -577,14 +583,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if not GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
             return
         for time_slot in self.area.future_market_time_slots:
-            if self._energy_params._allowed_operating_hours(time_slot):
-                current_day = self._get_day_of_timestamp(time_slot)
-                desired_energy_Wh = self._energy_params.energy_per_slot_Wh
-                if not self._energy_params.hours_per_day_are_respected(current_day):
-                    desired_energy_Wh = 0.0
-            else:
-                desired_energy_Wh = 0.0
-            self.state.set_desired_energy(desired_energy_Wh, time_slot)
+            current_day = self._get_day_of_timestamp(time_slot)
+            self._energy_params.update_energy_requirement(time_slot, current_day)
 
     def _update_energy_requirement_in_state(self):
         self._update_energy_requirement_spot_market()

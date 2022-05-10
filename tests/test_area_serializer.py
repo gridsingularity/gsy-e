@@ -37,13 +37,17 @@ from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 
 
+# pylint: disable=protected-access
+
 @pytest.fixture(scope="function", autouse=True)
-def device_registry_auto_fixture():
+def _device_registry_auto_fixture():
     yield
     ConstSettings.MASettings.MARKET_TYPE = 1
 
 
-def create_config(settings={}):
+def _create_config(settings=None):
+    if not settings:
+        settings = {}
     config_settings = {
         "start_date":
             instance(datetime.combine(settings.get("start_date"), datetime.min.time()))
@@ -76,7 +80,7 @@ def test_area_with_children_roundtrip():
     child2 = Area("child2")
     parent = Area("parent", [child1, child2])
     string = area_to_string(parent)
-    recovered = area_from_string(string, create_config())
+    recovered = area_from_string(string, _create_config())
     assert recovered.name == "parent"
     assert recovered.children[0].name == "child1"
     assert recovered.children[1].name == "child2"
@@ -84,19 +88,19 @@ def test_area_with_children_roundtrip():
 
 def test_raises_unknown_class():
     with pytest.raises(ValueError):
-        area_from_string("{'name':'broken','strategy':'NonexistentStrategy'}", create_config())
+        area_from_string("{'name':'broken','strategy':'NonexistentStrategy'}", _create_config())
 
 
 def test_strategy_roundtrip_with_params():
-    area = Area('area', [], None, PVStrategy(panel_count=42))
+    area = Area("area", [], None, PVStrategy(panel_count=42))
     area_str = area_to_string(area)
-    recovered = area_from_string(area_str, create_config())
+    recovered = area_from_string(area_str, _create_config())
     assert recovered.strategy._energy_params.panel_count == 42
 
 
 def test_non_attr_param():
-    area1 = Area('area1', [], None, PVStrategy())
-    recovered1 = area_from_string(area_to_string(area1), create_config())
+    area1 = Area("area1", [], None, PVStrategy())
+    recovered1 = area_from_string(area_to_string(area1), _create_config())
     assert recovered1.strategy._energy_params.capacity_kW is None
     assert recovered1.strategy.offer_update.final_rate_profile_buffer[area1.config.start_date] == \
         ConstSettings.PVSettings.SELLING_RATE_RANGE.final
@@ -114,7 +118,7 @@ def test_leaf_deserialization():
              ]
            }
         ''',
-        config=create_config()
+        config=_create_config()
     )
     pv1, pv2, smart_meter = recovered.children
     assert isinstance(pv1, PV)
@@ -140,7 +144,7 @@ def test_leaf_external_connection_deserialization():
              ]
            }
         ''',
-        create_config({"external_connection_enabled": True})
+        _create_config({"external_connection_enabled": True})
     )
 
     pv1, load1, storage1 = recovered.children
@@ -171,7 +175,7 @@ def test_leaf_deserialization_does_not_deserialize_invalid_args():
              ]
            }
         ''',
-        create_config()
+        _create_config()
     )
 
     assert isinstance(recovered.children[0], PV)
@@ -195,7 +199,7 @@ def test_leaf_deserialization_scm():
              ]
            }
         ''',
-        create_config()
+        _create_config()
     )
 
     assert isinstance(recovered.children[0], PV)
@@ -225,27 +229,27 @@ def test_leaf_deserialization_scm():
 
 
 @pytest.fixture
-def fixture_with_leaves():
+def _fixture_with_leaves():
     area = Area("house", [
-        PV("pv1", panel_count=1, config=create_config()),
-        PV("pv2", panel_count=4, config=create_config()),
-        SmartMeter("smart meter", smart_meter_profile="some_path.csv", config=create_config()),
+        PV("pv1", panel_count=1, config=_create_config()),
+        PV("pv2", panel_count=4, config=_create_config()),
+        SmartMeter("smart meter", smart_meter_profile="some_path.csv", config=_create_config()),
     ])
     return area_to_string(area)
 
 
-def test_leaf_serialization(fixture_with_leaves):
-    description = json.loads(fixture_with_leaves)
+def test_leaf_serialization(_fixture_with_leaves):
+    description = json.loads(_fixture_with_leaves)
     assert len(description["children"]) == 3
-    assert description['children'][0]['type'] == 'PV'
-    assert description['children'][0]['panel_count'] == 1
-    assert description['children'][1]['type'] == 'PV'
-    assert description['children'][1]['panel_count'] == 4
-    assert description['children'][2]['type'] == 'SmartMeter'
+    assert description["children"][0]["type"] == "PV"
+    assert description["children"][0]["panel_count"] == 1
+    assert description["children"][1]["type"] == "PV"
+    assert description["children"][1]["panel_count"] == 4
+    assert description["children"][2]["type"] == "SmartMeter"
 
 
-def test_roundtrip_with_leaf(fixture_with_leaves):
-    recovered = area_from_string(fixture_with_leaves, create_config())
+def test_roundtrip_with_leaf(_fixture_with_leaves):
+    recovered = area_from_string(_fixture_with_leaves, _create_config())
     assert isinstance(recovered.children[0].strategy, PVStrategy)
     assert isinstance(recovered.children[1].strategy, PVStrategy)
     assert isinstance(recovered.children[2].strategy, SmartMeterStrategy)
@@ -253,27 +257,27 @@ def test_roundtrip_with_leaf(fixture_with_leaves):
 
 def test_area_does_not_allow_duplicate_subarea_names():
     area = Area(
-        'Grid',
-        [Area('House 1', children=[Area('H1 General Load'), Area('H1 PV1')]),
-         Area('House 1', children=[Area('H2 General Load'), Area('H2 PV1')])],
+        "Grid",
+        [Area("House 1", children=[Area("H1 General Load"), Area("H1 PV1")]),
+         Area("House 1", children=[Area("H2 General Load"), Area("H2 PV1")])],
     )
 
     with pytest.raises(AssertionError):
         are_all_areas_unique(area, set())
 
     area = Area(
-        'Grid',
-        [Area('House 1', children=[Area('H1 General Load'), Area('H1 PV1')]),
-         Area('House 2', children=[Area('H1 General Load'), Area('H2 PV1')])],
+        "Grid",
+        [Area("House 1", children=[Area("H1 General Load"), Area("H1 PV1")]),
+         Area("House 2", children=[Area("H1 General Load"), Area("H2 PV1")])],
     )
 
     with pytest.raises(AssertionError):
         are_all_areas_unique(area, set())
 
     area = Area(
-        'Grid',
-        [Area('House 1', children=[Area('H1 General Load'), Area('H1 PV1')]),
-         Area('House 2', children=[Area('H2 General Load'), Area('H2 PV1')])],
+        "Grid",
+        [Area("House 1", children=[Area("H1 General Load"), Area("H1 PV1")]),
+         Area("House 2", children=[Area("H2 General Load"), Area("H2 PV1")])],
     )
 
     # Does not raise an assertion
