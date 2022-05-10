@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import inspect
 import logging
 
+from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.external_strategies.load import (
@@ -35,6 +36,10 @@ from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProf
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
+from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfile
+from gsy_e.models.strategy.scm.pv import SCMPVStrategy, SCMPVPredefinedStrategy, SCMPVUserProfile
+from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
+
 
 external_strategies_mapping = {
     LoadHoursStrategy: LoadHoursExternalStrategy,
@@ -53,6 +58,15 @@ forecast_strategy_mapping = {
     LoadHoursStrategy: LoadForecastExternalStrategy
 }
 
+scm_strategy_mapping = {
+    LoadHoursStrategy: SCMLoadHoursStrategy,
+    DefinedLoadStrategy: SCMLoadProfile,
+    PVStrategy: SCMPVStrategy,
+    PVPredefinedStrategy: SCMPVPredefinedStrategy,
+    PVUserProfileStrategy: SCMPVUserProfile,
+    StorageStrategy: SCMStorageStrategy
+}
+
 
 class Leaf(Area):
     """
@@ -62,7 +76,14 @@ class Leaf(Area):
     strategy_type = None
 
     def __init__(self, name, config, uuid=None, **kwargs):
-        if config.external_connection_enabled:
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
+            # For the SCM only use the SCM-enabled strategies and ignore the rest.
+            try:
+                self.strategy_type = scm_strategy_mapping[self.strategy_type]
+            except KeyError as e:
+                logging.error(f"Strategy {self.strategy_type} not supported in SCM.")
+                raise e
+        elif config.external_connection_enabled:
             if kwargs.get("forecast_stream_enabled", False) is True:
                 try:
                     self.strategy_type = forecast_strategy_mapping[self.strategy_type]

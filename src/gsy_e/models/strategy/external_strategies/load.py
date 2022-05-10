@@ -29,7 +29,7 @@ from gsy_e.models.strategy.external_strategies import (
     CommandTypeNotSupported, OrderCanNotBePosted)
 from gsy_e.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
-from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
+from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy, DefinedLoadEnergyParameters
 
 if TYPE_CHECKING:
     from gsy_e.models.state import LoadState
@@ -396,6 +396,15 @@ class LoadProfileExternalStrategy(LoadExternalMixin, DefinedLoadStrategy):
     """Concrete DefinedLoadStrategy class with external connection capabilities"""
 
 
+class LoadForecastExternalEnergyParams(DefinedLoadEnergyParameters):
+
+    def _read_or_rotate_profiles(self, reconfigure=False) -> None:
+        """Overridden with empty implementation to disable reading profile from DB."""
+
+    def event_activate_energy(self, area):
+        """Overridden with empty implementation to disable profile activation."""
+
+
 class LoadForecastExternalStrategy(ForecastExternalMixin, LoadProfileExternalStrategy):
     """
         Strategy responsible for reading forecast and measurement consumption data via hardware API
@@ -417,6 +426,8 @@ class LoadForecastExternalStrategy(ForecastExternalMixin, LoadProfileExternalStr
         if update_interval is None:
             update_interval = duration(
                 minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+
+        self._energy_params = LoadForecastExternalEnergyParams()
 
         super().__init__(daily_load_profile=None,
                          fit_to_limit=fit_to_limit,

@@ -92,6 +92,7 @@ class PVPredefinedEnergyParameters(PVEnergyParameters):
         """Reconfigure the device properties at runtime using the provided arguments."""
         if key_in_dict_and_not_none(kwargs, "cloud_coverage"):
             self.cloud_coverage = kwargs["cloud_coverage"]
+            self._power_profile_index = self.cloud_coverage
 
 
 class PVPredefinedStrategy(PVStrategy):
@@ -147,7 +148,7 @@ class PVPredefinedStrategy(PVStrategy):
     def read_config_event(self):
         # this is to trigger to read from self.simulation_config.cloud_coverage:
         self._energy_params.cloud_coverage = None
-        self._energy_params.read_predefined_profile_for_pv(self.simulation_config)
+        self._energy_params._power_profile_index = None
         self.set_produced_energy_forecast_in_state(reconfigure=True)
 
     def set_produced_energy_forecast_in_state(self, reconfigure=True):
@@ -166,6 +167,7 @@ class PVPredefinedStrategy(PVStrategy):
     def area_reconfigure_event(self, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
         self._energy_params.reconfigure(**kwargs)
+        self._energy_params.read_predefined_profile_for_pv(self.simulation_config)
         super().area_reconfigure_event(**kwargs)
 
 

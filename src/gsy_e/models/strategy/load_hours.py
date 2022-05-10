@@ -135,7 +135,7 @@ class LoadHoursEnergyParameters:
                 self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE)
 
     def decrease_hours_per_day(self, current_day, energy_Wh):
-        if current_day in self.hrs_per_day:
+        if self.hrs_per_day != {} and current_day in self.hrs_per_day:
             self.hrs_per_day[current_day] -= self._operating_hours(energy_Wh / 1000.0)
 
     def update_energy_requirement(self, time_slot, current_day, overwrite=False):
@@ -189,7 +189,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         as per utility's trading rate
         """
         super().__init__()
-        self._energy_params = self._create_energy_parameters(avg_power_W, hrs_per_day, hrs_of_day)
+        if not hasattr(self, "_energy_params"):
+            self._energy_params = LoadHoursEnergyParameters(avg_power_W, hrs_per_day, hrs_of_day)
 
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
         self.use_market_maker_rate = use_market_maker_rate
@@ -199,10 +200,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._calculate_active_markets()
         self._cycled_market = set()
         self._simulation_start_timestamp = None
-
-    @classmethod
-    def _create_energy_parameters(cls, *args):
-        return LoadHoursEnergyParameters(*args)
 
     @classmethod
     def _create_settlement_market_strategy(cls):
@@ -404,6 +401,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 if offer.id not in market.offers:
                     return
                 acceptable_offer = offer
+
             time_slot = market.time_slot
             current_day = self._get_day_of_timestamp(time_slot)
             if (acceptable_offer and self._energy_params.hours_per_day_are_respected(current_day)
@@ -472,7 +470,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             return
         for market in self.active_markets:
-            if (self.state.can_buy_more_energy(market.time_slot)
+            if (self.state.can_buy_more_energy(market.time_slot) and
+                    self._energy_params.hours_per_day_are_respected(
+                        self._get_day_of_timestamp(market.time_slot))
                     and not self.are_bids_posted(market.id)):
                 bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
                 if self._is_eligible_for_balancing_market:
@@ -505,7 +505,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 bid_trade.traded_energy * 1000,
                 bid_trade.time_slot, self.owner.name)
             market_day = self._get_day_of_timestamp(bid_trade.time_slot)
-            self._energy_params.decrease_hours_per_day(market_day, bid_trade.traded_energy)
+            self._energy_params.decrease_hours_per_day(market_day,
+                                                       bid_trade.traded_energy * 1000.0)
 
     def event_offer_traded(self, *, market_id, trade):
         """Register the offer traded by the device and its effects. Extends the superclass method.

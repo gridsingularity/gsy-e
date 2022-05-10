@@ -179,6 +179,3 @@ class ForecastExternalMixin(ExternalMixin):
         for time_str, energy in profile.items():
             if energy < 0.0:
                 raise ValueError(f"Energy is not positive for time stamp {time_str}.")
-
-    def _read_or_rotate_profiles(self, reconfigure=False) -> None:
-        """Overridden with empty implementation to disable reading profile from DB."""
