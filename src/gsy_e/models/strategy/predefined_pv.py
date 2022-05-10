@@ -90,7 +90,7 @@ class PVPredefinedEnergyParameters(PVEnergyParameters):
 
     def reconfigure(self, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
-        if key_in_dict_and_not_none(kwargs, "cloud_coverage"):
+        if "cloud_coverage" in kwargs:
             self.cloud_coverage = kwargs["cloud_coverage"]
             self._power_profile_index = self.cloud_coverage
 
