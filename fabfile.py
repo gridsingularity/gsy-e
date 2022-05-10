@@ -122,6 +122,7 @@ def sync():
         )
         local("pip install -e .")
     _ensure_pre_commit()
+    write_default_settings_file()
 
 
 @task
