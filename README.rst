@@ -22,9 +22,19 @@ Basic setup
 
 (For instructions using `Docker`_ see below)
 
-After cloning this project setup a Python 3.8 virtualenv and install `fabric3`_::
+Clone the Repository
 
-    ~# pip install fabric3
+    ~# git clone https://github.com/BC4P/gsy-e/
+
+To fetch and update the submodules:
+
+    ~# git submodule init --update
+
+After cloning this project setup a Python 3.10 virtualenv or conda env and install gsy-e using pip:
+    ~# conda create -n bc4p python=3.10
+
+    ~# pip install .
+    ~# cd gsy-framework && pip install -e . && cd ..
 
 
 The Simulation
@@ -41,6 +51,10 @@ There are various options available to control the simulation run.
 Help on there is available via::
 
     ~# gsy-e run --help
+    
+To run the BC4P simulation use:
+    
+    ~# gsy-e run --setup bc4p -t15s
 
 
 Controlling the simulation
