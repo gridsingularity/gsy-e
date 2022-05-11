@@ -19,7 +19,7 @@ from typing import Union
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.read_user_profile import InputProfileTypes
-from gsy_framework.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
+from gsy_framework.utils import find_object_of_same_weekday_and_time
 from pendulum import duration, DateTime
 
 from gsy_e.gsy_e_core.exceptions import GSyException
@@ -58,7 +58,7 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
         super().event_activate_energy(area)
 
     def reset(self, time_slot: DateTime, **kwargs) -> None:
-        if key_in_dict_and_not_none(kwargs, "daily_load_profile"):
+        if kwargs.get("daily_load_profile") is not None:
             self._load_profile_input = kwargs["daily_load_profile"]
             self.read_or_rotate_profiles(reconfigure=True)
 
