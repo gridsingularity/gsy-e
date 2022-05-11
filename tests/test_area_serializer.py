@@ -189,9 +189,10 @@ def test_leaf_deserialization_scm():
         '''{
              "name": "house",
              "children":[
-                 {"name": "pv1", "type": "PV", "panel_count": 4},
-                 {"name": "pv1", "type": "PredefinedPV", "panel_count": 5},
-                 {"name": "pv1", "type": "PVProfile", "panel_count": 6},
+                 {"name": "pv1", "type": "PV", "capacity_kW": 4},
+                 {"name": "pv1", "type": "PredefinedPV", "cloud_coverage": 1},
+                 {"name": "pv1", "type": "PVProfile", "power_profile": "test1.csv",
+                  "power_profile_uuid": "fedcba"},
                  {"name": "load1", "type": "LoadHours", "avg_power_W": 200},
                  {"name": "load1", "type": "LoadProfile", "daily_load_profile": "test.csv",
                   "daily_load_profile_uuid": "abcdef"},
@@ -204,15 +205,16 @@ def test_leaf_deserialization_scm():
 
     assert isinstance(recovered.children[0], PV)
     assert isinstance(recovered.children[0].strategy, SCMPVStrategy)
-    assert recovered.children[0].strategy._energy_params.panel_count == 4
+    assert recovered.children[0].strategy._energy_params.capacity_kW == 4
 
     assert isinstance(recovered.children[1], PredefinedPV)
     assert isinstance(recovered.children[1].strategy, SCMPVPredefinedStrategy)
-    assert recovered.children[1].strategy._energy_params.panel_count == 5
+    assert recovered.children[1].strategy._energy_params.cloud_coverage == 1
 
     assert isinstance(recovered.children[2], PVProfile)
     assert isinstance(recovered.children[2].strategy, SCMPVUserProfile)
-    assert recovered.children[2].strategy._energy_params.panel_count == 6
+    assert recovered.children[2].strategy._energy_params._power_profile_input == "test1.csv"
+    assert recovered.children[2].strategy._energy_params.power_profile_uuid == "fedcba"
 
     assert isinstance(recovered.children[3], LoadHours)
     assert isinstance(recovered.children[3].strategy, SCMLoadHoursStrategy)

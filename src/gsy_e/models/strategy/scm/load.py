@@ -2,7 +2,7 @@ from typing import Dict, TYPE_CHECKING
 
 from pendulum import DateTime
 
-from gsy_e.models.strategy.load_hours import LoadHoursEnergyParameters
+from gsy_e.models.strategy.load_hours import LoadHoursPerDayEnergyParameters
 from gsy_e.models.strategy.predefined_load import DefinedLoadEnergyParameters
 from gsy_e.models.strategy.scm import SCMStrategy
 
@@ -13,8 +13,7 @@ if TYPE_CHECKING:
 class SCMLoadHoursStrategy(SCMStrategy):
     """Load SCM strategy with constant power production."""
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None):
-        self._energy_params = LoadHoursEnergyParameters(
-            avg_power_W, hrs_per_day, hrs_of_day)
+        self._energy_params = LoadHoursPerDayEnergyParameters(avg_power_W, hrs_per_day, hrs_of_day)
         self._simulation_start_timestamp = None
 
     def activate(self, area: "AreaBase") -> None:
@@ -30,9 +29,6 @@ class SCMLoadHoursStrategy(SCMStrategy):
 
     def market_cycle(self, area: "AreaBase") -> None:
         """Update the load forecast and measurements for the next/previous market slot."""
-        self._energy_params.add_entry_in_hrs_per_day(
-            self._get_day_of_timestamp(area.current_time_slot)
-        )
         # self._update_energy_requirement_in_state()
         # # Provide energy values for the past market slot, to be used in the settlement market
         # self._set_energy_measurement_of_last_market()
@@ -54,7 +50,7 @@ class SCMLoadProfile(SCMStrategy):
 
     def activate(self, area: "AreaBase") -> None:
         """Activate the strategy."""
-        self._energy_params.event_activate_energy()
+        self._energy_params.event_activate_energy(area)
 
     def market_cycle(self, area: "AreaBase") -> None:
         """Update the load forecast and measurements for the next/previous market slot."""

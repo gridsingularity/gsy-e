@@ -20,16 +20,16 @@ from typing import Union
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.read_user_profile import InputProfileTypes
 from gsy_framework.utils import key_in_dict_and_not_none, find_object_of_same_weekday_and_time
-from pendulum import duration
+from pendulum import duration, DateTime
 
 from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import should_read_profile_from_db
 from gsy_e.models.state import LoadState
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy, LoadHoursEnergyParameters
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy, LoadHoursPerDayEnergyParameters
 
 
-class DefinedLoadEnergyParameters(LoadHoursEnergyParameters):
+class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
     """Energy parameters for the defined load strategy class."""
     def __init__(self, daily_load_profile=None, daily_load_profile_uuid: str = None):
         super().__init__(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)))
@@ -57,7 +57,7 @@ class DefinedLoadEnergyParameters(LoadHoursEnergyParameters):
         self.read_or_rotate_profiles()
         super().event_activate_energy(area)
 
-    def reset(self, current_day: int, **kwargs) -> None:
+    def reset(self, time_slot: DateTime, **kwargs) -> None:
         if key_in_dict_and_not_none(kwargs, "daily_load_profile"):
             self._load_profile_input = kwargs["daily_load_profile"]
             self.read_or_rotate_profiles(reconfigure=True)
@@ -76,7 +76,7 @@ class DefinedLoadEnergyParameters(LoadHoursEnergyParameters):
                     profile=input_profile,
                     profile_uuid=self.profile_uuid))
 
-    def update_energy_requirement(self, time_slot, current_day, overwrite=False):
+    def update_energy_requirement(self, time_slot, overwrite=False):
         if not self._load_profile_kWh:
             raise GSyException(
                 "Load tries to set its energy forecasted requirement "
@@ -91,7 +91,7 @@ class DefinedLoadEnergyParameters(LoadHoursEnergyParameters):
         """
         return 0
 
-    def allowed_operating_hours(self, time):
+    def allowed_operating_hours(self, time_slot):
         """
         Disabled feature for this subclass
         """
@@ -171,5 +171,4 @@ class DefinedLoadStrategy(LoadHoursStrategy):
     def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
         self._area_reconfigure_prices(**kwargs)
-        self._energy_params.reset(
-            self._get_day_of_timestamp(self.area.spot_market.time_slot), **kwargs)
+        self._energy_params.reset(self.area.spot_market.time_slot, **kwargs)
