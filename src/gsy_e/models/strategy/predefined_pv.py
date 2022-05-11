@@ -90,7 +90,10 @@ class PVPredefinedEnergyParameters(PVEnergyParameters):
 
     def reconfigure(self, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
-        if kwargs.get("cloud_coverage") is not None:
+
+        # kwargs["cloud_coverage"] = None is a valid value, therefore a None check should not
+        # be added here.
+        if "cloud_coverage" in kwargs:
             self.cloud_coverage = kwargs["cloud_coverage"]
             self._power_profile_index = self.cloud_coverage
 

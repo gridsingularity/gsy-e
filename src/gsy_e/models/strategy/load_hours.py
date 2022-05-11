@@ -173,8 +173,9 @@ class LoadHoursPerDayEnergyParameters(LoadHoursEnergyParameters):
     def allowed_operating_hours(self, time_slot):
         """Validate that the hours per day parameter is respected."""
         current_day = self._get_day_of_timestamp(time_slot)
-        return (current_day in self.hrs_per_day and
-                self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE)
+        return (super().allowed_operating_hours(time_slot) and
+                (current_day in self.hrs_per_day and
+                 self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE))
 
     def decrease_hours_per_day(self, time_slot, energy_Wh):
         """Decrease the energy from the quota of hours per day."""
