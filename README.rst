@@ -24,17 +24,24 @@ Basic setup
 
 Clone the Repository
 
-    ~# git clone https://github.com/BC4P/gsy-e/
+.. code-block::
+
+    git clone https://github.com/BC4P/gsy-e/
 
 To fetch and update the submodules:
 
-    ~# git submodule init --update
+.. code-block::
+    
+    cd gsy-e
+    git submodule update --init
 
 After cloning this project setup a Python 3.10 virtualenv or conda env and install gsy-e using pip:
-    ~# conda create -n bc4p python=3.10
-
-    ~# pip install .
-    ~# cd gsy-framework && pip install -e . && cd ..
+    
+.. code-block::
+    
+    conda create -n bc4p python=3.10
+    pip install .
+    cd gsy-framework && pip install -e . && cd ..
 
 
 The Simulation
@@ -54,7 +61,9 @@ Help on there is available via::
     
 To run the BC4P simulation use:
     
-    ~# gsy-e run --setup bc4p -t15s
+.. code-block::
+    
+    gsy-e run --setup bc4p
 
 
 Controlling the simulation
