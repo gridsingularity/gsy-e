@@ -110,7 +110,7 @@ class AreaBase:
         self.parent = None
         self.children = (
             AreaChildrenList(self, children)
-            if children is not None
+            if children
             else AreaChildrenList(self))
         for child in self.children:
             child.parent = self
@@ -451,7 +451,7 @@ class Area(AreaBase):
 
         if deactivate:
             return
-
+        # pylint: disable=fixme
         # TODO: Refactor and port the future, spot, settlement and balancing market creation to
         # AreaMarkets class, in order to create all necessary markets with one call.
         changed = self._markets.create_new_spot_market(now_value, AvailableMarketTypes.SPOT, self)
