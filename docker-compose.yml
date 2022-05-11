@@ -29,47 +29,7 @@ services:
     ports:
       - 6379:6379
 
-  substrate1:
-    image: parity/substrate:latest
-    ports:
-      - 9615:9615 # prometheus
-      - 9944:9944 # parity connections
-    command:
-      - "--alice"
-      - "--chain=local"
-      - "--no-telemetry"
-      - "--unsafe-ws-external"
-      - "--unsafe-rpc-external"
-      - "--rpc-cors"
-      - "all"
-      - "--prometheus-external"
-
-  substrate2:
-    image: parity/substrate:latest
-#    ports:
-#      - 9615:9615 # prometheus
-#      - 9944:9944 # parity connections
-    command:
-      - "--bob"
-      - "--chain=local"
-      - "--unsafe-ws-external"
-      - "--unsafe-rpc-external"
-      - "--rpc-cors"
-      - "all"
-      - "--no-telemetry"
-      - "--prometheus-external"
-
-  polkadot-ui:
-    image: jacogr/polkadot-js-apps:latest
-    container_name: polkadot-ui
-    ports:
-      - 8080:80
-    environment:
-    # will be opened from host
-      - WS_URL=ws://127.0.0.1:9944
-    depends_on:
-      - substrate1
-
+  
   gsy-market:
     image: gsy-e
     build: .
@@ -91,30 +51,7 @@ services:
     depends_on:
       - kafka
       - redis
-      - substrate1
-
-
-# https://github.com/paritytech/substrate/tree/master/.maintain/local-docker-test-network
-  prometheus:
-    image: prom/prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./tools/prometheus/:/etc/prometheus
-    restart: always
-
-  grafana:
-    image: grafana/grafana
-    user: "104"
-    depends_on:
-      - prometheus
-    ports:
-      - 3001:3000
-    volumes:
-      - ./tools/grafana/datasources:/etc/grafana/provisioning/datasources
-      - ./tools/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./tools/grafana/dashboard-definitions:/etc/grafana/provisioning/dashboard-definitions
-    restart: always
+#      - substrate1
 
 volumes:
   zookeeper_data:
