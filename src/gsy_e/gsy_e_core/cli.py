@@ -23,7 +23,7 @@ from multiprocessing import Process
 import click
 from click.types import Choice
 from click_default_group import DefaultGroup
-from colorlog.colorlog import ColoredFormatter
+from colorlog import ColoredFormatter
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.exceptions import GSyException
 from gsy_framework.settings_validators import validate_global_settings
