@@ -1,3 +1,6 @@
-[submodule "src/gsy_framework"]
-	path = src/gsy_framework
+[submodule "gsy-dex"]
+	path = gsy-dex
+	url = ../gsy-dex.git
+[submodule "gsy-framework"]
+	path = gsy-framework
 	url = ../gsy-framework.git

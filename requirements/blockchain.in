@@ -1,3 +1,2 @@
 -r base.txt
-
--e git+https://github.com/gridsingularity/gsy-dex@master#egg=gsy_dex
+-e gsy-dex
