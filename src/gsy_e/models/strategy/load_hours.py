@@ -144,7 +144,6 @@ class LoadHoursPerDayEnergyParameters(LoadHoursEnergyParameters):
         }
 
     def _assign_hours_per_day(self, hrs_per_day: int):
-        # be a parameter on the constructor or if we want to deal in percentages
         if hrs_per_day is None:
             hrs_per_day = len(self.hrs_of_day)
 
