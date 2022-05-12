@@ -182,6 +182,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
             smart_meter_profile, smart_meter_profile_uuid)
 
         self.use_market_maker_rate = use_market_maker_rate
+        update_interval = self._convert_update_interval_to_duration(update_interval)
 
         self.validator = SmartMeterValidator
         self.validator.validate(

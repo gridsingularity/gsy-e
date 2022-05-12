@@ -97,6 +97,16 @@ class Leaf(Area):
                     logging.error("%s could not be found in external_strategies_mapping, "
                                   "using template strategy.", self.strategy_type)
 
+        # The following code is used in order to collect all the available constructor arguments
+        # from the strategy class that needs to be constructed, and cross-check with the input
+        # arguments (kwargs) in order to verify that all arguments are valid for the strategy,
+        # and to log a warning and omit them if they are not valid for the strategy.
+        # This approach traverses over the class hierarchy in order to fetch all constructor
+        # arguments from all base classes. The reason why this is needed, is because some derived
+        # classes (e.g. all the external strategies) do not define a constructor, thus using the
+        # default one (def __init__(self, *args, **kwargs)) and thus making it impossible to read
+        # the constructor arguments.
+
         # Gather all constructor arguments from all base classes of the strategy class.
         allowed_arguments = ["self"]
         for strategy_base in self.strategy_type.__mro__:
