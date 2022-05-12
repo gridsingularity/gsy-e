@@ -35,13 +35,13 @@ class SCMPVStrategy(SCMStrategy):
             area.current_market_time_slot, area.simulation_config.slot_length)
 
     def market_cycle(self, area: "AreaBase") -> None:
-        """Update the load forecast and measurements for the next/previous market slot."""
+        """Update the PV forecast and measurements for the next/previous market slot."""
         self._energy_params.set_energy_measurement_kWh(area.past_market_time_slot)
         self._energy_params.set_produced_energy_forecast(
             area.current_market_time_slot, area.simulation_config.slot_length)
         self._state.delete_past_state_values(area.past_market_time_slot)
 
-    def get_available_energy_kWh(self, time_slot: DateTime) -> float:
+    def get_energy_to_sell_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for production for the specified time slot."""
         return self._state.get_available_energy_kWh(time_slot)
 

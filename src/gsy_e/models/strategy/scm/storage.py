@@ -58,10 +58,10 @@ class SCMStorageStrategy(SCMStrategy):
         self._state.delete_past_state_values(area.past_market_time_slot)
         self._state.check_state(area.current_market_time_slot)
 
-    def get_available_energy_to_sell_kWh(self, time_slot: DateTime) -> float:
+    def ge_energy_to_sell_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for production for the specified time slot."""
         return self._state.get_available_energy_to_sell_kWh(time_slot)
 
-    def get_available_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
+    def get_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for consumption for the specified time slot."""
         return self._state.get_available_energy_to_buy_kWh(time_slot)

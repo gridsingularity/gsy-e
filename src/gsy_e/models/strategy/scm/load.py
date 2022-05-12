@@ -33,7 +33,7 @@ class SCMLoadHoursStrategy(SCMStrategy):
         # # Provide energy values for the past market slot, to be used in the settlement market
         # self._set_energy_measurement_of_last_market()
 
-    def get_available_energy_kWh(self, time_slot: DateTime) -> float:
+    def get_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for consumption for the specified time slot."""
         return self._energy_params.state.get_energy_requirement_Wh(time_slot) / 1000.0
 
