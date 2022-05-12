@@ -171,14 +171,14 @@ def area_from_string(string, config):
     return area_from_dict(json.loads(string), config)
 
 
-def are_all_areas_unique(area, list_of_areas=None):
+def are_all_areas_unique(area, set_of_areas=None):
     """Assert that all areas have unique names. Currently disabled."""
-    if not list_of_areas:
-        list_of_areas = set()
-    assert area.name not in list_of_areas
-    list_of_areas.add(area.name)
+    if not set_of_areas:
+        set_of_areas = set()
+    assert area.name not in set_of_areas
+    set_of_areas.add(area.name)
 
     for child in area.children:
-        list_of_areas = are_all_areas_unique(child, list_of_areas)
+        set_of_areas = are_all_areas_unique(child, set_of_areas)
 
-    return list_of_areas
+    return set_of_areas

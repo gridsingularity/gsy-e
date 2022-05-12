@@ -143,15 +143,6 @@ class LoadHoursPerDayEnergyParameters(LoadHoursEnergyParameters):
             "hrs_per_day": self.hrs_per_day,
         }
 
-    def _assign_hours_per_day(self, hrs_per_day: int):
-        if hrs_per_day is None:
-            hrs_per_day = len(self.hrs_of_day)
-
-        self._initial_hrs_per_day = hrs_per_day
-
-        if len(self.hrs_of_day) < hrs_per_day:
-            raise ValueError("Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
-
     def add_entry_in_hrs_per_day(self, time_slot: DateTime, overwrite: bool = False) -> None:
         """Add the current day (in simulation) with the mapped hrs_per_day."""
         current_day = self._get_day_of_timestamp(time_slot)
@@ -185,6 +176,15 @@ class LoadHoursPerDayEnergyParameters(LoadHoursEnergyParameters):
     def _operating_hours(self, energy_kWh):
         return (((energy_kWh * 1000) / self.energy_per_slot_Wh)
                 * (self._area.config.slot_length / duration(hours=1)))
+
+    def _assign_hours_per_day(self, hrs_per_day: int):
+        if hrs_per_day is None:
+            hrs_per_day = len(self.hrs_of_day)
+
+        self._initial_hrs_per_day = hrs_per_day
+
+        if len(self.hrs_of_day) < hrs_per_day:
+            raise ValueError("Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
 
 
 # pylint: disable=too-many-instance-attributes
@@ -239,16 +239,16 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._cycled_market = set()
         self._simulation_start_timestamp = None
 
+    @property
+    def state(self) -> LoadState:
+        return self._energy_params.state
+
     @classmethod
     def _create_settlement_market_strategy(cls):
         return settlement_market_strategy_factory()
 
     def _create_future_market_strategy(self):
         return future_market_strategy_factory(self.asset_type)
-
-    @property
-    def state(self) -> LoadState:
-        return self._energy_params.state
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
                            initial_buying_rate, final_buying_rate):

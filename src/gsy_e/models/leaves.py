@@ -81,35 +81,35 @@ class Leaf(Area):
             try:
                 self.strategy_type = scm_strategy_mapping[self.strategy_type]
             except KeyError as e:
-                logging.error(f"Strategy {self.strategy_type} not supported in SCM.")
+                logging.error("Strategy %s not supported in SCM.", self.strategy_type)
                 raise e
         elif config.external_connection_enabled:
             if kwargs.get("forecast_stream_enabled", False) is True:
                 try:
                     self.strategy_type = forecast_strategy_mapping[self.strategy_type]
                 except KeyError:
-                    logging.error(f"{self.strategy_type} could not be found in "
-                                  f"forecast_strategy_mapping, using template strategy.")
+                    logging.error("%s could not be found in forecast_strategy_mapping, "
+                                  "using template strategy.", self.strategy_type)
             elif kwargs.get("allow_external_connection", False) is True:
                 try:
                     self.strategy_type = external_strategies_mapping[self.strategy_type]
                 except KeyError:
-                    logging.error(f"{self.strategy_type} could not be found "
-                                  f"in external_strategies_mapping, using template strategy.")
+                    logging.error("%s could not be found in external_strategies_mapping, "
+                                  "using template strategy.", self.strategy_type)
 
         # Gather all constructor arguments from all base classes of the strategy class.
-        allowed_arguments = ['self']
+        allowed_arguments = ["self"]
         for strategy_base in self.strategy_type.__mro__:
-            if '__init__' in strategy_base.__dict__:
+            if "__init__" in strategy_base.__dict__:
                 allowed_arguments += inspect.getfullargspec(strategy_base).args[1:]
 
         # Filter out the arguments that are not accepted by any constructor in the strategy
         # class hierarchy and log them.
         not_accepted_args = set(kwargs.keys()).difference(allowed_arguments)
         if not_accepted_args:
-            logging.warning(f"Trying to construct area strategy {name} with not allowed "
-                            f"arguments {not_accepted_args}")
-        super(Leaf, self).__init__(
+            logging.warning("Trying to construct area strategy %s with not allowed "
+                            "arguments %s", name, not_accepted_args)
+        super().__init__(
             name=name,
             strategy=self.strategy_type(**{
                 key: value for key, value in kwargs.items()
@@ -121,7 +121,11 @@ class Leaf(Area):
 
     @property
     def parameters(self):
+        """Get dict with the strategy parameters and their values."""
         return self.strategy.serialize()
+
+
+# pylint: disable=missing-class-docstring
 
 
 class CommercialProducer(Leaf):
