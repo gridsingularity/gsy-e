@@ -64,7 +64,8 @@ class SmartMeterStrategyTest(unittest.TestCase):
             update_interval=1, energy_rate_increase_per_update=2,
             energy_rate_decrease_per_update=4)
 
-        assert strategy.update_interval == duration(minutes=1)
+        assert strategy.offer_update.update_interval == duration(minutes=1)
+        assert strategy.bid_update.update_interval == duration(minutes=1)
         validate_mock.assert_called_once_with(
             fit_to_limit=True, energy_rate_increase_per_update=2,
             energy_rate_decrease_per_update=4)
@@ -136,9 +137,10 @@ class SmartMeterStrategyTest(unittest.TestCase):
         # We want to iterate over some area markets, so we create mocks for them
         market_mocks = self._create_market_mocks(3)
         self.strategy.area.all_markets = market_mocks
-        self.strategy._state = create_autospec(SmartMeterState)
-
-        self.strategy._set_energy_forecast_for_future_markets(reconfigure=True)
+        self.strategy._energy_params._state = create_autospec(SmartMeterState)
+        time_slots = [m.time_slot for m in self.strategy.area.all_markets]
+        self.strategy._energy_params.set_energy_forecast_for_future_markets(
+            time_slots, reconfigure=True)
 
         assert self.strategy.state.set_desired_energy.call_count == 3  # One call for each slot
         self.strategy.state.set_desired_energy.assert_has_calls([
@@ -160,18 +162,22 @@ class SmartMeterStrategyTest(unittest.TestCase):
     def test_set_energy_forecast_for_future_markets_no_profile(self, rotate_profile_mock):
         """Consumption/production expectations can't be set without an energy profile."""
         rotate_profile_mock.return_value = None
+        self.strategy._energy_params.activate(self.strategy.area)
         with self.assertRaises(GSyException):
-            self.strategy._set_energy_forecast_for_future_markets(reconfigure=True)
+            time_slots = [m.time_slot for m in self.strategy.area.all_markets]
+            self.strategy._energy_params.set_energy_forecast_for_future_markets(
+                time_slots, reconfigure=True)
 
     @patch("gsy_e.models.strategy.smart_meter.global_objects.profiles_handler.rotate_profile")
     def test_event_activate_energy(self, rotate_profile_mock):
         """event_activate_energy calls the expected state interface methods."""
         rotate_profile_mock.return_value = self._create_profile_mock()
-        self.strategy._set_energy_forecast_for_future_markets = Mock()
+        self.strategy._energy_params.set_energy_forecast_for_future_markets = Mock()
 
         self.strategy.event_activate_energy()
-        self.strategy._set_energy_forecast_for_future_markets.assert_called_once_with(
-            reconfigure=True)
+        time_slots = [m.time_slot for m in self.strategy.area.all_markets]
+        self.strategy._energy_params.set_energy_forecast_for_future_markets.\
+            assert_called_once_with(time_slots, reconfigure=True)
 
     @patch("gsy_e.models.strategy.BidEnabledStrategy.event_market_cycle")
     def test_event_market_cycle(self, super_method_mock):
@@ -183,7 +189,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
         self.strategy.state.delete_past_state_values = Mock()
         self.strategy.bid_update.delete_past_state_values = Mock()
         self.strategy.offer_update.delete_past_state_values = Mock()
-        self.strategy._set_energy_forecast_for_future_markets = Mock()
+        self.strategy._energy_params.set_energy_forecast_for_future_markets = Mock()
         self.strategy._set_energy_measurement_of_last_market = Mock()
         self.strategy._post_offer = Mock()
         market_mocks = self._create_market_mocks(3)
@@ -199,8 +205,9 @@ class SmartMeterStrategyTest(unittest.TestCase):
         self.strategy.offer_update.reset.assert_called_with(self.strategy)
 
         # We just assert calls to private methods, because we have separate unittests for them
-        self.strategy._set_energy_forecast_for_future_markets.assert_called_once_with(
-            reconfigure=False)
+        time_slots = [m.time_slot for m in self.strategy.area.all_markets]
+        self.strategy._energy_params.set_energy_forecast_for_future_markets.\
+            assert_called_once_with(time_slots, reconfigure=False)
         assert self.strategy._post_offer.call_count == 3
         self.strategy._set_energy_measurement_of_last_market.assert_called_once()
 

@@ -516,6 +516,7 @@ class StorageState(StateInterface):
 
         self._used_storage = self.initial_capacity_kWh
         self._battery_energy_per_slot = 0.0
+        self.initial_energy_origin = initial_energy_origin
         self._used_storage_share = [EnergyOrigin(initial_energy_origin, self.initial_capacity_kWh)]
         self._current_market_slot = None
 
