@@ -21,6 +21,7 @@ from logging import getLogger
 
 import pendulum
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.exceptions import GSyException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
     convert_kW_to_kWh, find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
@@ -42,6 +43,7 @@ log = getLogger(__name__)
 
 
 class PVEnergyParameters:
+    """Energy parameters for the PV strategy with gaussian generation profile."""
     def __init__(self, panel_count: int = 1, capacity_kW: float = None):
         PVValidator.validate_energy(panel_count=panel_count, capacity_kW=capacity_kW)
 
@@ -50,24 +52,34 @@ class PVEnergyParameters:
         self._state = PVState()
 
     def serialize(self):
+        """Return dict with the current energy parameter values."""
         return {
             "panel_count": self.panel_count,
             "capacity_kW": self.capacity_kW
         }
 
     def activate(self, simulation_config):
+        """Activate the energy parameters, called during the event_activate strategy event."""
         if self.capacity_kW is None:
             self.capacity_kW = simulation_config.capacity_kW
 
-    def set_produced_energy_forecast(self, time_slot, slot_length):
+    def set_produced_energy_forecast(self, time_slot, slot_length, reconfigure=True):
+        """Generate the energy forecast value for the specified timeslot."""
         difference_to_midnight_in_minutes = time_slot.diff(
             pendulum.datetime(
                 time_slot.year, time_slot.month, time_slot.day)).in_minutes() % (60 * 24)
-        available_energy_kWh = self.gaussian_energy_forecast_kWh(
+        available_energy_kWh = self._gaussian_energy_forecast_kWh(
             slot_length, difference_to_midnight_in_minutes) * self.panel_count
-        self._state.set_available_energy(available_energy_kWh, time_slot, True)
+        self._state.set_available_energy(available_energy_kWh, time_slot, reconfigure)
 
-    def gaussian_energy_forecast_kWh(self, slot_length, time_in_minutes=0):
+    def reset(self, **kwargs):
+        """Reset / update energy parameters."""
+        if key_in_dict_and_not_none(kwargs, "panel_count"):
+            self.panel_count = kwargs["panel_count"]
+        if key_in_dict_and_not_none(kwargs, "capacity_kW"):
+            self.capacity_kW = kwargs["capacity_kW"]
+
+    def _gaussian_energy_forecast_kWh(self, slot_length, time_in_minutes=0):
         # The sun rises at approx 6:30 and sets at 18hr
         # time_in_minutes is the difference in time to midnight
 
@@ -97,14 +109,9 @@ class PVEnergyParameters:
 
 
 class PVStrategy(BidEnabledStrategy):
+    """PV Strategy class for gaussian generation profile."""
 
-    def serialize(self):
-        return {
-            **self._energy_params.serialize(),
-            **self.offer_update.serialize(),
-            "use_market_maker_rate": self.use_market_maker_rate
-        }
-
+    # pylint: disable=too-many-arguments
     def __init__(self, panel_count: int = 1,
                  initial_selling_rate:
                  float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
@@ -127,9 +134,17 @@ class PVStrategy(BidEnabledStrategy):
         """
         super().__init__()
         self._energy_params = PVEnergyParameters(panel_count, capacity_kW)
+        self.use_market_maker_rate = use_market_maker_rate
         self._init_price_update(update_interval, initial_selling_rate, final_selling_rate,
-                                use_market_maker_rate, fit_to_limit,
-                                energy_rate_decrease_per_update)
+                                fit_to_limit, energy_rate_decrease_per_update)
+
+    def serialize(self):
+        """Return dict with the current strategy parameter values."""
+        return {
+            **self._energy_params.serialize(),
+            **self.offer_update.serialize(),
+            "use_market_maker_rate": self.use_market_maker_rate
+        }
 
     @classmethod
     def _create_settlement_market_strategy(cls):
@@ -140,14 +155,14 @@ class PVStrategy(BidEnabledStrategy):
 
     @property
     def state(self) -> PVState:
-        return self._energy_params._state
+        return self._energy_params._state  # pylint: disable=protected-access
 
+    # pylint: disable=too-many-arguments
     def _init_price_update(self, update_interval, initial_selling_rate, final_selling_rate,
-                           use_market_maker_rate, fit_to_limit, energy_rate_decrease_per_update):
+                           fit_to_limit, energy_rate_decrease_per_update):
 
         # Instantiate instance variables that should not be shared with child classes
         self.final_selling_rate = final_selling_rate
-        self.use_market_maker_rate = use_market_maker_rate
 
         if update_interval is None:
             update_interval = \
@@ -165,41 +180,36 @@ class PVStrategy(BidEnabledStrategy):
                                                          energy_rate_decrease_per_update,
                                                          update_interval)
 
-    def area_reconfigure_event(self, **kwargs):
+    def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
         self._area_reconfigure_prices(**kwargs)
         self.offer_update.update_and_populate_price_settings(self.area)
-
-        if key_in_dict_and_not_none(kwargs, "panel_count"):
-            self.panel_count = kwargs["panel_count"]
-        if key_in_dict_and_not_none(kwargs, "capacity_kW"):
-            self.capacity_kW = kwargs["capacity_kW"]
-
+        self._energy_params.reset(**kwargs)
         self.set_produced_energy_forecast_in_state(reconfigure=True)
 
     def _area_reconfigure_prices(self, **kwargs):
-        if key_in_dict_and_not_none(kwargs, "initial_selling_rate"):
-            initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                  kwargs["initial_selling_rate"])
-        else:
-            initial_rate = self.offer_update.initial_rate_profile_buffer
 
-        if key_in_dict_and_not_none(kwargs, "final_selling_rate"):
-            final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                kwargs["final_selling_rate"])
-        else:
-            final_rate = self.offer_update.final_rate_profile_buffer
-        if key_in_dict_and_not_none(kwargs, "energy_rate_decrease_per_update"):
-            energy_rate_change_per_update = \
-                read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                       kwargs["energy_rate_decrease_per_update"])
-        else:
-            energy_rate_change_per_update = \
-                self.offer_update.energy_rate_change_per_update_profile_buffer
-        if key_in_dict_and_not_none(kwargs, "fit_to_limit"):
-            fit_to_limit = kwargs["fit_to_limit"]
-        else:
-            fit_to_limit = self.offer_update.fit_to_limit
+        initial_rate = (
+            read_arbitrary_profile(InputProfileTypes.IDENTITY, kwargs["initial_selling_rate"])
+            if kwargs.get("initial_selling_rate") is not None
+            else self.offer_update.initial_rate_profile_buffer)
+
+        final_rate = (
+            read_arbitrary_profile(InputProfileTypes.IDENTITY, kwargs["final_selling_rate"])
+            if kwargs.get("final_selling_rate") is not None
+            else self.offer_update.final_rate_profile_buffer)
+
+        energy_rate_change_per_update = (
+            read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                   kwargs["energy_rate_decrease_per_update"])
+            if kwargs.get("energy_rate_decrease_per_update") is not None
+            else self.offer_update.energy_rate_change_per_update_profile_buffer)
+
+        fit_to_limit = (
+            kwargs["fit_to_limit"]
+            if kwargs.get("fit_to_limit") is not None
+            else self.offer_update.fit_to_limit)
+
         if key_in_dict_and_not_none(kwargs, "update_interval"):
             if isinstance(kwargs["update_interval"], int):
                 update_interval = duration(minutes=kwargs["update_interval"])
@@ -207,15 +217,16 @@ class PVStrategy(BidEnabledStrategy):
                 update_interval = kwargs["update_interval"]
         else:
             update_interval = self.offer_update.update_interval
+
         if key_in_dict_and_not_none(kwargs, "use_market_maker_rate"):
             self.use_market_maker_rate = kwargs["use_market_maker_rate"]
 
         try:
             self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
                                  fit_to_limit)
-        except Exception as e:
-            log.error(f"PVStrategy._area_reconfigure_prices failed. Exception: {e}. "
-                      f"Traceback: {traceback.format_exc()}")
+        except GSyException as e:  # pylint: disable=broad-except
+            log.error("PVStrategy._area_reconfigure_prices failed. Exception: %s. "
+                      "Traceback: %s", e, traceback.format_exc())
             return
 
         self.offer_update.set_parameters(
@@ -260,6 +271,7 @@ class PVStrategy(BidEnabledStrategy):
                              self.offer_update.fit_to_limit)
 
     def event_activate_energy(self):
+        """Activate energy parameters of the PV."""
         self._energy_params.activate(self.simulation_config)
         self.set_produced_energy_forecast_in_state(reconfigure=True)
 
@@ -274,7 +286,9 @@ class PVStrategy(BidEnabledStrategy):
         self._settlement_market_strategy.event_tick(self)
         self._future_market_strategy.event_tick(self)
 
+    # pylint: disable=unused-argument
     def set_produced_energy_forecast_in_state(self, reconfigure=True):
+        """Set the produced energy forecast for desired timeslot."""
         # This forecast is based on the real PV system data provided by enphase
         # They can be found in the tools folder
         # A fit of a gaussian function to those data results in a formula Energy(time)
@@ -310,6 +324,7 @@ class PVStrategy(BidEnabledStrategy):
         self.offer_update.delete_past_state_values(self.area.current_market.time_slot)
 
     def event_market_cycle_price(self):
+        """Manage price parameters during the market cycle event."""
         self.offer_update.update_and_populate_price_settings(self.area)
         self.offer_update.reset(self)
 
