@@ -82,8 +82,6 @@ class SmartMeterEnergyParameters:
                 f"Smart Meter {self._area.name} tries to set its required energy forecast without "
                 "a profile.")
 
-        # for market in self.area.all_markets:
-        #     slot_time = market.time_slot
         for slot_time in time_slots:
             energy_kWh = find_object_of_same_weekday_and_time(self.profile, slot_time)
             # For the Smart Meter, the energy amount can be either positive (consumption) or

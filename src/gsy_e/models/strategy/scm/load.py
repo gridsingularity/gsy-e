@@ -29,9 +29,6 @@ class SCMLoadHoursStrategy(SCMStrategy):
 
     def market_cycle(self, area: "AreaBase") -> None:
         """Update the load forecast and measurements for the next/previous market slot."""
-        # self._update_energy_requirement_in_state()
-        # # Provide energy values for the past market slot, to be used in the settlement market
-        # self._set_energy_measurement_of_last_market()
 
     def get_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for consumption for the specified time slot."""

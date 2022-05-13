@@ -217,12 +217,12 @@ class TestLiveEvents(unittest.TestCase):
         self.area_grid.activate()
         self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
-        assert self.area2.strategy.panel_count == 12
+        assert self.area2.strategy._energy_params.panel_count == 12
         assert set(self.area2.strategy.offer_update.initial_rate.values()) == {68}
         assert set(self.area2.strategy.offer_update.final_rate.values()) == {42}
         assert self.area2.strategy.offer_update.fit_to_limit is True
         assert self.area2.strategy.offer_update.update_interval.minutes == 12
-        assert self.area2.strategy.capacity_kW == 999
+        assert self.area2.strategy._energy_params.capacity_kW == 999
 
     def test_update_area_event_is_updating_the_parameters_of_a_storage(self):
         event_dict = {
