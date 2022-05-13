@@ -135,9 +135,6 @@ class DefinedLoadStrategy(LoadHoursStrategy):
             update_interval = \
                 duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
 
-        if not hasattr(self, "_energy_params"):
-            self._energy_params = DefinedLoadEnergyParameters(
-                daily_load_profile, daily_load_profile_uuid)
         super().__init__(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
                          fit_to_limit=fit_to_limit,
                          energy_rate_increase_per_update=energy_rate_increase_per_update,
@@ -146,6 +143,8 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                          initial_buying_rate=initial_buying_rate,
                          balancing_energy_ratio=balancing_energy_ratio,
                          use_market_maker_rate=use_market_maker_rate)
+        self._energy_params = DefinedLoadEnergyParameters(
+            daily_load_profile, daily_load_profile_uuid)
 
     def event_market_cycle(self):
         self._energy_params.read_or_rotate_profiles()

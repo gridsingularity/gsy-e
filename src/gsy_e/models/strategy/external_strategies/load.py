@@ -397,6 +397,10 @@ class LoadProfileExternalStrategy(LoadExternalMixin, DefinedLoadStrategy):
 
 
 class LoadForecastExternalEnergyParams(DefinedLoadEnergyParameters):
+    """
+    Energy parameters for LoadForecastExternalStrategy class. Mostly used to override / disable
+    methods of the DefinedLoadEnergyParameters.
+    """
 
     def _read_or_rotate_profiles(self, reconfigure=False) -> None:
         """Overridden with empty implementation to disable reading profile from DB."""
@@ -427,8 +431,6 @@ class LoadForecastExternalStrategy(ForecastExternalMixin, LoadProfileExternalStr
             update_interval = duration(
                 minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
 
-        self._energy_params = LoadForecastExternalEnergyParams()
-
         super().__init__(daily_load_profile=None,
                          fit_to_limit=fit_to_limit,
                          energy_rate_increase_per_update=energy_rate_increase_per_update,
@@ -437,6 +439,8 @@ class LoadForecastExternalStrategy(ForecastExternalMixin, LoadProfileExternalStr
                          initial_buying_rate=initial_buying_rate,
                          balancing_energy_ratio=balancing_energy_ratio,
                          use_market_maker_rate=use_market_maker_rate)
+
+        self._energy_params = LoadForecastExternalEnergyParams()
 
     def update_energy_forecast(self) -> None:
         """Set energy forecast for future markets."""

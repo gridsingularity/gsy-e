@@ -125,9 +125,8 @@ class PVStrategy(BidEnabledStrategy):
              energy_rate_decrease_per_update: Slope of PV Offer change per update
              capacity_kW: power rating of the predefined profiles
         """
-        if not hasattr(self, "_energy_params"):
-            self._energy_params = PVEnergyParameters(panel_count, capacity_kW)
         super().__init__()
+        self._energy_params = PVEnergyParameters(panel_count, capacity_kW)
         self._init_price_update(update_interval, initial_selling_rate, final_selling_rate,
                                 use_market_maker_rate, fit_to_limit,
                                 energy_rate_decrease_per_update)

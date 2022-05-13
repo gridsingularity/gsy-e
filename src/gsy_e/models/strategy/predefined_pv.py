@@ -136,8 +136,6 @@ class PVPredefinedStrategy(PVStrategy):
             update_interval = \
                 duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
 
-        self._energy_params = PVPredefinedEnergyParameters(
-            panel_count, cloud_coverage, capacity_kW)
         super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
                          final_selling_rate=final_selling_rate,
@@ -147,6 +145,9 @@ class PVPredefinedStrategy(PVStrategy):
                          capacity_kW=capacity_kW,
                          use_market_maker_rate=use_market_maker_rate
                          )
+
+        self._energy_params = PVPredefinedEnergyParameters(
+            panel_count, cloud_coverage, capacity_kW)
 
     def read_config_event(self):
         # this is to trigger to read from self.simulation_config.cloud_coverage:
@@ -255,8 +256,6 @@ class PVUserProfileStrategy(PVStrategy):
             panel_count: number of solar panels for this PV plant
             final_selling_rate: lower threshold for the PV sale price
         """
-        self._energy_params = PVUserProfileEnergyParameters(
-            panel_count, power_profile, power_profile_uuid)
         super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
                          final_selling_rate=final_selling_rate,
@@ -264,6 +263,8 @@ class PVUserProfileStrategy(PVStrategy):
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
                          use_market_maker_rate=use_market_maker_rate)
+        self._energy_params = PVUserProfileEnergyParameters(
+            panel_count, power_profile, power_profile_uuid)
 
     def set_produced_energy_forecast_in_state(self, reconfigure=True):
         time_slots = [self.area.spot_market.time_slot]

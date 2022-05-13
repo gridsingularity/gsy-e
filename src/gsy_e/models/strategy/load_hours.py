@@ -226,9 +226,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         as per utility's trading rate
         """
         super().__init__()
-        if not hasattr(self, "_energy_params"):
-            self._energy_params = LoadHoursPerDayEnergyParameters(
-                avg_power_W, hrs_per_day, hrs_of_day)
+        self._energy_params = LoadHoursPerDayEnergyParameters(
+            avg_power_W, hrs_per_day, hrs_of_day)
 
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
         self.use_market_maker_rate = use_market_maker_rate
