@@ -119,15 +119,20 @@ class Leaf(Area):
         if not_accepted_args:
             logging.warning("Trying to construct area strategy %s with not allowed "
                             "arguments %s", name, not_accepted_args)
-        super().__init__(
-            name=name,
-            strategy=self.strategy_type(**{
-                key: value for key, value in kwargs.items()
-                if key in allowed_arguments and value is not None
-            }),
-            config=config,
-            uuid=uuid
-        )
+        try:
+            super().__init__(
+                name=name,
+                strategy=self.strategy_type(**{
+                    key: value for key, value in kwargs.items()
+                    if key in allowed_arguments and value is not None
+                }),
+                config=config,
+                uuid=uuid
+            )
+        except TypeError as ex:
+            logging.error("Cannot create leaf area %s with strategy %s and parameters %s.",
+                          name, self.strategy_type, kwargs)
+            raise ex
 
     @property
     def parameters(self):
