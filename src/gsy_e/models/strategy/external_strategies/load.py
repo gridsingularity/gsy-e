@@ -424,6 +424,9 @@ class LoadForecastExternalStrategy(ForecastExternalMixin, LoadProfileExternalStr
                  (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
                   ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
                  use_market_maker_rate: bool = False,
+                 avg_power_W=0,
+                 hrs_per_day=0,
+                 hrs_of_day=None,
                  daily_load_profile=None,
                  daily_load_profile_uuid=None):
         """
