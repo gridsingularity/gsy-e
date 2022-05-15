@@ -423,7 +423,9 @@ class LoadForecastExternalStrategy(ForecastExternalMixin, LoadProfileExternalStr
                  balancing_energy_ratio: tuple =
                  (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
                   ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
-                 use_market_maker_rate: bool = False):
+                 use_market_maker_rate: bool = False,
+                 daily_load_profile=None,
+                 daily_load_profile_uuid=None):
         """
         Constructor of LoadForecastStrategy
         """
