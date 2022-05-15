@@ -402,7 +402,10 @@ class PVForecastExternalStrategy(ForecastExternalMixin, PVPredefinedExternalStra
             update_interval=duration(
                 minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
             energy_rate_decrease_per_update=None,
-            use_market_maker_rate: bool = False):
+            use_market_maker_rate: bool = False,
+            cloud_coverage: int = None,
+            capacity_kW: float = None
+    ):
         """
         Constructor of PVForecastStrategy
         """
