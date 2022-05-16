@@ -90,6 +90,12 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
         self.number_of_available_updates = 0
         self.rate_limit_object = rate_limit_object
 
+    def serialize(self):
+        return {
+            "fit_to_limit": self.fit_to_limit,
+            "update_interval": self.update_interval
+        }
+
     def _read_or_rotate_rate_profiles(self) -> None:
         """ Creates a new chunk of profiles if the current_timestamp is not in the profile buffers
         """
@@ -278,6 +284,14 @@ class TemplateStrategyBidUpdater(TemplateStrategyUpdaterBase):
             if strategy.are_bids_posted(market.id):
                 strategy.update_bid_rates(market, self.get_updated_rate(market.time_slot))
 
+    def serialize(self):
+        return {
+            **super().serialize(),
+            "initial_buying_rate": self.initial_rate_input,
+            "final_buying_rate": self.final_rate_input,
+            "energy_rate_increase_per_update": self.energy_rate_change_per_update_input
+        }
+
 
 class TemplateStrategyOfferUpdater(TemplateStrategyUpdaterBase):
     """Manage offers posted by template strategies. Update offers periodically."""
@@ -293,3 +307,11 @@ class TemplateStrategyOfferUpdater(TemplateStrategyUpdaterBase):
         if self.time_for_price_update(strategy, market.time_slot):
             if strategy.are_offers_posted(market.id):
                 strategy.update_offer_rates(market, self.get_updated_rate(market.time_slot))
+
+    def serialize(self):
+        return {
+            **super().serialize(),
+            "initial_selling_rate": self.initial_rate_input,
+            "final_selling_rate": self.final_rate_input,
+            "energy_rate_decrease_per_update": self.energy_rate_change_per_update_input
+        }

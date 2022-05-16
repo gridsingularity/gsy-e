@@ -82,7 +82,7 @@ class TestLiveEvents(unittest.TestCase):
 
         new_load = [c for c in self.area_house1.children if c.name == "new_load"][0]
         assert isinstance(new_load.strategy, LoadHoursStrategy)
-        assert new_load.strategy.avg_power_W == 234
+        assert new_load.strategy._energy_params.avg_power_W == 234
 
     def test_create_area_event(self):
         """The CreateAreaEvent tries to create an area when the passed area is valid."""
@@ -176,9 +176,9 @@ class TestLiveEvents(unittest.TestCase):
 
         self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
-        assert self.area1.strategy.avg_power_W == 234
-        assert self.area1.strategy.hrs_per_day[0] == 6
-        assert self.area1.strategy.hrs_of_day == [0, 1, 2, 3, 4, 5, 6, 7]
+        assert self.area1.strategy._energy_params.avg_power_W == 234
+        assert self.area1.strategy._energy_params.hrs_per_day[0] == 6
+        assert self.area1.strategy._energy_params.hrs_of_day == [0, 1, 2, 3, 4, 5, 6, 7]
         assert set(self.area1.strategy.bid_update.energy_rate_change_per_update.values()) == {-3}
         assert self.area1.strategy.bid_update.update_interval.minutes == 9
         assert set(self.area1.strategy.bid_update.initial_rate.values()) == {12}
@@ -217,12 +217,12 @@ class TestLiveEvents(unittest.TestCase):
         self.area_grid.activate()
         self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
-        assert self.area2.strategy.panel_count == 12
+        assert self.area2.strategy._energy_params.panel_count == 12
         assert set(self.area2.strategy.offer_update.initial_rate.values()) == {68}
         assert set(self.area2.strategy.offer_update.final_rate.values()) == {42}
         assert self.area2.strategy.offer_update.fit_to_limit is True
         assert self.area2.strategy.offer_update.update_interval.minutes == 12
-        assert self.area2.strategy.capacity_kW == 999
+        assert self.area2.strategy._energy_params.capacity_kW == 999
 
     def test_update_area_event_is_updating_the_parameters_of_a_storage(self):
         event_dict = {

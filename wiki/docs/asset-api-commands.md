@@ -3,15 +3,24 @@ An Oracle (see [above](asset-api-events.md)) is able to request information and 
 ###bid_energy()
 It sends an energy bid to the exchange. This command receives 4 arguments :
 
-*   **asset_uuid**: Universal Unique Identifier of the selected asset
-*   **energy**:  energy in kWh
-*   **price**: price in Euro cents
-*   **replace_existing**: if set to TRUE replace all existing bids with a new one
+* **asset_uuid**: Universal Unique Identifier of the selected asset
+* **energy**:  energy in kWh
+* **price**: price in Euro cents
+* **replace_existing**: if set to TRUE replace all existing bids with a new one
+* **attributes (optional)**: a dictionary of attributes that describes the bid (not supported at the moment)
+* **requirements (optional)**: a list of dictionaries containing requirements for the bid. At least one of the provided dictionaries needs to be satisfied in the matching process. Currently supported requirements for bids are:
+
+    - energy_type: energy type (e.g., “PV”) that the bid prefers to consume
+    - trading_partners: IDs of the market or asset owner with which the bid prefers to be matched
+    - energy: energy quantity (expressed in kWh) that the bid prefers to consume
+    - price: trade price (expressed in Euro cents) that the bid prefers to accept
+
+* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](settlement-market-structure.md))
 
 Here is an example:
 
 ```
-self.add_to_batch_commands.bid_energy(asset_uuid = "2e7866d8-34c6-49ad-a388-fd5876a3e679", energy = 2, price = 60, replace_existing = True)
+self.add_to_batch_commands.bid_energy(asset_uuid = "2e7866d8-34c6-49ad-a388-fd5876a3e679", energy = 2, price = 60, replace_existing = True, attributes = None,  requirements =  [{“energy_type”: “PV”, “trading_partners” = [], “energy” = 5, “price”: 28}], “time_slot” = None)
 ```
 If the bid is placed successfully, it returns the detailed information about the bid. If not, it returns the reason for the error.
 
@@ -19,15 +28,24 @@ If the bid is placed successfully, it returns the detailed information about the
 
 It sends an energy bid to the exchange. This batch command receives 4 arguments :
 
-*   **asset_uuid**: Universal Unique Identifier  of the selected asset
-*   **energy**: energy in kWh
-*   **rate**: price per volume in Euro cents/kWh
-*   **replace_existing**: if set to TRUE replace all existing bids with a new one
+* **asset_uuid**: Universal Unique Identifier  of the selected asset
+* **energy**: energy in kWh
+* **rate**: price per volume in Euro cents/kWh
+* **replace_existing**: if set to TRUE replace all existing bids with a new one
+* **attributes (optional)**: a dictionary of attributes that describes the bid (not supported at the moment)
+* **requirements (optional)**: a list of dictionaries containing requirements for the bid. At least one of the provided dictionaries needs to be satisfied in the matching process. Currently supported requirements for bids are:
+
+    - energy_type: energy type (e.g., “PV”) that the bid prefers to consume
+    - trading_partners: IDs of the market or asset owner with which the bid prefers to be matched
+    - energy: energy quantity (expressed in kWh) that the bid prefers to consume
+    - price: trade price (expressed in Euro cents) that the bid prefers to accept
+
+* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](settlement-market-structure.md))
 
 Here is an example:
 
 ```
-self.add_to_batch_commands.bid_energy_rate(asset_uuid = "2e7866d8-34c6-49ad-a388-fd5876a3e679", energy = 2, rate = 30, replace_existing = True)
+self.add_to_batch_commands.bid_energy_rate(asset_uuid = "2e7866d8-34c6-49ad-a388-fd5876a3e679", energy = 2, rate = 30, replace_existing = True, attributes = None,  requirements =  [{“energy_type”: “PV”, “trading_partners” = [], “energy” = 5, “price”: 28}], “time_slot” = None)
 ```
 
 ###lists_bids()
@@ -57,15 +75,21 @@ self.add_to_batch_commands.delete_bid(asset_uuid="62f827ec-ef86-4782-b5c3-883277
 
 It sends an energy offer to the exchange. This command receives 4 arguments :
 
-*   **asset_uuid**: Universal Unique Identifier  of the selected asset
-*   **energy**:  energy in kWh
-*   **price**: price in Euro cents
-*   **replace_existing**: if set to TRUE replace all existing bids with a new one
+* **asset_uuid**: Universal Unique Identifier  of the selected asset
+* **energy**:  energy in kWh
+* **price**: price in Euro cents
+* **replace_existing**: if set to TRUE replace all existing bids with a new one
+* **attributes (optional)**: a dictionary of attributes that describes the bid (not supported at the moment)
+* **requirements (optional)**: a list of dictionaries containing requirements for the bid. At least one of the provided dictionaries needs to be satisfied in the matching process. Currently supported requirements for bids are:
+
+    - energy_type: energy type of the offer (e.g. solar)
+
+* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](settlement-market-structure.md))
 
 Here is an example:
 
 ```
-self.add_to_batch_commands.offer_energy(asset_uuid = "2e7866d8-34c6-49ad-a388-fd5876a3e679", energy = 2, price_cents = 60, replace_existing = True)
+self.add_to_batch_commands.offer_energy(asset_uuid = "2e7866d8-34c6-49ad-a388-fd5876a3e679", energy = 2, price_cents = 60, replace_existing = True, attributes = “PV”,  requirements =  [{ “trading_partners”: "62f827ec-ef86-4782-b5c3-88327751d97d”}], “time_slot” = None)
 ```
 If the offer is placed successfully, it returns the detailed information about the bid. If not, it returns the reason for the error.
 
@@ -77,11 +101,16 @@ It sends an energy offer to the exchange. This command receives four arguments :
 *   **energy**:  energy in kWh
 *   **rate**: price per volume in Euro cents/kWh
 *   **replace_existing**: if set to TRUE replace all existing offers with a new one
+* **requirements (optional)**: a list of dictionaries containing requirements for the bid. At least one of the provided dictionaries needs to be satisfied in the matching process. Currently supported requirements for bids are:
+
+    - energy_type: energy type of the offer (e.g. solar)
+
+* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](settlement-market-structure.md))
 
 Here is an example:
 
 ```
-self.add_to_batch_commands.offer_energy_rate(asset_uuid = "2e7866d8-34c6-49ad-a388-fd5876a3e679", energy = 2, rate = 30, replace_existing = True)
+self.add_to_batch_commands.offer_energy_rate(asset_uuid = "2e7866d8-34c6-49ad-a388-fd5876a3e679", energy = 2, rate = 30, replace_existing = True, attributes = “PV”,  requirements =  [{ “trading_partners”: "62f827ec-ef86-4782-b5c3-88327751d97d”}], “time_slot” = None)
 ```
 
 ###lists_offers()
@@ -124,4 +153,3 @@ response = self.execute_batch_commands()
 In return the simulation will provide a detailed response for all commands submitted.
 
 *Note: The total amount of energy to bid/offer at any point is limited to the energy requirement/available of the asset. Replacing/updating a bid/offer during a market slot deletes other active bids/offers. Additionally, the price of your bids/offers must be a positive float otherwise it will get rejected by the market.*
-*

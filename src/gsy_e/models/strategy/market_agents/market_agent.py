@@ -26,7 +26,12 @@ from gsy_e.models.strategy import BaseStrategy, _TradeLookerUpper
 
 class MarketAgent(BaseStrategy):
     """Base class for inter area agents implementations."""
-    parameters = ("owner", "higher_market", "lower_market", "min_offer_age")
+
+    def serialize(self):
+        return {
+            "owner": self.owner, "higher_market": self.higher_market,
+            "lower_market": self.lower_market, "min_offer_age": self.min_offer_age
+        }
 
     def __init__(self, *, owner, higher_market, lower_market,
                  min_offer_age=ConstSettings.MASettings.MIN_OFFER_AGE):
