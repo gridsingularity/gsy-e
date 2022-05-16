@@ -402,7 +402,7 @@ class LoadForecastExternalEnergyParams(DefinedLoadEnergyParameters):
     methods of the DefinedLoadEnergyParameters.
     """
 
-    def _read_or_rotate_profiles(self, reconfigure=False) -> None:
+    def read_or_rotate_profiles(self, reconfigure=False) -> None:
         """Overridden with empty implementation to disable reading profile from DB."""
 
     def event_activate_energy(self, area):
