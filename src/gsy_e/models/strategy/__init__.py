@@ -462,7 +462,8 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         self._settlement_market_strategy = self._create_settlement_market_strategy()
         self._future_market_strategy = self._create_future_market_strategy()
 
-    parameters = None
+    def serialize(self):
+        return {}
 
     @property
     def simulation_config(self) -> SimulationConfig:

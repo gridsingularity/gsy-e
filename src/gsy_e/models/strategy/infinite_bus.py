@@ -33,8 +33,16 @@ from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 # pylint: disable=missing-class-docstring, too-many-instance-attributes, too-many-arguments
 class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
     """Implementation for infinite bus to participate in GSy Exchange."""
-    parameters = ("energy_sell_rate", "energy_rate_profile", "energy_buy_rate",
-                  "buying_rate_profile", "buying_rate_profile_uuid", "energy_rate_profile_uuid")
+
+    def serialize(self):
+        return {
+            "energy_sell_rate": self.energy_rate_input,
+            "energy_rate_profile": self.energy_rate_profile,
+            "energy_buy_rate": self.energy_buy_rate_input,
+            "buying_rate_profile": self.buying_rate_profile,
+            "buying_rate_profile_uuid": self.buying_rate_profile_uuid,
+            "energy_rate_profile_uuid": self.energy_rate_profile_uuid
+        }
 
     def __init__(self, energy_sell_rate=None, energy_rate_profile=None, energy_buy_rate=None,
                  buying_rate_profile=None, buying_rate_profile_uuid=None,

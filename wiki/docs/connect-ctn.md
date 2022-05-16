@@ -4,26 +4,34 @@ The Grid Singularity Canary Test Network, inspired by the “canary in a coal mi
 
 To create a Grid Singularity Canary Test Network, follow these steps (a video tutorial is also available [here](https://www.youtube.com/watch?v=8tAl8Td2XsU&list=PLdIkfx9NcrQeD8kLBvASosLce9qJ4gQIH&index=2)):
 
-1. Select the Simulation that you want to set up as a Canary Test Network. Once your simulation has completed, click on settings, and click *Go* in the box that says, “bring your simulation closer to reality”.
+- Select the Simulation that you want to set up as a Canary Test Network. Once your simulation has completed, click on settings, and click *Go* in the box that says, “bring your simulation closer to reality”.
+
+![alt_text](img/closer-to-reality.png)
+
    *A Grid Singularity agent will be in touch with you shortly after to lead you through setting up a Canary Network. Currently, this step requires manual Grid Singularity intervention. A personal account of an external user does not have the admin rights to create a Canary Test Network. If you have any questions, please contact us at [contact@gridsingularity.com](mailto:contact@gridsingularity.com) for technical support and provide us with the following:*
-   * *Your Name*
-   * *Grid Singularity account email address*
-   * *Company name*
-   * *Location of the community*
-   * *Size of the community (number of participants, assets)*
-   * *Energy Supplier / grid operator*
-   * *Purpose of the canary network*
-   * *Simulation name*
 
-Once Grid Singularity has approved your request, follow the steps below:
+  - *Your Name*
+  - *Grid Singularity account email address*
+  - *Company name*
+  - *Location of the community*
+  - *Size of the community (number of participants, assets)*
+  - *Energy Supplier / grid operator*
+  - *Purpose of the canary network*
+  - *Simulation name*
 
-2. With the creation of a Canary Network, a *Registry* tab has been added next to settings in the sidebar. Each homeowner or asset owner can be assigned to a home and invited to participate in the Canary Network by email through the *Add More People* invitation tool by the Canary Network owner. Once they accept the emailed invitation, they will be able to view the simulation and their assets through the *Registry*.![img](img/connect-ctn-1.png)
+   Once Grid Singularity has approved your request, follow the steps below:
 
-3. The Canary Network owner can also set *User Roles* for each user. Invited people default to *GSy User*, allowing them to view and analyze results for their owned assets. ![img](img/connect-ctn-2.png)
+- With the creation of a Canary Network, a *Registry* tab has been added next to settings in the sidebar. Each homeowner or asset owner can be assigned to a home and invited to participate in the Canary Network by email through the *Add More People* invitation tool by the Canary Network owner. Once they accept the emailed invitation, they will be able to view the simulation and their assets through the *Registry*.
 
-4. *Aggregators* must login and register to trade on behalf of each asset on the *Community Assets* tab. Once their registration is accepted by the simulation owner, they can trade on behalf of assets through the [Asset API](https://gridsingularity.github.io/d3a/assets-api/).
+![img](img/registry-cn.png)
 
-   ![img](img/connect-ctn-3.png)
+- The Canary Network owner can also set *User Roles* for each user. Invited people default to *GSy User*, allowing them to view and analyze results for their owned assets.
 
-   5. The *Grid Operator,* once registered, has access to manage grid fees and network congestion through the [Grid Operator API](https://gridsingularity.github.io/d3a/grid-operator-api/)*.*
-   6. Connect live data streams to the energy exchange (see section [below](https://docs.google.com/document/d/1B1aFLsB5NqrXMnSb4fpMaN84vsXUo1LigS0zCJpZLHo/edit#heading=h.lu5xu9ls176)).
+![img](img/ctn-1.png)
+
+- *Aggregators* must login and register to trade on behalf of each asset on the *Community Assets* tab. Once their registration is accepted by the simulation owner, they can trade on behalf of assets through the [Asset API](https://gridsingularity.github.io/d3a/assets-api/).
+
+![img](img/ctn-2.png)
+
+- The *Grid Operator,* once registered, has access to manage grid fees and network congestion through the [Grid Operator API](https://gridsingularity.github.io/d3a/grid-operator-api/)*.*
+- Connect live data streams to the energy exchange (see section [below](https://docs.google.com/document/d/1B1aFLsB5NqrXMnSb4fpMaN84vsXUo1LigS0zCJpZLHo/edit#heading=h.lu5xu9ls176)).

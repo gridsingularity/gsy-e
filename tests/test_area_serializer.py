@@ -19,20 +19,35 @@ import json
 from datetime import datetime
 
 import pytest
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig, SpotMarketTypeEnum
+from pendulum import duration, instance
+
 from gsy_e.gsy_e_core.area_serializer import area_to_string, area_from_string, are_all_areas_unique
 from gsy_e.models.area import Area
 from gsy_e.models.config import SimulationConfig
-from gsy_e.models.leaves import SmartMeter, PV, LoadHours, Storage
+from gsy_e.models.leaves import (
+    SmartMeter, PV, LoadHours, Storage, PredefinedPV, PVProfile, LoadProfile)
 from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from gsy_e.models.strategy.external_strategies.pv import PVExternalStrategy
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
-from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.pv import PVStrategy
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from pendulum import duration, instance
+from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfile
+from gsy_e.models.strategy.scm.pv import SCMPVStrategy, SCMPVPredefinedStrategy, SCMPVUserProfile
+from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
+from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 
 
-def create_config(settings={}):
+# pylint: disable=protected-access
+
+@pytest.fixture(scope="function", autouse=True)
+def _device_registry_auto_fixture():
+    yield
+    ConstSettings.MASettings.MARKET_TYPE = 1
+
+
+def _create_config(settings=None):
+    if not settings:
+        settings = {}
     config_settings = {
         "start_date":
             instance(datetime.combine(settings.get("start_date"), datetime.min.time()))
@@ -65,7 +80,7 @@ def test_area_with_children_roundtrip():
     child2 = Area("child2")
     parent = Area("parent", [child1, child2])
     string = area_to_string(parent)
-    recovered = area_from_string(string, create_config())
+    recovered = area_from_string(string, _create_config())
     assert recovered.name == "parent"
     assert recovered.children[0].name == "child1"
     assert recovered.children[1].name == "child2"
@@ -73,20 +88,20 @@ def test_area_with_children_roundtrip():
 
 def test_raises_unknown_class():
     with pytest.raises(ValueError):
-        area_from_string("{'name':'broken','strategy':'NonexistentStrategy'}", create_config())
+        area_from_string("{'name':'broken','strategy':'NonexistentStrategy'}", _create_config())
 
 
 def test_strategy_roundtrip_with_params():
-    area = Area('area', [], None, PVStrategy(panel_count=42))
+    area = Area("area", [], None, PVStrategy(panel_count=42))
     area_str = area_to_string(area)
-    recovered = area_from_string(area_str, create_config())
-    assert recovered.strategy.panel_count == 42
+    recovered = area_from_string(area_str, _create_config())
+    assert recovered.strategy._energy_params.panel_count == 42
 
 
 def test_non_attr_param():
-    area1 = Area('area1', [], None, PVStrategy())
-    recovered1 = area_from_string(area_to_string(area1), create_config())
-    assert recovered1.strategy.capacity_kW is None
+    area1 = Area("area1", [], None, PVStrategy())
+    recovered1 = area_from_string(area_to_string(area1), _create_config())
+    assert recovered1.strategy._energy_params.capacity_kW is None
     assert recovered1.strategy.offer_update.final_rate_profile_buffer[area1.config.start_date] == \
         ConstSettings.PVSettings.SELLING_RATE_RANGE.final
 
@@ -103,14 +118,14 @@ def test_leaf_deserialization():
              ]
            }
         ''',
-        config=create_config()
+        config=_create_config()
     )
     pv1, pv2, smart_meter = recovered.children
     assert isinstance(pv1, PV)
-    assert pv1.strategy.panel_count == 4
+    assert pv1.strategy._energy_params.panel_count == 4
     assert pv1.display_type == "PV"
     assert isinstance(pv2, PV)
-    assert pv2.strategy.panel_count == 1
+    assert pv2.strategy._energy_params.panel_count == 1
     assert pv2.display_type == "PV"
     assert isinstance(smart_meter, SmartMeter)
 
@@ -129,45 +144,114 @@ def test_leaf_external_connection_deserialization():
              ]
            }
         ''',
-        create_config({"external_connection_enabled": True})
+        _create_config({"external_connection_enabled": True})
     )
 
     pv1, load1, storage1 = recovered.children
     assert isinstance(pv1, PV)
     assert isinstance(pv1.strategy, PVExternalStrategy)
-    assert pv1.strategy.panel_count == 4
+    assert pv1.strategy._energy_params.panel_count == 4
     assert pv1.display_type == "PV"
     assert isinstance(load1, LoadHours)
     assert isinstance(load1.strategy, LoadHoursExternalStrategy)
-    assert load1.strategy.avg_power_W == 200
+    assert load1.strategy._energy_params.avg_power_W == 200
     assert load1.display_type == "Load"
     assert isinstance(storage1, Storage)
     assert isinstance(storage1.strategy, StorageExternalStrategy)
     assert storage1.display_type == "Storage"
 
 
+def test_leaf_deserialization_does_not_deserialize_invalid_args():
+    recovered = area_from_string(
+        '''{
+             "name": "house",
+             "children":[
+                 {"name": "pv1", "type": "PV", "panel_count": 4,
+                  "display_type": "PV", "load_profile": "test.csv"},
+                 {"name": "load1", "type": "LoadHours", "avg_power_W": 200,
+                 "allow_external_connection": true},
+                 {"name": "storage1", "type": "Storage", "display_type": "Storage",
+                 "allow_external_connection": true}
+             ]
+           }
+        ''',
+        _create_config()
+    )
+
+    assert isinstance(recovered.children[0], PV)
+    assert not hasattr(recovered.children[0].strategy, "load_profile")
+    assert recovered.children[0].strategy._energy_params.panel_count == 4
+
+
+def test_leaf_deserialization_scm():
+    ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.COEFFICIENTS.value
+    recovered = area_from_string(
+        '''{
+             "name": "house",
+             "children":[
+                 {"name": "pv1", "type": "PV", "capacity_kW": 4},
+                 {"name": "pv1", "type": "PredefinedPV", "cloud_coverage": 1},
+                 {"name": "pv1", "type": "PVProfile", "power_profile": "test1.csv",
+                  "power_profile_uuid": "fedcba"},
+                 {"name": "load1", "type": "LoadHours", "avg_power_W": 200},
+                 {"name": "load1", "type": "LoadProfile", "daily_load_profile": "test.csv",
+                  "daily_load_profile_uuid": "abcdef"},
+                 {"name": "storage1", "type": "Storage", "initial_soc": 34}
+             ]
+           }
+        ''',
+        _create_config()
+    )
+
+    assert isinstance(recovered.children[0], PV)
+    assert isinstance(recovered.children[0].strategy, SCMPVStrategy)
+    assert recovered.children[0].strategy._energy_params.capacity_kW == 4
+
+    assert isinstance(recovered.children[1], PredefinedPV)
+    assert isinstance(recovered.children[1].strategy, SCMPVPredefinedStrategy)
+    assert recovered.children[1].strategy._energy_params.cloud_coverage == 1
+
+    assert isinstance(recovered.children[2], PVProfile)
+    assert isinstance(recovered.children[2].strategy, SCMPVUserProfile)
+    assert recovered.children[2].strategy._energy_params._power_profile_input == "test1.csv"
+    assert recovered.children[2].strategy._energy_params.power_profile_uuid == "fedcba"
+
+    assert isinstance(recovered.children[3], LoadHours)
+    assert isinstance(recovered.children[3].strategy, SCMLoadHoursStrategy)
+    assert recovered.children[3].strategy._energy_params.avg_power_W == 200
+
+    assert isinstance(recovered.children[4], LoadProfile)
+    assert isinstance(recovered.children[4].strategy, SCMLoadProfile)
+    assert recovered.children[4].strategy._energy_params._load_profile_input == "test.csv"
+    assert recovered.children[4].strategy._energy_params.profile_uuid == "abcdef"
+
+    assert isinstance(recovered.children[5], Storage)
+    assert isinstance(recovered.children[5].strategy, SCMStorageStrategy)
+    assert recovered.children[5].strategy._state.initial_soc == 34
+
+
 @pytest.fixture
-def fixture_with_leaves():
+def _fixture_with_leaves():
     area = Area("house", [
-        PV("pv1", panel_count=1, config=create_config()),
-        PV("pv2", panel_count=4, config=create_config()),
-        SmartMeter("smart meter", smart_meter_profile="some_path.csv", config=create_config()),
+        PV("pv1", panel_count=1, config=_create_config()),
+        PV("pv2", panel_count=4, config=_create_config()),
+        SmartMeter("smart meter", smart_meter_profile="some_path.csv", config=_create_config()),
     ])
     return area_to_string(area)
 
 
-def test_leaf_serialization(fixture_with_leaves):
-    description = json.loads(fixture_with_leaves)
+def test_leaf_serialization(_fixture_with_leaves):
+    description = json.loads(_fixture_with_leaves)
     assert len(description["children"]) == 3
-    assert description['children'][0]['type'] == 'PV'
-    assert description['children'][0]['panel_count'] == 1
-    assert description['children'][1]['type'] == 'PV'
-    assert description['children'][1]['panel_count'] == 4
-    assert description['children'][2]['type'] == 'SmartMeter'
+    assert description["children"][0]["type"] == "PV"
+    assert description["children"][0]["panel_count"] == 1
+    assert description["children"][1]["type"] == "PV"
+    assert description["children"][1]["panel_count"] == 4
+    assert description["children"][2]["type"] == "SmartMeter"
 
 
-def test_roundtrip_with_leaf(fixture_with_leaves):
-    recovered = area_from_string(fixture_with_leaves, create_config())
+def test_roundtrip_with_leaf(_fixture_with_leaves):
+    recovered = area_from_string(_fixture_with_leaves, _create_config())
     assert isinstance(recovered.children[0].strategy, PVStrategy)
     assert isinstance(recovered.children[1].strategy, PVStrategy)
     assert isinstance(recovered.children[2].strategy, SmartMeterStrategy)
@@ -175,27 +259,27 @@ def test_roundtrip_with_leaf(fixture_with_leaves):
 
 def test_area_does_not_allow_duplicate_subarea_names():
     area = Area(
-        'Grid',
-        [Area('House 1', children=[Area('H1 General Load'), Area('H1 PV1')]),
-         Area('House 1', children=[Area('H2 General Load'), Area('H2 PV1')])],
+        "Grid",
+        [Area("House 1", children=[Area("H1 General Load"), Area("H1 PV1")]),
+         Area("House 1", children=[Area("H2 General Load"), Area("H2 PV1")])],
     )
 
     with pytest.raises(AssertionError):
         are_all_areas_unique(area, set())
 
     area = Area(
-        'Grid',
-        [Area('House 1', children=[Area('H1 General Load'), Area('H1 PV1')]),
-         Area('House 2', children=[Area('H1 General Load'), Area('H2 PV1')])],
+        "Grid",
+        [Area("House 1", children=[Area("H1 General Load"), Area("H1 PV1")]),
+         Area("House 2", children=[Area("H1 General Load"), Area("H2 PV1")])],
     )
 
     with pytest.raises(AssertionError):
         are_all_areas_unique(area, set())
 
     area = Area(
-        'Grid',
-        [Area('House 1', children=[Area('H1 General Load'), Area('H1 PV1')]),
-         Area('House 2', children=[Area('H2 General Load'), Area('H2 PV1')])],
+        "Grid",
+        [Area("House 1", children=[Area("H1 General Load"), Area("H1 PV1")]),
+         Area("House 2", children=[Area("H2 General Load"), Area("H2 PV1")])],
     )
 
     # Does not raise an assertion

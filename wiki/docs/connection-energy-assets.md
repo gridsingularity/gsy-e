@@ -2,11 +2,12 @@
 
 Once the Grid Singularity Canary Test Network is created, you need to send the live data stream from your community energy assets to the Grid Singularity exchange by establishing a connection from your hardware’s data service through the Grid Singularity [Asset API](asset-api-template-script.md). Please make sure to satisfy all the data requirements (check [here](data-requirements.md)) in order to connect live data streams to the Canary Network.
 
-##5.2.1 Enable Live Asset data on the User InterfaceOn the map, the Canary Network owner can click on the home and the asset they’d like to connect live data to. In the *Advanced Settings* tab, the *live data* switch can be toggled so the checkmark is highlighted. Once this step and the one below is completed (*Establish a connection with your energy assets*), the real energy data will be represented for those assets in the results in the UI.
+##Enable Live Asset data on the User Interface
+On the map, the Canary Network owner can click on the home and the asset they’d like to connect live data to. In the *Advanced Settings* tab, the *live data* switch can be toggled so the checkmark is highlighted. Once this step and the one below is completed (*Establish a connection with your energy assets*), the real energy data will be represented for those assets in the results in the UI.
 
 *Note that if live data is turned off, data will be read through the uploaded profiles instead of reading data sent through the Asset API.*
 
-##5.2.2 Establish a connection with your energy assets
+##Establish a connection with your energy assets
 
 It is possible to connect and register automatically to a running Canary Network:
 

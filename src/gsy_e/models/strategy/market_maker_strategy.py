@@ -33,8 +33,14 @@ class MarketMakerStrategy(CommercialStrategy):
     as a usual strategy by posting offers, or it only sets up the market maker rate configuration
     in order to be used as the reference market maker price by other strategies.
     """
-    parameters = ("energy_rate_profile", "energy_rate", "grid_connected",
-                  "energy_rate_profile_uuid")
+
+    def serialize(self):
+        return {
+            "energy_rate_profile": self.energy_rate_profile,
+            "energy_rate": self.energy_rate_input,
+            "grid_connected": self._grid_connected,
+            "energy_rate_profile_uuid": self.energy_rate_profile_uuid
+        }
 
     def __init__(self, energy_rate_profile=None, energy_rate=None, grid_connected=True,
                  energy_rate_profile_uuid=None):

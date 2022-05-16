@@ -19,7 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.matching_algorithms import (
-    PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm)
+    PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm,
+    AttributedMatchingAlgorithm)
 from gsy_e.gsy_e_core.exceptions import WrongMarketTypeException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
@@ -52,6 +53,9 @@ class MycoInternalMatcher(MycoMatcherInterface):
         if (ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
                 BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value):
             return PayAsClearMatchingAlgorithm()
+        if (ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
+                BidOfferMatchAlgoEnum.DOF.value):
+            return AttributedMatchingAlgorithm()
         raise WrongMarketTypeException("Wrong market type setting flag "
                                        f"{ConstSettings.MASettings.MARKET_TYPE}")
 

@@ -24,7 +24,12 @@ from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 
 
 class FinitePowerPlant(CommercialStrategy):
-    parameters = ('energy_rate', 'max_available_power_kW', )
+
+    def serialize(self):
+        return {
+            "energy_rate": self.energy_rate_input,
+            "max_available_power_kW": self.max_available_power_kW
+        }
 
     def __init__(self, energy_rate=None, max_available_power_kW=None):
         FiniteDieselGeneratorValidator.validate(max_available_power_kW=max_available_power_kW)

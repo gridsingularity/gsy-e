@@ -30,7 +30,9 @@ from gsy_e.models.strategy import BaseStrategy, INF_ENERGY
 
 
 class CommercialStrategy(BaseStrategy):
-    parameters = ("energy_rate",)
+
+    def serialize(self):
+        return {"energy_rate": self.energy_rate_input}
 
     def __init__(self, energy_rate=None):
         CommercialProducerValidator.validate(energy_rate=energy_rate)
