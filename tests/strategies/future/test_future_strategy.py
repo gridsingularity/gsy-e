@@ -121,7 +121,8 @@ class TestFutureMarketStrategy:
         )
 
     @pytest.mark.parametrize(
-        "future_strategy_fixture", [LoadHoursStrategy(100), PVStrategy(), StorageStrategy()])
+        "future_strategy_fixture", [LoadHoursStrategy(100), PVStrategy(),
+                                    StorageStrategy(initial_soc=50)])
     def test_event_tick_updates_bids_and_offers(
             self, future_strategy_fixture: "BaseStrategy") -> None:
         """Validate that tick event updates existing bids and offers to the expected energy

@@ -216,6 +216,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             time_slot=time_slot,
             replace_existing=False
         )
+        self._bid_updater.increment_update_counter_all_markets(strategy)
 
     def _post_producer_first_offer(
             self, strategy: "BaseStrategy", time_slot: DateTime,
@@ -231,6 +232,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             price=available_sell_energy_kWh * self._offer_updater.initial_rate[time_slot],
             time_slot=time_slot
         )
+        self._offer_updater.increment_update_counter_all_markets(strategy)
 
     def event_tick(self, strategy: "BaseStrategy") -> None:
         """
