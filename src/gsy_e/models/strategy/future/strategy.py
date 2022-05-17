@@ -50,9 +50,11 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
 
     def update(self, market: "FutureMarkets", strategy: "BaseStrategy") -> None:
         """Update the price of existing bids to reflect the new rates."""
+        # print("update bid")
         for time_slot in strategy.area.future_markets.market_time_slots:
             if self.time_for_price_update(strategy, time_slot):
                 if strategy.are_bids_posted(market.id, time_slot):
+                    # print("update bid ", time_slot)
                     strategy.update_bid_rates(market, self.get_updated_rate(time_slot), time_slot)
 
 
@@ -216,7 +218,10 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             time_slot=time_slot,
             replace_existing=False
         )
-        self._bid_updater.increment_update_counter_all_markets(strategy)
+        if self._bid_updater.update_counter[time_slot] == 0:
+            # update_counter is 0 only for the very first bid that hast not been updated
+            # has to be increased because the first price counts as a price update
+            self._bid_updater.increment_update_counter(strategy, time_slot)
 
     def _post_producer_first_offer(
             self, strategy: "BaseStrategy", time_slot: DateTime,
@@ -232,7 +237,10 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             price=available_sell_energy_kWh * self._offer_updater.initial_rate[time_slot],
             time_slot=time_slot
         )
-        self._offer_updater.increment_update_counter_all_markets(strategy)
+        if self._offer_updater.update_counter[time_slot] == 0:
+            # update_counter is 0 only for the very first bid that hast not been updated
+            # has to be increased because the first price counts as a price update
+            self._offer_updater.increment_update_counter(strategy, time_slot)
 
     def event_tick(self, strategy: "BaseStrategy") -> None:
         """
