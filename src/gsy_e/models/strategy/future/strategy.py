@@ -50,11 +50,9 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
 
     def update(self, market: "FutureMarkets", strategy: "BaseStrategy") -> None:
         """Update the price of existing bids to reflect the new rates."""
-        # print("update bid")
         for time_slot in strategy.area.future_markets.market_time_slots:
             if self.time_for_price_update(strategy, time_slot):
                 if strategy.are_bids_posted(market.id, time_slot):
-                    # print("update bid ", time_slot)
                     strategy.update_bid_rates(market, self.get_updated_rate(time_slot), time_slot)
 
 
