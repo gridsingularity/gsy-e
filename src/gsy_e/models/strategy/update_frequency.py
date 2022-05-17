@@ -231,12 +231,10 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
         for time_slot in self._get_all_time_slots(strategy.area):
             self.increment_update_counter(strategy, time_slot)
 
-    def increment_update_counter(self, strategy: "BaseStrategy", time_slot) -> bool:
+    def increment_update_counter(self, strategy: "BaseStrategy", time_slot) -> None:
         """Increment the counter of the number of times in which prices have been updated."""
         if self.time_for_price_update(strategy, time_slot):
             self.update_counter[time_slot] += 1
-            return True
-        return False
 
     def time_for_price_update(self, strategy: "BaseStrategy", time_slot: DateTime) -> bool:
         """Check if the prices of bids/offers should be updated."""
