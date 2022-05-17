@@ -229,9 +229,9 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
         update counter in order to validate whether an update in the posted energy rates
         is required."""
         for time_slot in self._get_all_time_slots(strategy.area):
-            self._increment_update_counter(strategy, time_slot)
+            self.increment_update_counter(strategy, time_slot)
 
-    def _increment_update_counter(self, strategy: "BaseStrategy", time_slot) -> bool:
+    def increment_update_counter(self, strategy: "BaseStrategy", time_slot) -> bool:
         """Increment the counter of the number of times in which prices have been updated."""
         if self.time_for_price_update(strategy, time_slot):
             self.update_counter[time_slot] += 1

@@ -216,7 +216,10 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             time_slot=time_slot,
             replace_existing=False
         )
-        self._bid_updater.increment_update_counter_all_markets(strategy)
+        if self._bid_updater.update_counter[time_slot] == 0:
+            # update_counter is 0 only for the very first bid that hast not been updated
+            # has to be increased because the first price counts as a price update
+            self._bid_updater.increment_update_counter(strategy, time_slot)
 
     def _post_producer_first_offer(
             self, strategy: "BaseStrategy", time_slot: DateTime,
@@ -232,7 +235,10 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             price=available_sell_energy_kWh * self._offer_updater.initial_rate[time_slot],
             time_slot=time_slot
         )
-        self._offer_updater.increment_update_counter_all_markets(strategy)
+        if self._offer_updater.update_counter[time_slot] == 0:
+            # update_counter is 0 only for the very first bid that hast not been updated
+            # has to be increased because the first price counts as a price update
+            self._offer_updater.increment_update_counter(strategy, time_slot)
 
     def event_tick(self, strategy: "BaseStrategy") -> None:
         """
