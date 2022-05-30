@@ -1671,6 +1671,150 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-2-4" type="checkbox" id="nav-4-2-4">
+    
+    <label class="md-nav__link" for="nav-4-2-4">
+      Customise the clearing algorithm through the Grid Singularity Matching API
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-4-2-4">
+        Customise the clearing algorithm through the Grid Singularity Matching API
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../matching-api-walkthrough/" title="Walkthrough" class="md-nav__link">
+      Walkthrough
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-2-4-2" type="checkbox" id="nav-4-2-4-2">
+    
+    <label class="md-nav__link" for="nav-4-2-4-2">
+      Matching API
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
+      <label class="md-nav__title" for="nav-4-2-4-2">
+        Matching API
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../matching-api-events/" title="Matching API Events" class="md-nav__link">
+      Matching API Events
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../matching-api-commands/" title="Matching API Commands" class="md-nav__link">
+      Matching API Commands
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../matching-api-template-script/" title="Matching API Template Script" class="md-nav__link">
+      Matching API Template Script
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-2-4-3" type="checkbox" id="nav-4-2-4-3">
+    
+    <label class="md-nav__link" for="nav-4-2-4-3">
+      Launch the Matching API
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
+      <label class="md-nav__title" for="nav-4-2-4-3">
+        Launch the Matching API
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../registration-matching-api-user-interface/" title="Registration - Simulations run on the User-Interface" class="md-nav__link">
+      Registration - Simulations run on the User-Interface
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../registration-matching-api-backend/" title="Registration - Simulations run on the Backend" class="md-nav__link">
+      Registration - Simulations run on the Backend
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -1923,9 +2067,22 @@
 <li><strong>energy</strong>:  energy in kWh</li>
 <li><strong>price</strong>: price in Euro cents</li>
 <li><strong>replace_existing</strong>: if set to TRUE replace all existing bids with a new one</li>
+<li><strong>attributes (optional)</strong>: a dictionary of attributes that describes the bid (not supported at the moment)</li>
+<li>
+<p><strong>requirements (optional)</strong>: a list of dictionaries containing requirements for the bid. At least one of the provided dictionaries needs to be satisfied in the matching process. Currently supported requirements for bids are:</p>
+<ul>
+<li>energy_type: energy type (e.g., “PV”) that the bid prefers to consume</li>
+<li>trading_partners: IDs of the market or asset owner with which the bid prefers to be matched</li>
+<li>energy: energy quantity (expressed in kWh) that the bid prefers to consume</li>
+<li>price: trade price (expressed in Euro cents) that the bid prefers to accept</li>
+</ul>
+</li>
+<li>
+<p><strong>time_slot (optional)</strong>: the time slot where the bid is going to be posted (to be used to trade post-delivery in the <a href="../settlement-market-structure/">Settlement Market</a>)</p>
+</li>
 </ul>
 <p>Here is an example:</p>
-<pre class="codehilite"><code>self.add_to_batch_commands.bid_energy(asset_uuid = &quot;2e7866d8-34c6-49ad-a388-fd5876a3e679&quot;, energy = 2, price = 60, replace_existing = True)
+<pre class="codehilite"><code>self.add_to_batch_commands.bid_energy(asset_uuid = &quot;2e7866d8-34c6-49ad-a388-fd5876a3e679&quot;, energy = 2, price = 60, replace_existing = True, attributes = None,  requirements =  [{“energy_type”: “PV”, “trading_partners” = [], “energy” = 5, “price”: 28}], “time_slot” = None)
 </code></pre>
 
 <p>If the bid is placed successfully, it returns the detailed information about the bid. If not, it returns the reason for the error.</p>
@@ -1936,9 +2093,22 @@
 <li><strong>energy</strong>: energy in kWh</li>
 <li><strong>rate</strong>: price per volume in Euro cents/kWh</li>
 <li><strong>replace_existing</strong>: if set to TRUE replace all existing bids with a new one</li>
+<li><strong>attributes (optional)</strong>: a dictionary of attributes that describes the bid (not supported at the moment)</li>
+<li>
+<p><strong>requirements (optional)</strong>: a list of dictionaries containing requirements for the bid. At least one of the provided dictionaries needs to be satisfied in the matching process. Currently supported requirements for bids are:</p>
+<ul>
+<li>energy_type: energy type (e.g., “PV”) that the bid prefers to consume</li>
+<li>trading_partners: IDs of the market or asset owner with which the bid prefers to be matched</li>
+<li>energy: energy quantity (expressed in kWh) that the bid prefers to consume</li>
+<li>price: trade price (expressed in Euro cents) that the bid prefers to accept</li>
+</ul>
+</li>
+<li>
+<p><strong>time_slot (optional)</strong>: the time slot where the bid is going to be posted (to be used to trade post-delivery in the <a href="../settlement-market-structure/">Settlement Market</a>)</p>
+</li>
 </ul>
 <p>Here is an example:</p>
-<pre class="codehilite"><code>self.add_to_batch_commands.bid_energy_rate(asset_uuid = &quot;2e7866d8-34c6-49ad-a388-fd5876a3e679&quot;, energy = 2, rate = 30, replace_existing = True)
+<pre class="codehilite"><code>self.add_to_batch_commands.bid_energy_rate(asset_uuid = &quot;2e7866d8-34c6-49ad-a388-fd5876a3e679&quot;, energy = 2, rate = 30, replace_existing = True, attributes = None,  requirements =  [{“energy_type”: “PV”, “trading_partners” = [], “energy” = 5, “price”: 28}], “time_slot” = None)
 </code></pre>
 
 <h3 id="lists_bids">lists_bids()<a class="headerlink" href="#lists_bids" title="Permanent link">&para;</a></h3>
@@ -1964,9 +2134,19 @@
 <li><strong>energy</strong>:  energy in kWh</li>
 <li><strong>price</strong>: price in Euro cents</li>
 <li><strong>replace_existing</strong>: if set to TRUE replace all existing bids with a new one</li>
+<li><strong>attributes (optional)</strong>: a dictionary of attributes that describes the bid (not supported at the moment)</li>
+<li>
+<p><strong>requirements (optional)</strong>: a list of dictionaries containing requirements for the bid. At least one of the provided dictionaries needs to be satisfied in the matching process. Currently supported requirements for bids are:</p>
+<ul>
+<li>energy_type: energy type of the offer (e.g. solar)</li>
+</ul>
+</li>
+<li>
+<p><strong>time_slot (optional)</strong>: the time slot where the bid is going to be posted (to be used to trade post-delivery in the <a href="../settlement-market-structure/">Settlement Market</a>)</p>
+</li>
 </ul>
 <p>Here is an example:</p>
-<pre class="codehilite"><code>self.add_to_batch_commands.offer_energy(asset_uuid = &quot;2e7866d8-34c6-49ad-a388-fd5876a3e679&quot;, energy = 2, price_cents = 60, replace_existing = True)
+<pre class="codehilite"><code>self.add_to_batch_commands.offer_energy(asset_uuid = &quot;2e7866d8-34c6-49ad-a388-fd5876a3e679&quot;, energy = 2, price_cents = 60, replace_existing = True, attributes = “PV”,  requirements =  [{ “trading_partners”: &quot;62f827ec-ef86-4782-b5c3-88327751d97d”}], “time_slot” = None)
 </code></pre>
 
 <p>If the offer is placed successfully, it returns the detailed information about the bid. If not, it returns the reason for the error.</p>
@@ -1977,9 +2157,18 @@
 <li><strong>energy</strong>:  energy in kWh</li>
 <li><strong>rate</strong>: price per volume in Euro cents/kWh</li>
 <li><strong>replace_existing</strong>: if set to TRUE replace all existing offers with a new one</li>
+<li>
+<p><strong>requirements (optional)</strong>: a list of dictionaries containing requirements for the bid. At least one of the provided dictionaries needs to be satisfied in the matching process. Currently supported requirements for bids are:</p>
+<ul>
+<li>energy_type: energy type of the offer (e.g. solar)</li>
+</ul>
+</li>
+<li>
+<p><strong>time_slot (optional)</strong>: the time slot where the bid is going to be posted (to be used to trade post-delivery in the <a href="../settlement-market-structure/">Settlement Market</a>)</p>
+</li>
 </ul>
 <p>Here is an example:</p>
-<pre class="codehilite"><code>self.add_to_batch_commands.offer_energy_rate(asset_uuid = &quot;2e7866d8-34c6-49ad-a388-fd5876a3e679&quot;, energy = 2, rate = 30, replace_existing = True)
+<pre class="codehilite"><code>self.add_to_batch_commands.offer_energy_rate(asset_uuid = &quot;2e7866d8-34c6-49ad-a388-fd5876a3e679&quot;, energy = 2, rate = 30, replace_existing = True, attributes = “PV”,  requirements =  [{ “trading_partners”: &quot;62f827ec-ef86-4782-b5c3-88327751d97d”}], “time_slot” = None)
 </code></pre>
 
 <h3 id="lists_offers">lists_offers()<a class="headerlink" href="#lists_offers" title="Permanent link">&para;</a></h3>
@@ -2009,8 +2198,7 @@ Here is an example:</p>
 </code></pre>
 
 <p>In return the simulation will provide a detailed response for all commands submitted.</p>
-<p><em>Note: The total amount of energy to bid/offer at any point is limited to the energy requirement/available of the asset. Replacing/updating a bid/offer during a market slot deletes other active bids/offers. Additionally, the price of your bids/offers must be a positive float otherwise it will get rejected by the market.</em>
-*</p>
+<p><em>Note: The total amount of energy to bid/offer at any point is limited to the energy requirement/available of the asset. Replacing/updating a bid/offer during a market slot deletes other active bids/offers. Additionally, the price of your bids/offers must be a positive float otherwise it will get rejected by the market.</em></p>
                 
                   
                 

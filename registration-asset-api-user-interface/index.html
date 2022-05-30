@@ -1636,6 +1636,150 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-2-4" type="checkbox" id="nav-4-2-4">
+    
+    <label class="md-nav__link" for="nav-4-2-4">
+      Customise the clearing algorithm through the Grid Singularity Matching API
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-4-2-4">
+        Customise the clearing algorithm through the Grid Singularity Matching API
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../matching-api-walkthrough/" title="Walkthrough" class="md-nav__link">
+      Walkthrough
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-2-4-2" type="checkbox" id="nav-4-2-4-2">
+    
+    <label class="md-nav__link" for="nav-4-2-4-2">
+      Matching API
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
+      <label class="md-nav__title" for="nav-4-2-4-2">
+        Matching API
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../matching-api-events/" title="Matching API Events" class="md-nav__link">
+      Matching API Events
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../matching-api-commands/" title="Matching API Commands" class="md-nav__link">
+      Matching API Commands
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../matching-api-template-script/" title="Matching API Template Script" class="md-nav__link">
+      Matching API Template Script
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-2-4-3" type="checkbox" id="nav-4-2-4-3">
+    
+    <label class="md-nav__link" for="nav-4-2-4-3">
+      Launch the Matching API
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
+      <label class="md-nav__title" for="nav-4-2-4-3">
+        Launch the Matching API
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../registration-matching-api-user-interface/" title="Registration - Simulations run on the User-Interface" class="md-nav__link">
+      Registration - Simulations run on the User-Interface
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../registration-matching-api-backend/" title="Registration - Simulations run on the Backend" class="md-nav__link">
+      Registration - Simulations run on the Backend
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -1846,15 +1990,15 @@
                   <h1>Registration - Simulations run on the User-Interface</h1>
                 
                 <p><em>Note: The following instructions serve as a guide to launch the Grid Operator API as well.</em></p>
-<p>The Exchange SDK is launched with a cli command. To launch the Exchange SDK, the user needs to open a new terminal and activate the gsy-e-sdk environment.</p>
+<p>The Asset API is launched with a cli command. To launch the Asset API, the user needs to open a new terminal and activate the gsy-e-sdk environment (Grid Singularity Exchange SDK).</p>
 <pre class="codehilite"><code>workon gsy-e-sdk
 </code></pre>
 
-<p>And go to the GSy Exchange SDK repository</p>
+<p>And go to the <a href="https://github.com/gridsingularity/gsy-e-sdk">GSy Exchange SDK repository</a></p>
 <pre class="codehilite"><code>cd path_to_repository/gsy-e-sdk
 </code></pre>
 
-<p>The api launch cli command takes several arguments that can be listed with:</p>
+<p>The API launch CLI command takes several arguments that can be listed with:</p>
 <pre class="codehilite"><code>gsy-e-sdk run --help
 </code></pre>
 
@@ -1870,10 +2014,10 @@
 <li><code>simulation-config-path</code> --&gt; Path to the JSON file that contains the user's collaboration/CN information. This file can be downloaded from the "Registry" page, currently still at d3a.io.</li>
 <li><code>run-on-redis</code> --&gt; This flag targets the local testing of the SDK, where no user authentication is required. A locally running redis server and Grid Singularity (d3a.io) simulation are needed here.</li>
 </ul>
-<p>The API agent can interface with a local simulation (<a href="../setup-configuration/">backend</a>) or a <a href="../collaboration/">collaboration</a>/<a href="../connect-ctn/">Canary Network</a> (<a href="https://www.d3a.io/">User-Interface</a>). There are 3 methods to parse the required information when launching the API to connect to the UI:</p>
+<p>The API agent can interface with a local simulation (<a href="../setup-configuration/">backend</a>) or a <a href="../collaboration/">collaboration</a>/<a href="../connect-ctn/">Canary Network</a> (<a href="https://www.d3a.io/">User-Interface</a>). There are 3 methods to parse the required information when launching the API to connect to the UI, as thoroughly explained in the text below:</p>
 <ol>
 <li>Simulation configuration file</li>
-<li>Cli command</li>
+<li>CLI command</li>
 <li>Environment variables</li>
 </ol>
 <h4 id="simulation-configuration-file">Simulation configuration file:<a class="headerlink" href="#simulation-configuration-file" title="Permanent link">&para;</a></h4>

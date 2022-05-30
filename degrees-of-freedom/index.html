@@ -1578,6 +1578,150 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-2-4" type="checkbox" id="nav-4-2-4">
+    
+    <label class="md-nav__link" for="nav-4-2-4">
+      Customise the clearing algorithm through the Grid Singularity Matching API
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-4-2-4">
+        Customise the clearing algorithm through the Grid Singularity Matching API
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../matching-api-walkthrough/" title="Walkthrough" class="md-nav__link">
+      Walkthrough
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-2-4-2" type="checkbox" id="nav-4-2-4-2">
+    
+    <label class="md-nav__link" for="nav-4-2-4-2">
+      Matching API
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
+      <label class="md-nav__title" for="nav-4-2-4-2">
+        Matching API
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../matching-api-events/" title="Matching API Events" class="md-nav__link">
+      Matching API Events
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../matching-api-commands/" title="Matching API Commands" class="md-nav__link">
+      Matching API Commands
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../matching-api-template-script/" title="Matching API Template Script" class="md-nav__link">
+      Matching API Template Script
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4-2-4-3" type="checkbox" id="nav-4-2-4-3">
+    
+    <label class="md-nav__link" for="nav-4-2-4-3">
+      Launch the Matching API
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
+      <label class="md-nav__title" for="nav-4-2-4-3">
+        Launch the Matching API
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../registration-matching-api-user-interface/" title="Registration - Simulations run on the User-Interface" class="md-nav__link">
+      Registration - Simulations run on the User-Interface
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../registration-matching-api-backend/" title="Registration - Simulations run on the Backend" class="md-nav__link">
+      Registration - Simulations run on the Backend
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -1737,11 +1881,30 @@
                 
                   <h1>Degrees of Freedom</h1>
                 
-                <p>Bids and offers for energy include a set of attributes (e.g. encrypted unique asset ID, asset location, type of energy produced e.g. solar energy or membership in energy club) and diverse requirements that reflect trading preferences, such as energy quantity, price range, energy source, geographic distance, or preferred trading partner.</p>
-<p>Intelligent agents managed by aggregators make algorithmic trading decisions on behalf of participants, translating energy asset information and prosumer trading preferences into a requirements function. Bids and offers are submitted through Grid Singularity’s existing <a href="../asset-api-template-script/">Asset API</a>, modified to include attributes and requirements for each submitted order. Each market then stores the list of attributed bids and offers in the exchange’s open order book to be matched.</p>
-<p>Below, an example of a bid and offer with attributes and requirements. The bid submits three sets of conditions. As the second condition is fulfilled by the offer, the two orders are successfully matched, in this case for 0.8 kWh of photovoltaic (PV) energy (at a price between 21 and 25 cents as determined by the matching algorithm). A verification function performs this check. The function accepts a bid / offer pair as input, returns a <True> (green check) if there is a valid match, and returns a <False> (red x) if requirements are not met. If the function returns <True>, a trade is created. In a near-term centralised implementation, this verification function is integrated into the exchange code. In a blockchain implementation, it is to be deployed as a module of the parachain’s protocol.</p>
+                <p>Through the Grid Singularity Exchange, and as permitted by local legislation, users can enjoy enhanced <strong>degrees of freedom</strong>, or <strong>choices to trade or share energy based on a set of preferences</strong>, such as energy quantity, price, source or preferred trading partner. The degrees of freedom are a key functionality of the <a href="https://gridsingularity.medium.com/discussion-paper-grid-singularitys-implementation-of-symbiotic-energy-markets-bd3954af43c8">Symbiotic Energy Market</a>, a future decentralised market design we aim to enable to the extent that legislation in relevant markets allows people to have more energy choices. A user might be interested to set trading preferences in order to prioritise consumption of green energy (i.e. solar, wind) over grey energy (i.e. coal) or in order to buy or sell energy directly to a friend or family member, for example.</p>
+<p>The <a href="../market-agent/">bids and offers</a> for an energy asset include a set of attributes and requirements that reflect its owner’s trading preferences. <strong>Attributes</strong> are parameters currently supported only for offers, that describe the energy type of the offer posted, which is commonly associated with the energy source (e.g. PV, Wind, Hydro, Biomass, etc…). On the other hand, <strong>requirements</strong> are parameters associated with both bids and offers, and represent the trading preferences of the users. The currently supported requirements are the following:</p>
+<ul>
+<li>Offers:<ul>
+<li>Preferred trading partners: community participants the users wish to sell energy to;</li>
+</ul>
+</li>
+<li>Bids:<ul>
+<li>Preferred trading partners: community participants the users wish to buy energy from;</li>
+<li>Energy type: the energy source that the user prefers to consume (e.g. PV, Wind, Hydro, Biomass, etc.)</li>
+<li>Energy: the maximum amount of energy that the user is willing to consume;</li>
+<li>Price: the maximum price for energy that the user is willing to pay.</li>
+</ul>
+</li>
+</ul>
+<p>Naturally, attributes and requirements can be aggregated/grouped in different combinations to express customised trading preferences. Below is an example of a bid and offer with attributes and requirements (figure 3.22). The bid submits three sets of conditions that must be interpreted as OR statements, i.e. each condition must be assessed individually and each requirement of the condition must be fulfilled. In this example, the Consumer desires to buy up to 1.0 kWh from their Mom for a maximum of 28 cents OR up to 1.0 kWh of solar energy for a maximum of 25 cents OR up to 0.5 kWh of energy from any source for a maximum of 20 cents. The Producer has 0.8 kWh of solar energy to sell for no less than 21 cents.</p>
+<p>In this case, the second condition is fulfilled by the offer, thus the two orders are successfully matched:
+- The energy source (solar) is the same in the bid and the offer;
+- The energy to be traded results in 0.8 kWh;
+- The trading price can range between 21 and 25 cents and will be determined by the matching algorithm in place.</p>
 <p><img alt="alt_text" src="../img/degrees-of-freedom.png" /></p>
 <p><strong><em>Figure 3.22</em></strong>. <em>Example of a bid and offer with attributes and requirements.</em></p>
+<p>Matching algorithms parse the orderbook and submit proposed bid and offer matches to the Grid Singularity Exchange through the <a href="../matching-api-walkthrough/">Matching API</a>. A verification function, integrated into the exchange code, confirms that the attributes of the proposed bid and offer match satisfies each other’s respective requirements. The verification function accepts a bid / offer pair as input and, if the requirements are met, a trade is created. Otherwise, the trade is rejected.</p>
+<p>Multi-attributed bids and offers are submitted through Grid Singularity’s existing <a href="../configure-trading-strategies-walkthrough/">Asset API</a>. For more information on how to add attributes and requirements to bids and offers by using the Asset API, please follow <a href="../matching-api-template-script/">this link</a>.</p>
                 
                   
                 
