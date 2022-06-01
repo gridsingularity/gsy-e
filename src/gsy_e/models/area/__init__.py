@@ -24,6 +24,7 @@ from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyAreaException, GSyDeviceException
 from gsy_framework.utils import key_in_dict_and_not_none
+from gsy_framework.data_classes import Trade
 from pendulum import DateTime
 from slugify import slugify
 
@@ -44,12 +45,12 @@ from gsy_e.models.market.future import FutureMarkets
 from gsy_e.models.market.market_structures import AvailableMarketTypes
 from gsy_e.models.strategy import BaseStrategy
 from gsy_e.models.strategy.external_strategies import ExternalMixin
+from gsy_e.models.strategy.scm import SCMStrategy
 
 log = getLogger(__name__)
 
 if TYPE_CHECKING:
     from gsy_e.models.market import MarketBase
-    from gsy_framework.data_classes import Trade
 
 
 def check_area_name_exists_in_parent_area(parent_area, name):
@@ -120,13 +121,13 @@ class AreaBase:
         self.strategy = strategy
         self._config = config
         self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
-        self._current_time_slot = None
+        self._current_market_time_slot = None
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
 
     @property
     def now(self) -> DateTime:
         """Get the current time of the simulation."""
-        return self._current_time_slot
+        return self._current_market_time_slot
 
     @property
     def trades(self) -> List["Trade"]:
@@ -143,6 +144,7 @@ class AreaBase:
             grid_fee_const = None
         self.grid_fee_constant = grid_fee_const
         self.grid_fee_percentage = grid_fee_percentage
+        self._trades = {}
 
     @property
     def config(self) -> Union[SimulationConfig, GlobalConfig]:
@@ -240,15 +242,121 @@ class AreaBase:
             log.exception("area.update_descendants_strategy_prices failed.")
             return
 
-    def cycle_coefficients_trading(self, current_time_slot: DateTime) -> None:
-        """Perform operations that should be executed on coefficients trading cycle."""
-        self._current_time_slot = current_time_slot
-
     def get_results_dict(self):
         """Calculate the results dict for the coefficients trading."""
         if self.strategy is not None:
-            return self.strategy.state.get_results_dict(self._current_time_slot)
+            return self.strategy.state.get_results_dict(self._current_market_time_slot)
         return {}
+
+
+class CoefficientArea(AreaBase):
+    def __init__(self, name: str = None, children: List["Area"] = None,
+                 uuid: str = None,
+                 strategy: BaseStrategy = None,
+                 config: SimulationConfig = None,
+                 grid_fee_percentage: float = None,
+                 grid_fee_constant: float = None,
+                 coefficient_percent: float = 0.1,
+                 trade_rate: float = 0.0
+                 ):
+        super().__init__(name, children, uuid, strategy, config, grid_fee_percentage,
+                         grid_fee_constant)
+        self._coefficient_percent = coefficient_percent
+        self._trade_rate = trade_rate
+        self.past_market_time_slot = None
+
+    def activate_coefficients(self, current_time_slot: DateTime) -> None:
+        self._current_market_time_slot = current_time_slot
+
+        if self.strategy:
+            self.strategy.activate(self)
+        for child in self.children:
+            child.activate_coefficients(current_time_slot)
+
+    def cycle_coefficients_trading(self, current_time_slot: DateTime) -> None:
+        """Perform operations that should be executed on coefficients trading cycle."""
+        self.past_market_time_slot = self._current_market_time_slot
+        self._current_market_time_slot = current_time_slot
+
+        if self.strategy:
+            self.strategy.market_cycle(self)
+
+        for child in self.children:
+            child.cycle_coefficients_trading(current_time_slot)
+
+    def aggregate_sell_energy(self, current_time_slot: DateTime) -> float:
+        if not self.children and isinstance(self.strategy, SCMStrategy):
+            return self.strategy.get_energy_to_sell_kWh(current_time_slot)
+        return sum(c.aggregate_sell_energy(current_time_slot) for c in self.children)
+
+    def trigger_energy_buy_trades(
+            self, current_time_slot: DateTime, total_sell_energy_kWh: float) -> float:
+        if not self.children:
+            if not isinstance(self.strategy, SCMStrategy):
+                return 0.0
+            available_production_kWh = total_sell_energy_kWh * self._coefficient_percent
+            strategy_energy_kWh = self.strategy.get_energy_to_buy_kWh(current_time_slot)
+            if available_production_kWh >= 0.0:
+                buy_energy_kWh = min(strategy_energy_kWh, available_production_kWh)
+                seller_name = gsy_e.constants.DEFAULT_SCM_SELLER_STRING
+            else:
+                buy_energy_kWh = strategy_energy_kWh
+                seller_name = gsy_e.constants.DEFAULT_GRID_SELLER_STRING
+            if buy_energy_kWh > 0.0:
+                trade = Trade(
+                    str(uuid4()), current_time_slot, None,
+                    seller_name, self.name,
+                    traded_energy=buy_energy_kWh, trade_price=self._trade_rate, residual=None,
+                    offer_bid_trade_info=None,
+                    seller_origin=seller_name,
+                    buyer_origin=self.name, fee_price=0., buyer_origin_id=self.uuid,
+                    seller_origin_id=None, seller_id=None, buyer_id=self.uuid,
+                    time_slot=current_time_slot)
+                if not self._trades.get(current_time_slot):
+                    self._trades[current_time_slot] = []
+                self._trades[current_time_slot].append(trade)
+                log.info("[SCM][TRADE][OFFER] [%s] [%s] %s", self.name, trade.time_slot, trade)
+                return buy_energy_kWh
+        else:
+            return sum(
+                child.trigger_energy_buy_trades(current_time_slot, total_sell_energy_kWh)
+                for child in self.children
+            )
+
+    def trigger_energy_sell_trades(
+            self, current_time_slot: DateTime, total_buy_energy_kWh: float) -> float:
+        if not self.children:
+            if not isinstance(self.strategy, SCMStrategy):
+                return 0.0
+            sell_energy_kWh = self.strategy.get_energy_to_sell_kWh(current_time_slot)
+            # if total_buy_energy_kWh >= sell_energy_kWh:
+            #     buyer_name = gsy_e.constants.DEFAULT_SCM_SELLER_STRING
+            #     total_buy_energy_kWh -= sell_energy_kWh
+            # else:
+            #     buyer_name = gsy_e.constants.DEFAULT_GRID_SELLER_STRING
+
+            if sell_energy_kWh > 0.0:
+                trade = Trade(
+                    str(uuid4()), current_time_slot, None,
+                    self.name, gsy_e.constants.DEFAULT_SCM_SELLER_STRING,
+                    traded_energy=sell_energy_kWh, trade_price=self._trade_rate, residual=None,
+                    offer_bid_trade_info=None,
+                    seller_origin=self.name,
+                    buyer_origin=gsy_e.constants.DEFAULT_SCM_SELLER_STRING,
+                    fee_price=0.,
+                    seller_origin_id=self.uuid, buyer_origin_id=None,
+                    seller_id=self.uuid, buyer_id=None,
+                    time_slot=current_time_slot)
+                if not self._trades.get(current_time_slot):
+                    self._trades[current_time_slot] = []
+                self._trades[current_time_slot].append(trade)
+                log.info("[SCM][TRADE][OFFER] [%s] [%s] %s", self.name, trade.time_slot, trade)
+                return total_buy_energy_kWh - sell_energy_kWh
+        else:
+            return sum(
+                child.trigger_energy_buy_trades(current_time_slot, total_buy_energy_kWh)
+                for child in self.children
+            )
 
 
 class Area(AreaBase):
