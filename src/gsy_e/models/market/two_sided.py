@@ -316,9 +316,8 @@ class TwoSidedMarket(OneSidedMarket):
         were_trades_performed = False
         while recommendations:
             recommended_pair = BidOfferMatch.from_dict(recommendations.pop(0))
-            market_offer = self.offers.get(recommended_pair.offer["id"])
-            market_bid = self.bids.get(recommended_pair.bid["id"])
 
+            market_offer = self.offers.get(recommended_pair.offer["id"])
             # TODO: This is a temporary solution based on the fact that trading strategies do not
             # post multiple bids or offers on the same market at the moment. Will be shortly
             # replaced by a global offer / bid identifier instead of tracking the original order
@@ -328,13 +327,15 @@ class TwoSidedMarket(OneSidedMarket):
                     recommended_pair.offer["seller_origin_id"])
                 if market_offer is None:
                     raise InvalidBidOfferPairException("Offer does not exist in the market")
-                recommended_pair.offer = market_offer.serializable_dict()
+            recommended_pair.offer = market_offer.serializable_dict()
+
+            market_bid = self.bids.get(recommended_pair.bid["id"])
             if not market_bid:
                 market_bid = self._get_bid_from_buyer_origin_id(
                     recommended_pair.bid["buyer_origin_id"])
                 if market_bid is None:
                     raise InvalidBidOfferPairException("Bid does not exist in the market")
-                recommended_pair.bid = market_bid.serializable_dict()
+            recommended_pair.bid = market_bid.serializable_dict()
 
             try:
                 self.validate_bid_offer_match(recommended_pair)
@@ -426,7 +427,35 @@ class TwoSidedMarket(OneSidedMarket):
                 f"Trade rate {clearing_rate} is higher than offer energy rate "
                 f"{market_offer.energy_rate}.")
 
+        self._validate_matching_requirements(recommendation)
         self._validate_requirements_satisfied(recommendation)
+
+    @staticmethod
+    def _validate_matching_requirements(recommendation: BidOfferMatch) -> None:
+        """Validate a matching_requirement actually exists in the Bid/Offer object.
+
+        Raises:
+            InvalidBidOfferPairException: matching_requirement doesn't exist in the Bid/Offer
+            object.
+        """
+        if not recommendation.matching_requirements:
+            return
+
+        bid_matching_requirement = recommendation.matching_requirements.get("bid_requirement")
+        if bid_matching_requirement:
+            bid_requirements = recommendation.bid.get("requirements") or []
+            if bid_matching_requirement not in bid_requirements:
+                raise InvalidBidOfferPairException(
+                    f"Matching requirement {bid_matching_requirement} doesn't exist in the Bid"
+                    f" object.")
+
+        offer_matching_requirement = recommendation.matching_requirements.get("offer_requirement")
+        if offer_matching_requirement:
+            offer_requirements = recommendation.offer.get("requirements") or []
+            if offer_matching_requirement not in offer_requirements:
+                raise InvalidBidOfferPairException(
+                    f"Matching requirement {offer_matching_requirement} doesn't exist in the Offer"
+                    f" object.")
 
     @classmethod
     def _replace_offers_bids_with_residual_in_recommendations_list(
