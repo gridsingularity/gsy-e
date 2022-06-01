@@ -575,3 +575,73 @@ class TestTwoSidedMarketMatchRecommendations:
         market.match_recommendations(
             [recommendation.serializable_dict() for recommendation in recommendations])
         assert len(market.trades) == 0
+
+    @staticmethod
+    def test_validate_recommendation_selected_energy(market):
+        """Test a recommendation with invalid selected_energy gets rejected."""
+        bid = Bid("bid_id1", pendulum.now(), price=2, energy=1, buyer="Buyer", buyer_id="buyer1",
+                  time_slot="2021-10-06T12:00")
+        offer = Offer("offer_id1", pendulum.now(), price=2, energy=1, seller="Seller",
+                      seller_id="seller1", time_slot="2021-10-06T12:00")
+
+        market.bids = {"bid_id1": bid}
+        market.offers = {"offer_id1": offer}
+
+        recommended_match1 = BidOfferMatch(
+            bid=bid.serializable_dict(), offer=offer.serializable_dict(),
+            trade_rate=2, selected_energy=2, market_id=market.id,
+            time_slot="2021-10-06T12:00")
+        recommended_match2 = BidOfferMatch(
+            bid=bid.serializable_dict(), offer=offer.serializable_dict(),
+            trade_rate=2, selected_energy=0, market_id=market.id,
+            time_slot="2021-10-06T12:00")
+        recommended_match3 = BidOfferMatch(
+            bid=bid.serializable_dict(), offer=offer.serializable_dict(),
+            trade_rate=2, selected_energy=-2, market_id=market.id,
+            time_slot="2021-10-06T12:00")
+
+        recommendations = [
+            recommended_match1,
+            recommended_match2,
+            recommended_match3]
+
+        for recommendation in recommendations:
+            with pytest.raises(InvalidBidOfferPairException):
+                market.validate_bid_offer_match(recommendation)
+
+        market.match_recommendations([
+            recommendation.serializable_dict() for recommendation in recommendations])
+        assert len(market.trades) == 0
+
+    @staticmethod
+    def test_validate_recommendation_traded_rate(market):
+        """Test a recommendation with invalid traded_rate gets rejected."""
+        bid = Bid("bid_id1", pendulum.now(), price=8, energy=4, buyer="Buyer", buyer_id="buyer1",
+                  time_slot="2021-10-06T12:00")
+        offer = Offer("offer_id1", pendulum.now(), price=8, energy=4, seller="Seller",
+                      seller_id="seller1", time_slot="2021-10-06T12:00")
+
+        market.bids = {"bid_id1": bid}
+        market.offers = {"offer_id1": offer}
+        # lower trade rate
+        recommended_match1 = BidOfferMatch(
+            bid=bid.serializable_dict(), offer=offer.serializable_dict(),
+            trade_rate=1, selected_energy=1, market_id=market.id,
+            time_slot="2021-10-06T12:00")
+        # higher trade rate
+        recommended_match2 = BidOfferMatch(
+            bid=bid.serializable_dict(), offer=offer.serializable_dict(),
+            trade_rate=3, selected_energy=1, market_id=market.id,
+            time_slot="2021-10-06T12:00")
+
+        recommendations = [
+            recommended_match1,
+            recommended_match2]
+
+        for recommendation in recommendations:
+            with pytest.raises(InvalidBidOfferPairException):
+                market.validate_bid_offer_match(recommendation)
+
+        market.match_recommendations([
+            recommendation.serializable_dict() for recommendation in recommendations])
+        assert len(market.trades) == 0
