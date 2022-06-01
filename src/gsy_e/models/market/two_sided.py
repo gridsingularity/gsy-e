@@ -436,7 +436,7 @@ class TwoSidedMarket(OneSidedMarket):
                 f"{recommendation.bid_energy_rate}.")
         if market_offer.energy_rate > clearing_rate + FLOATING_POINT_TOLERANCE:
             raise InvalidBidOfferPairException(
-                f"Trade rate {clearing_rate} is higher than offer energy rate "
+                f"Trade rate {clearing_rate} is lower than offer energy rate "
                 f"{market_offer.energy_rate}.")
 
         self._validate_matching_requirements(recommendation)
