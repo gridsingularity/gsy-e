@@ -300,11 +300,20 @@ class TwoSidedMarket(OneSidedMarket):
 
     def _get_offer_from_seller_origin_id(self, seller_origin_id):
         """Get the first offer that has the same seller_origin_id."""
+        if seller_origin_id is None:
+            # Many offers may have seller_origin_id=None; Avoid looking for them as it is
+            # inaccurate.
+            return None
+
         return next(iter(
             [offer for offer in self.offers.values()
              if offer.seller_origin_id == seller_origin_id]), None)
 
     def _get_bid_from_buyer_origin_id(self, buyer_origin_id):
+        if buyer_origin_id is None:
+            # Many bids may have buyer_origin_id=None; Avoid looking for them as it is inaccurate.
+            return None
+
         return next(iter(
             [bid for bid in self.bids.values()
              if bid.buyer_origin_id == buyer_origin_id]), None)
