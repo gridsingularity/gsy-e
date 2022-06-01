@@ -421,6 +421,9 @@ class TwoSidedMarket(OneSidedMarket):
             raise InvalidBidOfferPairException("Not all bids and offers exist in the market.")
         bid_energy = recommendation.bid_energy
         offer_energy = market_offer.energy
+        if selected_energy <= 0:
+            raise InvalidBidOfferPairException(
+                f"Energy traded {selected_energy} should be more than 0.")
         if selected_energy > bid_energy:
             raise InvalidBidOfferPairException(
                 f"Energy traded {selected_energy} is higher than bids energy {bid_energy}.")
