@@ -542,7 +542,7 @@ class Area(AreaBase):
         self._consume_commands_from_aggregator()
         if self.children:
             self.spot_market.update_clock(self.now)
-
+            self.future_markets.update_clock(self.now)
             for market in self._markets.settlement_markets.values():
                 market.update_clock(self.now)
         for child in self.children:
