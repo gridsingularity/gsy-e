@@ -8,6 +8,7 @@ import pytest
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import BidOfferMatch
 from gsy_framework.data_classes import TradeBidOfferInfo, Trade
+from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.matching_algorithms import (
     PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
 )
@@ -648,6 +649,8 @@ class TestTwoSidedMarketMatchRecommendations:
 
     @staticmethod
     def test_validate_recommendation_requirement_price(market):
+        """Test validate bid price requirement in PAY_AS_BID market."""
+        ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
         bid = Bid(
             "bid_id1", pendulum.now(), price=35, energy=1, buyer="Buyer", buyer_id="buyer1",
             time_slot="2021-10-06T12:00", requirements=[
