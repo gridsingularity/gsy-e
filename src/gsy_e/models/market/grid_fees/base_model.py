@@ -38,6 +38,7 @@ class GridFees(BaseClassGridFees):
             self, bid_propagated_rate, bid_original_rate,
             offer_propagated_rate, offer_original_rate,
             trade_rate_source):
+        # pylint: disable=too-many-arguments
         demand_side_tax = (
             0 if bid_original_rate == 0 else 1 - bid_propagated_rate / bid_original_rate)
         supply_side_tax = (
