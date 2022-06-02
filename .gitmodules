@@ -4,3 +4,6 @@
 [submodule "gsy-framework"]
 	path = gsy-framework
 	url = ../gsy-framework.git
+[submodule "energyMarket"]
+	path = src/gsy_e/energyMarket
+	url =  src/gsy_e/energyMarket/.git
